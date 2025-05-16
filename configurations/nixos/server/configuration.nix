@@ -66,7 +66,7 @@
   #  wget
      micro
      git
-     nvidia-docker
+     nvidia-container-toolkit
      gh
 
   ];
