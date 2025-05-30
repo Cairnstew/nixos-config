@@ -5,10 +5,11 @@
 { config, pkgs, ... }:
 
 let
-  hardwareTarball = fetchTarball {
-    url = "https://github.com/NixOS/nixos-hardware/archive/master.tar.gz";
-    hash = "sha256-166nv0i8p41smyjxx99ldy6srx5v5v8v66awdvil8b3i1wzbhzkn"; # ← Put real hash here
-  };
+  hardwareTarball = 
+    fetchTarball {
+      url = "https://github.com/NixOS/nixos-hardware/archive/master.tar.gz";
+      hash = ""; # ← Put real hash here
+    };
 
 in {
   imports = [
