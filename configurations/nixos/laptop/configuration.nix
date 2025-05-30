@@ -5,8 +5,16 @@
 { config, pkgs, ... }:
 
 {
-  imports =
-    [ # Include the results of the hardware scan.
+  # Fetch nixos-hardware
+  let
+    hardwareTarball = fetchTarball {
+      url = "https://github.com/NixOS/nixos-hardware/archive/master.tar.gz";
+      # You should specify a hash for reproducibility, like:
+      # hash = "sha256-abc123..."; 
+    };
+  in {
+    imports = [
+      "${hardwareTarball}/framework/13th-gen-intel"
       ./hardware-configuration.nix
     ];
 
