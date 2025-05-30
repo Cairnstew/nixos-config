@@ -56,8 +56,9 @@
     packages = with pkgs; [];
   };
 
-  # Allow unfree packages
-  nixpkgs.config.allowUnfree = true;
+  nixpkgs.config = {
+      allowUnfree = true;
+    };
 
   # List packages installed in system profile. To search, run:
   # $ nix search wget
@@ -97,5 +98,11 @@
   # Before changing this value read the documentation for this option
   # (e.g. man configuration.nix or on https://nixos.org/nixos/options.html).
   system.stateVersion = "24.05"; # Did you read the comment?
+
+
+  virtualisation.docker.daemon.settings = {
+      # Set your desired data root path
+      "data-root" = "/mnt/data/docker-data";
+    };
 
 }
