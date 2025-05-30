@@ -4,16 +4,9 @@
 
 { config, pkgs, ... }:
 
-let
-  hardwareTarball = 
-    fetchTarball {
-      url = "https://github.com/NixOS/nixos-hardware/archive/master.tar.gz";
-      sha256 = "166nv0i8p4lsmyjxx99ldy6srx5v5v8v66awdvil8b3i1wzbhzkn"; # ← Put real hash here
-    };
 
-in {
+{
   imports = [
-    "${hardwareTarball}/framework/13th-gen-intel"
     ./hardware-configuration.nix
   ];
 
@@ -48,6 +41,8 @@ in {
     LC_TELEPHONE = "en_US.UTF-8";
     LC_TIME = "en_US.UTF-8";
   };
+
+  services.fwupd.enable = true;
 
   # Configure keymap in X11
   services.xserver.xkb = {
