@@ -20,7 +20,7 @@ in
     ./linux/self-ide.nix
     ./linux/current-location.nix
     ./linux/docker.nix
-    ./linux/nvidia.nix
+    #./linux/nvidia.nix
   ];
 
   boot.loader.grub.configurationLimit = 5; # Who needs more?
