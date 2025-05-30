@@ -4,4 +4,6 @@
   users.users.${flake.config.me.username} = {
     extraGroups = [ "docker" ];
   };
+
+  virtualisation.docker.enableOnBoot = true;
 }

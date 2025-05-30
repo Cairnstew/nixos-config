@@ -5,8 +5,16 @@
 { config, pkgs, ... }:
 
 {
-  imports =
-    [ # Include the results of the hardware scan.
+  # Fetch nixos-hardware
+  let
+    hardwareTarball = fetchTarball {
+      url = "https://github.com/NixOS/nixos-hardware/archive/master.tar.gz";
+      # You should specify a hash for reproducibility, like:
+      # hash = "sha256-abc123..."; 
+    };
+  in {
+    imports = [
+      "${hardwareTarball}/framework/13th-gen-intel"
       ./hardware-configuration.nix
     ];
 
@@ -14,7 +22,7 @@
   boot.loader.systemd-boot.enable = true;
   boot.loader.efi.canTouchEfiVariables = true;
 
-  networking.hostName = "server"; # Define your hostname.
+  networking.hostName = "laptop"; # Define your hostname.
   # networking.wireless.enable = true;  # Enables wireless support via wpa_supplicant.
 
   # Configure network proxy if necessary
@@ -48,6 +56,28 @@
     variant = "";
   };
 
+  # Enable X11 and Plasma desktop
+  services.xserver.enable = true;
+  services.xserver.displayManager.sddm.enable = true;
+  services.xserver.desktopManager.plasma5.enable = true;
+
+  # Optional: enable printing
+  services.printing.enable = true;
+
+
+# Sound
+  sound.enable = true;
+  hardware.pulseaudio.enable = false;
+  services.pipewire = {
+    enable = true;
+    audio.enable = true;
+    pulse.enable = true;
+  };
+
+  # Enable OpenGL (helpful for graphics performance)
+  hardware.opengl.enable = true;
+
+  
   # Define a user account. Don't forget to set a password with ‘passwd’.
   users.users.seanc = {
     isNormalUser = true;
@@ -98,11 +128,4 @@
   # Before changing this value read the documentation for this option
   # (e.g. man configuration.nix or on https://nixos.org/nixos/options.html).
   system.stateVersion = "24.05"; # Did you read the comment?
-
-
-  virtualisation.docker.daemon.settings = {
-      # Set your desired data root path
-      "data-root" = "/mnt/data/docker-data";
-    };
-
 }

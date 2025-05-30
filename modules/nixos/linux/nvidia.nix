@@ -26,11 +26,17 @@
   powerManagement.finegrained = false;
   # nvidiaSettings is enabled by default
   # The open driver from nvidia (is NOT nouveau) nb: "semi"-open
-  open = true;
+  open = false;
   };
 
   boot.blacklistedKernelModules = [ "nouveau" ];
 
   # Load nvidia driver for Xorg and Wayland
   services.xserver.videoDrivers = ["nvidia"];
+
+  hardware.nvidia-container-toolkit = {
+      enable = true;
+    };
+
+  
 }
