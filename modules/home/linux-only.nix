@@ -1,17 +1,9 @@
 {
   imports = [
-    ./all/bash.nix
-    ./all/zsh.nix
-    ./all/vscode-server.nix
-    # ./all/emacs.nix
-    # ./all/obs.nix
-    ./all/zed
-    ./all/obs.nix
-
-    # Terms
-    # ./all/rio.nix
-    # ./all/wezterm
-    ./all/ghostty.nix
-    # ./all/kitty.nix
+    #./all/bash.nix
+    #./claude-code
+    #./all/juspay-vertex.nix
+    # ./all/zsh.nix
+    # ./all/vscode-server.nix
   ];
 }

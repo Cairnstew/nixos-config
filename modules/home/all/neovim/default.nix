@@ -5,7 +5,7 @@ let
 in
 {
   imports = [
-    inputs.nixvim.homeManagerModules.nixvim
+    inputs.nixvim.homeModules.nixvim
   ];
   programs.nixvim = {
     enable = true;
@@ -16,8 +16,17 @@ in
     ];
 
     # Theme
-    colorschemes.rose-pine.enable = true;
-    # colorschemes.onedark.enable = true;
+    # colorschemes.rose-pine.enable = true;
+    colorschemes.catppuccin = {
+      enable = true;
+      settings = {
+        flavour = "mocha"; # dark variant
+        term_colors = true;
+        integrations = {
+          treesitter = true;
+        };
+      };
+    };
 
     # Settings
     opts = {
@@ -27,6 +36,7 @@ in
       tabstop = 2;
       number = true;
       clipboard = "unnamedplus";
+      termguicolors = true;
     };
 
     # Keymaps
@@ -115,7 +125,7 @@ in
           marksman.enable = true;
           nil_ls.enable = true;
           rust_analyzer = {
-            enable = true;
+            # enable = true;
             installCargo = false;
             installRustc = false;
           };

@@ -1,22 +1,18 @@
 {
-  home.stateVersion = "22.11";
+  home.stateVersion = "24.05";
   imports = [
-    ./all/tmux.nix
-    ./all/neovim
-    # ./helix.nix
-    ./all/ssh.nix
-    ./all/starship.nix
-    ./all/terminal.nix
-    ./all/nix.nix
+    #./all/tmux.nix
+    # ./all/neovim
+    #./all/helix.nix
+    #./all/starship.nix
+    #./all/terminal.nix
+    #./all/nix.nix
     ./all/git.nix
-    ./all/direnv.nix
-    ./all/zellij.nix
-    # ./nushell.nix
-    ./all/just.nix
-    # ./powershell.nix
-    ./all/juspay.nix
-
-    # Comment out because of annoying password prompts
-    # ./all/_1password.nix
+    ./all/vscode.nix
+    #./all/direnv.nix
+    # ./all/zellij.nix
+    #./all/just.nix
+    # ./all/juspay.nix
+    #./all/gotty.nix
   ];
 }

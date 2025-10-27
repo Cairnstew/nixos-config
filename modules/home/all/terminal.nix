@@ -6,10 +6,12 @@ let
 in
 {
   imports = [
-    inputs.nix-index-database.hmModules.nix-index
+    inputs.nix-index-database.homeModules.nix-index
+    inputs.try.homeManagerModules.default
   ];
   home.packages = with pkgs; [
     # Unixy tools
+    neovim
     ripgrep
     fd
     sd
@@ -28,19 +30,24 @@ in
     nixpkgs-fmt
     just
 
+    eternal-terminal
+
+    uv # For running Python stuff quickly.
+
+    # AI
+    gemini-cli
+    google-cloud-sdk
+
     # Publishing
     asciinema
-    twitter-convert
-    copy-md-as-html
     ispell
     pandoc
 
     # Dev
-    gh
     fuckport
     sshuttle-via
     entr
-    git-merge-and-delete
+    hackage-publish
 
     # Fonts
     cascadia-code
@@ -48,15 +55,15 @@ in
 
     # Txns
     hledger
-    hledger-web
+    # hledger-web
 
     gnupg
+    ffmpeg
   ];
 
   fonts.fontconfig.enable = true;
 
   home.shellAliases = {
-    e = "nvim";
     g = "git";
     lg = "lazygit";
     l = "ls";
@@ -69,17 +76,19 @@ in
       enableZshIntegration = true;
     };
     nix-index-database.comma.enable = true;
-    /*
-      lsd = {
-      enable = true;
-      enableAliases = true;
-      };
-    */
     bat.enable = true;
     autojump.enable = false;
     zoxide.enable = true;
-    fzf.enable = true;
+    fzf = {
+      enable = true;
+      defaultCommand = "fd --type f";
+      enableBashIntegration = true;
+    };
     jq.enable = true;
     btop.enable = true;
+    try = {
+      enable = true;
+      path = "~/tries";
+    };
   };
 }

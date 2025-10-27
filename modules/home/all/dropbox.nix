@@ -1,5 +1,5 @@
 {
-  programs.rio = {
+  services.dropbox = {
     enable = true;
   };
 }

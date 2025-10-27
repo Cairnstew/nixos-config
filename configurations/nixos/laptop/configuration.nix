@@ -53,20 +53,11 @@
   # Enable X11 and Plasma desktop
   services.xserver.enable = true;
   services.xserver.displayManager.sddm.enable = true;
-  services.xserver.desktopManager.plasma5.enable = true;
+  services.xserver.desktopManager.plasma6.enable = true;
 
   # Optional: enable printing
   services.printing.enable = true;
 
-
-# Sound
-  sound.enable = true;
-  hardware.pulseaudio.enable = false;
-  services.pipewire = {
-    enable = true;
-    audio.enable = true;
-    pulse.enable = true;
-  };
 
   # Enable OpenGL (helpful for graphics performance)
   hardware.opengl.enable = true;
@@ -92,9 +83,11 @@
      micro
      git
      #nvidia-container-toolkit
-     gh
-     docker-compose
-
+     #gh
+     #docker-compose
+     
+     firefox
+	 
   ];
 
   # Some programs need SUID wrappers, can be configured further or are

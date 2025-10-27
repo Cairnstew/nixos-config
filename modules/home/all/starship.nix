@@ -1,7 +1,11 @@
 {
   programs.starship = {
     enable = true;
+    enableBashIntegration = true;
+    enableZshIntegration = true;
+    enableNushellIntegration = true;
     settings = {
+      gcloud.disabled = true;
       username = {
         style_user = "blue bold";
         style_root = "red bold";

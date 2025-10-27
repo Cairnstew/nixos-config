@@ -2,10 +2,8 @@
 {
   imports = [
     ./all/zsh.nix
-    ./all/nushell.nix
+    ./all/bash.nix
+    ./all/nushell
     # ./all/emacs.nix
-  ];
-
-  home.packages = with pkgs; [
   ];
 }
