@@ -61,7 +61,6 @@
 
   # Enable OpenGL (helpful for graphics performance)
   hardware.opengl.enable = true;
-
   
   # Define a user account. Don't forget to set a password with ‘passwd’.
   users.users.seanc = {
@@ -101,6 +100,17 @@
 
   # Enable the OpenSSH daemon.
     services.openssh.enable = true;
+
+  # Don't suspend or shutdown when the laptop lid is closed so the machine
+  # remains reachable over the network (SSH etc.).
+  # This tells systemd-logind to ignore lid events.
+  services.logind = {
+    lidSwitch = "ignore";
+    lidSwitchDocked = "ignore";
+    lidSwitchExternalPower = "ignore";
+  };
+
+  powerManagement.enable = false;
 
   # Open ports in the firewall.
   # networking.firewall.allowedTCPPorts = [ ... ];

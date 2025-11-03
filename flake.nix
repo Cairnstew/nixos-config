@@ -24,8 +24,8 @@
       github-nix-ci.url = "github:juspay/github-nix-ci";
       nixos-vscode-server.flake = false;
       nixos-vscode-server.url = "github:nix-community/nixos-vscode-server";
-      nix-vscode-extensions.url = "github:nix-community/nix-vscode-extensions/fd5c5549692ff4d2dbee1ab7eea19adc2f97baeb";
-      
+      nix-vscode-extensions.url = "github:nix-community/nix-vscode-extensions";
+      flake-utils.url = "github:numtide/flake-utils";
       #nix-index-database.url = "github:nix-community/nix-index-database";
       #nix-index-database.inputs.nixpkgs.follows = "nixpkgs";
       #try.url = "github:tobi/try";

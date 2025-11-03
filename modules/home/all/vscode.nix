@@ -12,8 +12,8 @@ in
       ms-python.python
       ms-toolsai.jupyter
       bbenoist.nix
-      
-      #bernhard-42.ocp-cad-viewer	
+
+      #bernhard-42.ocp-cad-viewer       
       #vscodevim.vim
       #yzhang.markdown-all-in-one
     ];

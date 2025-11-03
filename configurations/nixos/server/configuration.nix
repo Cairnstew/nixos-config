@@ -68,8 +68,8 @@
      micro
      git
      #nvidia-container-toolkit
-     gh
-     docker-compose
+     #gh
+     #docker-compose
 
   ];
 
