@@ -9,6 +9,7 @@ in
     self.nixosModules.default
     ./configuration.nix
     #inputs.vscode-server.nixosModules.default
+    self.nixosModules.server
     (self + /modules/nixos/linux/nvidia.nix)
     (self + /modules/nixos/linux/docker.nix)
   ];
