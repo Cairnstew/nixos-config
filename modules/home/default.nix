@@ -3,6 +3,7 @@
   imports = [
     ./all/git.nix
     ./all/vscode.nix
+    ./all/vscode-server.nix
     ./all/ssh.nix
     ./all/direnv.nix
     # ./all/zellij.nix

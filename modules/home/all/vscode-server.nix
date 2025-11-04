@@ -5,5 +5,8 @@
   ];
 
   services.vscode-server.enable = true;
-  # services.vscode-server.installPath = "~/.vscode-server-insiders";
+  services.vscode-server.installPath = [
+      "$HOME/.vscode-server"          # For standard VS Code (optional if not using it)
+      "$HOME/.vscode-server-insiders" # Required for Insiders
+    ];
 }
