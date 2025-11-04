@@ -2,15 +2,11 @@ let
   config = import ../config.nix;
   users = [ config.me.sshKey ];
 
-  laptop = "";
+  laptop = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAICbrsmX987Oq4V3Kikiv/ogKoffdLKkibbmlrp+UytYS root@";
   server = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIJ4fQUqAPiYzijmQjdpgdT7+yqd2O/ntJXmAiZsw63XO root@server";
-  systems = [ server ];
+  systems = [ server laptop ];
 in
 { 
-  #"hedgedoc.env.age".publicKeys = users ++ systems;
-  #"github-nix-ci/srid.token.age".publicKeys = users ++ systems;
-  #"pureintent-basic-auth.age".publicKeys = users ++ systems;
-
   # New ZeroNSD token secret
   "zeronsd-token.age".publicKeys = users ++ systems;
 }
