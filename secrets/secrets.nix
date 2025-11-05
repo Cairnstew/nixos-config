@@ -3,7 +3,7 @@ let
   users = [ config.me.sshKey ];
 
   laptop = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAICbrsmX987Oq4V3Kikiv/ogKoffdLKkibbmlrp+UytYS root@";
-  server = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIJ4fQUqAPiYzijmQjdpgdT7+yqd2O/ntJXmAiZsw63XO root@server";
+  server = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAINJXLC3S2pEuIchrWMtmWiTaJOA+U02HVyRczRNbRjMX root@nixos";
   systems = [ server laptop ];
 in
 { 
