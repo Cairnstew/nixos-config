@@ -6,7 +6,7 @@ in
 {
   imports = [
     "./zerotier.nix"
-  ]
+  ];
 
   #services.zerotierone.enable = true;
 
