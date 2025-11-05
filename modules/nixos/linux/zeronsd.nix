@@ -5,7 +5,7 @@ let
 in
 {
   imports = [
-    "./zerotier.nix"
+    ./zerotier.nix
   ];
 
   #services.zerotierone.enable = true;
