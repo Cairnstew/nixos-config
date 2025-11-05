@@ -1,6 +1,6 @@
 {flake, lib, config, ... }:
 let
-  inherit (flake.config.me) zerotier_networks;
+  inherit (flake.config.me) zerotier_network;
   inherit (flake.inputs) self;
 in
 {
