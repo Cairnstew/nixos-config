@@ -28,15 +28,15 @@ let
       };
 
       # ✅ Add this for ZeroTier network IDs
-      zerotier_networks = lib.mkOption {
-        type = lib.types.listOf lib.types.str;
-        default = [ ];
+      zerotier_network = lib.mkOption {
+        type = lib.types.str;
         description = ''
-          List of ZeroTier network IDs to join (e.g. ["8056c2e21c000001" "1234567890abcdef"]).
+          Zerotier Network ID, for Zeronsd
         '';
-        example = [ "8056c2e21c000001" "1234567890abcdef" ];
       };
+        
     };
+
   };
 in
 {

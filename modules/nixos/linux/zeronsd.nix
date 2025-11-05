@@ -4,21 +4,22 @@ let
   inherit (flake.inputs) self;
 in
 {
-  services.zerotierone.enable = true;
+  imports = [
+    "./zerotier.nix"
+  ]
+
+  #services.zerotierone.enable = true;
 
   # Define the secret via Agenix
   age.secrets."zeronsd-token" = {
     file = self + /secrets/zeronsd-token.age;
     owner = "zeronsd";
-    #mode = "0400";
+    domain = "zt";
   };
 
   # Dynamically configure zeronsd for each network
-  services.zeronsd.servedNetworks =
-    lib.genAttrs zerotier_networks (networkId: {
-      settings = {
+  services.zeronsd.servedNetworks.zerotier_network.settings = {
         token = config.age.secrets."zeronsd-token".path;
-        log_level = "trace";
-      };
-    });
+        #log_level = "trace";
+    };
 }
