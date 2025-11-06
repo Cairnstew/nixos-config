@@ -1,6 +1,6 @@
 { flake, ... }: {
   services.zerotierone = {
-    enable = true;
+    enable = false;
     joinNetworks = [
       flake.config.me.zerotier_network
     ];

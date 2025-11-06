@@ -17,10 +17,10 @@ in
   };
 
   # Dynamically configure zeronsd for each network
-  services.zeronsd.servedNetworks.zerotier_network.settings = {
-        token = config.age.secrets."zeronsd-token".path;
-        log_level = "trace";
-        domain = "zt";
-
-    };
+  #services.zeronsd.servedNetworks.zerotier_network.settings = {
+  #      token = config.age.secrets."zeronsd-token".path;
+  #      log_level = "trace";
+  #      domain = "zt";
+#
+  #  };
 }

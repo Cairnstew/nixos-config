@@ -18,7 +18,6 @@ in
     self.nixosModules.common
     inputs.agenix.nixosModules.default # Used in github-runner.nix & hedgedoc.nix
     ./linux/current-location.nix
-    ./linux/zerotier.nix
   ];
 
   boot.loader.grub.configurationLimit = 5; # Who needs more?
