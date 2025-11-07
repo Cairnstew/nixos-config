@@ -17,7 +17,7 @@ in
   };
 
   services.zeronsd = {
-    enable = true;
+    #enable = true;
     servedNetworks."${flake.config.me.zerotier_network}".settings = {
       token = config.age.secrets."zeronsd-token".path;
       log_level = "trace";
