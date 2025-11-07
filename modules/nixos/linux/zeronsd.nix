@@ -11,17 +11,10 @@ in
   # Define the secret via Agenix
   age.secrets."zeronsd-token" = {
     file = self + /secrets/zeronsd-token.age;
-    owner = "root";
+    owner = "zeronsd";
     group = "zeronsd";
-    mode = "0440";
+    mode = "0400";
   };
-
-  # Make authtoken.secret group-readable
-  systemd.services.zerotierone.serviceConfig.ExecStartPost = "${pkgs.coreutils}/bin/chmod g+r /var/lib/zerotier-one/authtoken.secret";
-
-  # Add zeronsd user to zerotierone group for access
-  users.users.zeronsd.extraGroups = [ "zerotierone" ];
-
   # Dynamically configure zeronsd for each network
   services.zeronsd.servedNetworks."${zerotier_network}" = {
     settings = {
