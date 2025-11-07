@@ -14,6 +14,7 @@ in
     owner = "zeronsd";
     group = "zeronsd";
     mode = "640";
+    symlink = false;
     # symlink is true by default; usually fine
   };
 
