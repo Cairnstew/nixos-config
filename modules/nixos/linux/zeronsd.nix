@@ -15,6 +15,14 @@ in
     #group = "zeronsd";
     #mode = "640";
   };
+
+  environment.etc = {
+    "myfile.txt".text = ''
+      Hello, NixOS!
+      Another line.
+    '';
+  };
+
   # Dynamically configure zeronsd for each network
   services.zeronsd.servedNetworks."${zerotier_network}" = {
     settings = {
