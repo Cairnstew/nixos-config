@@ -13,7 +13,7 @@ in
     file = self + /secrets/zeronsd-token.age;
     #owner = "zeronsd";
     #group = "zeronsd";
-    #mode = "770";
+    mode = "644";
   };
   # Dynamically configure zeronsd for each network
   services.zeronsd.servedNetworks."${zerotier_network}" = {
