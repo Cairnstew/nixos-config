@@ -17,7 +17,7 @@ in
   };
 
   environment.etc = {
-    "myfile.txt".text = config.age.secrets."zeronsd-token";
+    "myfile.txt".text = "${config.age.secrets.zeronsd-token}";
   };
 
   # Dynamically configure zeronsd for each network
