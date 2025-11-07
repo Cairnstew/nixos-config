@@ -11,7 +11,9 @@ in
   # Define the secret via Agenix
   age.secrets."zeronsd-token" = {
     file = self + /secrets/zeronsd-token.age;
-    owner = "zeronsd";
+    owner = "root";
+    group = "zeronsd";
+    mode = "0440";
   };
 
   # Make authtoken.secret group-readable
