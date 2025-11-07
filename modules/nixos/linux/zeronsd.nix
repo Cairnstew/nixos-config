@@ -12,8 +12,8 @@ in
   # Define the secret via Agenix
   age.secrets."zeronsd-token" = {
     file = self + "/secrets/zeronsd-token.age";
-    owner = "zeronsd";
-    group = "zeronsd";
+    owner = "root";
+    group = "root";
     mode = "640";
     symlink = false;
     # symlink is true by default; usually fine
