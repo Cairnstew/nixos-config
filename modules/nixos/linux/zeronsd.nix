@@ -8,6 +8,13 @@ in
     ./zerotier.nix
   ];
 
+  # Define the secret via Agenix
+  age.secrets."zeronsd-token" = {
+    file = self + "/secrets/zeronsd-token.age";
+    owner = "seanc";
+  };
+
+
   # Dynamically configure zeronsd for each network
   #services.zeronsd.servedNetworks."${zerotier_network}" = {
   #  settings = {
