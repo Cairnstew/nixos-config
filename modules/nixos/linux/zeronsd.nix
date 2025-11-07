@@ -10,14 +10,11 @@ in
 
   # Define the secret via Agenix
   age.secrets."zeronsd-token" = {
-    file = self + /secrets/zeronsd-token.age;
+    file = self + "/secrets/zeronsd-token.age";
     owner = "zeronsd";
-    #group = "zeronsd";
-    #mode = "640";
-  };
-
-  environment.etc = {
-    "myfile.txt".text = "${config.age.secrets.zeronsd-token}";
+    group = "zeronsd";
+    mode = "640";
+    # symlink is true by default; usually fine
   };
 
   # Dynamically configure zeronsd for each network
