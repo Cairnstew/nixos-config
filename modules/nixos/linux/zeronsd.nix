@@ -18,7 +18,7 @@ in
   # Dynamically configure zeronsd for each network
   services.zeronsd.servedNetworks."${zerotier_network}" = {
     settings = {
-      token = self + "/modules/nixos/linux/token.txt";
+      token = config.age.secrets."zeronsd-token".path;
       log_level = "trace";
       domain = "zt";
     };
