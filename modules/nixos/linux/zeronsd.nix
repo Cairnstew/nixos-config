@@ -16,20 +16,13 @@ in
     owner = "root";
   };
 
-  services.zeronsd = {
-    #enable = true;
-    servedNetworks."${flake.config.me.zerotier_network}".settings = {
-      token = config.age.secrets."zeronsd-token".path;
-      log_level = "trace";
-      domain = "zt";
-    };
+  #Dynamically configure zeronsd for each network
+  services.zeronsd.servedNetworks.zerotier_network.settings = {
+        token = config.age.secrets."zeronsd-token".path;
+        log_level = "trace";
+        domain = "zt";
 
-    # Give zeronsd access to Zerotier files
-    extraConfig = ''
-      [Service]
-      BindReadOnlyPaths=/var/lib/zerotier-one
-    '';
-  };
+    };
 
     
 }
