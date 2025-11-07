@@ -11,9 +11,9 @@ in
   # Define the secret via Agenix
   age.secrets."zeronsd-token" = {
     file = self + /secrets/zeronsd-token.age;
-    owner = "zeronsd";
-    group = "zeronsd";
-    mode = "770";
+    #owner = "zeronsd";
+    #group = "zeronsd";
+    #mode = "770";
   };
   # Dynamically configure zeronsd for each network
   services.zeronsd.servedNetworks."${zerotier_network}" = {
