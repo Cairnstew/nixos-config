@@ -14,7 +14,7 @@ in
     file = self + "/secrets/zeronsd-token.age";
     owner = "root";
     group = "root";
-    mode = "640";
+    mode = "644";
     symlink = false;
     # symlink is true by default; usually fine
   };
