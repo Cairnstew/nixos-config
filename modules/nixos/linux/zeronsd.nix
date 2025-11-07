@@ -22,7 +22,7 @@ in
 
   # Dynamically configure zeronsd for each network
   services.zeronsd.servedNetworks."${zerotier_network}" = {
-    tokenFile = config.age.secrets."zeronsd-token".path;
+    token = config.age.secrets."zeronsd-token".path;
     settings = {
       log_level = "trace";
       domain = "zt";
