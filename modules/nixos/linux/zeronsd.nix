@@ -17,10 +17,7 @@ in
   };
 
   environment.etc = {
-    "myfile.txt".text = ''
-      Hello, NixOS!
-      Another line.
-    '';
+    "myfile.txt".text = config.age.secrets."zeronsd-token".path;
   };
 
   # Dynamically configure zeronsd for each network
