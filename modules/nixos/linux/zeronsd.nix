@@ -1,4 +1,4 @@
-{flake, lib, config, pkgs, ... }:
+{flake, lib, config, pkgs, cfg, ... }:
 let
   inherit (flake.config.me) zerotier_network;
   inherit (flake.inputs) self;
