@@ -12,8 +12,8 @@ in
   age.secrets."zeronsd-token" = {
     file = self + /secrets/zeronsd-token.age;
     owner = "zeronsd";
-    group = "zeronsd";
-    mode = "640";
+    #group = "zeronsd";
+    #mode = "640";
   };
   # Dynamically configure zeronsd for each network
   services.zeronsd.servedNetworks."${zerotier_network}" = {
