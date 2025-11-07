@@ -8,6 +8,9 @@ in
     ./zerotier.nix
   ];
 
+  systemd.services.zeronsd.after = [ "agenix.service" ];
+  systemd.services.zeronsd.requires = [ "agenix.service" ];
+
   # Define the secret via Agenix
   age.secrets."zeronsd-token" = {
     file = self + "/secrets/zeronsd-token.age";
