@@ -15,7 +15,7 @@ in
     owner = "root";
     group = "root";
     #mode = "644";
-    #symlink = false;
+    symlink = true;
     # symlink is true by default; usually fine
   };
 
