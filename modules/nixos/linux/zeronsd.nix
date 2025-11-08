@@ -28,7 +28,7 @@ in
     domain: home
     log_level: info
     secret: /var/lib/zerotier-one/authtoken.secret
-    token: /etc/zeronsd/token
+    token: ${config.age.secrets."zeronsd-token".path}
     wildcard: true
   '';
 
@@ -49,7 +49,7 @@ in
       User = "zeronsd";
       Group = "zeronsd";
       RuntimeDirectory = "zeronsd";
-      AmbientCapabilities = [ "CAP_NET_BIND_SERVICE" ];
+      #AmbientCapabilities = [ "CAP_NET_BIND_SERVICE" ];
     };
 
     preStart = ''
