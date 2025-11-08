@@ -8,6 +8,8 @@ in
     ./zerotier.nix
   ];
 
+  services.openssh.enable = true;
+
   # Define the secret via Agenix
   #age.secrets."zeronsd-token" = {
   #  file = self + "/secrets/zeronsd-token.age";

@@ -8,4 +8,5 @@ let
 in
 {
   "zeronsd-token.age".publicKeys = [ server ];
+  "zeronsd-token.age".armor = true;
 }
