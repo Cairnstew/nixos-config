@@ -12,10 +12,10 @@ in
 
 
   # Define the secret via Agenix
-  age.secrets."zeronsd-token" = {
-    file = self + "/secrets/zeronsd-token.age";
-    #owner = "root";
-  };
+  #age.secrets."zeronsd-token" = {
+  #  file = self + "/secrets/zeronsd-token.age";
+  #  #owner = "root";
+  #};
 
 
   # Dynamically configure zeronsd for each network

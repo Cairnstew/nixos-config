@@ -13,6 +13,7 @@ in
     ./linux/zerotier.nix
     ./linux/zeronsd.nix
     ./linux/zerotier.nix
+    ./linux/age.nix
 
   ];
 
