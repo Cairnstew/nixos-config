@@ -58,7 +58,7 @@ in
       ExecStart = "
         ${pkgs.zeronsd}/bin/zeronsd start ${zerotier_network} allowDNS=1 -c /etc/zeronsd/${zerotier_network}.yaml
 
-        ${pkgs.zerotier}/bin/zerotier-cli set ${zerotier_network} allowDNS=1
+        ${pkgs.zerotierone}/bin/zerotier-cli set ${zerotier_network} allowDNS=1
       ";
       Restart = "on-failure";
       RestartSec = "10s";
