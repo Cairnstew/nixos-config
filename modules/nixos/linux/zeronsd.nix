@@ -8,9 +8,6 @@ in
     ./zerotier.nix
   ];
 
-  environment.variables.AGE_IDENTITIES_FILE = "/root/.ssh/id_ed25519";
-
-
   # Define the secret via Agenix
   #age.secrets."zeronsd-token" = {
   #  file = self + "/secrets/zeronsd-token.age";
