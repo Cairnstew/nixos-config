@@ -16,6 +16,7 @@ in
   age.secrets."zeronsd-token" = {
     file = self + "/secrets/zeronsd-token.age";
     owner = "zeronsd";
+    group = "zeronsd";
     mode = "770";
   };
 
