@@ -24,7 +24,7 @@ in
   services.zeronsd.servedNetworks = {
     zerotier_network = {
       settings = {
-        token = "/var/lib/zeronsd/apitoken";
+        token = "/var/lib/zerotier-one/token";
       };
     };
   };
