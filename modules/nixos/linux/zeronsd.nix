@@ -27,5 +27,5 @@ in
         token = "/var/lib/zeronsd/apitoken";
       };
     };
-  }
+  };
 }
