@@ -28,7 +28,7 @@ in
     domain: home
     log_level: info
     secret: /var/lib/zerotier-one/authtoken.secret
-    token: ${config.age.secrets."zeronsd-token".path}
+    token: /etc/zeronsd/token
     wildcard: true
   '';
 
