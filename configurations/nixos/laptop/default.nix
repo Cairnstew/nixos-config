@@ -7,7 +7,6 @@ in
 {
   imports = [
     self.nixosModules.default
-    self.nixosModules.server
     ./configuration.nix
     #(self + /modules/nixos/shared/github-runner.nix)
   ];
