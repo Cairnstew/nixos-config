@@ -20,11 +20,12 @@ in
     mode = "770";
   };
 
-  services.zerotierone-with-dns = {
-    enable = true;
-    networks = {
-      "homenet.zt" = zerotier_network;
-      #"gamenet.zt" = "<ZEROTIER NETWORK ID>";
+  
+  services.zeronsd.servedNetworks = {
+    zerotier_network = {
+      settings = {
+        token = "/var/lib/zeronsd/apitoken";
+      };
     };
-  };
+  }
 }
