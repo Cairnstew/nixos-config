@@ -24,7 +24,7 @@ in
 
   # Configuration file for ZeroNSD
   environment.etc."zeronsd/${zerotier_network}.yaml".text = ''
-    domain: home_server
+    domain: home
     log_level: info
     secret: /var/lib/zerotier-one/authtoken.secret
     token: ${config.age.secrets."zeronsd-token".path}
