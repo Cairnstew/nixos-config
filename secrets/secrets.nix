@@ -6,7 +6,6 @@ let
   server = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAILxKH++jNeehzeT6oKkNMtIIaWUF8aKeQ4pDg5FC7uBI root@server";
   systems = [ server laptop ];
 in
-{ 
-  # New ZeroNSD token secret
-  "zeronsd-token.age".publicKeys = users ++ systems;
+{
+  "zeronsd-token.age".publicKeys = [ server ];
 }
