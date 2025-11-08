@@ -8,7 +8,7 @@ in
   imports = [
     self.nixosModules.default
     ./configuration.nix
-    #(self + /modules/nixos/shared/github-runner.nix)
+    (self + /modules/nixos/linux/zerotier.nix)
   ];
   services.openssh.enable = true;
   nixos-unified.sshTarget = "seanc@laptop";
