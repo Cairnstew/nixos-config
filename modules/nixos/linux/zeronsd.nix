@@ -13,12 +13,12 @@ in
   age.identityPaths = [ "/root/.ssh/id_ed25519" ];
 
   # Define the secret via Agenix
-  #age.secrets."zeronsd-token" = {
-  #  file = self + "/secrets/zeronsd-token.age";
-  #  owner = "zeronsd";
-  #  group = "zeronsd";
-  #  mode = "770";
-  #};
+  age.secrets."zeronsd-token" = {
+    file = self + "/secrets/zeronsd-token.age";
+    #owner = "zeronsd";
+    #group = "zeronsd";
+    #mode = "770";
+  };
 
   
   #services.zeronsd.servedNetworks = {
