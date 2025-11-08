@@ -19,6 +19,22 @@ in
     mode = "770";
   };
 
+
+  services.zerotierone.localConf = {
+    settings = {
+      portMappingEnabled = false;       # Disable UPnP/NAT-PMP
+      allowTcpFallbackRelay = true;     # Allow TCP relay fallback
+      allowManagementFrom = ["127.0.0.1"];  # Management API only from localhost
+      bind = ["0.0.0.0"];               # Bind to all interfaces
+    };
+
+    physical = {
+      "10.0.0.0/24" = {
+        blacklist = false;              # Example: set true to block a subnet
+      };
+    };
+  };
+
   ###### ZeroNSD service ######
   environment.systemPackages = [ pkgs.zeronsd ];
 
