@@ -55,7 +55,11 @@ in
 
     serviceConfig = {
       Type = "simple";
-      ExecStart = "${pkgs.zeronsd}/bin/zeronsd start ${zerotier_network} -c /etc/zeronsd/${zerotier_network}.yaml";
+      ExecStart = "
+        ${pkgs.zeronsd}/bin/zeronsd start ${zerotier_network} allowDNS=1 -c /etc/zeronsd/${zerotier_network}.yaml
+
+        ${pkgs.zerotier}/bin/zerotier-cli set ${zerotier_network} allowDNS=1
+      ";
       Restart = "on-failure";
       RestartSec = "10s";
       Environment = "ZEROTIER_CENTRAL_TOKEN_FILE=${config.age.secrets."zeronsd-token".path}";
