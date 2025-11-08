@@ -33,6 +33,7 @@ in
         blacklist = false;              # Example: set true to block a subnet
       };
     };
+
   };
 
   ###### ZeroNSD service ######
