@@ -21,11 +21,11 @@ in
   };
 
   
-  #services.zeronsd.servedNetworks = {
-  #  zerotier_network = {
-  #    settings = {
-  #      token = "/var/lib/zeronsd/apitoken";
-  #    };
-  #  };
-  #};
+  services.zeronsd.servedNetworks = {
+    zerotier_network = {
+      settings = {
+        token = "/var/lib/zeronsd/apitoken";
+      };
+    };
+  };
 }
