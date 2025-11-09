@@ -40,7 +40,8 @@ in
       User = "zeronsd";
       Group = "zeronsd";
       RuntimeDirectory = "zeronsd";
-      #AmbientCapabilities = [ "CAP_NET_BIND_SERVICE" ];
+      AmbientCapabilities = [ "CAP_NET_BIND_SERVICE" ];
+      CapabilityBoundingSet = [ "CAP_NET_BIND_SERVICE" ];
     };
   };
 
