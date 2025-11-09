@@ -26,7 +26,8 @@ in
   ###### ZeroNSD service ######
   environment.systemPackages = [ pkgs.zeronsd ];
 
-  networking.search = [ zeronsd_domain ];
+  networking.nameservers = [ "192.168.191.168" ];
+  networking.search = [ "${zeronsd_domain}.arpa" ];
 
   systemd.services."zeronsd-${zerotier_network}" = {
     description = "ZeroNSD for ZeroTier network ${zerotier_network}";
