@@ -9,8 +9,10 @@ in
   ];
 
   services.openssh.enable = true;
+  services.resolved.enable = true;
 
   age.identityPaths = [ "/root/.ssh/id_ed25519" ];
+  
 
   # Define the secret via Agenix
   age.secrets."zeronsd-token" = {
