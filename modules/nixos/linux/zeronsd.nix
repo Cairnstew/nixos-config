@@ -2,6 +2,7 @@
 let
   inherit (flake.config.me) zerotier_network;
   inherit (flake.inputs) self;
+  zeronsd_domain = "home";
 in
 {
   imports = [
@@ -25,6 +26,8 @@ in
   ###### ZeroNSD service ######
   environment.systemPackages = [ pkgs.zeronsd ];
 
+  networking.search = [ zeronsd_domain ];
+
   systemd.services."zeronsd-${zerotier_network}" = {
     description = "ZeroNSD for ZeroTier network ${zerotier_network}";
     after = [ "network.target" "zerotierone.service" ];
@@ -33,7 +36,7 @@ in
 
     serviceConfig = {
       Type = "simple";
-      ExecStart = "${pkgs.zeronsd}/bin/zeronsd start ${zerotier_network} -t ${config.age.secrets."zeronsd-token".path} -w -v";
+      ExecStart = "${pkgs.zeronsd}/bin/zeronsd start ${zerotier_network} -d ${zeronsd_domain} -t ${config.age.secrets."zeronsd-token".path} -w -v";
       Restart = "on-failure";
       RestartSec = "10s";
       Environment = "ZEROTIER_CENTRAL_TOKEN_FILE=${config.age.secrets."zeronsd-token".path}";
