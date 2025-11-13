@@ -7,11 +7,10 @@ in
   environment.systemPackages = [
       (pkgs.vscode-with-extensions.override {
         vscode = pkgs.vscode;
-        #vscodeExtensions = with pkgs.vscode-extensions; [
-        #  bbenoist.nix
-        #  ms-python.python
-        #  esbenp.prettier-vscode
-        #];
+        vscodeExtensions = with pkgs.vscode-extensions; [
+          ms-python.python
+          ms-toolsai.jupyter
+        ];
       })
     ];
 }
