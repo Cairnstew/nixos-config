@@ -9,4 +9,5 @@ in
 {
   "zeronsd-token.age".publicKeys = [ server ];
   "zeronsd-token.age".armor = true;
+  "spotify-cred.age".publicKeys = systems;
 }

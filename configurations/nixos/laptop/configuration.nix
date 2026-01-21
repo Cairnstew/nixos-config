@@ -24,6 +24,12 @@
   # Enable networking
   networking.networkmanager.enable = true;
 
+  #services.xserver.enable = true; # optional
+  #services.displayManager.sddm.enable = true;
+  #services.desktopManager.plasma6.enable = true;
+
+  hardware.bluetooth.enable = true;
+
   # Set your time zone.
   #time.timeZone = "America/Chicago";
 
@@ -50,14 +56,8 @@
     variant = "";
   };
 
-  # Enable X11 and Plasma desktop
-  services.xserver.enable = true;
-  services.xserver.displayManager.sddm.enable = true;
-  services.xserver.desktopManager.plasma6.enable = true;
-
   # Optional: enable printing
-  services.printing.enable = true;
-
+  services.printing.enable = true;  
 
   # Enable OpenGL (helpful for graphics performance)
   hardware.opengl.enable = true;
@@ -84,9 +84,14 @@
      #nvidia-container-toolkit
      #gh
      #docker-compose
+ 
      
      firefox
-	 
+     # BlueTooth
+     bluez       # Bluetooth protocol stack
+     bluez-tools # command-line utilities like bluetoothctl
+     pulseaudioFull # if you use audio over Bluetooth
+	 adwaita-icon-theme	 
   ];
 
   # Some programs need SUID wrappers, can be configured further or are

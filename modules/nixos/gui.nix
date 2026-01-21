@@ -1,0 +1,5 @@
+{
+	imports = [
+		./all/gui/hyprland	
+	];
+}
