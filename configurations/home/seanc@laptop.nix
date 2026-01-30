@@ -7,7 +7,6 @@ in
 {
   imports = [
     self.homeModules.default
-    "${homeMod}/all/spotify.nix"
     "${homeMod}/all/vscode.nix"
     
   ];

@@ -1,4 +1,7 @@
-{ config, lib, pkgs, ... }:
+{pkgs, config, flake, ...}:
 {
-	programs.localsend.enable = true;
+  programs.localsend = {
+        enable = true;
+        openFirewall = true;
+  };
 }

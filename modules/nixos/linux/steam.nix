@@ -4,8 +4,13 @@ let
   inherit (inputs) self;
 in
 {
-  imports = [
-    inputs.steam-config.nixosModules.steam
-  ];
-
+  programs = {
+    steam = {
+      enable = true;
+      extraCompatPackages = [
+        pkgs.proton-ge-bin
+      ];
+    };
+  };
+  
 }

@@ -1,9 +1,9 @@
 {
-  time.timeZone = "America/New_York";
+  time.timeZone = "GB";
 
   location = {
-    # Quebec City
-    latitude = 46.813359;
-    longitude = -71.215796;
+    # Glasgow City
+    latitude = 55.8617;
+    longitude = 4.2583;
   };
 }

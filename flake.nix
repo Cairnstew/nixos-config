@@ -26,20 +26,23 @@
       nixos-vscode-server.url = "github:nix-community/nixos-vscode-server";
       nix-vscode-extensions.url = "github:nix-community/nix-vscode-extensions";
       flake-utils.url = "github:numtide/flake-utils";
-      #nix-index-database.url = "github:nix-community/nix-index-database";
-      #nix-index-database.inputs.nixpkgs.follows = "nixpkgs";
-      #try.url = "github:tobi/try";
-      #vira.url = "github:juspay/vira";
-      #nix-ai-tools.url = "github:numtide/nix-ai-tools";
-      #nix-ai-tools.inputs.nixpkgs.follows = "nixpkgs";
-      #landrun-nix.url = "github:srid/landrun-nix";
-  
+      nix-index-database.url = "github:nix-community/nix-index-database";
+      nix-index-database.inputs.nixpkgs.follows = "nixpkgs";
+      try.url = "github:tobi/try";
+      vira.url = "github:juspay/vira";
+      nix-ai-tools.url = "github:numtide/nix-ai-tools";
+      nix-ai-tools.inputs.nixpkgs.follows = "nixpkgs";
+      landrun-nix.url = "github:srid/landrun-nix";
+	  hyprland.url = "github:hyprwm/Hyprland";   
+	  
+	  desktop-config.url = "git+https://git.mynixos.com/sean-cairns/gui-config.git";
+	  
       # Neovim
-      #nixvim.url = "github:nix-community/nixvim";
-      #nixvim.inputs.nixpkgs.follows = "nixpkgs";
+      nixvim.url = "github:nix-community/nixvim";
+      nixvim.inputs.nixpkgs.follows = "nixpkgs";
       # Emacs
-      #nix-doom-emacs-unstraightened.url = "github:marienz/nix-doom-emacs-unstraightened";
-      #nix-doom-emacs-unstraightened.inputs.nixpkgs.follows = "nixpkgs";
+      nix-doom-emacs-unstraightened.url = "github:marienz/nix-doom-emacs-unstraightened";
+      nix-doom-emacs-unstraightened.inputs.nixpkgs.follows = "nixpkgs";
   
       # Devshell
       git-hooks.url = "github:cachix/git-hooks.nix";

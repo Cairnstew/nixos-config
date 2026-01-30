@@ -1,5 +1,5 @@
 {
   imports = [
-    ./thunderbird.nix
+    #./dropbox.nix
   ];
 }

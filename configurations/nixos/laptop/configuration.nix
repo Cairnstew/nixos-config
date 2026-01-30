@@ -13,6 +13,7 @@
   # Bootloader.
   boot.loader.systemd-boot.enable = true;
   boot.loader.efi.canTouchEfiVariables = true;
+  boot.kernelParams = [ "acpi_backlight=vendor" ];
 
   networking.hostName = "laptop"; # Define your hostname.
   # networking.wireless.enable = true;  # Enables wireless support via wpa_supplicant.
@@ -23,6 +24,7 @@
 
   # Enable networking
   networking.networkmanager.enable = true;
+
 
   #services.xserver.enable = true; # optional
   #services.displayManager.sddm.enable = true;
@@ -60,7 +62,7 @@
   services.printing.enable = true;  
 
   # Enable OpenGL (helpful for graphics performance)
-  hardware.opengl.enable = true;
+  hardware.graphics.enable = true;
   
   # Define a user account. Don't forget to set a password with ‘passwd’.
   users.users.seanc = {
@@ -91,7 +93,7 @@
      bluez       # Bluetooth protocol stack
      bluez-tools # command-line utilities like bluetoothctl
      pulseaudioFull # if you use audio over Bluetooth
-	 adwaita-icon-theme	 
+	 #adwaita-icon-theme	 
   ];
 
   # Some programs need SUID wrappers, can be configured further or are
@@ -109,10 +111,10 @@
   # Don't suspend or shutdown when the laptop lid is closed so the machine
   # remains reachable over the network (SSH etc.).
   # This tells systemd-logind to ignore lid events.
-  services.logind = {
-    lidSwitch = "ignore";
-    lidSwitchDocked = "ignore";
-    lidSwitchExternalPower = "ignore";
+  services.logind.settings.Login = {
+    HandleLidSwitch = "ignore";
+    HandleLidSwitchDocked = "ignore";
+    HandleLidSwitchExternalPower = "ignore";
   };
 
   powerManagement.enable = false;
