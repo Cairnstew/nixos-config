@@ -2,6 +2,7 @@
 let
   inherit (flake.config.me) zerotier_network;
   inherit (flake.inputs) self;
+  zeronsd_domain = "home";
 in
 {
   imports = [
@@ -9,27 +10,24 @@ in
   ];
 
   services.openssh.enable = true;
+  services.resolved.enable = true;
 
   age.identityPaths = [ "/root/.ssh/id_ed25519" ];
+  
 
   # Define the secret via Agenix
   age.secrets."zeronsd-token" = {
     file = self + "/secrets/zeronsd-token.age";
     owner = "zeronsd";
-    mode = "770";
+    group = "zeronsd";
+    mode = "600";
   };
 
   ###### ZeroNSD service ######
   environment.systemPackages = [ pkgs.zeronsd ];
 
-  # Configuration file for ZeroNSD
-  environment.etc."zeronsd/${zerotier_network}.yaml".text = ''
-    domain: home
-    log_level: info
-    secret: /var/lib/zerotier-one/authtoken.secret
-    token: ${config.age.secrets."zeronsd-token".path}
-    wildcard: true
-  '';
+  networking.nameservers = [ "192.168.191.168" ];
+  networking.search = [ "${zeronsd_domain}.arpa" ];
 
   systemd.services."zeronsd-${zerotier_network}" = {
     description = "ZeroNSD for ZeroTier network ${zerotier_network}";
@@ -39,7 +37,7 @@ in
 
     serviceConfig = {
       Type = "simple";
-      ExecStart = "${pkgs.zeronsd}/bin/zeronsd start ${zerotier_network} -c /etc/zeronsd/${zerotier_network}.yaml";
+      ExecStart = "${pkgs.zeronsd}/bin/zeronsd start ${zerotier_network} -d ${zeronsd_domain} -t ${config.age.secrets."zeronsd-token".path} -w -v";
       Restart = "on-failure";
       RestartSec = "10s";
       Environment = "ZEROTIER_CENTRAL_TOKEN_FILE=${config.age.secrets."zeronsd-token".path}";
@@ -48,14 +46,9 @@ in
       User = "zeronsd";
       Group = "zeronsd";
       RuntimeDirectory = "zeronsd";
+      AmbientCapabilities = [ "CAP_NET_BIND_SERVICE" ];
+      CapabilityBoundingSet = [ "CAP_NET_BIND_SERVICE" ];
     };
-
-    preStart = ''
-      if [ ! -f /etc/zeronsd/${zerotier_network}.yaml ]; then
-        echo "Missing config file /etc/zeronsd/${zerotier_network}.yaml"
-        exit 1
-      fi
-    '';
   };
 
   # Optional: system user for ZeroNSD
