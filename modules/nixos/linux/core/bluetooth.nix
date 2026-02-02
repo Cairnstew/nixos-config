@@ -13,4 +13,10 @@ in
   	};
   };
 
+  environment.systemPackages = with pkgs; [
+    bluez
+    bluez-tools
+    bluez-alsa
+  ];
+
 }

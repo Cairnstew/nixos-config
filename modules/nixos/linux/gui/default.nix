@@ -2,9 +2,11 @@
 let
   inherit (flake) config inputs;
   inherit (inputs) self;
+  
 in
 {
-  environment.systemPackages = with pkgs; [
-    obsidian
-  ];
+    imports = [
+      ./_1password.nix
+    ];
 }
+

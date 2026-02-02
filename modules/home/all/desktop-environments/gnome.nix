@@ -4,6 +4,7 @@ let
   inherit (inputs) self;
 in
 {
+
   dconf = {
         settings = {
           # ...
@@ -13,7 +14,6 @@ in
               "code.desktop"
               "org.gnome.Terminal.desktop"
               "spotify.desktop"
-              "virt-manager.desktop"
             ];
           };
           "org/gnome/desktop/interface" = {
@@ -33,6 +33,10 @@ in
             primary-color = "#3465a4";
             secondary-color = "#000000";
           };
+          "org/gnome/settings-daemon/plugins/power" = {
+            sleep-inactive-ac-timeout = 0;    # disable AC suspend
+            sleep-inactive-battery-timeout = 300; # 5 minutes on battery
+          };
         };
       };
       gtk = {
@@ -49,20 +53,5 @@ in
           name = "Breeze-Dark";
         };
       };
-      programs = {
-        alacritty = {
-          enable = true;
-          theme = "gruvbox_material_hard_dark";
-        };
-      };
-      xdg = {
-        configFile = {
-          "gtk-3.0/settings.ini" = {
-            force = true;
-          };
-          "gtk-4.0/settings.ini" = {
-            force = true;
-          };
-        };
-      };
+      
 }

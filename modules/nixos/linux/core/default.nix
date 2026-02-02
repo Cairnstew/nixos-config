@@ -7,5 +7,6 @@ in
  imports = [
   ./bluetooth.nix
   ./audio.nix
+  ./battery.nix
  ];
 }

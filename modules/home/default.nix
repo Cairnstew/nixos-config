@@ -4,7 +4,6 @@
     ./all/browser
     ./all/email
     ./all/files
-    ./all/gui
     ./all/ide
     ./all/security
     ./all/terminal

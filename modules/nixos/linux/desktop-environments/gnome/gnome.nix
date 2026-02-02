@@ -1,9 +1,15 @@
-{flake, lib, config, pkgs, ... }:
+{ flake, pkgs, lib, ... }:
 let
-  inherit (flake.config.me) zerotier_network;
-  inherit (flake.inputs) self;
+  inherit (flake) config inputs;
+  inherit (inputs) self;
+  homeMod = self + /modules/home;
 in
 {
+  home-manager.sharedModules = [
+      "${homeMod}/all/desktop-environments/gnome.nix"
+    ];
+  
+  
   services.xserver = {
     enable = true;
     displayManager.gdm.enable = true;

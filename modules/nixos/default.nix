@@ -20,7 +20,7 @@ in
     inputs.agenix.nixosModules.default # Used in github-runner.nix & hedgedoc.nix
     ./linux/current-location.nix
     ./linux/core
-    ./linux/gui/gnome
+    ./linux/gui
   ];
 
   boot.loader.grub.configurationLimit = 5; # Who needs more?

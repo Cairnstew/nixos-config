@@ -4,13 +4,8 @@ let
   inherit (inputs) self;
 in
 {
-  programs = {
-    steam = {
+
+  programs.yazi = {
       enable = true;
-      extraCompatPackages = [
-        pkgs.proton-ge-bin
-      ];
-    };
-  };
-  
+    };    
 }
