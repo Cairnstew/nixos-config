@@ -30,8 +30,6 @@
   #services.displayManager.sddm.enable = true;
   #services.desktopManager.plasma6.enable = true;
 
-  hardware.bluetooth.enable = true;
-
   # Set your time zone.
   #time.timeZone = "America/Chicago";
 
@@ -75,6 +73,7 @@
   nixpkgs.config = {
       allowUnfree = true;
     };
+  
 
   # List packages installed in system profile. To search, run:
   # $ nix search wget
@@ -82,17 +81,8 @@
   #  vim # Do not forget to add an editor to edit configuration.nix! The Nano editor is also installed by default.
   #  wget
      micro
-     git
      #nvidia-container-toolkit
      #gh
-     #docker-compose
- 
-     
-     firefox
-     # BlueTooth
-     bluez       # Bluetooth protocol stack
-     bluez-tools # command-line utilities like bluetoothctl
-     pulseaudioFull # if you use audio over Bluetooth
 	 #adwaita-icon-theme	 
   ];
 
@@ -104,21 +94,10 @@
   #   enableSSHSupport = true;
   # };
   # List services that you want to enable:
-
-  # Enable the OpenSSH daemon.
-    services.openssh.enable = true;
-
   # Don't suspend or shutdown when the laptop lid is closed so the machine
   # remains reachable over the network (SSH etc.).
   # This tells systemd-logind to ignore lid events.
-  services.logind.settings.Login = {
-    HandleLidSwitch = "ignore";
-    HandleLidSwitchDocked = "ignore";
-    HandleLidSwitchExternalPower = "ignore";
-  };
-
-  powerManagement.enable = false;
-
+  
   # Open ports in the firewall.
   # networking.firewall.allowedTCPPorts = [ ... ];
   # networking.firewall.allowedUDPPorts = [ ... ];

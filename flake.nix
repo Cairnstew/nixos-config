@@ -11,7 +11,7 @@
   
       nix-darwin.url = "github:LnL7/nix-darwin";
       nix-darwin.inputs.nixpkgs.follows = "nixpkgs";
-      home-manager.url = "github:nix-community/home-manager";
+      home-manager.url = "github:nix-community/home-manager/release-25.11";
       home-manager.inputs.nixpkgs.follows = "nixpkgs";
       nixos-hardware.url = "github:NixOS/nixos-hardware";
       nixos-unified.url = "github:srid/nixos-unified";
@@ -20,6 +20,12 @@
       agenix.url = "github:ryantm/agenix";
       nuenv.url = "github:hallettj/nuenv/writeShellApplication";
       nixpkgs-unstable.url = "github:NixOS/nixpkgs/nixos-unstable";
+
+      auto-cpufreq = {
+        url = "github:AdnanHodzic/auto-cpufreq";
+        inputs.nixpkgs.follows = "nixpkgs";   # important to avoid version mismatch
+      };
+
       # Software inputs
       github-nix-ci.url = "github:juspay/github-nix-ci";
       nixos-vscode-server.flake = false;
@@ -33,24 +39,49 @@
       nix-ai-tools.url = "github:numtide/nix-ai-tools";
       nix-ai-tools.inputs.nixpkgs.follows = "nixpkgs";
       landrun-nix.url = "github:srid/landrun-nix";
-	  hyprland.url = "github:hyprwm/Hyprland";   
-	  
-	  desktop-config.url = "git+https://git.mynixos.com/sean-cairns/gui-config.git";
-	  
+	    hyprland.url = "github:hyprwm/Hyprland";   
+	  	
       # Neovim
       nixvim.url = "github:nix-community/nixvim";
       nixvim.inputs.nixpkgs.follows = "nixpkgs";
       # Emacs
       nix-doom-emacs-unstraightened.url = "github:marienz/nix-doom-emacs-unstraightened";
       nix-doom-emacs-unstraightened.inputs.nixpkgs.follows = "nixpkgs";
-  
+
+      zig-overlay.url = "github:mitchellh/zig-overlay";
+      
+      # Terminal
+      ghostty = {
+        url = "github:ghostty-org/ghostty/v1.2.3";
+        inputs = {
+          nixpkgs.follows = "nixpkgs";
+          zig.follows = "zig-overlay";
+        };
+      };
+
       # Devshell
       git-hooks.url = "github:cachix/git-hooks.nix";
       git-hooks.flake = false;
     };
 
   # Wired using https://nixos-unified.org/autowiring.html
-    outputs = inputs:
-      inputs.nixos-unified.lib.mkFlake
-        { inherit inputs; root = ./.; };
-  }
+    outputs = inputs@{ self, ... }:
+    inputs.flake-parts.lib.mkFlake { inherit inputs; } {
+      systems = [ "x86_64-linux" "aarch64-linux" "aarch64-darwin" ];
+      imports = (with builtins;
+        map
+          (fn: ./modules/flake-parts/${fn})
+          (attrNames (readDir ./modules/flake-parts)));
+
+      perSystem = { lib, system, ... }: {
+        # Make our overlay available to the devShell
+        # "Flake parts does not yet come with an endorsed module that initializes the pkgs argument.""
+        # So we must do this manually; https://flake.parts/overlays#consuming-an-overlay
+        _module.args.pkgs = import inputs.nixpkgs {
+          inherit system;
+          overlays = lib.attrValues self.overlays;
+          config.allowUnfree = true;
+        };
+      };
+    };
+}

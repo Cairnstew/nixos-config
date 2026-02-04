@@ -1,33 +1,47 @@
 { config, flake, pkgs, lib,  ... }:
 
 let
-  inherit (flake) inputs;
+  inherit (flake) config inputs;
   inherit (inputs) self;
-  homeMod = self + /modules/home;
 in
 {
 
   nixos-unified.sshTarget = "seanc@laptop";
 
   imports = [
-    self.nixosModules.default
     ./configuration.nix
-    (self + /modules/nixos/linux/zerotier.nix)
-    (self + /modules/nixos/linux/freecad.nix)
-    (self + /modules/nixos/linux/localsend.nix)
-    (self + /modules/nixos/linux/freecad.nix)
-    (self + /modules/nixos/linux/spotify.nix)
-    (self + /modules/nixos/linux/steam.nix)
-    (self + /modules/nixos/linux/obsidian.nix)
-    (self + /modules/nixos/linux/rstudio.nix)
 
-
-
+    self.nixosModules.default
+    
+    self.nixosModules.zerotier
+    self.nixosModules.localsend
+    self.nixosModules.freecad
+    self.nixosModules.spotify
+    self.nixosModules.rstudio
+    self.nixosModules.gnome
   ];
 
-  home-manager.sharedModules = [
-      
-    ];
+  home-manager.users.${config.me.username}.my = { 
+        programs = {
+          cudatext.enable = true;
+          firefox.enable = true;
+          obsidian.enable = true;
+          thunderbird = {
+            enable = true;
+            email = flake.config.me.email;
+            username = flake.config.me.username;
+          };
+          vscode.enable = true;
+          youtube-music.enable = true;
+
+        };
+
+        services = {
+          udiskie.enable = true;
+        };
+
+      };
+  
   services.openssh.enable = true;
 
 }

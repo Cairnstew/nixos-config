@@ -7,9 +7,11 @@ in
 {
   imports = [
     self.homeModules.default
-    "${homeMod}/all/vscode.nix"
+    #self.homeModules.youtube-music
     
   ];
+
+  programs.youtube-music.enable = true;
 
   home.username = "seanc";
 }

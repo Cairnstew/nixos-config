@@ -7,20 +7,25 @@ let
 in
 {
   imports = [
-    {
-      users.users.${config.me.username}.isNormalUser = lib.mkDefault true;
-      home-manager.users.${config.me.username} = { };
-      home-manager.backupFileExtension = "backup";
-      home-manager.sharedModules = [
-        self.homeModules.default
-        self.homeModules.linux-only
-      ];
-    }
-    self.nixosModules.common
+    # Common
+    self.nixosModules.primary-as-admin
+    self.nixosModules.caches
+    self.nixosModules.ssh
+    self.nixosModules.nix
+
+    # Home Manager
+    self.nixosModules.homeManager
+
+    # Linux Specific
+    self.nixosModules._1password
+    self.nixosModules.audio
+    self.nixosModules.battery
+    self.nixosModules.bluetooth
+    self.nixosModules.current-location
+
+
     inputs.agenix.nixosModules.default # Used in github-runner.nix & hedgedoc.nix
-    ./linux/current-location.nix
-    ./linux/core
-    ./linux/gui
+
   ];
 
   boot.loader.grub.configurationLimit = 5; # Who needs more?

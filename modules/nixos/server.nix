@@ -7,13 +7,9 @@ let
 in
 {
   imports = [
-    self.nixosModules.common
-    inputs.agenix.nixosModules.default # Used in github-runner.nix & hedgedoc.nix
-    ./linux/current-location.nix
-    ./linux/zerotier.nix
-    ./linux/zeronsd.nix
-    ./linux/zerotier.nix
-
+    self.nixosModules.default
+    self.nixosModules.zerotier
+    self.nixosModules.zeronsd
 
   ];
 
