@@ -5,8 +5,11 @@ let
   homeMod = self + /modules/home;
 in
 {
+
   imports = [
     self.nixosModules.udisks2
+    self.nixosModules.graphics
+    self.nixosModules.xserver
 
     {
       home-manager.sharedModules = [
@@ -17,14 +20,12 @@ in
 
   ];
   
+  systemModules.graphics.enable = true;
+  systemModules.xserver.enable = true;
+
   services.gvfs.enable = true;
   services.devmon.enable = true;
   
-  services.xserver = {
-    enable = true;
-  };
-
-  hardware.graphics.enable = true;
 
   environment = {
     gnome = {

@@ -3,6 +3,7 @@ let
   cfg = config.my.desktop.gnome;
 in
 {
+
   options.my.desktop.gnome = {
     enable = lib.mkOption {
       type = lib.types.bool;
@@ -77,7 +78,10 @@ in
   };
 
   config = lib.mkIf cfg.enable {
-    dconf = {
+    home.packages = with pkgs; [
+      nautilus
+    ];
+      dconf = {
       settings = {
         "org/gnome/shell" = {
           favorite-apps = cfg.favoriteApps;

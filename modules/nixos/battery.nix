@@ -1,24 +1,37 @@
-{flake, lib, config, pkgs, ... }:
+{ lib, config, pkgs, ... }:
+
 let
-  inherit (flake) config inputs;
-  inherit (flake.inputs) self;
+  cfg = config.my.system.battery;
 in
-
 {
-  services.tlp.enable = false;
-  services.power-profiles-daemon.enable = false;
-  services.thermald.enable = true;
+  options.my.system.battery = {
+    enable = lib.mkOption {
+      type = lib.types.bool;
+      default = false;
+      description = "Enable auto-cpufreq with thermald and disable conflicting power managers";
+    };
+  };
 
-  services.auto-cpufreq = {
-    enable = true;
-    settings = {
-      battery = {
-        governor = "powersave";
-        turbo = "never";
-      };
-      charger = {
-        governor = "performance";
-        turbo = "auto";
+  config = lib.mkIf cfg.enable {
+    # Disable conflicting services
+    services.tlp.enable = false;
+    services.power-profiles-daemon.enable = false;
+
+    # Thermal management
+    services.thermald.enable = true;
+
+    # CPU frequency scaling
+    services.auto-cpufreq = {
+      enable = true;
+      settings = {
+        battery = {
+          governor = "powersave";
+          turbo = "never";
+        };
+        charger = {
+          governor = "performance";
+          turbo = "auto";
+        };
       };
     };
   };

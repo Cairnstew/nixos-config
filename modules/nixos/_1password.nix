@@ -5,6 +5,7 @@ let
   
 in
 {
+
   programs._1password.enable = true;
   programs._1password-gui = {
     enable = true;
@@ -13,4 +14,12 @@ in
     polkitPolicyOwners = [ "${flake.config.me.username}" ];
   };
   security.polkit.enable = true;
+
+
+  home-manager.users.${config.me.username}.my.programs = { 
+    ssh-1password.enable = true;
+  };
+
+
+
 }

@@ -1,22 +1,27 @@
-{flake, lib, config, pkgs, ... }:
+{ lib, config, pkgs, ... }:
+
 let
-  inherit (flake) config inputs;
-  inherit (flake.inputs) self;
+  cfg = config.my.system.bluetooth;
 in
 {
-
-  hardware = {
-
-  	bluetooth = {
-  		enable = true;
-  		powerOnBoot = true;
-  	};
+  options.my.system.bluetooth = {
+    enable = lib.mkOption {
+      type = lib.types.bool;
+      default = false;
+      description = "Enable Bluetooth hardware and related packages";
+    };
   };
 
-  environment.systemPackages = with pkgs; [
-    bluez
-    bluez-tools
-    bluez-alsa
-  ];
+  config = lib.mkIf cfg.enable {
+    hardware.bluetooth = {
+      enable = true;
+      powerOnBoot = true;
+    };
 
+    environment.systemPackages = with pkgs; [
+      bluez
+      bluez-tools
+      bluez-alsa
+    ];
+  };
 }

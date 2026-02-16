@@ -62,22 +62,18 @@ in
     keybindings = lib.mkOption {
       type = lib.types.listOf lib.types.str;
       default = [
-        # Split management
-        "ctrl+shift+arrow_left=new_split:left"
-        "ctrl+shift+arrow_right=new_split:right"
-        "ctrl+shift+arrow_down=new_split:down"
-        "ctrl+shift+arrow_up=new_split:up"
-        "ctrl+arrow_right=goto_split:right"
-        "ctrl+arrow_left=goto_split:left"
-        "ctrl+arrow_down=goto_split:down"
-        "ctrl+arrow_up=goto_split:up"
-        # Window management
+        "ctrl+shift+left=new_split:left"
+        "ctrl+shift+right=new_split:right"
+        "ctrl+shift+down=new_split:down"
+        "ctrl+shift+up=new_split:up"
+        "ctrl+right=goto_split:right"
+        "ctrl+left=goto_split:left"
+        "ctrl+down=goto_split:down"
+        "ctrl+up=goto_split:up"
         "ctrl+shift+n=new_window"
         "ctrl+shift+w=close_window"
-        # Tab management
         "ctrl+n=new_tab"
         "ctrl+w=close_surface"
-        # Copy/Paste
         "ctrl+c=copy_to_clipboard"
         "ctrl+v=paste_from_clipboard"
         "ctrl+a=select_all"

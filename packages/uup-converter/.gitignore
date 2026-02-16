@@ -1,0 +1,17 @@
+# Nix build outputs
+result/
+*.drv
+*.nar
+*.lock  # optional if you want to ignore other lock files besides flake.lock
+
+# User-specific or temporary nix files
+.nix-channels
+.nix-profile
+.nix-defexpr
+.nix-*.tmp
+
+# Emacs / Vim / IDE stuff (optional)
+*~
+*.swp
+.idea/
+.vscode/

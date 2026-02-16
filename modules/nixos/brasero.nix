@@ -1,10 +1,26 @@
-{ flake, pkgs, lib, ... }:
+{ config, pkgs, lib, ... }:
+
 let
-  inherit (flake) config inputs;
-  inherit (inputs) self;
+  cfg = config.my.services.brasero;
 in
 {
-  environment.systemPackages = with pkgs; [
-    brasero
-  ];
+  ######################
+  # Options
+  ######################
+  options.my.services.brasero = {
+    enable = lib.mkOption {
+      type = lib.types.bool;
+      default = false;
+      description = "Enable Brasero disc burning support.";
+    };
+  };
+
+  ######################
+  # Implementation
+  ######################
+  config = lib.mkIf cfg.enable {
+    environment.systemPackages = with pkgs; [
+      brasero
+    ];
+  };
 }
