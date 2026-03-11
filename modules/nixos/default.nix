@@ -61,7 +61,7 @@ in
     nm.zerotier
     nm.zeronsd
     nm.rustdesk
-    nm.natshare
+    nm.natShare
 
     # External modules
     agenixModules

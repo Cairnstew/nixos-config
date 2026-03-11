@@ -55,7 +55,7 @@ in
     # Enable NAT from LAN → WAN
     networking.nat = {
       enable            = true;
-      internalIfaces    = [ cfg.lanInterface ];
+      internalInterfaces    = [ cfg.lanInterface ];
       externalInterface = cfg.wanInterface;
     };
 

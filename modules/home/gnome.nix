@@ -176,12 +176,12 @@ in
         };
 
         "org/gnome/desktop/session" = {
-          idle-delay = lib.hm.gvariant.mkUint32 cfg.screenBlankTimeout;
+          idle-delay = lib.hm.gvariant.mkUint32 300;  # screen off after 5 minutes
         };
-
         "org/gnome/settings-daemon/plugins/power" = {
-          sleep-inactive-ac-timeout      = cfg.suspendTimeoutAC;
-          sleep-inactive-battery-timeout = cfg.suspendTimeoutBattery;
+          sleep-inactive-ac-timeout      = 0;
+          sleep-inactive-battery-timeout = 0;
+          idle-dim                       = true;   # dim before blanking, saves more power
         };
       };
     };
