@@ -27,12 +27,18 @@ in
       default = "ignore";
       description = "What to do when the lid is closed while docked";
     };
+
+    disableSuspend = lib.mkOption {
+      type    = lib.types.bool;
+      default = false;
+      description = "Completely disable suspend (useful for remote access via RustDesk etc.)";
+    };
   };
 
   config = lib.mkIf cfg.enable {
     # Disable conflicting services
-    services.tlp.enable                    = false;
-    services.power-profiles-daemon.enable  = false;
+    services.tlp.enable                   = false;
+    services.power-profiles-daemon.enable = false;
 
     # Thermal management
     services.thermald.enable = true;
@@ -54,9 +60,17 @@ in
 
     # Lid behaviour
     services.logind = {
-      lidSwitch             = cfg.lidSwitch;
+      lidSwitch              = cfg.lidSwitch;
       lidSwitchExternalPower = cfg.lidSwitchExternalPower;
-      lidSwitchDocked       = cfg.lidSwitchDocked;
+      lidSwitchDocked        = cfg.lidSwitchDocked;
+      settings.Login.LidSwitchIgnoreInhibited = "no";
     };
+
+    # Optionally nuke suspend entirely for remote access machines
+    systemd.services.systemd-suspend.enable  = lib.mkIf cfg.disableSuspend false;
+    systemd.targets.suspend.enable           = lib.mkIf cfg.disableSuspend false;
+    systemd.targets.sleep.enable             = lib.mkIf cfg.disableSuspend false;
+    systemd.targets.hibernate.enable         = lib.mkIf cfg.disableSuspend false;
+    systemd.targets.hybrid-sleep.enable      = lib.mkIf cfg.disableSuspend false;
   };
 }

@@ -27,6 +27,12 @@ in
       latitude  = 55.8617;
       longitude = 4.2583;
     };
+    battery = {
+      enable = true;
+      lidSwitch = "ignore";
+      disableSuspend = false; 
+   
+    };
   };
 
   # ── System programs ────────────────────────────────────
@@ -45,6 +51,10 @@ in
     waydroid = {
       enable = false;
     };
+    docker = {
+      enable = true;
+      users = [ user ];
+    };
   };
 
   # ── System services ────────────────────────────────────
@@ -52,6 +62,12 @@ in
     zerotier = {
       enable   = true;
       networks = [ me.zerotier_network ];
+    };
+
+    natShare = {
+      enable = true;
+      wanInterface = "wlp170s0";   # check yours with `ip link`
+      lanInterface = "enp0s13f0u2";  # check yours with `ip link`
     };
 
     # zeronsd = {
@@ -63,6 +79,7 @@ in
 
   environment.systemPackages = [
     self.packages.${pkgs.stdenv.hostPlatform.system}.get-template
+    pkgs.rustdesk
   ];
 
   # ── Home Manager configuration ─────────────────────────
