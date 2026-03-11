@@ -60,6 +60,8 @@ in
     # Networking
     nm.zerotier
     nm.zeronsd
+    nm.rustdesk
+    nm.natshare
 
     # External modules
     agenixModules
@@ -69,7 +71,6 @@ in
   my = { 
     system = {
       audio.enable = true;
-      battery.enable = true;
       bluetooth.enable = true;
       location.enable = true;
     };
