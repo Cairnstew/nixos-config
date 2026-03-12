@@ -1,5 +1,4 @@
 { config, lib, pkgs, ... }:
-
 let
   cfg = config.my.services.zeronsd;
 in
@@ -15,23 +14,33 @@ in
 
     domain = lib.mkOption {
       type = lib.types.str;
-      default = "home";
-      description = "DNS domain served by ZeroNSD.";
+      default = "home.arpa";
+      example = "home.arpa";
+      description = "DNS domain served by ZeroNSD (used as TLD and search domain).";
     };
 
     tokenFile = lib.mkOption {
       type = lib.types.path;
-      description = "Path to ZeroNSD ZeroTier Central API token file.";
+      example = "/run/secrets/zeronsd_token";
+      description = "Path to file containing the ZeroTier Central API token.";
     };
 
     nameserver = lib.mkOption {
       type = lib.types.str;
       default = "192.168.191.168";
-      description = "Nameserver address provided by ZeroNSD.";
+      example = "192.168.191.168";
+      description = "IP address of the ZeroNSD nameserver (usually this host's ZeroTier IP).";
+    };
+
+    verbose = lib.mkOption {
+      type = lib.types.bool;
+      default = false;
+      description = "Enable verbose logging for ZeroNSD.";
     };
   };
 
   config = lib.mkIf cfg.enable {
+
     #### Base services ####
     services.openssh.enable = lib.mkDefault true;
     services.resolved.enable = lib.mkDefault true;
@@ -41,7 +50,7 @@ in
 
     #### Networking ####
     networking.nameservers = [ cfg.nameserver ];
-    networking.search = [ "${cfg.domain}.arpa" ];
+    networking.search = [ cfg.domain ];
 
     #### System user ####
     users.users.zeronsd = {
@@ -60,26 +69,28 @@ in
 
       serviceConfig = {
         Type = "simple";
-        ExecStart =
-          "${pkgs.zeronsd}/bin/zeronsd start ${cfg.zerotierNetwork}"
-          + " -d ${cfg.domain}"
-          + " -t ${cfg.tokenFile}"
-          + " -w -v";
-
+        ExecStart = lib.concatStringsSep " " ([
+          "${pkgs.zeronsd}/bin/zeronsd start"
+          "-d ${cfg.domain}"
+          "-t ${cfg.tokenFile}"
+          "-w"
+          cfg.zerotierNetwork
+        ] ++ lib.optional cfg.verbose "-v");
         Restart = "on-failure";
         RestartSec = "10s";
-
-        Environment =
-          "ZEROTIER_CENTRAL_TOKEN_FILE=${cfg.tokenFile}";
-
         User = "zeronsd";
         Group = "zeronsd";
-
         RuntimeDirectory = "zeronsd";
-
+        # Allow binding port 53 without running as root
         AmbientCapabilities = [ "CAP_NET_BIND_SERVICE" ];
         CapabilityBoundingSet = [ "CAP_NET_BIND_SERVICE" ];
-
+        # Harden the service
+        NoNewPrivileges = true;
+        ProtectSystem = "strict";
+        ProtectHome = true;
+        PrivateTmp = true;
+        # Allow reading the token file from outside RuntimeDirectory
+        ReadOnlyPaths = [ cfg.tokenFile ];
         StandardOutput = "journal";
         StandardError = "journal";
       };
@@ -89,7 +100,11 @@ in
     assertions = [
       {
         assertion = cfg.zerotierNetwork != "";
-        message = "my.services.zeronsd.enable requires zerotierNetwork to be set";
+        message = "my.services.zeronsd: zerotierNetwork must be set";
+      }
+      {
+        assertion = lib.stringLength cfg.zerotierNetwork == 16;
+        message = "my.services.zeronsd: zerotierNetwork should be a 16-character hex string";
       }
     ];
   };
