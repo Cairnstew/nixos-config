@@ -74,9 +74,9 @@ in
         "ctrl+shift+w=close_window"
         "ctrl+n=new_tab"
         "ctrl+w=close_surface"
-        "ctrl+c=copy_to_clipboard"
-        "ctrl+v=paste_from_clipboard"
-        "ctrl+a=select_all"
+        "ctrl+shift+c=copy_to_clipboard"
+        "ctrl+shift+v=paste_from_clipboard"
+        "ctrl+shift+a=select_all"
       ];
       description = "Custom keybindings for Ghostty";
     };
