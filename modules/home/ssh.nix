@@ -1,5 +1,4 @@
 { pkgs, config, lib, flake, ... }:
-
 let
   cfg = config.my.services.ssh;
 in
@@ -48,6 +47,40 @@ in
       default = pkgs.stdenv.isLinux;
       description = "Whether to enable the SSH agent service (Linux only).";
     };
+
+    matchBlocks = lib.mkOption {
+      type = lib.types.attrsOf (lib.types.submodule {
+        options = {
+          host = lib.mkOption {
+            type = lib.types.str;
+            default = "";
+            description = "Hostname or IP to match.";
+          };
+          user = lib.mkOption {
+            type = lib.types.str;
+            default = "";
+            description = "Username to use for this host.";
+          };
+          port = lib.mkOption {
+            type = lib.types.nullOr lib.types.port;
+            default = null;
+            description = "Port to use for this host.";
+          };
+          identityFile = lib.mkOption {
+            type = lib.types.nullOr lib.types.str;
+            default = null;
+            description = "Identity file to use for this host.";
+          };
+          extraOptions = lib.mkOption {
+            type = lib.types.attrsOf lib.types.str;
+            default = {};
+            description = "Extra SSH options for this host.";
+          };
+        };
+      });
+      default = {};
+      description = "SSH match blocks for specific hosts or IPs.";
+    };
   };
 
   config = lib.mkIf cfg.enable {
@@ -57,6 +90,13 @@ in
         lib.optional cfg.addKeysToAgent "AddKeysToAgent yes"
         ++ lib.optional (cfg.extraConfig != "") cfg.extraConfig
       );
+      matchBlocks = lib.mapAttrs (_: block:
+        { inherit (block) extraOptions; }
+        // lib.optionalAttrs (block.host != "") { hostname = block.host; }
+        // lib.optionalAttrs (block.user != "") { inherit (block) user; }
+        // lib.optionalAttrs (block.port != null) { inherit (block) port; }
+        // lib.optionalAttrs (block.identityFile != null) { inherit (block) identityFile; }
+      ) cfg.matchBlocks;
     };
 
     home.activation.generateSSHKey = lib.mkIf cfg.generateKey (
