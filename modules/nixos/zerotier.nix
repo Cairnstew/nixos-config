@@ -1,5 +1,4 @@
 { config, lib, ... }:
-
 let
   cfg = config.my.services.zerotier;
 in
@@ -16,12 +15,25 @@ in
         automatically join at boot.
       '';
     };
+
+    mtu = lib.mkOption {
+      type = lib.types.nullOr lib.types.int;
+      default = null;
+      example = 1280;
+      description = "MTU to set on ZeroTier interfaces. Useful to prevent stalling on large transfers.";
+    };
   };
 
   config = lib.mkIf cfg.enable {
     services.zerotierone = {
       enable = true;
       joinNetworks = cfg.networks;
+      postStart = lib.mkIf (cfg.mtu != null) ''
+        sleep 5
+        for iface in $(ip link | grep zt | awk -F: '{print $2}' | tr -d ' '); do
+          ip link set "$iface" mtu ${toString cfg.mtu}
+        done
+      '';
     };
   };
 }
