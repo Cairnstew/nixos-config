@@ -17,13 +17,13 @@ in
 
     # Static configuration
     nm.nix
-    nm.ssh
     nm.primary-as-admin
     nm.self-ide
     nm._1password
 
     # Common
     nm.current-location
+    nm.ssh
     
     # Home Manager
     nm.homeManager
@@ -73,6 +73,12 @@ in
       audio.enable = true;
       bluetooth.enable = true;
       location.enable = true;
+    };
+    services = {
+      ssh.authorizedKeys = [
+        "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIPWrhAp1ZU9p7UvJ1x9ApM1pY9OK2S8crEKHeEAxX0z6 sean.cairnsst@gmail.com" # Laptop
+        "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIIrUD7LMeCHW8WP5XGp0STYsp23oWZUWRAk4pjL0xn7f sean.cairnsst@gmail.com" # Server
+      ];
     };
   };
   

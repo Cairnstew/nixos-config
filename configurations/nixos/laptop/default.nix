@@ -59,6 +59,11 @@ in
 
   # ── System services ────────────────────────────────────
   my.services = {
+
+    ssh = {
+      enable = true;
+    };
+
     zerotier = {
       enable   = true;
       networks = [ me.zerotier_network ];
