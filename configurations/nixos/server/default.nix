@@ -64,12 +64,6 @@ in
       networks = [ me.zerotier_network ];
     };
 
-    natShare = {
-      enable = false;
-      wanInterface = "wlp170s0";   # check yours with `ip link`
-      lanInterface = "enp0s13f0u2";  # check yours with `ip link`
-    };
-
     # zeronsd = {
     #   enable         = true;
     #   zerotierNetwork = me.zerotier_network;
