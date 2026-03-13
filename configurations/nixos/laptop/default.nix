@@ -114,6 +114,8 @@ in
             user = "seanc";
             identityFile = "~/.ssh/id_ed25519";
             extraOptions.KexAlgorithms = "curve25519-sha256";
+            serverAliveCountMax = 5;
+            serverAliveInterval = 60;
           };
         };
       };
