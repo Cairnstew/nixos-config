@@ -76,6 +76,17 @@ in
             default = {};
             description = "Extra SSH options for this host.";
           };
+          serverAliveInterval = lib.mkOption {
+            type = lib.types.nullOr lib.types.int;
+            default = null;
+            description = "Interval in seconds between keepalive messages.";
+          };
+
+            serverAliveCountMax = lib.mkOption {
+            type = lib.types.nullOr lib.types.int;
+            default = null;
+            description = "Number of keepalive messages before disconnecting.";
+          };
         };
       });
       default = {};
@@ -91,12 +102,20 @@ in
         ++ lib.optional (cfg.extraConfig != "") cfg.extraConfig
       );
       matchBlocks = lib.mapAttrs (_: block:
-        { inherit (block) extraOptions; }
+        {
+            extraOptions = block.extraOptions
+            // lib.optionalAttrs (block.serverAliveInterval != null) {
+                ServerAliveInterval = toString block.serverAliveInterval;
+                }
+            // lib.optionalAttrs (block.serverAliveCountMax != null) {
+                ServerAliveCountMax = toString block.serverAliveCountMax;
+                };
+        }
         // lib.optionalAttrs (block.host != "") { hostname = block.host; }
         // lib.optionalAttrs (block.user != "") { inherit (block) user; }
         // lib.optionalAttrs (block.port != null) { inherit (block) port; }
         // lib.optionalAttrs (block.identityFile != null) { inherit (block) identityFile; }
-      ) cfg.matchBlocks;
+        ) cfg.matchBlocks;
     };
 
     home.activation.generateSSHKey = lib.mkIf cfg.generateKey (
