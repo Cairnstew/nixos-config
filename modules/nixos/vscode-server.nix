@@ -1,12 +1,5 @@
-{ flake, config, pkgs, lib, ... }:
-let
-  inherit (flake) inputs;
-in
+{ config, lib, ... }:
 {
-  imports = [
-    inputs.nixos-vscode-server.nixosModules.default
-  ];
-
   options.my.services.vscode-server = {
     enable = lib.mkEnableOption "VSCode Server";
   };
