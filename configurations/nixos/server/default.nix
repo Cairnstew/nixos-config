@@ -64,6 +64,8 @@ in
       networks = [ me.zerotier_network ];
     };
 
+    vscode-server.enable = true;
+
     # zeronsd = {
     #   enable         = true;
     #   zerotierNetwork = me.zerotier_network;
