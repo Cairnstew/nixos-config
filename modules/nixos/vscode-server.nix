@@ -2,13 +2,17 @@
 let
   inherit (flake) config inputs;
   inherit (inputs) self;
-
 in
 {
- imports = [
-    self.nixos-vscode-server.nixosModules.default
- ];
+  nixosModules.vscode-server = { config, pkgs, lib, ... }: {
+    imports = [
+      self.nixos-vscode-server.nixosModules.default
+    ];
 
-  services.vscode-server.enable = true;
+    options.services.vscode-server.enable = lib.mkEnableOption "VSCode Server";
 
+    config = lib.mkIf config.services.vscode-server.enable {
+      services.vscode-server.enable = true;
+    };
+  };
 }
