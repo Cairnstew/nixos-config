@@ -9,9 +9,11 @@ in
       self.nixos-vscode-server.nixosModules.default
     ];
 
-    options.services.vscode-server.enable = lib.mkEnableOption "VSCode Server";
+    options.my.services.vscode-server = {
+      enable = lib.mkEnableOption "VSCode Server";
+    };
 
-    config = lib.mkIf config.services.vscode-server.enable {
+    config = lib.mkIf config.my.services.vscode-server.enable {
       services.vscode-server.enable = true;
     };
   };
