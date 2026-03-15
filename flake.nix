@@ -29,7 +29,7 @@
       # Software inputs
       github-nix-ci.url = "github:juspay/github-nix-ci";
       nixos-vscode-server.url = "github:nix-community/nixos-vscode-server";
-      nix-vscode-extensions.url = "github:nix-community/nix-vscode-extensions";
+      vscode-server.url = "github:nix-community/nixos-vscode-server";
       flake-utils.url = "github:numtide/flake-utils";
       nix-index-database.url = "github:nix-community/nix-index-database";
       nix-index-database.inputs.nixpkgs.follows = "nixpkgs";
