@@ -5,7 +5,6 @@ in
 {
   options.my.services.zerotier = {
     enable = lib.mkEnableOption "ZeroTier system service";
-
     networks = lib.mkOption {
       type = lib.types.listOf lib.types.str;
       default = [];
@@ -15,7 +14,6 @@ in
         automatically join at boot.
       '';
     };
-
     mtu = lib.mkOption {
       type = lib.types.nullOr lib.types.int;
       default = null;
@@ -28,9 +26,12 @@ in
     services.zerotierone = {
       enable = true;
       joinNetworks = cfg.networks;
-      postStart = lib.mkIf (cfg.mtu != null) ''
+    };
+
+    systemd.services.zerotierone = lib.mkIf (cfg.mtu != null) {
+      postStart = ''
         sleep 5
-        for iface in $(ip link | grep zt | awk -F: '{print $2}' | tr -d ' '); do
+        for iface in $(${lib.getExe' pkgs.iproute2 "ip"} link | grep zt | awk -F: '{print $2}' | tr -d ' '); do
           ip link set "$iface" mtu ${toString cfg.mtu}
         done
       '';
