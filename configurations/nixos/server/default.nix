@@ -66,6 +66,7 @@ in
     zerotier = {
       enable   = true;
       networks = [ me.zerotier_network ];
+      mtu = 1280;
     };
 
     # zeronsd = {
