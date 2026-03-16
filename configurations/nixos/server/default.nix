@@ -64,8 +64,6 @@ in
       networks = [ me.zerotier_network ];
     };
 
-    vscode-server.enable = true;
-
     # zeronsd = {
     #   enable         = true;
     #   zerotierNetwork = me.zerotier_network;
@@ -85,6 +83,7 @@ in
           git_protocol = "ssh";
         };
     };
+    services.vscode-server.enable = true;
   };
 
   fileSystems."/mnt/data" = {
