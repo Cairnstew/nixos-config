@@ -14,6 +14,7 @@ in
   imports = [
     ./configuration.nix
     self.nixosModules.default
+    (fetchTarball "https://github.com/nix-community/nixos-vscode-server/tarball/master")
   ];
 
   # ── Hardware configuration ─────────────────────────────
@@ -21,6 +22,9 @@ in
     enable = true;
     modesetting = true;
   };
+
+
+  services.vscode-server.enable = true;
 
   # ── System settings ────────────────────────────────────
   my.system = {
@@ -83,7 +87,7 @@ in
           git_protocol = "ssh";
         };
     };
-    services.vscode-server.enable = true;
+    #services.vscode-server.enable = true;
   };
 
   fileSystems."/mnt/data" = {
