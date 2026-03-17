@@ -14,7 +14,6 @@ in
   imports = [
     ./configuration.nix
     self.nixosModules.default
-    (fetchTarball "https://github.com/nix-community/nixos-vscode-server/tarball/master")
   ];
 
   # ── Hardware configuration ─────────────────────────────
@@ -22,9 +21,6 @@ in
     enable = true;
     modesetting = true;
   };
-
-
-  services.vscode-server.enable = true;
 
   # ── System settings ────────────────────────────────────
   my.system = {
@@ -81,16 +77,23 @@ in
   ];
 
   # ── Home Manager configuration ─────────────────────────
-  home-manager.users.${user}.my = {
-    programs = {
-      gh.hosts."github.com" = {
-          user = "Cairnstew";
-          git_protocol = "ssh";
-        };
+  home-manager.users.${user} = {
+    imports = [
+      "${flake.inputs.nixos-vscode-server}/modules/vscode-server/home.nix"
+    ];
+    
+    my = {
+      programs = {
+        gh.hosts."github.com" = {
+            user = "Cairnstew";
+            git_protocol = "ssh";
+          };
+      };
     };
-    #services.vscode-server.enable = true;
+    services.vscode-server.enable = true;
   };
 
+  
   fileSystems."/mnt/data" = {
     device = "/dev/disk/by-uuid/aaf609bd-e320-4d13-a9a6-fc2cc5cd0f3a";
     fsType = "ext4";

@@ -53,8 +53,7 @@ in
     nm.udisks2
     nm.ventoy
     nm.uup-converter
-    nm.vscode-server
-
+  
     # Entertainment
     nm.spotify
 
