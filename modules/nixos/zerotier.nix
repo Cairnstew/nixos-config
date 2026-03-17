@@ -28,13 +28,22 @@ in
       joinNetworks = cfg.networks;
     };
 
-    systemd.services.zerotierone = lib.mkIf (cfg.mtu != null) {
-      postStart = ''
-        sleep 5
-        for iface in $(${lib.getExe' pkgs.iproute2 "ip"} link | grep zt | awk -F: '{print $2}' | tr -d ' '); do
-          ip link set "$iface" mtu ${toString cfg.mtu}
-        done
-      '';
+    systemd.services.zerotier-mtu = lib.mkIf (cfg.mtu != null) {
+      description = "Set MTU on ZeroTier interfaces";
+      wantedBy = [ "multi-user.target" ];
+      after = [ "zerotierone.service" "network-online.target" ];
+      requires = [ "zerotierone.service" ];
+      serviceConfig = {
+        Type = "oneshot";
+        RemainAfterExit = true;
+        ExecStartPre = "${pkgs.coreutils}/bin/sleep 10";
+        ExecStart = pkgs.writeShellScript "zt-mtu" ''
+          for iface in $(${lib.getExe' pkgs.iproute2 "ip"} -o link show | ${pkgs.gnugrep}/bin/grep -oP '^\d+:\s+\Kzt\S+(?=@|:)'); do
+            echo "Setting MTU on $iface to ${toString cfg.mtu}"
+            ${lib.getExe' pkgs.iproute2 "ip"} link set "$iface" mtu ${toString cfg.mtu}
+          done
+        '';
+      };
     };
   };
 }
