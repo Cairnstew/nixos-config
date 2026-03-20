@@ -11,6 +11,11 @@ in
         mode = "0400";
         group = "users";
         };
+      "obsidian-git-token" = {
+        file = flake.inputs.self + /secrets/obsidian-git-token.age;
+        owner = "${flake.config.me.username}";
+        mode = "0400";
+      };
     };
 
     users.users.${flake.config.me.username}.isNormalUser = lib.mkDefault true;
@@ -39,6 +44,13 @@ in
         };
         ghostty.enable = true;
         just.enable = true;
+        obsidian = {
+          repo = {
+            enable = true;
+            url = "https://github.com/Cairnstew/Cairns-Notes";
+            tokenFile = config.age.secrets."obsidian-git-token".path;
+          };
+        };
         yazi.enable = true;
         zsh.enable = true;
       };
