@@ -76,11 +76,15 @@ in
 
   # ── Home Manager configuration ─────────────────────────
   home-manager.users.${user} = {
+    imports = [
+      "${flake.inputs.nixos-vscode-server}/modules/vscode-server/home.nix"
+    ];
 
     my = {
       programs = {
 
       };
     };
+    services.vscode-server.enable = true;
   };
 }
