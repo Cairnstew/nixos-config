@@ -1,4 +1,4 @@
-{ config, lib, pkgs, ... }:
+{ config, lib, pkgs, flake, ... }:
 
 let
   cfg = config.systemModules.graphics;
@@ -14,6 +14,10 @@ in
     hardware.graphics = {
       enable = true;
       enable32Bit = true;
+    };
+    programs.light.enable = true;  # sets up udev rules
+    users.users.${flake.config.me.username} = {
+      extraGroups = [ "video" ];
     };
   };
 }
