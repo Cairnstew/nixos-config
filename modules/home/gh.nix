@@ -10,68 +10,66 @@ in
     package = lib.mkOption {
       type = lib.types.package;
       default = pkgs.gh;
-      defaultText = "pkgs.gh";
       description = "The gh package to use.";
     };
 
-    extensions = lib.mkOption {
-      type = lib.types.listOf lib.types.package;
-      default = [ ];
-      example = [ pkgs.gh-eco ];
+    tokenFile = lib.mkOption {
+      type = lib.types.nullOr lib.types.path;
+      default = null;
+      example = "/run/secrets/github-token";
       description = ''
-        GitHub CLI extensions to install.
-        Each entry should be in the form "OWNER/REPO".
+        Path to a file containing the GitHub token.
+        The file's contents will be exported as GITHUB_TOKEN at shell startup.
+        Compatible with agenix, sops-nix, or any secret manager that exposes a file path.
       '';
+    };
+
+    extensions = lib.mkOption {
+      type = lib.types.listOf lib.types.str;
+      default = [ ];
+      example = [ "dlvhdr/gh-dash" ];
+      description = "GitHub CLI extensions (OWNER/REPO format).";
     };
 
     settings = lib.mkOption {
       type = lib.types.attrs;
       default = { };
-      example = {
-        git_protocol = "ssh";
-        prompt = "enabled";
-        editor = "vim";
-
-        aliases = {
-          co = "pr checkout";
-          pv = "pr view";
-        };
-      };
-      description = ''
-        Configuration written to
-        $XDG_CONFIG_HOME/gh/config.yml.
-      '';
+      description = "Config written to gh config.yml.";
     };
 
     hosts = lib.mkOption {
-      type = lib.types.attrsOf (lib.types.attrs);
+      type = lib.types.attrsOf lib.types.attrs;
       default = { };
-      example = {
-        "github.com" = {
-          user = "userName";
-        };
-      };
-      description = ''
-        Host-specific configuration written to
-        $XDG_CONFIG_HOME/gh/hosts.yml.
-
-        Authentication tokens are not managed here.
-        Use `gh auth login` to authenticate.
-      '';
+      description = "Host config (no auth tokens).";
     };
   };
 
   config = lib.mkIf cfg.enable {
-    home.packages = [
-      cfg.package
-    ];
+    # Export token at runtime only when tokenFile is set
+    programs.zsh.initContent = lib.mkIf (cfg.tokenFile != null) (lib.mkAfter ''
+      if [ -f ${cfg.tokenFile} ]; then
+        export GITHUB_TOKEN="$(cat ${cfg.tokenFile})"
+      fi
+    '');
+
+    programs.bash.initExtra = lib.mkIf (cfg.tokenFile != null) (lib.mkAfter ''
+      if [ -f ${cfg.tokenFile} ]; then
+        export GITHUB_TOKEN="$(cat ${cfg.tokenFile})"
+      fi
+    '');
+
+    home.packages = [ cfg.package ];
+
     programs.gh = {
-      enable = cfg.enable;
-      extensions = cfg.extensions;
-      hosts = cfg.hosts;
+      enable = true;
       settings = cfg.settings;
-
-
+      hosts = cfg.hosts;
     };
+
+    home.activation.installGhExtensions = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
+      for ext in ${lib.concatStringsSep " " cfg.extensions}; do
+        ${cfg.package}/bin/gh extension install "$ext" || true
+      done
+    '';
   };
 }

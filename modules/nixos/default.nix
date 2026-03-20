@@ -20,6 +20,7 @@ in
     nm.primary-as-admin
     nm.self-ide
     nm._1password
+    
 
     # Common
     nm.current-location
