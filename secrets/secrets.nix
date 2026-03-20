@@ -12,4 +12,5 @@ in
   "zeronsd-token.age".armor = true;
   "spotify-cred.age".publicKeys = users ++ systems;
   "github-token.age".publicKeys = users ++ systems;
+  "obsidian-git-token.age".publicKeys = users ++ systems;
 }
