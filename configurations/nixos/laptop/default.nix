@@ -88,10 +88,6 @@ in
       cudatext.enable           = true;
       discord.enable            = true;
       firefox.enable            = true;
-      gh.hosts."github.com" = {
-          user = "Cairnstew";
-          git_protocol = "ssh";
-        };
       localsend.enable          = true;
       obsidian.enable           = true;
       rstudio.enable            = true;

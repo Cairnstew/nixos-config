@@ -34,6 +34,13 @@ let
           Zerotier Network ID, for Zeronsd
         '';
       };
+
+      github_username = lib.mkOption {
+        type = lib.types.str;
+        description = ''
+          github.com Username.
+        '';
+      };
         
     };
 
