@@ -84,10 +84,7 @@ in
     
     my = {
       programs = {
-        gh.hosts."github.com" = {
-            user = "Cairnstew";
-            git_protocol = "ssh";
-          };
+        
       };
     };
     services.vscode-server.enable = true;
