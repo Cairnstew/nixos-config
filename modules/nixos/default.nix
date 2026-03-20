@@ -76,10 +76,7 @@ in
       location.enable = true;
     };
     services = {
-      ssh.authorizedKeys = [
-        "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIPWrhAp1ZU9p7UvJ1x9ApM1pY9OK2S8crEKHeEAxX0z6 sean.cairnsst@gmail.com" # Laptop
-        "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIIrUD7LMeCHW8WP5XGp0STYsp23oWZUWRAk4pjL0xn7f sean.cairnsst@gmail.com" # Server
-      ];
+      ssh.enable = true;
     };
   };
   
