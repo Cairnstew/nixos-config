@@ -13,46 +13,46 @@ let
       stashMsg = "git-repo-sync-stash-${name}-${branch}";
     in
     if repo.conflictStrategy == "ff-only" then ''
-      git -C "${repoPath}" merge --ff-only "${ref}" 2>/dev/null \
+      ${git} -C "${repoPath}" merge --ff-only "${ref}" 2>/dev/null \
         || echo "[git-repo-sync] ${name}/${branch}: SKIP — fast-forward not possible (local commits or dirty tree)."
     ''
 
     else if repo.conflictStrategy == "rebase" then ''
-      if ! git -C "${repoPath}" rebase "${ref}" 2>/tmp/git-sync-err-${name}; then
+      if ! ${git} -C "${repoPath}" rebase "${ref}" 2>/tmp/git-sync-err-${name}; then
         echo "[git-repo-sync] ${name}/${branch}: rebase CONFLICT — aborting and leaving branch unchanged." >&2
         cat /tmp/git-sync-err-${name} >&2
-        git -C "${repoPath}" rebase --abort 2>/dev/null || true
+        ${git} -C "${repoPath}" rebase --abort 2>/dev/null || true
       fi
       rm -f /tmp/git-sync-err-${name}
     ''
 
     else if repo.conflictStrategy == "reset-hard" then ''
       echo "[git-repo-sync] ${name}/${branch}: resetting to ${ref} (destructive — local commits discarded)."
-      git -C "${repoPath}" reset --hard "${ref}"
+      ${git} -C "${repoPath}" reset --hard "${ref}"
     ''
 
     else if repo.conflictStrategy == "stash-and-pull" then ''
-      DIRTY=$(git -C "${repoPath}" status --porcelain 2>/dev/null)
+      DIRTY=$(${git} -C "${repoPath}" status --porcelain 2>/dev/null)
       STASHED=0
       if [ -n "$DIRTY" ]; then
         echo "[git-repo-sync] ${name}/${branch}: stashing local changes before pull."
-        git -C "${repoPath}" stash push --include-untracked -m "${stashMsg}" \
+        ${git} -C "${repoPath}" stash push --include-untracked -m "${stashMsg}" \
           && STASHED=1 \
           || echo "[git-repo-sync] ${name}/${branch}: SKIP — stash failed, leaving branch unchanged."
       fi
 
-      if ! git -C "${repoPath}" merge --ff-only "${ref}" 2>/tmp/git-sync-err-${name}; then
+      if ! ${git} -C "${repoPath}" merge --ff-only "${ref}" 2>/tmp/git-sync-err-${name}; then
         echo "[git-repo-sync] ${name}/${branch}: fast-forward failed after stash (diverged history?)." >&2
         cat /tmp/git-sync-err-${name} >&2
       fi
       rm -f /tmp/git-sync-err-${name}
 
       if [ "$STASHED" = "1" ]; then
-        STASH_REF=$(git -C "${repoPath}" stash list --format="%gd %s" \
+        STASH_REF=$(${git} -C "${repoPath}" stash list --format="%gd %s" \
           | awk '/${stashMsg}/ {print $1; exit}')
         if [ -n "$STASH_REF" ]; then
           echo "[git-repo-sync] ${name}/${branch}: restoring stashed changes."
-          git -C "${repoPath}" stash pop "$STASH_REF" 2>/tmp/git-sync-pop-err-${name} \
+          ${git} -C "${repoPath}" stash pop "$STASH_REF" 2>/tmp/git-sync-pop-err-${name} \
             || {
               echo "[git-repo-sync] ${name}/${branch}: WARNING — stash pop conflicted. Changes preserved in stash entry $STASH_REF." >&2
               cat /tmp/git-sync-pop-err-${name} >&2
@@ -74,7 +74,7 @@ let
       );
 
       guardedPull = branch: ''
-        CURRENT=$(git -C "${repo.path}" symbolic-ref --short HEAD 2>/dev/null || true)
+        CURRENT=$(${git} -C "${repo.path}" symbolic-ref --short HEAD 2>/dev/null || true)
         if [ "$CURRENT" = "${branch}" ]; then
           ${mkPullLogic name repo branch}
         else
@@ -83,23 +83,25 @@ let
       '';
 
       guardedPullCurrent = ''
-        CURRENT=$(git -C "${repo.path}" symbolic-ref --short HEAD 2>/dev/null || true)
+        CURRENT=$(${git} -C "${repo.path}" symbolic-ref --short HEAD 2>/dev/null || true)
         if [ -n "$CURRENT" ]; then
           ${mkPullLogic name repo "$CURRENT"}
         fi
       '';
     in
     if repo.branches == [] then ''
-      git -C "${repo.path}" fetch ${repo.remote} ${fetchArgs}
+      ${git} -C "${repo.path}" fetch ${repo.remote} ${fetchArgs}
       ${optionalString repo.autoPull guardedPullCurrent}
     ''
     else concatMapStrings (branch: ''
-      git -C "${repo.path}" fetch ${repo.remote} ${fetchArgs} "${branch}:${branch}" 2>/dev/null \
-        || git -C "${repo.path}" fetch ${repo.remote} ${fetchArgs}
+      ${git} -C "${repo.path}" fetch ${repo.remote} ${fetchArgs} "${branch}:${branch}" 2>/dev/null \
+        || ${git} -C "${repo.path}" fetch ${repo.remote} ${fetchArgs}
       ${optionalString repo.autoPull (guardedPull branch)}
     '') repo.branches;
 
   # ── Shell script for one repo ──────────────────────────────────────────────
+  git  = "${pkgs.git}/bin/git";
+
   mkSyncScript = name: repo:
     let
       tokenEnv = optionalString repo.agenix.enable ''
@@ -137,7 +139,7 @@ let
         ${optionalString repo.cloneBare
           ''CLONE_ARGS="$CLONE_ARGS --bare"''}
 
-        git clone $CLONE_ARGS "${cloneUrl}" "${repo.path}"
+        ${git} clone $CLONE_ARGS "${cloneUrl}" "${repo.path}"
         echo "[git-repo-sync] ${name}: clone complete."
       else
         # ── Fetch / pull ────────────────────────────────────────────────────
@@ -145,9 +147,9 @@ let
 
         ${optionalString repo.agenix.enable ''
           if [ -n "$GITHUB_TOKEN" ]; then
-            ORIG_URL=$(git -C "${repo.path}" remote get-url ${repo.remote})
-            git -C "${repo.path}" remote set-url ${repo.remote} "$AUTHED_URL"
-            trap 'git -C "${repo.path}" remote set-url ${repo.remote} "$ORIG_URL"' EXIT
+            ORIG_URL=$(${git} -C "${repo.path}" remote get-url ${repo.remote})
+            ${git} -C "${repo.path}" remote set-url ${repo.remote} "$AUTHED_URL"
+            trap '${git} -C "${repo.path}" remote set-url ${repo.remote} "$ORIG_URL"' EXIT
           fi
         ''}
 
@@ -166,7 +168,11 @@ let
       serviceConfig = {
         Type = "oneshot";
         ExecStart = "${mkSyncScript name repo}";
-        Environment = [ "HOME=%h" "GIT_TERMINAL_PROMPT=0" ];
+        Environment = [
+          "HOME=%h"
+          "GIT_TERMINAL_PROMPT=0"
+          "PATH=${lib.makeBinPath [ pkgs.git pkgs.gnused pkgs.gawk pkgs.coreutils ]}"
+        ];
       };
     };
   };
