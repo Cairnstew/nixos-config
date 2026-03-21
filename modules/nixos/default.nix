@@ -21,7 +21,6 @@ in
     nm.self-ide
     nm._1password
     
-
     # Common
     nm.current-location
     nm.ssh
@@ -54,6 +53,7 @@ in
     nm.udisks2
     nm.ventoy
     nm.uup-converter
+    nm.gitRepoSync
   
     # Entertainment
     nm.spotify
