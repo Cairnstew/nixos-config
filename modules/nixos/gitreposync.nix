@@ -167,9 +167,11 @@ let
       wants = [ "network-online.target" ];
       serviceConfig = {
         Type = "oneshot";
+        User = repo.user;
+        Group = repo.group;
         ExecStart = "${mkSyncScript name repo}";
         Environment = [
-          "HOME=%h"
+          "HOME=${repo.homeDir}"
           "GIT_TERMINAL_PROMPT=0"
           "PATH=${lib.makeBinPath [ pkgs.git pkgs.gnused pkgs.gawk pkgs.coreutils ]}"
         ];
@@ -192,6 +194,24 @@ let
   # ── Per-repo option declarations ───────────────────────────────────────────
   repoOpts = { name, ... }: {
     options = {
+      user = mkOption {
+        type = types.str;
+        description = "User to run the sync service as.";
+        example = "alice";
+      };
+
+      group = mkOption {
+        type = types.str;
+        default = "users";
+        description = "Group to run the sync service as.";
+      };
+
+      homeDir = mkOption {
+        type = types.str;
+        description = "Home directory of the user (used to set HOME in the service environment).";
+        example = "/home/alice";
+      };
+
       url = mkOption {
         type = types.str;
         description = "Remote URL of the repository (https or ssh).";

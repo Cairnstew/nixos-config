@@ -102,6 +102,8 @@ in
           nix-config = {
             url              = "https://github.com/Cairnstew/nixos-config.git";
             path             = "/home/${flake.config.me.username}/nixos-config";
+            user             = flake.config.me.username;
+            homeDir          = "/home/${flake.config.me.username}";
             interval         = "10m";
             conflictStrategy = "ff-only";
 
