@@ -13,7 +13,7 @@ in
     self.nixosModules.default
     flake.inputs.nixos-wsl.nixosModules.default
   ];
-
+  wsl.defaultUser = user;
   nixpkgs.hostPlatform = "x86_64-linux";
 
   # ── Hardware configuration ─────────────────────────────
