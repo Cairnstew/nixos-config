@@ -54,6 +54,7 @@ in
     nm.ventoy
     nm.uup-converter
     nm.gitreposync
+    nm.cachix-push
   
     # Entertainment
     nm.spotify
@@ -86,6 +87,11 @@ in
         owner = "${flake.config.me.username}";
         mode = "0400";
       };
+      "nixos-config-cache-token" = {
+        file = flake.inputs.self + /secrets/nixos-config-cache-token.age;
+        owner = "root";
+        mode = "0400";
+      };
     };
 
   my = { 
@@ -96,6 +102,11 @@ in
     };
     services = {
       ssh.enable = true;
+      cachix-push = {
+        enable = true;
+        cacheName = "cairnstew-nixos-config-cache";
+        tokenFile = config.age.secrets.nixos-config-cache-token.path;
+      };
       gitRepoSync = {
         enable = true;
         repos = {
