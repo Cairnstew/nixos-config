@@ -15,4 +15,5 @@ in
   "github-token.age".publicKeys = users ++ systems;
   "obsidian-git-token.age".publicKeys = users ++ systems;
   "nixos-config-git-token.age".publicKeys = users ++ systems;
+  "onepassword-token.age".publicKeys = users;
 }
