@@ -160,12 +160,10 @@ let
   # ── systemd units ──────────────────────────────────────────────────────────
   mkService = name: repo: {
     "git-repo-sync-${name}" = {
-      Unit = {
-        Description = "git repo sync: ${name}";
-        After = [ "network-online.target" ];
-        Wants = [ "network-online.target" ];
-      };
-      Service = {
+      description = "git repo sync: ${name}";
+      after = [ "network-online.target" ];
+      wants = [ "network-online.target" ];
+      serviceConfig = {
         Type = "oneshot";
         ExecStart = "${mkSyncScript name repo}";
         Environment = [ "HOME=%h" "GIT_TERMINAL_PROMPT=0" ];
@@ -175,13 +173,13 @@ let
 
   mkTimer = name: repo: {
     "git-repo-sync-${name}" = {
-      Unit.Description = "git repo sync timer: ${name}";
-      Timer = {
+      description = "git repo sync timer: ${name}";
+      timerConfig = {
         OnBootSec = repo.onBootDelaySec;
         OnUnitActiveSec = repo.interval;
         Persistent = repo.timerPersistent;
       };
-      Install.WantedBy = [ "timers.target" ];
+      wantedBy = [ "timers.target" ];
     };
   };
 
