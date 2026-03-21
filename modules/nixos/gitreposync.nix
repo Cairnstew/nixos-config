@@ -167,7 +167,6 @@ let
       wants = [ "network-online.target" ];
       serviceConfig = {
         Type = "oneshot";
-        User = repo.user;
         ExecStart = "${mkSyncScript name repo}";
         Environment = [
           "HOME=${repo.homeDir}"
@@ -193,15 +192,10 @@ let
   # ── Per-repo option declarations ───────────────────────────────────────────
   repoOpts = { name, ... }: {
     options = {
-      user = mkOption {
-        type = types.str;
-        description = "User to run the sync service as.";
-        example = "alice";
-      };
-
       homeDir = mkOption {
         type = types.str;
-        description = "Home directory of the user (used to set HOME in the service environment).";
+        default = "%h";
+        description = "Home directory for the HOME environment variable. Defaults to %h (systemd user home specifier).";
         example = "/home/alice";
       };
 
