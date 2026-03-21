@@ -13,6 +13,9 @@ in
     self.nixosModules.default
     flake.inputs.nixos-wsl.nixosModules.default
   ];
+  users.users.${user} = {
+    uid = 1000;
+  };
   wsl.defaultUser = user;
   nixpkgs.hostPlatform = "x86_64-linux";
 
