@@ -53,7 +53,7 @@ in
     nm.udisks2
     nm.ventoy
     nm.uup-converter
-    nm.gitRepoSync
+    nm.gitreposync
   
     # Entertainment
     nm.spotify
