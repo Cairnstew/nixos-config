@@ -4,19 +4,6 @@ let
   inherit (inputs) self;
 in
 {
-    age.secrets = {
-      "github-token" = {
-        file = flake.inputs.self + /secrets/github-token.age;
-        owner = "${flake.config.me.username}";
-        mode = "0400";
-        group = "users";
-        };
-      "obsidian-git-token" = {
-        file = flake.inputs.self + /secrets/obsidian-git-token.age;
-        owner = "${flake.config.me.username}";
-        mode = "0400";
-      };
-    };
 
     users.users.${flake.config.me.username}.isNormalUser = lib.mkDefault true;
     home-manager.backupFileExtension = "backup";

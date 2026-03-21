@@ -69,6 +69,25 @@ in
   ];
 
 
+  age.secrets = {
+      "github-token" = {
+        file = flake.inputs.self + /secrets/github-token.age;
+        owner = "${flake.config.me.username}";
+        mode = "0400";
+        group = "users";
+        };
+      "obsidian-git-token" = {
+        file = flake.inputs.self + /secrets/obsidian-git-token.age;
+        owner = "${flake.config.me.username}";
+        mode = "0400";
+      };
+      "nixos-config-git-token" = {
+        file = flake.inputs.self + /secrets/nixos-config-git-token.age;
+        owner = "${flake.config.me.username}";
+        mode = "0400";
+      };
+    };
+
   my = { 
     system = {
       audio.enable = true;
@@ -77,6 +96,22 @@ in
     };
     services = {
       ssh.enable = true;
+      gitRepoSync = {
+        enable = true;
+        repos = {
+          nix-config = {
+            url              = "https://github.com/Cairnstew/nixos-config.git";
+            path             = "/home/${flake.config.me.username}/nixos-config";
+            interval         = "10m";
+            conflictStrategy = "ff-only";
+
+            agenix = {
+              enable     = true;
+              secretPath = config.age.secrets.nixos-config-git-token.path;
+            };
+          };
+        };
+      };
     };
   };
   
