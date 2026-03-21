@@ -168,7 +168,6 @@ let
       serviceConfig = {
         Type = "oneshot";
         User = repo.user;
-        Group = repo.group;
         ExecStart = "${mkSyncScript name repo}";
         Environment = [
           "HOME=${repo.homeDir}"
@@ -198,12 +197,6 @@ let
         type = types.str;
         description = "User to run the sync service as.";
         example = "alice";
-      };
-
-      group = mkOption {
-        type = types.str;
-        default = "users";
-        description = "Group to run the sync service as.";
       };
 
       homeDir = mkOption {

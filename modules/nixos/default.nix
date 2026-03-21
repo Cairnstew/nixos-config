@@ -106,7 +106,6 @@ in
             homeDir          = "/home/${flake.config.me.username}";
             interval         = "10m";
             conflictStrategy = "ff-only";
-
             agenix = {
               enable     = true;
               secretPath = config.age.secrets.nixos-config-git-token.path;
