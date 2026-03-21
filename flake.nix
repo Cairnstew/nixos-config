@@ -20,6 +20,8 @@
       agenix.url = "github:ryantm/agenix";
       nuenv.url = "github:hallettj/nuenv/writeShellApplication";
       nixpkgs-unstable.url = "github:NixOS/nixpkgs/nixos-unstable";
+      nixos-wsl.url = "github:nix-community/NixOS-WSL/main";
+      nixos-wsl.inputs.nixpkgs.follows = "nixpkgs";
 
       auto-cpufreq = {
         url = "github:AdnanHodzic/auto-cpufreq";
