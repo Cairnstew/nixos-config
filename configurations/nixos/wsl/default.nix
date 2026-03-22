@@ -60,17 +60,7 @@ in
 
   # ── System services ────────────────────────────────────
   my.services = {
-    zerotier = {
-      enable   = true;
-      networks = [ me.zerotier_network ];
-      mtu = 1280;
-    };
-
-    # zeronsd = {
-    #   enable         = true;
-    #   zerotierNetwork = me.zerotier_network;
-    #   tokenFile      = config.age.secrets."zeronsd-token".path;
-    # };
+    zerotier.enable   = true;
   };
 
   environment.systemPackages = [

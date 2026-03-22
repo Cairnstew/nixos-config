@@ -59,22 +59,13 @@ in
 
   # ── System services ────────────────────────────────────
   my.services = {
-    zerotier = {
-      enable   = true;
-      networks = [ me.zerotier_network ];
-    };
+    zerotier.enable   = true;
 
     natShare = {
       enable = true;
       wanInterface = "wlp170s0";   # check yours with `ip link`
       lanInterface = "enp0s13f0u2";  # check yours with `ip link`
     };
-
-    # zeronsd = {
-    #   enable         = true;
-    #   zerotierNetwork = me.zerotier_network;
-    #   tokenFile      = config.age.secrets."zeronsd-token".path;
-    # };
   };
 
   environment.systemPackages = [
