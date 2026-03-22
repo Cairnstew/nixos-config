@@ -103,10 +103,11 @@ in
     services = {
       ssh.enable = true;
       zerotier = {
-        networks = [ flake.config.me.zerotier_network ];
-        mtu = 1280;
-        dnsServer = flake.config.me.zerodnsServer;
-        dnsDomains = [ "~zt" ];
+        networks    = lib.mkDefault [ flake.config.me.zerotier_network ];
+        mtu         = lib.mkDefault 1280;
+        dnsServer   = lib.mkDefault flake.config.me.zerodnsServer;
+        dnsDomains  = lib.mkDefault [ "~zt" ];
+        allowDNS    = lib.mkDefault true;
       };
       cachix-push = {
         enable = true;
