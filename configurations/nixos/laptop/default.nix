@@ -92,20 +92,5 @@ in
       thunderbird.email         = me.email;
       thunderbird.username      = user;
     };
-    services = {
-      ssh = {
-        enable = true;
-        matchBlocks = {
-          "server" = {
-            host = "192.168.191.168";
-            user = "seanc";
-            identityFile = "~/.ssh/id_ed25519";
-            extraOptions.KexAlgorithms = "curve25519-sha256";
-            serverAliveCountMax = 5;
-            serverAliveInterval = 60;
-          };
-        };
-      };
-    };
   };
 }
