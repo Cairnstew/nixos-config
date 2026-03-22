@@ -38,7 +38,7 @@ in
       inter
       jetbrains-mono
       noto-fonts
-      noto-fonts-emoji
+      noto-fonts-color-emoji
       nerd-fonts.jetbrains-mono    # new per-font package
     ];
     fontconfig.defaultFonts = {
