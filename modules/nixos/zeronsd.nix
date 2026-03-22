@@ -1,7 +1,7 @@
 { config, lib, pkgs, ... }:
 
 let
-  cfg = config.services.zeronsd;
+  cfg = config.my.services.zeronsd;
   inherit (lib)
     mkEnableOption mkOption mkIf types literalExpression
     mapAttrs' nameValuePair attrValues;
@@ -98,7 +98,7 @@ in
   # ---------------------------------------------------------------------------
   # Interface
   # ---------------------------------------------------------------------------
-  options.services.zeronsd = {
+  options.my.services.zeronsd = {
     enable = mkEnableOption "zeronsd — ZeroTier Central DNS server";
 
     package = mkOption {
