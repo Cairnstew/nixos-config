@@ -9,7 +9,7 @@ let
   systems = [ laptop server wsl ];
 in
 {
-  "zeronsd-token.age".publicKeys = [ users ++ systems ];
+  "zeronsd-token.age".publicKeys = users ++ systems;
   "spotify-cred.age".publicKeys = users ++ systems;
   "github-token.age".publicKeys = users ++ systems;
   "obsidian-git-token.age".publicKeys = users ++ systems;
