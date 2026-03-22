@@ -20,12 +20,34 @@ in
       example = 1280;
       description = "MTU to set on ZeroTier interfaces. Useful to prevent stalling on large transfers.";
     };
+
+    dnsServer = lib.mkOption {
+      type = lib.types.nullOr lib.types.str;
+      default = null;
+      description = "ZeroNSD server IP to use for home.arpa resolution";
+      example = "192.168.191.168";
+    };
+
+    dnsDomains = lib.mkOption {
+      type = lib.types.listOf lib.types.str;
+      default = [ "~home.arpa" ];
+      example = [ "~home.arpa" "~zt.example.com" ];
+      description = "Domains to route to the ZeroNSD server. Prefix with ~ for routing-only (no search).";
+    };
   };
 
   config = lib.mkIf cfg.enable {
     services.zerotierone = {
       enable = true;
       joinNetworks = cfg.networks;
+    };
+    services.resolved = lib.mkIf (cfg.dnsServer != null) {
+      enable = true;
+      extraConfig = ''
+        [Resolve]
+        DNS=${cfg.dnsServer}
+        Domains=${lib.concatStringsSep " " cfg.dnsDomains}
+      '';
     };
 
     systemd.services.zerotier-mtu = lib.mkIf (cfg.mtu != null) {

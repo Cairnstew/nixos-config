@@ -41,6 +41,14 @@ let
           github.com Username.
         '';
       };
+
+      zerodnsServer = lib.mkOption {
+        type = lib.types.str;
+        description = ''
+          Zerotier Dns Server IP.
+        '';
+        example = "192.168.191.168";
+      };
         
     };
 
