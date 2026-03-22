@@ -20,7 +20,7 @@ in
   nixpkgs.hostPlatform = "x86_64-linux";
 
   services.resolved.enable = lib.mkForce false;
-  networking.nameservers = [ ${me.zerodnsServer} "1.1.1.1" ];
+  networking.nameservers = [ me.zerodnsServer "1.1.1.1" ];
   wsl.wslConf.network.generateResolvConf = false;
 
   # ── Hardware configuration ─────────────────────────────
