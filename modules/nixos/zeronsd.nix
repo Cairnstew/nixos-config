@@ -134,6 +134,11 @@ in
   # ---------------------------------------------------------------------------
   config = mkIf (cfg.enable && cfg.networks != { }) {
 
+    networking.firewall.interfaces."zt*" = {
+      allowedTCPPorts = [ 53 ];
+      allowedUDPPorts = [ 53 ];
+    };
+
     # zerotier-one must already be running so zeronsd can reach its socket.
     services.zerotierone.enable = lib.mkDefault true;
 
