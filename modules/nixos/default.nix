@@ -106,7 +106,7 @@ in
         networks = [ flake.config.me.zerotier_network ];
         mtu = 1280;
         dnsServer = flake.config.me.zerodnsServer;
-        dnsDomains = [ "~zt.home" ];
+        dnsDomains = [ "~zt" ];
       };
       cachix-push = {
         enable = true;
