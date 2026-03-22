@@ -67,7 +67,10 @@ in
 
   # ── System services ────────────────────────────────────
   my.services = {
-    zerotier.enable   = true;
+    zerotier = {
+      enable = true;
+      allowDNS = false;
+    };
     zeronsd = {
       enable = true;
       networks.${me.zerotier_network} = {
