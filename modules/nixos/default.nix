@@ -102,6 +102,10 @@ in
     };
     services = {
       ssh.enable = true;
+      zerotier = {
+        networks = [ flake.config.me.zerotier_network ];
+        mtu = 1280;
+      };
       cachix-push = {
         enable = true;
         cacheName = "cairnstew-nixos-config-cache";
