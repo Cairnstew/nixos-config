@@ -31,10 +31,10 @@ let
 
       domain = mkOption {
         type = types.str;
-        default = "home.arpa";
+        default = "zt.home";
         description = ''
           The TLD / domain suffix zeronsd will serve.
-          IANA recommends <literal>home.arpa</literal> for local use.
+          IANA recommends <literal>zt.home</literal> for local use.
         '';
         example = "zt.example.com";
       };
@@ -122,7 +122,7 @@ in
             # tokenFile is the only required option when using the attr
             # name as the network ID.
             tokenFile = config.age.secrets.zerotierToken.path;
-            domain    = "home.arpa";
+            domain    = "zt.home";
           };
         }
       '';
