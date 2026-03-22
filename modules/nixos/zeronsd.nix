@@ -31,7 +31,7 @@ let
 
       domain = mkOption {
         type = types.str;
-        default = "zt.home";
+        default = "zt";
         description = ''
           The TLD / domain suffix zeronsd will serve.
           IANA recommends <literal>zt.home</literal> for local use.
@@ -122,7 +122,7 @@ in
             # tokenFile is the only required option when using the attr
             # name as the network ID.
             tokenFile = config.age.secrets.zerotierToken.path;
-            domain    = "zt.home";
+            domain    = "zt";
           };
         }
       '';
