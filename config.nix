@@ -9,5 +9,6 @@
     zerotier_token = "TzHZTaXYCpjTzhb3wBIpLNBldFkx3EDN";
     zerotier_network = "1c33c1ced07e2ece";
     github_username = "Cairnstew";
+    zerodnsServer = "192.168.191.168";
   };
 }
