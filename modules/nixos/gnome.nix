@@ -100,8 +100,8 @@ in
       games.enable                = false;
 
       # Tracker (file indexer) — disable if you don't use GNOME Search
-      tracker-miners.enable = false;
-      tracker.enable        = false;
+      localsearch.enable = false;
+      tinysparql.enable        = false;
     };
   };
 }
