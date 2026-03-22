@@ -57,6 +57,14 @@ in
     };
   };
 
+  age.secrets = {
+      "zeronsd-token" = {
+        file = flake.inputs.self + /secrets/zeronsd-token.age;
+        owner = "root";
+        mode = "0400";
+      };
+    };
+
   # ── System services ────────────────────────────────────
   my.services = {
     zerotier = {
@@ -64,12 +72,10 @@ in
       networks = [ me.zerotier_network ];
       mtu = 1280;
     };
-
-    # zeronsd = {
-    #   enable         = true;
-    #   zerotierNetwork = me.zerotier_network;
-    #   tokenFile      = config.age.secrets."zeronsd-token".path;
-    # };
+    zeronsd = {
+      enable = true;
+      networks.${me.zerotier_network}.tokenFile = config.age.secrets.zeronsd-token.path;
+    };
   };
 
   environment.systemPackages = [
