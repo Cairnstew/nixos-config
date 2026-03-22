@@ -143,13 +143,14 @@ in
         svcName   = "zeronsd-${networkId}";
 
         args = lib.concatLists [
+          [ "start" ]
           [ "-t" netCfg.tokenFile ]
           [ "-d" netCfg.domain ]
           (lib.optional (netCfg.secretFile != null) [ "-s" netCfg.secretFile ])
           (lib.optional (netCfg.hostsFile  != null) [ "-f" netCfg.hostsFile  ])
           (lib.optional  netCfg.wildcardMode         [ "-w"                  ])
           netCfg.extraArgs
-          [ "start" networkId ]
+          [ networkId ]
         ];
       in
       nameValuePair svcName {
