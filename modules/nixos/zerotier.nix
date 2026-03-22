@@ -30,7 +30,7 @@ in
 
     dnsDomains = lib.mkOption {
       type = lib.types.listOf lib.types.str;
-      default = [ "~home.arpa" ];
+      default = [ "~zt.home" ];
       example = [ "~home.arpa" "~zt.example.com" ];
       description = "Domains to route to the ZeroNSD server. Prefix with ~ for routing-only (no search).";
     };
