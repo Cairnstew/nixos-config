@@ -50,6 +50,11 @@ in
       '';
     };
 
+    networking.firewall.interfaces."zt*" = {
+      allowedTCPPorts = [ 53 ];
+      allowedUDPPorts = [ 53 ];
+    };
+
     systemd.services.zerotier-mtu = lib.mkIf (cfg.mtu != null) {
       description = "Set MTU on ZeroTier interfaces";
       wantedBy = [ "multi-user.target" ];
