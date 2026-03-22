@@ -24,14 +24,14 @@ in
     dnsServer = lib.mkOption {
       type = lib.types.nullOr lib.types.str;
       default = null;
-      description = "ZeroNSD server IP to use for home.arpa resolution";
+      description = "ZeroNSD server IP to use for DNS resolution.";
       example = "192.168.191.168";
     };
 
     dnsDomains = lib.mkOption {
       type = lib.types.listOf lib.types.str;
-      default = [ "~zt.home" ];
-      example = [ "~home.arpa" "~zt.example.com" ];
+      default = [ "~zt" ];
+      example = [ "~zt" "~home.arpa" ];
       description = "Domains to route to the ZeroNSD server. Prefix with ~ for routing-only (no search).";
     };
   };
@@ -41,14 +41,20 @@ in
       enable = true;
       joinNetworks = cfg.networks;
     };
+
     services.resolved = lib.mkIf (cfg.dnsServer != null) {
       enable = true;
       extraConfig = ''
         [Resolve]
         DNS=${cfg.dnsServer}
         Domains=${lib.concatStringsSep " " cfg.dnsDomains}
+        FallbackDNS=1.1.1.1
       '';
     };
+
+    # Prevent conflict with nixos-wsl's generateResolvConf management.
+    # mkDefault allows WSL (or any host) to override this without a collision.
+    networking.resolvconf.enable = lib.mkDefault false;
 
     systemd.services.zerotier-mtu = lib.mkIf (cfg.mtu != null) {
       description = "Set MTU on ZeroTier interfaces";
