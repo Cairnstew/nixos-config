@@ -5,6 +5,7 @@ in
 {
   options.my.services.zerotier = {
     enable = lib.mkEnableOption "ZeroTier system service";
+
     networks = lib.mkOption {
       type = lib.types.listOf lib.types.str;
       default = [];
@@ -14,6 +15,7 @@ in
         automatically join at boot.
       '';
     };
+
     mtu = lib.mkOption {
       type = lib.types.nullOr lib.types.int;
       default = null;
@@ -32,7 +34,20 @@ in
       type = lib.types.listOf lib.types.str;
       default = [ "~zt" ];
       example = [ "~zt" "~home.arpa" ];
-      description = "Domains to route to the ZeroNSD server. Prefix with ~ for routing-only (no search).";
+      description = ''
+        Domains to route to the ZeroNSD server.
+        Prefix with ~ for routing-only (no search domain).
+      '';
+    };
+
+    allowDNS = lib.mkOption {
+      type = lib.types.bool;
+      default = true;
+      description = ''
+        Whether to run `zerotier-cli set <network> allowDNS=1` at boot.
+        Enable on clients so ZeroTier Central pushes DNS config to them.
+        Typically disabled on the server running zeronsd itself.
+      '';
     };
   };
 
@@ -55,6 +70,25 @@ in
     # Prevent conflict with nixos-wsl's generateResolvConf management.
     # mkDefault allows WSL (or any host) to override this without a collision.
     networking.resolvconf.enable = lib.mkDefault false;
+
+    # Tell ZeroTier to accept DNS config pushed from ZeroTier Central.
+    systemd.services.zerotier-dns = lib.mkIf (cfg.allowDNS && cfg.dnsServer != null) {
+      description = "Enable ZeroTier DNS for networks";
+      wantedBy = [ "multi-user.target" ];
+      after    = [ "zerotierone.service" ];
+      requires = [ "zerotierone.service" ];
+      serviceConfig = {
+        Type = "oneshot";
+        RemainAfterExit = true;
+        ExecStart = pkgs.writeShellScript "zt-dns" ''
+          for network in ${lib.concatStringsSep " " cfg.networks}; do
+            ${pkgs.zerotierone}/bin/zerotier-cli \
+              -D/var/lib/zerotier-one \
+              set "$network" allowDNS=1
+          done
+        '';
+      };
+    };
 
     systemd.services.zerotier-mtu = lib.mkIf (cfg.mtu != null) {
       description = "Set MTU on ZeroTier interfaces";
