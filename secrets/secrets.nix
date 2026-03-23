@@ -16,4 +16,5 @@ in
   "nixos-config-git-token.age".publicKeys = users ++ systems;
   "nixos-config-cache-token.age".publicKeys = users ++ systems;
   "onepassword-token.age".publicKeys = users;
+  "zt-ssh-key.age".publicKeys = users ++ systems;
 }
