@@ -19,9 +19,18 @@ in
   wsl.defaultUser = user;
   nixpkgs.hostPlatform = "x86_64-linux";
 
-  services.resolved.enable = lib.mkForce false;
-  networking.nameservers = [ me.zerodnsServer "1.1.1.1" ];
   wsl.wslConf.network.generateResolvConf = false;
+  networking.useHostResolvConf = false;
+
+  networking.nameservers = [
+    "1.1.1.1"
+    "8.8.8.8"
+    "100.100.100.100"
+  ];
+
+  networking.search = [ "lan" ]; # optional
+
+
 
   # ── Hardware configuration ─────────────────────────────
   hardwareProfiles.gpu.amd = {
@@ -60,26 +69,6 @@ in
       enable = true;
       users = [ user ];
     };
-  };
-
-  services.unbound = {
-    enable = true;
-    settings = {
-      server = {
-        interface = [ "192.168.191.168" ];
-        access-control = [ "192.168.191.0/24 allow" ];
-        port = 5353;
-      };
-      forward-zone = [{
-        name = "zt.";
-        forward-addr = "192.168.191.168@53";
-      }];
-    };
-  };
-
-  networking.firewall.interfaces."zt+" = {
-    allowedUDPPorts = [ 53 5353 ];
-    allowedTCPPorts = [ 53 5353 ];
   };
 
   # ── System services ────────────────────────────────────
