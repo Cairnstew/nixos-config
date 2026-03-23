@@ -235,6 +235,7 @@ in
           DNS=${zt.dnsServer}
           Domains=${concatStringsSep " " zt.dnsDomains}
           FallbackDNS=1.1.1.1
+          SearchDomains=
         '';
       };
 
