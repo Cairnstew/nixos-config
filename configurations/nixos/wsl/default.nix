@@ -74,6 +74,7 @@ in
   # ── System services ────────────────────────────────────
   my.services = {
     zerotier.enable   = true;
+    tailscale.ssh.sshConfigPath = "/run/ssh-${flake.config.me.username}/config";
   };
 
   environment.systemPackages = [
