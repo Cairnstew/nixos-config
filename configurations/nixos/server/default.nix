@@ -75,7 +75,6 @@ in
       enable = true;
       networks.${me.zerotier_network} = {
         tokenFile = config.age.secrets.zeronsd-token.path;
-        domain = "zt";
       };
     };
     

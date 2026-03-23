@@ -41,18 +41,5 @@ in
         yazi.enable = true;
         zsh.enable = true;
       };
-    
-      services = {
-        ssh = {
-          enable = true;
-          matchBlocks = builtins.mapAttrs (name: _: {
-            host = "${name}.zt";
-            user = flake.config.me.username;
-            identityFile = "~/.ssh/id_ed25519";
-            serverAliveCountMax = 5;
-            serverAliveInterval = 60;
-          }) flake.inputs.self.nixosConfigurations;
-        };
-      };
     };
 }
