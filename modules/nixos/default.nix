@@ -109,6 +109,11 @@ in
         networks              = lib.mkDefault [ flake.config.me.zerotier_network ];
         mtu                   = lib.mkDefault 1280;
       };
+      tailscale = {
+        enable            = true;
+        authKeySecretFile = lib.mkDefault (flake.inputs.self + /secrets/tailscale-authkey.age);
+        tags              = lib.mkDefault [ "tag:nixos" ];
+      };
       cachix-push = {
         enable = true;
         cacheName = "cairnstew-nixos-config-cache";
