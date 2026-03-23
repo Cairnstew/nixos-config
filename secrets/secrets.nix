@@ -21,6 +21,7 @@ in
   # Tailscale Keys - Expire after 90 Days - Created : 3/23/2026
   "tailscale-authkey.age".publicKeys = all;
   "tailscale-apikey.age".publicKeys = all;
+  "tailscale-ssh-key.age".publicKeys = all;
 
   # OnePass Key
   "onepassword-token.age".publicKeys = users;
