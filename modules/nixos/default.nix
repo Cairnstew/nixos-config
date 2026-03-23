@@ -61,7 +61,6 @@ in
 
     # Networking
     nm.zerotier
-    nm.zeronsd
     nm.rustdesk
     nm.natShare
 
@@ -106,13 +105,13 @@ in
     services = {
       ssh.enable = true;
       zerotier = {
-        networks    = lib.mkDefault [ flake.config.me.zerotier_network ];
-        mtu         = lib.mkDefault 1280;
-        dnsServer   = lib.mkDefault flake.config.me.zerodnsServer;
-        dnsDomains  = lib.mkDefault [ "~zt" ];
-        allowDNS    = lib.mkDefault true;
-        sshKeyFile  = lib.mkDefault config.age.secrets.zt-ssh-key.path;
-        sshAuthorizedKeyFiles = [ ./secrets/zt-ssh-key.pub ];
+        networks              = lib.mkDefault [ flake.config.me.zerotier_network ];
+        mtu                   = lib.mkDefault 1280;
+        dnsServer             = lib.mkDefault flake.config.me.zerodnsServer;
+        dnsDomains            = lib.mkDefault [ "~zt" ];
+        allowDNS              = lib.mkDefault true;
+        sshSecretFile         = lib.mkDefault (flake.inputs.self + /secrets/zt-ssh-key.age);
+        sshAuthorizedKeyFiles = [ (flake.inputs.self + /secrets/zt-ssh-key.pub) ];
       };
       cachix-push = {
         enable = true;
