@@ -3,7 +3,8 @@
 let
   inherit (lib)
     mkEnableOption mkOption mkIf mkDefault types literalExpression
-    mapAttrs' nameValuePair concatStringsSep concatLists optional;
+    mapAttrs' nameValuePair concatStringsSep concatLists optional
+    filterAttrs;
 
   zt  = config.my.services.zerotier;
   nsd = config.my.services.zeronsd;
@@ -17,30 +18,46 @@ let
         description = "16-character ZeroTier network ID. Defaults to the attribute name.";
         example = "36579ad8f6a82ad3";
       };
-      tokenFile = mkOption {
-        type = types.path;
+
+      tokenSecretFile = mkOption {
+        type = types.nullOr types.path;
+        default = null;
         description = ''
-          Path to a file containing the ZeroTier Central API token.
-          Compatible with agenix — set to config.age.secrets.zeronsd-token.path.
+          Path to the agenix-encrypted .age file for the ZeroTier Central
+          API token. The module declares age.secrets automatically.
+          Use this OR tokenFile, not both.
         '';
-        example = literalExpression "config.age.secrets.zeronsd-token.path";
       };
+
+      tokenFile = mkOption {
+        type = types.nullOr types.path;
+        default = null;
+        description = ''
+          Path to the decrypted token at runtime (e.g. from age.secrets).
+          Use this if you manage age.secrets yourself.
+          Use this OR tokenSecretFile, not both.
+        '';
+      };
+
       domain = mkOption {
         type = types.str;
         default = "zt";
-        description = "TLD zeronsd will serve (e.g. 'zt', 'home.arpa').";
+        description = "TLD zeronsd will serve.";
         example = "zt";
       };
+
       wildcardMode = mkOption {
         type = types.bool;
         default = false;
         description = "Enable wildcard records for all member names.";
       };
+
       hostsFile = mkOption {
         type = types.nullOr types.path;
         default = null;
         description = "Optional /etc/hosts-format file appended to DNS records.";
       };
+
       secretFile = mkOption {
         type = types.nullOr types.path;
         default = null;
@@ -49,11 +66,13 @@ let
           at /var/lib/zerotier-one/authtoken.secret.
         '';
       };
+
       logLevel = mkOption {
         type = types.enum [ "off" "error" "warn" "info" "debug" "trace" ];
         default = "info";
         description = "Log verbosity for zeronsd.";
       };
+
       extraArgs = mkOption {
         type = types.listOf types.str;
         default = [];
@@ -62,6 +81,26 @@ let
       };
     };
   };
+
+  # Secret name for a zeronsd network token.
+  nsdSecretName = networkId: "zeronsd-token-${networkId}";
+
+  # Networks using tokenSecretFile (auto age.secrets).
+  networksWithSecret = filterAttrs
+    (_: n: n.tokenSecretFile != null)
+    nsd.networks;
+
+  # Resolve the token path — prefer auto-managed secret over manual.
+  resolvedTokenFile = netCfg:
+    if netCfg.tokenSecretFile != null
+    then config.age.secrets.${nsdSecretName netCfg.networkId}.path
+    else netCfg.tokenFile;
+
+  # Resolved SSH key path — prefer auto-managed secret over manual.
+  resolvedSshKeyFile =
+    if zt.sshSecretFile != null
+    then config.age.secrets."zt-ssh-key".path
+    else zt.sshKeyFile;
 
 in
 {
@@ -83,7 +122,7 @@ in
         type = types.nullOr types.int;
         default = null;
         example = 1280;
-        description = "MTU to set on ZeroTier interfaces. Prevents stalling on large transfers.";
+        description = "MTU to set on ZeroTier interfaces.";
       };
 
       dnsServer = mkOption {
@@ -97,28 +136,37 @@ in
         type = types.listOf types.str;
         default = [ "~zt" ];
         example = [ "~zt" "~home.arpa" ];
-        description = "Domains routed to the ZeroNSD server. Prefix with ~ for routing-only.";
+        description = "Domains routed to ZeroNSD. Prefix with ~ for routing-only.";
       };
 
       allowDNS = mkOption {
         type = types.bool;
         default = true;
         description = ''
-          Run 'zerotier-cli set <network> allowDNS=1' at boot so ZeroTier
-          Central pushes DNS config to this machine. Disable on the host
-          running zeronsd itself.
+          Run zerotier-cli set <network> allowDNS=1 at boot.
+          Disable on the host running zeronsd itself.
         '';
       };
 
       # ── Inter-host SSH key ─────────────────────────────────────────────────
+      sshSecretFile = mkOption {
+        type = types.nullOr types.path;
+        default = null;
+        description = ''
+          Path to the agenix-encrypted .age file for the inter-host SSH
+          private key. The module declares age.secrets automatically.
+          Use this OR sshKeyFile, not both.
+        '';
+      };
+
       sshKeyFile = mkOption {
         type = types.nullOr types.path;
         default = null;
-        example = literalExpression "config.age.secrets.zt-ssh-key.path";
         description = ''
-          Path to the private SSH key used for connections between ZeroTier
-          hosts. Typically an agenix secret deployed to all machines.
-          When set, a Host *.zt matchblock is added to SSH config automatically.
+          Path to the decrypted SSH private key at runtime.
+          Use this if you manage age.secrets yourself.
+          Use this OR sshSecretFile, not both.
+          When either is set, a Host *.zt matchblock is added automatically.
         '';
       };
 
@@ -131,10 +179,10 @@ in
       sshAuthorizedKeyFiles = mkOption {
         type = types.listOf types.path;
         default = [];
-        example = literalExpression "[ ./secrets/zt-ssh-key.pub ]";
         description = ''
           Public key files added to the user's authorized_keys.
-          Add the ZeroTier inter-host public key here so all machines accept it.
+          Commit the ZeroTier inter-host public key plaintext to your repo
+          and reference it here.
         '';
       };
     };
@@ -154,14 +202,13 @@ in
         type = types.attrsOf (types.submodule networkOpts);
         default = {};
         description = ''
-          Attribute set of ZeroTier networks to serve DNS for.
-          Each key is the network ID. One systemd service is created per network.
+          ZeroTier networks to serve DNS for. One systemd service per network.
         '';
         example = literalExpression ''
           {
             "36579ad8f6a82ad3" = {
-              tokenFile = config.age.secrets.zeronsd-token.path;
-              domain    = "zt";
+              tokenSecretFile = flake.inputs.self + /secrets/zeronsd-token.age;
+              domain = "zt";
             };
           }
         '';
@@ -179,10 +226,8 @@ in
         joinNetworks = zt.networks;
       };
 
-      # Prevent conflict with nixos-wsl generateResolvConf management.
       networking.resolvconf.enable = mkDefault false;
 
-      # Point systemd-resolved at zeronsd for ZeroTier domains.
       services.resolved = mkIf (zt.dnsServer != null) {
         enable = true;
         extraConfig = ''
@@ -193,7 +238,6 @@ in
         '';
       };
 
-      # Enable DNS push from ZeroTier Central on client machines.
       systemd.services.zerotier-dns = mkIf (zt.allowDNS && zt.dnsServer != null) {
         description = "Enable ZeroTier DNS push for joined networks";
         wantedBy = [ "multi-user.target" ];
@@ -212,7 +256,6 @@ in
         };
       };
 
-      # Set MTU on ZeroTier interfaces to prevent packet fragmentation.
       systemd.services.zerotier-mtu = mkIf (zt.mtu != null) {
         description = "Set MTU on ZeroTier interfaces";
         wantedBy = [ "multi-user.target" ];
@@ -233,39 +276,53 @@ in
         };
       };
 
-      # Add the ZeroTier inter-host public key to authorized_keys.
+      # Auto-declare age.secrets for the SSH key if sshSecretFile is set.
+      age.secrets."zt-ssh-key" = mkIf (zt.sshSecretFile != null) {
+        file  = zt.sshSecretFile;
+        owner = zt.sshUser;
+        mode  = "0600";
+      };
+
       users.users.${zt.sshUser} = mkIf (zt.sshAuthorizedKeyFiles != []) {
         openssh.authorizedKeys.keyFiles = zt.sshAuthorizedKeyFiles;
       };
 
-      # SSH matchblock for *.zt hosts using the shared inter-host key.
-      programs.ssh.extraConfig = mkIf (zt.sshKeyFile != null) ''
-        Host *.zt
-          User ${zt.sshUser}
-          IdentityFile ${zt.sshKeyFile}
-          ServerAliveCountMax 5
-          ServerAliveInterval 60
-      '';
+      programs.ssh.extraConfig =
+        mkIf (zt.sshSecretFile != null || zt.sshKeyFile != null) ''
+          Host *.zt
+            User ${zt.sshUser}
+            IdentityFile ${resolvedSshKeyFile}
+            ServerAliveCountMax 5
+            ServerAliveInterval 60
+        '';
     })
 
     # ── zeronsd ───────────────────────────────────────────────────────────────
     (mkIf (nsd.enable && nsd.networks != {}) {
 
-      # Open port 53 on ZeroTier interfaces for DNS queries from peers.
       networking.firewall.interfaces."zt+" = {
         allowedTCPPorts = [ 53 ];
         allowedUDPPorts = [ 53 ];
       };
 
-      # zerotier-one must be running so zeronsd can reach its socket.
       services.zerotierone.enable = mkDefault true;
 
-      systemd.services = mapAttrs' (_attrName: netCfg:
+      # Auto-declare age.secrets for networks using tokenSecretFile.
+      age.secrets = mapAttrs' (_: netCfg:
+        nameValuePair (nsdSecretName netCfg.networkId) {
+          file  = netCfg.tokenSecretFile;
+          owner = "root";
+          mode  = "0400";
+        }
+      ) networksWithSecret;
+
+      systemd.services = mapAttrs' (_: netCfg:
         let
           networkId = netCfg.networkId;
+          tokenPath = resolvedTokenFile netCfg;
           args = concatLists [
             [ "start" ]
-            [ "-t" netCfg.tokenFile ]
+            [ "-t" tokenPath ]
             [ "-d" netCfg.domain ]
             (optional (netCfg.secretFile != null) "-s")
             (optional (netCfg.secretFile != null) netCfg.secretFile)
