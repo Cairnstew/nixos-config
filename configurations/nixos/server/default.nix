@@ -63,7 +63,11 @@ in
       enable = true;
       allowDNS = false;
     };
-    
+    tailscale = {
+      tags             = [ "tag:nixos" "tag:server" ];
+      apiKeySecretFile = flake.inputs.self + /secrets/tailscale-apikey.age;
+      policyFile       = flake.inputs.self + /tailscale-policy.json;
+    };
   };
 
   environment.systemPackages = [
