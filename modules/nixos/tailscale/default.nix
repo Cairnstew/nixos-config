@@ -171,41 +171,79 @@ in
         text = ''
           set -euo pipefail
 
+          ###############
+          # Binaries
+          ###############
+          CURL=${pkgs.curl}/bin/curl
+          JQ=${pkgs.jq}/bin/jq
+          SED=${pkgs.gnused}/bin/sed
+          GREP=${pkgs.gnugrep}/bin/grep
+          MKDIR=${pkgs.coreutils}/bin/mkdir
+          CHMOD=${pkgs.coreutils}/bin/chmod
+          TOUCH=${pkgs.coreutils}/bin/touch
+          MV=${pkgs.coreutils}/bin/mv
+          CHOWN=${pkgs.coreutils}/bin/chown
+
+          ###############
+          # Paths and markers
+          ###############
           SSH_CONFIG="${cfg.ssh.sshConfigPath}"
-          SSH_DIR=$(dirname "$SSH_CONFIG")
+          SSH_DIR=$($SED 's/\/[^/]*$//' <<< "$SSH_CONFIG")  # dirname
           MARKER_START="# BEGIN tailscale-managed"
           MARKER_END="# END tailscale-managed"
+
+          ###############
+          # Environment variables for jq
+          ###############
+          export SSH_KEY="${sshKeyPath}"
+          export EXTRA_HOST_CONFIG="${cfg.ssh.extraHostConfig}"
+
+          ###############
+          # Ensure directory & file exist
+          ###############
+          $MKDIR -p "$SSH_DIR"
+          $CHMOD 700 "$SSH_DIR"
+
+          $TOUCH "$SSH_CONFIG"
+          $CHMOD 600 "$SSH_CONFIG"
+
+          ###############
+          # Fetch devices
+          ###############
           API_KEY=$(cat ${apiKeyPath})
 
-          mkdir -p "$SSH_DIR"
-          chmod 700 "$SSH_DIR"
-          touch "$SSH_CONFIG"
-          chmod 600 "$SSH_CONFIG"
-
           echo "tailscale-ssh-config: fetching machine list..."
-          response=$(${pkgs.curl}/bin/curl -sf \
-            -H "Authorization: Bearer $API_KEY" \
-            "https://api.tailscale.com/api/v2/tailnet/-/devices")
+          response=$($CURL -sf -H "Authorization: Bearer $API_KEY" "https://api.tailscale.com/api/v2/tailnet/-/devices")
 
-          NEW_BLOCK=$(echo "$response" | ${pkgs.jq}/bin/jq -r '
+          ###############
+          # Generate Host blocks
+          ###############
+          NEW_BLOCK=$($JQ -r '
             .devices[]
             | select(.hostname != null and .hostname != "")
             | "Host " + .hostname + "\n" +
               "  HostName " + .hostname + ".ts.net\n" +
-              "  IdentityFile ${sshKeyPath}\n" +
+              "  IdentityFile " + env.SSH_KEY + "\n" +
               "  IdentitiesOnly yes\n" +
-              ${if cfg.ssh.extraHostConfig != "" then
-                  ''"  " + "${lib.escape ["\"" "\\"] cfg.ssh.extraHostConfig}" + "\n" +''
-                else ""}
-              ""
-          ')
+              (if env.EXTRA_HOST_CONFIG != "" then
+                  "  " + env.EXTRA_HOST_CONFIG + "\n"
+              else
+                  ""
+              end)
+          ' <<< "$response")
 
-          if grep -q "$MARKER_START" "$SSH_CONFIG"; then
-            BEFORE=$(sed "/$MARKER_START/,/$MARKER_END/d" "$SSH_CONFIG")
+          ###############
+          # Remove old managed block
+          ###############
+          if $GREP -q "$MARKER_START" "$SSH_CONFIG"; then
+            BEFORE=$($SED "/$MARKER_START/,/$MARKER_END/d" "$SSH_CONFIG")
           else
             BEFORE=$(cat "$SSH_CONFIG")
           fi
 
+          ###############
+          # Write new config atomically
+          ###############
           {
             printf '%s\n' "$BEFORE"
             echo ""
@@ -214,9 +252,10 @@ in
             echo "$MARKER_END"
           } > "$SSH_CONFIG.tmp"
 
-          mv "$SSH_CONFIG.tmp" "$SSH_CONFIG"
-          chown ${cfg.ssh.user}:users "$SSH_DIR" "$SSH_CONFIG"
-          echo "tailscale-ssh-config: wrote $(echo "$NEW_BLOCK" | grep -c '^Host ') host entries to $SSH_CONFIG"
+          $MV "$SSH_CONFIG.tmp" "$SSH_CONFIG"
+          $CHOWN ${cfg.ssh.user}:users "$SSH_DIR" "$SSH_CONFIG"
+
+          echo "tailscale-ssh-config: wrote $(echo "$NEW_BLOCK" | $GREP -c '^Host ') host entries to $SSH_CONFIG"
         '';
       };
     })
