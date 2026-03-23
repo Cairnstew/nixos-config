@@ -95,7 +95,6 @@ in
         mode = "0400";
       };
     };
-
   my = { 
     system = {
       audio.enable = true;
@@ -107,11 +106,6 @@ in
       zerotier = {
         networks              = lib.mkDefault [ flake.config.me.zerotier_network ];
         mtu                   = lib.mkDefault 1280;
-        dnsServer             = lib.mkDefault flake.config.me.zerodnsServer;
-        dnsDomains            = lib.mkDefault [ "~zt" ];
-        allowDNS              = lib.mkDefault true;
-        sshSecretFile         = lib.mkDefault (flake.inputs.self + /secrets/zt-ssh-key.age);
-        sshAuthorizedKeyFiles = [ (flake.inputs.self + /secrets/zt-ssh-key.pub) ];
       };
       cachix-push = {
         enable = true;

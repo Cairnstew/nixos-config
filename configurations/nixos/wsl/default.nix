@@ -62,6 +62,26 @@ in
     };
   };
 
+  services.unbound = {
+    enable = true;
+    settings = {
+      server = {
+        interface = [ "192.168.191.168" ];
+        access-control = [ "192.168.191.0/24 allow" ];
+        port = 5353;
+      };
+      forward-zone = [{
+        name = "zt.";
+        forward-addr = "192.168.191.168@53";
+      }];
+    };
+  };
+
+  networking.firewall.interfaces."zt+" = {
+    allowedUDPPorts = [ 53 5353 ];
+    allowedTCPPorts = [ 53 5353 ];
+  };
+
   # ── System services ────────────────────────────────────
   my.services = {
     zerotier.enable   = true;
