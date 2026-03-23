@@ -63,6 +63,8 @@ in
     nm.zerotier
     nm.rustdesk
     nm.natShare
+    nm.nebula
+    nm.tailscale
 
     # External modules
     agenixModules
