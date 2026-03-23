@@ -69,6 +69,9 @@ in
     agenixModules
   ];
 
+  environment.systemPackages = [
+    pkgs.dig
+  ];
 
   age.secrets = {
       "github-token" = {
