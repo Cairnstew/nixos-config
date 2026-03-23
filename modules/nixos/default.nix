@@ -111,6 +111,8 @@ in
         dnsServer   = lib.mkDefault flake.config.me.zerodnsServer;
         dnsDomains  = lib.mkDefault [ "~zt" ];
         allowDNS    = lib.mkDefault true;
+        sshKeyFile  = lib.mkDefault config.age.secrets.zt-ssh-key.path;
+        sshAuthorizedKeyFiles = [ ./secrets/zt-ssh-key.pub ];
       };
       cachix-push = {
         enable = true;
