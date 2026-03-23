@@ -162,7 +162,7 @@ in
         text = ''
           set -euo pipefail
 
-          SSH_DIR="/home/${cfg.ssh.user}/.ssh"
+          SSH_DIR="/run/ssh-${cfg.ssh.user}"
           SSH_CONFIG="$SSH_DIR/config"
           MARKER_START="# BEGIN tailscale-managed"
           MARKER_END="# END tailscale-managed"
