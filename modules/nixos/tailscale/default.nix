@@ -61,6 +61,15 @@ in
         example = "seanc";
       };
 
+      sshConfigPath = mkOption {
+        type = types.str;
+        default = "~/.ssh/config"; # default to home directory
+        description = ''
+          Path where the tailscale-managed SSH config will be written.
+          Can be overridden for WSL or read-only home directories.
+        '';
+      };
+
       sshKeySecretFile = mkOption {
         type    = types.nullOr types.path;
         default = null;
@@ -162,8 +171,8 @@ in
         text = ''
           set -euo pipefail
 
-          SSH_DIR="/run/ssh-${cfg.ssh.user}"
-          SSH_CONFIG="$SSH_DIR/config"
+          SSH_CONFIG="${cfg.ssh.sshConfigPath}"
+          SSH_DIR=$(dirname "$SSH_CONFIG")
           MARKER_START="# BEGIN tailscale-managed"
           MARKER_END="# END tailscale-managed"
           API_KEY=$(cat ${apiKeyPath})

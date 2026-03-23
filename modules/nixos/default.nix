@@ -111,16 +111,16 @@ in
       };
       tailscale = {
         enable            = lib.mkDefault true;
-        authKeySecretFile = flake.inputs.self + /secrets/tailscale-authkey.age;
-        tags              = [ "tag:nixos" ];
+        authKeySecretFile = lib.mkDefault flake.inputs.self + /secrets/tailscale-authkey.age;
+        tags              = lib.mkDefault [ "tag:nixos" ];
 
         ssh = {
-          enable           = true;
-          user             = flake.config.me.username;
-          sshKeySecretFile = flake.inputs.self + /secrets/tailscale-ssh-key.age;
-          apiKeySecretFile = flake.inputs.self + /secrets/tailscale-apikey.age;
+          enable           = lib.mkDefault true;
+          user             = lib.mkDefault flake.config.me.username;
+          sshKeySecretFile = lib.mkDefault flake.inputs.self + /secrets/tailscale-ssh-key.age;
+          apiKeySecretFile = lib.mkDefault flake.inputs.self + /secrets/tailscale-apikey.age;
           # Optional: appended to every Host block
-          extraHostConfig  = "ForwardAgent yes";
+          extraHostConfig  = lib.mkDefault "ForwardAgent yes";
         };
       };
       cachix-push = {
