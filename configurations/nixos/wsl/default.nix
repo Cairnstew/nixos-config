@@ -88,6 +88,7 @@ in
 
     my = {
       programs = {
+        vscode.enable = true;
 
       };
     };
