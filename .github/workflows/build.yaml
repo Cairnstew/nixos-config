@@ -4,18 +4,17 @@ on:
   workflow_dispatch:
     inputs:
       host:
-        description: "NixOS host to build (e.g. my-host)"
-        required: true
-        default: "my-host"
-      type:
-        description: "Build type"
+        description: "NixOS host to build"
         required: true
         type: choice
         options:
           - wsl
           - pc
-          - vm
-        default: wsl
+          - server
+      build_type:
+        description: "Optional: choose a specific build target; defaults to first available"
+        required: false
+        type: string
       release_tag:
         description: "Release tag (e.g. v1.0.0)"
         required: true
@@ -40,37 +39,41 @@ jobs:
       - name: Determine build target
         id: build-target
         run: |
-          case "${{ github.event.inputs.type }}" in
-            wsl)
-              BUILD_TARGET="tarballBuilder"
-              ;;
-            pc)
-              BUILD_TARGET="isoImage"
-              ;;
-            vm)
-              BUILD_TARGET="vmWithBootLoader"
-              ;;
-            *)
-              echo "Unknown type '${{ github.event.inputs.type }}'"
+          HOST="${{ github.event.inputs.host }}"
+          # List all available system.build keys for this host
+          BUILD_KEYS=$(nix eval --raw .#nixosConfigurations."$HOST".config.system.build | jq -r 'keys[]')
+
+          # Use user-specified build_type if valid, else first key
+          if [ -n "${{ github.event.inputs.build_type }}" ]; then
+            if echo "$BUILD_KEYS" | grep -qx "${{ github.event.inputs.build_type }}"; then
+              TARGET="${{ github.event.inputs.build_type }}"
+            else
+              echo "Invalid build_type '${{ github.event.inputs.build_type }}'. Available: $BUILD_KEYS"
               exit 1
-              ;;
-          esac
-          echo "target=$BUILD_TARGET" >> "$GITHUB_OUTPUT"
+            fi
+          else
+            TARGET=$(echo "$BUILD_KEYS" | head -n 1)
+          fi
+
+          echo "Detected build target: $TARGET"
+          echo "target=$TARGET" >> "$GITHUB_OUTPUT"
 
       - name: Build NixOS image
         run: |
-          nix build \
-            .#nixosConfigurations.${{ github.event.inputs.host }}.config.system.build.${{ steps.build-target.outputs.target }} \
+          HOST="${{ github.event.inputs.host }}"
+          TARGET="${{ steps.build-target.outputs.target }}"
+
+          nix build .#nixosConfigurations."$HOST".config.system.build."$TARGET" \
             --out-link ./result \
             --show-trace
 
       - name: Locate image file
         id: image
         run: |
-          BUILD_TYPE="${{ steps.build-target.outputs.target }}"
-          if [ "$BUILD_TYPE" = "isoImage" ]; then
+          TARGET="${{ steps.build-target.outputs.target }}"
+          if [ "$TARGET" = "isoImage" ]; then
             FILE=$(find ./result/iso -name "*.iso" | head -1)
-          elif [ "$BUILD_TYPE" = "tarballBuilder" ]; then
+          elif [ "$TARGET" = "tarballBuilder" ]; then
             FILE=$(find ./result -name "*.tar.gz" | head -1)
           else
             FILE=$(find ./result -name "*.img" -o -name "*.qcow2" | head -1)
@@ -82,13 +85,12 @@ jobs:
           echo "Found image: $FILE"
           ls -lh "$FILE"
 
-      - name: Split image into segments
+      - name: Split ISO into segments
         if: steps.build-target.outputs.target == 'isoImage'
         run: |
           mkdir -p ./image-segments
           ISONAME="${{ steps.image.outputs.name }}"
 
-          # Split into 1900 MiB chunks — safely under GitHub's 2 GiB asset limit
           split \
             --bytes=1900m \
             --suffix-length=3 \
@@ -96,7 +98,6 @@ jobs:
             "${{ steps.image.outputs.path }}" \
             "./image-segments/${ISONAME}.part"
 
-          # Copy checksum and join script
           cp "${{ steps.image.outputs.path }}.sha256" ./image-segments/
           cp ./scripts/join-iso.sh ./image-segments/
           echo "Segments produced:"
