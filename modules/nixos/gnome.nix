@@ -24,10 +24,6 @@ in
   services.gvfs.enable   = true;
   services.devmon.enable = true;
 
-  # ── Keyring & secrets ─────────────────────────────────────────────────────
-  services.gnome.gnome-keyring.enable = true;
-  security.pam.services.gdm.enableGnomeKeyring = true;
-
   # ── Networking (connectivity indicator in top bar) ────────────────────────
   networking.networkmanager.enable = true;
 
@@ -39,7 +35,7 @@ in
       jetbrains-mono
       noto-fonts
       noto-fonts-color-emoji
-      nerd-fonts.jetbrains-mono    # new per-font package
+      nerd-fonts.jetbrains-mono
     ];
     fontconfig.defaultFonts = {
       sansSerif = [ "Inter" ];
@@ -73,7 +69,7 @@ in
     papirus-icon-theme
     kdePackages.breeze-gtk
     kdePackages.breeze-icons
-    kdePackages.breeze          # provides Breeze_Snow cursor
+    kdePackages.breeze
   ];
 
   # ── dconf (required for home-manager dconf settings to apply) ─────────────
@@ -89,19 +85,25 @@ in
   services = {
     displayManager.gdm = {
       enable      = true;
-      autoSuspend = false;   # prevent GDM itself from suspending at login screen
+      autoSuspend = false;
     };
 
     desktopManager.gnome.enable = true;
 
     gnome = {
+      # ── Keyring & secrets ─────────────────────────────────────────────────
+      gnome-keyring.enable = true;          # ← moved here
+
       core-apps.enable            = false;
       core-developer-tools.enable = false;
       games.enable                = false;
 
       # Tracker (file indexer) — disable if you don't use GNOME Search
       localsearch.enable = false;
-      tinysparql.enable        = false;
+      tinysparql.enable  = false;
     };
   };
+
+  # This line must stay outside the services.gnome block
+  security.pam.services.gdm.enableGnomeKeyring = true;
 }
