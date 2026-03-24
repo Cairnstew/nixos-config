@@ -124,12 +124,14 @@ in
       };
       gitRepoSync = {
         enable = true;
+        user = flake.config.me.username;
         repos = {
           nix-config = {
             url              = "https://github.com/Cairnstew/nixos-config.git";
             path             = "/home/${flake.config.me.username}/nixos-config";
             interval         = "10m";
             conflictStrategy = "ff-only";
+            branches = [ "main" ];
             agenix = {
               enable     = true;
               secretPath = config.age.secrets.nixos-config-git-token.path;
