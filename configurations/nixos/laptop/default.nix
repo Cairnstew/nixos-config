@@ -59,8 +59,6 @@ in
 
   # ── System services ────────────────────────────────────
   my.services = {
-    zerotier.enable   = true;
-
     natShare = {
       enable = true;
       wanInterface = "wlp170s0";   # check yours with `ip link`

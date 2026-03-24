@@ -60,7 +60,6 @@ in
     nm.spotify
 
     # Networking
-    nm.zerotier
     nm.rustdesk
     nm.natShare
     nm.nebula
@@ -105,25 +104,16 @@ in
     };
     services = {
       ssh.enable = true;
-      zerotier = {
-        networks              = lib.mkDefault [ flake.config.me.zerotier_network ];
-        mtu                   = lib.mkDefault 1280;
-      };
       tailscale = {
-        enable = lib.mkDefault true;
-
-        authKeySecretFile = lib.mkDefault (flake.inputs.self + "/secrets/tailscale-authkey.age");
-
-        tags = lib.mkDefault [ "tag:nixos" ];
-
+        enable            = lib.mkDefault true;
+        authKeySecretFile = lib.mkDefault (flake.inputs.self + /secrets/tailscale-authkey.age);
+        tags              = lib.mkDefault [ "tag:nixos" ];
         ssh = {
-          enable = lib.mkDefault true;
-          user   = lib.mkDefault flake.config.me.username;
-
-          sshKeySecretFile = lib.mkDefault (flake.inputs.self + "/secrets/tailscale-ssh-key.age");
-          apiKeySecretFile = lib.mkDefault (flake.inputs.self + "/secrets/tailscale-apikey.age");
-
-          extraHostConfig = lib.mkDefault "ForwardAgent yes";
+          enable           = lib.mkDefault true;
+          user             = lib.mkDefault flake.config.me.username;
+          apiKeySecretFile  = lib.mkDefault (flake.inputs.self + /secrets/tailscale-apikey.age);
+          sshKeySecretFile = lib.mkDefault (flake.inputs.self + /secrets/tailscale-ssh-key.age);
+          extraHostConfig  = lib.mkDefault "ForwardAgent yes";
         };
       };
       cachix-push = {
@@ -148,7 +138,7 @@ in
       };
     };
   };
-  
+
   assertions = [
     {
       assertion =

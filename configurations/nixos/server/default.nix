@@ -59,10 +59,10 @@ in
 
   # ── System services ────────────────────────────────────
   my.services = {
-    zerotier = {
-      enable = true;
-      allowDNS = false;
-    };
+    #zerotier = {
+    #  enable = true;
+    #  allowDNS = false;
+    #};
   };
 
   environment.systemPackages = [

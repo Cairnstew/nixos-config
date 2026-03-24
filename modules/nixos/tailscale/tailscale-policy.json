@@ -1,0 +1,33 @@
+{
+  "tagOwners": {
+    "tag:nixos": ["autogroup:owner"]
+  },
+
+  "grants": [
+    {
+      "src": ["autogroup:owner"],
+      "dst": ["tag:nixos"],
+      "ip":  ["*"]
+    },
+    {
+      "src": ["tag:nixos"],
+      "dst": ["tag:nixos"],
+      "ip":  ["*"]
+    }
+  ],
+
+  "ssh": [
+    {
+      "action": "accept",
+      "src":    ["autogroup:owner"],
+      "dst":    ["tag:nixos"],
+      "users":  ["seanc"]
+    },
+    {
+      "action": "accept",
+      "src":    ["tag:nixos"],
+      "dst":    ["tag:nixos"],
+      "users":  ["seanc"]
+    }
+  ]
+}
