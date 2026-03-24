@@ -1,0 +1,91 @@
+name: Build NixOS ISO
+
+on:
+  workflow_dispatch:
+    inputs:
+      host:
+        description: "NixOS host to build (e.g. my-host)"
+        required: true
+        default: "my-host"
+      release_tag:
+        description: "Release tag (e.g. v1.0.0)"
+        required: true
+        default: "latest"
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write   # needed to create releases and upload assets
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Nix
+        uses: DeterminateSystems/nix-installer-action@v13
+
+      - name: Set up Nix cache
+        uses: DeterminateSystems/magic-nix-cache-action@v7
+
+      - name: Build ISO
+        run: |
+          nix build \
+            .#nixosConfigurations.${{ github.event.inputs.host }}.config.system.build.isoImage \
+            --out-link ./result \
+            --show-trace
+
+      - name: Locate ISO file
+        id: iso
+        run: |
+          ISO_PATH=$(find ./result/iso -name "*.iso" | head -1)
+          echo "path=$ISO_PATH" >> "$GITHUB_OUTPUT"
+          echo "name=$(basename "$ISO_PATH")" >> "$GITHUB_OUTPUT"
+          sha256sum "$ISO_PATH" > "$ISO_PATH.sha256"
+          echo "Found ISO: $ISO_PATH"
+          ls -lh "$ISO_PATH"
+
+      - name: Split ISO into segments
+        run: |
+          mkdir -p ./iso-segments
+          ISONAME="${{ steps.iso.outputs.name }}"
+
+          # Split into 1900 MiB chunks — safely under GitHub's 2 GiB asset limit
+          split \
+            --bytes=1900m \
+            --suffix-length=3 \
+            --numeric-suffixes=1 \
+            "${{ steps.iso.outputs.path }}" \
+            "./iso-segments/${ISONAME}.part"
+
+          # Copy the checksum and reassembly script alongside the segments
+          cp "${{ steps.iso.outputs.path }}.sha256" ./iso-segments/
+          cp ./scripts/join-iso.sh ./iso-segments/
+
+          echo "Segments produced:"
+          ls -lh ./iso-segments/
+
+      - name: Create GitHub release and upload segments
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          TAG="${{ github.event.inputs.release_tag }}"
+          HOST="${{ github.event.inputs.host }}"
+          ISONAME="${{ steps.iso.outputs.name }}"
+
+          # Create the release (--notes-file keeps the body clean)
+          gh release create "$TAG" \
+            --title "NixOS ISO — ${HOST} ${TAG}" \
+            --notes "## NixOS ISO for \`${HOST}\`
+
+          Built from commit \`${{ github.sha }}\`.
+
+          ### Reassembly
+          Download all release assets into one folder, then run:
+          \`\`\`bash
+          bash join-iso.sh ${ISONAME}
+          \`\`\`
+          \`join-iso.sh\` is included as a release asset — no need to clone the repo."
+
+          # Upload every segment and the checksum
+          gh release upload "$TAG" ./iso-segments/*
