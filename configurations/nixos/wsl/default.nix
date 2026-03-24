@@ -88,7 +88,7 @@ in
 
     my = {
       programs = {
-
+        #vscode.enable = true;
       };
     };
     services.vscode-server.enable = true;
