@@ -10,13 +10,15 @@ let
   all = users ++ systems;
 in
 {
-  "zeronsd-token.age".publicKeys = all;
-  "spotify-cred.age".publicKeys = all;
+  # Overall GitHub Token
   "github-token.age".publicKeys = all;
-  "obsidian-git-token.age".publicKeys = all;
+
+  # Git Repos
   "nixos-config-git-token.age".publicKeys = all;
+  "obsidian-git-token.age".publicKeys = all;
+
+  # Cache Token
   "nixos-config-cache-token.age".publicKeys = all;
-  "zt-ssh-key.age".publicKeys = all;
 
   # Tailscale Keys - Expire after 90 Days - Created : 3/23/2026
   "tailscale-authkey.age".publicKeys = all;
