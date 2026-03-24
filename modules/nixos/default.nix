@@ -55,6 +55,7 @@ in
     nm.uup-converter
     nm.gitreposync
     nm.cachix-push
+    nm.default-build
   
     # Entertainment
     nm.spotify
