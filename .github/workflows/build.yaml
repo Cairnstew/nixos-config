@@ -1,4 +1,4 @@
-name: Build NixOS ISO
+name: Build NixOS Image
 
 on:
   workflow_dispatch:
@@ -7,6 +7,15 @@ on:
         description: "NixOS host to build (e.g. my-host)"
         required: true
         default: "my-host"
+      type:
+        description: "Build type"
+        required: true
+        type: choice
+        options:
+          - wsl
+          - pc
+          - vm
+        default: wsl
       release_tag:
         description: "Release tag (e.g. v1.0.0)"
         required: true
@@ -28,64 +37,86 @@ jobs:
       - name: Set up Nix cache
         uses: DeterminateSystems/magic-nix-cache-action@v7
 
-      - name: Build ISO
+      - name: Determine build target
+        id: build-target
+        run: |
+          case "${{ github.event.inputs.type }}" in
+            wsl)
+              BUILD_TARGET="tarballBuilder"
+              ;;
+            pc)
+              BUILD_TARGET="isoImage"
+              ;;
+            vm)
+              BUILD_TARGET="vmWithBootLoader"
+              ;;
+            *)
+              echo "Unknown type '${{ github.event.inputs.type }}'"
+              exit 1
+              ;;
+          esac
+          echo "target=$BUILD_TARGET" >> "$GITHUB_OUTPUT"
+
+      - name: Build NixOS image
         run: |
           nix build \
-            .#nixosConfigurations.${{ github.event.inputs.host }}.config.system.build.isoImage \
+            .#nixosConfigurations.${{ github.event.inputs.host }}.config.system.build.${{ steps.build-target.outputs.target }} \
             --out-link ./result \
             --show-trace
 
-      - name: Locate ISO file
-        id: iso
+      - name: Locate image file
+        id: image
         run: |
-          ISO_PATH=$(find ./result/iso -name "*.iso" | head -1)
-          echo "path=$ISO_PATH" >> "$GITHUB_OUTPUT"
-          echo "name=$(basename "$ISO_PATH")" >> "$GITHUB_OUTPUT"
-          sha256sum "$ISO_PATH" > "$ISO_PATH.sha256"
-          echo "Found ISO: $ISO_PATH"
-          ls -lh "$ISO_PATH"
+          BUILD_TYPE="${{ steps.build-target.outputs.target }}"
+          if [ "$BUILD_TYPE" = "isoImage" ]; then
+            FILE=$(find ./result/iso -name "*.iso" | head -1)
+          elif [ "$BUILD_TYPE" = "tarballBuilder" ]; then
+            FILE=$(find ./result -name "*.tar.gz" | head -1)
+          else
+            FILE=$(find ./result -name "*.img" -o -name "*.qcow2" | head -1)
+          fi
 
-      - name: Split ISO into segments
+          echo "path=$FILE" >> "$GITHUB_OUTPUT"
+          echo "name=$(basename "$FILE")" >> "$GITHUB_OUTPUT"
+          sha256sum "$FILE" > "$FILE.sha256"
+          echo "Found image: $FILE"
+          ls -lh "$FILE"
+
+      - name: Split image into segments
+        if: steps.build-target.outputs.target == 'isoImage'
         run: |
-          mkdir -p ./iso-segments
-          ISONAME="${{ steps.iso.outputs.name }}"
+          mkdir -p ./image-segments
+          ISONAME="${{ steps.image.outputs.name }}"
 
           # Split into 1900 MiB chunks — safely under GitHub's 2 GiB asset limit
           split \
             --bytes=1900m \
             --suffix-length=3 \
             --numeric-suffixes=1 \
-            "${{ steps.iso.outputs.path }}" \
-            "./iso-segments/${ISONAME}.part"
+            "${{ steps.image.outputs.path }}" \
+            "./image-segments/${ISONAME}.part"
 
-          # Copy the checksum and reassembly script alongside the segments
-          cp "${{ steps.iso.outputs.path }}.sha256" ./iso-segments/
-          cp ./scripts/join-iso.sh ./iso-segments/
-
+          # Copy checksum and join script
+          cp "${{ steps.image.outputs.path }}.sha256" ./image-segments/
+          cp ./scripts/join-iso.sh ./image-segments/
           echo "Segments produced:"
-          ls -lh ./iso-segments/
+          ls -lh ./image-segments/
 
-      - name: Create GitHub release and upload segments
+      - name: Create GitHub release and upload
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           TAG="${{ github.event.inputs.release_tag }}"
           HOST="${{ github.event.inputs.host }}"
-          ISONAME="${{ steps.iso.outputs.name }}"
+          IMAGE_NAME="${{ steps.image.outputs.name }}"
 
-          # Create the release (--notes-file keeps the body clean)
           gh release create "$TAG" \
-            --title "NixOS ISO — ${HOST} ${TAG}" \
-            --notes "## NixOS ISO for \`${HOST}\`
+            --title "NixOS Image — ${HOST} ${TAG}" \
+            --notes "## NixOS Image for \`${HOST}\`  
+Built from commit \`${{ github.sha }}\`."
 
-          Built from commit \`${{ github.sha }}\`.
-
-          ### Reassembly
-          Download all release assets into one folder, then run:
-          \`\`\`bash
-          bash join-iso.sh ${ISONAME}
-          \`\`\`
-          \`join-iso.sh\` is included as a release asset — no need to clone the repo."
-
-          # Upload every segment and the checksum
-          gh release upload "$TAG" ./iso-segments/*
+          if [ "${{ steps.build-target.outputs.target }}" = "isoImage" ]; then
+            gh release upload "$TAG" ./image-segments/*
+          else
+            gh release upload "$TAG" "${{ steps.image.outputs.path }}" "${{ steps.image.outputs.path }}.sha256"
+          fi
