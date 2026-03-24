@@ -127,7 +127,7 @@ in
         user = flake.config.me.username;
         repos = {
           nix-config = {
-            url              = "git@github.com:Cairnstew/nixos-config.git";
+            url              = "https://github.com/Cairnstew/nixos-config.git";
             path             = "/home/${flake.config.me.username}/nixos-config";
             interval         = "1m";
             conflictStrategy = "ff-only";
