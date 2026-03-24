@@ -1,0 +1,80 @@
+name: Release NixOS ISO (split)
+
+on:
+  workflow_dispatch:
+    inputs:
+      host:
+        description: 'Host name (e.g. server, laptop, desktop)'
+        required: true
+        type: string
+
+jobs:
+  build-and-release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Nix
+        uses: cachix/install-nix-action@v27
+        with:
+          nix_path: nixpkgs=channel:nixos-25.11
+
+      - name: Setup Cachix
+        uses: cachix/cachix-action@v15
+        with:
+          name: cairnstew-nixos-config-cache
+          authToken: '${{ secrets.CACHIX_AUTH_TOKEN }}'   # ← create this secret in repo settings
+
+      - name: Build ISO
+        run: |
+          echo "Building .#${{ inputs.host }} (default = images.iso)"
+          nix build .#${{ inputs.host }} --out-link result-iso
+
+      - name: Prepare split assets
+        run: |
+          set -euo pipefail
+
+          # The symlink points to the real .iso in the Nix store
+          ISO_STORE=$(readlink -f result-iso)
+          BASE_NAME="nixos-iso-${{ inputs.host }}"
+
+          echo "==> Copying ISO → ${BASE_NAME}.iso"
+          cp -L "$ISO_STORE" "${BASE_NAME}.iso"
+
+          echo "==> Computing SHA-256"
+          sha256sum "${BASE_NAME}.iso" > "${BASE_NAME}.iso.sha256"
+
+          echo "==> Splitting into ~1.9 GB parts"
+          split -d -b 1900M "${BASE_NAME}.iso" "${BASE_NAME}.iso.part"
+
+          echo "Parts created:"
+          ls -lh "${BASE_NAME}.iso.part"* "${BASE_NAME}.iso.sha256"
+
+      - name: Create GitHub Release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          DATE=$(date +%Y-%m-%d)
+          TAG="iso-${{ inputs.host }}-${DATE}"
+          TITLE="NixOS ISO — ${{ inputs.host }} (${DATE})"
+
+          gh release create "$TAG" \
+            --title "$TITLE" \
+            --notes "Built from \`nix build .#${{ inputs.host }}\`
+
+          **How to reassemble:**
+
+          \`\`\`bash
+          # Download ALL files from this release into one folder
+          bash join-iso.sh nixos-iso-${{ inputs.host }}.iso
+          \`\`\`
+
+          The join script is also attached below." \
+                      --latest false
+
+                    echo "Uploading assets..."
+                    gh release upload "$TAG" \
+                      nixos-iso-${{ inputs.host }}.iso.part* \
+                      nixos-iso-${{ inputs.host }}.iso.sha256 \
+                      scripts/join-iso.sh
