@@ -113,6 +113,7 @@ in
           user             = lib.mkDefault flake.config.me.username;
           apiKeySecretFile  = lib.mkDefault (flake.inputs.self + /secrets/tailscale-apikey.age);
           sshKeySecretFile = lib.mkDefault (flake.inputs.self + /secrets/tailscale-ssh-key.age);
+          sshPublicKeyFile = lib.mkDefault (flake.inputs.self + /secrets/tailscale_id.pub);
           extraHostConfig  = lib.mkDefault "ForwardAgent yes";
         };
       };
