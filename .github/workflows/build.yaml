@@ -113,7 +113,7 @@ jobs:
           gh release create "$TAG" \
             --title "NixOS Image — ${HOST} ${TAG}" \
             --notes "## NixOS Image for \`${HOST}\`  
-Built from commit \`${{ github.sha }}\`."
+          Built from commit \`${{ github.sha }}\`."
 
           if [ "${{ steps.build-target.outputs.target }}" = "isoImage" ]; then
             gh release upload "$TAG" ./image-segments/*
