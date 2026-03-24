@@ -43,7 +43,9 @@ jobs:
           # List all available system.build keys for this host
           BUILD_KEYS=$(nix eval --raw .#nixosConfigurations."$HOST".config.system.build | jq -r 'keys[]')
 
-          # Use user-specified build_type if valid, else first key
+          # Use user-specified build_type if valid, else default to images.iso
+          DEFAULT_TARGET="isoImage"  # <-- change this if your flake uses a different name, e.g., images.iso
+
           if [ -n "${{ github.event.inputs.build_type }}" ]; then
             if echo "$BUILD_KEYS" | grep -qx "${{ github.event.inputs.build_type }}"; then
               TARGET="${{ github.event.inputs.build_type }}"
@@ -52,7 +54,12 @@ jobs:
               exit 1
             fi
           else
-            TARGET=$(echo "$BUILD_KEYS" | head -n 1)
+            if echo "$BUILD_KEYS" | grep -qx "$DEFAULT_TARGET"; then
+              TARGET="$DEFAULT_TARGET"
+            else
+              # fallback to first available if default not found
+              TARGET=$(echo "$BUILD_KEYS" | head -n 1)
+            fi
           fi
 
           echo "Detected build target: $TARGET"
