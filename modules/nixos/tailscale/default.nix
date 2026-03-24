@@ -89,6 +89,16 @@ in
         example = "ForwardAgent yes";
       };
 
+      sshPublicKeyFile = mkOption {
+        type    = types.nullOr types.path;
+        default = null;
+        description = ''
+          Path to the SSH public key file to add to authorized_keys for
+          the configured user on this machine.
+        '';
+        example = literalExpression "flake.inputs.self + /secrets/tailscale_id.pub";
+      };
+
       sshConfigPath = mkOption {
         type    = types.nullOr types.str;
         default = null;
@@ -170,6 +180,11 @@ in
         owner = "root";
         mode  = "0400";
       };
+
+      # Authorize the public key on this machine so other tailnet machines
+      # can SSH in using the shared keypair.
+      users.users.${cfg.ssh.user}.openssh.authorizedKeys.keyFiles =
+        lib.optional (cfg.ssh.sshPublicKeyFile != null) cfg.ssh.sshPublicKeyFile;
 
       # Enable the home-manager SSH module and include the generated fragment.
       home-manager.users.${cfg.ssh.user}.my.services.ssh = {
