@@ -178,16 +178,17 @@ let
   };
 
   mkTimer = name: repo: {
-    "git-repo-sync-${name}" = {
-      description = "git repo sync timer: ${name}";
-      timerConfig = {
-        OnBootSec = repo.onBootDelaySec;
-        OnUnitActiveSec = repo.interval;
-        Persistent = repo.timerPersistent;
-      };
-      wantedBy = [ "timers.target" ];
+  "git-repo-sync-${name}" = {
+    description = "git repo sync timer: ${name}";
+    timerConfig = {
+      OnBootSec       = repo.onBootDelaySec;
+      OnUnitActiveSec = repo.interval;
+      OnActiveSec     = repo.interval;   # ← add this
+      Persistent      = repo.timerPersistent;
     };
+    wantedBy = [ "timers.target" ];
   };
+};
 
   # ── Per-repo option declarations ───────────────────────────────────────────
   repoOpts = { name, ... }: {
@@ -338,9 +339,18 @@ let
   };
 
 in {
+
+  imports = [ ./home.nix ];
+
   # ── Module interface ────────────────────────────────────────────────────────
   options.my.services.gitRepoSync = {
     enable = mkEnableOption "git repository sync service" // { default = false; };
+
+    user = mkOption {
+      type = types.str;
+      description = "User whose systemd session should run the timers.";
+      example = "alice";
+    };
 
     repos = mkOption {
       type = types.attrsOf (types.submodule repoOpts);
@@ -390,6 +400,10 @@ in {
         message   = "git-repo-sync: repo '${name}' is a bare clone — set autoPull = false "
                   + "(bare repos have no working tree to merge into).";
       }) cfg.repos;
+
+    users.users.${cfg.user} = {
+      linger = lib.mkDefault true;
+    };
 
     systemd.user.services = mkMerge (mapAttrsToList mkService cfg.repos);
     systemd.user.timers   = mkMerge (mapAttrsToList mkTimer   cfg.repos);
