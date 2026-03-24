@@ -129,9 +129,9 @@ in
           nix-config = {
             url              = "https://github.com/Cairnstew/nixos-config.git";
             path             = "/home/${flake.config.me.username}/nixos-config";
-            interval         = "10m";
+            interval         = "1m";
             conflictStrategy = "ff-only";
-            branches = [ "main" ];
+            branches = [ "master" ];
             agenix = {
               enable     = true;
               secretPath = config.age.secrets.nixos-config-git-token.path;
