@@ -7,13 +7,14 @@ on:
         description: 'Host name (e.g. server, laptop, desktop)'
         required: true
         type: string
-        
+
 permissions:
   contents: write
 
 jobs:
   build-and-release:
     runs-on: ubuntu-latest
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -33,45 +34,44 @@ jobs:
         run: |
           set -euo pipefail
           
-          # 1. Build the target
           nix build .#${{ inputs.host }} --out-link result-target
           BUILD_OUT=$(readlink -f result-target)
 
-          # 2. Determine if it's a script (WSL) or a directory (ISO)
           if [[ -f "$BUILD_OUT" && -x "$BUILD_OUT" ]]; then
             echo "Detected WSL builder script. Running with sudo..."
-            # Run the builder script. It defaults to 'nixos.wsl' output.
-            sudo "$BUILD_OUT" "nixos-${{ inputs.host }".wsl
+            sudo "$BUILD_OUT" "nixos-${{ inputs.host }}.wsl"
             FINAL_FILE="nixos-${{ inputs.host }}.wsl"
             EXTENSION="wsl"
           else
             echo "Detected standard ISO directory."
-            # Find the ISO in the store directory
             ISO_PATH=$(find "$BUILD_OUT" -name '*.iso' -print -quit)
             FINAL_FILE="nixos-${{ inputs.host }}.iso"
             cp -L "$ISO_PATH" "$FINAL_FILE"
             EXTENSION="iso"
           fi
 
-          # 3. Hash and Split
           echo "==> Computing SHA-256"
           sha256sum "$FINAL_FILE" > "${FINAL_FILE}.sha256"
 
           echo "==> Splitting into ~1.9 GB parts"
           split -d -b 1900M "$FINAL_FILE" "${FINAL_FILE}.part"
 
-          # Export for the release step
           echo "FINAL_FILE=$FINAL_FILE" >> $GITHUB_ENV
           echo "EXTENSION=$EXTENSION" >> $GITHUB_ENV
+
+      - name: Ensure GitHub CLI is installed
+        run: |
+          type gh || sudo apt-get update && sudo apt-get install -y gh
 
       - name: Create (or update) GitHub Release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
+          set -euo pipefail
+
           TAG="iso-${{ inputs.host }}"
           TITLE="NixOS ISO — ${{ inputs.host }} (latest)"
 
-          # Delete old release (if it exists) so we replace it cleanly
           gh release delete "$TAG" --yes 2>/dev/null || true
 
           gh release create "$TAG" \
@@ -85,14 +85,15 @@ jobs:
           \`\`\`bash
           # 1. Download ALL files from this release into one folder
           # 2. Run:
-          bash join-iso.sh nixos-iso-${{ inputs.host }}.iso
+          bash join-iso.sh nixos-${{ inputs.host }}.${{ env.EXTENSION }}
           \`\`\`
 
-          The join script is also attached as \`join-iso.sh\`." 
+          The join script is also attached as \`join-iso.sh\`."
 
-                    echo "Uploading (overwriting) assets..."
+                    echo "Uploading assets..."
+
                     gh release upload "$TAG" \
-                      nixos-iso-${{ inputs.host }}.iso.part* \
-                      nixos-iso-${{ inputs.host }}.iso.sha256 \
+                      ${FINAL_FILE}.part* \
+                      ${FINAL_FILE}.sha256 \
                       scripts/join-iso.sh \
                       --clobber
