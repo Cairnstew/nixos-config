@@ -73,7 +73,7 @@ jobs:
           TAG="iso-${{ inputs.host }}"
           TITLE="NixOS ISO — ${{ inputs.host }} (latest)"
 
-          # Delete old release if it exists (so we get fresh notes + assets)
+          # Delete old release (if it exists) so we replace it cleanly
           gh release delete "$TAG" --yes 2>/dev/null || true
 
           gh release create "$TAG" \
@@ -90,8 +90,7 @@ jobs:
           bash join-iso.sh nixos-iso-${{ inputs.host }}.iso
           \`\`\`
 
-          The join script is also attached as \`join-iso.sh\`." \
-                      --latest false
+          The join script is also attached as \`join-iso.sh\`." 
 
                     echo "Uploading (overwriting) assets..."
                     gh release upload "$TAG" \
