@@ -29,52 +29,39 @@ jobs:
           name: cairnstew-nixos-config-cache
           authToken: '${{ secrets.CACHIX_AUTH_TOKEN }}'
 
-      - name: Build ISO
-        run: |
-          echo "Building .#${{ inputs.host }} (default = images.iso)"
-          nix build .#${{ inputs.host }} --out-link result-iso
-
-      - name: Prepare split assets
+      - name: Build and Generate Asset
         run: |
           set -euo pipefail
+          
+          # 1. Build the target
+          nix build .#${{ inputs.host }} --out-link result-target
+          BUILD_OUT=$(readlink -f result-target)
 
-          # Get the absolute path of the build result
-          BUILD_OUT=$(readlink -f result-iso)
-          BASE_NAME="nixos-${{ inputs.host }}"
-
-          echo "Build directory in store: $BUILD_OUT"
-
-          # 1. Detection Logic
-          # Look for .iso first, then look for .tar.gz (common for WSL)
-          ISO_FILE=$(find "$BUILD_OUT" -name '*.iso' -print -quit)
-          WSL_FILE=$(find "$BUILD_OUT" -name '*.tar.gz' -print -quit)
-
-          if [[ -n "$ISO_FILE" ]]; then
-            TARGET_FILE="$ISO_FILE"
-            EXTENSION="iso"
-            echo "Detected ISO build."
-          elif [[ -n "$WSL_FILE" ]]; then
-            TARGET_FILE="$WSL_FILE"
-            EXTENSION="wsl.tar.gz"
-            echo "Detected WSL tarball build."
+          # 2. Determine if it's a script (WSL) or a directory (ISO)
+          if [[ -f "$BUILD_OUT" && -x "$BUILD_OUT" ]]; then
+            echo "Detected WSL builder script. Running with sudo..."
+            # Run the builder script. It defaults to 'nixos.wsl' output.
+            sudo "$BUILD_OUT" "nixos-${{ inputs.host }".wsl
+            FINAL_FILE="nixos-${{ inputs.host }}.wsl"
+            EXTENSION="wsl"
           else
-            echo "Error: Could not find .iso or .tar.gz in $BUILD_OUT" >&2
-            exit 1
+            echo "Detected standard ISO directory."
+            # Find the ISO in the store directory
+            ISO_PATH=$(find "$BUILD_OUT" -name '*.iso' -print -quit)
+            FINAL_FILE="nixos-${{ inputs.host }}.iso"
+            cp -L "$ISO_PATH" "$FINAL_FILE"
+            EXTENSION="iso"
           fi
 
-          # 2. Preparation
-          FINAL_NAME="${BASE_NAME}.${EXTENSION}"
-          cp -L "$TARGET_FILE" "$FINAL_NAME"
-
+          # 3. Hash and Split
           echo "==> Computing SHA-256"
-          sha256sum "$FINAL_NAME" > "${FINAL_NAME}.sha256"
+          sha256sum "$FINAL_FILE" > "${FINAL_FILE}.sha256"
 
-          # 3. Splitting (GitHub has a 2GB limit per file)
           echo "==> Splitting into ~1.9 GB parts"
-          split -d -b 1900M "$FINAL_NAME" "${FINAL_NAME}.part"
+          split -d -b 1900M "$FINAL_FILE" "${FINAL_FILE}.part"
 
-          # Export variables for the next step
-          echo "FINAL_NAME=$FINAL_NAME" >> $GITHUB_ENV
+          # Export for the release step
+          echo "FINAL_FILE=$FINAL_FILE" >> $GITHUB_ENV
           echo "EXTENSION=$EXTENSION" >> $GITHUB_ENV
 
       - name: Create (or update) GitHub Release
