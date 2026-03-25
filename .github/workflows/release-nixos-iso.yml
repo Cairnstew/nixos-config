@@ -52,11 +52,11 @@ jobs:
               exit 1
             fi
 
-            FINAL_FILE="nixos-${{ inputs.host }}.tar.gz"
-            EXTENSION="tar.gz"
+            FINAL_FILE="nixos-${{ inputs.host }}-wsl-builder"
+            EXTENSION="builder"
 
-            echo "Running builder script..."
-            sudo "$BUILDER" "$FINAL_FILE"
+            cp -L "$BUILDER" "$FINAL_FILE"
+            chmod +x "$FINAL_FILE"
 
           # --- ISO CASE ---
           elif [[ -d "$BUILD_OUT/iso" ]]; then
