@@ -42,30 +42,22 @@ jobs:
 
           # --- WSL CASE ---
           if [[ -d "$BUILD_OUT/bin" ]]; then
-            echo "Detected WSL builder script — extracting tarball instead"
+            echo "Detected WSL output"
 
-            # First try: tarball sitting directly in the store output
-            TAR_PATH=$(find "$BUILD_OUT" -type f \( -name '*.tar.gz' -o -name '*.tar.xz' -o -name '*.tar.zst' \) | head -n1)
+            WSL_PATH=$(find "$BUILD_OUT/bin" -type f | head -n1)
 
-            if [[ -z "$TAR_PATH" ]]; then
-              # Second try: grep the builder script for a referenced store path
-              BUILDER=$(find "$BUILD_OUT/bin" -type f | head -n1)
-              TAR_PATH=$(grep -oP '/nix/store/[^\s"'"'"']+\.tar\.(gz|xz|zst)' "$BUILDER" | head -n1)
-            fi
-
-            if [[ -z "$TAR_PATH" ]]; then
-              echo "ERROR: Could not locate tarball in WSL output"
-              echo "Build output contents:"
-              find "$BUILD_OUT" -ls
+            if [[ -z "$WSL_PATH" ]]; then
+              echo "ERROR: No file found in bin/"
+              ls -R "$BUILD_OUT"
               exit 1
             fi
 
-            EXT="${TAR_PATH##*.tar.}"
-            FINAL_FILE="nixos-${{ inputs.host }}.tar.$EXT"
-            EXTENSION="tar.$EXT"
+            EXT="${WSL_PATH##*.}"
+            FINAL_FILE="nixos-${{ inputs.host }}.$EXT"
+            EXTENSION="$EXT"
 
-            echo "Copying tarball from: $TAR_PATH"
-            cp -L "$TAR_PATH" "$FINAL_FILE"
+            echo "Copying: $WSL_PATH"
+            cp -L "$WSL_PATH" "$FINAL_FILE"
 
           # --- ISO CASE ---
           elif [[ -d "$BUILD_OUT/iso" ]]; then
