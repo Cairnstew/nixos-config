@@ -1,4 +1,4 @@
-name: Release NixOS ISO (split)
+name: Release NixOS ISO (single release per host)
 
 on:
   workflow_dispatch:
@@ -24,7 +24,7 @@ jobs:
         uses: cachix/cachix-action@v15
         with:
           name: cairnstew-nixos-config-cache
-          authToken: '${{ secrets.CACHIX_AUTH_TOKEN }}'   # ← create this secret in repo settings
+          authToken: '${{ secrets.CACHIX_AUTH_TOKEN }}'
 
       - name: Build ISO
         run: |
@@ -41,7 +41,7 @@ jobs:
           echo "ISO directory in store: $ISO_DIR"
           ls -la "$ISO_DIR"
 
-          # Find the actual .iso file (it’s inside the directory)
+          # Find the actual .iso file inside the Nix store directory
           if [[ -d "$ISO_DIR/iso" ]]; then
             ISO_FILE=$(find "$ISO_DIR/iso" -name '*.iso' -print -quit)
           else
@@ -64,32 +64,38 @@ jobs:
           split -d -b 1900M "${BASE_NAME}.iso" "${BASE_NAME}.iso.part"
 
           echo "Parts created:"
-          ls -lh "${BASE_NAME}.iso.part"* "${BASE_NAME}.iso.sha256" "${BASE_NAME}.iso"
+          ls -lh "${BASE_NAME}.iso.part"* "${BASE_NAME}.iso.sha256"
 
-      - name: Create GitHub Release
+      - name: Create (or update) GitHub Release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          DATE=$(date +%Y-%m-%d)
-          TAG="iso-${{ inputs.host }}-${DATE}"
-          TITLE="NixOS ISO — ${{ inputs.host }} (${DATE})"
+          TAG="iso-${{ inputs.host }}"
+          TITLE="NixOS ISO — ${{ inputs.host }} (latest)"
+
+          # Delete old release if it exists (so we get fresh notes + assets)
+          gh release delete "$TAG" --yes 2>/dev/null || true
 
           gh release create "$TAG" \
             --title "$TITLE" \
-            --notes "Built from \`nix build .#${{ inputs.host }}\`
+            --notes "Latest NixOS ISO for host **${{ inputs.host }}**
 
-          **How to reassemble:**
+          Built from \`nix build .#${{ inputs.host }}\`
+
+          **How to reassemble the ISO:**
 
           \`\`\`bash
-          # Download ALL files from this release into one folder
+          # 1. Download ALL files from this release into one folder
+          # 2. Run:
           bash join-iso.sh nixos-iso-${{ inputs.host }}.iso
           \`\`\`
 
-          The join script is also attached below." \
+          The join script is also attached as \`join-iso.sh\`." \
                       --latest false
 
-                    echo "Uploading assets..."
+                    echo "Uploading (overwriting) assets..."
                     gh release upload "$TAG" \
                       nixos-iso-${{ inputs.host }}.iso.part* \
                       nixos-iso-${{ inputs.host }}.iso.sha256 \
-                      scripts/join-iso.sh
+                      scripts/join-iso.sh \
+                      --clobber
