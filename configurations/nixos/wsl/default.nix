@@ -30,7 +30,7 @@ in
 
   networking.search = [ "lan" ]; # optional
 
-
+  my.build.default = "tarballBuilder";
 
   # ── Hardware configuration ─────────────────────────────
   hardwareProfiles.gpu.amd = {
