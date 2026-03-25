@@ -74,7 +74,7 @@ in
     pkgs.dig
   ];
   my = { 
-    secrets.enable = true;
+    secrets.enable = lib.mkDefault true;
     system = {
       audio.enable = true;
       bluetooth.enable = true;
