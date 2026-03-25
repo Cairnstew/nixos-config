@@ -1,4 +1,4 @@
-name: Release NixOS ISO (single release per host)
+name: Release NixOS ISO/WSL (single release per host)
 
 on:
   workflow_dispatch:
@@ -33,27 +33,57 @@ jobs:
       - name: Build and Generate Asset
         run: |
           set -euo pipefail
-          
-          nix build .#${{ inputs.host }} --out-link result-target
-          BUILD_OUT=$(readlink -f result-target)
 
-          if [[ -f "$BUILD_OUT" && -x "$BUILD_OUT" ]]; then
-            echo "Detected WSL builder script. Running with sudo..."
-            sudo "$BUILD_OUT" "nixos-${{ inputs.host }}.wsl"
+          echo "==> Building target: ${{ inputs.host }}"
+          nix build .#${{ inputs.host }} --out-link result-target
+
+          BUILD_OUT=$(readlink -f result-target)
+          echo "Build output: $BUILD_OUT"
+
+          # --- WSL CASE ---
+          if [[ -d "$BUILD_OUT/bin" ]]; then
+            echo "Detected WSL builder script"
+
+            BUILDER=$(find "$BUILD_OUT/bin" -type f | head -n1)
+
+            if [[ -z "$BUILDER" ]]; then
+              echo "ERROR: No builder script found"
+              exit 1
+            fi
+
             FINAL_FILE="nixos-${{ inputs.host }}.wsl"
             EXTENSION="wsl"
-          else
-            echo "Detected standard ISO directory."
-            ISO_PATH=$(find "$BUILD_OUT" -name '*.iso' -print -quit)
+
+            echo "Running builder script..."
+            sudo "$BUILDER" "$FINAL_FILE"
+
+          # --- ISO CASE ---
+          elif [[ -d "$BUILD_OUT/iso" ]]; then
+            echo "Detected ISO output"
+
+            ISO_PATH=$(find "$BUILD_OUT/iso" -type f -name '*.iso' | head -n1)
+
+            if [[ -z "$ISO_PATH" ]]; then
+              echo "ERROR: No ISO found"
+              exit 1
+            fi
+
             FINAL_FILE="nixos-${{ inputs.host }}.iso"
-            cp -L "$ISO_PATH" "$FINAL_FILE"
             EXTENSION="iso"
+
+            cp -L "$ISO_PATH" "$FINAL_FILE"
+
+          # --- UNKNOWN ---
+          else
+            echo "ERROR: Unknown output structure"
+            ls -R "$BUILD_OUT"
+            exit 1
           fi
 
           echo "==> Computing SHA-256"
           sha256sum "$FINAL_FILE" > "${FINAL_FILE}.sha256"
 
-          echo "==> Splitting into ~1.9 GB parts"
+          echo "==> Splitting into ~1.9GB parts"
           split -d -b 1900M "$FINAL_FILE" "${FINAL_FILE}.part"
 
           echo "FINAL_FILE=$FINAL_FILE" >> $GITHUB_ENV
@@ -61,37 +91,40 @@ jobs:
 
       - name: Ensure GitHub CLI is installed
         run: |
-          type gh || sudo apt-get update && sudo apt-get install -y gh
+          type gh || (sudo apt-get update && sudo apt-get install -y gh)
 
-      - name: Create (or update) GitHub Release
+      - name: Create (or replace) GitHub Release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           set -euo pipefail
 
           TAG="iso-${{ inputs.host }}"
-          TITLE="NixOS ISO — ${{ inputs.host }} (latest)"
+          TITLE="NixOS Build — ${{ inputs.host }} (latest)"
 
+          echo "Deleting old release if it exists..."
           gh release delete "$TAG" --yes 2>/dev/null || true
 
+          echo "Creating release..."
           gh release create "$TAG" \
             --title "$TITLE" \
-            --notes "Latest NixOS ISO for host **${{ inputs.host }}**
+            --notes "Latest build for **${{ inputs.host }}**
 
-          Built from \`nix build .#${{ inputs.host }}\`
+          Built from:
+          \`nix build .#${{ inputs.host }}\`
 
-          **How to reassemble the ISO:**
+          **Contents:**
+          - Split archive parts
+          - SHA256 checksum
+          - join script
 
+          **Reassemble:**
           \`\`\`bash
-          # 1. Download ALL files from this release into one folder
-          # 2. Run:
-          bash join-iso.sh nixos-${{ inputs.host }}.${{ env.EXTENSION }}
+          bash join-iso.sh $FINAL_FILE
           \`\`\`
-
-          The join script is also attached as \`join-iso.sh\`."
+          "
 
                     echo "Uploading assets..."
-
                     gh release upload "$TAG" \
                       ${FINAL_FILE}.part* \
                       ${FINAL_FILE}.sha256 \
