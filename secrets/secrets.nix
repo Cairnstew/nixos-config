@@ -14,8 +14,8 @@ in
   "github-token.age".publicKeys = all;
 
   # Git Repos
-  "nixos-config-git-token.age".publicKeys = all;
-  "obsidian-git-token.age".publicKeys = all;
+  "github-token-nixos-config.age".publicKeys = all;
+  "github-token-obsidian.age".publicKeys = all;
 
   # Cache Token
   "nixos-config-cache-token.age".publicKeys = all;
