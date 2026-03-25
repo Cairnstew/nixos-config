@@ -73,31 +73,8 @@ in
   environment.systemPackages = [
     pkgs.dig
   ];
-
-  age.secrets = {
-      "github-token" = {
-        file = flake.inputs.self + /secrets/github-token.age;
-        owner = "${flake.config.me.username}";
-        mode = "0400";
-        group = "users";
-        };
-      "obsidian-git-token" = {
-        file = flake.inputs.self + /secrets/obsidian-git-token.age;
-        owner = "${flake.config.me.username}";
-        mode = "0400";
-      };
-      "nixos-config-git-token" = {
-        file = flake.inputs.self + /secrets/nixos-config-git-token.age;
-        owner = "${flake.config.me.username}";
-        mode = "0400";
-      };
-      "nixos-config-cache-token" = {
-        file = flake.inputs.self + /secrets/nixos-config-cache-token.age;
-        owner = "root";
-        mode = "0400";
-      };
-    };
   my = { 
+    secrets.enable = true;
     system = {
       audio.enable = true;
       bluetooth.enable = true;
@@ -107,19 +84,15 @@ in
       ssh.enable = true;
       tailscale = {
         enable            = lib.mkDefault true;
-        authKeySecretFile = lib.mkDefault (flake.inputs.self + /secrets/tailscale-authkey.age);
         tags              = lib.mkDefault [ "tag:nixos" ];
         ssh = {
           enable           = lib.mkDefault true;
           user             = lib.mkDefault flake.config.me.username;
-          apiKeySecretFile  = lib.mkDefault (flake.inputs.self + /secrets/tailscale-apikey.age);
-          sshKeySecretFile = lib.mkDefault (flake.inputs.self + /secrets/tailscale-ssh-key.age);
-          sshPublicKeyFile = lib.mkDefault (flake.inputs.self + /secrets/tailscale_id.pub);
           extraHostConfig  = lib.mkDefault "ForwardAgent yes";
         };
       };
       cachix-push = {
-        enable = true;
+        enable = config.age.secrets ? "nixos-config-cache-token";
         cacheName = "cairnstew-nixos-config-cache";
         tokenFile = config.age.secrets.nixos-config-cache-token.path;
       };
@@ -134,8 +107,8 @@ in
             conflictStrategy = "ff-only";
             branches = [ "master" ];
             agenix = {
-              enable     = true;
-              secretPath = config.age.secrets.nixos-config-git-token.path;
+              enable     = config.age.secrets ? "github-token-nixos-config";
+              secretPath = config.age.secrets.github-token-nixos-config.path;
             };
           };
         };

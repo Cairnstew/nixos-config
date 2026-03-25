@@ -14,7 +14,7 @@ in
         bash.enable = true;
         direnv.enable = true;
         gh = {
-          enable = true;
+          enable = config.age.secrets ? "github-token";
 
           tokenFile = config.age.secrets."github-token".path;
 
@@ -33,9 +33,9 @@ in
         just.enable = true;
         obsidian = {
           repo = {
-            enable = true;
+            enable = config.age.secrets ? "github-token-obsidian";
             url = "https://github.com/Cairnstew/Cairns-Notes";
-            tokenFile = config.age.secrets."obsidian-git-token".path;
+            tokenFile = config.age.secrets."github-token-obsidian".path;
           };
         };
         yazi.enable = true;
