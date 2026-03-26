@@ -6,25 +6,84 @@ let
   cfg = config.my.services.tailscale;
   sec = config.my.secrets;
 
-  # Derive the actual runtime paths only when secrets are active.
-  authKeyPath = mkIf sec.enable sec.tailscale.authKey;
-  apiKeyPath  = config.age.secrets.${sec.names.tailscale.apiKey}.path;
-  sshKeyPath  = config.age.secrets.${sec.names.tailscale.sshKey}.path;
+  apiKeyPath = config.age.secrets.${sec.names.tailscale.apiKey}.path;
+  sshKeyPath = config.age.secrets.${sec.names.tailscale.sshKey}.path;
 
   sshConfigPath =
     if cfg.ssh.sshConfigPath != null
     then cfg.ssh.sshConfigPath
     else "/home/${cfg.ssh.user}/.ssh/config.d/tailscale";
 
+  # The script is a derivation so sshKeyPath / sshConfigPath are
+  # baked in at eval time — no runtime secret-path guessing needed.
+  generatorScript = pkgs.writeShellScript "tailscale-ssh-config" ''
+    set -euo pipefail
+
+    SSH_CONFIG="${sshConfigPath}"
+    SSH_DIR=$(dirname "$SSH_CONFIG")
+
+    # ── Read secrets ────────────────────────────────────────────────────────
+    if ! API_KEY=$(cat "${apiKeyPath}" 2>/dev/null); then
+      echo "tailscale-ssh-config: ERROR: cannot read API key at ${apiKeyPath}" >&2
+      exit 1
+    fi
+
+    # ── Fetch device list with retry ────────────────────────────────────────
+    response=""
+    for attempt in 1 2 3; do
+      if response=$(${pkgs.curl}/bin/curl -sf --max-time 10 \
+          -H "Authorization: Bearer $API_KEY" \
+          "https://api.tailscale.com/api/v2/tailnet/-/devices"); then
+        break
+      fi
+      echo "tailscale-ssh-config: attempt $attempt failed, retrying…" >&2
+      sleep $((attempt * 5))
+    done
+
+    if [ -z "$response" ]; then
+      echo "tailscale-ssh-config: ERROR: failed to fetch device list after 3 attempts" >&2
+      exit 1
+    fi
+
+    # ── Build host blocks ───────────────────────────────────────────────────
+    NEW_BLOCK=$(echo "$response" | ${pkgs.jq}/bin/jq -r '
+      .devices[]
+      | select(.hostname != null and .hostname != "")
+      | "Host " + .hostname
+      + "\n  HostName " + .name
+      + "\n  IdentityFile ${sshKeyPath}"
+      + "\n  IdentitiesOnly yes"
+      + "${lib.optionalString (cfg.ssh.extraHostConfig != "")
+          "\\n  ${lib.replaceStrings ["\n"] ["\\n  "] cfg.ssh.extraHostConfig}"}"
+    ')
+
+    # ── Write atomically ────────────────────────────────────────────────────
+    mkdir -p "$SSH_DIR"
+    chmod 700 "$SSH_DIR"
+
+    TMPFILE=$(mktemp "$SSH_DIR/.tailscale.XXXXXX")
+    trap 'rm -f "$TMPFILE"' EXIT
+
+    {
+      echo "# BEGIN tailscale-managed"
+      echo "$NEW_BLOCK"
+      echo "# END tailscale-managed"
+    } > "$TMPFILE"
+
+    chmod 600 "$TMPFILE"
+    mv "$TMPFILE" "$SSH_CONFIG"
+
+    echo "tailscale-ssh-config: wrote $(echo "$NEW_BLOCK" | grep -c '^Host ') host(s) to $SSH_CONFIG"
+  '';
+
 in
 {
   imports = [ ../secrets/default.nix ];
 
-  # ── Options ──────────────────────────────────────────────────────────────
   options.my.services.tailscale = {
-    enable      = mkEnableOption "Tailscale mesh VPN";
-    openFirewall = mkOption { type = types.bool; default = true; description = "Open the Tailscale UDP port in the firewall."; };
-    exitNode    = mkOption { type = types.bool; default = false; description = "Advertise this machine as a Tailscale exit node."; };
+    enable       = mkEnableOption "Tailscale mesh VPN";
+    openFirewall = mkOption { type = types.bool; default = true;  description = "Open the Tailscale UDP port in the firewall."; };
+    exitNode     = mkOption { type = types.bool; default = false; description = "Advertise this machine as a Tailscale exit node."; };
 
     tags = mkOption {
       type    = types.listOf types.str;
@@ -46,26 +105,30 @@ in
         type        = types.nullOr types.path;
         default     = null;
         description = "Path to the Tailscale SSH public key to authorise on this host.";
-        example     = "/etc/ssh/tailscale_id.pub";
       };
 
       sshConfigPath = mkOption {
         type        = types.nullOr types.str;
         default     = null;
         description = "Override destination path for the generated fragment. Defaults to ~/.ssh/config.d/tailscale.";
-        example     = "/run/ssh-alice/tailscale";
       };
 
       extraHostConfig = mkOption {
         type        = types.lines;
         default     = "";
-        description = "Extra lines appended verbatim inside every generated Host block.";
-        example     = "ForwardAgent yes";
+        description = "Extra lines appended inside every generated Host block (e.g. 'ForwardAgent yes').";
+        example     = "ForwardAgent yes\nServerAliveInterval 60";
+      };
+
+      refreshInterval = mkOption {
+        type        = types.str;
+        default     = "1h";
+        description = "How often to refresh the SSH config from the Tailscale API (systemd calendar interval).";
+        example     = "30min";
       };
     };
   };
 
-  # ── Implementation ────────────────────────────────────────────────────────
   config = mkIf cfg.enable (mkMerge [
 
     # ── Core VPN ─────────────────────────────────────────────────────────────
@@ -77,14 +140,14 @@ in
           config.age.secrets.${sec.names.tailscale.authKey}.path;
         extraUpFlags =
           [ "--accept-dns=true" ]
-          ++ lib.optional (cfg.tags    != [])  "--advertise-tags=${lib.concatStringsSep "," cfg.tags}"
-          ++ lib.optional  cfg.exitNode         "--advertise-exit-node";
+          ++ lib.optional (cfg.tags   != []) "--advertise-tags=${lib.concatStringsSep "," cfg.tags}"
+          ++ lib.optional  cfg.exitNode       "--advertise-exit-node";
       };
 
-      networking.firewall.trustedInterfaces    = [ "tailscale0" ];
-      networking.networkmanager.dns            = "systemd-resolved";
-      environment.etc."resolv.conf".source     = lib.mkForce "/run/systemd/resolve/stub-resolv.conf";
-      services.resolved.enable                 = true;
+      networking.firewall.trustedInterfaces = [ "tailscale0" ];
+      networking.networkmanager.dns         = "systemd-resolved";
+      environment.etc."resolv.conf".source  = lib.mkForce "/run/systemd/resolve/stub-resolv.conf";
+      services.resolved.enable              = true;
     }
 
     # ── SSH config generation ─────────────────────────────────────────────────
@@ -101,74 +164,40 @@ in
         }
       ];
 
-      # Set the SSH key secret owner to the configured user.
       age.secrets.${sec.names.tailscale.sshKey}.owner = cfg.ssh.user;
 
-      # Authorise the shared public key on this host.
       users.users.${cfg.ssh.user}.openssh.authorizedKeys.keyFiles =
         lib.optional (cfg.ssh.publicKeyPath != null) cfg.ssh.publicKeyPath;
 
-      # Pull the generated fragment into the user's SSH config.
       home-manager.users.${cfg.ssh.user}.my.services.ssh = {
         enable   = true;
         includes = [ "config.d/tailscale" ];
       };
 
-      # Write a Host block per tailnet machine, preserving non-managed lines.
+      # ── One-shot service ──────────────────────────────────────────────────
       systemd.services.tailscale-ssh-config = {
         description = "Generate SSH config from Tailscale API";
-
-        after = [
-          "network-online.target"
-          "tailscaled.service"
-        ];
-
-        wants = [ "network-online.target" ];
-
+        after       = [ "network-online.target" "tailscaled.service" "agenix.service" ];
+        requires    = [ "agenix.service" ];  # hard dependency, not just ordering
+        wants       = [ "network-online.target" ];
         serviceConfig = {
-          Type = "oneshot";
-          User = cfg.ssh.user;
-          ExecStart = pkgs.writeShellScript "tailscale-ssh-config" ''
-            set -euo pipefail
-
-            SSH_CONFIG="${sshConfigPath}"
-            SSH_DIR=$(dirname "$SSH_CONFIG")
-            MARKER_START="# BEGIN tailscale-managed"
-            MARKER_END="# END tailscale-managed"
-
-            if ! API_KEY=$(cat ${apiKeyPath} 2>/dev/null); then
-              echo "tailscale-ssh-config: WARNING: cannot read API key, skipping." >&2
-              exit 0
-            fi
-
-            mkdir -p "$SSH_DIR"
-            chmod 700 "$SSH_DIR"
-            touch "$SSH_CONFIG"
-            chmod 600 "$SSH_CONFIG"
-
-            echo "tailscale-ssh-config: fetching machine list…"
-
-            response=$(${pkgs.curl}/bin/curl -sf \
-              -H "Authorization: Bearer $API_KEY" \
-              "https://api.tailscale.com/api/v2/tailnet/-/devices")
-
-            NEW_BLOCK=$(echo "$response" | ${pkgs.jq}/bin/jq -r '
-              .devices[]
-              | select(.hostname != null and .hostname != "")
-              | "Host " + .hostname
-              + "\n  HostName " + .name
-              + "\n  IdentityFile ${sshKeyPath}"
-              + "\n  IdentitiesOnly yes"
-              + "\n"
-            ')
-
-            echo "$MARKER_START" > "$SSH_CONFIG"
-            echo "$NEW_BLOCK" >> "$SSH_CONFIG"
-            echo "$MARKER_END" >> "$SSH_CONFIG"
-          '';
+          Type      = "oneshot";
+          User      = cfg.ssh.user;
+          ExecStart = generatorScript;
+          Restart   = "no";
         };
+      };
 
-        wantedBy = [ "multi-user.target" ];
+      # ── Timer for periodic refresh ────────────────────────────────────────
+      systemd.timers.tailscale-ssh-config = {
+        description = "Periodically refresh Tailscale SSH config";
+        wantedBy    = [ "timers.target" ];
+        timerConfig = {
+          OnBootSec         = "30s";       # first run shortly after boot
+          OnUnitActiveSec   = cfg.ssh.refreshInterval;
+          RandomizedDelaySec = "60s";      # avoid thundering herd across hosts
+          Persistent        = true;        # catch up if the machine was off
+        };
       };
     })
   ]);
