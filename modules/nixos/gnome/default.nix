@@ -2,13 +2,12 @@
 let
   inherit (flake) inputs;
   inherit (inputs) self;
+  homeModule = import ./home.nix;
 in
 {
   imports = [
     {
-      home-manager.sharedModules = [
-        self.homeModules.gnome
-      ];
+      home-manager.sharedModules = [ homeModule ];
       home-manager.users.${flake.config.me.username}.my.desktop.gnome.enable = true;
     }
   ];
