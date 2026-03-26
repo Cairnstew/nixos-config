@@ -130,7 +130,7 @@ jobs:
           REPO=\"Cairnstew/nixos-config\"
           TAG=\"iso-${{ inputs.host }}\"
 
-          curl -s \"https://api.github.com/repos/$REPO/releases/tags/$TAG\" \
+          curl -s \"https://api.github.com/repos/\$REPO/releases/tags/\$TAG\" \
             | jq -r '.assets[].browser_download_url' \
             | xargs -n1 curl -L -O
           \`\`\`
