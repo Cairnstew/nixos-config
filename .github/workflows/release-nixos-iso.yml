@@ -123,6 +123,17 @@ jobs:
           \`\`\`bash
           bash join-iso.sh $FINAL_FILE
           \`\`\`
+
+          **Download without GitHub CLI:**
+          \`\`\`bash
+          # Replace with your host/tag
+          REPO=\"Cairnstew/nixos-config\"
+          TAG=\"iso-${{ inputs.host }}\"
+
+          curl -s \"https://api.github.com/repos/$REPO/releases/tags/$TAG\" \
+            | jq -r '.assets[].browser_download_url' \
+            | xargs -n1 curl -L -O
+          \`\`\`
           "
 
           echo "Uploading assets..."
