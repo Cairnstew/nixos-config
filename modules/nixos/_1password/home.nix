@@ -21,20 +21,12 @@ in
       type    = lib.types.attrs;
       default = {};
       description = "Additional SSH match blocks to merge into my.services.ssh.matchBlocks.";
-      example = lib.literalExpression ''
-        {
-          "myserver" = {
-            forwardAgent = true;
-          };
-        }
-      '';
     };
   };
 
   config = lib.mkIf cfg.enable {
     home.packages = lib.mkIf cfg.install1PasswordCli [ pkgs._1password-cli ];
 
-    # Contribute to the unified SSH config — do not set programs.ssh directly.
     my.services.ssh = {
       identityAgent = agentSock;
       matchBlocks   = cfg.additionalMatchBlocks;
