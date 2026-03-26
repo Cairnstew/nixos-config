@@ -18,8 +18,9 @@ in
 
   # ── Hardware configuration ─────────────────────────────
   hardwareProfiles.gpu.nvidia = {
-    enable = true;
+    enable = false;
     modesetting = true;
+    headless = true;
   };
 
   # ── System settings ────────────────────────────────────
