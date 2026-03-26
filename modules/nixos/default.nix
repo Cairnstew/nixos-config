@@ -35,10 +35,6 @@ in
 
     # Graphics
     nm.graphics
-    nm.gpu-amd
-    nm.gpu-nvidia
-    nm.gpu-mesa
-    nm.vulkan
 
     # Desktop Environments
     nm.gnome

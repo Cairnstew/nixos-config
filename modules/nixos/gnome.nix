@@ -5,9 +5,6 @@ let
 in
 {
   imports = [
-    self.nixosModules.udisks2
-    self.nixosModules.graphics
-    self.nixosModules.xserver
     {
       home-manager.sharedModules = [
         self.homeModules.gnome
@@ -19,9 +16,6 @@ in
   options.systemModules.gnome.enable = lib.mkEnableOption "GNOME desktop environment";
 
   config = lib.mkIf config.systemModules.gnome.enable {
-
-    systemModules.graphics.enable = true;
-    systemModules.xserver.enable  = true;
 
     # ── Filesystems / removable media ─────────────────────────────────────────
     services.gvfs.enable   = true;
