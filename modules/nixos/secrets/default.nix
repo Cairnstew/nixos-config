@@ -18,8 +18,8 @@ let
   #   extra        – optional age.secrets overrides (owner, group, mode…)
   secretDefs = {
     "tailscale.authKey"    = { name = "tailscale-authkey";            file = self + /secrets/tailscale-authkey.age;            extra = {};                         };
-    "tailscale.apiKey"     = { name = "tailscale-apikey";             file = self + /secrets/tailscale-apikey.age;             extra = {};                         };
-    "tailscale.sshKey"     = { name = "tailscale-ssh-key";            file = self + /secrets/tailscale-ssh-key.age;            extra = {};                         };
+    "tailscale.apiKey"     = { name = "tailscale-apikey";             file = self + /secrets/tailscale-apikey.age;             extra = { owner = me; };                         };
+    "tailscale.sshKey"     = { name = "tailscale-ssh-key";            file = self + /secrets/tailscale-ssh-key.age;            extra = { owner = me; };                         };
     "github.token"         = { name = "github-token";                 file = self + /secrets/github-token.age;                 extra = { owner = me; group = "users"; }; };
     "githubRepos.nixosConfig" = { name = "github-token-nixos-config"; file = self + /secrets/github-token-nixos-config.age;   extra = { owner = me; };            };
     "githubRepos.obsidian"    = { name = "github-token-obsidian";     file = self + /secrets/github-token-obsidian.age;        extra = { owner = me; };            };
