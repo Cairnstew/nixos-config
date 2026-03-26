@@ -119,20 +119,16 @@ jobs:
           - SHA256 checksum
           - join script
 
-          **Reassemble:**
+          **Download, reassemble and verify:**
+
+          **Linux/Mac:**
           \`\`\`bash
-          bash join-iso.sh $FINAL_FILE
+          bash <(curl -sL \"https://github.com/Cairnstew/nixos-config/releases/download/$TAG/join-iso.sh\") ${{ inputs.host }}
           \`\`\`
 
-          **Download without GitHub CLI:**
-          \`\`\`bash
-          # Replace with your host/tag
-          REPO=\"Cairnstew/nixos-config\"
-          TAG=\"iso-${{ inputs.host }}\"
-
-          curl -s \"https://api.github.com/repos/\$REPO/releases/tags/\$TAG\" \
-            | jq -r '.assets[].browser_download_url' \
-            | xargs -n1 curl -L -O
+          **PowerShell (Windows):**
+          \`\`\`powershell
+          iwr \"https://github.com/Cairnstew/nixos-config/releases/download/$TAG/join-iso.sh\" -OutFile join-iso.sh; bash join-iso.sh ${{ inputs.host }}
           \`\`\`
           "
 
