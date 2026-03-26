@@ -6,8 +6,6 @@ let
   cfg = config.my.services.gitRepoSync;
   sec = config.my.secrets.github-repos;
 
-
-
   # ── Per-branch pull logic, driven by conflictStrategy ──────────────────────
   mkPullLogic = name: repo: branch:
     let
