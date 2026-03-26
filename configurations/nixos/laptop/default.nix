@@ -18,6 +18,7 @@ in
 
   # ── Hardware configuration ─────────────────────────────
   hardwareProfiles.gpu.mesa.enable = true;
+  systemModules.gnome.enable = true;
 
   # ── System settings ────────────────────────────────────
   my.system = {
