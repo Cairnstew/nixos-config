@@ -156,12 +156,14 @@ in
       boot.blacklistedKernelModules = lib.mkIf nvidia.blasklistNouveau [ "nouveau" ];
 
       hardware.nvidia-container-toolkit.enable = nvidia.toolkit;
+      hardware.nvidia-container-toolkit.suppressNvidiaDriverAssertion = lib.mkIf nvidia.headless true;
 
-      systemModules.graphics.enable   = lib.mkIf (!nvidia.headless) true;
-      systemModules.xserver.enable    = lib.mkIf (!nvidia.headless) true;
+      #hardware.nvidia.datacenter.enable = lib.mkIf nvidia.headless true;
+
+      systemModules.graphics.enable     = lib.mkIf (!nvidia.headless) true;
+      systemModules.xserver.enable      = lib.mkIf (!nvidia.headless) true;
       systemModules.xserver.videoDriver = lib.mkIf (!nvidia.headless) [ "nvidia" ];
     })
-
     # -- GPU: AMD ----------------------------------------------------
     (lib.mkIf amd.enable {
       systemModules.xserver.videoDriver = [ "amdgpu" ];
