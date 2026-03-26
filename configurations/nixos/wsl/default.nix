@@ -32,11 +32,6 @@ in
 
   my.build.default = "tarballBuilder";
 
-  # ── Hardware configuration ─────────────────────────────
-  hardwareProfiles.gpu.amd = {
-    enable = true;
-  };
-
   # ── System settings ────────────────────────────────────
   my.system = {
     location = {
