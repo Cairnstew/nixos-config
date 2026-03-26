@@ -4,7 +4,7 @@ let
 
   laptop = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIETE96NnwPAZ0n5y6XcCzoErkrAhulUht/Hho0V829Qy root@laptop";
   server = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAINJXLC3S2pEuIchrWMtmWiTaJOA+U02HVyRczRNbRjMX root@nixos";
-  wsl = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIDlMFfZDXP0suzz0Fh+CPYxv8hmZfrEg1PtfUVe1Bs2E root@wsl";
+  wsl = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIAKZIYbM8ac+hHEAvvScLq2lHtAHi44Zlvlew/QYU3H0 root@wsl";
 
   systems = [ laptop server wsl ];
   all = users ++ systems;
