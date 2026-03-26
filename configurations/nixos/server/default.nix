@@ -18,9 +18,9 @@ in
 
   # ── Hardware configuration ─────────────────────────────
   hardwareProfiles.gpu.nvidia = {
-    enable = false;
-    modesetting = true;
-    headless = true;
+    enable   = true;
+    headless = true;   # skips graphics stack and X server entirely
+    toolkit  = true;
   };
 
   # ── System settings ────────────────────────────────────
