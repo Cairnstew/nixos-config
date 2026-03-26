@@ -85,6 +85,7 @@ in
           enable           = lib.mkDefault true;
           user             = lib.mkDefault flake.config.me.username;
           extraHostConfig  = lib.mkDefault "ForwardAgent yes";
+          publicKeyPath = (flake.inputs.self + /secrets/tailscale-ssh-key.pub);
         };
       };
       cachix-push = {
