@@ -17,6 +17,12 @@ in
       description = "Enable NVIDIA proprietary drivers.";
     };
 
+    headless = lib.mkOption {
+      type = lib.types.bool;
+      default = false;
+      description = "Enable NVIDIA drivers without any graphics/display stack (for CUDA, containers, etc).";
+    };
+
     package = lib.mkOption {
       type = lib.types.package;
       default = config.boot.kernelPackages.nvidiaPackages.stable;
@@ -73,10 +79,8 @@ in
 
     hardware.nvidia-container-toolkit.enable = cfg.toolkit;
 
-    systemModules.graphics.enable = true;
-
-    systemModules.xserver.enable = true;
-    systemModules.xserver.videoDriver = [ "nvidia" ];
-
+    systemModules.graphics.enable = lib.mkIf (!cfg.headless) true;
+    systemModules.xserver.enable  = lib.mkIf (!cfg.headless) true;
+    systemModules.xserver.videoDriver = lib.mkIf (!cfg.headless) [ "nvidia" ];
   };
 }
