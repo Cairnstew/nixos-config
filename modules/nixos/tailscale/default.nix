@@ -188,12 +188,13 @@ in
         };
       };
 
+
       # ── Timer for periodic refresh ────────────────────────────────────────
       systemd.timers.tailscale-ssh-config = {
         description = "Periodically refresh Tailscale SSH config";
         wantedBy    = [ "timers.target" ];
         timerConfig = {
-          OnBootSec         = "30s";       # first run shortly after boot
+          OnActiveSec         = "30s";       # first run shortly after boot
           OnUnitActiveSec   = cfg.ssh.refreshInterval;
           RandomizedDelaySec = "60s";      # avoid thundering herd across hosts
           Persistent        = true;        # catch up if the machine was off
