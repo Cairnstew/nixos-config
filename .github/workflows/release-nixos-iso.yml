@@ -117,7 +117,7 @@ jobs:
           **Contents:**
           - Split archive parts
           - SHA256 checksum
-          - join script
+          - join scripts
 
           **Download, reassemble and verify:**
 
@@ -128,7 +128,7 @@ jobs:
 
           **PowerShell (Windows):**
           \`\`\`powershell
-          iwr \"https://github.com/Cairnstew/nixos-config/releases/download/$TAG/join-iso.sh\" -OutFile join-iso.sh; bash join-iso.sh ${{ inputs.host }}
+          iwr \"https://github.com/Cairnstew/nixos-config/releases/download/$TAG/join-iso.ps1\" -OutFile join-iso.ps1; pwsh -File join-iso.ps1 ${{ inputs.host }}
           \`\`\`
           "
 
@@ -137,4 +137,5 @@ jobs:
             ${FINAL_FILE}.part* \
             ${FINAL_FILE}.sha256 \
             scripts/join-iso.sh \
+            scripts/join-iso.ps1 \
             --clobber
