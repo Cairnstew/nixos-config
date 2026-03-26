@@ -3,12 +3,12 @@
 # Usage (PowerShell):
 #   iwr "https://github.com/Cairnstew/nixos-config/releases/download/iso-<host>/join-iso.ps1" -OutFile join-iso.ps1; pwsh -File join-iso.ps1 <host>
 
-param([Parameter(Mandatory)][string]$Host)
+param([Parameter(Mandatory)][string]$HostName)
 
-$iso  = "nixos-$Host.tar.gz"
-$tag  = "iso-$Host"
-$repo = "Cairnstew/nixos-config"
-$api  = "https://api.github.com/repos/$repo/releases/tags/$tag"
+$iso      = "nixos-$HostName.tar.gz"
+$tag      = "iso-$HostName"
+$repo     = "Cairnstew/nixos-config"
+$api      = "https://api.github.com/repos/$repo/releases/tags/$tag"
 $checksum = "$iso.sha256"
 
 # --- Download ---
@@ -17,7 +17,7 @@ $urls = (Invoke-RestMethod $api).assets.browser_download_url
 
 Write-Host "==> Downloading assets in parallel..."
 $jobs = $urls | ForEach-Object {
-    $url = $_
+    $url  = $_
     $file = Split-Path $url -Leaf
     Start-Job { Invoke-WebRequest $using:url -OutFile $using:file }
 }
