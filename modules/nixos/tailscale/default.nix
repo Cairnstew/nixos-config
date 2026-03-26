@@ -115,17 +115,20 @@ in
       };
 
       # Write a Host block per tailnet machine, preserving non-managed lines.
-      system.activationScripts.tailscale-ssh-config = {
-        deps = [ "agenix" ];
-        text =
-          let
-            # Build the extra-config lines as a shell variable so multi-line
-            # values survive the jq interpolation safely.
-            extraLines = lib.optionalString (cfg.ssh.extraHostConfig != "") ''
-              EXTRA_CONFIG=${lib.escapeShellArg cfg.ssh.extraHostConfig}
-            '';
-          in
-          ''
+      systemd.services.tailscale-ssh-config = {
+        description = "Generate SSH config from Tailscale API";
+
+        after = [
+          "network-online.target"
+          "tailscaled.service"
+        ];
+
+        wants = [ "network-online.target" ];
+
+        serviceConfig = {
+          Type = "oneshot";
+          User = cfg.ssh.user;
+          ExecStart = pkgs.writeShellScript "tailscale-ssh-config" ''
             set -euo pipefail
 
             SSH_CONFIG="${sshConfigPath}"
@@ -144,45 +147,28 @@ in
             chmod 600 "$SSH_CONFIG"
 
             echo "tailscale-ssh-config: fetching machine list…"
+
             response=$(${pkgs.curl}/bin/curl -sf \
               -H "Authorization: Bearer $API_KEY" \
               "https://api.tailscale.com/api/v2/tailnet/-/devices")
 
-            ${extraLines}
-            NEW_BLOCK=$(echo "$response" | ${pkgs.jq}/bin/jq -r --arg extra "''${EXTRA_CONFIG:-}" '
+            NEW_BLOCK=$(echo "$response" | ${pkgs.jq}/bin/jq -r '
               .devices[]
               | select(.hostname != null and .hostname != "")
               | "Host " + .hostname
-              + "\n  HostName "            + .name
+              + "\n  HostName " + .name
               + "\n  IdentityFile ${sshKeyPath}"
               + "\n  IdentitiesOnly yes"
-              + "\n  ServerAliveInterval 60"
-              + "\n  ServerAliveCountMax 5"
-              + (if $extra != "" then "\n  " + $extra else "" end)
               + "\n"
             ')
 
-            # Keep everything outside the managed block.
-            if ${pkgs.gnugrep}/bin/grep -q "$MARKER_START" "$SSH_CONFIG" 2>/dev/null; then
-              PRESERVED=$(${pkgs.gnused}/bin/sed "/$MARKER_START/,/$MARKER_END/d" "$SSH_CONFIG" \
-                | ${pkgs.gnused}/bin/sed '/^[[:space:]]*$/d')
-            else
-              PRESERVED=$(cat "$SSH_CONFIG")
-            fi
-
-            {
-              [ -n "$PRESERVED" ] && { echo "$PRESERVED"; echo ""; }
-              echo "$MARKER_START"
-              echo "$NEW_BLOCK"
-              echo "$MARKER_END"
-            } > "$SSH_CONFIG.tmp"
-
-            mv "$SSH_CONFIG.tmp" "$SSH_CONFIG"
-            chown ${cfg.ssh.user}:users "$SSH_DIR" "$SSH_CONFIG"
-
-            COUNT=$(echo "$NEW_BLOCK" | ${pkgs.gnugrep}/bin/grep -c '^Host ' || true)
-            echo "tailscale-ssh-config: wrote $COUNT host entries to $SSH_CONFIG"
+            echo "$MARKER_START" > "$SSH_CONFIG"
+            echo "$NEW_BLOCK" >> "$SSH_CONFIG"
+            echo "$MARKER_END" >> "$SSH_CONFIG"
           '';
+        };
+
+        wantedBy = [ "multi-user.target" ];
       };
     })
   ]);
