@@ -8,14 +8,13 @@ in
   imports = [
     {
       home-manager.sharedModules = [ homeModule ];
-      home-manager.users.${flake.config.me.username}.my.desktop.gnome.enable = true;
     }
   ];
 
   options.systemModules.gnome.enable = lib.mkEnableOption "GNOME desktop environment";
 
   config = lib.mkIf config.systemModules.gnome.enable {
-
+    home-manager.users.${flake.config.me.username}.my.desktop.gnome.enable = true;
     # ── Filesystems / removable media ─────────────────────────────────────────
     services.gvfs.enable   = true;
     services.devmon.enable = true;
