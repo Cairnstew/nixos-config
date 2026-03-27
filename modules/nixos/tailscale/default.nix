@@ -177,8 +177,7 @@ in
       # ── One-shot service ──────────────────────────────────────────────────
       systemd.services.tailscale-ssh-config = {
         description = "Generate SSH config from Tailscale API";
-        after       = [ "network-online.target" "tailscaled.service" "agenix.service" ];
-        requires    = [ "agenix.service" ];  # hard dependency, not just ordering
+        after       = [ "network-online.target" "tailscaled.service" ];
         wants       = [ "network-online.target" ];
         serviceConfig = {
           Type      = "oneshot";
