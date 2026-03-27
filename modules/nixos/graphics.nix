@@ -93,6 +93,11 @@ in
         default     = true;
         description = "Blacklist the nouveau kernel module to prevent conflicts with NVIDIA drivers.";
       };
+      CUDABinaryCache = lib.mkOption {
+        type = lib.types.bool;
+        default = false;
+        description = "Toggle for using dua binary cache to speed up build times.";
+      };
     };
 
     # -- GPU: AMD ----------------------------------------------------
@@ -163,6 +168,18 @@ in
       systemModules.graphics.enable     = lib.mkIf (!nvidia.headless) true;
       systemModules.xserver.enable      = lib.mkIf (!nvidia.headless) true;
       systemModules.xserver.videoDriver = lib.mkIf (!nvidia.headless) [ "nvidia" ];
+    })
+    (lib.mkIf nvidia.CUDABinaryCache {
+      nix.settings = {
+        substituters = [
+          "https://cache.nixos.org/"
+          "https://cuda-maintainers.cachix.org"
+        ];
+
+        trusted-public-keys = [
+          "cuda-maintainers.cachix.org-1:0dqXKq+exampleReplaceThisKey="
+        ];
+      };
     })
     # -- GPU: AMD ----------------------------------------------------
     (lib.mkIf amd.enable {
