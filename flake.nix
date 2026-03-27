@@ -1,14 +1,14 @@
 {
   description = "Srid's NixOS / nix-darwin configuration";
 
-  nixConfig = {
-    extra-substituters = [
-      "https://cairnstew-nixos-config-cache.cachix.org"
-    ];
-    extra-trusted-public-keys = [
-      "cairnstew-nixos-config-cache.cachix.org-1:1150paajFeK18p7Eie/4L8iews3pbFbVp3eOxkmXar4="
-    ];
-  };
+  #nixConfig = {
+  #  extra-substituters = [
+  #    "https://cairnstew-nixos-config-cache.cachix.org"
+  #  ];
+  #  extra-trusted-public-keys = [
+  #    "cairnstew-nixos-config-cache.cachix.org-1:1150paajFeK18p7Eie/4L8iews3pbFbVp3eOxkmXar4="
+  #  ];
+  #};
 
   inputs = {
       flake-parts.url = "github:hercules-ci/flake-parts";

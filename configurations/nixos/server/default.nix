@@ -21,7 +21,7 @@ in
     enable   = true;
     headless = true;   # skips graphics stack and X server entirely
     toolkit  = true;
-    CUDABinaryCache = true;
+    CUDABinaryCache = false;
   };
 
   # ── System settings ────────────────────────────────────
