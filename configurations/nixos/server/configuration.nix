@@ -105,4 +105,6 @@
       "data-root" = "/mnt/data/docker-data";
     };
 
+  nix.settings.build-dir = "/mnt/data/nix-build";
+
 }
