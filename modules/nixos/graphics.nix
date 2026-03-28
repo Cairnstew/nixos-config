@@ -171,11 +171,11 @@ in
     })
     (lib.mkIf nvidia.CUDABinaryCache {
       nix.settings = {
-        extra-substituters = [
+        substituters = [
           "https://cache.nixos.org/"
           "https://nix-community.cachix.org"
         ];
-        extra-trusted-public-keys = [
+        trusted-public-keys = [
           "cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY="
           "nix-community.cachix.org-1:0dq3bujKpuEPMCX6U4WylrUDZ9JyUG0VpVZa7CNfq5E="
         ];
