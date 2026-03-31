@@ -168,6 +168,9 @@ in
       systemModules.graphics.enable     = lib.mkIf (!nvidia.headless) true;
       systemModules.xserver.enable      = lib.mkIf (!nvidia.headless) true;
       systemModules.xserver.videoDriver = lib.mkIf (!nvidia.headless) [ "nvidia" ];
+
+      # Headless still needs the driver registered so the kernel module loads
+      services.xserver.videoDrivers = [ "nvidia" ];
     })
     (lib.mkIf nvidia.CUDABinaryCache {
       nix.settings = {
