@@ -20,10 +20,9 @@ in
   hardwareProfiles.gpu.nvidia = {
     enable   = true;
     headless = true;   # skips graphics stack and X server entirely
-    toolkit  = true;
-    CUDABinaryCache = true;
+    toolkit  = false;
   };
-
+  
   # ── System settings ────────────────────────────────────
   my.system = {
     location = {
@@ -65,6 +64,12 @@ in
     #  enable = true;
     #  allowDNS = false;
     #};
+    ollama = {
+      enable = true;
+      acceleration = "cuda";
+      #loadModels = [ "mistral" ];
+      #port = 11434;
+    };
   };
 
   environment.systemPackages = [
