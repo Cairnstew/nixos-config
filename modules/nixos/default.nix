@@ -43,6 +43,7 @@ in
     # Containers & Virtualization
     nm.docker
     nm.waydroid
+    nm.ollama
 
     # Utility
     nm.brasero
