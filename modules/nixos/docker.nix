@@ -13,12 +13,12 @@ in
       description = "When enabled, dockerd is started on boot.";
     };
 
-    enableNvidia = lib.mkOption {
+    enableNvidiaContainerToolkit = lib.mkOption {
       type = lib.types.bool;
       default = false;
       description = ''
-        Deprecated. Enable Nvidia GPU support for Docker.
-        Please use hardware.nvidia-container-toolkit.enable instead.
+        Enable the NVIDIA Container Toolkit, allowing Docker containers to
+        access the host GPU. Requires hardware.nvidia.modesetting.enable = true.
       '';
     };
 
@@ -175,7 +175,6 @@ in
     virtualisation.docker = {
       enable = true;
       enableOnBoot = cfg.enableOnBoot;
-      #enableNvidia = cfg.enableNvidia;
       package = cfg.package;
       extraOptions = cfg.extraOptions;
       extraPackages = cfg.extraPackages;
@@ -190,9 +189,15 @@ in
         dates = cfg.autoPrune.dates;
       };
 
-      daemon.settings = cfg.daemon.settings
+      daemon.settings =
+      cfg.daemon.settings
       // lib.optionalAttrs (cfg.dataRoot != null) {
         data-root = cfg.dataRoot;
+      }
+      // lib.optionalAttrs cfg.enableNvidiaContainerToolkit {
+        features = {
+          cdi = true;
+        };
       };
 
       rootless = {
@@ -201,6 +206,8 @@ in
         daemon.settings = cfg.rootless.daemon.settings;
       };
     };
+
+    hardware.nvidia-container-toolkit.enable = lib.mkForce cfg.enableNvidiaContainerToolkit;
 
     users.users = lib.genAttrs cfg.users (_: {
       extraGroups = [ "docker" ];
