@@ -168,7 +168,7 @@ in
     virtualisation.docker = {
       enable = true;
       enableOnBoot = cfg.enableOnBoot;
-      enableNvidia = cfg.enableNvidia;
+      #enableNvidia = cfg.enableNvidia;
       package = cfg.package;
       extraOptions = cfg.extraOptions;
       extraPackages = cfg.extraPackages;
