@@ -54,7 +54,8 @@ in
     };
     docker = {
       enable = true;
-      users = [ user ];
+      users = [ flake.config.me.username ];
+      enableNvidiaContainerToolkit = true;
     };
   };
 
