@@ -65,7 +65,7 @@ in
     #  allowDNS = false;
     #};
     ollama = {
-      enable = true;
+      enable = false;
       acceleration = "cuda";
       #loadModels = [ "mistral" ];
       #port = 11434;
