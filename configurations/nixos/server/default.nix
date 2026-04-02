@@ -20,7 +20,7 @@ in
   hardwareProfiles.gpu.nvidia = {
     enable   = true;
     headless = true;   # skips graphics stack and X server entirely
-    toolkit  = false;
+    toolkit  = true;
   };
   
   # ── System settings ────────────────────────────────────
