@@ -53,7 +53,9 @@
       nix-ai-tools.url = "github:numtide/nix-ai-tools";
       nix-ai-tools.inputs.nixpkgs.follows = "nixpkgs";
       landrun-nix.url = "github:srid/landrun-nix";
-	    hyprland.url = "github:hyprwm/Hyprland";   
+	    hyprland.url = "github:hyprwm/Hyprland";
+      compose2nix.url = "github:aksiksi/compose2nix";
+      compose2nix.inputs.nixpkgs.follows = "nixpkgs";   
 	  	
       # Neovim
       nixvim.url = "github:nix-community/nixvim";
