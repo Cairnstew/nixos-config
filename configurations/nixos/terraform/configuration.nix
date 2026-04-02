@@ -1,6 +1,11 @@
 { config, pkgs, ... }:
 
 {
+
+  imports = [
+    ./hardware-configuration.nix  # <--- Include it here
+  ];
+
   # Minimal boot and networking
   boot.loader.grub.device = "/dev/xvda"; 
   networking.hostName = "nixos-vm";
