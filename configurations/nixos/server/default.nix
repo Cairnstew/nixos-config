@@ -76,6 +76,7 @@ in
   environment.systemPackages = [
     self.packages.${pkgs.stdenv.hostPlatform.system}.get-template
     pkgs.screen
+    pkgs.terraform
   ];
 
   # ── Home Manager configuration ─────────────────────────
