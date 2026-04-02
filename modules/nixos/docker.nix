@@ -129,6 +129,13 @@ in
       };
     };
 
+    dataRoot = lib.mkOption {
+      type = lib.types.nullOr lib.types.path;
+      default = null;
+      example = "/mnt/data/docker";
+      description = "Root directory for Docker data (images, containers, volumes).";
+    };
+
     rootless = {
       enable = lib.mkEnableOption "rootless Docker";
 
@@ -183,7 +190,10 @@ in
         dates = cfg.autoPrune.dates;
       };
 
-      daemon.settings = cfg.daemon.settings;
+      daemon.settings = cfg.daemon.settings
+      // lib.optionalAttrs (cfg.dataRoot != null) {
+        data-root = cfg.dataRoot;
+      };
 
       rootless = {
         enable = cfg.rootless.enable;
