@@ -177,7 +177,10 @@ in
       enableOnBoot = cfg.enableOnBoot;
       package = cfg.package;
       extraOptions = cfg.extraOptions;
-      extraPackages = cfg.extraPackages;
+      extraPackages = cfg.extraPackages
+      ++ lib.optionals cfg.enableNvidiaContainerToolkit [
+        pkgs.nvidia-container-toolkit.tools  # has nvidia-container-runtime
+      ];
       listenOptions = cfg.listenOptions;
       liveRestore = cfg.liveRestore;
       logDriver = cfg.logDriver;
@@ -190,15 +193,20 @@ in
       };
 
       daemon.settings =
-      cfg.daemon.settings
-      // lib.optionalAttrs (cfg.dataRoot != null) {
-        data-root = cfg.dataRoot;
-      }
-      // lib.optionalAttrs cfg.enableNvidiaContainerToolkit {
-        features = {
-          cdi = true;
+        cfg.daemon.settings
+        // lib.optionalAttrs (cfg.dataRoot != null) {
+          data-root = cfg.dataRoot;
+        }
+        // lib.optionalAttrs cfg.enableNvidiaContainerToolkit {
+          features = {
+            cdi = true;
+          };
+          runtimes = {
+            nvidia = {
+              path = "nvidia-container-runtime";
+            };
+          };
         };
-      };
 
       rootless = {
         enable = cfg.rootless.enable;
