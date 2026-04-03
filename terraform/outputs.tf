@@ -4,8 +4,8 @@ output "instances" {
     for name, instance in aws_instance.cloud_hosts :
     name => {
       id            = instance.id
-      public_ip     = instance.public_ip_address
-      private_ip    = instance.private_ip_address
+      public_ip     = instance.public_ip
+      private_ip    = instance.private_ip
       instance_type = instance.instance_type
       ami           = instance.ami
     }
@@ -16,7 +16,7 @@ output "ssh_command" {
   description = "SSH command to connect to instances"
   value = {
     for name, instance in aws_instance.cloud_hosts :
-    name => "ssh -i id_deployer.pem root@${instance.public_ip_address}"
+    name => "ssh -i id_deployer.pem root@${instance.public_ip}"
   }
 }
 

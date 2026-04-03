@@ -1,80 +1,114 @@
 { inputs, lib, ... }:
-{
-  flake.cloudHosts = {
+
+let
+  # ── Cloud provider definitions ─────────────────────────────────────────────
+  # Add new providers here. Each entry needs:
+  #   secretsPath  – runtime path agenix decrypts to
+  #   region       – default region (can be overridden per-host)
+  providers = {
+    aws-labs = {
+      secretsPath = "/run/agenix/aws-labs";
+      region      = "eu-west-1";
+    };
+    # aws-prod = {
+    #   secretsPath = "/run/agenix/aws-prod";
+    #   region      = "us-east-1";
+    # };
+    # gcp = {
+    #   secretsPath = "/run/agenix/gcp-creds";
+    #   region      = "europe-west2";
+    # };
+  };
+
+  # ── Cloud host definitions ─────────────────────────────────────────────────
+  # Each host specifies which provider it belongs to.
+  cloudHosts = {
     aws-webserver = {
+      provider      = "aws-labs";
       instance_type = "t3.micro";
       nixos_release = "24.11";
     };
     aws-bastion = {
+      provider      = "aws-labs";
       instance_type = "t3.micro";
       nixos_release = "24.11";
     };
+    # gcp-worker = {
+    #   provider      = "gcp";
+    #   instance_type = "e2-micro";
+    #   nixos_release = "24.11";
+    # };
   };
+
+in
+{
+  flake.cloudHosts = cloudHosts;
+  flake.cloudProviders = providers;
 
   perSystem = { pkgs, system, ... }:
   let
-    unstable = inputs.nixpkgs-unstable.legacyPackages.${system};  # ← use unstable for cached binaries
+    unstable = inputs.nixpkgs-unstable.legacyPackages.${system};
 
-    awsHosts = inputs.self.cloudHosts;
+    hostsVar = hosts:
+      # Strip the provider field before passing to tofu — it's flake-only metadata
+      builtins.toJSON (lib.mapAttrs (_: h: removeAttrs h [ "provider" ]) hosts);
 
-    hostsVar = hosts: builtins.toJSON hosts;
+    mkSecretsBlock = hosts:
+      # Collect the unique set of providers used by these hosts and source each
+      let
+        usedProviders = lib.unique (lib.mapAttrsToList (_: h: h.provider) hosts);
+      in lib.concatMapStrings (p:
+        let secretsPath = providers.${p}.secretsPath;
+        in ''
+          if [ -f "${secretsPath}" ]; then
+            source "${secretsPath}"
+          else
+            echo "WARNING: secrets file for provider '${p}' not found at ${secretsPath}" >&2
+          fi
+        ''
+      ) usedProviders;
 
     mkTfApp = hosts: {
       type = "app";
       program = toString (pkgs.writeShellScript "tf" ''
         set -e
-        
-        # Capture original terraform directory before changing dirs
+
         ORIG_TFDIR=$(pwd)
-        
-        # Work in a temp directory to avoid Nix sandbox read-only restrictions
+
         TFDIR=$(mktemp -d)
         trap "rm -rf $TFDIR" EXIT
-        
-        # Copy terraform files to temp directory
+
         cp -r "$ORIG_TFDIR"/* "$TFDIR/" 2>/dev/null || true
         cd "$TFDIR"
-        
-        # Set TF_DATA_DIR for provider cache/plugins
+
         export TF_DATA_DIR="''${TF_DATA_DIR:-/tmp/terraform-data}"
         mkdir -p "$TF_DATA_DIR"
-        
-        # Load AWS credentials from agenix secrets if available
-        # The aws-labs.age file should contain lines like:
-        # export AWS_ACCESS_KEY_ID=...
-        # export AWS_SECRET_ACCESS_KEY=...
-        SECRETS_FILE="${toString ./../../secrets}/aws-labs.age"
-        if [ -f "$SECRETS_FILE" ]; then
-          set +e
-          source <(${inputs.agenix.packages.${system}.agenix}/bin/agenix -d "$SECRETS_FILE")
-          set -e
-        fi
-        
-        # Pick the subcommand (e.g., init, plan, apply)
+
+        ${mkSecretsBlock hosts}
+
         ACTION=$1
-        shift # Remove the action from the arguments list
+        shift
 
         ${unstable.opentofu}/bin/tofu "$ACTION" \
-            -var="flake_root=${toString ./../../.}" \
             -var='cloud_hosts=${hostsVar hosts}' \
             "$@"
-        
-        # Copy lock file back to original directory
+
         if [ -f "$TFDIR/.terraform.lock.hcl" ]; then
           cp -f "$TFDIR/.terraform.lock.hcl" "$ORIG_TFDIR/.terraform.lock.hcl"
         fi
-        '');
+      '');
     };
+
   in {
     apps = {
-      tf = mkTfApp awsHosts;
+      tf = mkTfApp cloudHosts;
     } // lib.mapAttrs' (name: _: {
-      name = "tf-${name}";
-      value = mkTfApp { ${name} = awsHosts.${name}; };
-    }) awsHosts;
+      name  = "tf-${name}";
+      value = mkTfApp { ${name} = cloudHosts.${name}; };
+    }) cloudHosts;
 
     devShells.terraform = pkgs.mkShell {
-      buildInputs = [ unstable.opentofu unstable.awscli2 ];  # ← same for the devshell
+      buildInputs = [ unstable.opentofu unstable.awscli2 ];
     };
   };
 }
