@@ -1,10 +1,8 @@
 terraform {
   required_providers {
-    aws      = { source = "hashicorp/aws",      version = "~> 5.0" }
-    tls      = { source = "hashicorp/tls",      version = "~> 4.0" }
-    local    = { source = "hashicorp/local",    version = "~> 2.0" }
-    external = { source = "hashicorp/external", version = "~> 2.0" }
-    null     = { source = "hashicorp/null",     version = "~> 3.0" }
+    aws   = { source = "hashicorp/aws",   version = "~> 5.0" }
+    tls   = { source = "hashicorp/tls",   version = "~> 4.0" }
+    local = { source = "hashicorp/local", version = "~> 2.0" }
   }
 }
 
@@ -12,7 +10,9 @@ provider "aws" {
   region = "eu-west-1"
 }
 
-# Generate or use existing SSH key pair
+# ---------------------------------------------------------------------------
+# SSH key pair
+# ---------------------------------------------------------------------------
 resource "tls_private_key" "deployer" {
   algorithm = "RSA"
   rsa_bits  = 4096
@@ -29,7 +29,9 @@ resource "local_sensitive_file" "deployer_ssh_key" {
   file_permission = "0600"
 }
 
-# Security group for NixOS instances
+# ---------------------------------------------------------------------------
+# Security group
+# ---------------------------------------------------------------------------
 resource "aws_security_group" "nixos" {
   name        = "nixos-vms"
   description = "Security group for NixOS VMs"
@@ -55,29 +57,54 @@ resource "aws_security_group" "nixos" {
   }
 }
 
-# Build NixOS AMI for each release version
+# ---------------------------------------------------------------------------
+# NixOS AMI lookup
+# Uses the official NixOS community AMIs (owner: 080433136561).
+# No local Nix build or flake_root needed — just pick the release version.
+# ---------------------------------------------------------------------------
 locals {
   nixos_releases = distinct([for host in var.cloud_hosts : host.nixos_release])
 }
 
-module "nixos_image" {
+data "aws_ami" "nixos" {
   for_each = toset(local.nixos_releases)
 
-  source = "git::https://github.com/nix-community/terraform-nixos.git?ref=master//aws_image_nixos"
+  most_recent = true
+  owners      = ["080433136561"] # NixOS community AWS account
 
-  flake_url = "file://${var.flake_root}"
-  release   = each.value
+  filter {
+    name   = "name"
+    values = ["nixos/${each.value}.*"]
+  }
+
+  filter {
+    name   = "architecture"
+    values = ["x86_64"]
+  }
+
+  filter {
+    name   = "virtualization-type"
+    values = ["hvm"]
+  }
 }
 
-# Deploy EC2 instances for each cloud host
+# ---------------------------------------------------------------------------
+# EC2 instances
+# ---------------------------------------------------------------------------
 resource "aws_instance" "cloud_hosts" {
   for_each = var.cloud_hosts
 
-  ami           = module.nixos_image[each.value.nixos_release].ami
-  instance_type = each.value.instance_type
-  key_name      = aws_key_pair.deployer.key_name
+  ami                         = data.aws_ami.nixos[each.value.nixos_release].id
+  instance_type               = each.value.instance_type
+  key_name                    = aws_key_pair.deployer.key_name
+  associate_public_ip_address = true
 
   vpc_security_group_ids = [aws_security_group.nixos.id]
+
+  root_block_device {
+    volume_size = 20
+    volume_type = "gp3"
+  }
 
   tags = {
     Name = each.key
