@@ -33,4 +33,4 @@ terraform.rc
 .DS_Store
 Thumbs.db
 
-.envrc
+#.envrc
