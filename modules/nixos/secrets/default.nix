@@ -24,6 +24,7 @@ let
     "githubRepos.nixosConfig" = { name = "github-token-nixos-config"; file = self + /secrets/github-token-nixos-config.age;   extra = { owner = me; };            };
     "githubRepos.obsidian"    = { name = "github-token-obsidian";     file = self + /secrets/github-token-obsidian.age;        extra = { owner = me; };            };
     "system.cache"         = { name = "nixos-config-cache-token";     file = self + /secrets/nixos-config-cache-token.age;    extra = { owner = "root"; };        };
+    "aws_labs.apiKey"         = { name = "aws-labs";     file = self + /secrets/aws-labs.age;    extra = { owner = me; };        };
   };
 
   # ── Helpers ─────────────────────────────────────────────────────────────────
