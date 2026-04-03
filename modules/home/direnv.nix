@@ -33,6 +33,48 @@ in
         }
       '';
     };
+
+    secretFiles = lib.mkOption {
+      type = lib.types.attrsOf (lib.types.submodule {
+        options = {
+          vars = lib.mkOption {
+            type = lib.types.attrsOf lib.types.str;
+            default = {};
+            description = "Map of env var names to secret file paths";
+            example = lib.literalExpression ''
+              {
+                MY_API_TOKEN = config.age.secrets.my-api-token.path;
+              }
+            '';
+          };
+          envFiles = lib.mkOption {
+            type = lib.types.listOf lib.types.str;
+            default = [];
+            description = "Paths to KEY=VALUE secret files to source directly";
+            example = lib.literalExpression ''
+              [ config.age.secrets.aws-labs-creds.path ]
+            '';
+          };
+        };
+      });
+      default = {};
+      description = ''
+        Named secret files to generate under ~/.config/direnv/secrets/.
+        Paths can be anything — agenix paths, absolute paths, etc.
+      '';
+      example = lib.literalExpression ''
+        {
+          aws-labs = {
+            envFiles = [ config.age.secrets.aws-labs-creds.path ];
+          };
+          my-api = {
+            vars = {
+              MY_API_TOKEN = config.age.secrets.my-api-token.path;
+            };
+          };
+        }
+      '';
+    };
   };
 
   config = lib.mkIf cfg.enable {
@@ -40,7 +82,6 @@ in
       enable = true;
       nix-direnv = {
         enable = cfg.enableNixDirenv;
-        # Until https://github.com/nix-community/home-manager/pull/5773
         package = lib.mkIf (config.nix.package != null)
           (pkgs.nix-direnv.override { nix = config.nix.package; });
       };
@@ -48,5 +89,19 @@ in
         hide_env_diff = cfg.hideEnvDiff;
       } // cfg.globalConfig;
     };
+
+    home.file = lib.mapAttrs' (fileName: fileCfg: {
+      name = ".config/direnv/secrets/${fileName}.sh";
+      value.text = ''
+        ${lib.concatStrings (lib.mapAttrsToList (envName: path: ''
+          export ${envName}=$(cat ${path})
+        '') fileCfg.vars)}
+        ${lib.concatMapStrings (path: ''
+          set -a
+          source ${path}
+          set +a
+        '') fileCfg.envFiles}
+      '';
+    }) cfg.secretFiles;
   };
 }
