@@ -87,7 +87,21 @@ in
     
     my = {
       programs = {
-        
+        direnv = {
+          enable = true;
+
+          secretFiles = {
+            aws-labs = {
+              envFiles = [ config.age.secrets.aws-labs.path ];  # file contains AWS_ACCESS_KEY_ID=... etc
+            };
+            #my-api = {
+            #  vars = {
+            #    MY_API_TOKEN = "my-api-token";  # single value secret
+            #  };
+            #};
+          };
+        };
+
       };
     };
     services.vscode-server.enable = true;
