@@ -32,3 +32,5 @@ terraform.rc
 # Editor / OS junk
 .DS_Store
 Thumbs.db
+
+.envrc
