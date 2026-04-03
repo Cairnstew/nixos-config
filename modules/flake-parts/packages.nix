@@ -9,7 +9,12 @@
         }).config.system.build.default
       )
       (lib.filterAttrs
-        (_: cfg: cfg.config.nixpkgs.hostPlatform.system or "" == system)
+        (_: cfg:
+          let
+            probed = builtins.tryEval (cfg.config.nixpkgs.hostPlatform.system);  # ← changed
+          in
+            probed.success && probed.value == system
+        )
         config.flake.nixosConfigurations);
   };
 }

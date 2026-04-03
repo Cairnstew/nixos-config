@@ -1,0 +1,49 @@
+# =========================
+# Terraform / OpenTofu
+# =========================
+
+# Local .terraform directories
+.terraform/
+
+# State files (VERY important to ignore)
+*.tfstate
+*.tfstate.*
+
+# Crash logs
+crash.log
+crash.*.log
+
+# Sensitive variable files
+*.tfvars
+*.tfvars.json
+
+# Override files (local-only configs)
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+
+# CLI config files
+.terraformrc
+terraform.rc
+
+# Lock file (optional: see note below)
+.terraform.lock.hcl
+
+# Plan output files
+*.tfplan
+
+# Dependency lock directories (rare but safe)
+.terraform.d/
+
+# OpenTofu specific (just in case)
+.tofu/
+.tofu.lock.hcl
+
+# Editor / OS junk
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+.vscode/
+.idea/
