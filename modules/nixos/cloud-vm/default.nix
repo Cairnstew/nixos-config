@@ -16,6 +16,13 @@ in {
       description = "Cloud provider this VM will run on";
     };
 
+    hostPlatform = lib.mkOption {        # ← new
+      type = lib.types.str;
+      default = "x86_64-linux";
+      description = "The system platform for this cloud VM (sets nixpkgs.hostPlatform).";
+      example = "aarch64-linux";
+    };
+
     profile = lib.mkOption {
       type = lib.types.enum [ "web" "worker" "bastion" ];
       default = "web";
@@ -30,6 +37,8 @@ in {
   };
 
   config = lib.mkIf cfg.enable {
+    nixpkgs.hostPlatform = lib.mkDefault cfg.hostPlatform;    # ← new
+
     services.openssh.enable = true;
     networking.firewall.enable = true;
     system.stateVersion = "24.11";
