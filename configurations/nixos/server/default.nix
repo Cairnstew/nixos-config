@@ -91,8 +91,8 @@ in
           enable = true;
 
           secretFiles = {
-            aws-labs = {
-              envFiles = [ config.age.secrets.aws-labs.path ];  # file contains AWS_ACCESS_KEY_ID=... etc
+            aws-cloud = {
+              envFiles = [ config.age.secrets.aws-cloud.path ];  # file contains AWS_ACCESS_KEY_ID=... etc
             };
             #my-api = {
             #  vars = {
