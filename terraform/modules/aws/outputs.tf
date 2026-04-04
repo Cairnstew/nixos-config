@@ -7,5 +7,5 @@ output "instance_id" {
 }
 
 output "ami_id" {
-  value = module.nixos_image.ami
+  value = data.aws_ami.nixos.id
 }
