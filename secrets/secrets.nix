@@ -29,6 +29,6 @@ in
   "onepassword-token.age".publicKeys = users;
 
   # Virtual Machines
-  "aws-labs.age".publicKeys = all;
+  "aws-cloud.age".publicKeys = all;
   
 }
