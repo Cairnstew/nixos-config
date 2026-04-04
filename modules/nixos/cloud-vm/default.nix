@@ -6,6 +6,7 @@ in {
   imports = [
     ./aws.nix
     ./google.nix
+    ./disk.nix
   ];
 
   options.my.cloud-vm = {
@@ -44,7 +45,7 @@ in {
 
     nixosRelease = lib.mkOption {
       type        = lib.types.str;
-      default     = "24.11";
+      default     = "25.11";
       description = "NixOS release used for the AMI/image lookup in Terraform";
     };
 
@@ -54,11 +55,6 @@ in {
       example     = "eu-west-1";
     };
 
-    secretsPath = lib.mkOption {
-      type        = lib.types.str;
-      description = "Runtime path agenix decrypts the provider credentials to (read by flake tooling, not NixOS config)";
-      example     = "/run/agenix/aws-labs";
-    };
   };
 
   config = lib.mkIf cfg.enable {

@@ -1,8 +1,6 @@
 { inputs, lib, config, ... }:
 
 let
-  # ── All hosts that have secrets enabled ───────────────────────────────────
-  # Baked in at eval time as a JSON map of hostname → provider secret paths
   hostsWithSecrets = lib.filterAttrs
     (_: cfg: cfg.config.my.secrets.enable or false)
     config.flake.nixosConfigurations;
@@ -11,19 +9,13 @@ let
     let s = cfg.config.my.secrets.names;
     in {
       aws = {
-        credsPath  = cfg.config.age.secrets.${s.aws_labs.apiKey}.path;
-        sshPubPath = cfg.config.age.secrets.${s.aws_labs.sshPubKey}.path;
-        sshKeyPath = cfg.config.age.secrets.${s.aws_labs.sshKey}.path;
+        credsPath  = cfg.config.age.secrets.${s.aws_cloud.apiKey}.path;
+        sshPubPath = cfg.config.age.secrets.${s.aws_cloud.sshPubKey}.path;
+        sshKeyPath = cfg.config.age.secrets.${s.aws_cloud.sshKey}.path;
       };
-      # google = {
-      #   credsPath  = cfg.config.age.secrets.${s.gcp.apiKey}.path;
-      #   sshPubPath = cfg.config.age.secrets.${s.gcp.sshPubKey}.path;
-      #   sshKeyPath = cfg.config.age.secrets.${s.gcp.sshKey}.path;
-      # };
     }
   ) hostsWithSecrets);
 
-  # ── Cloud hosts derived from nixosConfigurations ──────────────────────────
   cloudConfigs = lib.filterAttrs
     (_: cfg: cfg.config.my.cloud-vm.enable or false)
     config.flake.nixosConfigurations;
@@ -47,17 +39,21 @@ in
 
   perSystem = { pkgs, system, ... }:
   let
-    unstable = inputs.nixpkgs-unstable.legacyPackages.${system};
+    unstable      = inputs.nixpkgs-unstable.legacyPackages.${system};
+    nixos-anywhere = inputs.nixos-anywhere.packages.${system}.nixos-anywhere;
 
-    # ── Secrets block — resolved at runtime via hostname ────────────────────
+    # ── Secrets block ─────────────────────────────────────────────────────
     mkSecretsBlock = providers:
       let
         providerBlock = lib.concatMapStrings (p: ''
           CREDS_PATH=$(echo "$HOST_SECRETS" | ${pkgs.jq}/bin/jq -r '.${p}.credsPath')
+          SSH_KEY_PATH=$(echo "$HOST_SECRETS" | ${pkgs.jq}/bin/jq -r '.${p}.sshKeyPath')
           SSH_PUB_PATH=$(echo "$HOST_SECRETS" | ${pkgs.jq}/bin/jq -r '.${p}.sshPubPath')
 
           if [ -f "$CREDS_PATH" ]; then
+            set -a
             source "$CREDS_PATH"
+            set +a
           else
             echo "WARNING: creds for '${p}' not found at $CREDS_PATH" >&2
           fi
@@ -83,18 +79,21 @@ in
         ${providerBlock}
       '';
 
+    # ── Terraform app ─────────────────────────────────────────────────────
     mkTfApp = hosts: {
       type    = "app";
       program = toString (pkgs.writeShellScript "tf" ''
         set -e
 
-        ORIG_TFDIR=$(pwd)/terraform
+        REPO_ROOT=$(pwd)
+        ORIG_TFDIR="$REPO_ROOT/terraform"
         TFDIR=$(mktemp -d)
         trap "rm -rf $TFDIR" EXIT
 
         cp -r "$ORIG_TFDIR"/. "$TFDIR/"
+        cd "$TFDIR"
 
-        export TF_DATA_DIR="''${TF_DATA_DIR:-$(pwd)/terraform/.terraform}"
+        export TF_DATA_DIR="''${TF_DATA_DIR:-$REPO_ROOT/terraform/.terraform}"
         mkdir -p "$TF_DATA_DIR"
 
         ${mkSecretsBlock usedProviders}
@@ -104,11 +103,60 @@ in
           -var='cloud_hosts=${builtins.toJSON hosts}' \
           "$@"
 
+        if [ -f "$TFDIR/terraform.tfstate" ]; then
+          cp -f "$TFDIR/terraform.tfstate" "$ORIG_TFDIR/terraform.tfstate"
+        fi
+        if [ -f "$TFDIR/terraform.tfstate.backup" ]; then
+          cp -f "$TFDIR/terraform.tfstate.backup" "$ORIG_TFDIR/terraform.tfstate.backup"
+        fi
         if [ -f "$TFDIR/.terraform.lock.hcl" ]; then
           cp -f "$TFDIR/.terraform.lock.hcl" "$ORIG_TFDIR/.terraform.lock.hcl"
         fi
       '');
     };
+
+    # ── Deploy app ────────────────────────────────────────────────────────
+    mkDeployApp = hostName:
+      let
+        # Read ssh key path for this host's provider at eval time
+        sshKeyPath = "/run/agenix/aws-cloud-ssh-key"; # TODO: derive from provider
+      in {
+        type    = "app";
+        program = toString (pkgs.writeShellScript "deploy-${hostName}" ''
+          set -e
+
+          REPO_ROOT=$(pwd)
+
+          ${mkSecretsBlock usedProviders}
+
+          IP=$(${unstable.opentofu}/bin/tofu \
+            -chdir="$REPO_ROOT/terraform" \
+            output -json \
+            | ${pkgs.jq}/bin/jq -r '.aws_hosts.value["${hostName}"]')
+
+          if [ -z "$IP" ] || [ "$IP" = "null" ]; then
+            echo "ERROR: could not get IP for ${hostName} from tofu state" >&2
+            exit 1
+          fi
+
+          echo "Deploying ${hostName} to $IP..."
+
+          MODE="''${1:-switch}"
+
+          if [ "$MODE" = "--first" ]; then
+            ${nixos-anywhere}/bin/nixos-anywhere \
+              --flake .#${hostName} \
+              --ssh-option "IdentityFile=$SSH_KEY_PATH" \
+              root@$IP
+          else
+            ${pkgs.nixos-rebuild}/bin/nixos-rebuild switch \
+              --flake .#${hostName} \
+              --target-host root@$IP \
+              --build-host localhost \
+              --ssh-option "IdentityFile=$SSH_KEY_PATH"
+          fi
+        '');
+      };
 
   in {
     apps =
@@ -116,10 +164,14 @@ in
       // lib.mapAttrs' (name: _: {
            name  = "tf-${name}";
            value = mkTfApp { ${name} = hostsVar.${name}; };
+         }) hostsVar
+      // lib.mapAttrs' (name: _: {
+           name  = "deploy-${name}";
+           value = mkDeployApp name;
          }) hostsVar;
 
     devShells.terraform = pkgs.mkShell {
-      buildInputs = [ unstable.opentofu unstable.awscli2 pkgs.jq ];
+      buildInputs = [ unstable.opentofu unstable.awscli2 pkgs.jq nixos-anywhere ];
     };
   };
 }
