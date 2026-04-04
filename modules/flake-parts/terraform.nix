@@ -67,7 +67,7 @@ in
           cp -f "$TFDIR/.terraform.lock.hcl" "$ORIG_TFDIR/.terraform.lock.hcl"
       '');
     };
-    };
+
 
   in {
     apps =
