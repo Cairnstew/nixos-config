@@ -1,22 +1,27 @@
-{ config, flake, pkgs, lib, ... }:
+{ config, flake, lib, ... }:
 
 let
-  # ── Short aliases ───────────────────────────────────────
-  me   = flake.config.me;
-  user = me.username;
   self = flake.inputs.self;
 in
 {
-  imports = [ self.nixosModules.cloud-vm ];
+  imports = [
+    self.nixosModules.cloud-vm
+  ];
 
   my.cloud-vm = {
-    enable       = true;        # ← this triggers nixpkgs.hostPlatform = "x86_64-linux"
+    enable       = true;
     provider     = "aws";
     profile      = "web";
-    instanceType = "t3.micro";
-    nixosRelease = "24.11";
+    instanceType = "t3.small";
+    nixosRelease = "25.11";
     region       = "eu-west-1";
-    secretsPath  = "/run/agenix/aws-labs";
+    diskDevice   = "/dev/nvme0n1";  
+  };
+
+  services.openssh = {
+    enable                          = true;
+    settings.PasswordAuthentication = false;
+    settings.PermitRootLogin        = lib.mkDefault "prohibit-password";
   };
 
   networking.hostName = "aws-webserver";
