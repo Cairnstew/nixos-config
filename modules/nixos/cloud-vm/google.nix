@@ -1,13 +1,24 @@
-# google.nix
-{ config, lib, modulesPath, ... }:
+{ config, lib, ... }:
+
 let
   cfg = config.my.cloud-vm;
 in {
-  imports = [
-    "${modulesPath}/virtualisation/google-compute-image.nix"
-  ];
-
   config = lib.mkIf (cfg.enable && cfg.provider == "google") {
-    # google-specific overrides if needed
+    boot.loader.grub = {
+      device     = lib.mkDefault cfg.diskDevice;
+      efiSupport = lib.mkDefault false;
+    };
+
+    boot.initrd.availableKernelModules = [
+      "virtio_pci"
+      "virtio_scsi"
+      "virtio_blk"
+      "virtio_net"
+    ];
+
+    networking.useDHCP = lib.mkDefault true;
+
+    # GCP serial console
+    boot.kernelParams = [ "console=ttyS0" ];
   };
 }
