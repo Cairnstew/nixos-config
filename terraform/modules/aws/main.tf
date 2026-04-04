@@ -8,9 +8,19 @@ terraform {
 }
 
 # ── NixOS AMI lookup ───────────────────────────────────────────────────────────
-module "nixos_image" {
-  source  = "git::https://github.com/nix-community/terraform-nixos.git//aws_image_nixos?ref=master"
-  release = var.nixos_release
+data "aws_ami" "nixos" {
+  most_recent = true
+  owners      = ["427812963091"]
+
+  filter {
+    name   = "name"
+    values = ["nixos/${var.nixos_release}*x86_64-linux"]
+  }
+
+  filter {
+    name   = "virtualization-type"
+    values = ["hvm"]
+  }
 }
 
 # ── SSH key ────────────────────────────────────────────────────────────────────
@@ -95,7 +105,7 @@ resource "aws_security_group" "this" {
 
 # ── EC2 instance ───────────────────────────────────────────────────────────────
 resource "aws_instance" "this" {
-  ami                    = module.nixos_image.ami
+  ami                    = data.aws_ami.nixos.id
   instance_type          = var.instance_type
   subnet_id              = aws_subnet.public.id
   vpc_security_group_ids = [aws_security_group.this.id]
