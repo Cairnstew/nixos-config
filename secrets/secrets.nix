@@ -30,5 +30,7 @@ in
 
   # Virtual Machines
   "aws-cloud.age".publicKeys = all;
+  "aws-cloud-ssh-key.age".publicKeys = all;
+  "aws-cloud-ssh-pub-key.age".publicKeys = all;
   
 }
