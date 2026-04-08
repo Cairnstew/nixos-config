@@ -48,6 +48,11 @@
         inputs.nixpkgs.follows = "nixpkgs";   # important to avoid version mismatch
       };
 
+      terranix = {
+        url = "github:terranix/terranix";
+        inputs.nixpkgs.follows = "nixpkgs";
+      };
+
       # Software inputs
       github-nix-ci.url = "github:juspay/github-nix-ci";
       nixos-vscode-server.flake = false;
