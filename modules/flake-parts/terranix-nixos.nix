@@ -20,6 +20,16 @@ let
   terraformModulesPath = self.nixosModules.terraform;
 in
 {
+  # ── Top-level: NixOS config that applies to all systems ───────────────────
+  flake.nixosModules.terraformInfra = { ... }: {
+    users.groups.terraform = { };
+
+    systemd.tmpfiles.rules = [
+      "d  /var/lib/terraform           0750  root  terraform  -    -"
+      "d  ${stateDir}                  2770  root  terraform  -    -"
+    ];
+  };
+
   perSystem = { system, pkgs, ... }:
     let
       terraformConfiguration = inputs.terranix.lib.terranixConfiguration {
