@@ -70,6 +70,13 @@ in
   environment.systemPackages = [
     pkgs.dig
   ];
+
+  users.users.${flake.config.me.username} = {
+    isNormalUser = true;
+    extraGroups = [ "terraform" ];
+  };
+
+
   my = { 
     secrets.enable = lib.mkDefault true;
     system = {
