@@ -11,26 +11,26 @@ let
 in
 {
   # Overall GitHub Token
-  "github-token.age".publicKeys = all;
+  "github/github-token.age".publicKeys = all;
 
   # Git Repos
-  "github-token-nixos-config.age".publicKeys = all;
-  "github-token-obsidian.age".publicKeys = all;
+  "github/repos/token-nixos-config.age".publicKeys = all;
+  "github/repos/token-obsidian.age".publicKeys = all;
 
   # Cache Token
-  "nixos-config-cache-token.age".publicKeys = all;
+  "cachix/nixos-config-cache-token.age".publicKeys = all;
 
   # Tailscale Keys - Expire after 90 Days - Created : 3/23/2026
-  "tailscale-authkey.age".publicKeys = all;
-  "tailscale-apikey.age".publicKeys = all;
-  "tailscale-ssh-key.age".publicKeys = all;
+  "tailscale/authkey.age".publicKeys = all;
+  "tailscale/apikey.age".publicKeys = all;
+  "tailscale/ssh-key.age".publicKeys = all;
 
   # OnePass Key
   "onepassword-token.age".publicKeys = users;
 
   # Virtual Machines
-  "aws-cloud.age".publicKeys = all;
-  "aws-cloud-ssh-key.age".publicKeys = all;
-  "aws-cloud-ssh-pub-key.age".publicKeys = all;
+  "cloud/aws/auth.age".publicKeys = all;
+  "cloud/aws/ssh-key.age".publicKeys = all;
+  "cloud/aws/ssh-pub-key.age".publicKeys = all;
   
 }
