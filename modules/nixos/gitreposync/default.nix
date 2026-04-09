@@ -324,7 +324,7 @@ let
           type = types.str;
           default = "/run/agenix/github-token-${name}";
           description = "Path to the agenix-decrypted file containing the raw GitHub token.";
-          example = "/run/agenix/github-token-my-repo";
+          example = "/run/agenix/github/repos/my-repo";
         };
 
         tokenUser = mkOption {
@@ -372,7 +372,7 @@ in {
             interval         = "10m";
             conflictStrategy = "stash-and-pull";
             agenix.enable     = true;
-            agenix.secretPath = "/run/agenix/github-notes-token";
+            agenix.secretPath = "/run/agenix/github/repos/notes-token";
           };
 
           infra-mirror = {
@@ -381,7 +381,7 @@ in {
             interval         = "5m";
             conflictStrategy = "reset-hard";
             agenix.enable     = true;
-            agenix.secretPath = "/run/agenix/github-infra-token";
+            agenix.secretPath = "/run/agenix/github/repos/infra-token";
           };
         }
       '';

@@ -17,16 +17,16 @@ let
   #   file         – default .age file relative to flake root (or null)
   #   extra        – optional age.secrets overrides (owner, group, mode…)
   secretDefs = {
-    "tailscale.authKey"    = { name = "tailscale-authkey";            file = self + /secrets/tailscale-authkey.age;            extra = {};                         };
-    "tailscale.apiKey"     = { name = "tailscale-apikey";             file = self + /secrets/tailscale-apikey.age;             extra = { owner = me; };                         };
-    "tailscale.sshKey"     = { name = "tailscale-ssh-key";            file = self + /secrets/tailscale-ssh-key.age;            extra = { owner = me; };                         };
-    "github.token"         = { name = "github-token";                 file = self + /secrets/github-token.age;                 extra = { owner = me; group = "users"; }; };
-    "githubRepos.nixosConfig" = { name = "github-token-nixos-config"; file = self + /secrets/github-token-nixos-config.age;   extra = { owner = me; };            };
-    "githubRepos.obsidian"    = { name = "github-token-obsidian";     file = self + /secrets/github-token-obsidian.age;        extra = { owner = me; };            };
-    "system.cache"         = { name = "nixos-config-cache-token";     file = self + /secrets/nixos-config-cache-token.age;    extra = { owner = "root"; };        };
-    "aws_cloud.apiKey"    = { name = "aws-cloud";              file = self + /secrets/aws-cloud.age;              extra = { owner = me; }; };
-    "aws_cloud.sshKey"    = { name = "aws-cloud-ssh-key";      file = self + /secrets/aws-cloud-ssh-key.age;      extra = { owner = me; }; };
-    "aws_cloud.sshPubKey" = { name = "aws-cloud-ssh-pub-key";  file = self + /secrets/aws-cloud-ssh-pub-key.age;  extra = { owner = me; }; };
+    "tailscale.authKey"    = { name = "tailscale-authkey";            file = self + /secrets/tailscale/authkey.age;            extra = {};                         };
+    "tailscale.apiKey"     = { name = "tailscale-apikey";             file = self + /secrets/tailscale/apikey.age;             extra = { owner = me; };                         };
+    "tailscale.sshKey"     = { name = "tailscale-ssh-key";            file = self + /secrets/tailscale/ssh-key.age;            extra = { owner = me; };                         };
+    "github.token"         = { name = "github-token";                 file = self + /secrets/github/token.age;                 extra = { owner = me; group = "users"; }; };
+    "githubRepos.nixosConfig" = { name = "github-token-nixos-config"; file = self + /secrets/github/repos/token-nixos-config.age;   extra = { owner = me; };            };
+    "githubRepos.obsidian"    = { name = "github-token-obsidian";     file = self + /secrets/github/repos/token-obsidian.age;        extra = { owner = me; };            };
+    "system.cache"         = { name = "nixos-config-cache-token";     file = self + /secrets/cachix/nixos-config-cache-token.age;    extra = { owner = "root"; };        };
+    "aws_cloud.apiKey"    = { name = "aws-cloud";              file = self + /secrets/cloud/aws/auth.age;              extra = { owner = me; }; };
+    "aws_cloud.sshKey"    = { name = "aws-cloud-ssh-key";      file = self + /secrets/cloud/aws/ssh-key.age;      extra = { owner = me; }; };
+    "aws_cloud.sshPubKey" = { name = "aws-cloud-ssh-pub-key";  file = self + /secrets/cloud/aws/ssh-pub-key.age;  extra = { owner = me; }; };
   };
 
   # ── Helpers ─────────────────────────────────────────────────────────────────
