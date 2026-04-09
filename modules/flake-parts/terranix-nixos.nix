@@ -17,7 +17,7 @@ let
   stateDir = "/var/lib/terraform/state";
 
   # Root-relative path to your Terranix module tree.
-  terraformModulesPath = self.nixosModules.terraform
+  terraformModulesPath = self.nixosModules.terraform;
 in
 {
   perSystem = { system, pkgs, ... }:
