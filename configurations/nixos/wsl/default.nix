@@ -85,6 +85,7 @@ in
       programs = {
         #vscode.enable = true;
         rstudio.enable            = true;
+        obsidian.enable           = true;
       };
     };
     services.vscode-server.enable = true;
