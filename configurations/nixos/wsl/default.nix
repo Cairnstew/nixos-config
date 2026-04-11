@@ -84,6 +84,7 @@ in
     my = {
       programs = {
         #vscode.enable = true;
+        rstudio.enable            = true;
       };
     };
     services.vscode-server.enable = true;
