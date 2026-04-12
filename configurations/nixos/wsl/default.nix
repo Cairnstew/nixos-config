@@ -22,6 +22,13 @@ in
   wsl.wslConf.network.generateResolvConf = false;
   networking.useHostResolvConf = false;
 
+
+  wsl.windowManager = {
+    enable = true;
+    windowManager = "i3";
+    extraPackages = with pkgs; [ i3 i3status dmenu xterm ];
+  };
+
   networking.nameservers = [
     "1.1.1.1"
     "8.8.8.8"
