@@ -1,6 +1,8 @@
 { config, pkgs, lib, ... }:
 let
   cfg = config.my.programs.obsidian;
+  vaultDir = "${config.home.homeDirectory}/${cfg.defaultDirectory}";
+  vaultId = builtins.substring 0 16 (builtins.hashString "md5" vaultDir);
 in
 {
   options.my.programs.obsidian = {
@@ -38,18 +40,17 @@ in
   };
 
   config = lib.mkIf cfg.enable {
-    programs.obsidian = {
-      enable = true;
-      vaults."main-vault" = {
-        enable = true;
-        target = cfg.defaultDirectory;
-        settings = {
-          app = {
-            promptDelete = false;
-            alwaysUpdateLinks = true;
-            attachmentFolderPath = "Media";
+    # obsidian installed here instead of programs.obsidian to avoid conflict with home.file below
+    home.packages = with pkgs; [ obsidian jq ];
+
+    home.file.".config/obsidian/obsidian.json" = {
+      text = builtins.toJSON {
+        vaults = {
+          "${vaultId}" = {
+            path = vaultDir;
+            ts = 0;
+            open = true;
           };
-          appearance.cssTheme = "AnuPpuccin";
         };
       };
     };
@@ -61,23 +62,28 @@ in
         TOKEN=$(cat "${cfg.repo.tokenFile}")
         REPO_URL=$(echo "${cfg.repo.url}" | sed "s|https://|https://''${TOKEN}@|")
 
-        if [ ! -d "$VAULT_DIR" ]; then
+        if [ ! -d "$VAULT_DIR/.git" ]; then
           echo "Cloning Obsidian vault..."
+          rm -rf "$VAULT_DIR" 2>/dev/null || true
           ${pkgs.git}/bin/git clone "$REPO_URL" "$VAULT_DIR"
           echo "Vault cloned successfully to $VAULT_DIR"
         fi
 
-        # Always ensure the remote is using the token, even if vault already existed
-        echo "Updating remote URL with token..."
-        ${pkgs.git}/bin/git -C "$VAULT_DIR" remote set-url origin "$REPO_URL"
+        if [ -d "$VAULT_DIR/.git" ]; then
+          echo "Updating remote URL with token..."
+          ${pkgs.git}/bin/git -C "$VAULT_DIR" remote set-url origin "$REPO_URL"
 
-        # Store credentials for obsidian-git push/pull
-        ${pkgs.git}/bin/git -C "$VAULT_DIR" config credential.helper store
-        echo "https://''${TOKEN}@github.com" > "$HOME/.git-credentials"
-        chmod 600 "$HOME/.git-credentials"
+          ${pkgs.git}/bin/git -C "$VAULT_DIR" config credential.helper store
+          echo "https://''${TOKEN}@github.com" > "$HOME/.git-credentials"
+          chmod 600 "$HOME/.git-credentials"
 
-        echo "Verifying remote..."
-        ${pkgs.git}/bin/git -C "$VAULT_DIR" fetch && echo "Token auth working" || echo "WARNING: fetch failed, check token"
+          echo "Verifying remote..."
+          ${pkgs.git}/bin/git -C "$VAULT_DIR" fetch \
+            && echo "Token auth working" \
+            || echo "WARNING: fetch failed, check token"
+        else
+          echo "ERROR: Vault directory exists but is not a git repo"
+        fi
       ''}
 
       ${lib.optionalString cfg.repo.enable ''
