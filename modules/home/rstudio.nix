@@ -8,6 +8,7 @@ let
     dplyr
     tidyr
     tidyverse
+    ggrepel
     # add more here
   ];
 
