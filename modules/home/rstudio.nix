@@ -28,6 +28,11 @@ in
   config = lib.mkIf cfg.enable {
     home.packages = [
       rstudio-with-my-packages
+      pkgs.nerd-fonts.jetbrains-mono
+      pkgs.nerd-fonts.fira-code
+      pkgs.noto-fonts
+      pkgs.liberation_ttf
+      pkgs.texliveSmall
     ];
   };
 }
