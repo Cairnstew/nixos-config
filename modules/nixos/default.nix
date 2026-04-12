@@ -65,6 +65,10 @@ in
 
     # External modules
     agenixModules
+
+    # WSL Module (only imported in WSL configuration)
+    nm.wsl-wm
+
   ];
 
   environment.systemPackages = [
