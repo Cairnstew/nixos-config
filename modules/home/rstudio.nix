@@ -32,7 +32,7 @@ in
       pkgs.nerd-fonts.fira-code
       pkgs.noto-fonts
       pkgs.liberation_ttf
-      pkgs.texliveSmall
+      pkgs.texlive.combined.scheme-full
     ];
   };
 }
