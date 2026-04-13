@@ -12,7 +12,20 @@ in
       programs = {
         ssh-1password.enable = true;
         bash.enable = true;
-        direnv.enable = true;
+        direnv = {
+          enable = true;
+
+          secretFiles = {
+            aws-cloud = {
+              envFiles = [ config.age.secrets.aws-cloud.path ];  # file contains AWS_ACCESS_KEY_ID=... etc
+            };
+            #my-api = {
+            #  vars = {
+            #    MY_API_TOKEN = "my-api-token";  # single value secret
+            #  };
+            #};
+          };
+        };
         gh = {
           enable = config.age.secrets ? "github-token";
 
