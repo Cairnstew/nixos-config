@@ -19,6 +19,11 @@ in
             aws-cloud = {
               envFiles = [ config.age.secrets.aws-cloud.path ];  # file contains AWS_ACCESS_KEY_ID=... etc
             };
+            ssh-keys = {
+              paths = {
+                FILE_PATH = config.age.secrets.aws-lab-ssh-key.path;
+              };
+            };
             #my-api = {
             #  vars = {
             #    MY_API_TOKEN = "my-api-token";  # single value secret

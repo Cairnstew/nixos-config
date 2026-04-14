@@ -40,10 +40,20 @@ in
           vars = lib.mkOption {
             type = lib.types.attrsOf lib.types.str;
             default = {};
-            description = "Map of env var names to secret file paths";
+            description = "Map of env var names to secret file paths — exports file contents as value";
             example = lib.literalExpression ''
               {
                 MY_API_TOKEN = config.age.secrets.my-api-token.path;
+              }
+            '';
+          };
+          paths = lib.mkOption {
+            type = lib.types.attrsOf lib.types.str;
+            default = {};
+            description = "Map of env var names to secret file paths — exports the path itself as value";
+            example = lib.literalExpression ''
+              {
+                MY_PRIVATE_KEY_PATH = config.age.secrets.my-private-key.path;
               }
             '';
           };
@@ -72,6 +82,11 @@ in
               MY_API_TOKEN = config.age.secrets.my-api-token.path;
             };
           };
+          ssh-keys = {
+            paths = {
+              MY_PRIVATE_KEY_PATH = config.age.secrets.my-private-key.path;
+            };
+          };
         }
       '';
     };
@@ -96,6 +111,9 @@ in
         ${lib.concatStrings (lib.mapAttrsToList (envName: path: ''
           export ${envName}=$(cat ${path})
         '') fileCfg.vars)}
+        ${lib.concatStrings (lib.mapAttrsToList (envName: path: ''
+          export ${envName}=${path}
+        '') fileCfg.paths)}
         ${lib.concatMapStrings (path: ''
           set -a
           source ${path}
