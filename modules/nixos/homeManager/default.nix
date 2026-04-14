@@ -21,7 +21,7 @@ in
             };
             ssh-keys = {
               paths = {
-                FILE_PATH = config.age.secrets.aws-lab-ssh-key.path;
+                AWS_LABS_SSH_KEY_PATH = config.age.secrets.aws-lab-ssh-key.path;
               };
             };
             #my-api = {
