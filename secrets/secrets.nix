@@ -32,5 +32,6 @@ in
   "cloud/aws/auth.age".publicKeys = all;
   "cloud/aws/ssh-key.age".publicKeys = all;
   "cloud/aws/ssh-pub-key.age".publicKeys = all;
+  "cloud/aws/lab-ssh-key.age".publicKeys = all;
   
 }
