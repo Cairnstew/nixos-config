@@ -9,6 +9,7 @@ let
     tidyr
     tidyverse
     ggrepel
+    pagedown
     # add more here
   ];
 
