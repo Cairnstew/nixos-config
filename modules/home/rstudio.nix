@@ -35,6 +35,8 @@ in
       pkgs.noto-fonts
       pkgs.liberation_ttf
       pkgs.texlive.combined.scheme-full
+
+      pkgs.chromium # For RStudio's web-based IDE features, e.g. RStudio pagedown
     ];
   };
 }
