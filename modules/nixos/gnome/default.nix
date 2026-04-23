@@ -78,12 +78,12 @@ in
 
     # ── Display manager & desktop ─────────────────────────────────────────────
     services = {
-      displayManager.gdm = {
+      xserver.displayManager.gdm = {
         enable      = true;
         autoSuspend = false;
       };
 
-      desktopManager.gnome.enable = true;
+      xserver.desktopManager.gnome.enable = true;
 
       gnome = {
         gnome-keyring.enable = true;
