@@ -88,10 +88,16 @@ in
         description = "Enable NVIDIA Container Toolkit for GPU acceleration in containers.";
       };
 
-      blasklistNouveau = lib.mkOption {
+      blacklistNouveau = lib.mkOption {
         type        = lib.types.bool;
         default     = true;
         description = "Blacklist the nouveau kernel module to prevent conflicts with NVIDIA drivers.";
+      };
+
+      cuda = lib.mkOption {
+        type        = lib.types.bool;
+        default     = false;
+        description = "Allow unfree CUDA packages (cuda_cccl, cuda_cudart, cuda_nvcc, libcublas, nvidia-settings, nvidia-x11).";
       };
     };
 
@@ -126,10 +132,10 @@ in
     # -- Base graphics stack -----------------------------------------
     (lib.mkIf gfx.enable {
       hardware.graphics = {
-        enable     = true;
+        enable      = true;
         enable32Bit = true;
       };
-      programs.light.enable = true; # sets up udev rules
+      programs.light.enable = true;
       users.users.${flake.config.me.username} = {
         extraGroups = [ "video" ];
       };
@@ -146,19 +152,19 @@ in
     # -- GPU: NVIDIA -------------------------------------------------
     (lib.mkIf nvidia.enable {
       hardware.nvidia = {
-        package                      = nvidia.package;
-        modesetting.enable           = nvidia.modesetting;
-        powerManagement.enable       = nvidia.powerManagement;
-        powerManagement.finegrained  = nvidia.finegrainedPowerManagement;
-        open                         = nvidia.open;
+        package                     = nvidia.package;
+        modesetting.enable          = nvidia.modesetting;
+        powerManagement.enable      = nvidia.powerManagement;
+        powerManagement.finegrained = nvidia.finegrainedPowerManagement;
+        open                        = nvidia.open;
       };
 
-      boot.blacklistedKernelModules = lib.mkIf nvidia.blasklistNouveau [ "nouveau" ];
+      boot.blacklistedKernelModules =
+        lib.mkIf nvidia.blacklistNouveau [ "nouveau" ];
 
       hardware.nvidia-container-toolkit.enable = nvidia.toolkit;
-      hardware.nvidia-container-toolkit.suppressNvidiaDriverAssertion = lib.mkIf nvidia.headless true;
-
-      #hardware.nvidia.datacenter.enable = lib.mkIf nvidia.headless true;
+      hardware.nvidia-container-toolkit.suppressNvidiaDriverAssertion =
+        lib.mkIf nvidia.headless true;
 
       systemModules.graphics.enable     = lib.mkIf (!nvidia.headless) true;
       systemModules.xserver.enable      = lib.mkIf (!nvidia.headless) true;
@@ -167,6 +173,22 @@ in
       # Headless still needs the driver registered so the kernel module loads
       services.xserver.videoDrivers = [ "nvidia" ];
     })
+
+    # -- GPU: NVIDIA CUDA --------------------------------------------
+    (lib.mkIf (nvidia.enable && nvidia.cuda) {
+      nixpkgs.config.allowUnfree = true;
+      nixpkgs.config.cuda.acceptLicense = true;
+      nixpkgs.config.cudaSupport = true;
+
+      nixpkgs.overlays = [
+        (final: prev: {
+          cudaPackages = prev.cudaPackages.overrideScope (cfinal: cprev: {
+            cuda_compat = prev.emptyDirectory;
+          });
+        })
+      ];
+    })
+
     # -- GPU: AMD ----------------------------------------------------
     (lib.mkIf amd.enable {
       systemModules.xserver.videoDriver = [ "amdgpu" ];
