@@ -55,24 +55,27 @@ in
 
     whitelistAddresses = lib.mkOption {
       type = lib.types.listOf lib.types.str;
-      default = [];
+      default = [ "127.0.0.1" "::1" ];
       example = [ "192.168.1.10" "10.0.0.5" ];
       description = "IP addresses allowed when whitelistMode is true.";
     };
 
-    # Note: --configPath is ignored by SillyTavern 1.17+ in "global mode".
-    # Config is always read from $HOME/.local/share/SillyTavern/config.yaml.
-    # This option is kept for documentation/future use but has no effect at runtime.
-    configFile = lib.mkOption {
-      type = lib.types.nullOr lib.types.path;
-      default = null;
-      example = "/etc/sillytavern/config.yaml";
-      description = ''
-        Path to the SillyTavern configuration file.
-        NOTE: SillyTavern 1.17+ ignores --configPath in global mode and always
-        uses $HOME/.local/share/SillyTavern/config.yaml. If null, the module
-        generates that file via a seed script on first run.
-      '';
+    basicAuthMode = lib.mkOption {
+      type = lib.types.bool;
+      default = false;
+      description = "Enable basic authentication.";
+    };
+
+    basicAuthUser = lib.mkOption {
+      type = lib.types.str;
+      default = "user";
+      description = "Basic auth username.";
+    };
+
+    basicAuthPassword = lib.mkOption {
+      type = lib.types.str;
+      default = "password";
+      description = "Basic auth password.";
     };
 
     ollama = {
@@ -101,62 +104,61 @@ in
 
   config =
     let
-      # SillyTavern 1.17+ always uses $HOME/.local/share/SillyTavern/ regardless
-      # of --configPath, so we point the home dir here and let XDG do the rest.
       homeDir = "/var/lib/sillytavern";
       stDataDir = "${homeDir}/.local/share/SillyTavern";
       stUserDir = "${stDataDir}/data/default-user";
 
-      # config.yaml written into the XDG data dir on first run.
-      configYaml = lib.generators.toYAML { } (
-        {
-          port = cfg.port;
-          listen = cfg.listen;
-          whitelistMode = cfg.whitelistMode;
-          whitelist = cfg.whitelistAddresses;
-        }
-        // lib.optionalAttrs (cfg.listenAddressIPv4 != null && !cfg.listen) {
-          listenAddressIPv4 = cfg.listenAddressIPv4;
-        }
-        // lib.optionalAttrs (cfg.listenAddressIPv6 != null && !cfg.listen) {
-          listenAddressIPv6 = cfg.listenAddressIPv6;
-        }
-      );
+      ollamaProfileId = "a1b2c3d4-e5f6-7890-abcd-ef1234567890";
+      ollamaUrl = "http://${cfg.ollama.host}:${toString cfg.ollama.port}";
 
       ollamaSettingsJson = builtins.toJSON {
-        main_api = "ollama";
-        api_server = "http://${cfg.ollama.host}:${toString cfg.ollama.port}";
-        ollama = {
-          server_url = "http://${cfg.ollama.host}:${toString cfg.ollama.port}";
-          selected_model = cfg.ollama.model;
+        power_user = {
+          servers = [
+            {
+              label = "ollama";
+              url = "${ollamaUrl}/";
+            }
+          ];
+        };
+        extension_settings = {
+          connectionManager = {
+            selectedProfile = ollamaProfileId;
+            profiles = [
+              {
+                id = ollamaProfileId;
+                mode = "tc";
+                exclude = [];
+                api = "ollama";
+                preset = "Default";
+                "api-url" = ollamaUrl;
+                model = cfg.ollama.model;
+                sysprompt = "Neutral - Chat";
+                "sysprompt-state" = "true";
+                context = "Default";
+                "instruct-state" = "false";
+                tokenizer = "best_match";
+                "stop-strings" = "";
+                "start-reply-with" = "";
+                "reasoning-template" = "Think XML";
+                name = "ollama ${cfg.ollama.model} - Default";
+              }
+            ];
+          };
         };
       };
 
-      # Runs as root (+) before the service starts.
-      # Seeds config.yaml and optionally settings.json on first run only.
       seedScript = pkgs.writeShellScript "sillytavern-seed" ''
         set -euo pipefail
-
         mkdir -p "${stDataDir}"
         mkdir -p "${stUserDir}"
 
-        # Seed config.yaml if absent
-        if [ ! -f "${stDataDir}/config.yaml" ]; then
-          printf '%s' '${configYaml}' > "${stDataDir}/config.yaml"
-          echo "sillytavern: seeded config.yaml (port=${toString cfg.port}, listen=${lib.boolToString cfg.listen})"
-        fi
-
         ${lib.optionalString cfg.ollama.enable ''
-          # Seed settings.json with Ollama config if absent
           if [ ! -f "${stUserDir}/settings.json" ]; then
             printf '%s' '${ollamaSettingsJson}' > "${stUserDir}/settings.json"
-            echo "sillytavern: seeded settings.json with Ollama config"
-            echo "  url  : http://${cfg.ollama.host}:${toString cfg.ollama.port}"
-            echo "  model: ${cfg.ollama.model}"
+            echo "sillytavern: seeded settings.json with Ollama connection profile"
           fi
         ''}
 
-        # Fix ownership so the service user can write to its data dir
         chown -R ${cfg.user}:${cfg.group} "${homeDir}"
       '';
     in
@@ -182,11 +184,33 @@ in
           ++ lib.optional cfg.ollama.enable "ollama.service";
         wants = lib.optional cfg.ollama.enable "ollama.service";
 
+        # All config.yaml settings can be overridden via SILLYTAVERN_* env vars.
+        # This is cleaner than seeding a file — always reflects current Nix config
+        # without needing to delete and re-seed on changes.
         environment = {
-          # Make XDG_DATA_HOME explicit so SillyTavern finds its data dir
-          # even when run as a system service without a proper login session.
           HOME = homeDir;
           XDG_DATA_HOME = "${homeDir}/.local/share";
+
+          SILLYTAVERN_PORT = toString cfg.port;
+          SILLYTAVERN_LISTEN = lib.boolToString cfg.listen;
+          SILLYTAVERN_WHITELISTMODE = lib.boolToString cfg.whitelistMode;
+          SILLYTAVERN_WHITELIST = builtins.toJSON cfg.whitelistAddresses;
+          SILLYTAVERN_BASICAUTHMODE = lib.boolToString cfg.basicAuthMode;
+          SILLYTAVERN_BASICAUTHUSER__USERNAME = cfg.basicAuthUser;
+          SILLYTAVERN_BASICAUTHUSER__PASSWORD = cfg.basicAuthPassword;
+
+          # Disable auto browser launch — this is a headless server
+          SILLYTAVERN_BROWSERLAUNCH__ENABLED = "false";
+
+          # Security override needed when listen=true without whitelist/auth
+          # (set automatically based on config)
+          SILLYTAVERN_SECURITYOVERRIDE = lib.boolToString (
+            cfg.listen && !cfg.whitelistMode && !cfg.basicAuthMode
+          );
+        } // lib.optionalAttrs (cfg.listenAddressIPv4 != null) {
+          SILLYTAVERN_LISTENADDRESS__IPV4 = cfg.listenAddressIPv4;
+        } // lib.optionalAttrs (cfg.listenAddressIPv6 != null) {
+          SILLYTAVERN_LISTENADDRESS__IPV6 = cfg.listenAddressIPv6;
         };
 
         serviceConfig = {
@@ -197,28 +221,26 @@ in
           StateDirectory = "sillytavern";
           StateDirectoryMode = "0750";
 
-          # Seed config/settings on first run; no-op on subsequent starts.
           ExecStartPre = "+${seedScript}";
-
           ExecStart = "${lib.getExe cfg.package}";
 
           Restart = "on-failure";
           RestartSec = "5s";
 
           # Hardening
+          # - MemoryDenyWriteExecute: must be OFF — V8 JIT requires W+X pages
+          # - CapabilityBoundingSet: CAP_CHOWN needed — SillyTavern chowns its data dir
           NoNewPrivileges = true;
           PrivateTmp = true;
           PrivateDevices = true;
-          ProtectHome = false; # needs access to homeDir
+          ProtectHome = false;
           ProtectSystem = "strict";
           ReadWritePaths = [ homeDir ];
           CapabilityBoundingSet = [ "CAP_CHOWN" "CAP_DAC_OVERRIDE" ];
           LockPersonality = true;
-          MemoryDenyWriteExecute = false; # V8 JIT requires W+X pages
+          MemoryDenyWriteExecute = false;
           RestrictNamespaces = true;
           RestrictRealtime = true;
-          # SystemCallFilter omitted — SillyTavern uses fs.chown() and other
-          # syscalls that conflict with allowlist-based filtering
         };
       };
     };
