@@ -19,9 +19,21 @@ in
   # ── Hardware configuration ─────────────────────────────
   hardwareProfiles.gpu.nvidia = {
     enable   = true;
-    headless = true;   # skips graphics stack and X server entirely
+    headless = true;
+    open     = false;
     toolkit  = true;
+    cuda     = true;
   };
+
+  my.services.ollama = {
+    enable = true;
+    acceleration = "cuda";
+    loadModels = [ "qwen2.5-coder:7b" "deepseek-r1:14b" ];
+    models = "/mnt/data/models";
+  };
+
+  nixpkgs.config.allowUnfree = true;
+  nixpkgs.config.cuda.acceptLicense = true;
   
   # ── System settings ────────────────────────────────────
   my.system = {
@@ -65,12 +77,6 @@ in
     #  enable = true;
     #  allowDNS = false;
     #};
-    ollama = {
-      enable = false;
-      acceleration = "cuda";
-      #loadModels = [ "mistral" ];
-      #port = 11434;
-    };
   };
 
   environment.systemPackages = [
