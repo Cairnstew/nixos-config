@@ -20,6 +20,23 @@ in
       description = "Hardware acceleration backend. null = CPU only.";
     };
 
+    host = lib.mkOption {
+      type    = lib.types.str;
+      default = "127.0.0.1";
+      example = "0.0.0.0";
+      description = ''
+        The host address Ollama listens on.
+        Use 0.0.0.0 to listen on all interfaces,
+        or a specific IP (e.g. Tailscale) to restrict access.
+      '';
+    };
+
+    port = lib.mkOption {
+      type    = lib.types.port;
+      default = 11434;
+      description = "Port Ollama listens on.";
+    };
+
     loadModels = lib.mkOption {
       type    = lib.types.listOf lib.types.str;
       default = [ ];
@@ -36,12 +53,6 @@ in
         services.ollama.home/models (/var/lib/ollama/models) when null.
       '';
     };
-
-    port = lib.mkOption {
-      type    = lib.types.port;
-      default = 11434;
-      description = "Port Ollama listens on.";
-    };
   };
 
   config = lib.mkIf cfg.enable {
@@ -51,8 +62,9 @@ in
 
     services.ollama = {
       enable     = true;
-      user       = "ollama";   # needed so tmpfiles ownership matches
+      user       = "ollama";
       group      = "ollama";
+      host       = cfg.host;
       port       = cfg.port;
       loadModels = cfg.loadModels;
       package    = packageMap.${if cfg.acceleration == null then "null" else cfg.acceleration};
