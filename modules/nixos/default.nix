@@ -56,6 +56,7 @@ in
   
     # Entertainment
     nm.spotify
+    nm.sillytavern
 
     # Networking
     nm.rustdesk
