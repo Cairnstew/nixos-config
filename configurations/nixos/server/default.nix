@@ -28,8 +28,24 @@ in
   my.services.ollama = {
     enable = true;
     acceleration = "cuda";
-    loadModels = [ "qwen2.5-coder:7b" "deepseek-r1:14b" ];
+    loadModels = [ "qwen2.5-coder:7b" "deepseek-r1:14b" "hf.co/Lewdiculous/DS-R1-Qwen3-8B-ArliAI-RpR-v4-Small-GGUF-IQ-Imatrix"];
     models = "/mnt/data/models";
+    host = "0.0.0.0";
+  };
+
+  my.services.sillytavern = {
+    enable = true;
+    port = 8111;
+    listen = true;
+    whitelistMode = true;
+    whitelistAddresses = [ "100.111.231.84" ]; 
+
+    ollama = {
+      enable = true;
+      host = "127.0.0.1";
+      port = 11434;
+      model = "hf.co/Lewdiculous/DS-R1-Qwen3-8B-ArliAI-RpR-v4-Small-GGUF-IQ-Imatrix";
+    };
   };
 
   nixpkgs.config.allowUnfree = true;
