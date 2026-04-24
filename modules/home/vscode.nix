@@ -90,8 +90,9 @@ in
           };
           mergedConfig = lib.recursiveUpdate baseConfig cfg.continue.extraConfig;
         in
-          (pkgs.formats.yaml {}).generate "continue-config" mergedConfig
-          |> builtins.readFile;
+          builtins.readFile (
+            (pkgs.formats.yaml {}).generate "continue-config" mergedConfig
+          );
     };
   };
 }
