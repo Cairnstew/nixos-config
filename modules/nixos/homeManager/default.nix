@@ -2,6 +2,7 @@
 let
   inherit (flake) inputs;
   inherit (inputs) self;
+  ollamaModels = flake.config.ollamaModels;
 in
 {
 
@@ -45,6 +46,15 @@ in
               user = flake.config.me.github_username;
               git_protocol = "ssh";
             };
+          };
+        };
+        opencode = {
+          enable = true;
+          settings.provider.ollama = {
+            npm             = "@ai-sdk/openai-compatible";
+            name            = "Ollama (local)";
+            options.baseURL = "http://${flake.config.tailnet.server.ip}:11434/v1";
+            models          = lib.mapAttrs (_id: m: { name = m.name; }) flake.config.ollamaModels;
           };
         };
         ghostty.enable = true;
