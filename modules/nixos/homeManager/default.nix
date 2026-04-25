@@ -64,6 +64,7 @@ in
             enable = config.age.secrets ? "github-token-obsidian";
             url = "https://github.com/Cairnstew/Cairns-Notes";
             tokenFile = config.age.secrets."github-token-obsidian".path;
+            electron = pkgs.electron_35;
           };
         };
         yazi.enable = true;

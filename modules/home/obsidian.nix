@@ -3,6 +3,7 @@ let
   cfg = config.my.programs.obsidian;
   vaultDir = "${config.home.homeDirectory}/${cfg.defaultDirectory}";
   vaultId = builtins.substring 0 16 (builtins.hashString "md5" vaultDir);
+  obsidianPkg = cfg.package.override { electron = cfg.electron; };
 in
 {
   options.my.programs.obsidian = {
@@ -10,6 +11,20 @@ in
       type = lib.types.bool;
       default = false;
       description = "Enable Obsidian with custom configuration";
+    };
+
+    package = lib.mkOption {
+      type = lib.types.package;
+      default = pkgs.obsidian;
+      defaultText = "pkgs.obsidian";
+      description = "The obsidian package to use.";
+    };
+
+    electron = lib.mkOption {
+      type = lib.types.package;
+      default = pkgs.electron;
+      defaultText = "pkgs.electron";
+      description = "The electron package obsidian should use.";
     };
 
     defaultDirectory = lib.mkOption {
@@ -41,7 +56,7 @@ in
 
   config = lib.mkIf cfg.enable {
     # obsidian installed here instead of programs.obsidian to avoid conflict with home.file below
-    home.packages = with pkgs; [ obsidian jq ];
+    home.packages = [ obsidianPkg pkgs.jq ];
 
     home.file.".config/obsidian/obsidian.json" = {
       text = builtins.toJSON {
