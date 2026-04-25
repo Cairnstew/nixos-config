@@ -14,6 +14,7 @@ in
   imports = [
     ./configuration.nix
     self.nixosModules.default
+    self.nixosModules.server
   ];
 
   # ── Hardware configuration ─────────────────────────────
