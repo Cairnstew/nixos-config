@@ -20,48 +20,54 @@ let
           SSH public key
         '';
       };
-      zerotier_token = lib.mkOption {
-        type = lib.types.str;
-        description = ''
-          Zerotier Admin Token, for Zeronsd
-        '';
-      };
-
-      # ✅ Add this for ZeroTier network IDs
-      zerotier_network = lib.mkOption {
-        type = lib.types.str;
-        description = ''
-          Zerotier Network ID, for Zeronsd
-        '';
-      };
-
       github_username = lib.mkOption {
         type = lib.types.str;
         description = ''
           github.com Username.
         '';
       };
-
-      zerodnsServer = lib.mkOption {
-        type = lib.types.str;
-        description = ''
-          Zerotier Dns Server IP.
-        '';
-        example = "192.168.191.168";
-      };
-        
     };
 
   };
+
+  tailnetHostSubmodule = lib.types.submodule {
+    options = {
+      ip = lib.mkOption {
+        type = lib.types.str;
+        description = "Stable Tailscale IP (100.x.x.x)";
+        example = "100.64.1.5";
+      };
+      hostname = lib.mkOption {
+        type = lib.types.str;
+        description = "Short hostname as it appears in the tailnet";
+        example = "homeserver";
+      };
+      magicDnsName = lib.mkOption {
+        type = lib.types.nullOr lib.types.str;
+        default = null;
+        description = "Full MagicDNS name, e.g. homeserver.tail1234.ts.net";
+      };
+    };
+  };
 in
 {
-  imports = [
-    ../../config.nix
-  ];
+  imports = [ ../../config.nix ];
 
   options = {
     me = lib.mkOption {
       type = userSubmodule;
+    };
+
+    tailnet = lib.mkOption {
+      type    = lib.types.attrsOf tailnetHostSubmodule;
+      default = {};
+      description = "Known tailnet hosts, keyed by logical name.";
+      example = lib.literalExpression ''
+        {
+          homeserver = { ip = "100.64.1.5"; hostname = "homeserver"; };
+          laptop     = { ip = "100.64.1.12"; hostname = "laptop"; };
+        }
+      '';
     };
   };
 }
