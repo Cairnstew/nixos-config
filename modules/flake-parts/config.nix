@@ -27,25 +27,34 @@ let
         '';
       };
     };
-
   };
 
   tailnetHostSubmodule = lib.types.submodule {
     options = {
       ip = lib.mkOption {
-        type = lib.types.str;
+        type        = lib.types.str;
         description = "Stable Tailscale IP (100.x.x.x)";
-        example = "100.64.1.5";
+        example     = "100.64.1.5";
       };
       hostname = lib.mkOption {
-        type = lib.types.str;
+        type        = lib.types.str;
         description = "Short hostname as it appears in the tailnet";
-        example = "homeserver";
+        example     = "homeserver";
       };
       magicDnsName = lib.mkOption {
-        type = lib.types.nullOr lib.types.str;
-        default = null;
+        type        = lib.types.nullOr lib.types.str;
+        default     = null;
         description = "Full MagicDNS name, e.g. homeserver.tail1234.ts.net";
+      };
+    };
+  };
+
+  ollamaModelSubmodule = lib.types.submodule {
+    options = {
+      name = lib.mkOption {
+        type        = lib.types.str;
+        description = "Display name for the model.";
+        example     = "Qwen 2.5 Coder 14B";
       };
     };
   };
@@ -59,13 +68,25 @@ in
     };
 
     tailnet = lib.mkOption {
-      type    = lib.types.attrsOf tailnetHostSubmodule;
-      default = {};
+      type        = lib.types.attrsOf tailnetHostSubmodule;
+      default     = {};
       description = "Known tailnet hosts, keyed by logical name.";
-      example = lib.literalExpression ''
+      example     = lib.literalExpression ''
         {
           homeserver = { ip = "100.64.1.5"; hostname = "homeserver"; };
           laptop     = { ip = "100.64.1.12"; hostname = "laptop"; };
+        }
+      '';
+    };
+
+    ollamaModels = lib.mkOption {
+      type        = lib.types.attrsOf ollamaModelSubmodule;
+      default     = {};
+      description = "Ollama models to load, keyed by model identifier.";
+      example     = lib.literalExpression ''
+        {
+          "qwen2.5-coder:14b" = { name = "Qwen 2.5 Coder 14B"; };
+          "deepseek-r1:14b"   = { name = "DeepSeek R1 14B"; };
         }
       '';
     };

@@ -16,4 +16,12 @@
     laptop     = { ip = "100.108.181.64"; hostname = "laptop";     magicDnsName = "laptop.tail685690.ts.net"; };
     wsl        = { ip = "100.70.224.82";  hostname = "wsl";        magicDnsName = "wsl.tail685690.ts.net"; };
   };
+
+  ollamaModels = {
+    "qwen2.5-coder:14b"  = { name = "Qwen 2.5 Coder 14B"; };
+    "deepseek-r1:14b"    = { name = "DeepSeek R1 14B"; };
+    "hf.co/Lewdiculous/DS-R1-Qwen3-8B-ArliAI-RpR-v4-Small-GGUF-IQ-Imatrix" = {
+      name = "Lewdiculous Qwen3 8B";
+    };
+  };
 }
