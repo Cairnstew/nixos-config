@@ -56,6 +56,16 @@ let
         description = "Display name for the model.";
         example     = "Qwen 2.5 Coder 14B";
       };
+      tools = lib.mkOption {
+        type        = lib.types.bool;
+        default     = true;
+        description = "Whether the model supports tool calling.";
+      };
+      numCtx = lib.mkOption {
+        type        = lib.types.nullOr lib.types.int;
+        default     = null;
+        description = "Context window size override. Null uses Ollama's default.";
+      };
     };
   };
 in
