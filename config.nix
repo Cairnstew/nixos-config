@@ -18,8 +18,8 @@
   };
 
   ollamaModels = {
-    "qwen2.5-coder:14b"  = { name = "Qwen 2.5 Coder 14B"; };
-    "deepseek-r1:14b"    = { name = "DeepSeek R1 14B"; };
+    "qwen2.5-coder:14b" = { name = "Qwen 2.5 Coder 14B"; tools = true; numCtx = 32768; };
+    "deepseek-r1:14b"    = { name = "DeepSeek R1 14B"; tools = true; };
     "hf.co/Lewdiculous/DS-R1-Qwen3-8B-ArliAI-RpR-v4-Small-GGUF-IQ-Imatrix" = {
       name = "Lewdiculous Qwen3 8B";
     };
