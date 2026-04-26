@@ -50,11 +50,19 @@ in
         };
         opencode = {
           enable = true;
+          model = "ollama/qwen2.5-coder:14b";
+          #model = "ollama/deepseek-r1:14b";
           settings.provider.ollama = {
             npm             = "@ai-sdk/openai-compatible";
             name            = "Ollama (local)";
             options.baseURL = "http://${flake.config.tailnet.server.ip}:11434/v1";
-            models          = lib.mapAttrs (_id: m: { name = m.name; }) flake.config.ollamaModels;
+            models = lib.mapAttrs (_id: m: {
+              name  = m.name;
+              tools = m.tools;
+            } // lib.optionalAttrs (m.numCtx != null) {
+              options.num_ctx = m.numCtx;
+            }) flake.config.ollamaModels;
+
           };
         };
         ghostty.enable = true;
