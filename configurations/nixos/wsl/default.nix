@@ -91,7 +91,7 @@ in
     my = {
       programs = {
         #vscode.enable = true;
-        rstudio.enable            = true;
+        rstudio.enable            = false;
         obsidian.enable           = true;
       };
     };
