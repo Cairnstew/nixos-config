@@ -18,10 +18,16 @@
   };
 
   ollamaModels = {
-    "qwen2.5-coder:14b" = { name = "Qwen 2.5 Coder 14B"; tools = true; numCtx = 32768; };
+    "qwen3:8b" = { name = "Qwen 3 8B"; tools = true; numCtx = 16384; think = false; };
     "deepseek-r1:14b"    = { name = "DeepSeek R1 14B"; tools = true; };
     "hf.co/Lewdiculous/DS-R1-Qwen3-8B-ArliAI-RpR-v4-Small-GGUF-IQ-Imatrix" = {
       name = "Lewdiculous Qwen3 8B";
+    };
+    "deepseek-coder-v2:16b" = {
+      name = "DeepSeek Coder 2 16B";
+      tools = true;
+      numCtx = 20000;
+      temperature = 0.1;
     };
   };
 }
