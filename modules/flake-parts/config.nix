@@ -66,6 +66,16 @@ let
         default     = null;
         description = "Context window size override. Null uses Ollama's default.";
       };
+      temperature = lib.mkOption {
+        type        = lib.types.nullOr lib.types.float;
+        default     = null;
+        description = "Sampling temperature. Lower values are more deterministic.";
+      };
+      think = lib.mkOption {
+        type        = lib.types.nullOr lib.types.bool;
+        default     = null;
+        description = "Enable or disable Qwen3 thinking mode.";
+      };
     };
   };
 in
