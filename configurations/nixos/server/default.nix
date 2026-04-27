@@ -27,8 +27,8 @@ in
   };
 
   my.services.ollama = {
-    acceleration = "cuda";
-    models = "/mnt/data/models";
+    gpu    = { enable = true; type = "nvidia"; };
+    dataDir  = "/mnt/data/ollama";
   };
 
   nixpkgs.config.allowUnfree = true;
