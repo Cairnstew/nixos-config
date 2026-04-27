@@ -18,7 +18,7 @@ in
   my.services = {
     ollama = {
       enable     = true;
-      loadModels = lib.attrNames ollamaModels;
+      models  = ollamaModels;
       host       = "0.0.0.0";
     };
 
