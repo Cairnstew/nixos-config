@@ -48,36 +48,6 @@ let
       };
     };
   };
-
-  ollamaModelSubmodule = lib.types.submodule {
-    options = {
-      name = lib.mkOption {
-        type        = lib.types.str;
-        description = "Display name for the model.";
-        example     = "Qwen 2.5 Coder 14B";
-      };
-      tools = lib.mkOption {
-        type        = lib.types.bool;
-        default     = true;
-        description = "Whether the model supports tool calling.";
-      };
-      numCtx = lib.mkOption {
-        type        = lib.types.nullOr lib.types.int;
-        default     = null;
-        description = "Context window size override. Null uses Ollama's default.";
-      };
-      temperature = lib.mkOption {
-        type        = lib.types.nullOr lib.types.float;
-        default     = null;
-        description = "Sampling temperature. Lower values are more deterministic.";
-      };
-      think = lib.mkOption {
-        type        = lib.types.nullOr lib.types.bool;
-        default     = null;
-        description = "Enable or disable Qwen3 thinking mode.";
-      };
-    };
-  };
 in
 {
   imports = [ ../../config.nix ];
@@ -100,15 +70,7 @@ in
     };
 
     ollamaModels = lib.mkOption {
-      type        = lib.types.attrsOf ollamaModelSubmodule;
-      default     = {};
-      description = "Ollama models to load, keyed by model identifier.";
-      example     = lib.literalExpression ''
-        {
-          "qwen2.5-coder:14b" = { name = "Qwen 2.5 Coder 14B"; };
-          "deepseek-r1:14b"   = { name = "DeepSeek R1 14B"; };
-        }
-      '';
+      type = lib.types.attrsOf lib.types.attrs;
     };
   };
 }
