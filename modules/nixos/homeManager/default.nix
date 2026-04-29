@@ -52,8 +52,25 @@ in
           ollamaBaseURL = "http://${flake.config.tailnet.server.ip}:11434/v1";
           ollamaModels = flake.config.ollamaModels;
         };
-        aider = {
+        cline = {
           enable = true;
+
+          ollamaBaseURL = "http://${flake.config.tailnet.server.ip}:11434";
+
+          ollamaModels = flake.config.ollamaModels;
+
+          # Optional extra Cline VS Code settings
+          settings = {
+            "cline.maxTokens"                = 16384;
+            "cline.terminalOutputLineLimit"  = 500;
+          };
+          kanban = {
+            enable    = true;
+            extraArgs = [ "--port" "3000" ];
+          };
+        };
+        aider = {
+          enable = false;
           ollamaModels = flake.config.ollamaModels;
           ollamaBaseURL = "http://${flake.config.tailnet.server.ip}:11434";
           settings = {
