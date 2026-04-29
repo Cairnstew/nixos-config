@@ -18,6 +18,9 @@ let
 
   cfg = config.my.programs.cline;
 
+  # Node 22 required by kanban and cline CLI.
+  nodejs = pkgs.nodejs_22;
+
   # Find the first model flagged as the cline default.
   defaultModelTag = lib.findFirst
     (tag: cfg.ollamaModels.${tag}.cline_default or false)
@@ -40,11 +43,6 @@ let
       "cline.ollamaModelId" = clineDefaultModel;
     }
     // cfg.settings;
-
-  # The kanban CLI — thin npx wrapper until cline/kanban lands in nixpkgs.
-  kanbanPackage = pkgs.writeShellScriptBin "cline" ''
-    exec ${lib.getExe pkgs.nodejs} ${pkgs.nodejs}/bin/npx --yes cline "$@"
-  '';
 
 in
 {
@@ -100,8 +98,8 @@ in
       default = {};
       example = literalExpression ''
         {
-          "cline.maxTokens"                = 16384;
-          "cline.terminalOutputLineLimit"  = 500;
+          "cline.maxTokens"               = 16384;
+          "cline.terminalOutputLineLimit" = 500;
         }
       '';
       description = ''
@@ -130,20 +128,25 @@ in
         type    = types.bool;
         default = false;
         description = ''
-          Install the <command>cline</command> Kanban CLI — a browser-based
+          Install the <command>cline-kanban</command> CLI — a browser-based
           kanban board for orchestrating multiple coding agents in parallel
-          via git worktrees.  Run <command>cline</command> from the root of
-          any git repo to open the board in your browser.
+          via git worktrees.  Run <command>cline-kanban</command> from the
+          root of any git repo to open the board in your browser.
+
+          The <literal>kanban</literal> npm package is installed into
+          <filename>~/.npm-global</filename> on first <command>home-manager
+          switch</command> and kept there across rebuilds.
         '';
       };
 
       extraArgs = mkOption {
         type    = types.listOf types.str;
         default = [];
-        example = literalExpression ''[ "--port" "3000" ]'';
+        example = literalExpression ''[ "--host" "0.0.0.0" "--port" "3484" ]'';
         description = ''
-          Extra command-line flags passed to <command>cline</command> on every
-          invocation.
+          Extra command-line flags passed to <command>kanban</command> on
+          every invocation.  Use <literal>--host 0.0.0.0</literal> to bind
+          to all interfaces when running on a remote machine or WSL.
         '';
       };
     };
@@ -179,10 +182,21 @@ in
     # ── Kanban CLI package ─────────────────────────────────────────────────
 
     home.packages = lib.optional cfg.kanban.enable (
-        pkgs.writeShellScriptBin "cline-kanban" ''
-            exec ${pkgs.nodejs}/bin/npx --yes kanban \
-            ${lib.escapeShellArgs cfg.kanban.extraArgs} \
-            "$@"
+      pkgs.writeShellScriptBin "cline-kanban" ''
+        export NPM_CONFIG_PREFIX=$HOME/.npm-global
+        exec ${lib.getExe nodejs} $HOME/.npm-global/bin/kanban \
+          ${lib.escapeShellArgs cfg.kanban.extraArgs} \
+          "$@"
+      ''
+    );
+
+    # Install/upgrade the kanban npm package into ~/.npm-global on every
+    # home-manager switch.  npm install -g is idempotent when already current.
+    home.activation.installKanban = lib.mkIf cfg.kanban.enable (
+        lib.hm.dag.entryAfter [ "writeBoundary" ] ''
+            export NPM_CONFIG_PREFIX=$HOME/.npm-global
+            export PATH=${nodejs}/bin:${pkgs.python3}/bin:${pkgs.gcc}/bin:${pkgs.gnumake}/bin:$PATH
+            $DRY_RUN_CMD ${nodejs}/bin/npm install -g kanban
         ''
         );
 
@@ -203,8 +217,14 @@ in
 
     # ── Environment ────────────────────────────────────────────────────────
 
-    home.sessionVariables = optionalAttrs usingOllama {
-      OLLAMA_HOST = cfg.ollamaBaseURL;
-    };
+    home.sessionVariables =
+      optionalAttrs usingOllama {
+        OLLAMA_HOST = cfg.ollamaBaseURL;
+      }
+      // optionalAttrs cfg.kanban.enable {
+        # Ensure npm -g always resolves to the writable prefix, not the
+        # read-only Nix store, for any manual npm -g commands the user runs.
+        NPM_CONFIG_PREFIX = "$HOME/.npm-global";
+      };
   };
 }
