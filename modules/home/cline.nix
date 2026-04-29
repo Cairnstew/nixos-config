@@ -35,8 +35,8 @@ let
     then defaultModelTag
     else cfg.model;
 
-  # Build the VS Code settings fragment that Cline reads.
-  clineSettings =
+  # VS Code settings fragment that the Cline extension reads.
+  clineVSCodeSettings =
     {
       "cline.apiProvider"   = "ollama";
       "cline.ollamaBaseUrl" = cfg.ollamaBaseURL;
@@ -44,10 +44,29 @@ let
     }
     // cfg.settings;
 
+  # ~/.cline/data/settings/providers.json — read by the Cline CLI and
+  # Kanban board.  Matches the format written by `cline config` so the
+  # tools accept it without interactive first-run setup.
+  clineProviders = {
+    version          = 1;
+    lastUsedProvider = "ollama";
+    providers = {
+      ollama = {
+        settings = {
+          provider = "ollama";
+          model    = clineDefaultModel;
+          # Cline CLI expects the OpenAI-compatible /v1 suffix.
+          baseUrl  = "${cfg.ollamaBaseURL}/v1";
+        };
+        tokenSource = "manual";
+      };
+    };
+  };
+
 in
 {
   options.my.programs.cline = {
-    enable = mkEnableOption "Cline – AI coding agent in VS Code";
+    enable = mkEnableOption "Cline – AI coding agent in VS Code and terminal";
 
     # ── Ollama integration ─────────────────────────────────────────────────
 
@@ -73,8 +92,9 @@ in
       default = "http://127.0.0.1:11434";
       example = "http://my-gpu-box:11434";
       description = ''
-        Base URL for the Ollama server.  Written into VS Code settings as
-        <literal>cline.ollamaBaseUrl</literal> and exported as
+        Base URL for the Ollama server, without a trailing slash and without
+        the <literal>/v1</literal> suffix — the module appends that
+        automatically for the Cline CLI provider config.  Exported as
         <envar>OLLAMA_HOST</envar>.
       '';
     };
@@ -134,8 +154,12 @@ in
           root of any git repo to open the board in your browser.
 
           The <literal>kanban</literal> npm package is installed into
-          <filename>~/.npm-global</filename> on first <command>home-manager
-          switch</command> and kept there across rebuilds.
+          <filename>~/.npm-global</filename> on first
+          <command>home-manager switch</command> and kept there across rebuilds.
+
+          Use <literal>--host 0.0.0.0</literal> in <option>extraArgs</option>
+          when running on a remote machine or WSL so the board is reachable
+          from your browser at <literal>http://&lt;host-ip&gt;:3484</literal>.
         '';
       };
 
@@ -145,8 +169,7 @@ in
         example = literalExpression ''[ "--host" "0.0.0.0" "--port" "3484" ]'';
         description = ''
           Extra command-line flags passed to <command>kanban</command> on
-          every invocation.  Use <literal>--host 0.0.0.0</literal> to bind
-          to all interfaces when running on a remote machine or WSL.
+          every invocation.
         '';
       };
     };
@@ -179,11 +202,23 @@ in
       }
     ];
 
+    # ── Cline CLI provider config ──────────────────────────────────────────
+
+    # Writes the provider/model/URL config that both the Cline CLI and the
+    # Kanban board read, matching the format produced by `cline config`.
+    # force = false means manual changes via `cline config` are not clobbered
+    # on subsequent home-manager switches.
+    home.file.".cline/data/settings/providers.json" = mkIf usingOllama {
+      text  = builtins.toJSON clineProviders;
+      force = false;
+    };
+
     # ── Kanban CLI package ─────────────────────────────────────────────────
 
     home.packages = lib.optional cfg.kanban.enable (
       pkgs.writeShellScriptBin "cline-kanban" ''
         export NPM_CONFIG_PREFIX=$HOME/.npm-global
+        export PATH=${nodejs}/bin:$PATH
         exec ${lib.getExe nodejs} $HOME/.npm-global/bin/kanban \
           ${lib.escapeShellArgs cfg.kanban.extraArgs} \
           "$@"
@@ -193,25 +228,25 @@ in
     # Install/upgrade the kanban npm package into ~/.npm-global on every
     # home-manager switch.  npm install -g is idempotent when already current.
     home.activation.installKanban = lib.mkIf cfg.kanban.enable (
-        lib.hm.dag.entryAfter [ "writeBoundary" ] ''
-            export NPM_CONFIG_PREFIX=$HOME/.npm-global
-            export PATH=${nodejs}/bin:${pkgs.python3}/bin:${pkgs.gcc}/bin:${pkgs.gnumake}/bin:$PATH
-            $DRY_RUN_CMD ${nodejs}/bin/npm install -g kanban
-        ''
-        );
+      lib.hm.dag.entryAfter [ "writeBoundary" ] ''
+        export NPM_CONFIG_PREFIX=$HOME/.npm-global
+        export PATH=${nodejs}/bin:${pkgs.python3}/bin:${pkgs.gcc}/bin:${pkgs.gnumake}/bin:$PATH
+        $DRY_RUN_CMD ${nodejs}/bin/npm install -g kanban
+      ''
+    );
 
     # ── VS Code settings ───────────────────────────────────────────────────
 
     # Preferred path: let home-manager's vscode module own settings.json.
     programs.vscode.userSettings = mkIf
       (config.programs.vscode.enable or false)
-      clineSettings;
+      clineVSCodeSettings;
 
     # Fallback: write a standalone settings.json when vscode is not HM-managed.
     home.file."${cfg.vsCodeSettingsPath}" = mkIf
       (!(config.programs.vscode.enable or false))
       {
-        text  = builtins.toJSON clineSettings;
+        text  = builtins.toJSON clineVSCodeSettings;
         force = false;
       };
 
@@ -222,8 +257,7 @@ in
         OLLAMA_HOST = cfg.ollamaBaseURL;
       }
       // optionalAttrs cfg.kanban.enable {
-        # Ensure npm -g always resolves to the writable prefix, not the
-        # read-only Nix store, for any manual npm -g commands the user runs.
+        # Ensure manual `npm -g` commands also resolve to the writable prefix.
         NPM_CONFIG_PREFIX = "$HOME/.npm-global";
       };
   };
