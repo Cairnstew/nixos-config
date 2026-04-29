@@ -18,16 +18,16 @@
   };
 
   ollamaModels = {
-    "qwen3:8b" = { name = "Qwen 3 8B"; tools = true; numCtx = 16384; think = false; };
-    "deepseek-r1:14b"    = { name = "DeepSeek R1 14B"; tools = true; };
-    "hf.co/Lewdiculous/DS-R1-Qwen3-8B-ArliAI-RpR-v4-Small-GGUF-IQ-Imatrix" = {
-      name = "Lewdiculous Qwen3 8B";
-    };
-    "deepseek-coder-v2:16b" = {
-      name = "DeepSeek Coder 2 16B";
+    "qwen3.5:9b" = {
+      name = "qwen3.5:9b";
       tools = true;
-      numCtx = 20000;
-      temperature = 0.1;
+      numCtx = 32768;
+      temperature = 0.7;
+      topP = 0.90;
+      topK = 40;
+      repeatPenalty = 1.1;
+
+      aider_default  = true;
     };
   };
 }
