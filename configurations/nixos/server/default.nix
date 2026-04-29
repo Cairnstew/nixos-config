@@ -31,6 +31,11 @@ in
     dataDir  = "/mnt/data/ollama";
   };
 
+  swapDevices = [{
+    device = "/mnt/data/storage/swapfile";
+    size   = 32 * 1024; # 32GB
+  }];
+
   nixpkgs.config.allowUnfree = true;
   nixpkgs.config.cuda.acceptLicense = true;
   
