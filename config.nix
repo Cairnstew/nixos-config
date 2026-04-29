@@ -18,8 +18,30 @@
   };
 
   ollamaModels = {
-    "qwen3.5:9b" = {
-      name = "qwen3.5:9b";
+    "deepseek-coder-v2:16b" = {
+      name = "deepseek-coder-v2:16b";
+      tools = true;
+      numCtx = 32768;
+      temperature = 0.7;
+      topP = 0.90;
+      topK = 40;
+      repeatPenalty = 1.1;
+
+      aider_default  = false;
+    };
+    "qwen2.5-coder:7b" = {
+      name = "qwen2.5-coder:7b";
+      tools = true;
+      numCtx = 32768;
+      temperature = 0.7;
+      topP = 0.90;
+      topK = 40;
+      repeatPenalty = 1.1;
+
+      aider_default  = false;
+    };
+    "qwen2.5-coder:14b-instruct" = {
+      name = "qwen2.5-coder:14b-instruct";
       tools = true;
       numCtx = 32768;
       temperature = 0.7;
@@ -28,6 +50,7 @@
       repeatPenalty = 1.1;
 
       aider_default  = true;
+      cline_default = true;
     };
   };
 }
