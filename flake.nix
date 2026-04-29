@@ -3,16 +3,15 @@
 
   nixConfig = {
     substituters = [
-      "https://cache.nixos.org"          # ← missing!
-      "https://cairnstew-nixos-config-cache.cachix.org"
-      "https://cuda-maintainers.cachix.org"
+      "https://cache.nixos-cuda.org/"
+      "https://cache.nixos.org/"
       "https://nix-community.cachix.org"
+    
     ];
     trusted-public-keys = [
-      "cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY="   # ← missing!
+      "cache.nixos-cuda.org-1:dykfIgNYfi2cKCfb4xMBbOjlzFnEiCsHxlXLjfXDwOY="
+      "cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY="
       "nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs="
-      "cuda-maintainers.cachix.org-1:0dq3bujKpuEPMCX6U4WylrUDZ9JyUG0VpVZa7CNfq5E="
-      "cairnstew-nixos-config-cache.cachix.org-1:1150paajFeK18p7Eie/4L8iews3pbFbVp3eOxkmXar4="
     ];
   };
 
@@ -22,11 +21,12 @@
       # Principle inputs
   
       # RETARDED POLITICAL UPSTREAM BREAKS CACHE OFTEN
-      nixpkgs.url = "github:nixos/nixpkgs/e55e5f4aca43f22a36cd8ecb51553fb0774feed7";
+      nixpkgs.url = "github:nixos/nixpkgs/nixos-unstable";
+
   
       nix-darwin.url = "github:LnL7/nix-darwin";
       nix-darwin.inputs.nixpkgs.follows = "nixpkgs";
-      home-manager.url = "github:nix-community/home-manager/release-25.11";
+      home-manager.url = "github:nix-community/home-manager";
       home-manager.inputs.nixpkgs.follows = "nixpkgs";
       nixos-hardware.url = "github:NixOS/nixos-hardware";
       nixos-unified.url = "github:srid/nixos-unified";
