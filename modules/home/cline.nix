@@ -179,13 +179,12 @@ in
     # ── Kanban CLI package ─────────────────────────────────────────────────
 
     home.packages = lib.optional cfg.kanban.enable (
-      pkgs.writeShellScriptBin "cline" ''
-        exec ${lib.getExe pkgs.nodejs} \
-          ${pkgs.nodejs}/bin/npx --yes cline \
-          ${lib.escapeShellArgs cfg.kanban.extraArgs} \
-          "$@"
-      ''
-    );
+        pkgs.writeShellScriptBin "cline-kanban" ''
+            exec ${pkgs.nodejs}/bin/npx --yes kanban \
+            ${lib.escapeShellArgs cfg.kanban.extraArgs} \
+            "$@"
+        ''
+        );
 
     # ── VS Code settings ───────────────────────────────────────────────────
 
