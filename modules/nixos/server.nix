@@ -18,8 +18,22 @@ in
   my.services = {
     ollama = {
       enable     = true;
+      backend = "docker";
+      port = 11434;
+      gpu = {
+        enable = true;
+        type = "nvidia";
+        nvidiaDeviceArg = "all";
+        healthCheck = true;
+      };
       models  = ollamaModels;
       host       = "0.0.0.0";
+      performance = {
+        numParallel      = 1;
+        maxLoadedModels  = 1;
+        maxVram          = 10000000000; # leave ~2GB free, spill rest to RAM
+        flashAttention   = true;        # reduces VRAM for large contexts
+      };
     };
 
     sillytavern = {
