@@ -59,11 +59,22 @@ in
 
           ollamaModels = flake.config.ollamaModels;
 
-          # Optional extra Cline VS Code settings
-          settings = {
-            "cline.maxTokens"                = 16384;
-            "cline.terminalOutputLineLimit"  = 500;
+          mcp.servers = {
+            ollama = {
+              type = "sse";
+              url  = "http://${flake.config.tailnet.server.ip}:3100/sse";
+            };
+            linear = {
+              type = "streamableHttp";
+              url  = "https://mcp.linear.app/mcp";
+            };
           };
+
+          settings = {
+            "cline.maxTokens"               = 16384;
+            "cline.terminalOutputLineLimit" = 500;
+          };
+
           kanban = {
             enable    = true;
             extraArgs = [ "--port" "3000" ];
