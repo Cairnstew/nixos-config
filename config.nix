@@ -50,6 +50,18 @@
       repeatPenalty = 1.1;
 
       aider_default  = true;
+      cline_default = false;
+    };
+    "hermes3:8b" = {
+      name = "hermes3:8b";
+      tools = true;
+      numCtx = 32768;
+      temperature = 0.7;
+      topP = 0.90;
+      topK = 40;
+      repeatPenalty = 1.1;
+
+      aider_default  = false;
       cline_default = true;
     };
   };

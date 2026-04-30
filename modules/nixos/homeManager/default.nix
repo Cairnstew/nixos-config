@@ -67,7 +67,7 @@ in
           };
 
           settings = {
-            "cline.maxTokens"               = 16384;
+            "cline.maxTokens"               = 32768;
             "cline.terminalOutputLineLimit" = 500;
           };
 
