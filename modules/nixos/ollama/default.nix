@@ -356,6 +356,8 @@ in
                  ++ lib.optional (cfg.models != {}) "ollama-pull-models.service";
       requires = [ "${cfg.backend}-ollama.service" ];
       wantedBy = [ "multi-user.target" ];
+      
+      path = [ pkgs.nodejs_22 pkgs.curl ];
 
       environment = {
         # ollama-mcp-server uses this to reach the Ollama REST API
