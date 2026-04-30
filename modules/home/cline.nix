@@ -377,7 +377,9 @@ in
     home.activation.writeClineProviders = lib.mkIf usingOllama (
       lib.hm.dag.entryAfter [ "writeBoundary" ] ''
         mkdir -p $HOME/.cline/data/settings
-        $DRY_RUN_CMD cp -f ${clineProvidersFile} \
+        # Remove first so cp -f isn't blocked by read-only bits set by Cline
+        $DRY_RUN_CMD rm -f $HOME/.cline/data/settings/providers.json
+        $DRY_RUN_CMD cp ${clineProvidersFile} \
           $HOME/.cline/data/settings/providers.json
         $DRY_RUN_CMD chmod 644 \
           $HOME/.cline/data/settings/providers.json
@@ -390,13 +392,12 @@ in
       lib.hm.dag.entryAfter [ "writeBoundary" ] ''
         mkdir -p $HOME/.cline/data/settings
 
-        # Server list — always overwrite so Nix is authoritative.
-        $DRY_RUN_CMD cp -f ${clineMcpSettingsFile} \
+        $DRY_RUN_CMD rm -f $HOME/.cline/data/settings/cline_mcp_settings.json
+        $DRY_RUN_CMD cp ${clineMcpSettingsFile} \
           $HOME/.cline/data/settings/cline_mcp_settings.json
         $DRY_RUN_CMD chmod 644 \
           $HOME/.cline/data/settings/cline_mcp_settings.json
 
-        # OAuth state — seed only; never overwrite Cline's runtime tokens.
         if [[ ! -f $HOME/.cline/data/settings/cline_mcp_oauth_settings.json ]]; then
           $DRY_RUN_CMD cp ${clineMcpOAuthSettingsFile} \
             $HOME/.cline/data/settings/cline_mcp_oauth_settings.json
