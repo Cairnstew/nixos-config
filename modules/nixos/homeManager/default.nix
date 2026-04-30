@@ -64,10 +64,6 @@ in
               type = "sse";
               url  = "http://${flake.config.tailnet.server.ip}:3100/sse";
             };
-            linear = {
-              type = "streamableHttp";
-              url  = "https://mcp.linear.app/mcp";
-            };
           };
 
           settings = {
