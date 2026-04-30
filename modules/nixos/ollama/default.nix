@@ -374,9 +374,9 @@ in
         ExecStart = lib.escapeShellArgs [
           "${ollamaMcpWrapper}/bin/supergateway"
           "--port"     (toString cfg.mcp.port)
-          "--host"     "0.0.0.0"   # Force listen on Tailscale/Network
-          "--cors"     "true"      # Prevent browser-based hangups
-          "--logLevel" cfg.mcp.logLevel
+          "--host"     "0.0.0.0"
+          "--cors"     "true"
+          "--logLevel" "debug"  # CHANGED TO DEBUG
           "--stdio"    "${pkgs.nodejs_22}/bin/node ${ollamaMcpServerBin}"
         ];
 
