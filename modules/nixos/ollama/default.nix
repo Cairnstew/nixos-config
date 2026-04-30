@@ -361,7 +361,7 @@ in
 
       environment = {
         # ollama-mcp-server uses this to reach the Ollama REST API
-        OLLAMA_HOST = "http://127.0.0.1:${toString cfg.port}";
+        OLLAMA_HOST = "http://${cfg.host}:${toString cfg.port}";
       };
 
       serviceConfig = {
