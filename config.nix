@@ -49,7 +49,7 @@
       topK = 40;
       repeatPenalty = 1.1;
 
-      aider_default  = true;
+      aider_default  = false;
       cline_default = false;
     };
     "hermes3:8b" = {
@@ -71,8 +71,10 @@
       temperature  = 1.0;   # low temp for agentic tasks
       topP         = 0.95;  # higher topP to increase creativity
       topK         = 64;
+      
       cline_default = true;
-      aider_default = false;
+      aider_default = true;
+      opencode_default = true;
     };
   };
 }
