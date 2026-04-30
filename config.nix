@@ -64,8 +64,8 @@
       aider_default  = false;
       cline_default = false;
     };
-    "gemma4:31b" = {
-      name         = "gemma4:31b";
+    "gemma4:e4b" = {
+      name         = "gemma4:e4b";
       tools        = true;
       numCtx       = 32768;
       temperature  = 1.0;   # low temp for agentic tasks
