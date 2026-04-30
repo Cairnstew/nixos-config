@@ -356,7 +356,7 @@ in
                  ++ lib.optional (cfg.models != {}) "ollama-pull-models.service";
       requires = [ "${cfg.backend}-ollama.service" ];
       wantedBy = [ "multi-user.target" ];
-      
+
       path = [ pkgs.nodejs_22 pkgs.curl ];
 
       environment = {
@@ -374,6 +374,8 @@ in
         ExecStart = lib.escapeShellArgs [
           "${ollamaMcpWrapper}/bin/supergateway"
           "--port"     (toString cfg.mcp.port)
+          "--host"     "0.0.0.0"   # Force listen on Tailscale/Network
+          "--cors"     "true"      # Prevent browser-based hangups
           "--logLevel" cfg.mcp.logLevel
           "--stdio"    "${pkgs.nodejs_22}/bin/node ${ollamaMcpServerBin}"
         ];
