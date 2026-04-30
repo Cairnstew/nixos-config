@@ -44,7 +44,7 @@ let
 
     # Run: nixos-rebuild switch 2>&1 | grep "got:"
     # to find the correct hash after setting this to lib.fakeHash.
-    npmDepsHash = lib.fakeHash;
+    npmDepsHash = "sha256-2q0ImcLtkJmtHTGnEfCYG/g0n7ysUWe7g00qncNSwmA=";
 
     dontNpmBuild = true;  # both packages ship pre-built JS
 
