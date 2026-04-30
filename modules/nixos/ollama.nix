@@ -46,14 +46,12 @@ in
 
     # ---------------------------------------------------------------------------
     # Per-model submodule
-    # FIX 1: topK / topP / repeatPenalty / seed / systemPrompt / template moved
-    #         here from performance so they can be set independently per model.
     # ---------------------------------------------------------------------------
     models = lib.mkOption {
       type = lib.types.attrsOf (lib.types.submodule {
 
         freeformType = with lib.types; attrsOf anything;
-        
+
         options = {
           name = lib.mkOption {
             type = lib.types.str;
@@ -65,7 +63,7 @@ in
             default = false;
             description = "Whether this model supports tool/function calling (informational only).";
           };
-          
+
           opencode_default = lib.mkOption {
             type    = lib.types.bool;
             default = false;
@@ -102,8 +100,6 @@ in
               Set to false for more reliable tool calling.
             '';
           };
-
-          # --- sampling params (were incorrectly under performance) ---
 
           topK = lib.mkOption {
             type = lib.types.nullOr lib.types.int;
@@ -310,18 +306,92 @@ in
         '';
       };
     };
+
+    # ---------------------------------------------------------------------------
+    # MCP server options
+    # Runs ollama-mcp-server (Node.js) as a systemd service, exposing an SSE
+    # endpoint that Cline (and other MCP clients) can connect to remotely.
+    # ---------------------------------------------------------------------------
+    mcp = {
+      enable = lib.mkEnableOption "Ollama MCP server for Cline/MCP clients";
+
+      package = lib.mkOption {
+        type = lib.types.package;
+        default = pkgs.nodejs_22;
+        defaultText = lib.literalExpression "pkgs.nodejs_22";
+        description = ''
+          Node.js package used to run ollama-mcp-server via npx.
+          Defaults to nodejs_22; override if your system uses a different version.
+        '';
+      };
+
+      port = lib.mkOption {
+        type = lib.types.port;
+        default = 3100;
+        description = ''
+          Port the MCP SSE server listens on.
+          Cline connects to http://<host>:<port>/sse.
+        '';
+      };
+
+      listenAddress = lib.mkOption {
+        type = lib.types.str;
+        default = "127.0.0.1";
+        example = "0.0.0.0";
+        description = ''
+          Address the MCP server binds to.
+          Set to "0.0.0.0" to accept connections from other machines on the network.
+          Only set this if the port is protected by a firewall or VPN.
+        '';
+      };
+
+      openFirewall = lib.mkOption {
+        type = lib.types.bool;
+        default = false;
+        description = ''
+          Open cfg.mcp.port in the NixOS firewall.
+          Only enable if you trust the network (e.g. behind a VPN or local LAN only).
+        '';
+      };
+
+      logLevel = lib.mkOption {
+        type = lib.types.enum [ "debug" "info" "warn" "error" ];
+        default = "info";
+        description = "Log verbosity for the MCP server process.";
+      };
+
+      extraEnv = lib.mkOption {
+        type = lib.types.attrsOf lib.types.str;
+        default = {};
+        example = { MCP_SOME_OPTION = "value"; };
+        description = "Additional environment variables passed to the MCP server process.";
+      };
+    };
   };
 
   # =============================================================================
   config = lib.mkIf cfg.enable {
-    
-    assertions = [{
-      assertion = (lib.length (lib.filter
-        (tag: cfg.models.${tag}.opencode_default)
-        (lib.attrNames cfg.models)) <= 1);
-      message = "my.services.ollama.models: only one model may have opencode_default = true";
-    }];
-    
+
+    assertions = [
+      {
+        assertion = (lib.length (lib.filter
+          (tag: cfg.models.${tag}.opencode_default)
+          (lib.attrNames cfg.models)) <= 1);
+        message = "my.services.ollama.models: only one model may have opencode_default = true";
+      }
+      {
+        # Warn if MCP is enabled but Ollama is not listening on a reachable address.
+        # If mcp.listenAddress is 0.0.0.0 but ollama host is 127.0.0.1 that is fine
+        # (MCP talks to localhost internally), so this is just a firewall sanity check.
+        assertion = !(cfg.mcp.enable && cfg.mcp.openFirewall && cfg.mcp.listenAddress == "127.0.0.1");
+        message = ''
+          my.services.ollama.mcp: openFirewall = true has no effect when
+          listenAddress = "127.0.0.1" because the MCP server only accepts
+          local connections. Set listenAddress = "0.0.0.0" to allow remote clients.
+        '';
+      }
+    ];
+
     virtualisation.docker = lib.mkIf (cfg.backend == "docker") {
       enable = lib.mkDefault true;
       autoPrune.enable = lib.mkDefault cfg.autoPrune;
@@ -381,9 +451,6 @@ in
       ];
     };
 
-    # FIX 2: Removed broken partOf/wantedBy pointing at a non-existent compose
-    #         target. Plain oci-containers uses docker-ollama / podman-ollama
-    #         directly. Network creation moved here as ExecStartPre.
     systemd.services."${cfg.backend}-ollama" = {
       serviceConfig = {
         Restart            = lib.mkOverride 90 cfg.restart.policy;
@@ -402,8 +469,6 @@ in
 
     # ---------------------------------------------------------------------------
     # Model pull + Modelfile service
-    # FIX 3: waitCmd replaced with a real readiness loop.
-    # FIX 1: paramLines / hasModelfile now read per-model fields correctly.
     # ---------------------------------------------------------------------------
     systemd.services."ollama-pull-models" = lib.mkIf (cfg.models != {}) {
       description = "Pull and configure Ollama models";
@@ -420,7 +485,6 @@ in
 
       script =
         let
-          # FIX 3: real wait loop — polls the REST API until Ollama is ready.
           waitCmd = ''
             echo "Waiting for Ollama to become ready..."
             until ${pkgs.curl}/bin/curl -sf http://127.0.0.1:${toString cfg.port}/api/tags > /dev/null 2>&1; do
@@ -430,17 +494,16 @@ in
             echo "Ollama is ready."
           '';
 
-          # FIX 1: mcfg is a per-model config — all fields now live on the model submodule.
           paramLines = mcfg: lib.concatStringsSep "" (
             lib.filter (s: s != "") [
-              (lib.optionalString (mcfg.numCtx       != null) "printf 'PARAMETER num_ctx %s\\n'       '${toString mcfg.numCtx}'       >> \"$MODELFILE\"\n")
-              (lib.optionalString (mcfg.temperature  != null) "printf 'PARAMETER temperature %s\\n'   '${toString mcfg.temperature}'  >> \"$MODELFILE\"\n")
-              (lib.optionalString (mcfg.topK         != null) "printf 'PARAMETER top_k %s\\n'         '${toString mcfg.topK}'         >> \"$MODELFILE\"\n")
-              (lib.optionalString (mcfg.topP         != null) "printf 'PARAMETER top_p %s\\n'         '${toString mcfg.topP}'         >> \"$MODELFILE\"\n")
+              (lib.optionalString (mcfg.numCtx        != null) "printf 'PARAMETER num_ctx %s\\n'        '${toString mcfg.numCtx}'        >> \"$MODELFILE\"\n")
+              (lib.optionalString (mcfg.temperature   != null) "printf 'PARAMETER temperature %s\\n'    '${toString mcfg.temperature}'   >> \"$MODELFILE\"\n")
+              (lib.optionalString (mcfg.topK          != null) "printf 'PARAMETER top_k %s\\n'          '${toString mcfg.topK}'          >> \"$MODELFILE\"\n")
+              (lib.optionalString (mcfg.topP          != null) "printf 'PARAMETER top_p %s\\n'          '${toString mcfg.topP}'          >> \"$MODELFILE\"\n")
               (lib.optionalString (mcfg.repeatPenalty != null) "printf 'PARAMETER repeat_penalty %s\\n' '${toString mcfg.repeatPenalty}' >> \"$MODELFILE\"\n")
-              (lib.optionalString (mcfg.numPredict != null) "printf 'PARAMETER num_predict %s\\n' '${toString mcfg.numPredict}' >> \"$MODELFILE\"\n")
-              (lib.optionalString (mcfg.seed         != null) "printf 'PARAMETER seed %s\\n'          '${toString mcfg.seed}'         >> \"$MODELFILE\"\n")
-              (lib.optionalString (mcfg.think        != null) "printf 'PARAMETER think %s\\n'         '${if mcfg.think == true then "true" else "false"}' >> \"$MODELFILE\"\n")
+              (lib.optionalString (mcfg.numPredict    != null) "printf 'PARAMETER num_predict %s\\n'    '${toString mcfg.numPredict}'    >> \"$MODELFILE\"\n")
+              (lib.optionalString (mcfg.seed          != null) "printf 'PARAMETER seed %s\\n'           '${toString mcfg.seed}'          >> \"$MODELFILE\"\n")
+              (lib.optionalString (mcfg.think         != null) "printf 'PARAMETER think %s\\n'          '${if mcfg.think == true then "true" else "false"}' >> \"$MODELFILE\"\n")
             ]
           );
 
@@ -450,7 +513,7 @@ in
             mcfg.topK          != null ||
             mcfg.topP          != null ||
             mcfg.repeatPenalty != null ||
-            mcfg.numPredict != null ||
+            mcfg.numPredict    != null ||
             mcfg.seed          != null ||
             mcfg.think         != null ||
             mcfg.systemPrompt  != null ||
@@ -458,7 +521,6 @@ in
 
           modelCmds = lib.concatStringsSep "\n" (lib.mapAttrsToList (tag: mcfg:
             let
-              # e.g. "qwen3:8b" -> "qwen3-8b"  used as the created model name
               safeName = builtins.replaceStrings [ ":" "/" ] [ "-" "-" ] tag;
             in
             ''
@@ -491,5 +553,64 @@ in
         in
           waitCmd + "\n" + modelCmds;
     };
+
+    # ---------------------------------------------------------------------------
+    # MCP server — ollama-mcp-server via npx
+    #
+    # Runs as a dedicated non-root DynamicUser. On first start npx downloads the
+    # package into a writable cache dir; subsequent starts use the cache so the
+    # service works offline after the first boot (assuming npm cache is warm).
+    #
+    # Cline SSE endpoint: http://<host>:${toString cfg.mcp.port}/sse
+    # ---------------------------------------------------------------------------
+    systemd.services."ollama-mcp-server" = lib.mkIf cfg.mcp.enable {
+      description = "Ollama MCP Server (ollama-mcp-server via npx) for Cline";
+
+      # Wait for Ollama itself, and for models to be ready if that service exists.
+      after    = [ "${cfg.backend}-ollama.service" ]
+                 ++ lib.optional (cfg.models != {}) "ollama-pull-models.service";
+      requires = [ "${cfg.backend}-ollama.service" ];
+      wantedBy = [ "multi-user.target" ];
+
+      environment = {
+        # Tell the MCP server where Ollama lives.
+        OLLAMA_HOST = "http://127.0.0.1:${toString cfg.port}";
+
+        # Port and bind address for the SSE HTTP server.
+        PORT        = toString cfg.mcp.port;
+        HOST        = cfg.mcp.listenAddress;
+
+        # Logging.
+        LOG_LEVEL   = cfg.mcp.logLevel;
+
+        # npm/npx cache — must be writable, pointed at the state dir below.
+        npm_config_cache = "/var/cache/ollama-mcp-server/npm";
+      } // cfg.mcp.extraEnv;
+
+      serviceConfig = {
+        Type       = "simple";
+        Restart    = "always";
+        RestartSec = "5s";
+
+        ExecStart = "${cfg.mcp.package}/bin/npx --yes ollama-mcp-server";
+
+        # --- sandboxing ---
+        # DynamicUser gives us a throwaway UID; we need a persistent state dir
+        # for the npm cache so npx doesn't re-download on every restart.
+        DynamicUser          = true;
+        StateDirectory       = "ollama-mcp-server";
+        CacheDirectory       = "ollama-mcp-server/npm";
+        PrivateTmp           = true;
+        NoNewPrivileges      = true;
+        ProtectSystem        = "strict";
+        ProtectHome          = true;
+        RestrictAddressFamilies = [ "AF_INET" "AF_INET6" ];
+        RestrictNamespaces   = true;
+      };
+    };
+
+    # Open the firewall port if requested.
+    networking.firewall.allowedTCPPorts =
+      lib.mkIf (cfg.mcp.enable && cfg.mcp.openFirewall) [ cfg.mcp.port ];
   };
 }
