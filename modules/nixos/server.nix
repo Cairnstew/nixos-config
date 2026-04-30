@@ -28,7 +28,6 @@ in
       };
       mcp = {
         enable       = true;
-        listenAddress = "0.0.0.0";  # accept remote connections
         openFirewall  = true;
       };
       models  = ollamaModels;
