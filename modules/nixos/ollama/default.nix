@@ -53,11 +53,11 @@ let
     installPhase = ''
       runHook preInstall
 
-      # Install the whole node_modules tree
-      mkdir -p $out/lib/node_modules/ollama-mcp-wrapper
-      cp -r . $out/lib/node_modules/ollama-mcp-wrapper/
+      # Install node_modules directly to the lib path
+      mkdir -p $out/lib/node_modules
+      cp -r . $out/lib/node_modules/ollama-mcp-wrapper
 
-      # Expose supergateway as a wrapped binary pointing at its pre-built entry point
+      # Expose supergateway
       mkdir -p $out/bin
       makeWrapper ${pkgs.nodejs_22}/bin/node $out/bin/supergateway \
         --add-flags "$out/lib/node_modules/ollama-mcp-wrapper/node_modules/supergateway/dist/index.js"
