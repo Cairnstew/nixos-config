@@ -28,6 +28,7 @@ let
   ollamaMcpWrapper = pkgs.buildNpmPackage {
     pname   = "ollama-mcp-wrapper";
     version = "1.0.0";
+    nodejs  = pkgs.nodejs_22;
 
     src = pkgs.runCommand "ollama-mcp-wrapper-src" {} ''
       mkdir -p $out
@@ -371,13 +372,14 @@ in
 
         # supergateway spawns ollama-mcp-server as a child over stdio,
         # then serves SSE on 0.0.0.0:<port> (Node default for app.listen(port)).
-        ExecStart = lib.escapeShellArgs [
+        ExecStart = lib.concatStringsSep " " [
           "${ollamaMcpWrapper}/bin/supergateway"
-          "--port"     (toString cfg.mcp.port)
-          "--host"     "0.0.0.0"
-          "--cors"     "true"
-          "--logLevel" "debug"  # CHANGED TO DEBUG
-          "--stdio"    "${pkgs.nodejs_22}/bin/node ${ollamaMcpServerBin}"
+          "--port"            (toString cfg.mcp.port)
+          "--host"            "0.0.0.0"
+          "--cors"            "*"
+          "--logLevel"        cfg.mcp.logLevel
+          "--outputTransport" "streamableHttp"
+          "--stdio"           (lib.escapeShellArg "${pkgs.nodejs_22}/bin/node ${ollamaMcpServerBin}")
         ];
 
         NoNewPrivileges = true;
