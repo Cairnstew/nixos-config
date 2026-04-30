@@ -26,6 +26,11 @@ in
         nvidiaDeviceArg = "all";
         healthCheck = true;
       };
+      mcp = {
+        enable       = true;
+        listenAddress = "0.0.0.0";  # accept remote connections
+        openFirewall  = true;
+      };
       models  = ollamaModels;
       host       = "0.0.0.0";
       performance = {
