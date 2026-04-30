@@ -1,3 +1,4 @@
+# modules/services/ollama.nix
 { config, pkgs, lib, ... }:
 
 let
@@ -6,25 +7,6 @@ let
     then "${pkgs.docker}/bin/docker"
     else "${pkgs.podman}/bin/podman";
 
-  # ---------------------------------------------------------------------------
-  # ollama-mcp-wrapper derivation
-  #
-  # Packages supergateway (HTTP SSE bridge) + ollama-mcp-server (stdio MCP).
-  # supergateway spawns ollama-mcp-server as a child process over stdio and
-  # exposes it on an HTTP SSE port so remote Cline clients can connect.
-  #
-  # Architecture:
-  #   Cline --SSE--> supergateway:3100 --stdio--> ollama-mcp-server --> Ollama
-  #
-  # To update package versions, regenerate ollama-mcp-package-lock.json:
-  #   cd /tmp && mkdir wrap && cd wrap
-  #   echo '{"dependencies":{"ollama-mcp-server":"X.Y.Z","supergateway":"A.B.C"}}' \
-  #     > package.json
-  #   npm install --package-lock-only --ignore-scripts
-  #   cp package-lock.json /path/to/nixos-config/modules/services/ollama-mcp-package-lock.json
-  # Then update npmDepsHash by setting it to lib.fakeHash, running nixos-rebuild
-  # (it will fail and print the correct hash), and replacing it below.
-  # ---------------------------------------------------------------------------
   ollamaMcpWrapper = pkgs.buildNpmPackage {
     pname   = "ollama-mcp-wrapper";
     version = "1.0.0";
@@ -37,39 +19,38 @@ let
         version = "1.0.0";
         dependencies = {
           "ollama-mcp-server" = "1.1.0";
+          # 3.4.3 has a single-client SSE crash; we use streamableHttp
+          # transport to avoid it. Bump when a fix lands upstream.
           "supergateway"      = "3.4.3";
         };
       })} $out/package.json
       cp ${./mcp-package-lock.json} $out/package-lock.json
     '';
 
-    # Run: nixos-rebuild switch 2>&1 | grep "got:"
-    # to find the correct hash after setting this to lib.fakeHash.
     npmDepsHash = "sha256-2q0ImcLtkJmtHTGnEfCYG/g0n7ysUWe7g00qncNSwmA=";
 
-    dontNpmBuild = true;  # both packages ship pre-built JS
+    dontNpmBuild = true;
 
     nativeBuildInputs = [ pkgs.makeWrapper ];
 
     installPhase = ''
       runHook preInstall
-
-      # Install node_modules directly to the lib path
       mkdir -p $out/lib/node_modules
       cp -r . $out/lib/node_modules/ollama-mcp-wrapper
-
-      # Expose supergateway
       mkdir -p $out/bin
       makeWrapper ${pkgs.nodejs_22}/bin/node $out/bin/supergateway \
         --add-flags "$out/lib/node_modules/ollama-mcp-wrapper/node_modules/supergateway/dist/index.js"
-
       runHook postInstall
     '';
   };
 
-  # Absolute path to ollama-mcp-server's pre-built entry point inside node_modules
   ollamaMcpServerBin =
     "${ollamaMcpWrapper}/lib/node_modules/ollama-mcp-wrapper/node_modules/ollama-mcp-server/build/index.js";
+
+  # The host-side Ollama API URL — always 127.0.0.1 because the MCP server
+  # runs on the host and reaches Ollama via the published port mapping,
+  # regardless of what address Ollama binds to inside the container.
+  ollamaHostUrl = "http://127.0.0.1:${toString cfg.port}";
 
 in
 {
@@ -112,21 +93,26 @@ in
 
     models = lib.mkOption {
       type = lib.types.attrsOf (lib.types.submodule {
+        # freeformType allows ad-hoc keys without breaking evaluation.
         freeformType = with lib.types; attrsOf anything;
         options = {
-          name           = lib.mkOption { type = lib.types.str; description = "Display name."; };
-          tools          = lib.mkOption { type = lib.types.bool; default = false; };
-          opencode_default = lib.mkOption { type = lib.types.bool; default = false; };
-          numCtx         = lib.mkOption { type = lib.types.nullOr lib.types.int;   default = null; };
-          temperature    = lib.mkOption { type = lib.types.nullOr lib.types.float; default = null; };
-          think          = lib.mkOption { type = lib.types.nullOr lib.types.bool;  default = null; };
-          topK           = lib.mkOption { type = lib.types.nullOr lib.types.int;   default = null; };
-          topP           = lib.mkOption { type = lib.types.nullOr lib.types.float; default = null; };
-          repeatPenalty  = lib.mkOption { type = lib.types.nullOr lib.types.float; default = null; };
-          numPredict     = lib.mkOption { type = lib.types.nullOr lib.types.int;   default = null; };
-          seed           = lib.mkOption { type = lib.types.nullOr lib.types.int;   default = null; };
-          systemPrompt   = lib.mkOption { type = lib.types.nullOr lib.types.str;   default = null; };
-          template       = lib.mkOption { type = lib.types.nullOr lib.types.str;   default = null; };
+          name             = lib.mkOption { type = lib.types.str;              description = "Display name."; };
+          tools            = lib.mkOption { type = lib.types.bool;             default = false; description = "Model supports tool/function calling."; };
+          # ── cross-module default flags ────────────────────────────────────
+          opencode_default = lib.mkOption { type = lib.types.bool;             default = false; description = "Use as default model in opencode."; };
+          aider_default    = lib.mkOption { type = lib.types.bool;             default = false; description = "Use as default model in aider."; };
+          cline_default    = lib.mkOption { type = lib.types.bool;             default = false; description = "Use as default model in Cline."; };
+          # ── Modelfile parameters ──────────────────────────────────────────
+          numCtx        = lib.mkOption { type = lib.types.nullOr lib.types.int;   default = null; description = "Context window size (num_ctx)."; };
+          temperature   = lib.mkOption { type = lib.types.nullOr lib.types.float; default = null; description = "Sampling temperature. Use 0–0.2 for agentic/tool tasks."; };
+          think         = lib.mkOption { type = lib.types.nullOr lib.types.bool;  default = null; description = "Enable chain-of-thought reasoning (supported models only)."; };
+          topK          = lib.mkOption { type = lib.types.nullOr lib.types.int;   default = null; };
+          topP          = lib.mkOption { type = lib.types.nullOr lib.types.float; default = null; };
+          repeatPenalty = lib.mkOption { type = lib.types.nullOr lib.types.float; default = null; };
+          numPredict    = lib.mkOption { type = lib.types.nullOr lib.types.int;   default = null; };
+          seed          = lib.mkOption { type = lib.types.nullOr lib.types.int;   default = null; };
+          systemPrompt  = lib.mkOption { type = lib.types.nullOr lib.types.str;   default = null; };
+          template      = lib.mkOption { type = lib.types.nullOr lib.types.str;   default = null; };
         };
       });
       default = {};
@@ -145,11 +131,11 @@ in
       alias = lib.mkOption { type = lib.types.str; default = "ollama"; };
     };
 
-    extraVolumes        = lib.mkOption { type = lib.types.listOf lib.types.str;        default = []; };
-    extraOptions        = lib.mkOption { type = lib.types.listOf lib.types.str;        default = []; };
-    environmentVariables = lib.mkOption { type = lib.types.attrsOf lib.types.str;      default = {}; };
-    logDriver           = lib.mkOption { type = lib.types.str;                         default = "journald"; };
-    autoPrune           = lib.mkOption { type = lib.types.bool;                        default = true; };
+    extraVolumes         = lib.mkOption { type = lib.types.listOf lib.types.str;   default = []; };
+    extraOptions         = lib.mkOption { type = lib.types.listOf lib.types.str;   default = []; };
+    environmentVariables = lib.mkOption { type = lib.types.attrsOf lib.types.str;  default = {}; };
+    logDriver            = lib.mkOption { type = lib.types.str;                    default = "journald"; };
+    autoPrune            = lib.mkOption { type = lib.types.bool;                   default = true; };
 
     restart = {
       policy      = lib.mkOption { type = lib.types.str; default = "always"; };
@@ -165,17 +151,16 @@ in
       flashAttention  = lib.mkOption { type = lib.types.bool;                  default = false; };
     };
 
-    # ---------------------------------------------------------------------------
-    # MCP server options
-    # ---------------------------------------------------------------------------
     mcp = {
-      enable = lib.mkEnableOption "Ollama MCP SSE server for Cline (supergateway + ollama-mcp-server)";
+      enable = lib.mkEnableOption "Ollama MCP server for Cline (supergateway + ollama-mcp-server)";
 
       port = lib.mkOption {
         type    = lib.types.port;
         default = 3100;
         description = ''
-          Port the SSE server listens on. Cline connects to http://<host>:<port>/sse.
+          Port the MCP server listens on.
+          Cline connects via streamableHttp at
+          <literal>http://&lt;host&gt;:&lt;port&gt;/mcp</literal>.
         '';
       };
 
@@ -183,7 +168,7 @@ in
         type    = lib.types.bool;
         default = false;
         description = ''
-          Open cfg.mcp.port in the NixOS firewall.
+          Open <option>mcp.port</option> in the NixOS firewall.
           Not needed when Tailscale routes traffic directly between nodes.
         '';
       };
@@ -199,12 +184,26 @@ in
   # =============================================================================
   config = lib.mkIf cfg.enable {
 
-    assertions = [{
-      assertion = (lib.length (lib.filter
-        (tag: cfg.models.${tag}.opencode_default)
-        (lib.attrNames cfg.models)) <= 1);
-      message = "my.services.ollama.models: only one model may have opencode_default = true";
-    }];
+    assertions = [
+      {
+        assertion = lib.length (lib.filter
+          (tag: cfg.models.${tag}.opencode_default)
+          (lib.attrNames cfg.models)) <= 1;
+        message = "my.services.ollama.models: only one model may have opencode_default = true";
+      }
+      {
+        assertion = lib.length (lib.filter
+          (tag: cfg.models.${tag}.cline_default)
+          (lib.attrNames cfg.models)) <= 1;
+        message = "my.services.ollama.models: only one model may have cline_default = true";
+      }
+      {
+        assertion = lib.length (lib.filter
+          (tag: cfg.models.${tag}.aider_default)
+          (lib.attrNames cfg.models)) <= 1;
+        message = "my.services.ollama.models: only one model may have aider_default = true";
+      }
+    ];
 
     virtualisation.docker = lib.mkIf (cfg.backend == "docker") {
       enable = lib.mkDefault true;
@@ -283,8 +282,8 @@ in
       serviceConfig = {
         Type            = "oneshot";
         RemainAfterExit = true;
-        Restart         = "on-failure";
-        RestartSec      = "10s";
+        # Restart/RestartSec removed — ignored for Type=oneshot.
+        # Retry logic is handled by the waitCmd polling loop in the script.
       };
 
       script =
@@ -348,10 +347,10 @@ in
     };
 
     # ---------------------------------------------------------------------------
-    # MCP SSE service
+    # MCP streamableHttp service
     # ---------------------------------------------------------------------------
     systemd.services."ollama-mcp-server" = lib.mkIf cfg.mcp.enable {
-      description = "Ollama MCP SSE server (supergateway → ollama-mcp-server) for Cline";
+      description = "Ollama MCP server (supergateway → ollama-mcp-server) for Cline";
 
       after    = [ "${cfg.backend}-ollama.service" ]
                  ++ lib.optional (cfg.models != {}) "ollama-pull-models.service";
@@ -361,8 +360,10 @@ in
       path = [ pkgs.nodejs_22 pkgs.curl ];
 
       environment = {
-        # ollama-mcp-server uses this to reach the Ollama REST API
-        OLLAMA_HOST = "http://${cfg.host}:${toString cfg.port}";
+        # ollama-mcp-server reads both env vars depending on version.
+        # Always point at the host-side port mapping, not cfg.host (container bind addr).
+        OLLAMA_HOST     = ollamaHostUrl;
+        OLLAMA_BASE_URL = ollamaHostUrl;
       };
 
       serviceConfig = {
@@ -370,8 +371,6 @@ in
         Restart    = "always";
         RestartSec = "5s";
 
-        # supergateway spawns ollama-mcp-server as a child over stdio,
-        # then serves SSE on 0.0.0.0:<port> (Node default for app.listen(port)).
         ExecStart = lib.concatStringsSep " " [
           "${ollamaMcpWrapper}/bin/supergateway"
           "--port"            (toString cfg.mcp.port)

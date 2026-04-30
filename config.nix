@@ -56,13 +56,23 @@
       name = "hermes3:8b";
       tools = true;
       numCtx = 32768;
-      temperature = 0.7;
+      temperature = 0.1;
       topP = 0.90;
       topK = 40;
       repeatPenalty = 1.1;
 
       aider_default  = false;
+      cline_default = false;
+    };
+    "gemma4:31b" = {
+      name         = "gemma4:31b";
+      tools        = true;
+      numCtx       = 32768;
+      temperature  = 1.0;   # low temp for agentic tasks
+      topP         = 0.95;  # higher topP to increase creativity
+      topK         = 64;
       cline_default = true;
+      aider_default = false;
     };
   };
 }
