@@ -174,12 +174,13 @@ in
   config = mkIf cfg.enable {
 
     home.packages = [
-      (pkgs.writeShellScriptBin "aider" ''
-        exec ${lib.getExe aiderPackage} \
-          ${lib.escapeShellArgs cfg.extraArgs} \
-          "$@"
-      '')
-    ];
+    (pkgs.writeShellScriptBin "aider" ''
+      export OLLAMA_API_BASE="${cfg.ollamaBaseURL}"
+      exec ${lib.getExe aiderPackage} \
+        ${lib.escapeShellArgs cfg.extraArgs} \
+        "$@"
+    '')
+  ];
 
     home.file.".aider.conf.yml".source = aiderConf;
 
