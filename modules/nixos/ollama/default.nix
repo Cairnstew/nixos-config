@@ -179,6 +179,21 @@ in
         description = "supergateway log verbosity.";
       };
     };
+
+    # ── Test suite ────────────────────────────────────────────────────────────
+    tests = {
+      enable = lib.mkEnableOption "Ollama smoke-test suite (ollama-smoke-test oneshot + ollama-test CLI)";
+
+      generateModel = lib.mkOption {
+        type    = lib.types.str;
+        default = "";
+        description = ''
+          Model tag to use for the generate roundtrip in the smoke test.
+          Defaults to the first model with opencode_default, then aider_default,
+          then the first model in the attrset.  Override explicitly if needed.
+        '';
+      };
+    };
   };
 
   # =============================================================================
@@ -257,22 +272,45 @@ in
       ];
     };
 
+    # ---------------------------------------------------------------------------
+    # Container service — network creation + restart policy + Layer-1a probe
+    # ---------------------------------------------------------------------------
     systemd.services."${cfg.backend}-ollama" = {
       serviceConfig = {
         Restart            = lib.mkOverride 90 cfg.restart.policy;
         RestartMaxDelaySec = lib.mkOverride 90 cfg.restart.maxDelaySec;
         RestartSec         = lib.mkOverride 90 cfg.restart.delaySec;
         RestartSteps       = lib.mkOverride 90 cfg.restart.steps;
-        ExecStartPre       = lib.mkOverride 90
+
+        ExecStartPre = lib.mkOverride 90
           "${pkgs.writeShellScript "ollama-create-network" ''
             if ! ${backendBin} network inspect ${lib.escapeShellArg cfg.network.name} > /dev/null 2>&1; then
               echo "Creating network ${cfg.network.name}..."
               ${backendBin} network create ${lib.escapeShellArg cfg.network.name}
             fi
           ''}";
+
+        # Layer 1a: verify the API is reachable before systemd marks the unit active.
+        ExecStartPost = lib.mkOverride 90
+          "${pkgs.writeShellScript "ollama-container-probe" ''
+            echo "[ollama probe] waiting for API..."
+            for i in $(${pkgs.coreutils}/bin/seq 1 30); do
+              if ${pkgs.curl}/bin/curl -sf \
+                  http://127.0.0.1:${toString cfg.port}/api/tags > /dev/null 2>&1; then
+                echo "[ollama probe] API reachable (attempt $i)"
+                exit 0
+              fi
+              sleep 1
+            done
+            echo "[ollama probe] FAIL: API not reachable after 30s" >&2
+            exit 1
+          ''}";
       };
     };
 
+    # ---------------------------------------------------------------------------
+    # Model pull service — pull + configure + Layer-1b probe
+    # ---------------------------------------------------------------------------
     systemd.services."ollama-pull-models" = lib.mkIf (cfg.models != {}) {
       description = "Pull and configure Ollama models";
       after    = [ "${cfg.backend}-ollama.service" ];
@@ -284,6 +322,23 @@ in
         RemainAfterExit = true;
         # Restart/RestartSec removed — ignored for Type=oneshot.
         # Retry logic is handled by the waitCmd polling loop in the script.
+
+        # Layer 1b: after all pulls complete, warn about any model not yet
+        # visible in /api/tags.  Uses WARN (not exit 1) because the model index
+        # can lag a few seconds after 'ollama create'.
+        ExecStartPost =
+          "${pkgs.writeShellScript "ollama-model-probe" ''
+            echo "[model probe] checking pulled models..."
+            ${lib.concatStringsSep "\n" (lib.mapAttrsToList (tag: _: ''
+              if ${pkgs.curl}/bin/curl -sf \
+                  http://127.0.0.1:${toString cfg.port}/api/tags \
+                | ${pkgs.gnugrep}/bin/grep -q ${lib.escapeShellArg tag}; then
+                echo "[model probe] OK: ${tag}"
+              else
+                echo "[model probe] WARN: ${tag} not yet listed in /api/tags" >&2
+              fi
+            '') cfg.models)}
+          ''}";
       };
 
       script =
@@ -347,7 +402,7 @@ in
     };
 
     # ---------------------------------------------------------------------------
-    # MCP streamableHttp service
+    # MCP streamableHttp service + Layer-1c probe
     # ---------------------------------------------------------------------------
     systemd.services."ollama-mcp-server" = lib.mkIf cfg.mcp.enable {
       description = "Ollama MCP server (supergateway → ollama-mcp-server) for Cline";
@@ -381,6 +436,25 @@ in
           "--stdio"           (lib.escapeShellArg "${pkgs.nodejs_22}/bin/node ${ollamaMcpServerBin}")
         ];
 
+        # Layer 1c: verify the MCP endpoint is answering before marking active.
+        # supergateway returns 405 to bare GET /mcp (expects JSON-RPC POST),
+        # so we treat both 200 and 405 as "port is live".
+        ExecStartPost =
+          "${pkgs.writeShellScript "ollama-mcp-probe" ''
+            echo "[mcp probe] waiting for MCP endpoint on port ${toString cfg.mcp.port}..."
+            for i in $(${pkgs.coreutils}/bin/seq 1 15); do
+              code=$(${pkgs.curl}/bin/curl -s -o /dev/null -w "%{http_code}" \
+                http://127.0.0.1:${toString cfg.mcp.port}/mcp 2>/dev/null || echo "000")
+              if [ "$code" = "200" ] || [ "$code" = "405" ]; then
+                echo "[mcp probe] MCP endpoint alive (HTTP $code, attempt $i)"
+                exit 0
+              fi
+              sleep 1
+            done
+            echo "[mcp probe] FAIL: MCP endpoint unresponsive after 15s" >&2
+            exit 1
+          ''}";
+
         NoNewPrivileges = true;
         PrivateTmp      = true;
         ProtectSystem   = "strict";
@@ -388,6 +462,133 @@ in
         RestrictAddressFamilies = [ "AF_INET" "AF_INET6" ];
       };
     };
+
+    # ---------------------------------------------------------------------------
+    # Layer 2: on-demand smoke test
+    # Trigger manually: systemctl start ollama-smoke-test
+    # ---------------------------------------------------------------------------
+    systemd.services."ollama-smoke-test" = lib.mkIf cfg.tests.enable {
+      description = "Ollama smoke test (on-demand)";
+
+      # Does not start automatically — no wantedBy.
+      after    = [ "${cfg.backend}-ollama.service" ]
+                 ++ lib.optional (cfg.models != {}) "ollama-pull-models.service"
+                 ++ lib.optional cfg.mcp.enable    "ollama-mcp-server.service";
+      requires = [ "${cfg.backend}-ollama.service" ];
+
+      serviceConfig = {
+        Type            = "oneshot";
+        # RemainAfterExit = false (default) so re-running systemctl start
+        # always executes the script fresh.
+      };
+
+      script =
+        let
+          # Model selection for the generate roundtrip:
+          # explicit override > opencode_default > aider_default > first model.
+          defaultModel =
+            if cfg.tests.generateModel != "" then cfg.tests.generateModel
+            else
+              let
+                oc  = lib.filter (t: cfg.models.${t}.opencode_default) (lib.attrNames cfg.models);
+                ai  = lib.filter (t: cfg.models.${t}.aider_default)    (lib.attrNames cfg.models);
+                all = lib.attrNames cfg.models;
+              in
+              if oc  != [] then lib.head oc
+              else if ai  != [] then lib.head ai
+              else if all != [] then lib.head all
+              else "";
+
+          generateTest = lib.optionalString (defaultModel != "") ''
+            echo ""
+            echo "=== [3] generate roundtrip (${defaultModel}) ==="
+            response=$(${pkgs.curl}/bin/curl -sf \
+              -X POST http://127.0.0.1:${toString cfg.port}/api/generate \
+              -H 'Content-Type: application/json' \
+              -d '{"model":${lib.escapeShellArg (builtins.toJSON defaultModel)},"prompt":"Reply with exactly one word: ok","stream":false}' \
+              --max-time 60 2>&1)
+            if echo "$response" | ${pkgs.gnugrep}/bin/grep -qi '"response"'; then
+              echo "PASS: got a response field"
+            else
+              echo "FAIL: no response field in generate output" >&2
+              echo "      raw: $response" >&2
+              FAILED=1
+            fi
+          '';
+
+          mcpTest = lib.optionalString cfg.mcp.enable ''
+            echo ""
+            echo "=== [4] MCP endpoint ==="
+            code=$(${pkgs.curl}/bin/curl -s -o /dev/null -w "%{http_code}" \
+              http://127.0.0.1:${toString cfg.mcp.port}/mcp --max-time 5 2>/dev/null || echo "000")
+            if [ "$code" = "200" ] || [ "$code" = "405" ]; then
+              echo "PASS: MCP port ${toString cfg.mcp.port} alive (HTTP $code)"
+            else
+              echo "FAIL: MCP port ${toString cfg.mcp.port} returned HTTP $code" >&2
+              FAILED=1
+            fi
+          '';
+
+          modelListChecks = lib.optionalString (cfg.models != {}) ''
+            ${lib.concatStringsSep "\n" (lib.mapAttrsToList (tag: _: ''
+              if echo "$tags" | ${pkgs.gnugrep}/bin/grep -q ${lib.escapeShellArg tag}; then
+                echo "  PASS model listed: ${tag}"
+              else
+                echo "  WARN model not yet listed: ${tag}" >&2
+              fi
+            '') cfg.models)}
+          '';
+        in
+        ''
+          FAILED=0
+
+          echo "=== [1] API reachability ==="
+          if ${pkgs.curl}/bin/curl -sf \
+              http://127.0.0.1:${toString cfg.port}/api/tags > /dev/null; then
+            echo "PASS: /api/tags reachable"
+          else
+            echo "FAIL: /api/tags unreachable" >&2
+            FAILED=1
+          fi
+
+          echo ""
+          echo "=== [2] model listing ==="
+          tags=$(${pkgs.curl}/bin/curl -sf \
+            http://127.0.0.1:${toString cfg.port}/api/tags 2>/dev/null)
+          if [ -z "$tags" ]; then
+            echo "FAIL: empty response from /api/tags" >&2
+            FAILED=1
+          else
+            echo "PASS: /api/tags returned data"
+            ${modelListChecks}
+          fi
+
+          ${generateTest}
+          ${mcpTest}
+
+          echo ""
+          if [ "$FAILED" = "0" ]; then
+            echo "=== ALL TESTS PASSED ==="
+          else
+            echo "=== SOME TESTS FAILED — check output above ===" >&2
+            exit 1
+          fi
+        '';
+    };
+
+    # ---------------------------------------------------------------------------
+    # Layer 3: interactive CLI wrapper
+    # Usage: ollama-test   (requires sudo for systemctl start)
+    # ---------------------------------------------------------------------------
+    environment.systemPackages = lib.mkIf cfg.tests.enable [
+      (pkgs.writeShellScriptBin "ollama-test" ''
+        echo "Running Ollama smoke test..."
+        sudo ${pkgs.systemd}/bin/systemctl start ollama-smoke-test
+        echo ""
+        echo "--- journal output ---"
+        ${pkgs.systemd}/bin/journalctl -u ollama-smoke-test -n 60 --no-pager
+      '')
+    ];
 
     networking.firewall.allowedTCPPorts =
       lib.mkIf (cfg.mcp.enable && cfg.mcp.openFirewall) [ cfg.mcp.port ];

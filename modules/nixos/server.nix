@@ -18,6 +18,7 @@ in
   my.services = {
     ollama = {
       enable     = true;
+      tests.enable      = true;
       backend = "docker";
       port = 11434;
       gpu = {
