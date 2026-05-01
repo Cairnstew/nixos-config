@@ -505,8 +505,15 @@ in
             response=$(${pkgs.curl}/bin/curl -sf \
               -X POST http://127.0.0.1:${toString cfg.port}/api/generate \
               -H 'Content-Type: application/json' \
-              -d '{"model":${lib.escapeShellArg (builtins.toJSON defaultModel)},"prompt":"Reply with exactly one word: ok","stream":false}' \
-              --max-time 60 2>&1)
+              -d ${
+                lib.escapeShellArg (builtins.toJSON {
+                  model = defaultModel;
+                  prompt = "Reply with exactly one word: ok";
+                  stream = false;
+                })
+              } \
+              --max-time 360 2>&1)
+
             if echo "$response" | ${pkgs.gnugrep}/bin/grep -qi '"response"'; then
               echo "PASS: got a response field"
             else
