@@ -15,6 +15,7 @@
     server = { ip = "100.119.248.77";  hostname = "server"; magicDnsName = "server.tail685690.ts.net"; };
     laptop     = { ip = "100.108.181.64"; hostname = "laptop";     magicDnsName = "laptop.tail685690.ts.net"; };
     wsl        = { ip = "100.70.224.82";  hostname = "wsl";        magicDnsName = "wsl.tail685690.ts.net"; };
+    desktop-dlstflt    = { ip = "100.111.231.84"; hostname = "desktop-dlstflt";    magicDnsName = "desktop-dlstflt.tail685690.ts.net"; };
   };
 
   ollamaModels = {
