@@ -42,6 +42,10 @@ Agents must never define options in the global NixOS namespace (e.g., `services.
 * **Preserve Import Topology:** Maintain the existing relationship between `default.nix` and its sidecar files.
 * **No Stylistic Refactoring:** Do not reformat code or change variable naming unless it directly relates to a functional requirement.
 
+### 2.4 Why `meta.nix` is a Strict Requirement
+* **Machine-Readability:** It allows the system to identify the module without evaluating the full Nix build.
+* **LLM Context:** It serves as a "Header" for future Agents to quickly understand the module’s intent.
+
 ---
 
 ## 3. Modification Protocol
