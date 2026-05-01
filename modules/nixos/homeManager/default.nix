@@ -53,7 +53,7 @@ in
           ollamaModels = flake.config.ollamaModels;
         };
         cline = {
-          enable = true;
+          enable = false;
 
           ollamaBaseURL = "http://${flake.config.tailnet.server.ip}:11434";
 
@@ -77,7 +77,7 @@ in
           };
         };
         aider = {
-          enable = false;
+          enable = true;
           ollamaModels = flake.config.ollamaModels;
           ollamaBaseURL = "http://${flake.config.tailnet.server.ip}:11434";
           settings = {
