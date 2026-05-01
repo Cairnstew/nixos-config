@@ -35,30 +35,37 @@ let
     then defaultModelTag
     else cfg.model;
 
-  # VS Code settings fragment that the Cline extension reads.
+  # ---------------------------------------------------------------------------
+  # VS Code settings
+  #
+  # Uses the "ollama" provider — talks directly to Ollama's native API.
+  # Do NOT switch to "openai" here: that provider ignores baseUrl entirely
+  # and always hits api.openai.com, causing auth failures with local models.
+  # ---------------------------------------------------------------------------
   clineVSCodeSettings = {
-    "cline.apiProvider"            = "openai";
-    "cline.openAiBaseUrl"          = "${cfg.ollamaBaseURL}/v1";
-    "cline.openAiApiKey"           = "ollama";
-    "cline.openAiModelId"          = clineDefaultModel;
-    "cline.openAiStreamingEnabled" = true;
+    "cline.apiProvider"   = "ollama";
+    "cline.ollamaBaseUrl" = cfg.ollamaBaseURL;  # no /v1 — ollama provider adds it
+    "cline.ollamaModelId" = clineDefaultModel;
   } // cfg.settings;
 
-  # providers.json written as a Nix store text file so we can copy (not
-  # symlink) it into ~/.cline/data/settings/ — Cline writes back to this
-  # file at runtime so it must be mutable.
+  # ---------------------------------------------------------------------------
+  # providers.json
+  #
+  # Copied (not symlinked) so Cline can write back at runtime.
+  # Always overwritten on home-manager switch so Nix stays authoritative
+  # — Cline regularly rewrites this file when the user switches models in the UI.
+  # ---------------------------------------------------------------------------
   clineProvidersFile = pkgs.writeText "cline-providers.json" (
     builtins.toJSON {
       version          = 1;
-      lastUsedProvider = "openai";
+      lastUsedProvider = "ollama";
       providers = {
-        openai = {
+        ollama = {
           settings = {
-            provider              = "openai";
-            model                 = clineDefaultModel;
-            baseUrl               = "${cfg.ollamaBaseURL}/v1";
-            apiKey                = "ollama";
-            openAiStreamingEnabled = true;
+            provider = "ollama";
+            model    = clineDefaultModel;
+            baseUrl  = cfg.ollamaBaseURL;  # no /v1 — ollama provider adds it
+            apiKey   = "ollama";
           };
           updatedAt   = "2026-04-30T01:00:00.000Z";
           tokenSource = "manual";
@@ -69,8 +76,14 @@ let
 
   # ---------------------------------------------------------------------------
   # MCP settings helpers
+  #
+  # Our local MCP bridge (supergateway wrapping ollama-mcp-server) uses SSE
+  # transport and serves at /sse. Always use type = "sse" for supergateway.
+  # Use "streamableHttp" only for hosted services that explicitly support it
+  # (e.g. Linear). Never use "streamableHttp" + /mcp for supergateway — it
+  # will return garbage and cause "expected string, received undefined" errors
+  # in Cline's tool call parser.
   # ---------------------------------------------------------------------------
-
   mcpServersObj = lib.mapAttrs (_name: srv:
     { inherit (srv) type url; }
     // lib.optionalAttrs (srv.env     != {}) { inherit (srv) env; }
@@ -81,6 +94,8 @@ let
     builtins.toJSON { mcpServers = mcpServersObj; }
   );
 
+  # Seed an empty-but-valid OAuth file so Cline doesn't error on first read.
+  # Never overwritten after creation so Cline's own OAuth tokens are preserved.
   clineMcpOAuthSettingsFile = pkgs.writeText "cline-mcp-oauth-settings.json" (
     builtins.toJSON {
       servers = lib.mapAttrs (_name: _srv: {}) cfg.mcp.servers;
@@ -90,8 +105,9 @@ let
   hasMcpServers = cfg.mcp.servers != {};
 
   # ---------------------------------------------------------------------------
-  # Health-check script for all configured MCP servers.
-  # streamableHttp needs a POST; SSE needs a GET — we detect by type.
+  # Health-check script
+  # SSE servers: HTTP GET to base URL.
+  # streamableHttp servers: POST MCP initialize message.
   # ---------------------------------------------------------------------------
   mcpHealthScript = pkgs.writeShellScriptBin "cline-mcp-health" ''
     set -euo pipefail
@@ -163,15 +179,14 @@ in
       default = {};
       example = literalExpression ''
         {
-          "qwen2.5-coder:14b" = { cline_default = true; };
-          "codestral:22b"     = {};
-          "mistral:7b"        = {};
+          "gemma4:e4b"        = { cline_default = true; };
+          "qwen2.5-coder:14b" = {};
         }
       '';
       description = ''
-        Ollama models to expose to Cline.
-        Set <literal>cline_default = true</literal> on exactly one model to use
-        it as the active model; otherwise <option>model</option> is used.
+        Ollama models available to Cline.
+        Set <literal>cline_default = true</literal> on exactly one model to
+        use it as the active model; otherwise <option>model</option> is used.
       '';
     };
 
@@ -180,19 +195,16 @@ in
       default = "http://127.0.0.1:11434";
       example = "http://my-gpu-box:11434";
       description = ''
-        Base URL for the Ollama server, without a trailing slash and without
-        the <literal>/v1</literal> suffix — the module appends that
-        automatically for the Cline CLI provider config.  Exported as
-        <envar>OLLAMA_HOST</envar>.
+        Base URL for the Ollama server — no trailing slash, no
+        <literal>/v1</literal> suffix.  The ollama provider adds the path
+        itself.  Exported as <envar>OLLAMA_HOST</envar>.
       '';
     };
-
-    # ── Shorthand options ──────────────────────────────────────────────────
 
     model = mkOption {
       type    = types.str;
       default = "";
-      example = "qwen2.5-coder:14b";
+      example = "gemma4:e4b";
       description = ''
         Fallback model tag when no entry in <option>ollamaModels</option> has
         <literal>cline_default = true</literal>.
@@ -207,66 +219,49 @@ in
           options = {
             type = mkOption {
               type    = types.enum [ "sse" "streamableHttp" "stdio" ];
-              # streamableHttp is the modern, multi-client-safe transport.
-              # Use "sse" only for older servers that don't support it.
-              default = "streamableHttp";
+              default = "sse";
               description = ''
                 MCP transport type.
-                <literal>streamableHttp</literal> — modern, stateless, supports
-                multiple simultaneous clients; endpoint typically ends in
-                <literal>/mcp</literal>.  Preferred for all new servers.
-                <literal>sse</literal> — legacy transport; single client only;
-                endpoint typically ends in <literal>/sse</literal>.
-                <literal>stdio</literal> — local process; no URL needed.
+                <literal>sse</literal> — for local servers wrapped by
+                supergateway; endpoint ends in <literal>/sse</literal>.
+                <literal>streamableHttp</literal> — for hosted services
+                (Linear, etc.); endpoint ends in <literal>/mcp</literal>.
+                <literal>stdio</literal> — local process, no URL needed.
               '';
             };
 
             url = mkOption {
               type    = types.str;
               default = "";
-              example = "http://my-server:3100/mcp";
-              description = ''
-                URL the MCP client connects to.
-                For <literal>streamableHttp</literal>: typically ends in
-                <literal>/mcp</literal>.
-                For <literal>sse</literal>: typically ends in
-                <literal>/sse</literal>.
-                Not used for <literal>stdio</literal> servers.
-              '';
+              example = "http://my-server:3100/sse";
+              description = "URL the MCP client connects to.";
             };
 
             env = mkOption {
               type    = types.attrsOf types.str;
               default = {};
-              example = literalExpression ''{ API_KEY = "secret"; }'';
-              description = "Environment variables passed to the MCP server process (stdio only).";
+              description = "Environment variables for stdio servers.";
             };
 
             headers = mkOption {
               type    = types.attrsOf types.str;
               default = {};
-              example = literalExpression ''{ Authorization = "Bearer token"; }'';
-              description = "HTTP headers sent with every request (sse / streamableHttp).";
+              description = "HTTP headers for sse/streamableHttp servers.";
             };
           };
         });
         default = {};
         example = literalExpression ''
           {
-            # Local Ollama MCP server — uses streamableHttp (multi-client safe)
+            # Local Ollama MCP via supergateway — must use sse + /sse
             ollama = {
-              type = "streamableHttp";
-              url  = "http://my-server:3100/mcp";
+              type = "sse";
+              url  = "http://100.119.248.77:3100/sse";
             };
-            # Hosted Linear MCP
+            # Hosted Linear MCP — streamableHttp
             linear = {
               type = "streamableHttp";
               url  = "https://mcp.linear.app/mcp";
-            };
-            # Legacy SSE server
-            legacy = {
-              type = "sse";
-              url  = "http://my-server:3200/sse";
             };
           }
         '';
@@ -274,10 +269,7 @@ in
           Declarative MCP server definitions written to
           <filename>~/.cline/data/settings/cline_mcp_settings.json</filename>
           on every <command>home-manager switch</command>.
-
-          The file is copied (not symlinked) so Cline can still update it at
-          runtime.  The Nix declaration is always authoritative for the server
-          list; transient runtime edits will be overwritten on next switch.
+          Nix is always authoritative for the server list.
         '';
       };
     };
@@ -294,10 +286,9 @@ in
         }
       '';
       description = ''
-        Extra key/value pairs merged into the Cline VS Code settings fragment.
-        Keys must be fully-qualified VS Code setting names
-        (i.e. <literal>"cline.*"</literal>).  Values here take precedence over
-        all shorthand options above.
+        Extra VS Code settings merged into the Cline fragment.
+        Keys must be fully-qualified (i.e. <literal>"cline.*"</literal>).
+        Values here take precedence over all shorthand options above.
       '';
     };
 
@@ -305,11 +296,7 @@ in
       type    = types.str;
       default = ".config/Code/User/settings.json";
       example = ".config/VSCodium/User/settings.json";
-      description = ''
-        Path relative to <envar>HOME</envar> for the VS Code
-        <filename>settings.json</filename> file.  Override for VS Code OSS,
-        VSCodium, or a non-standard XDG base directory.
-      '';
+      description = "Path relative to HOME for VS Code settings.json.";
     };
 
     # ── Kanban CLI ─────────────────────────────────────────────────────────
@@ -320,17 +307,8 @@ in
         default = false;
         description = ''
           Install the <command>cline-kanban</command> CLI — a browser-based
-          kanban board for orchestrating multiple coding agents in parallel
-          via git worktrees.  Run <command>cline-kanban</command> from the
-          root of any git repo to open the board in your browser.
-
-          Also installs the <command>cline</command> CLI agent into
-          <filename>~/.npm-global/bin</filename> so Kanban can detect and
-          launch it automatically.
-
-          Use <literal>--host 0.0.0.0</literal> in <option>extraArgs</option>
-          when running on a remote machine or WSL so the board is reachable
-          from your browser at <literal>http://&lt;host-ip&gt;:3484</literal>.
+          kanban board for orchestrating multiple Cline agents in parallel
+          via git worktrees.
         '';
       };
 
@@ -338,10 +316,7 @@ in
         type    = types.listOf types.str;
         default = [];
         example = literalExpression ''[ "--host" "0.0.0.0" "--port" "3484" ]'';
-        description = ''
-          Extra command-line flags passed to <command>kanban</command> on
-          every invocation.
-        '';
+        description = "Extra flags passed to kanban on every invocation.";
       };
     };
   };
@@ -373,12 +348,11 @@ in
       }
     ];
 
-    # ── Cline CLI provider config ──────────────────────────────────────────
+    # ── Provider config ────────────────────────────────────────────────────
 
     home.activation.writeClineProviders = lib.mkIf usingOllama (
       lib.hm.dag.entryAfter [ "writeBoundary" ] ''
         mkdir -p $HOME/.cline/data/settings
-        # Remove first so cp -f isn't blocked by read-only bits set by Cline
         $DRY_RUN_CMD rm -f $HOME/.cline/data/settings/providers.json
         $DRY_RUN_CMD cp ${clineProvidersFile} \
           $HOME/.cline/data/settings/providers.json
@@ -387,7 +361,7 @@ in
       ''
     );
 
-    # ── MCP settings files ─────────────────────────────────────────────────
+    # ── MCP settings ───────────────────────────────────────────────────────
 
     home.activation.writeClineMcpSettings = lib.mkIf hasMcpServers (
       lib.hm.dag.entryAfter [ "writeBoundary" ] ''
@@ -408,7 +382,7 @@ in
       ''
     );
 
-    # ── Kanban + Cline CLI + health-check packages ─────────────────────────
+    # ── Packages ───────────────────────────────────────────────────────────
 
     home.packages =
       lib.optional cfg.kanban.enable (
