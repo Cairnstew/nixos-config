@@ -61,8 +61,8 @@ in
 
           mcp.servers = {
             ollama = {
-              type = "streamableHttp";
-              url  = "http://100.119.248.77:3100/mcp";
+              type = "sse";                                                # ← was streamableHttp
+              url  = "http://${flake.config.tailnet.server.ip}:3100/sse"; # ← was /mcp
             };
           };
 
