@@ -69,7 +69,7 @@
       name         = "gemma4:e4b";
       tools        = true;
       numCtx       = 32768;
-      temperature  = 1.0;   # low temp for agentic tasks
+      temperature  = 0.10;   # low temp for agentic tasks
       topP         = 0.95;  # higher topP to increase creativity
       topK         = 64;
       
