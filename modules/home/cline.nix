@@ -39,8 +39,8 @@ let
   # VS Code settings
   #
   # Uses the "ollama" provider — talks directly to Ollama's native API.
-  # Do NOT switch to "openai" here: that provider ignores baseUrl entirely
-  # and always hits api.openai.com, causing auth failures with local models.
+  # Do NOT switch to "openai": that provider ignores baseUrl entirely and
+  # always hits api.openai.com, causing auth failures with local models.
   # ---------------------------------------------------------------------------
   clineVSCodeSettings = {
     "cline.apiProvider"   = "ollama";
@@ -77,12 +77,16 @@ let
   # ---------------------------------------------------------------------------
   # MCP settings helpers
   #
-  # Our local MCP bridge (supergateway wrapping ollama-mcp-server) uses SSE
-  # transport and serves at /sse. Always use type = "sse" for supergateway.
-  # Use "streamableHttp" only for hosted services that explicitly support it
-  # (e.g. Linear). Never use "streamableHttp" + /mcp for supergateway — it
-  # will return garbage and cause "expected string, received undefined" errors
-  # in Cline's tool call parser.
+  # supergateway runs with --outputTransport streamableHttp (its default) and
+  # serves the MCP JSON-RPC endpoint at POST /mcp.
+  #
+  # Clients must send:
+  #   Accept: application/json, text/event-stream
+  #   Content-Type: application/json
+  #
+  # Use type = "streamableHttp" + url ending in /mcp for supergateway.
+  # Use type = "sse" + url ending in /sse only for legacy servers that don't
+  # support streamableHttp (supergateway is NOT one of them).
   # ---------------------------------------------------------------------------
   mcpServersObj = lib.mapAttrs (_name: srv:
     { inherit (srv) type url; }
@@ -106,18 +110,41 @@ let
 
   # ---------------------------------------------------------------------------
   # Health-check script
-  # SSE servers: HTTP GET to base URL.
-  # streamableHttp servers: POST MCP initialize message.
+  # streamableHttp: POST MCP initialize with correct Accept header.
+  # sse: GET to base URL.
   # ---------------------------------------------------------------------------
   mcpHealthScript = pkgs.writeShellScriptBin "cline-mcp-health" ''
     set -euo pipefail
     ok=0
     fail=0
 
-    check_get() {
+    check_streamable() {
+      local name="$1" url="$2"
+      printf "  %-30s " "$name"
+      local http_code
+      http_code=$(${pkgs.curl}/bin/curl -s -o /dev/null -w "%{http_code}" \
+        --max-time 5 --connect-timeout 3 \
+        -X POST \
+        -H "Content-Type: application/json" \
+        -H "Accept: application/json, text/event-stream" \
+        -d '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2024-11-05","capabilities":{},"clientInfo":{"name":"health-check","version":"1.0"}}}' \
+        "$url" 2>/dev/null || echo "000")
+      if [[ "$http_code" == "000" ]]; then
+        echo "✗  UNREACHABLE (connection refused or timeout)"
+        fail=$((fail + 1))
+      elif [[ "$http_code" -ge 200 && "$http_code" -lt 500 ]]; then
+        echo "✓  OK (HTTP $http_code)"
+        ok=$((ok + 1))
+      else
+        echo "✗  ERROR (HTTP $http_code)"
+        fail=$((fail + 1))
+      fi
+    }
+
+    check_sse() {
       local name="$1" url="$2"
       local base
-      base=$(echo "$url" | ${pkgs.gnused}/bin/sed 's|/sse$||;s|/mcp$||')
+      base=$(echo "$url" | ${pkgs.gnused}/bin/sed 's|/sse$||')
       printf "  %-30s " "$name"
       local http_code
       http_code=$(${pkgs.curl}/bin/curl -s -o /dev/null -w "%{http_code}" \
@@ -134,33 +161,12 @@ let
       fi
     }
 
-    check_post() {
-      local name="$1" url="$2"
-      printf "  %-30s " "$name"
-      local http_code
-      http_code=$(${pkgs.curl}/bin/curl -s -o /dev/null -w "%{http_code}" \
-        --max-time 5 --connect-timeout 3 \
-        -X POST -H "Content-Type: application/json" \
-        -d '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2024-11-05","capabilities":{},"clientInfo":{"name":"health-check","version":"1.0"}}}' \
-        "$url" 2>/dev/null || echo "000")
-      if [[ "$http_code" == "000" ]]; then
-        echo "✗  UNREACHABLE (connection refused or timeout)"
-        fail=$((fail + 1))
-      elif [[ "$http_code" -ge 200 && "$http_code" -lt 500 ]]; then
-        echo "✓  OK (HTTP $http_code)"
-        ok=$((ok + 1))
-      else
-        echo "✗  ERROR (HTTP $http_code)"
-        fail=$((fail + 1))
-      fi
-    }
-
     echo "Cline MCP server health check"
     echo "─────────────────────────────────────────────"
     ${lib.concatStringsSep "\n" (lib.mapAttrsToList (name: srv:
       if srv.type == "streamableHttp"
-      then "check_post ${lib.escapeShellArg name} ${lib.escapeShellArg srv.url}"
-      else "check_get  ${lib.escapeShellArg name} ${lib.escapeShellArg srv.url}"
+      then "check_streamable ${lib.escapeShellArg name} ${lib.escapeShellArg srv.url}"
+      else "check_sse        ${lib.escapeShellArg name} ${lib.escapeShellArg srv.url}"
     ) cfg.mcp.servers)}
     echo "─────────────────────────────────────────────"
     echo "  $ok OK  /  $fail failed"
@@ -219,13 +225,15 @@ in
           options = {
             type = mkOption {
               type    = types.enum [ "sse" "streamableHttp" "stdio" ];
-              default = "sse";
+              default = "streamableHttp";
               description = ''
                 MCP transport type.
-                <literal>sse</literal> — for local servers wrapped by
-                supergateway; endpoint ends in <literal>/sse</literal>.
-                <literal>streamableHttp</literal> — for hosted services
-                (Linear, etc.); endpoint ends in <literal>/mcp</literal>.
+                <literal>streamableHttp</literal> — modern stateless transport;
+                endpoint ends in <literal>/mcp</literal>.  Use this for
+                supergateway and hosted services (Linear, etc.).
+                <literal>sse</literal> — legacy single-client transport;
+                endpoint ends in <literal>/sse</literal>.  Only for servers
+                that don't support streamableHttp.
                 <literal>stdio</literal> — local process, no URL needed.
               '';
             };
@@ -233,8 +241,12 @@ in
             url = mkOption {
               type    = types.str;
               default = "";
-              example = "http://my-server:3100/sse";
-              description = "URL the MCP client connects to.";
+              example = "http://my-server:3100/mcp";
+              description = ''
+                URL the MCP client connects to.
+                streamableHttp servers: end in <literal>/mcp</literal>.
+                SSE servers: end in <literal>/sse</literal>.
+              '';
             };
 
             env = mkOption {
@@ -253,12 +265,12 @@ in
         default = {};
         example = literalExpression ''
           {
-            # Local Ollama MCP via supergateway — must use sse + /sse
+            # Local Ollama MCP via supergateway — streamableHttp at /mcp
             ollama = {
-              type = "sse";
-              url  = "http://100.119.248.77:3100/sse";
+              type = "streamableHttp";
+              url  = "http://100.119.248.77:3100/mcp";
             };
-            # Hosted Linear MCP — streamableHttp
+            # Hosted Linear MCP
             linear = {
               type = "streamableHttp";
               url  = "https://mcp.linear.app/mcp";

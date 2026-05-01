@@ -64,7 +64,6 @@ in
               type = "streamableHttp";
               url  = "http://${flake.config.tailnet.server.ip}:3100/mcp";
             };
-
           };
 
           settings = {
