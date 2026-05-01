@@ -36,13 +36,13 @@ let
     else cfg.model;
 
   # VS Code settings fragment that the Cline extension reads.
-  clineVSCodeSettings =
-    {
-      "cline.apiProvider"   = "ollama";
-      "cline.ollamaBaseUrl" = cfg.ollamaBaseURL;
-      "cline.ollamaModelId" = clineDefaultModel;
-    }
-    // cfg.settings;
+  clineVSCodeSettings = {
+    "cline.apiProvider"            = "openai";
+    "cline.openAiBaseUrl"          = "${cfg.ollamaBaseURL}/v1";
+    "cline.openAiApiKey"           = "ollama";
+    "cline.openAiModelId"          = clineDefaultModel;
+    "cline.openAiStreamingEnabled" = true;
+  } // cfg.settings;
 
   # providers.json written as a Nix store text file so we can copy (not
   # symlink) it into ~/.cline/data/settings/ — Cline writes back to this
@@ -50,14 +50,15 @@ let
   clineProvidersFile = pkgs.writeText "cline-providers.json" (
     builtins.toJSON {
       version          = 1;
-      lastUsedProvider = "ollama";
+      lastUsedProvider = "openai";
       providers = {
-        ollama = {
+        openai = {
           settings = {
-            provider = "ollama";
-            model    = clineDefaultModel;
-            baseUrl  = "${cfg.ollamaBaseURL}/v1";
-            apiKey   = "ollama";
+            provider              = "openai";
+            model                 = clineDefaultModel;
+            baseUrl               = "${cfg.ollamaBaseURL}/v1";
+            apiKey                = "ollama";
+            openAiStreamingEnabled = true;
           };
           updatedAt   = "2026-04-30T01:00:00.000Z";
           tokenSource = "manual";
