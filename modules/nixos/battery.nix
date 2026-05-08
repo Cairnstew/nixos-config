@@ -63,7 +63,9 @@ in
       lidSwitch              = cfg.lidSwitch;
       lidSwitchExternalPower = cfg.lidSwitchExternalPower;
       lidSwitchDocked        = cfg.lidSwitchDocked;
-      extraConfig            = "LidSwitchIgnoreInhibited=no";
+      settings.Login = {
+        LidSwitchIgnoreInhibited = "no";
+      };
     };
 
     # Optionally nuke suspend entirely for remote access machines

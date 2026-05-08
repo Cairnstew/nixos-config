@@ -135,7 +135,7 @@ in
         enable      = true;
         enable32Bit = true;
       };
-      programs.light.enable = true;
+      hardware.acpilight.enable = true;
       users.users.${flake.config.me.username} = {
         extraGroups = [ "video" ];
       };
