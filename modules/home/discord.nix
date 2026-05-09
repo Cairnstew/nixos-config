@@ -45,8 +45,7 @@ in
   config = lib.mkIf cfg.enable {
 
     # Install Discord and extra packages
-    home.packages = [ (pkgs.discord.override { version = cfg.version; }) ] ++ cfg.extraPackages;
-
+    home.packages = [ pkgs.discord ] ++ cfg.extraPackages;
     # Environment variables for Discord (e.g., theme)
     home.sessionVariables = {
       DISCORD_THEME = cfg.theme;

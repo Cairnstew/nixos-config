@@ -6,12 +6,16 @@
       "https://cache.nixos-cuda.org/"
       "https://cache.nixos.org/"
       "https://nix-community.cachix.org"
-    
+      "https://cairnstew-nixos-config-cache.cachix.org"
     ];
+
     trusted-public-keys = [
       "cache.nixos-cuda.org-1:dykfIgNYfi2cKCfb4xMBbOjlzFnEiCsHxlXLjfXDwOY="
       "cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY="
       "nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs="
+
+      # Your cache
+      "cairnstew-nixos-config-cache.cachix.org-1:1150paajFeK18p7Eie/4L8iews3pbFbVp3eOxkmXar4="
     ];
   };
 
