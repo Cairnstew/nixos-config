@@ -28,6 +28,15 @@ let
       exit 1
     fi
 
+    for i in $(seq 1 30); do
+      if ${pkgs.tailscale}/bin/tailscale status --json >/dev/null 2>&1; then
+        break
+      fi
+
+      echo "tailscale-ssh-config: waiting for tailscale..." >&2
+      sleep 2
+    done
+
     # ── Fetch device list with retry ────────────────────────────────────────
     response=""
     for attempt in 1 2 3; do
@@ -177,13 +186,26 @@ in
       # ── One-shot service ──────────────────────────────────────────────────
       systemd.services.tailscale-ssh-config = {
         description = "Generate SSH config from Tailscale API";
-        after       = [ "network-online.target" "tailscaled.service" ];
-        wants       = [ "network-online.target" ];
+
+        after = [
+          "network-online.target"
+          "tailscaled.service"
+        ];
+
+        wants = [
+          "network-online.target"
+          "tailscaled.service"
+        ];
+
+        wantedBy = [ "multi-user.target" ];
+
         serviceConfig = {
-          Type      = "oneshot";
-          User      = cfg.ssh.user;
+          Type = "oneshot";
+          User = cfg.ssh.user;
           ExecStart = generatorScript;
-          Restart   = "no";
+
+          Restart = "on-failure";
+          RestartSec = "30s";
         };
       };
 
