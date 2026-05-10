@@ -14,38 +14,79 @@ let
     then cfg.ssh.sshConfigPath
     else "/home/${cfg.ssh.user}/.ssh/config.d/tailscale";
 
-  # The script is a derivation so sshKeyPath / sshConfigPath are
-  # baked in at eval time — no runtime secret-path guessing needed.
+  # ---------------------------------------------------------------------------
+  # Wait-for-tailscale helper — a separate derivation so it can be used both
+  # in ExecStartPre and independently if needed. Uses `tailscale status` with
+  # a generous timeout; exits 0 only when tailscale reports itself as Running.
+  # ---------------------------------------------------------------------------
+  waitScript = pkgs.writeShellScript "wait-for-tailscale" ''
+    set -euo pipefail
+    TIMEOUT=120
+    ELAPSED=0
+
+    echo "wait-for-tailscale: waiting for tailscaled to be ready..." >&2
+
+    while true; do
+      STATUS=$(${pkgs.tailscale}/bin/tailscale status --json 2>/dev/null \
+               | ${pkgs.jq}/bin/jq -r '.BackendState // empty' 2>/dev/null || true)
+
+      case "$STATUS" in
+        Running)
+          echo "wait-for-tailscale: tailscale is Running." >&2
+          exit 0
+          ;;
+        NeedsLogin|NeedsMachineAuth)
+          echo "wait-for-tailscale: tailscale state is $STATUS — cannot proceed." >&2
+          exit 1
+          ;;
+      esac
+
+      if [ "$ELAPSED" -ge "$TIMEOUT" ]; then
+        echo "wait-for-tailscale: timed out after ${toString cfg.ssh.waitTimeout}s waiting for tailscale." >&2
+        exit 1
+      fi
+
+      sleep 5
+      ELAPSED=$((ELAPSED + 5))
+    done
+  '';
+
+  # ---------------------------------------------------------------------------
+  # Main generator script — only runs once tailscale is confirmed Running.
+  # ---------------------------------------------------------------------------
   generatorScript = pkgs.writeShellScript "tailscale-ssh-config" ''
     set -euo pipefail
 
     SSH_CONFIG="${sshConfigPath}"
     SSH_DIR=$(dirname "$SSH_CONFIG")
 
-    # ── Read secrets ────────────────────────────────────────────────────────
+    # ── Read API key ──────────────────────────────────────────────────────────
     if ! API_KEY=$(cat "${apiKeyPath}" 2>/dev/null); then
       echo "tailscale-ssh-config: ERROR: cannot read API key at ${apiKeyPath}" >&2
       exit 1
     fi
+    if [ -z "$API_KEY" ]; then
+      echo "tailscale-ssh-config: ERROR: API key is empty" >&2
+      exit 1
+    fi
 
-    for i in $(seq 1 30); do
-      if ${pkgs.tailscale}/bin/tailscale status --json >/dev/null 2>&1; then
-        break
-      fi
-
-      echo "tailscale-ssh-config: waiting for tailscale..." >&2
-      sleep 2
-    done
-
-    # ── Fetch device list with retry ────────────────────────────────────────
+    # ── Fetch device list (3 attempts) ────────────────────────────────────────
     response=""
     for attempt in 1 2 3; do
-      if response=$(${pkgs.curl}/bin/curl -sf --max-time 10 \
+      if response=$(${pkgs.curl}/bin/curl -sf --max-time 15 \
           -H "Authorization: Bearer $API_KEY" \
-          "https://api.tailscale.com/api/v2/tailnet/-/devices"); then
-        break
+          "https://api.tailscale.com/api/v2/tailnet/-/devices" 2>&1); then
+
+        # Validate that we got JSON with a devices key
+        if echo "$response" | ${pkgs.jq}/bin/jq -e '.devices' >/dev/null 2>&1; then
+          break
+        else
+          echo "tailscale-ssh-config: attempt $attempt: unexpected API response: $response" >&2
+          response=""
+        fi
+      else
+        echo "tailscale-ssh-config: attempt $attempt: curl failed (exit $?)" >&2
       fi
-      echo "tailscale-ssh-config: attempt $attempt failed, retrying…" >&2
       sleep $((attempt * 5))
     done
 
@@ -54,10 +95,15 @@ let
       exit 1
     fi
 
-    # ── Build host blocks ───────────────────────────────────────────────────
+    # ── Build host blocks ─────────────────────────────────────────────────────
+    # .name is the full MagicDNS name (e.g. host.tail1234.ts.net)
+    # .hostname is the short name reported by the device — use it as the SSH alias.
     NEW_BLOCK=$(echo "$response" | ${pkgs.jq}/bin/jq -r '
       .devices[]
-      | select(.hostname != null and .hostname != "")
+      | select(
+          (.hostname != null and .hostname != "") and
+          (.name     != null and .name     != "")
+        )
       | "Host " + .hostname
       + "\n  HostName " + .name
       + "\n  IdentityFile ${sshKeyPath}"
@@ -66,7 +112,14 @@ let
           "\\n  ${lib.replaceStrings ["\n"] ["\\n  "] cfg.ssh.extraHostConfig}"}"
     ')
 
-    # ── Write atomically ────────────────────────────────────────────────────
+    HOST_COUNT=$(echo "$NEW_BLOCK" | grep -c '^Host ' || true)
+
+    if [ "$HOST_COUNT" -eq 0 ]; then
+      echo "tailscale-ssh-config: WARNING: API returned devices but none had hostname+name set." >&2
+      # Write an empty (but valid) file so SSH doesn't trip on a stale one.
+    fi
+
+    # ── Write atomically as the target user ──────────────────────────────────
     mkdir -p "$SSH_DIR"
     chmod 700 "$SSH_DIR"
 
@@ -74,15 +127,18 @@ let
     trap 'rm -f "$TMPFILE"' EXIT
 
     {
-      echo "# BEGIN tailscale-managed"
-      echo "$NEW_BLOCK"
+      echo "# BEGIN tailscale-managed — do not edit, regenerated automatically"
+      echo "# Last updated: $(date -u '+%Y-%m-%dT%H:%M:%SZ')"
+      if [ -n "$NEW_BLOCK" ]; then
+        echo "$NEW_BLOCK"
+      fi
       echo "# END tailscale-managed"
     } > "$TMPFILE"
 
     chmod 600 "$TMPFILE"
     mv "$TMPFILE" "$SSH_CONFIG"
 
-    echo "tailscale-ssh-config: wrote $(echo "$NEW_BLOCK" | grep -c '^Host ') host(s) to $SSH_CONFIG"
+    echo "tailscale-ssh-config: wrote $HOST_COUNT host(s) to $SSH_CONFIG"
   '';
 
 in
@@ -132,15 +188,21 @@ in
       refreshInterval = mkOption {
         type        = types.str;
         default     = "1h";
-        description = "How often to refresh the SSH config from the Tailscale API (systemd calendar interval).";
+        description = "How often to refresh the SSH config from the Tailscale API (systemd OnUnitActiveSec interval).";
         example     = "30min";
+      };
+
+      waitTimeout = mkOption {
+        type        = types.int;
+        default     = 120;
+        description = "Seconds to wait for tailscale to reach Running state before giving up.";
       };
     };
   };
 
   config = mkIf cfg.enable (mkMerge [
 
-    # ── Core VPN ─────────────────────────────────────────────────────────────
+    # ── Core VPN ──────────────────────────────────────────────────────────────
     {
       services.tailscale = {
         enable       = true;
@@ -159,7 +221,7 @@ in
       services.resolved.enable              = true;
     }
 
-    # ── SSH config generation ─────────────────────────────────────────────────
+    # ── SSH config generation ──────────────────────────────────────────────────
     (mkIf (cfg.ssh.enable && sec.enable) {
 
       assertions = [
@@ -183,42 +245,58 @@ in
         includes = [ "config.d/tailscale" ];
       };
 
-      # ── One-shot service ──────────────────────────────────────────────────
+      # ── One-shot service ────────────────────────────────────────────────────
+      # Does NOT restart on failure — if tailscale isn't Running or the API
+      # key is wrong, restarting in a loop won't help. The timer will retry
+      # after refreshInterval anyway. Set StartLimitBurst=0 to disable the
+      # systemd-level restart limit error spam.
       systemd.services.tailscale-ssh-config = {
         description = "Generate SSH config from Tailscale API";
 
-        after = [
-          "network-online.target"
-          "tailscaled.service"
-        ];
+        # tailscaled must be running before we even try. network-online ensures
+        # we have a route to api.tailscale.com.
+        after  = [ "network-online.target" "tailscaled.service" ];
+        wants  = [ "network-online.target" ];
+        # Hard dependency: if tailscaled isn't active, don't start at all.
+        requires = [ "tailscaled.service" ];
 
-        wants = [
-          "network-online.target"
-          "tailscaled.service"
-        ];
-
-        wantedBy = [ "multi-user.target" ];
+        # Do NOT add to multi-user.target — the timer owns scheduling.
+        # Removing wantedBy here means the oneshot only runs via the timer
+        # (or manual systemctl start). This eliminates the boot race entirely.
 
         serviceConfig = {
           Type = "oneshot";
           User = cfg.ssh.user;
-          ExecStart = generatorScript;
 
-          Restart = "on-failure";
-          RestartSec = "30s";
+          # ExecStartPre blocks until tailscale is Running (or times out and
+          # fails — which aborts ExecStart cleanly, no restart loop).
+          ExecStartPre = waitScript;
+          ExecStart    = generatorScript;
+
+          # Never auto-restart a oneshot; let the timer decide when to retry.
+          Restart    = "no";
+
+          # Prevent systemd from rate-limiting manual retries.
+          StartLimitBurst = 0;
         };
       };
 
-
-      # ── Timer for periodic refresh ────────────────────────────────────────
+      # ── Timer ───────────────────────────────────────────────────────────────
+      # OnBootSec fires once after boot (giving tailscale time to settle).
+      # OnUnitActiveSec then fires every refreshInterval thereafter.
+      # Persistent=true catches up if the machine was suspended/off.
       systemd.timers.tailscale-ssh-config = {
         description = "Periodically refresh Tailscale SSH config";
         wantedBy    = [ "timers.target" ];
         timerConfig = {
-          OnActiveSec         = "30s";       # first run shortly after boot
-          OnUnitActiveSec   = cfg.ssh.refreshInterval;
-          RandomizedDelaySec = "60s";      # avoid thundering herd across hosts
-          Persistent        = true;        # catch up if the machine was off
+          # Delay first run so tailscale has a chance to authenticate on a
+          # fresh boot — the wait script adds its own check, but this keeps
+          # the timer log noise down on machines that need auth interaction.
+          OnBootSec          = "2min";
+          OnUnitActiveSec    = cfg.ssh.refreshInterval;
+          RandomizedDelaySec = "60s";
+          Persistent         = true;
+          Unit               = "tailscale-ssh-config.service";
         };
       };
     })

@@ -69,7 +69,7 @@ in
 
   environment.systemPackages = [
     self.packages.${pkgs.stdenv.hostPlatform.system}.get-template
-    pkgs.rustdesk
+    #pkgs.rustdesk
   ];
 
   # ── Home Manager configuration ─────────────────────────
@@ -80,7 +80,7 @@ in
       firefox.enable            = true;
       localsend.enable          = true;
       obsidian.enable           = true;
-      rstudio.enable            = true;
+      #rstudio.enable            = true;
       #steam.enable            = true;
       vscode.enable             = true;
       "whatsapp-electron".enable = true;
