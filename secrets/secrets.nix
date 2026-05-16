@@ -38,5 +38,7 @@ in
   "cloud/aws/lab-ssh-key.age".publicKeys = all;
 
   "cloud/gcloud/auth.json.age".publicKeys = all;
+
+  "misc/huggingface-token.age".publicKeys = all;
   
 }

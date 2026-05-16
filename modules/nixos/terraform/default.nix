@@ -1,9 +1,9 @@
 # terraform/main.nix
-{ flake, config, ... }:
+{ config, ... }:
 
 let
   region = "europe-west2";
-  zone   = "${region}-b";  # b has better L4 spot availability than a
+  zone   = "${region}-b";
 in
 {
   terraform.required_providers.google = {
@@ -14,28 +14,30 @@ in
   variable.gcp_credentials_file = {
     description = "Path to GCP service account JSON key file";
     type        = "string";
-    default     = config.age.secrets.tailscale.cloud-auth.path;
+    default     = config.secrets.names.gcloud-auth.file;
   };
 
-  variable.allowed_ip = {
-    description = "Your personal IP (e.g. 1.2.3.4/32) allowed to reach the GPU";
+  variable.tailscale_auth_key = {
+    description = "Tailscale reusable+ephemeral auth key from admin panel";
     type        = "string";
+    sensitive   = true;
+    default     = config.secrets.names.tailscale-cloud-auth.file;
   };
 
   variable.vllm_model = {
-    description = "HuggingFace model to serve, e.g. mistralai/Mistral-7B-Instruct-v0.2";
+    description = "HuggingFace model to serve";
     type        = "string";
     default     = "mistralai/Mistral-7B-Instruct-v0.2";
   };
 
   variable.hf_token = {
-    description = "HuggingFace token (needed for gated models like Llama)";
+    description = "HuggingFace token for gated models";
     type        = "string";
-    default     = "";
+    default     = config.secrets.names.huggingface-token.file;
     sensitive   = true;
   };
 
-  # ── Read project from SA JSON ─────────────────────────────────────────────
+  # ── Project from SA JSON ──────────────────────────────────────────────────
   data.external.sa_json = {
     program = [ "sh" "-c" ''jq -r '{project_id:.project_id}' "$0"'' "\${var.gcp_credentials_file}" ];
   };
@@ -48,7 +50,7 @@ in
     credentials = "\${file(var.gcp_credentials_file)}";
   };
 
-  # ── Enable APIs ───────────────────────────────────────────────────────────
+  # ── APIs ──────────────────────────────────────────────────────────────────
   resource.google_project_service.apis = {
     for_each = "\${{ for api in toset([\"compute.googleapis.com\", \"iam.googleapis.com\", \"cloudresourcemanager.googleapis.com\"]) : api => api }}";
     project  = "\${local.project}";
@@ -73,27 +75,21 @@ in
   };
 
   # ── Firewall ──────────────────────────────────────────────────────────────
-  # SSH from your IP only
-  resource.google_compute_firewall.ssh = {
-    name    = "allow-ssh";
+  # Tailscale needs outbound UDP 41641 — outbound is open by default on GCP.
+  # We only need inbound for the Tailscale coordination + DERP fallback.
+  # vLLM port is NOT exposed publicly — only reachable over tailnet.
+
+  resource.google_compute_firewall.tailscale = {
+    name    = "allow-tailscale";
     network = "\${google_compute_network.main.name}";
     project = "\${local.project}";
-    allow   = [{ protocol = "tcp"; ports = [ "22" ]; }];
-    source_ranges = [ "\${var.allowed_ip}" ];
+    allow   = [{ protocol = "udp"; ports = [ "41641" ]; }];
+    # Tailscale's coordination servers — direct connection works without this
+    # but it helps on networks with strict egress filtering
+    source_ranges = [ "0.0.0.0/0" ];
     target_tags   = [ "gpu" ];
   };
 
-  # vLLM API (OpenAI-compatible) from your IP only
-  resource.google_compute_firewall.vllm = {
-    name    = "allow-vllm";
-    network = "\${google_compute_network.main.name}";
-    project = "\${local.project}";
-    allow   = [{ protocol = "tcp"; ports = [ "8000" ]; }];
-    source_ranges = [ "\${var.allowed_ip}" ];
-    target_tags   = [ "gpu" ];
-  };
-
-  # Internal traffic within the VPC (for future agent VM)
   resource.google_compute_firewall.internal = {
     name    = "allow-internal";
     network = "\${google_compute_network.main.name}";
@@ -107,12 +103,11 @@ in
   # ── GPU Spot VM ───────────────────────────────────────────────────────────
   resource.google_compute_instance.gpu = {
     name         = "gpu";
-    machine_type = "g2-standard-4";  # 4 vCPU, 16GB RAM, 1x L4
+    machine_type = "g2-standard-4";
     inherit zone;
     project      = "\${local.project}";
     tags         = [ "gpu" ];
 
-    # Spot VM config
     scheduling = {
       preemptible         = true;
       automatic_restart   = false;
@@ -121,58 +116,77 @@ in
       instance_termination_action = "STOP";
     };
 
-    # L4 GPU
     guest_accelerator = [{
       type  = "nvidia-l4";
       count = 1;
     }];
 
     boot_disk.initialize_params = {
-      # Deep Learning VM image — comes with CUDA + drivers preinstalled
       image = "projects/ml-images/global/images/family/common-cu121-debian-11-py310";
-      size  = 100;  # GB — models can be large
+      size  = 100;
       type  = "pd-ssd";
     };
 
     network_interface = [{
       subnetwork = "\${google_compute_subnetwork.main.id}";
-      access_config = [{}];  # ephemeral public IP
+      # No access_config = no public IP at all
     }];
 
-    # Install and start vLLM on boot
     metadata.startup-script = ''
       #!/bin/bash
-      set -e
+      set -euo pipefail
+      exec >> /var/log/startup.log 2>&1
 
-      # Install vLLM if not already present
+      echo "==> $(date) starting up"
+
+      # ── Install Tailscale ────────────────────────────────────────────────
+      if ! command -v tailscale &>/dev/null; then
+        echo "==> installing tailscale"
+        curl -fsSL https://tailscale.com/install.sh | sh
+      fi
+
+      # ── Join tailnet ─────────────────────────────────────────────────────
+      echo "==> joining tailnet"
+      tailscale up \
+        --authkey="${"\${var.tailscale_auth_key}"}" \
+        --hostname="gpu-spot" \
+        --accept-routes \
+        --ssh  # enables Tailscale SSH so you don't need a separate key
+
+      # ── Install vLLM ────────────────────────────────────────────────────
       if ! command -v vllm &>/dev/null; then
+        echo "==> installing vllm"
         pip install vllm huggingface_hub
       fi
 
-      # Start vLLM serving the chosen model
-      export HF_TOKEN="\${var.hf_token}"
+      # ── Start vLLM ──────────────────────────────────────────────────────
+      echo "==> starting vllm with model ${"\${var.vllm_model}"}"
+      export HF_TOKEN="${"\${var.hf_token}"}"
 
-      nohup vllm serve "\${var.vllm_model}" \
-        --host 0.0.0.0 \
+      # Listen only on the Tailscale interface (100.x.x.x)
+      TS_IP=$(tailscale ip -4)
+
+      nohup vllm serve "${"\${var.vllm_model}"}" \
+        --host "$TS_IP" \
         --port 8000 \
         --dtype auto \
         --max-model-len 8192 \
         >> /var/log/vllm.log 2>&1 &
-    '';
 
-    metadata_startup_script = null;  # use metadata.startup-script above
+      echo "==> done. vLLM endpoint: http://$TS_IP:8000/v1"
+    '';
 
     depends_on = [ "google_project_service.apis" ];
   };
 
   # ── Outputs ───────────────────────────────────────────────────────────────
-  output.gpu_ip = {
-    value       = "\${google_compute_instance.gpu.network_interface[0].access_config[0].nat_ip}";
-    description = "GPU VM public IP — point OpenCode here";
+  output.tailscale_hostname = {
+    value       = "gpu-spot";
+    description = "Tailscale hostname — use this to reach vLLM from your laptop";
   };
 
   output.vllm_endpoint = {
-    value       = "http://\${google_compute_instance.gpu.network_interface[0].access_config[0].nat_ip}:8000/v1";
-    description = "OpenAI-compatible API endpoint for OpenCode / agents";
+    value       = "http://gpu-spot:8000/v1";
+    description = "OpenAI-compatible endpoint (reachable over Tailscale only)";
   };
 }
