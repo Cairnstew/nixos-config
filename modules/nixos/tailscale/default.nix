@@ -246,55 +246,41 @@ in
       };
 
       # ── One-shot service ────────────────────────────────────────────────────
-      # Does NOT restart on failure — if tailscale isn't Running or the API
-      # key is wrong, restarting in a loop won't help. The timer will retry
-      # after refreshInterval anyway. Set StartLimitBurst=0 to disable the
-      # systemd-level restart limit error spam.
+      # No wantedBy — the timer owns all scheduling, including the first run
+      # after boot. This means there is zero boot-time racing.
       systemd.services.tailscale-ssh-config = {
         description = "Generate SSH config from Tailscale API";
 
-        # tailscaled must be running before we even try. network-online ensures
-        # we have a route to api.tailscale.com.
-        after  = [ "network-online.target" "tailscaled.service" ];
-        wants  = [ "network-online.target" ];
-        # Hard dependency: if tailscaled isn't active, don't start at all.
+        # These are soft ordering hints for when the service does run, not
+        # boot-time triggers. tailscaled must be active or we exit cleanly.
+        after    = [ "network-online.target" "tailscaled.service" ];
+        wants    = [ "network-online.target" ];
         requires = [ "tailscaled.service" ];
 
-        # Do NOT add to multi-user.target — the timer owns scheduling.
-        # Removing wantedBy here means the oneshot only runs via the timer
-        # (or manual systemctl start). This eliminates the boot race entirely.
-
         serviceConfig = {
-          Type = "oneshot";
-          User = cfg.ssh.user;
-
-          # ExecStartPre blocks until tailscale is Running (or times out and
-          # fails — which aborts ExecStart cleanly, no restart loop).
-          ExecStartPre = waitScript;
-          ExecStart    = generatorScript;
-
-          # Never auto-restart a oneshot; let the timer decide when to retry.
-          Restart    = "no";
-
-          # Prevent systemd from rate-limiting manual retries.
+          Type            = "oneshot";
+          User            = cfg.ssh.user;
+          ExecStartPre    = waitScript;
+          ExecStart       = generatorScript;
+          Restart         = "no";
           StartLimitBurst = 0;
         };
       };
 
       # ── Timer ───────────────────────────────────────────────────────────────
-      # OnBootSec fires once after boot (giving tailscale time to settle).
-      # OnUnitActiveSec then fires every refreshInterval thereafter.
-      # Persistent=true catches up if the machine was suspended/off.
+      # OnBootSec=3min: fires once the system is fully settled post-boot.
+      # By this point NetworkManager, tailscaled, and DNS are all stable —
+      # no more races. The wait script is a belt-and-braces check on top.
+      #
+      # OnUnitActiveSec handles the periodic refresh (new devices, key rotation).
+      # Persistent=true re-runs a missed refresh after suspend/resume.
       systemd.timers.tailscale-ssh-config = {
-        description = "Periodically refresh Tailscale SSH config";
+        description = "Refresh Tailscale SSH config after boot and periodically";
         wantedBy    = [ "timers.target" ];
         timerConfig = {
-          # Delay first run so tailscale has a chance to authenticate on a
-          # fresh boot — the wait script adds its own check, but this keeps
-          # the timer log noise down on machines that need auth interaction.
-          OnBootSec          = "2min";
+          OnBootSec          = "3min";
           OnUnitActiveSec    = cfg.ssh.refreshInterval;
-          RandomizedDelaySec = "60s";
+          RandomizedDelaySec = "30s";
           Persistent         = true;
           Unit               = "tailscale-ssh-config.service";
         };

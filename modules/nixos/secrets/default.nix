@@ -28,6 +28,7 @@ let
     "aws_cloud.sshKey"    = { name = "aws-cloud-ssh-key";      file = self + /secrets/cloud/aws/ssh-key.age;      extra = { owner = me; }; };
     "aws_cloud.sshPubKey" = { name = "aws-cloud-ssh-pub-key";  file = self + /secrets/cloud/aws/ssh-pub-key.age;  extra = { owner = me; }; };
     "aws_labs.sshKey"    = { name = "aws-lab-ssh-key";      file = self + /secrets/cloud/aws/lab-ssh-key.age;      extra = { owner = me; }; };
+    "gcloud.auth"        = { name = "gcloud-auth";           file = self + /secrets/cloud/gcloud/auth.json.age;           extra = { owner = me; }; };
   };
 
   # ── Helpers ─────────────────────────────────────────────────────────────────
