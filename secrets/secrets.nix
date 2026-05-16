@@ -25,6 +25,9 @@ in
   "tailscale/apikey.age".publicKeys = all;
   "tailscale/ssh-key.age".publicKeys = all;
 
+
+  "tailscale/cloud-authkey.age".publicKeys = all; # Expires Aug 14, 2026
+
   # OnePass Key
   "onepassword-token.age".publicKeys = users;
 
