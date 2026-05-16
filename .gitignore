@@ -1,3 +1,4 @@
 /result
-/.direnv
+*.direnv
+**/flake-profile*
 /.pre-commit-config.yaml
