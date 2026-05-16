@@ -22,14 +22,14 @@ in
             ssh-keys = {
               paths = {
                 AWS_LABS_SSH_KEY_PATH = config.age.secrets.aws-lab-ssh-key.path;
-                GCLOUD_SERVICE_ACCOUNT_KEY_PATH = config.age.secrets.gcloud-service-account-key.path;
               };
             };
-            #my-api = {
-            #  vars = {
-            #    MY_API_TOKEN = "my-api-token";  # single value secret
-            #  };
-            #};
+            gcloud = {
+              paths = {
+                # This will export GCLOUD_SERVICE_ACCOUNT_KEY_PATH pointing to the decrypted JSON path
+                GCLOUD_SERVICE_ACCOUNT_KEY_PATH = config.age.secrets.gcloud-auth.path;
+              };
+            };
           };
         };
         gh = {
