@@ -22,6 +22,7 @@ in
             ssh-keys = {
               paths = {
                 AWS_LABS_SSH_KEY_PATH = config.age.secrets.aws-lab-ssh-key.path;
+                GCLOUD_SERVICE_ACCOUNT_KEY_PATH = config.age.secrets.gcloud-service-account-key.path;
               };
             };
             #my-api = {
