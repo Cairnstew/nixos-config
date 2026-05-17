@@ -62,6 +62,20 @@ let
     };
   };
 
+  # Build a provider.clarifai block when a PAT file path is supplied.
+  # Clarifai exposes an OpenAI-compatible endpoint so we use the openai-compatible
+  # npm package.  Model IDs are full Clarifai URLs, e.g.:
+  #   https://clarifai.com/openai/chat-completion/models/gpt-oss-120b
+  clarifaiProviderSettings = lib.optionalAttrs (cfg.clarifai.patFile != null) {
+    provider.clarifai = {
+      npm             = "@ai-sdk/openai-compatible";
+      name            = "Clarifai";
+      options.baseURL = "https://api.clarifai.com/v2/ext/openai/v1";
+      # CLARIFAI_PAT is exported from the pat file via home.sessionVariables.
+      options.apiKey  = "\${CLARIFAI_PAT}";
+    };
+  };
+
 in
 {
   # ---------------------------------------------------------------------------
@@ -101,6 +115,33 @@ in
             - groq/llama-3.3-70b-versatile   (best quality, ~$0.59/$0.79 per M tokens)
             - groq/llama-3.1-8b-instant       (fastest, ~$0.05/$0.08 per M tokens)
             - groq/llama-4-scout              (good middle ground)
+        '';
+      };
+    };
+
+    # ── Clarifai ─────────────────────────────────────────────────────────────
+
+    clarifai = {
+      patFile = mkOption {
+        type        = types.nullOr types.path;
+        default     = null;
+        example     = "/run/secrets/clarifai-pat";
+        description = ''
+          Path to a file containing a Clarifai Personal Access Token (PAT).
+          When set, CLARIFAI_PAT is exported in your shell session and the
+          Clarifai provider is registered in opencode's config.
+
+          Get a PAT from: https://clarifai.com/settings/security
+
+          Model IDs are full Clarifai URLs — set with
+          <option>my.programs.opencode.model</option> using the
+          "clarifai/" prefix, e.g.:
+            - clarifai/https://clarifai.com/openai/chat-completion/models/gpt-oss-120b
+            - clarifai/https://clarifai.com/openai/chat-completion/models/gpt-oss-20b
+            - clarifai/https://clarifai.com/meta/Llama-3/models/llama-3_3-70b-instruct
+            - clarifai/https://clarifai.com/deepseek-ai/deepseek-chat/models/DeepSeek-R1
+
+          Browse all models at: https://clarifai.com/explore/models
         '';
       };
     };
@@ -215,6 +256,12 @@ in
     (mkIf (cfg.groq.keyFile != null) {
       home.sessionVariables.GROQ_API_KEY = "$(cat ${cfg.groq.keyFile})";
       programs.opencode.settings = groqProviderSettings;
+    })
+
+    # Clarifai: export PAT from file and register the provider
+    (mkIf (cfg.clarifai.patFile != null) {
+      home.sessionVariables.CLARIFAI_PAT = "$(cat ${cfg.clarifai.patFile})";
+      programs.opencode.settings = clarifaiProviderSettings;
     })
 
     # Ollama: register provider if any models are declared

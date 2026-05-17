@@ -49,12 +49,12 @@ in
           };
         };
         opencode = {
-          enable = false;
-          ollamaBaseURL = "http://${flake.config.tailnet.server.ip}:11434/v1";
-          ollamaModels = flake.config.ollamaModels;
+          enable = true;
+          clarifai.patFile = "/run/secrets/clarifai-pat";
+          model = "clarifai/https://clarifai.com/openai/chat-completion/models/gpt-oss-120b";
         };
         cline = {
-          enable = true;
+          enable = false;
 
           ollamaBaseURL = "http://${flake.config.tailnet.server.ip}:11434";
 
