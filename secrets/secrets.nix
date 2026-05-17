@@ -42,5 +42,6 @@ in
   "ai/huggingface-token.age".publicKeys = all;
 
   "ai/groq-token.age".publicKeys = all;
+  "ai/clarifai-pat.age".publicKeys = all;
   
 }

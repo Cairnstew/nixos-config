@@ -32,6 +32,7 @@ let
     "tailscale.cloud-auth" = { name = "tailscale-cloud-auth"; file = self + /secrets/tailscale/cloud-authkey.age; extra = { owner = me; }; };
     "huggingface.token"      = { name = "huggingface-token";     file = self + /secrets/ai/huggingface-token.age;     extra = { owner = me; }; };
     "groq.token"            = { name = "groq-token";           file = self + /secrets/ai/groq-token.age;           extra = { owner = me; }; };
+    "clarifai.pat"          = { name = "clarifai-pat";         file = self + /secrets/ai/clarifai-pat.age;         extra = { owner = me; }; };
   };
 
   # ── Helpers ─────────────────────────────────────────────────────────────────
