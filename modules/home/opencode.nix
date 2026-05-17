@@ -64,15 +64,16 @@ let
 
   # Build a provider.clarifai block when a PAT file path is supplied.
   # Clarifai exposes an OpenAI-compatible endpoint so we use the openai-compatible
-  # npm package.  Model IDs are full Clarifai URLs, e.g.:
-  #   https://clarifai.com/openai/chat-completion/models/gpt-oss-120b
+  # npm package.  Model IDs are short slugs as returned by the /models endpoint, e.g.:
+  #   gpt-oss-120b, gpt-oss-20b, DeepSeek-R1, Kimi-K2_6
+  # Use {file:...} substitution because opencode has a known bug where
+  # {env:...} does not expand for apiKey in openai-compatible providers.
   clarifaiProviderSettings = lib.optionalAttrs (cfg.clarifai.patFile != null) {
     provider.clarifai = {
       npm             = "@ai-sdk/openai-compatible";
       name            = "Clarifai";
       options.baseURL = "https://api.clarifai.com/v2/ext/openai/v1";
-      # CLARIFAI_PAT is exported from the pat file via home.sessionVariables.
-      options.apiKey  = "\${CLARIFAI_PAT}";
+      options.apiKey  = "{file:${cfg.clarifai.patFile}}";
     };
   };
 
@@ -128,20 +129,22 @@ in
         example     = "/run/secrets/clarifai-pat";
         description = ''
           Path to a file containing a Clarifai Personal Access Token (PAT).
-          When set, CLARIFAI_PAT is exported in your shell session and the
-          Clarifai provider is registered in opencode's config.
+          When set, the Clarifai provider is registered in opencode's config
+          and the PAT is read directly from the file at runtime via opencode's
+          {file:...} substitution.
 
-          Get a PAT from: https://clarifai.com/settings/security
+          Get a PAT from the Secrets section of your Clarifai app settings.
 
-          Model IDs are full Clarifai URLs — set with
-          <option>my.programs.opencode.model</option> using the
+          Model IDs are short slugs — check available models with:
+            curl -s https://api.clarifai.com/v2/ext/openai/v1/models \
+              -H "Authorization: Key $(cat /path/to/pat)" | jq '.[].id'
+
+          Set with <option>my.programs.opencode.model</option> using the
           "clarifai/" prefix, e.g.:
-            - clarifai/https://clarifai.com/openai/chat-completion/models/gpt-oss-120b
-            - clarifai/https://clarifai.com/openai/chat-completion/models/gpt-oss-20b
-            - clarifai/https://clarifai.com/meta/Llama-3/models/llama-3_3-70b-instruct
-            - clarifai/https://clarifai.com/deepseek-ai/deepseek-chat/models/DeepSeek-R1
-
-          Browse all models at: https://clarifai.com/explore/models
+            - clarifai/gpt-oss-120b
+            - clarifai/gpt-oss-20b
+            - clarifai/DeepSeek-R1
+            - clarifai/Kimi-K2_6
         '';
       };
     };
@@ -258,9 +261,9 @@ in
       programs.opencode.settings = groqProviderSettings;
     })
 
-    # Clarifai: export PAT from file and register the provider
+    # Clarifai: register provider using {file:...} substitution for the PAT.
+    # Note: {env:...} has a known opencode bug for openai-compatible apiKey fields.
     (mkIf (cfg.clarifai.patFile != null) {
-      home.sessionVariables.CLARIFAI_PAT = "$(cat ${cfg.clarifai.patFile})";
       programs.opencode.settings = clarifaiProviderSettings;
     })
 

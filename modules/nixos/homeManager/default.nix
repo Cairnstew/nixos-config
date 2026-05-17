@@ -51,7 +51,8 @@ in
         opencode = {
           enable = true;
           clarifai.patFile = config.age.secrets."clarifai-pat".path;
-          model = "clarifai/https://clarifai.com/openai/chat-completion/models/gpt-oss-120b";
+          groq.keyFile = config.age.secrets."groq-token".path;
+          model = "clarifai/gpt-4o";
         };
         cline = {
           enable = false;
