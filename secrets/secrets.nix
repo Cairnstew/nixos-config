@@ -39,6 +39,8 @@ in
 
   "cloud/gcloud/auth.json.age".publicKeys = all;
 
-  "misc/huggingface-token.age".publicKeys = all;
+  "ai/huggingface-token.age".publicKeys = all;
+
+  "ai/groq-token.age".publicKeys = all;
   
 }
