@@ -50,7 +50,7 @@ in
         };
         opencode = {
           enable = true;
-          clarifai.patFile = "/run/secrets/clarifai-pat";
+          clarifai.patFile = config.age.secrets."clarifai-pat".path;
           model = "clarifai/https://clarifai.com/openai/chat-completion/models/gpt-oss-120b";
         };
         cline = {
