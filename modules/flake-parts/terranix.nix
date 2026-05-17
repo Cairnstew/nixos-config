@@ -1,7 +1,7 @@
 { self, inputs, lib, ... }:
 
 let
-  stateDir = "$HOME/.local/share/terraform/${self.shortRev or "dirty"}";
+  stateDir = "$HOME/.local/share/terraform/nixos-infra";
 in
 {
   flake.nixosModules.terraformInfra = { ... }: {
@@ -16,7 +16,9 @@ in
     let
       terraformConfiguration = inputs.terranix.lib.terranixConfiguration {
         inherit system;
-        modules = [ self.nixosModules.terraform ];
+        modules = [
+          self.nixosModules.terraform
+        ];
       };
 
       tfRunner = pkgs.writeShellScriptBin "tf" ''
@@ -24,7 +26,7 @@ in
 
         if [ $# -eq 0 ]; then
           echo "Usage: nix run .#tf -- <command> [options]"
-          echo "Commands: plan, apply, destroy, show-config"
+          echo "Commands: plan, apply, destroy, import, show-config"
           exit 1
         fi
 
@@ -36,7 +38,16 @@ in
 
         STATE_DIR="${stateDir}"
         WORK_DIR="$(mktemp -d)"
-        trap 'rm -rf "$WORK_DIR"' EXIT
+
+        # Always persist state back on exit, whether success or failure
+        persist_state() {
+          echo "==> persisting state"
+          [[ -f "$WORK_DIR/terraform.tfstate"   ]] && cp "$WORK_DIR/terraform.tfstate"   "$STATE_DIR/"
+          [[ -f "$WORK_DIR/.terraform.lock.hcl" ]] && cp "$WORK_DIR/.terraform.lock.hcl" "$STATE_DIR/"
+          [[ -d "$WORK_DIR/.terraform"          ]] && cp -r "$WORK_DIR/.terraform"        "$STATE_DIR/"
+          rm -rf "$WORK_DIR"
+        }
+        trap persist_state EXIT
 
         mkdir -p "$STATE_DIR"
 
@@ -57,16 +68,8 @@ in
           ${pkgs.terraform}/bin/terraform init
         fi
 
-        [[ -f ".terraform.lock.hcl" ]] && cp    ".terraform.lock.hcl" "$STATE_DIR/"
-        [[ -d ".terraform"          ]] && cp -r ".terraform"           "$STATE_DIR/"
-
         echo "==> terraform $@"
         ${pkgs.terraform}/bin/terraform "$@"
-
-        if [ "$COMMAND" = "apply" ] || [ "$COMMAND" = "destroy" ]; then
-          echo "==> persisting state"
-          [[ -f "terraform.tfstate" ]] && cp "terraform.tfstate" "$STATE_DIR/"
-        fi
       '';
 
       mkAlias = name: args: {
@@ -79,22 +82,24 @@ in
     in
     {
       devShells.default = pkgs.mkShell {
-        packages = [ pkgs.terraform pkgs.jq pkgs.openssh ];
+        packages = [ pkgs.terraform pkgs.jq pkgs.openssh pkgs.google-cloud-sdk ];
         shellHook = ''
           echo "Terraform infra dev shell"
           echo "  nix run .#tf -- plan"
           echo "  nix run .#tf -- apply"
           echo "  nix run .#tf -- destroy"
+          echo "  nix run .#tf -- import <resource> <id>"
           echo "  nix run .#tf -- show-config"
+          echo ""
+          echo "  State dir: ${stateDir}"
         '';
       };
 
       apps = {
-        tf         = { type = "app"; program = "${tfRunner}/bin/tf"; };
-        default    = { type = "app"; program = "${tfRunner}/bin/tf"; };
-        tf-plan        = mkAlias "tf-plan"    "plan";
-        tf-apply       = mkAlias "tf-apply"   "apply -auto-approve";
-        tf-destroy     = mkAlias "tf-destroy" "destroy -auto-approve";
+        tf             = { type = "app"; program = "${tfRunner}/bin/tf"; };
+        tf-plan        = mkAlias "tf-plan"        "plan";
+        tf-apply       = mkAlias "tf-apply"       "apply -auto-approve";
+        tf-destroy     = mkAlias "tf-destroy"     "destroy -auto-approve";
         tf-show-config = mkAlias "tf-show-config" "show-config";
       };
 
