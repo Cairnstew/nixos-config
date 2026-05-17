@@ -17,22 +17,14 @@ let
 
   cfg = config.my.programs.opencode;
 
-  # Convert an ollama model attrset entry into an opencode provider model entry.
-  # Strips ollama-specific fields (tools, numCtx, etc.) that opencode doesn't understand.
-  # The model name in opencode is always "ollama/<tag>".
-  ollamaModelToProvider = tag: _mcfg: {
-    name     = "ollama/${tag}";
-    provider = "ollama";
-  };
+  # ---------------------------------------------------------------------------
+  # Helpers
+  # ---------------------------------------------------------------------------
 
-  defaultModel = lib.findFirst
-    (tag: (cfg.ollamaModels.${tag}.opencode_default or false) == true)
-    null
-    (lib.attrNames cfg.ollamaModels);
-
-  # Build the providers block if any ollamaModels were supplied.
+  # Build a provider.ollama block from the ollamaModels attrset.
+  # Strips Ollama-specific fields that opencode doesn't understand.
   ollamaProviderSettings = lib.optionalAttrs (cfg.ollamaModels != {}) {
-    provider.ollama = {        # <-- singular, not providers
+    provider.ollama = {
       npm             = "@ai-sdk/openai-compatible";
       name            = "Ollama (local)";
       options.baseURL = cfg.ollamaBaseURL;
@@ -54,8 +46,28 @@ let
     };
   };
 
+  # Find the first Ollama model tagged opencode_default = true, if any.
+  defaultOllamaModel = lib.findFirst
+    (tag: (cfg.ollamaModels.${tag}.opencode_default or false) == true)
+    null
+    (lib.attrNames cfg.ollamaModels);
+
+  # Build a provider.groq block when a key file path is supplied.
+  groqProviderSettings = lib.optionalAttrs (cfg.groq.keyFile != null) {
+    provider.groq = {
+      npm  = "@ai-sdk/groq";
+      name = "Groq";
+      # opencode reads the env var GROQ_API_KEY at runtime; we arrange for the
+      # shell to export it from the key file via home.sessionVariables below.
+    };
+  };
+
 in
 {
+  # ---------------------------------------------------------------------------
+  # Options
+  # ---------------------------------------------------------------------------
+
   options.my.programs.opencode = {
 
     enable = mkEnableOption "opencode – AI coding agent for the terminal";
@@ -73,11 +85,29 @@ in
       description = "Forward programs.mcp.servers into opencode's MCP configuration.";
     };
 
-    # ── Ollama integration ────────────────────────────────────────────────
+    # ── Groq ────────────────────────────────────────────────────────────────
+
+    groq = {
+      keyFile = mkOption {
+        type        = types.nullOr types.path;
+        default     = null;
+        example     = "/run/secrets/groq-api-key";
+        description = ''
+          Path to a file containing the Groq API key.
+          When set, GROQ_API_KEY is exported in your shell session from this
+          file and the Groq provider is registered in opencode's config.
+
+          Recommended models to set with <option>my.programs.opencode.model</option>:
+            - groq/llama-3.3-70b-versatile   (best quality, ~$0.59/$0.79 per M tokens)
+            - groq/llama-3.1-8b-instant       (fastest, ~$0.05/$0.08 per M tokens)
+            - groq/llama-4-scout              (good middle ground)
+        '';
+      };
+    };
+
+    # ── Ollama ──────────────────────────────────────────────────────────────
 
     ollamaModels = mkOption {
-      # Accepts the same attrset shape as my.services.ollama.models —
-      # extra fields (tools, numCtx, temperature, etc.) are silently ignored.
       type    = types.attrsOf types.anything;
       default = {};
       example = {
@@ -86,12 +116,17 @@ in
           tools       = true;
           numCtx      = 32768;
           temperature = 0.7;
+          opencode_default = true;
         };
       };
       description = ''
-        Ollama models to expose to opencode. Accepts the same attrset shape as
-        my.services.ollama.models — ollama-specific fields are ignored.
-        Each key becomes an "ollama/<tag>" model entry in opencode's provider config.
+        Ollama models to expose to opencode.  Accepts the same attrset shape as
+        <option>my.services.ollama.models</option>; Ollama-specific fields are
+        silently ignored by opencode.
+
+        Set <literal>opencode_default = true</literal> on exactly one model to
+        make it the default.  Each key becomes an
+        <literal>ollama/&lt;tag&gt;</literal> entry in the provider config.
       '';
     };
 
@@ -99,68 +134,72 @@ in
       type        = types.str;
       default     = "http://127.0.0.1:11434/v1";
       example     = "http://100.64.0.1:11434/v1";
-      description = "Base URL for the Ollama API (OpenAI-compatible endpoint).";
+      description = "Base URL for the Ollama OpenAI-compatible endpoint.";
     };
 
-    # ── Shorthand options ─────────────────────────────────────────────────
+    # ── Shorthands ───────────────────────────────────────────────────────────
 
     model = mkOption {
       type        = types.nullOr types.str;
       default     = null;
-      example     = "anthropic/claude-sonnet-4-20250514";
-      description = "Shorthand for settings.model.";
+      example     = "groq/llama-3.3-70b-versatile";
+      description = "Shorthand for <option>settings.model</option>.";
     };
 
     autoshare = mkOption {
       type        = types.nullOr types.bool;
       default     = null;
-      description = "Shorthand for settings.autoshare.";
+      description = "Shorthand for <option>settings.autoshare</option>.";
     };
 
     autoupdate = mkOption {
       type        = types.nullOr types.bool;
       default     = null;
-      description = "Shorthand for settings.autoupdate.";
+      description = "Shorthand for <option>settings.autoupdate</option>.";
     };
 
-    # ── Pass-throughs ─────────────────────────────────────────────────────
+    # ── Pass-throughs ────────────────────────────────────────────────────────
 
     settings = mkOption {
       type        = (pkgs.formats.json {}).type;
       default     = {};
-      description = "Verbatim JSON config written to $XDG_CONFIG_HOME/opencode/config.json.";
+      description = "Verbatim JSON written to \$XDG_CONFIG_HOME/opencode/config.json.";
     };
 
     rules = mkOption {
       type        = types.either types.lines types.path;
       default     = "";
-      description = "Global custom instructions written to $XDG_CONFIG_HOME/opencode/AGENTS.md.";
+      description = "Global instructions written to \$XDG_CONFIG_HOME/opencode/AGENTS.md.";
     };
 
     commands = mkOption {
-      type    = types.attrsOf (types.either types.lines types.path);
-      default = {};
+      type        = types.attrsOf (types.either types.lines types.path);
+      default     = {};
       description = "Custom slash-commands.";
     };
 
     agents = mkOption {
-      type    = types.attrsOf (types.either types.lines types.path);
-      default = {};
+      type        = types.attrsOf (types.either types.lines types.path);
+      default     = {};
       description = "Custom agents.";
     };
 
     themes = mkOption {
-      type    = types.attrsOf (types.either (pkgs.formats.json {}).type types.path);
-      default = {};
+      type        = types.attrsOf (types.either (pkgs.formats.json {}).type types.path);
+      default     = {};
       description = "Custom colour themes.";
     };
   };
 
-  # ── Implementation ────────────────────────────────────────────────────────
+  # ---------------------------------------------------------------------------
+  # Implementation
+  # ---------------------------------------------------------------------------
 
-  config = mkIf cfg.enable {
-    programs.opencode = mkMerge [
-      {
+  config = mkIf cfg.enable (mkMerge [
+
+    # Base opencode config
+    {
+      programs.opencode = {
         enable               = true;
         package              = cfg.package;
         enableMcpIntegration = cfg.enableMcpIntegration;
@@ -169,21 +208,29 @@ in
         agents               = cfg.agents;
         themes               = cfg.themes;
         settings             = cfg.settings;
-      }
+      };
+    }
 
-      # Merge ollama provider block if any models were declared
-      (mkIf (cfg.ollamaModels != {}) {
-        settings = ollamaProviderSettings;
-      })
+    # Groq: export API key from file and register the provider
+    (mkIf (cfg.groq.keyFile != null) {
+      home.sessionVariables.GROQ_API_KEY = "$(cat ${cfg.groq.keyFile})";
+      programs.opencode.settings = groqProviderSettings;
+    })
 
-      # Auto-set default model if opencode_default = true on any model
-      (mkIf (defaultModel != null) {
-        settings.model = "ollama/${defaultModel}";
-      })
+    # Ollama: register provider if any models are declared
+    (mkIf (cfg.ollamaModels != {}) {
+      programs.opencode.settings = ollamaProviderSettings;
+    })
 
-      (mkIf (cfg.model      != null) { settings.model      = cfg.model; })
-      (mkIf (cfg.autoshare  != null) { settings.autoshare  = cfg.autoshare; })
-      (mkIf (cfg.autoupdate != null) { settings.autoupdate = cfg.autoupdate; })
-    ];
-  };
+    # Ollama: auto-select default model if one is tagged
+    (mkIf (defaultOllamaModel != null) {
+      programs.opencode.settings.model = "ollama/${defaultOllamaModel}";
+    })
+
+    # Shorthands (highest priority — override any auto-set model above)
+    (mkIf (cfg.model      != null) { programs.opencode.settings.model      = cfg.model; })
+    (mkIf (cfg.autoshare  != null) { programs.opencode.settings.autoshare  = cfg.autoshare; })
+    (mkIf (cfg.autoupdate != null) { programs.opencode.settings.autoupdate = cfg.autoupdate; })
+
+  ]);
 }
