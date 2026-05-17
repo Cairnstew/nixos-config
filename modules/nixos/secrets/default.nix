@@ -30,7 +30,8 @@ let
     "aws_labs.sshKey"    = { name = "aws-lab-ssh-key";      file = self + /secrets/cloud/aws/lab-ssh-key.age;      extra = { owner = me; }; };
     "gcloud.auth"        = { name = "gcloud-auth";           file = self + /secrets/cloud/gcloud/auth.json.age;           extra = { owner = me; }; };
     "tailscale.cloud-auth" = { name = "tailscale-cloud-auth"; file = self + /secrets/tailscale/cloud-authkey.age; extra = { owner = me; }; };
-    "huggingface.token"      = { name = "huggingface-token";     file = self + /secrets/misc/huggingface-token.age;     extra = { owner = me; }; };
+    "huggingface.token"      = { name = "huggingface-token";     file = self + /secrets/ai/huggingface-token.age;     extra = { owner = me; }; };
+    "groq.token"            = { name = "groq-token";           file = self + /secrets/ai/groq-token.age;           extra = { owner = me; }; };
   };
 
   # ── Helpers ─────────────────────────────────────────────────────────────────
