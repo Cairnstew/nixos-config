@@ -2,7 +2,7 @@
   "mcpServers": {
     "nixos": {
       "command": "nix",
-      "args": ["run", ".#mcp-nixos"]
+      "args": ["run", "/home/seanc/nixos-config#mcp-nixos"]
     }
   }
 }
