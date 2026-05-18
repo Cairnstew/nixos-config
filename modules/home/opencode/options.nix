@@ -123,6 +123,21 @@ in {
       '';
     };
 
+    deepinfra = {
+      keyFile = mkKeyFileOpt ''
+        Path to a file containing the DeepInfra API key.
+        When set, DEEPINFRA_API_KEY is exported.
+
+        Note: This only exports the API key. You must manually configure the
+        provider in your opencode.json or use the `/connect` command in opencode.
+
+        Recommended models:
+          - deepinfra/deepseek-ai/DeepSeek-V3-0324
+          - deepinfra/deepseek-ai/DeepSeek-R1
+          - deepinfra/moonshotai/Kimi-K2.5
+      '';
+    };
+
     # ── OpenAI-compatible providers (file-substitution keys) ────────────────
 
     together = {

@@ -5,6 +5,7 @@ let
   cfg = config.my.programs.opencode;
 
   # Count how many providers are active
+  # Note: deepinfra is NOT included here because defining it in opencode.json breaks it
   activeProviders = lib.filter (p: p != null) [
     (if cfg.openai.keyFile    != null then "openai"    else null)
     (if cfg.anthropic.keyFile != null then "anthropic" else null)
@@ -16,7 +17,6 @@ let
     (if cfg.openrouter.keyFile != null then "openrouter" else null)
     (if cfg.fireworks.keyFile != null then "fireworks" else null)
     (if cfg.cerebras.keyFile  != null then "cerebras"  else null)
-    (if cfg.deepinfra.keyFile != null then "deepinfra" else null)
     (if cfg.clarifai.patFile  != null then "clarifai"  else null)
     (if (cfg.azure.keyFile != null && cfg.azure.endpoint != null && cfg.azure.deployment != null) then "azure" else null)
     (if cfg.ollamaModels != {} then "ollama" else null)
@@ -42,12 +42,8 @@ in {
         assertion = cfg.azure.keyFile != null -> (cfg.azure.endpoint != null && cfg.azure.deployment != null);
         message = "my.programs.opencode: azure.keyFile is set but azure.endpoint and/or azure.deployment are missing.";
       }
-      # Verify deepinfra provider is properly configured when keyFile is set
-      {
-        assertion = cfg.deepinfra.keyFile != null ->
-          (lib.hasPrefix "{file:" (opencodeCfg.settings.provider.deepinfra.options.apiKey or ""));
-        message = "my.programs.opencode: deepinfra provider not properly configured. Check that settings are being merged correctly.";
-      }
+      # Note: deepinfra is NOT verified here because defining it in opencode.json breaks it.
+      # The API key is exported via shell init instead.
       # Verify clarifai provider is properly configured when patFile is set
       {
         assertion = cfg.clarifai.patFile != null ->
@@ -84,8 +80,8 @@ in {
     ];
 
     # ── L1: Shell init — export secrets as env vars for SDK-based providers ─
-    # OpenAI-compatible providers (DeepInfra, Clarifai, etc.) use {file:...} syntax
-    # and don't need env vars. SDK-based providers still need env vars.
+    # OpenAI-compatible providers (Clarifai, etc.) use {file:...} syntax.
+    # DeepInfra is handled here because defining it in opencode.json breaks it.
     programs.zsh.initExtra = lib.optionalString cfg.enable ''
       ${lib.optionalString (cfg.groq.keyFile != null) ''
         export GROQ_API_KEY="$(cat ${cfg.groq.keyFile})"
@@ -104,6 +100,9 @@ in {
       ''}
       ${lib.optionalString (cfg.xai.keyFile != null) ''
         export XAI_API_KEY="$(cat ${cfg.xai.keyFile})"
+      ''}
+      ${lib.optionalString (cfg.deepinfra.keyFile != null) ''
+        export DEEPINFRA_API_KEY="$(cat ${cfg.deepinfra.keyFile})"
       ''}
     '';
 
@@ -126,10 +125,13 @@ in {
       ${lib.optionalString (cfg.xai.keyFile != null) ''
         export XAI_API_KEY="$(cat ${cfg.xai.keyFile})"
       ''}
+      ${lib.optionalString (cfg.deepinfra.keyFile != null) ''
+        export DEEPINFRA_API_KEY="$(cat ${cfg.deepinfra.keyFile})"
+      ''}
     '';
 
     # ── L2: Config validation script ────────────────────────────────────────
-    home.file.".local/share/opencode/test-config.sh" = mkIf (cfg.deepinfra.keyFile != null || cfg.clarifai.patFile != null || cfg.share != null || cfg.tui != {}) {
+    home.file.".local/share/opencode/test-config.sh" = mkIf (cfg.clarifai.patFile != null || cfg.share != null || cfg.tui != {}) {
       executable = true;
       text = ''
         #!/usr/bin/env bash
@@ -149,23 +151,6 @@ in {
           echo "ERROR: opencode.json is not valid JSON"
           exit 1
         fi
-
-        ${lib.optionalString (cfg.deepinfra.keyFile != null) ''
-          # Check deepinfra provider
-          if ${pkgs.jq}/bin/jq -e '.provider.deepinfra' "$CONFIG_FILE" > /dev/null 2>&1; then
-            echo "✓ deepinfra provider configured"
-            API_KEY=$(${pkgs.jq}/bin/jq -r '.provider.deepinfra.options.apiKey // empty' "$CONFIG_FILE")
-            if [[ "$API_KEY" == {file:* ]]; then
-              echo "✓ deepinfra apiKey uses file substitution: $API_KEY"
-            else
-              echo "ERROR: deepinfra apiKey should use {file:...} syntax (got: $API_KEY)"
-              exit 1
-            fi
-          else
-            echo "ERROR: deepinfra provider not found in config"
-            exit 1
-          fi
-        ''}
 
         ${lib.optionalString (cfg.clarifai.patFile != null) ''
           # Check clarifai provider
