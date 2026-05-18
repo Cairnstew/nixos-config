@@ -1,100 +1,49 @@
-{ config, flake, pkgs, lib, ... }:
-
-let
-  # ── Short aliases ───────────────────────────────────────
-  me   = flake.config.me;
-  user = me.username;
-  self = flake.inputs.self;
-in
+# WSL Configuration
+# See: ../../AGENT.md for configuration conventions
+{ flake, ... }:
 {
-  # ── Imports ────────────────────────────────────────────
   imports = [
     ./configuration.nix
-    self.nixosModules.default
-    flake.inputs.nixos-wsl.nixosModules.default
+    flake.inputs.self.nixosModules.common
   ];
-  users.users.${user} = {
-    uid = 1000;
-  };
-  wsl.defaultUser = user;
+
+  # Explicitly set hostPlatform to ensure pkgs is available
   nixpkgs.hostPlatform = "x86_64-linux";
 
-  wsl.wslConf.network.generateResolvConf = false;
-  networking.useHostResolvConf = false;
-
-
-  wsl.windowManager = {
+  # ── System Identity ──────────────────────────────────────────────────────
+  networking.hostName = "wsl";
+  
+  # ── WSL Specific ───────────────────────────────────────────────────────
+  wsl = {
     enable = true;
-    windowManager = "i3";
-    extraPackages = with pkgs; [ i3 i3status dmenu xterm ];
+    defaultUser = flake.config.me.username;
+    wslConf.network.generateResolvConf = false;
+  };
+  
+  networking.useHostResolvConf = false;
+  networking.nameservers = [ "1.1.1.1" "8.8.8.8" "100.100.100.100" ];
+  networking.search = [ "lan" ];
+
+  # ── System Profiles ────────────────────────────────────────────────────
+  my.profiles = {
+    # Minimal profile for WSL
+    minimal.enable = true;
+    development.enable = true;
   };
 
-  networking.nameservers = [
-    "1.1.1.1"
-    "8.8.8.8"
-    "100.100.100.100"
-  ];
-
-  networking.search = [ "lan" ]; # optional
-
-  my.build.default = "tarballBuilder";
-
-  # ── System settings ────────────────────────────────────
-  my.system = {
-    location = {
-      enable    = true;
-      timeZone  = "GB";
-      latitude  = 55.8617;
-      longitude = 4.2583;
-    };
-    battery = {
-      enable = false;
-    };
+  # ── Home Profiles ───────────────────────────────────────────────────────
+  my.homeProfiles = {
+    common.enable = true;
+    minimal.enable = true;
   };
 
-  # ── System programs ────────────────────────────────────
-  my.programs = {
-    #spotify.enable = true;
+  # ── Location ────────────────────────────────────────────────────────────
+  my.system.location = {
+    timeZone = "GB";
+    latitude = 55.8617;
+    longitude = 4.2583;
   };
 
-  # ── System tools ───────────────────────────────────────
-  my.tools = {
-    uup-converter.enable = false;
-  };  
-
-  # Virtualisation
-  my.virtualisation = {
-    waydroid = {
-      enable = false;
-    };
-    docker = {
-      enable = true;
-      users = [ user ];
-    };
-  };
-
-  # ── System services ────────────────────────────────────
-  my.services = {
-    
-  };
-
-  environment.systemPackages = [
-    self.packages.${pkgs.stdenv.hostPlatform.system}.get-template
-  ];
-
-  # ── Home Manager configuration ─────────────────────────
-  home-manager.users.${user} = {
-    imports = [
-      "${flake.inputs.nixos-vscode-server}/modules/vscode-server/home.nix"
-    ];
-
-    my = {
-      programs = {
-        #vscode.enable = true;
-        rstudio.enable            = false;
-        obsidian.enable           = true;
-      };
-    };
-    services.vscode-server.enable = true;
-  };
+  # ── Home Manager Extra ─────────────────────────────────────────────────
+  my.homeManager.extraConfig.my.programs.obsidian.enable = true;
 }

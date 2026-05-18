@@ -1,104 +1,64 @@
-{ config, flake, pkgs, lib, ... }:
-
-let
-  # ── Short aliases ───────────────────────────────────────
-  me   = flake.config.me;
-  user = me.username;
-  self = flake.inputs.self;
-in
+# Server Configuration
+# See: ../../AGENT.md for configuration conventions
+{ flake, ... }:
 {
-  # ── SSH configuration ───────────────────────────────────
-  nixos-unified.sshTarget = "seanc@server";
-
-  # ── Imports ────────────────────────────────────────────
   imports = [
     ./configuration.nix
-    self.nixosModules.default
-    self.nixosModules.server
+    ./hardware-configuration.nix
+    flake.inputs.self.nixosModules.common
   ];
 
-  # ── Hardware configuration ─────────────────────────────
-  hardwareProfiles.gpu.nvidia = {
-    enable   = true;
-    headless = true;
-    open     = false;
-    toolkit  = true;
-    cuda     = true;
+  # Explicitly set hostPlatform to ensure pkgs is available
+  nixpkgs.hostPlatform = "x86_64-linux";
+
+  # ── System Identity ──────────────────────────────────────────────────────
+  networking.hostName = "server";
+  nixos-unified.sshTarget = "seanc@server";
+
+  # ── System Profiles ──────────────────────────────────────────────────────
+  my.profiles = {
+    # Role
+    server.enable = true;
+    development.enable = true;
+    
+    # Hardware
+    gpu.nvidia-headless.enable = true;
+    location.enable = true;
   };
 
+  # ── Home Profiles ───────────────────────────────────────────────────────
+  my.homeProfiles = {
+    common.enable = true;
+    server.enable = true;
+    development.enable = true;
+  };
+
+  # ── Location ────────────────────────────────────────────────────────────
+  my.system.location = {
+    timeZone = "America/Chicago";
+    latitude = 30.2672;
+    longitude = -97.7431;
+  };
+
+  # ── NVIDIA Configuration ───────────────────────────────────────────────
   my.services.ollama = {
-    gpu    = { enable = true; type = "nvidia"; };
-    dataDir  = "/mnt/data/ollama";
+    gpu.enable = true;
+    gpu.type = "nvidia";
+    dataDir = "/mnt/data/ollama";
   };
 
+  # ── Swap Configuration ───────────────────────────────────────────────────
   swapDevices = [{
     device = "/mnt/data/storage/swapfile";
-    size   = 32 * 1024; # 32GB
+    size = 32 * 1024; # 32GB
   }];
 
-  nixpkgs.config.allowUnfree = true;
-  nixpkgs.config.cuda.acceptLicense = true;
-  
-  # ── System settings ────────────────────────────────────
-  my.system = {
-    location = {
-      enable    = true;
-      timeZone  = "America/Chicago";
-      latitude  = 30.2672;
-      longitude = -97.7431;
-    };
-    battery = {
-      enable = false;
-    };
+  # ── Unfree Software ────────────────────────────────────────────────────
+  nixpkgs.config = {
+    allowUnfree = true;
+    cuda.acceptLicense = true;
   };
 
-  # ── System programs ────────────────────────────────────
-  my.programs = {
-    #spotify.enable = true;
-
-  };
-
-  # ── System tools ───────────────────────────────────────
-  my.tools = {
-    uup-converter.enable = false;
-  };  
-
-  # Virtualisation
-  my.virtualisation = {
-    waydroid = {
-      enable = false;
-    };
-    docker = {
-      enable = true;
-      users = [ flake.config.me.username ];
-      enableNvidiaContainerToolkit = true;
-    };
-  };
-
-  # ── System services ────────────────────────────────────
-  my.services = {
-    #zerotier = {
-    #  enable = true;
-    #  allowDNS = false;
-    #};
-  };
-
-  environment.systemPackages = [
-    self.packages.${pkgs.stdenv.hostPlatform.system}.get-template
-    pkgs.screen
-    pkgs.terraform
-  ];
-
-  # ── Home Manager configuration ─────────────────────────
-  home-manager.users.${user} = {
-    imports = [
-      "${flake.inputs.nixos-vscode-server}/modules/vscode-server/home.nix"
-    ];
-    
-    my = {
-      programs = {
-      };
-    };
-    services.vscode-server.enable = true;
-  };
+  # ── VSCode Server ───────────────────────────────────────────────────────
+  # Imported via the server module which sets this up
 }

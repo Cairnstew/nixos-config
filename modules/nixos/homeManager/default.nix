@@ -1,117 +1,56 @@
-{ flake, pkgs, lib, config, ... }:
+# modules/nixos/homeManager/default.nix
+# Home Manager integration for NixOS hosts
+# Automatically applies home profiles based on system configuration
+{ flake, lib, config, ... }:
 let
   inherit (flake) inputs;
   inherit (inputs) self;
+  inherit (flake.config.me) username;
+  
+  cfg = config.my.homeManager;
 in
 {
+  imports = [
+    # Home Manager NixOS module
+    inputs.home-manager.nixosModules.home-manager
+  ];
 
-    users.users.${flake.config.me.username}.isNormalUser = lib.mkDefault true;
+  options.my.homeManager = {
+    enable = lib.mkEnableOption "Home Manager integration" // { default = true; };
+    
+    extraModules = lib.mkOption {
+      type = lib.types.listOf lib.types.unspecified;
+      default = [];
+      description = "Extra home-manager modules to import for this user.";
+    };
+    
+    extraConfig = lib.mkOption {
+      type = lib.types.attrsOf lib.types.anything;
+      default = {};
+      description = "Extra configuration to merge into the user's home config.";
+    };
+  };
+
+  config = lib.mkIf cfg.enable {
+    # Basic home-manager setup
     home-manager.backupFileExtension = "backup";
     home-manager.sharedModules = builtins.attrValues self.homeModules;
-    home-manager.users.${flake.config.me.username}.my = { 
-      programs = {
-        ssh-1password.enable = true;
-        bash.enable = true;
-        direnv = {
-          enable = true;
-
-          secretFiles = {
-            aws-cloud = lib.mkIf (config.age.secrets ? "aws-cloud") {
-              envFiles = [ config.age.secrets.aws-cloud.path ];  # file contains AWS_ACCESS_KEY_ID=... etc
-            };
-            ssh-keys = lib.mkIf (config.age.secrets ? "aws-lab-ssh-key") {
-              paths = {
-                AWS_LABS_SSH_KEY_PATH = config.age.secrets.aws-lab-ssh-key.path;
-              };
-            };
-            gcloud = lib.mkIf (config.age.secrets ? "gcloud-auth") {
-              paths = {
-                # This will export GCLOUD_SERVICE_ACCOUNT_KEY_PATH pointing to the decrypted JSON path
-                GCLOUD_SERVICE_ACCOUNT_KEY_PATH = config.age.secrets.gcloud-auth.path;
-              };
-            };
-          };
-        };
-        gh = {
-          enable = config.age.secrets ? "github-token";
-
-          tokenFile = config.age.secrets."github-token".path;
-
-          settings = {
-            git_protocol = "ssh";
-          };
-
-          hosts = {
-            "github.com" = {
-              user = flake.config.me.github_username;
-              git_protocol = "ssh";
-            };
-          };
-        };
-        opencode = {
-          enable = true;
-          clarifai.patFile = if config.age.secrets ? "clarifai-pat" then config.age.secrets."clarifai-pat".path else null;
-          deepinfra.keyFile = if config.age.secrets ? "deepinfra-key" then config.age.secrets."deepinfra-key".path else null;
-          groq.keyFile = if config.age.secrets ? "groq-token" then config.age.secrets."groq-token".path else null;
-          # Only set model if at least one provider secret exists
-          model = if (config.age.secrets ? "clarifai-pat") || (config.age.secrets ? "deepinfra-key") || (config.age.secrets ? "groq-token")
-                  then "meta-llama/Meta-Llama-3.1-8B-Instruct"
-                  else null;
-          enableMcpIntegration = true;
-          settings.mcp = {
-            nixos = {
-              enabled = true;
-              type = "local";
-              command = [ "nix" "run" "${flake.inputs.self}#mcp-nixos" ];
-            };
-          };
-        };
-        cline = {
-          enable = false;
-
-          ollamaBaseURL = "http://${flake.config.tailnet.server.ip}:11434";
-
-          ollamaModels = flake.config.ollamaModels;
-
-          mcp.servers = {
-            ollama = {
-              type = "streamableHttp";
-              url  = "http://${flake.config.tailnet.server.ip}:3100/mcp";
-            };
-          };
-
-          settings = {
-            "cline.maxTokens"               = 32768;
-            "cline.terminalOutputLineLimit" = 500;
-          };
-
-          kanban = {
-            enable    = true;
-            extraArgs = [ "--port" "3000" ];
-          };
-        };
-        aider = {
-          enable = false;
-          ollamaModels = flake.config.ollamaModels;
-          ollamaBaseURL = "http://${flake.config.tailnet.server.ip}:11434";
-          settings = {
-            dark-mode = true;
-            git = true;
-            show-diffs = true;
-          };
-        };
-        ghostty.enable = true;
-        just.enable = true;
-        obsidian = {
-          repo = {
-            enable = config.age.secrets ? "github-token-obsidian";
-            url = "https://github.com/Cairnstew/Cairns-Notes";
-            tokenFile = config.age.secrets."github-token-obsidian".path;
-            
-          };
-        };
-        yazi.enable = true;
-        zsh.enable = true;
-      };
-    };
+    
+    # Configure the primary user
+    users.users.${username}.isNormalUser = lib.mkDefault true;
+    
+    # Apply home configuration
+    home-manager.users.${username} = lib.mkMerge [
+      # Base configuration
+      {
+        home.stateVersion = lib.mkDefault "24.05";
+        
+        # Import all home modules
+        imports = cfg.extraModules;
+      }
+      
+      # User-specific config from extraConfig
+      cfg.extraConfig
+    ];
+  };
 }

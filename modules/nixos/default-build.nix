@@ -1,7 +1,7 @@
 { lib, config, ... }: {
   options.my.build.default = lib.mkOption {
     type = lib.types.str;               # e.g. "images.iso" or "tarballBuilder"
-    default = "images.iso";             # sensible default for normal NixOS hosts
+    default = "toplevel";             # sensible default for normal NixOS hosts
     example = "tarballBuilder";
     description = ''
       Attribute path under `config.system.build` that should be the default

@@ -6,9 +6,24 @@
 
 ---
 
+## Table of Contents
+
+1. [Project Overview](#1-project-overview)
+2. [Directory → Flake Output Map](#2-directory--flake-output-map-autowiring)
+3. [Configuration Architecture](#3-configuration-architecture)
+4. [Profiles System](#4-profiles-system)
+5. [Module Conventions](#5-module-conventions)
+6. [Configuration Conventions](#6-configuration-conventions)
+7. [Secrets](#7-secrets)
+8. [Common Tasks](#8-common-tasks)
+9. [Style & Lint](#9-style--lint)
+10. [Subdirectory Policies](#10-subdirectory-policies)
+
+---
+
 ## 1. Project Overview
 
-This is a multi-system Nix configuration managed by one flake.  It targets:
+This is a multi-system Nix configuration managed by one flake targeting:
 
 * **NixOS** laptops, servers, WSL instances, and cloud VMs
 * **nix-darwin** (macOS) — currently dormant but wired
@@ -17,7 +32,7 @@ This is a multi-system Nix configuration managed by one flake.  It targets:
 The two structural pillars are:
 
 1. **`flake-parts`** — module system for the flake itself (`perSystem`, `flake.*` outputs).
-2. **`nixos-unified`** — provides `flakeModules.autoWire` so that files under
+2. **`nixos-unified`** — provides `flakeModules.autoWire` so files under
    `configurations/` and `modules/` are **automatically** exported as flake outputs
    without manual registration in `flake.nix`.
 
@@ -27,165 +42,273 @@ The two structural pillars are:
 
 | Path | Flake output |
 |------|--------------|
-| `configurations/nixos/<name>.nix` or `…/<name>/default.nix` | `nixosConfigurations.<name>` |
-| `configurations/darwin/<name>.nix` or `…/<name>/default.nix` | `darwinConfigurations.<name>` |
-| `configurations/home/<name>.nix` | `homeConfigurations.<name>` |
-| `modules/nixos/<name>.nix` | `nixosModules.<name>` |
-| `modules/darwin/<name>.nix` | `darwinModules.<name>` |
-| `modules/home/<name>.nix` | `homeModules.<name>` |
-| `modules/flake-parts/<name>.nix` | imported into `flake-parts` top-level |
-| `overlays/<name>.nix` | `overlays.<name>` |
-| `packages/<name>/` or `packages/<name>.nix` | manually wired in `modules/flake-parts/packages.nix` |
+| `configurations/nixos/(host-name).nix` or `…/(host-name)/default.nix` | `nixosConfigurations.(host-name)` |
+| `configurations/darwin/(host-name).nix` or `…/(host-name)/default.nix` | `darwinConfigurations.(host-name)` |
+| `configurations/home/(user-name).nix` | `homeConfigurations.(user-name)` |
+| `modules/nixos/(name).nix` or `…/(name)/default.nix` | `nixosModules.(name)` |
+| `modules/darwin/(name).nix` or `…/(name)/default.nix` | `darwinModules.(name)` |
+| `modules/home/(name).nix` or `…/(name)/default.nix` | `homeModules.(name)` |
+| `modules/flake-parts/(name).nix` | imported into `flake-parts` top-level |
+| `overlays/(name).nix` | `overlays.(name)` |
+| `packages/(name)/` or `packages/(name).nix` | auto-wired via `perSystem` |
 | `secrets/` | agenix secrets (not a flake output) |
 
 **Agent rule:** If you add a new file in one of the autowired directories it
-*will* become a flake output automatically.  Do not duplicate imports in
+*will* become a flake output automatically. Do not duplicate imports in
 `flake.nix`.
 
 ---
 
-## 3. Global Conventions
+## 3. Configuration Architecture
 
-### 3.1 `.envrc` & direnv
+### 3.1 Quick Start
 
-The repository root contains an `.envrc` file.  **direnv** is enabled by
-default (`my.programs.direnv.enable = true`) so the environment auto-loads
-whenever you `cd` into the project.
-
-#### `.envrc` rules
-
-* **Base line:** `.envrc` must start with `use flake` so the flake devShell
-  (tools, formatters, Nix itself) is always available.
-* **No plaintext secrets.**  Never commit API keys, tokens, or passwords into
-  `.envrc`.  If a secret is needed at development time, read it from an agenix
-  path (`/run/agenix/…`) or use the `secretFiles` mechanism provided by the
-  direnv module (see `modules/home/direnv.nix`).
-* **Runtime-only exports are OK.**  Exporting variables that point to agenix
-  paths (e.g. `GCLOUD_SERVICE_ACCOUNT_KEY_PATH=/run/agenix/gcloud-auth`) is
-  acceptable because the sensitive data lives outside the repo.
-* **Keep it minimal.**  If a module needs environment variables for its own
-  development workflow, prefer wiring them through the module system (options +
-  generated files) rather than bloating the root `.envrc`.
-
-#### direnv module (`modules/home/direnv.nix`)
-
-The home-manager direnv module provides a `secretFiles` option that generates
-sourced scripts under `~/.config/direnv/secrets/`:
-
-```nix
-my.programs.direnv.secretFiles = {
-  my-api = {
-    vars  = { MY_API_TOKEN = config.age.secrets.my-api-token.path; };
-    paths = { MY_KEY_PATH  = config.age.secrets.my-key.path; };
-  };
-};
-```
-
-These scripts are loaded by `.envrc` or by per-directory `.envrc` files via:
+Create a new NixOS host:
 
 ```bash
-source ~/.config/direnv/secrets/my-api.sh
+mkdir configurations/nixos/myhost
+cat > configurations/nixos/myhost/default.nix
 ```
 
-**Agent rule:** When adding a new secret-dependent tool, use `secretFiles`
-instead of editing `.envrc` directly.
-
-### 3.2 `config.nix` — The Identity File
-
-`config.nix` in the repo root contains the **single source of truth** for user
-identity, tailnet hosts, and Ollama model metadata.  It is imported by
-`modules/flake-parts/config.nix` which turns it into typed flake-parts options.
-
-* `me` — username, fullname, email, SSH key, GitHub handle.
-* `tailnet` — Tailscale IPs / hostnames for known machines.
-* `ollamaModels` — model definitions shared across AI-tool modules.
-
-**Agent rule:** Never hard-code user-specific strings inside modules;
-reference `flake.config.me.<field>` or `config.me.<field>` instead.
-
-### 3.3 Systems & Platforms
-
-Supported systems (from `flake.nix`):
-
 ```nix
-systems = [ "x86_64-linux" "aarch64-linux" "aarch64-darwin" ];
+{ flake, ... }:
+{
+  imports = [ flake.inputs.self.nixosModules.common ];
+  
+  networking.hostName = "myhost";
+  nixpkgs.hostPlatform = "x86_64-linux";
+  
+  # Pick profiles
+  my.profiles.workstation.enable = true;
+  my.profiles.desktop.gnome.enable = true;
+  my.homeProfiles.common.enable = true;
+  my.homeProfiles.desktop.enable = true;
+}
 ```
 
-`perSystem` overlays and packages must be safe for all three.
+### 3.2 Architecture Overview
 
-### 3.4 Overlays
+```
+configurations/nixos/           # Host configurations
+├── laptop/                    # Laptop with GUI
+│   ├── default.nix             # Host configuration (imports common)
+│   └── hardware-configuration.nix  # Generated hardware config
+├── server/                    # Headless server
+│   └── default.nix
+└── wsl/                       # WSL instance
+    └── default.nix
 
-All overlays live in `overlays/default.nix` (or sidecars imported from there).
-They are composed **once** in `flake.nix` and passed to every `pkgs` instance:
+modules/nixos/                 # NixOS modules
+├── common.nix                  # Common configuration (import this!)
+├── profiles/                  # System & home profiles
+│   ├── system/                # System-level profiles
+│   │   ├── workstation.nix
+│   │   ├── server.nix
+│   │   ├── development.nix
+│   │   └── minimal.nix
+│   └── home/                  # Home-level profiles
+│       ├── default.nix
+│       ├── common.nix
+│       └── desktop.nix
+└── ...                        # Individual modules
+
+modules/home/                  # Home Manager modules
+└── ...                        # Individual program modules
+```
+
+### 3.3 Key Principles
+
+1. **Import `nixosModules.common`** — This single import provides all base functionality
+2. **Use Profiles** — Enable features via `my.profiles.*` and `my.homeProfiles.*`
+3. **Minimal Boilerplate** — Host configs should be declarative and short
+4. **No Direct Module Imports** — Don't import individual modules in host configs
+
+---
+
+## 4. Profiles System
+
+Profiles provide convenient bundles of related configuration.
+
+### 4.1 System Profiles (`my.profiles`)
+
+| Profile | Purpose | Enables |
+|---------|---------|---------|
+| `workstation` | Desktop/laptop | Audio, bluetooth, desktop environment |
+| `server` | Headless server | SSH, minimal services |
+| `minimal` | Bare essentials | Core services only |
+| `development` | Dev tools | Docker, git, direnv |
+| `gaming` | Gaming setup | Steam, gaming tools |
+
+**Feature Profiles:**
+
+| Profile | Purpose |
+|---------|---------|
+| `desktop.gnome` | GNOME desktop |
+| `desktop.plasma` | KDE Plasma desktop |
+| `gpu.mesa` | Intel/AMD graphics |
+| `gpu.nvidia` | NVIDIA graphics |
+| `gpu.nvidia-headless` | NVIDIA (headless/CUDA) |
+| `battery` | Power management |
+| `location` | Timezone/geolocation |
+
+**Example:**
 
 ```nix
-_module.args.pkgs = import inputs.nixpkgs {
-  inherit system;
-  overlays = lib.attrValues self.overlays;
-  config.allowUnfree = true;
+my.profiles = {
+  workstation.enable = true;
+  development.enable = true;
+  desktop.gnome.enable = true;
+  gpu.mesa.enable = true;
+  battery.enable = true;
 };
 ```
 
-**Agent rule:** If you need to override or add a package, prefer an overlay so
-it is available everywhere.
+### 4.2 Home Profiles (`my.homeProfiles`)
+
+| Profile | Purpose | Programs |
+|---------|---------|----------|
+| `common` | Basic shell tools | bash, zsh, direnv, gh |
+| `desktop` | GUI applications | firefox, discord, obsidian |
+| `development` | Dev tools | vscode, cudatext |
+| `server` | Server user | minimal GUI |
+| `minimal` | Essential only | bash only |
+
+**Example:**
+
+```nix
+my.homeProfiles = {
+  common.enable = true;
+  desktop.enable = true;
+  development.enable = true;
+};
+```
+
+### 4.3 Per-Host Customization
+
+For host-specific home settings:
+
+```nix
+my.homeManager.extraConfig.my.programs = {
+  steam.enable = true;  # Extra program for this host
+  firefox.enable = false; # Disable default
+};
+```
 
 ---
 
-## 4. Module Conventions
+## 5. Module Conventions
 
-For **all** modules (NixOS, darwin, home, flake-parts) see the detailed policy
-in:
+### 5.1 All Modules
 
-> **`modules/AGENT.md`**
+* All custom options MUST live under the `my.*` namespace
+* Module file names match the option path: `my.services.tailscale` → `modules/nixos/tailscale.nix`
+* Directories are used for complex modules: `modules/nixos/tailscale/`
 
-The file now contains **per-category directives** (Section 3) for each module
-type — NixOS, nix-darwin, Home Manager, and flake-parts — because the
-subsystems, allowed options, and testing strategies differ significantly.
+### 5.2 Module Structure
 
-Key take-aways:
+```
+modules/nixos/example/
+├── default.nix      # Entrypoint (imports only)
+├── options.nix      # Option declarations
+├── config.nix       # Main implementation
+├── services.nix     # systemd units
+└── tests.nix        # Tests & assertions
+```
 
-* All custom options MUST live under the `my.*` namespace, with one exception:
-  flake-parts identity/config options (`me`, `tailnet`, `ollamaModels`).
-* Every self-contained module under `modules/<category>/<name>/` should contain:
-  `default.nix`, `meta.nix`, `tests.nix`, `README.md`.
-* Side-car files must be **explicitly** imported in `default.nix`; no directory
-  scanning.
-* `modules/flake-parts/README.md` documents the flake-parts layer and how to
-  add new flake-level modules.
+**Rule:** `default.nix` is an **import manifest** — contains only `imports`, no logic.
 
----
-
-## 5. Host / Configuration Conventions
-
-A host configuration (e.g. `configurations/nixos/laptop/default.nix`) typically:
-
-1. Sets `nixos-unified.sshTarget = "<user>@<hostname>"` for remote activation.
-2. Imports `./configuration.nix` (hardware & boot specifics) and
-   `self.nixosModules.default` (the common NixOS module bundle).
-3. Enables per-host features via the `my.*` option tree.
-4. Declares `home-manager.users.<name>.my.*` for user-level features.
-
-**Agent rule:** Keep host files declarative.  Extract reusable logic into a
-proper `modules/nixos/<name>.nix` (or `modules/home/<name>.nix`) rather than
-bloating the host file.
+See `modules/AGENT.md` for detailed module conventions.
 
 ---
 
-## 6. Secrets
+## 6. Configuration Conventions
+
+### 6.1 Configuration Structure
+
+**Good:**
+```nix
+{ flake, ... }:
+{
+  imports = [ flake.inputs.self.nixosModules.common ];
+  
+  networking.hostName = "laptop";
+  nixpkgs.hostPlatform = "x86_64-linux";
+  
+  my.profiles.workstation.enable = true;
+  my.profiles.desktop.gnome.enable = true;
+  my.homeProfiles.common.enable = true;
+}
+```
+
+**Avoid:**
+```nix
+{ config, flake, pkgs, lib, ... }:
+let
+  me = flake.config.me;
+  user = me.username;
+  self = flake.inputs.self;
+in
+{
+  imports = [
+    ./configuration.nix
+    self.nixosModules.default
+  ];
+  # ... verbose config with many let bindings
+}
+```
+
+### 6.2 Required Settings
+
+Every configuration MUST set:
+
+1. `networking.hostName` — The hostname
+2. `nixpkgs.hostPlatform` — System architecture (e.g., "x86_64-linux")
+3. Import `nixosModules.common` — Base configuration
+
+### 6.3 Override Specifics, Not Defaults
+
+Set specific values only when needed:
+
+```nix
+# Good: Override specific setting
+my.services.tailscale.tags = [ "tag:laptop" "tag:mobile" ];
+
+# Avoid: Re-declaring defaults
+my.services.tailscale = {
+  enable = true;  # Already default in common.nix
+  user = "seanc"; # Already default
+};
+```
+
+### 6.4 Secrets Handling
+
+Don't reference secrets directly. Use conditional guards:
+
+```nix
+# Good: Check if secret exists first
+my.services.cachix-push.enable = config.age.secrets ? "cache-token";
+
+# Bad: Will fail if secret missing
+my.services.cachix-push.tokenFile = config.age.secrets.cache-token.path;
+```
+
+---
+
+## 7. Secrets
 
 Secrets are managed with **agenix**.
 
 * Secret definitions: `secrets/secrets.nix`
 * Encrypted blobs: `secrets/*.age`
-* Decryption keys: SSH host keys or user SSH keys (declared in `secrets.nix`).
+* Decryption keys: SSH host keys or user SSH keys (declared in `secrets.nix`)
 
-**Agent rule:** Never commit plaintext secrets.  If you need to add a new
+**Agent rule:** Never commit plaintext secrets. If you need to add a new
 secret, update `secrets/secrets.nix`, place the `.age` file, and reference it in
-a module via `config.age.secrets.<name>.path`.
+a module via `config.age.secrets.(name).path`.
 
 ---
 
-## 7. Common Tasks
+## 8. Common Tasks
 
 | Task | Command |
 |------|---------|
@@ -194,63 +317,14 @@ a module via `config.age.secrets.<name>.path`.
 | Update specific inputs | `nix flake lock --update-input nixpkgs --update-input home-manager` |
 | Format the tree | `nix fmt` |
 | Build all outputs (CI) | `nix --accept-flake-config run github:juspay/omnix ci build` |
+| Check flake | `nix flake check --no-build` |
+| Test specific host | `nix run .#test run (hostname)` |
+| List hosts | `nix run .#test list` |
 | Garbage collect | `sudo nix-env -p /nix/var/nix/profiles/system --delete-generations +2 && sudo nixos-rebuild boot` |
 
 ---
 
-## 7.1 Testing — `my.testing`
-
-The `my.testing` flake-parts module (in `modules/flake-parts/testing.nix`)
-generates a `test` CLI and per-host `test-<name>` packages.  Enable it in a
-host configuration:
-
-```nix
-my.testing.enable = true;
-```
-
-### Commands
-
-| Command | Description |
-|---------|-------------|
-| `nix run .#test list` | List all available host configurations |
-| `nix run .#test summary` | Show brief summary of each host |
-| `nix run .#test run` | Run test suite for all hosts |
-| `nix run .#test run <host>` | Run test suite for a specific host |
-| `nix run .#test dry-run` | Evaluate all configurations without building |
-| `nix run .#test dry-run <host>` | Evaluate a single host configuration |
-| `nix run .#test show <host>` | Print the evaluated system closure path |
-
-### What each `test-<host>` package checks
-
-| Level | Check |
-|-------|-------|
-| L0 | System closure integrity (`bin`, `etc`, `lib`, `sbin` present) |
-| L1 | systemd unit declarations — counts services, warns on missing `ExecStart` binaries |
-| L2 | Environment sanity — profile.d scripts, NixOS config files |
-| L3 | Broken symlink scan across the entire system closure |
-
-### Integration with nixos-unified
-
-The `test` CLI works alongside `nixos-unified`'s `nix run` workflow.  Instead
-of switching configurations and rebuilding, run:
-
-```bash
-# Evaluate without building
-nix run .#test dry-run laptop
-
-# Run lightweight closure checks (no build needed beyond evaluation)
-nix run .#test run laptop
-
-# Run all hosts
-nix run .#test run
-```
-
-**Agent rule:** Always enable `my.testing` in host configurations that
-introduce new services, daemons, or system-level changes.
-
----
-
-## 8. Style & Lint
+## 9. Style & Lint
 
 * Use `nixpkgs-fmt` (enforced by `nix fmt`).
 * Prefer `lib.mkDefault` in common modules so host configs can override easily.
@@ -260,16 +334,28 @@ introduce new services, daemons, or system-level changes.
 
 ---
 
-## 9. Subdirectory Policies
+## 10. Subdirectory Policies
 
 The following subdirectories carry their own `AGENT.md` (or equivalent)
-policy docs.  When they conflict, the **most specific** `AGENT.md` wins.
+policy docs. When they conflict, the **most specific** `AGENT.md` wins.
 
 * **`modules/AGENT.md`** — universal module structure, `my.*` namespace,
   `meta.nix`, `tests.nix`, and per-type directives (NixOS, darwin, home,
   flake-parts).
+* **`configurations/AGENT.md`** — host configuration conventions, profiles
+  usage, and examples.
 * **`modules/flake-parts/README.md`** — flake-parts layer documentation:
   identity options, `perSystem` vs `flake.*` outputs, and conventions for
   adding new flake-level modules.
 
-When working inside a subdirectory, read its local policy first.
+---
+
+## Summary
+
+**For Agents:**
+
+1. Host configs should be **minimal** and **declarative**
+2. Use **profiles** (`my.profiles.*`, `my.homeProfiles.*`) for common patterns
+3. Import **`nixosModules.common`** for base functionality
+4. Set `networking.hostName` and `nixpkgs.hostPlatform`
+5. Follow the **AGENT.md** hierarchy for detailed conventions
