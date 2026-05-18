@@ -4,10 +4,15 @@ let
   inherit (lib)
     mkIf
     mkMerge
+    recursiveUpdate
     ;
 
   cfg = config.my.programs.opencode;
   providers = import ./providers.nix { inherit lib cfg; };
+
+  # Deep merge settings with provider settings
+  # Use recursiveUpdate to merge nested attrsets properly
+  mergedSettings = recursiveUpdate cfg.settings providers.allProviderSettings;
 
 in {
   config = mkIf cfg.enable (mkMerge [
@@ -22,7 +27,7 @@ in {
         commands             = cfg.commands;
         agents               = cfg.agents;
         themes               = cfg.themes;
-        settings             = cfg.settings // providers.allProviderSettings;
+        settings             = mergedSettings;
       };
     }
 

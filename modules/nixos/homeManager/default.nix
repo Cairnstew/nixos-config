@@ -16,15 +16,15 @@ in
           enable = true;
 
           secretFiles = {
-            aws-cloud = {
+            aws-cloud = lib.mkIf (config.age.secrets ? "aws-cloud") {
               envFiles = [ config.age.secrets.aws-cloud.path ];  # file contains AWS_ACCESS_KEY_ID=... etc
             };
-            ssh-keys = {
+            ssh-keys = lib.mkIf (config.age.secrets ? "aws-lab-ssh-key") {
               paths = {
                 AWS_LABS_SSH_KEY_PATH = config.age.secrets.aws-lab-ssh-key.path;
               };
             };
-            gcloud = {
+            gcloud = lib.mkIf (config.age.secrets ? "gcloud-auth") {
               paths = {
                 # This will export GCLOUD_SERVICE_ACCOUNT_KEY_PATH pointing to the decrypted JSON path
                 GCLOUD_SERVICE_ACCOUNT_KEY_PATH = config.age.secrets.gcloud-auth.path;
@@ -50,10 +50,13 @@ in
         };
         opencode = {
           enable = true;
-          clarifai.patFile = config.age.secrets."clarifai-pat".path;
-          deepinfra.keyFile = config.age.secrets."deepinfra-key".path;
-          groq.keyFile = config.age.secrets."groq-token".path;
-          model = "meta-llama/Meta-Llama-3.1-8B-Instruct";
+          clarifai.patFile = if config.age.secrets ? "clarifai-pat" then config.age.secrets."clarifai-pat".path else null;
+          deepinfra.keyFile = if config.age.secrets ? "deepinfra-key" then config.age.secrets."deepinfra-key".path else null;
+          groq.keyFile = if config.age.secrets ? "groq-token" then config.age.secrets."groq-token".path else null;
+          # Only set model if at least one provider secret exists
+          model = if (config.age.secrets ? "clarifai-pat") || (config.age.secrets ? "deepinfra-key") || (config.age.secrets ? "groq-token")
+                  then "meta-llama/Meta-Llama-3.1-8B-Instruct"
+                  else null;
           enableMcpIntegration = true;
           settings.mcp = {
             nixos = {

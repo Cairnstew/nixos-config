@@ -74,7 +74,7 @@ in
           program = "${pkgs.mcp-nixos}/bin/mcp-nixos";
         };
 
-        packages.mcp-nixos = pkgs.mcp-nixos;
+        # mcp-nixos package is auto-wired from packages/mcp-nixos/
       };
   };
 }

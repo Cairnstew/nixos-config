@@ -8,6 +8,8 @@ let
     attrNames
     findFirst
     mkDefault
+    foldl'
+    recursiveUpdate
     ;
 
   # ── Ollama provider ───────────────────────────────────────────────────────
@@ -87,21 +89,23 @@ let
     };
 
   # ── Merge all provider settings ─────────────────────────────────────────
-  allProviderSettings =
+  # Use foldl' with recursiveUpdate to properly merge nested attrsets
+  allProviderSettings = lib.foldl' lib.recursiveUpdate {} [
     ollamaProviderSettings
-    // openaiProviderSettings
-    // anthropicProviderSettings
-    // googleProviderSettings
-    // groqProviderSettings
-    // mistralProviderSettings
-    // xaiProviderSettings
-    // togetherProviderSettings
-    // openrouterProviderSettings
-    // fireworksProviderSettings
-    // cerebrasProviderSettings
-    // deepinfraProviderSettings
-    // clarifaiProviderSettings
-    // azureProviderSettings;
+    openaiProviderSettings
+    anthropicProviderSettings
+    googleProviderSettings
+    groqProviderSettings
+    mistralProviderSettings
+    xaiProviderSettings
+    togetherProviderSettings
+    openrouterProviderSettings
+    fireworksProviderSettings
+    cerebrasProviderSettings
+    deepinfraProviderSettings
+    clarifaiProviderSettings
+    azureProviderSettings
+  ];
 
 in {
   inherit

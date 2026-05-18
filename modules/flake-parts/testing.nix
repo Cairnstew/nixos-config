@@ -231,7 +231,7 @@ in
         mkHostEntries =
           let
             # 1. Define a list of hostnames you want to skip
-            disabledHosts = [ "aws-webserver" ];
+            disabledHosts = [ ];
 
             # 2. Helper function to filter out disabled hosts
             isTestable = name: _: ! (builtins.elem name disabledHosts);
