@@ -51,8 +51,9 @@ in
         opencode = {
           enable = true;
           clarifai.patFile = config.age.secrets."clarifai-pat".path;
+          deepinfra.keyFile = config.age.secrets."deepinfra-key".path;
           groq.keyFile = config.age.secrets."groq-token".path;
-          model = "clarifai/gpt-4o";
+          model = "meta-llama/Meta-Llama-3.1-8B-Instruct";
         };
         cline = {
           enable = false;

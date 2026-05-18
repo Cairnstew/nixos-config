@@ -63,10 +63,7 @@ let
   };
 
   # Build a provider.clarifai block when a PAT file path is supplied.
-  # Clarifai exposes an OpenAI-compatible endpoint so we use the openai-compatible
-  # npm package.  Model IDs are short slugs as returned by the /models endpoint, e.g.:
-  #   gpt-oss-120b, gpt-oss-20b, DeepSeek-R1, Kimi-K2_6
-  # Use {file:...} substitution because opencode has a known bug where
+  # Uses {file:...} substitution because opencode has a known bug where
   # {env:...} does not expand for apiKey in openai-compatible providers.
   clarifaiProviderSettings = lib.optionalAttrs (cfg.clarifai.patFile != null) {
     provider.clarifai = {
@@ -74,6 +71,25 @@ let
       name            = "Clarifai";
       options.baseURL = "https://api.clarifai.com/v2/ext/openai/v1";
       options.apiKey  = "{file:${cfg.clarifai.patFile}}";
+    };
+  };
+
+  # Build a provider.deepinfra block when a key file path is supplied.
+  # DeepInfra exposes an OpenAI-compatible endpoint.
+  # Model IDs use owner/name slugs, e.g.:
+  #   deepseek-ai/DeepSeek-V3.2
+  #   meta-llama/Meta-Llama-3.1-70B-Instruct-Turbo
+  #   Qwen/Qwen3-235B-A22B
+  #   microsoft/WizardLM-2-8x22B
+  # Uses {file:...} substitution — same workaround as Clarifai because opencode
+  # has a known bug where {env:...} does not expand for apiKey in
+  # openai-compatible providers.
+  deepinfraProviderSettings = lib.optionalAttrs (cfg.deepinfra.keyFile != null) {
+    provider.deepinfra = {
+      npm             = "@ai-sdk/openai-compatible";
+      name            = "DeepInfra";
+      options.baseURL = "https://api.deepinfra.com/v1/openai";
+      options.apiKey  = "{file:${cfg.deepinfra.keyFile}}";
     };
   };
 
@@ -149,6 +165,36 @@ in
       };
     };
 
+    # ── DeepInfra ────────────────────────────────────────────────────────────
+
+    deepinfra = {
+      keyFile = mkOption {
+        type        = types.nullOr types.path;
+        default     = null;
+        example     = "/run/secrets/deepinfra-api-key";
+        description = ''
+          Path to a file containing a DeepInfra API token (DEEPINFRA_TOKEN).
+          When set, the DeepInfra provider is registered in opencode's config
+          and the token is read directly from the file at runtime via opencode's
+          {file:...} substitution (same workaround as Clarifai — {env:...} is
+          broken for apiKey in openai-compatible providers).
+
+          Get a token at https://deepinfra.com/dash — API Keys section.
+
+          Model IDs use the owner/name slug format as listed on deepinfra.com.
+          Set with <option>my.programs.opencode.model</option> using the
+          "deepinfra/" prefix, e.g.:
+            - deepinfra/deepseek-ai/DeepSeek-V3.2       (~$0.28/$0.90 per M tokens)
+            - deepinfra/meta-llama/Llama-4-Maverick      (good tool use)
+            - deepinfra/Qwen/Qwen3-235B-A22B             (strong reasoning)
+            - deepinfra/deepseek-ai/DeepSeek-R1          (reasoning model)
+
+          Check all available models at:
+            https://deepinfra.com/models/text-generation
+        '';
+      };
+    };
+
     # ── Ollama ──────────────────────────────────────────────────────────────
 
     ollamaModels = mkOption {
@@ -186,8 +232,8 @@ in
     model = mkOption {
       type        = types.nullOr types.str;
       default     = null;
-      example     = "groq/llama-3.3-70b-versatile";
-      description = "Shorthand for <option>settings.model</option>.";
+      example     = "deepinfra/deepseek-ai/DeepSeek-V3.2";
+      description = "Shorthand for <option>settings.model</option>. Takes highest priority — overrides any auto-selected default.";
     };
 
     autoshare = mkOption {
@@ -267,17 +313,27 @@ in
       programs.opencode.settings = clarifaiProviderSettings;
     })
 
+    # DeepInfra: register provider using {file:...} substitution for the API key.
+    # Note: same {env:...} bug as Clarifai — use {file:...} so opencode reads
+    # the token directly at runtime without needing a session variable export.
+    (mkIf (cfg.deepinfra.keyFile != null) {
+      programs.opencode.settings = deepinfraProviderSettings;
+    })
+
     # Ollama: register provider if any models are declared
     (mkIf (cfg.ollamaModels != {}) {
       programs.opencode.settings = ollamaProviderSettings;
     })
 
-    # Ollama: auto-select default model if one is tagged
+    # Ollama: auto-select default model if one is tagged.
+    # Uses mkDefault (priority 1000) so that the explicit cfg.model shorthand
+    # below (plain assignment, priority 100) always wins — this was the bug
+    # causing the default model not to be overridden by cfg.model.
     (mkIf (defaultOllamaModel != null) {
-      programs.opencode.settings.model = "ollama/${defaultOllamaModel}";
+      programs.opencode.settings.model = lib.mkDefault "ollama/${defaultOllamaModel}";
     })
 
-    # Shorthands (highest priority — override any auto-set model above)
+    # Shorthands (plain assignment = priority 100, overrides mkDefault above)
     (mkIf (cfg.model      != null) { programs.opencode.settings.model      = cfg.model; })
     (mkIf (cfg.autoshare  != null) { programs.opencode.settings.autoshare  = cfg.autoshare; })
     (mkIf (cfg.autoupdate != null) { programs.opencode.settings.autoupdate = cfg.autoupdate; })
