@@ -64,6 +64,9 @@ in
     nm.nebula
     nm.tailscale
 
+    # Secrets
+    nm.secrets
+
     # External modules
     agenixModules
 
