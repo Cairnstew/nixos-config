@@ -54,6 +54,14 @@ in
           deepinfra.keyFile = config.age.secrets."deepinfra-key".path;
           groq.keyFile = config.age.secrets."groq-token".path;
           model = "meta-llama/Meta-Llama-3.1-8B-Instruct";
+          enableMcpIntegration = true;
+          settings.mcp = {
+            nixos = {
+              enabled = true;
+              type = "local";
+              command = [ "nix" "run" "${flake.inputs.self}#mcp-nixos" ];
+            };
+          };
         };
         cline = {
           enable = false;
