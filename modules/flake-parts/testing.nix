@@ -91,7 +91,10 @@ in
 
               # ── L0: Closure integrity ──────────────────────────────────
               echo "[L0] Checking system closure integrity..."
-              for path in bin etc lib sbin nix store; do
+              # NixOS closures have: bin, etc, sw, systemd (plus kernel
+              # artefacts).  /lib, /sbin, /nix, /store are created at
+              # activation time and do not exist in the raw toplevel.
+              for path in bin etc sw systemd; do
                 if [ ! -e "$SYSTEM_ROOT/$path" ]; then
                   echo "  FAIL: /$path missing from system closure"
                   exit_code=1
@@ -101,10 +104,21 @@ in
               done
 
               # ── L1: systemd unit declarations ──────────────────────────
-              if [ -d "$SYSTEM_ROOT/etc/systemd/system" ]; then
+              # NixOS stores unit files in sw/lib/systemd/system/ inside the
+              # closure.  etc/systemd/system is a runtime symlink that only
+              # exists on an activated system.
+              systemd_dir=""
+              for candidate in "$SYSTEM_ROOT/sw/lib/systemd/system" "$SYSTEM_ROOT/etc/systemd/system"; do
+                if [ -d "$candidate" ]; then
+                  systemd_dir="$candidate"
+                  break
+                fi
+              done
+
+              if [ -n "$systemd_dir" ]; then
                 echo ""
-                echo "[L1] Checking systemd units..."
-                unit_count=$(find "$SYSTEM_ROOT/etc/systemd/system" -type f \( -name "*.service" -o -name "*.timer" -o -name "*.socket" \) 2>/dev/null | wc -l)
+                echo "[L1] Checking systemd units (from $systemd_dir)..."
+                unit_count=$(find "$systemd_dir" -type f \( -name "*.service" -o -name "*.timer" -o -name "*.socket" \) 2>/dev/null | wc -l)
                 echo "  Found $unit_count service/timer/socket units"
 
                 while IFS= read -r -d "" unit_file; do
@@ -119,7 +133,7 @@ in
                       fi
                     fi
                   fi
-                done < <(find "$SYSTEM_ROOT/etc/systemd/system" -name "*.service" -print0 2>/dev/null)
+                done < <(find "$systemd_dir" -name "*.service" -print0 2>/dev/null)
                 echo "  OK: systemd unit check complete"
               fi
 
