@@ -1,0 +1,323 @@
+{ config, lib, pkgs, ... }:
+
+let
+  inherit (lib)
+    mkEnableOption
+    mkOption
+    types
+    literalExpression
+    ;
+
+  # Common keyFile option for SDK-based providers
+  mkKeyFileOpt = description: mkOption {
+    type        = types.nullOr types.path;
+    default     = null;
+    example     = "/run/secrets/api-key";
+    inherit description;
+  };
+
+  # Common keyFile option for OpenAI-compatible providers
+  mkOpenAiKeyFileOpt = description: mkOption {
+    type        = types.nullOr types.path;
+    default     = null;
+    example     = "/run/secrets/api-key";
+    description = description + ''
+
+      Uses {file:...} substitution because opencode has a known bug where
+      {env:...} does not expand for apiKey in openai-compatible providers.
+    '';
+  };
+
+in {
+  options.my.programs.opencode = {
+
+    enable = mkEnableOption "opencode – AI coding agent for the terminal";
+
+    package = mkOption {
+      type        = types.nullOr types.package;
+      default     = pkgs.opencode;
+      defaultText = literalExpression "pkgs.opencode";
+      description = "The opencode package to use.";
+    };
+
+    enableMcpIntegration = mkOption {
+      type        = types.bool;
+      default     = false;
+      description = "Forward programs.mcp.servers into opencode's MCP configuration.";
+    };
+
+    # ── SDK-based cloud providers (env-var keys) ────────────────────────────
+
+    openai = {
+      keyFile = mkKeyFileOpt ''
+        Path to a file containing the OpenAI API key.
+        When set, OPENAI_API_KEY is exported in your shell session and the
+        OpenAI provider is registered.
+
+        Recommended models:
+          - openai/gpt-4o
+          - openai/gpt-4o-mini
+          - openai/o3-mini
+      '';
+    };
+
+    anthropic = {
+      keyFile = mkKeyFileOpt ''
+        Path to a file containing the Anthropic API key.
+        When set, ANTHROPIC_API_KEY is exported and the Anthropic provider is
+        registered.
+
+        Recommended models:
+          - anthropic/claude-sonnet-4-20250514
+          - anthropic/claude-opus-4-20250514
+          - anthropic/claude-3-5-haiku-20241022
+      '';
+    };
+
+    google = {
+      keyFile = mkKeyFileOpt ''
+        Path to a file containing the Google Generative AI API key.
+        When set, GOOGLE_GENERATIVE_AI_API_KEY is exported and the Google
+        provider is registered.
+
+        Recommended models:
+          - google/gemini-2.5-pro
+          - google/gemini-2.5-flash
+          - google/gemini-2.0-flash
+      '';
+    };
+
+    groq = {
+      keyFile = mkKeyFileOpt ''
+        Path to a file containing the Groq API key.
+        When set, GROQ_API_KEY is exported and the Groq provider is registered.
+
+        Recommended models:
+          - groq/llama-3.3-70b-versatile
+          - groq/llama-3.1-8b-instant
+          - groq/llama-4-scout
+      '';
+    };
+
+    mistral = {
+      keyFile = mkKeyFileOpt ''
+        Path to a file containing the Mistral API key.
+        When set, MISTRAL_API_KEY is exported and the Mistral provider is
+        registered.
+
+        Recommended models:
+          - mistral/mistral-large-latest
+          - mistral/mistral-small-latest
+          - mistral/codestral-latest
+      '';
+    };
+
+    xai = {
+      keyFile = mkKeyFileOpt ''
+        Path to a file containing the xAI API key.
+        When set, XAI_API_KEY is exported and the xAI provider is registered.
+
+        Recommended models:
+          - xai/grok-3-beta
+          - xai/grok-3-mini-beta
+      '';
+    };
+
+    # ── OpenAI-compatible providers (file-substitution keys) ────────────────
+
+    together = {
+      keyFile = mkOpenAiKeyFileOpt ''
+        Path to a file containing a Together AI API key.
+        When set, the Together provider is registered.
+
+        Get a key at https://api.together.xyz/settings/api-keys.
+
+        Recommended models:
+          - together/deepseek-ai/DeepSeek-V3
+          - together/meta-llama/Llama-3.3-70B-Instruct-Turbo
+          - together/Qwen/Qwen2.5-72B-Instruct-Turbo
+      '';
+    };
+
+    openrouter = {
+      keyFile = mkOpenAiKeyFileOpt ''
+        Path to a file containing an OpenRouter API key.
+        When set, the OpenRouter provider is registered.
+
+        Get a key at https://openrouter.ai/settings/keys.
+
+        Recommended models:
+          - openrouter/anthropic/claude-sonnet-4
+          - openrouter/openai/gpt-4o
+          - openrouter/google/gemini-2.5-pro
+      '';
+    };
+
+    fireworks = {
+      keyFile = mkOpenAiKeyFileOpt ''
+        Path to a file containing a Fireworks AI API key.
+        When set, the Fireworks provider is registered.
+
+        Get a key at https://fireworks.ai/account/api-keys.
+
+        Recommended models:
+          - fireworks/accounts/fireworks/models/llama4-maverick-instruct-basic
+          - fireworks/accounts/fireworks/models/deepseek-v3-0324
+      '';
+    };
+
+    cerebras = {
+      keyFile = mkOpenAiKeyFileOpt ''
+        Path to a file containing a Cerebras API key.
+        When set, the Cerebras provider is registered.
+
+        Get a key at https://cloud.cerebras.ai/platform/org_level/api_keys.
+
+        Recommended models:
+          - cerebras/llama-4-scout-17b-16e-instruct
+          - cerebras/llama-4-maverick-17b-128e-instruct
+      '';
+    };
+
+    deepinfra = {
+      keyFile = mkOpenAiKeyFileOpt ''
+        Path to a file containing a DeepInfra API token.
+        When set, the DeepInfra provider is registered.
+
+        Get a token at https://deepinfra.com/dash — API Keys section.
+
+        Recommended models:
+          - deepinfra/deepseek-ai/DeepSeek-V3.2
+          - deepinfra/meta-llama/Llama-4-Maverick
+          - deepinfra/Qwen/Qwen3-235B-A22B
+      '';
+    };
+
+    clarifai = {
+      patFile = mkOpenAiKeyFileOpt ''
+        Path to a file containing a Clarifai Personal Access Token (PAT).
+        When set, the Clarifai provider is registered.
+
+        Get a PAT from the Secrets section of your Clarifai app settings.
+
+        Recommended models:
+          - clarifai/gpt-oss-120b
+          - clarifai/DeepSeek-R1
+          - clarifai/Kimi-K2_6
+      '';
+    };
+
+    # ── Azure OpenAI ────────────────────────────────────────────────────────
+
+    azure = {
+      keyFile = mkOption {
+        type        = types.nullOr types.path;
+        default     = null;
+        example     = "/run/secrets/azure-openai-key";
+        description = ''
+          Path to a file containing the Azure OpenAI API key.
+          When set, AZURE_API_KEY is exported and the Azure provider is registered.
+        '';
+      };
+
+      endpoint = mkOption {
+        type        = types.nullOr types.str;
+        default     = null;
+        example     = "https://my-resource.openai.azure.com";
+        description = "Azure OpenAI endpoint base URL (without /openai/deployments/…).";
+      };
+
+      deployment = mkOption {
+        type        = types.nullOr types.str;
+        default     = null;
+        example     = "gpt-4o";
+        description = "Azure OpenAI deployment name.";
+      };
+    };
+
+    # ── Ollama ──────────────────────────────────────────────────────────────
+
+    ollamaModels = mkOption {
+      type    = types.attrsOf types.anything;
+      default = {};
+      example = {
+        "qwen3.5:9b" = {
+          name        = "qwen3.5:9b";
+          tools       = true;
+          numCtx      = 32768;
+          temperature = 0.7;
+          opencode_default = true;
+        };
+      };
+      description = ''
+        Ollama models to expose to opencode.  Accepts the same attrset shape as
+        <option>my.services.ollama.models</option>; Ollama-specific fields are
+        silently ignored by opencode.
+
+        Set <literal>opencode_default = true</literal> on exactly one model to
+        make it the default.  Each key becomes an
+        <literal>ollama/&lt;tag&gt;</literal> entry in the provider config.
+      '';
+    };
+
+    ollamaBaseURL = mkOption {
+      type        = types.str;
+      default     = "http://127.0.0.1:11434/v1";
+      example     = "http://100.64.0.1:11434/v1";
+      description = "Base URL for the Ollama OpenAI-compatible endpoint.";
+    };
+
+    # ── Shorthands ───────────────────────────────────────────────────────────
+
+    model = mkOption {
+      type        = types.nullOr types.str;
+      default     = null;
+      example     = "anthropic/claude-sonnet-4-20250514";
+      description = "Shorthand for <option>settings.model</option>. Takes highest priority — overrides any auto-selected default.";
+    };
+
+    autoshare = mkOption {
+      type        = types.nullOr types.bool;
+      default     = null;
+      description = "Shorthand for <option>settings.autoshare</option>.";
+    };
+
+    autoupdate = mkOption {
+      type        = types.nullOr types.bool;
+      default     = null;
+      description = "Shorthand for <option>settings.autoupdate</option>.";
+    };
+
+    # ── Pass-throughs ────────────────────────────────────────────────────────
+
+    settings = mkOption {
+      type        = (pkgs.formats.json {}).type;
+      default     = {};
+      description = "Verbatim JSON written to \$XDG_CONFIG_HOME/opencode/config.json.";
+    };
+
+    context = mkOption {
+      type        = types.either types.lines types.path;
+      default     = "";
+      description = "Global instructions written to \$XDG_CONFIG_HOME/opencode/context.md.";
+    };
+
+    commands = mkOption {
+      type        = types.attrsOf (types.either types.lines types.path);
+      default     = {};
+      description = "Custom slash-commands.";
+    };
+
+    agents = mkOption {
+      type        = types.attrsOf (types.either types.lines types.path);
+      default     = {};
+      description = "Custom agents.";
+    };
+
+    themes = mkOption {
+      type        = types.attrsOf (types.either (pkgs.formats.json {}).type types.path);
+      default     = {};
+      description = "Custom colour themes.";
+    };
+  };
+}

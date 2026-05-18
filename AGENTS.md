@@ -46,7 +46,51 @@ The two structural pillars are:
 
 ## 3. Global Conventions
 
-### 3.1 `config.nix` — The Identity File
+### 3.1 `.envrc` & direnv
+
+The repository root contains an `.envrc` file.  **direnv** is enabled by
+default (`my.programs.direnv.enable = true`) so the environment auto-loads
+whenever you `cd` into the project.
+
+#### `.envrc` rules
+
+* **Base line:** `.envrc` must start with `use flake` so the flake devShell
+  (tools, formatters, Nix itself) is always available.
+* **No plaintext secrets.**  Never commit API keys, tokens, or passwords into
+  `.envrc`.  If a secret is needed at development time, read it from an agenix
+  path (`/run/agenix/…`) or use the `secretFiles` mechanism provided by the
+  direnv module (see `modules/home/direnv.nix`).
+* **Runtime-only exports are OK.**  Exporting variables that point to agenix
+  paths (e.g. `GCLOUD_SERVICE_ACCOUNT_KEY_PATH=/run/agenix/gcloud-auth`) is
+  acceptable because the sensitive data lives outside the repo.
+* **Keep it minimal.**  If a module needs environment variables for its own
+  development workflow, prefer wiring them through the module system (options +
+  generated files) rather than bloating the root `.envrc`.
+
+#### direnv module (`modules/home/direnv.nix`)
+
+The home-manager direnv module provides a `secretFiles` option that generates
+sourced scripts under `~/.config/direnv/secrets/`:
+
+```nix
+my.programs.direnv.secretFiles = {
+  my-api = {
+    vars  = { MY_API_TOKEN = config.age.secrets.my-api-token.path; };
+    paths = { MY_KEY_PATH  = config.age.secrets.my-key.path; };
+  };
+};
+```
+
+These scripts are loaded by `.envrc` or by per-directory `.envrc` files via:
+
+```bash
+source ~/.config/direnv/secrets/my-api.sh
+```
+
+**Agent rule:** When adding a new secret-dependent tool, use `secretFiles`
+instead of editing `.envrc` directly.
+
+### 3.2 `config.nix` — The Identity File
 
 `config.nix` in the repo root contains the **single source of truth** for user
 identity, tailnet hosts, and Ollama model metadata.  It is imported by
@@ -59,7 +103,7 @@ identity, tailnet hosts, and Ollama model metadata.  It is imported by
 **Agent rule:** Never hard-code user-specific strings inside modules;
 reference `flake.config.me.<field>` or `config.me.<field>` instead.
 
-### 3.2 Systems & Platforms
+### 3.3 Systems & Platforms
 
 Supported systems (from `flake.nix`):
 
@@ -69,7 +113,7 @@ systems = [ "x86_64-linux" "aarch64-linux" "aarch64-darwin" ];
 
 `perSystem` overlays and packages must be safe for all three.
 
-### 3.3 Overlays
+### 3.4 Overlays
 
 All overlays live in `overlays/default.nix` (or sidecars imported from there).
 They are composed **once** in `flake.nix` and passed to every `pkgs` instance:

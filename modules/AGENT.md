@@ -242,7 +242,64 @@ Any caveats, upstream links, or host-specific quirks.
 
 ---
 
-## 6. The `my.*` Namespace
+## 6. `.envrc` & Development Environment
+
+Modules **must not** directly create or modify the repository root `.envrc`.
+That file is a global, human-managed concern.  However, modules that introduce
+tools requiring environment variables should follow these conventions.
+
+### 6.1 Document Required Variables
+
+List any runtime environment variables a module expects in its `README.md`:
+
+```markdown
+## Development Environment
+
+When working with this module locally you may need:
+
+| Variable | Source | Purpose |
+|----------|--------|---------|
+| `MY_API_TOKEN` | `config.age.secrets.my-api.path` | API authentication |
+```
+
+### 6.2 Use the `secretFiles` Mechanism
+
+If a module needs secrets available in a development shell, it should expose a
+`secretFiles` stanza through the existing `direnv` module rather than bloating
+`.envrc`:
+
+```nix
+# In the module's config.nix or home.nix
+my.programs.direnv.secretFiles.my-module = {
+  vars = {
+    MY_API_TOKEN = config.age.secrets.my-api-token.path;
+  };
+  paths = {
+    MY_KEY_PATH = config.age.secrets.my-key.path;
+  };
+};
+```
+
+This generates `~/.config/direnv/secrets/my-module.sh` which can be sourced
+from `.envrc` or from per-directory `.envrc` files.
+
+**Agent rule:** Never hard-code secret values or secret file paths into the
+root `.envrc`.  Always route secret injection through `my.programs.direnv.secretFiles`.
+
+### 6.3 Per-Directory `.envrc`
+
+If a module manages a sub-project (e.g. `packages/complex-app/`) that needs its
+own environment, a `.envrc` inside that directory is acceptable.  It should
+still follow the same rules:
+
+* Start with `use flake` (or `use flake ..` / `use flake ../../#devShell`) if
+  a devShell is available.
+* Source secrets from `~/.config/direnv/secrets/` rather than inlining them.
+* Never commit plaintext secrets.
+
+---
+
+## 7. The `my.*` Namespace
 
 All custom options **must** live under `my.*`.  The canonical structure is:
 
@@ -259,7 +316,7 @@ my
 **Agent rule:** Never declare `services.foo` or `programs.bar` directly in a
 module under `modules/`.  Always nest under `options.my`.
 
-### 6.1 Option Naming
+### 7.1 Option Naming
 
 * Use camelCase: `my.services.natShare.wanInterface`
 * Booleans: `my.services.<name>.enable`
@@ -268,7 +325,7 @@ module under `modules/`.  Always nest under `options.my`.
 
 ---
 
-## 7. Import Topology
+## 8. Import Topology
 
 `default.nix` must use **explicit** imports.  No directory scanning.
 
@@ -286,7 +343,7 @@ imports = [
 imports = lib.mapAttrsToList (n: _: ./${n}) (builtins.readDir ./.);
 ```
 
-### 7.1 Cross-Module Dependencies
+### 8.1 Cross-Module Dependencies
 
 If module `A` depends on options from module `B`, import `B` at the
 configuration level (e.g. in `modules/nixos/default.nix`) rather than inside
@@ -294,7 +351,7 @@ configuration level (e.g. in `modules/nixos/default.nix`) rather than inside
 
 ---
 
-## 8. Flat-File → Directory Migration
+## 9. Flat-File → Directory Migration
 
 If a module currently exists as a flat file (`modules/nixos/foo.nix`), migrate
 it to a directory when any of the following become true:
@@ -316,7 +373,7 @@ it to a directory when any of the following become true:
 
 ---
 
-## 9. Failure Modes (Hard Gates)
+## 10. Failure Modes (Hard Gates)
 
 A change will be rejected if it violates any of the following:
 
@@ -333,7 +390,7 @@ A change will be rejected if it violates any of the following:
 
 ---
 
-## 10. Design Philosophy
+## 11. Design Philosophy
 
 This module system optimises for **Machine-Readable Intent** and **Human
 Discoverability**.  Every module should be understandable by:
