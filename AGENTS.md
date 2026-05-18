@@ -138,13 +138,20 @@ in:
 
 > **`modules/AGENT.md`**
 
+The file now contains **per-category directives** (Section 3) for each module
+type — NixOS, nix-darwin, Home Manager, and flake-parts — because the
+subsystems, allowed options, and testing strategies differ significantly.
+
 Key take-aways:
 
-* All custom options MUST live under the `my.*` namespace.
+* All custom options MUST live under the `my.*` namespace, with one exception:
+  flake-parts identity/config options (`me`, `tailnet`, `ollamaModels`).
 * Every self-contained module under `modules/<category>/<name>/` should contain:
   `default.nix`, `meta.nix`, `tests.nix`, `README.md`.
 * Side-car files must be **explicitly** imported in `default.nix`; no directory
   scanning.
+* `modules/flake-parts/README.md` documents the flake-parts layer and how to
+  add new flake-level modules.
 
 ---
 
@@ -191,6 +198,58 @@ a module via `config.age.secrets.<name>.path`.
 
 ---
 
+## 7.1 Testing — `my.testing`
+
+The `my.testing` flake-parts module (in `modules/flake-parts/testing.nix`)
+generates a `test` CLI and per-host `test-<name>` packages.  Enable it in a
+host configuration:
+
+```nix
+my.testing.enable = true;
+```
+
+### Commands
+
+| Command | Description |
+|---------|-------------|
+| `nix run .#test list` | List all available host configurations |
+| `nix run .#test summary` | Show brief summary of each host |
+| `nix run .#test run` | Run test suite for all hosts |
+| `nix run .#test run <host>` | Run test suite for a specific host |
+| `nix run .#test dry-run` | Evaluate all configurations without building |
+| `nix run .#test dry-run <host>` | Evaluate a single host configuration |
+| `nix run .#test show <host>` | Print the evaluated system closure path |
+
+### What each `test-<host>` package checks
+
+| Level | Check |
+|-------|-------|
+| L0 | System closure integrity (`bin`, `etc`, `lib`, `sbin` present) |
+| L1 | systemd unit declarations — counts services, warns on missing `ExecStart` binaries |
+| L2 | Environment sanity — profile.d scripts, NixOS config files |
+| L3 | Broken symlink scan across the entire system closure |
+
+### Integration with nixos-unified
+
+The `test` CLI works alongside `nixos-unified`'s `nix run` workflow.  Instead
+of switching configurations and rebuilding, run:
+
+```bash
+# Evaluate without building
+nix run .#test dry-run laptop
+
+# Run lightweight closure checks (no build needed beyond evaluation)
+nix run .#test run laptop
+
+# Run all hosts
+nix run .#test run
+```
+
+**Agent rule:** Always enable `my.testing` in host configurations that
+introduce new services, daemons, or system-level changes.
+
+---
+
 ## 8. Style & Lint
 
 * Use `nixpkgs-fmt` (enforced by `nix fmt`).
@@ -203,9 +262,14 @@ a module via `config.age.secrets.<name>.path`.
 
 ## 9. Subdirectory Policies
 
-The following subdirectories are known to carry (or will soon carry) their own
-`AGENT.md` files:
+The following subdirectories carry their own `AGENT.md` (or equivalent)
+policy docs.  When they conflict, the **most specific** `AGENT.md` wins.
 
-* `modules/AGENT.md` — module structure, `my.*` namespace, `meta.nix`, `tests.nix`
+* **`modules/AGENT.md`** — universal module structure, `my.*` namespace,
+  `meta.nix`, `tests.nix`, and per-type directives (NixOS, darwin, home,
+  flake-parts).
+* **`modules/flake-parts/README.md`** — flake-parts layer documentation:
+  identity options, `perSystem` vs `flake.*` outputs, and conventions for
+  adding new flake-level modules.
 
-When working inside a subdirectory, read its local `AGENT.md` first.
+When working inside a subdirectory, read its local policy first.

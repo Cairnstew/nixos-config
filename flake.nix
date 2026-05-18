@@ -100,10 +100,12 @@
     outputs = inputs@{ self, ... }:
     inputs.flake-parts.lib.mkFlake { inherit inputs; } {
       systems = [ "x86_64-linux" "aarch64-linux" "aarch64-darwin" ];
-      imports = (with builtins;
-        map
-          (fn: ./modules/flake-parts/${fn})
-          (attrNames (readDir ./modules/flake-parts)));
+      imports =
+        let
+          files = builtins.attrNames (builtins.readDir ./modules/flake-parts);
+          nixFiles = builtins.filter (fn: builtins.match ".*\\.nix" fn != null) files;
+        in
+          builtins.map (fn: ./modules/flake-parts/${fn}) nixFiles;
 
       perSystem = { lib, system, ... }: {
         # Make our overlay available to the devShell
