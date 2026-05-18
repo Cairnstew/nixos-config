@@ -53,6 +53,13 @@ in
       args = [ "run" "./.#mcp-nixos" ];
       description = "Nix/NixOS operations - eval, build, flake check, search";
     };
+    
+    # Documentation search MCP server
+    mcp.servers.nixos-docs = {
+      command = "nix";
+      args = [ "run" "./.#mcp-nixos-docs" ];
+      description = "Search nixos-unified.org documentation";
+    };
 
     # Generate packages per system
     perSystem = { system, pkgs, ... }:

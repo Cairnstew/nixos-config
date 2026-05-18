@@ -179,20 +179,6 @@ in {
       '';
     };
 
-    deepinfra = {
-      keyFile = mkOpenAiKeyFileOpt ''
-        Path to a file containing a DeepInfra API token.
-        When set, the DeepInfra provider is registered.
-
-        Get a token at https://deepinfra.com/dash — API Keys section.
-
-        Recommended models:
-          - deepinfra/deepseek-ai/DeepSeek-V3.2
-          - deepinfra/meta-llama/Llama-4-Maverick
-          - deepinfra/Qwen/Qwen3-235B-A22B
-      '';
-    };
-
     clarifai = {
       patFile = mkOpenAiKeyFileOpt ''
         Path to a file containing a Clarifai Personal Access Token (PAT).
@@ -276,16 +262,45 @@ in {
       description = "Shorthand for <option>settings.model</option>. Takes highest priority — overrides any auto-selected default.";
     };
 
-    autoshare = mkOption {
-      type        = types.nullOr types.bool;
+    share = mkOption {
+      type        = types.nullOr (types.enum [ "manual" "auto" "disabled" ]);
       default     = null;
-      description = "Shorthand for <option>settings.autoshare</option>.";
+      example     = "auto";
+      description = "Shorthand for \u003coption\u003esettings.share\u003c/option\u003e. Controls session sharing behavior: manual, auto, or disabled.";
     };
 
     autoupdate = mkOption {
+      type        = types.nullOr (types.either types.bool (types.enum [ "notify" ]));
+      default     = null;
+      example     = "notify";
+      description = "Shorthand for \u003coption\u003esettings.autoupdate\u003c/option\u003e. Set to false to disable, \"notify\" to be notified without auto-installing.";
+    };
+
+    smallModel = mkOption {
+      type        = types.nullOr types.str;
+      default     = null;
+      example     = "anthropic/claude-haiku-4-5";
+      description = "Shorthand for \u003coption\u003esettings.small_model\u003c/option\u003e. A cheaper model for lightweight tasks like title generation.";
+    };
+
+    defaultAgent = mkOption {
+      type        = types.nullOr types.str;
+      default     = null;
+      example     = "plan";
+      description = "Shorthand for \u003coption\u003esettings.default_agent\u003c/option\u003e. Default agent to use when none is specified. Must be a primary agent (not a subagent).";
+    };
+
+    shell = mkOption {
+      type        = types.nullOr types.str;
+      default     = null;
+      example     = "zsh";
+      description = "Shorthand for \u003coption\u003esettings.shell\u003c/option\u003e. Shell used for the interactive terminal and agent tool calls.";
+    };
+
+    snapshot = mkOption {
       type        = types.nullOr types.bool;
       default     = null;
-      description = "Shorthand for <option>settings.autoupdate</option>.";
+      description = "Shorthand for \u003coption\u003esettings.snapshot\u003c/option\u003e. Whether to track file changes during agent operations (enables undo/revert).";
     };
 
     # ── Pass-throughs ────────────────────────────────────────────────────────
@@ -318,6 +333,36 @@ in {
       type        = types.attrsOf (types.either (pkgs.formats.json {}).type types.path);
       default     = {};
       description = "Custom colour themes.";
+    };
+
+    tui = mkOption {
+      type        = (pkgs.formats.json {}).type;
+      default     = {};
+      example     = {
+        theme = "system";
+        keybinds = { leader = "alt+b"; };
+        scroll_speed = 3;
+      };
+      description = "TUI-specific configuration written to \u0024XDG_CONFIG_HOME/opencode/tui.json.";
+    };
+
+    skills = mkOption {
+      type        = types.attrsOf (types.either types.lines (types.either types.path types.str));
+      default     = {};
+      description = "Custom skills. See https://opencode.ai/docs/skills/.";
+    };
+
+    tools = mkOption {
+      type        = types.attrsOf (types.either types.lines types.path);
+      default     = {};
+      description = "Custom tools. See https://opencode.ai/docs/tools/.";
+    };
+
+    extraPackages = mkOption {
+      type        = types.listOf types.package;
+      default     = [];
+      example     = lib.literalExpression "[ pkgs.uv pkgs.nodejs ]";
+      description = "Extra packages added to the PATH available to OpenCode.";
     };
   };
 }

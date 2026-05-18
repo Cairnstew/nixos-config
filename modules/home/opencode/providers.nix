@@ -57,7 +57,9 @@ let
   mistralProviderSettings   = mkSdkProvider "mistral"   "@ai-sdk/mistral"    "MISTRAL_API_KEY"               cfg.mistral.keyFile;
   xaiProviderSettings       = mkSdkProvider "xai"       "@ai-sdk/xai"        "XAI_API_KEY"                   cfg.xai.keyFile;
 
-  # ── OpenAI-compatible providers (file-substitution keys) ────────────────
+  # ── OpenAI-compatible providers (file-substitution keys) ─────────────────
+  # Uses {file:...} substitution because opencode has a known bug where
+  # {env:...} does not expand for apiKey in openai-compatible providers.
   mkOpenAiProvider = name: baseURL: keyFile:
     optionalAttrs (keyFile != null) {
       provider.${name} = {
@@ -68,11 +70,10 @@ let
       };
     };
 
-  togetherProviderSettings   = mkOpenAiProvider "together"   "https://api.together.xyz/v1"          cfg.together.keyFile;
-  openrouterProviderSettings = mkOpenAiProvider "openrouter" "https://openrouter.ai/api/v1"         cfg.openrouter.keyFile;
-  fireworksProviderSettings  = mkOpenAiProvider "fireworks"  "https://api.fireworks.ai/inference/v1" cfg.fireworks.keyFile;
-  cerebrasProviderSettings   = mkOpenAiProvider "cerebras"   "https://api.cerebras.ai/v1"           cfg.cerebras.keyFile;
-  deepinfraProviderSettings  = mkOpenAiProvider "deepinfra"  "https://api.deepinfra.com/v1/openai"  cfg.deepinfra.keyFile;
+  togetherProviderSettings   = mkOpenAiProvider "together"   "https://api.together.xyz/v1"           cfg.together.keyFile;
+  openrouterProviderSettings = mkOpenAiProvider "openrouter" "https://openrouter.ai/api/v1"          cfg.openrouter.keyFile;
+  fireworksProviderSettings  = mkOpenAiProvider "fireworks"  "https://api.fireworks.ai/inference/v1"  cfg.fireworks.keyFile;
+  cerebrasProviderSettings   = mkOpenAiProvider "cerebras"   "https://api.cerebras.ai/v1"            cfg.cerebras.keyFile;
   clarifaiProviderSettings   = mkOpenAiProvider "clarifai"   "https://api.clarifai.com/v2/ext/openai/v1" cfg.clarifai.patFile;
 
   # ── Azure OpenAI ────────────────────────────────────────────────────────
@@ -80,16 +81,15 @@ let
     (cfg.azure.keyFile != null && cfg.azure.endpoint != null && cfg.azure.deployment != null)
     {
       provider.azure = {
-        npm             = "@ai-sdk/azure";
-        name            = "Azure OpenAI";
-        options.baseURL = cfg.azure.endpoint;
-        options.apiKey  = "{file:${cfg.azure.keyFile}}";
+        npm                = "@ai-sdk/azure";
+        name               = "Azure OpenAI";
+        options.baseURL    = cfg.azure.endpoint;
+        options.apiKey     = "{file:${cfg.azure.keyFile}}";
         options.deployment = cfg.azure.deployment;
       };
     };
 
   # ── Merge all provider settings ─────────────────────────────────────────
-  # Use foldl' with recursiveUpdate to properly merge nested attrsets
   allProviderSettings = lib.foldl' lib.recursiveUpdate {} [
     ollamaProviderSettings
     openaiProviderSettings
@@ -102,7 +102,6 @@ let
     openrouterProviderSettings
     fireworksProviderSettings
     cerebrasProviderSettings
-    deepinfraProviderSettings
     clarifaiProviderSettings
     azureProviderSettings
   ];

@@ -18,4 +18,5 @@ self: super: {
 
   # MCP Servers
   mcp-nixos = self.callPackage "${packages}/mcp-nixos" { };
+  mcp-nixos-docs = self.callPackage "${packages}/mcp-nixos-docs" { };
 }

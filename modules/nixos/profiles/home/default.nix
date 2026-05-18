@@ -30,7 +30,7 @@ in
       bash.enable = lib.mkDefault true;
       zsh.enable = lib.mkDefault true;
       direnv.enable = lib.mkDefault true;
-      gh.enable = lib.mkDefault true;
+      gh.enable = lib.mkDefault (config.age.secrets ? "github-token");
       ghostty.enable = lib.mkDefault true;
       just.enable = lib.mkDefault true;
       yazi.enable = lib.mkDefault true;
