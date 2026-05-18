@@ -35,15 +35,30 @@ in
     battery.enable = lib.mkEnableOption "battery/power management";
   };
 
-  # Assertions to prevent conflicting profiles
-  config.assertions = [
+  # Connect profiles to actual modules and assertions
+  config = lib.mkMerge [
+    # GNOME desktop profile
+    (lib.mkIf cfg.desktop.gnome.enable {
+      my.desktop.gnome.enable = true;
+    })
+
+    # Plasma desktop profile
+    (lib.mkIf cfg.desktop.plasma.enable {
+      my.services.plasmaX11.enable = true;
+    })
+
+    # Assertions to prevent conflicting profiles
     {
-      assertion = !(cfg.gpu.mesa.enable && cfg.gpu.nvidia.enable);
-      message = "Cannot enable both Mesa and NVIDIA GPU profiles.";
-    }
-    {
-      assertion = !(cfg.desktop.gnome.enable && cfg.desktop.plasma.enable);
-      message = "Cannot enable both GNOME and Plasma desktop profiles.";
+      assertions = [
+        {
+          assertion = !(cfg.gpu.mesa.enable && cfg.gpu.nvidia.enable);
+          message = "Cannot enable both Mesa and NVIDIA GPU profiles.";
+        }
+        {
+          assertion = !(cfg.desktop.gnome.enable && cfg.desktop.plasma.enable);
+          message = "Cannot enable both GNOME and Plasma desktop profiles.";
+        }
+      ];
     }
   ];
 }

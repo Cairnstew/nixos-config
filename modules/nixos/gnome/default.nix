@@ -1,25 +1,31 @@
+# modules/nixos/gnome/default.nix
+# GNOME Desktop Environment configuration
 { flake, config, pkgs, lib, ... }:
 let
-  inherit (flake) inputs;
-  inherit (inputs) self;
+  cfg = config.my.desktop.gnome;
   homeModule = import ./home.nix;
 in
 {
   imports = [
-    {
-      home-manager.sharedModules = [ homeModule ];
-    }
+    # Share the home module via home-manager
+    { home-manager.sharedModules = [ homeModule ]; }
   ];
 
-  options.systemModules.gnome.enable = lib.mkEnableOption "GNOME desktop environment";
+  # ── Options ────────────────────────────────────────────────────────────────
+  options.my.desktop.gnome = {
+    enable = lib.mkEnableOption "GNOME desktop environment with GDM display manager";
+  };
 
-  config = lib.mkIf config.systemModules.gnome.enable {
+  # ── Configuration ─────────────────────────────────────────────────────────
+  config = lib.mkIf cfg.enable {
+    # Enable home module for the user
     home-manager.users.${flake.config.me.username}.my.desktop.gnome.enable = true;
-    # ── Filesystems / removable media ─────────────────────────────────────────
-    services.gvfs.enable   = true;
+
+    # ── Filesystems / removable media ────────────────────────────────────────
+    services.gvfs.enable = true;
     services.devmon.enable = true;
 
-    # ── Networking (connectivity indicator in top bar) ────────────────────────
+    # ── Networking ───────────────────────────────────────────────────────────
     networking.networkmanager.enable = true;
 
     # ── Fonts ─────────────────────────────────────────────────────────────────
@@ -34,12 +40,12 @@ in
       ];
       fontconfig.defaultFonts = {
         sansSerif = [ "Inter" ];
-        monospace  = [ "JetBrains Mono" ];
-        emoji      = [ "Noto Color Emoji" ];
+        monospace = [ "JetBrains Mono" ];
+        emoji = [ "Noto Color Emoji" ];
       };
     };
 
-    # ── Excluded GNOME bloat ───────────────────────────────────────────────────
+    # ── Excluded GNOME packages ──────────────────────────────────────────────
     environment.gnome.excludePackages = [
       pkgs.gnome-tour
       pkgs.gnome-photos
@@ -57,7 +63,7 @@ in
       pkgs.gnome-initial-setup
     ];
 
-    # ── System packages ────────────────────────────────────────────────────────
+    # ── System packages ───────────────────────────────────────────────────────
     environment.systemPackages = with pkgs; [
       gnome-tweaks
       adwaita-icon-theme
@@ -67,34 +73,31 @@ in
       kdePackages.breeze
     ];
 
-    # ── dconf (required for home-manager dconf settings to apply) ─────────────
+    # ── dconf (required for home-manager dconf settings) ──────────────────────
     programs.dconf.enable = true;
 
-    # ── XDG portal (needed by Flatpak, screen sharing, file pickers) ──────────
+    # ── XDG portal ────────────────────────────────────────────────────────────
     xdg.portal = {
       enable = true;
       extraPortals = [ pkgs.xdg-desktop-portal-gnome ];
     };
 
-    # ── Display manager & desktop ─────────────────────────────────────────────
-    services = {
-      xserver.displayManager.gdm = {
-        enable      = true;
-        autoSuspend = false;
-      };
+    # ── Display manager & desktop ────────────────────────────────────────────
+    # Use new NixOS option names (24.05+)
+    services.displayManager.gdm = {
+      enable = true;
+      autoSuspend = false;
+    };
 
-      xserver.desktopManager.gnome.enable = true;
+    services.desktopManager.gnome.enable = true;
 
-      gnome = {
-        gnome-keyring.enable = true;
-
-        core-apps.enable            = false;
-        core-developer-tools.enable = false;
-        games.enable                = false;
-
-        localsearch.enable = false;
-        tinysparql.enable  = false;
-      };
+    services.gnome = {
+      gnome-keyring.enable = true;
+      core-apps.enable = false;
+      core-developer-tools.enable = false;
+      games.enable = false;
+      localsearch.enable = false;
+      tinysparql.enable = false;
     };
 
     security.pam.services.gdm.enableGnomeKeyring = true;
