@@ -65,6 +65,7 @@ in
       {
         my.programs.opencode = {
           enable = lib.mkDefault true;
+          enableLsp = lib.mkDefault true;
           clarifai.patFile = if config.age.secrets ? "clarifai-pat"
                               then config.age.secrets."clarifai-pat".path
                               else null;

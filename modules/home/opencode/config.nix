@@ -120,8 +120,8 @@ in {
         tui                  = cfg.tui;
         skills               = cfg.skills;
         tools                = cfg.tools;
-        extraPackages        = cfg.extraPackages;
-        settings             = mergedSettings;
+        extraPackages        = cfg.extraPackages ++ lib.optionals cfg.enableLsp [ pkgs.nixd ];
+        settings             = mergedSettings // lib.optionalAttrs cfg.enableLsp { lsp = true; };
       };
     }
 

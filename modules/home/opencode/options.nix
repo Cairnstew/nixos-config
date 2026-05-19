@@ -483,5 +483,16 @@ in {
       example     = lib.literalExpression "[ pkgs.mcp-nixos pkgs.nodejs ]";
       description = "Extra packages added to the PATH available to OpenCode.";
     };
+
+    enableLsp = mkOption {
+      type        = types.bool;
+      default     = false;
+      example     = true;
+      description = ''
+        Enable Language Server Protocol (LSP) support in OpenCode.
+        When enabled, nixd is added to extraPackages for Nix LSP support.
+        See https://opencode.ai/docs/lsp/ for more information.
+      '';
+    };
   };
 }
