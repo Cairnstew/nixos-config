@@ -45,8 +45,11 @@ the terminal, with support for 14+ LLM providers.
 | `my.programs.opencode.azure.keyFile` | `null` | Path to Azure API key file |
 | `my.programs.opencode.azure.endpoint` | `null` | Azure OpenAI endpoint |
 | `my.programs.opencode.azure.deployment` | `null` | Azure deployment name |
+| `my.programs.opencode.mcp` | `{}` | MCP server configurations |
 
 ## Usage Example
+
+### Basic Setup
 
 ```nix
 my.programs.opencode = {
@@ -56,6 +59,43 @@ my.programs.opencode = {
   ollamaModels = flake.config.ollamaModels;
 };
 ```
+
+### With MCP Servers
+
+```nix
+my.programs.opencode = {
+  enable = true;
+  model = "anthropic/claude-sonnet-4-20250514";
+  anthropic.keyFile = config.age.secrets.anthropic-key.path;
+  
+  # MCP servers using uvx (fetched from PyPI)
+  mcp = {
+    nixos = {
+      enabled = true;
+      type = "local";
+      command = [ "uvx" "mcp-nixos" ];
+    };
+    nixos-docs = {
+      enabled = true;
+      type = "local";
+      command = [ "uvx" "--from" "mcp-nixos" "mcp-nixos-docs" ];
+    };
+  };
+};
+```
+
+### MCP Configuration Format
+
+MCP servers are configured using opencode's native format under the `mcp` key:
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `enabled` | `boolean` | Whether the server is active |
+| `type` | `"local"` or `"remote"` | Server type |
+| `command` | `list of string` | Command and arguments to run the server |
+| `environment` | `attrsOf string` | (Optional) Environment variables |
+
+See https://opencode.ai/docs/mcp-servers for more details.
 
 ## Development Environment
 

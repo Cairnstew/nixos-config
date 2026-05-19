@@ -47,20 +47,6 @@ in
   };
 
   config = {
-    # Always provide the nixos MCP server
-    mcp.servers.nixos = {
-      command = "nix";
-      args = [ "run" "./.#mcp-nixos" ];
-      description = "Nix/NixOS operations - eval, build, flake check, search";
-    };
-    
-    # Documentation search MCP server
-    mcp.servers.nixos-docs = {
-      command = "nix";
-      args = [ "run" "./.#mcp-nixos-docs" ];
-      description = "Search nixos-unified.org documentation";
-    };
-
     # Generate packages per system
     perSystem = { system, pkgs, ... }:
       let
@@ -75,13 +61,6 @@ in
       in
       {
         packages.mcp-config = configFile;
-
-        apps.mcp-nixos = {
-          type = "app";
-          program = "${pkgs.mcp-nixos}/bin/mcp-nixos";
-        };
-
-        # mcp-nixos package is auto-wired from packages/mcp-nixos/
       };
   };
 }

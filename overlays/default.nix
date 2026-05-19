@@ -16,7 +16,4 @@ self: super: {
   #omnix = inputs.omnix.packages.${self.system}.default;
   git-merge-and-delete = self.callPackage "${packages}/git-merge-and-delete.nix" { };
 
-  # MCP Servers
-  mcp-nixos = self.callPackage "${packages}/mcp-nixos" { };
-  mcp-nixos-docs = self.callPackage "${packages}/mcp-nixos-docs" { };
 }

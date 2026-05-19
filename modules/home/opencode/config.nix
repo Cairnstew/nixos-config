@@ -5,14 +5,39 @@ let
     mkIf
     mkMerge
     recursiveUpdate
+    filterAttrs
+    mapAttrs
     ;
 
   cfg = config.my.programs.opencode;
   providers = import ./providers.nix { inherit lib cfg; };
 
-  # Deep merge settings with provider settings
+  # Transform agent config to opencode.json format
+  # Filter out null values for optional fields
+  mkAgentConfig = agentCfg: {
+    model = agentCfg.model;
+    mode  = agentCfg.mode;
+  }
+  // (lib.optionalAttrs (agentCfg.temperature != null) { temperature = agentCfg.temperature; })
+  // (lib.optionalAttrs (agentCfg.steps != null) { steps = agentCfg.steps; })
+  // (lib.optionalAttrs (agentCfg.permission != null) {
+    permission = filterAttrs (_: v: v != null) {
+      edit = agentCfg.permission.edit;
+      bash = agentCfg.permission.bash;
+    };
+  });
+
+  agentSettings = lib.optionalAttrs (cfg.agents != {}) {
+    agent = mapAttrs (_: mkAgentConfig) cfg.agents;
+  };
+
+  # Deep merge settings with provider settings, mcp settings, and agent settings
   # Use recursiveUpdate to merge nested attrsets properly
-  mergedSettings = recursiveUpdate cfg.settings providers.allProviderSettings;
+  settingsWithProviders = recursiveUpdate cfg.settings providers.allProviderSettings;
+  settingsWithMcp = recursiveUpdate settingsWithProviders (
+    lib.optionalAttrs (cfg.mcp != {}) { inherit (cfg) mcp; }
+  );
+  mergedSettings = recursiveUpdate settingsWithMcp agentSettings;
 
 in {
   config = mkIf cfg.enable (mkMerge [
@@ -25,7 +50,6 @@ in {
         enableMcpIntegration = cfg.enableMcpIntegration;
         context              = cfg.context;
         commands             = cfg.commands;
-        agents               = cfg.agents;
         themes               = cfg.themes;
         tui                  = cfg.tui;
         skills               = cfg.skills;

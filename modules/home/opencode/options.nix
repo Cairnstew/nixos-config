@@ -339,9 +339,61 @@ in {
     };
 
     agents = mkOption {
-      type        = types.attrsOf (types.either types.lines types.path);
+      type        = types.attrsOf (types.submodule {
+        options = {
+          model = mkOption {
+            type        = types.str;
+            example     = "anthropic/claude-sonnet-4-20250514";
+            description = "The model to use for this agent.";
+          };
+          mode = mkOption {
+            type        = types.enum [ "primary" "subagent" ];
+            example     = "primary";
+            description = "Agent mode: primary or subagent.";
+          };
+          temperature = mkOption {
+            type        = types.nullOr types.float;
+            default     = null;
+            example     = 0.1;
+            description = "Temperature for the agent (optional).";
+          };
+          steps = mkOption {
+            type        = types.nullOr types.ints.positive;
+            default     = null;
+            example     = 10;
+            description = "Number of steps for the agent (optional).";
+          };
+          permission = mkOption {
+            type        = types.nullOr (types.submodule {
+              options = {
+                edit = mkOption {
+                  type        = types.nullOr (types.enum [ "allow" "deny" "ask" ]);
+                  default     = null;
+                  description = "Permission for file edits.";
+                };
+                bash = mkOption {
+                  type        = types.nullOr (types.enum [ "allow" "deny" "ask" ]);
+                  default     = null;
+                  description = "Permission for bash commands.";
+                };
+              };
+            });
+            default     = null;
+            description = "Permission settings for the agent.";
+          };
+        };
+      });
       default     = {};
-      description = "Custom agents.";
+      example     = {
+        plan = {
+          model       = "opencode-go/qwen3.5-plus";
+          mode        = "primary";
+          temperature = 0.1;
+          steps       = 10;
+          permission  = { edit = "deny"; bash = "deny"; };
+        };
+      };
+      description = "Agent configurations. Each key is an agent name.";
     };
 
     themes = mkOption {
@@ -371,6 +423,28 @@ in {
       type        = types.attrsOf (types.either types.lines types.path);
       default     = {};
       description = "Custom tools. See https://opencode.ai/docs/tools/.";
+    };
+
+    mcp = mkOption {
+      type        = (pkgs.formats.json {}).type;
+      default     = {};
+      example     = {
+        nixos = {
+          enabled = true;
+          type = "local";
+          command = [ "uvx" "mcp-nixos" ];
+        };
+      };
+      description = ''
+        MCP (Model Context Protocol) server configurations.
+        See https://opencode.ai/docs/mcp-servers.
+
+        Each server should have:
+        - enabled: Boolean to enable/disable the server
+        - type: "local" or "remote"
+        - command: Array of command and arguments (e.g., [ "uvx" "mcp-nixos" ])
+        - environment: (optional) Environment variables for the server
+      '';
     };
 
     extraPackages = mkOption {

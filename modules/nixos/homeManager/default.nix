@@ -83,36 +83,51 @@ in
                   then lib.mkDefault "meta-llama/Meta-Llama-3.1-8B-Instruct"
               else lib.mkDefault null;
           enableMcpIntegration = lib.mkDefault true;
-          
-          # MCP Servers - including mcp-nixos and documentation search
-          settings.mcp = lib.mkDefault {
+
+          # MCP Servers - using uvx for direct PyPI installation
+          mcp = lib.mkDefault {
             nixos = {
               enabled = true;
               type = "local";
-              command = [ "nix" "run" "${flake.inputs.self}#mcp-nixos" ];
+              command = [ "uvx" "mcp-nixos" ];
             };
             nixos-docs = {
               enabled = true;
               type = "local";
-              command = [ "nix" "run" "${flake.inputs.self}#mcp-nixos-docs" ];
+              command = [ "uvx" "--from" "mcp-nixos" "mcp-nixos-docs" ];
             };
           };
           
-          # Custom agents with documentation awareness
-          agents.nixos-unified = lib.mkDefault ''
-            # NixOS Unified Expert
-            
-            You are an expert in NixOS Unified configurations. You have access to:
-            - The mcp-nixos tool for Nix operations
-            - The mcp-nixos-docs tool for searching nixos-unified.org documentation
-            
-            When helping with configuration:
-            1. Use mcp-nixos to check flake validity and explore options
-            2. Use mcp-nixos-docs to search documentation when needed
-            3. Follow the AGENT.md conventions in this repository
-            4. Prefer profiles (my.profiles.*) over manual module imports
-            5. Keep configurations minimal and declarative
-          '';
+          # Structured agents configuration
+          agents = {
+            plan = {
+              model = "opencode-go/qwen3.5-plus";
+              mode = "primary";
+              temperature = 0.1;
+              steps = 10;
+              permission = {
+                edit = "deny";
+                bash = "deny";
+              };
+            };
+            explore = {
+              model = "opencode-go/kimi-k2.5";
+              mode = "subagent";
+              temperature = 0.1;
+              permission = {
+                edit = "deny";
+                bash = "deny";
+              };
+            };
+            build = {
+              model = "opencode-go/kimi-k2.5";
+              mode = "primary";
+              permission = {
+                edit = "allow";
+                bash = "allow";
+              };
+            };
+          };
         };
       }
       
