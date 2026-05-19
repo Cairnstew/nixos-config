@@ -7,6 +7,7 @@ let
     recursiveUpdate
     filterAttrs
     mapAttrs
+    optionalString
     ;
 
   cfg = config.my.programs.opencode;
@@ -38,6 +39,71 @@ let
     lib.optionalAttrs (cfg.mcp != {}) { inherit (cfg) mcp; }
   );
   mergedSettings = recursiveUpdate settingsWithMcp agentSettings;
+
+  # ── Auth.json entries for ALL providers ────────────────────────────────────
+  # Format matches what `/connect` command writes:
+  # { "provider-name": { "type": "api", "key": "actual-key" } }
+
+  # Build list of all providers that need auth.json entries
+  allAuthProviders = lib.filter (p: p.keyFile != null) [
+    # First-class providers
+    { name = "opencode-go";  keyFile = cfg.opencode-go.keyFile; }
+    { name = "opencode-zen"; keyFile = cfg.opencode-zen.keyFile; }
+    { name = "anthropic";    keyFile = cfg.anthropic.keyFile; }
+    { name = "groq";         keyFile = cfg.groq.keyFile; }
+    { name = "openai";       keyFile = cfg.openai.keyFile; }
+    { name = "google";       keyFile = cfg.google.keyFile; }
+    { name = "mistral";      keyFile = cfg.mistral.keyFile; }
+    { name = "xai";          keyFile = cfg.xai.keyFile; }
+
+    # OpenAI-compatible providers
+    { name = "deepinfra";    keyFile = cfg.deepinfra.keyFile; }
+    { name = "clarifai";     keyFile = cfg.clarifai.patFile; }
+    { name = "together";     keyFile = cfg.together.keyFile; }
+    { name = "fireworks";    keyFile = cfg.fireworks.keyFile; }
+    { name = "cerebras";     keyFile = cfg.cerebras.keyFile; }
+    { name = "openrouter";   keyFile = cfg.openrouter.keyFile; }
+
+    # Azure
+    { name = "azure";        keyFile = cfg.azure.keyFile; }
+  ];
+
+  hasAuthProviders = allAuthProviders != [];
+
+  # Script to write auth.json, merging with existing entries
+  # Uses jq to merge so existing providers (e.g., from /connect) are preserved
+  writeAuthJsonScript = pkgs.writeShellScript "opencode-write-auth-json" ''
+    set -euo pipefail
+
+    AUTH_DIR="$HOME/.local/share/opencode"
+    AUTH_FILE="$AUTH_DIR/auth.json"
+
+    mkdir -p "$AUTH_DIR"
+
+    # Initialize with empty object if file doesn't exist
+    if [[ ! -f "$AUTH_FILE" ]]; then
+      echo '{}' > "$AUTH_FILE"
+    fi
+
+    # Merge each provider entry into auth.json
+    # Format: { "provider-name": { "type": "api", "key": "actual-key" } }
+    ${lib.concatMapStringsSep "\n" (p: ''
+      if [[ -r "${p.keyFile}" ]]; then
+        key_value=$(cat "${p.keyFile}" | tr -d '\n')
+        ${pkgs.jq}/bin/jq \
+          --arg name "${p.name}" \
+          --arg key "$key_value" \
+          '. * {($name): { "type": "api", "key": $key }}' \
+          "$AUTH_FILE" > "$AUTH_DIR/auth.json.tmp" && \
+          mv "$AUTH_DIR/auth.json.tmp" "$AUTH_FILE"
+      else
+        echo "Warning: Cannot read ${p.name} key file: ${p.keyFile}" >&2
+      fi
+    '') allAuthProviders}
+
+    # Ensure proper permissions
+    chmod 600 "$AUTH_FILE" 2>/dev/null || true
+  '';
 
 in {
   config = mkIf cfg.enable (mkMerge [
@@ -72,6 +138,14 @@ in {
     (mkIf (cfg.defaultAgent != null) { programs.opencode.settings.default_agent = cfg.defaultAgent; })
     (mkIf (cfg.shell        != null) { programs.opencode.settings.shell        = cfg.shell; })
     (mkIf (cfg.snapshot     != null) { programs.opencode.settings.snapshot     = cfg.snapshot; })
+
+    # ── Write ALL provider credentials to auth.json ───────────────────────────
+    (mkIf hasAuthProviders {
+      home.activation.opencodeAuthJson = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
+        verboseEcho "Setting up OpenCode auth.json for providers..."
+        ${writeAuthJsonScript}
+      '';
+    })
 
   ]);
 }

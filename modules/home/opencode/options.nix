@@ -208,17 +208,31 @@ in {
       '';
     };
 
+    # ── First-class providers (auth.json only, NOT in opencode.json provider block) ─
+
     opencode-go = {
-      keyFile = mkOpenAiKeyFileOpt ''
+      keyFile = mkKeyFileOpt ''
         Path to a file containing an OpenCode Go API key.
-        When set, the OpenCode Go provider is registered.
+        Credentials are written to ~/.local/share/opencode/auth.json.
+        OpenCode Go is a first-class provider and must NOT appear in
+        opencode.json's provider block.
 
         Get a key at https://opencode.ai/.
 
         Recommended models:
-          - opencode-go/qwen3.5-plus
           - opencode-go/kimi-k2.5
-          - opencode-go/deepseek-v3
+          - opencode-go/kimi-k2.6
+          - opencode-go/qwen3.5-plus
+          - opencode-go/deepseek-v4-flash
+      '';
+    };
+
+    opencode-zen = {
+      keyFile = mkKeyFileOpt ''
+        Path to a file containing an OpenCode Zen API key.
+        Credentials are written to ~/.local/share/opencode/auth.json.
+        OpenCode Zen is a first-class provider and must NOT appear in
+        opencode.json's provider block.
       '';
     };
 
