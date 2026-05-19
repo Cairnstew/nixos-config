@@ -34,6 +34,7 @@ let
     "groq.token"            = { name = "groq-token";           file = self + /secrets/ai/groq-token.age;           extra = { owner = me; }; };
     "clarifai.pat"          = { name = "clarifai-pat";         file = self + /secrets/ai/clarifai-pat.age;         extra = { owner = me; }; };
     "deepinfra.key"         = { name = "deepinfra-key";       file = self + /secrets/ai/deepinfra-key.age;         extra = { owner = me; }; };
+    "opencode.token"        = { name = "opencode-token";      file = self + /secrets/ai/opencode-token.age;        extra = { owner = me; }; };
   };
 
   # ── Helpers ─────────────────────────────────────────────────────────────────
