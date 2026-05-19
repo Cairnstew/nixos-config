@@ -68,12 +68,16 @@ in
           clarifai.patFile = if config.age.secrets ? "clarifai-pat" 
                               then config.age.secrets."clarifai-pat".path 
                               else null;
-          deepinfra.keyFile = if config.age.secrets ? "deepinfra-key" 
-                               then config.age.secrets."deepinfra-key".path 
+          deepinfra.keyFile = if config.age.secrets ? "deepinfra-key"
+                               then config.age.secrets."deepinfra-key".path
                                else null;
+          opencode-go.keyFile = if config.age.secrets ? "opencode-token"
+                                then config.age.secrets."opencode-token".path
+                                else null;
           groq.keyFile = if config.age.secrets ? "groq-token" 
                           then config.age.secrets."groq-token".path 
                           else null;
+          
           # Default to DeepInfra Kimi K2.5 when deepinfra key is available
       model = if (config.age.secrets ? "deepinfra-key")
                   then lib.mkDefault null

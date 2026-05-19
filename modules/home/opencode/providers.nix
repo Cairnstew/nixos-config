@@ -75,6 +75,7 @@ let
   fireworksProviderSettings  = mkOpenAiProvider "fireworks"  "https://api.fireworks.ai/inference/v1"  cfg.fireworks.keyFile;
   cerebrasProviderSettings   = mkOpenAiProvider "cerebras"   "https://api.cerebras.ai/v1"            cfg.cerebras.keyFile;
   clarifaiProviderSettings   = mkOpenAiProvider "clarifai"   "https://api.clarifai.com/v2/ext/openai/v1" cfg.clarifai.patFile;
+  opencodeGoProviderSettings = mkOpenAiProvider "opencode-go" "https://opencode.ai/zen/go/v1/chat/completions" cfg.opencode-go.keyFile;
 
   # ── Azure OpenAI ────────────────────────────────────────────────────────
   azureProviderSettings = optionalAttrs
@@ -103,6 +104,7 @@ let
     fireworksProviderSettings
     cerebrasProviderSettings
     clarifaiProviderSettings
+    opencodeGoProviderSettings
     azureProviderSettings
   ];
 

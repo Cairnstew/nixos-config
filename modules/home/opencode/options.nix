@@ -208,6 +208,20 @@ in {
       '';
     };
 
+    opencode-go = {
+      keyFile = mkOpenAiKeyFileOpt ''
+        Path to a file containing an OpenCode Go API key.
+        When set, the OpenCode Go provider is registered.
+
+        Get a key at https://opencode.ai/.
+
+        Recommended models:
+          - opencode-go/qwen3.5-plus
+          - opencode-go/kimi-k2.5
+          - opencode-go/deepseek-v3
+      '';
+    };
+
     # ── Azure OpenAI ────────────────────────────────────────────────────────
 
     azure = {
