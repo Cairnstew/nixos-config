@@ -1,0 +1,34 @@
+# Flake templates for starting new projects
+{ lib, ... }:
+let
+  # Helper to create a template entry from a directory
+  # The path is relative to the flake root
+  mkTemplate = name: description: {
+    path = ./../../templates/${name};
+    inherit description;
+  };
+in
+{
+  flake.templates = {
+    # Default template (used when running `nix flake init -t .#`)
+    default = mkTemplate "default" "Basic project structure with minimal flake.nix";
+
+    # Language-specific templates
+    rust = mkTemplate "rust" "Rust project with crane, cargo, and rust-overlay";
+    python = mkTemplate "python" "Python project with uv/poetry setup";
+    node = mkTemplate "node" "Node.js project with pnpm/npm setup";
+    go = mkTemplate "go" "Go project with module support";
+    zig = mkTemplate "zig" "Zig project with build.zig";
+    haskell = mkTemplate "haskell" "Haskell project with haskell-flake";
+
+    # Nix-specific templates
+    nixos-module = mkTemplate "nixos-module" "NixOS module with my.* namespace conventions";
+    home-module = mkTemplate "home-module" "Home Manager module structure";
+    flake-parts = mkTemplate "flake-parts" "flake-parts module for this repo";
+
+    # Project types
+    webapp = mkTemplate "webapp" "Full-stack web application template";
+    cli = mkTemplate "cli" "Command-line tool with argument parsing";
+    lib = mkTemplate "lib" "Nix library with functions and tests";
+  };
+}
