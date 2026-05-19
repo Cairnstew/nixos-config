@@ -1,7 +1,15 @@
 # Opencode — AI Coding Agent
 
 Home-manager module for [opencode](https://opencode.ai), an AI coding agent for
-the terminal, with support for 14+ LLM providers.
+the terminal, with support for 15+ LLM providers, custom skills, agents, and MCP integration.
+
+## Features
+
+- **15+ LLM Providers**: Local (Ollama) and cloud providers (Anthropic, OpenAI, Google, Groq, etc.)
+- **Custom Skills**: Context-aware instructions for common tasks
+- **Custom Agents**: Specialized agents with different permissions and models
+- **MCP Integration**: Model Context Protocol servers for extended capabilities
+- **Agenix Integration**: Secure API key management
 
 ## Supported Providers
 
@@ -47,6 +55,16 @@ the terminal, with support for 14+ LLM providers.
 | `my.programs.opencode.azure.deployment` | `null` | Azure deployment name |
 | `my.programs.opencode.mcp` | `{}` | MCP server configurations |
 
+## Default Skills
+
+This module includes pre-configured skills for common tasks:
+
+| Skill | Description |
+|-------|-------------|
+| `git-repo-management` | Git repository management, gitreposync service, common git tasks |
+| `nixos-configuration` | Working with this NixOS configuration repository |
+| `module-development` | Creating modules following repo conventions |
+
 ## Usage Example
 
 ### Basic Setup
@@ -83,6 +101,34 @@ my.programs.opencode = {
   };
 };
 ```
+
+### Custom Skills
+
+Add custom skills via the `skills` option:
+
+```nix
+my.programs.opencode.skills.my-skill = ''
+  # Skill content in Markdown
+  # This becomes ~/.config/opencode/skills/my-skill/SKILL.md
+  
+  ## Overview
+  
+  Description of what this skill helps with.
+  
+  ## Common Tasks
+  
+  - Task 1: How to do it
+  - Task 2: Another common pattern
+'';
+```
+
+Or reference a file:
+
+```nix
+my.programs.opencode.skills.my-skill = ./path/to/skill.md;
+```
+
+See [OpenCode Skills Documentation](https://opencode.ai/docs/skills/) for the skill format.
 
 ### MCP Configuration Format
 

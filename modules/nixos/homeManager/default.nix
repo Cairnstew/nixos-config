@@ -1,7 +1,7 @@
 # modules/nixos/homeManager/default.nix
 # Home Manager integration for NixOS hosts
 # Automatically applies home profiles based on system configuration
-{ flake, lib, config, ... }:
+{ flake, lib, config, pkgs, ... }:
 let
   inherit (flake) inputs;
   inherit (inputs) self;
@@ -65,8 +65,8 @@ in
       {
         my.programs.opencode = {
           enable = lib.mkDefault true;
-          clarifai.patFile = if config.age.secrets ? "clarifai-pat" 
-                              then config.age.secrets."clarifai-pat".path 
+          clarifai.patFile = if config.age.secrets ? "clarifai-pat"
+                              then config.age.secrets."clarifai-pat".path
                               else null;
           deepinfra.keyFile = if config.age.secrets ? "deepinfra-key"
                                then config.age.secrets."deepinfra-key".path
@@ -74,12 +74,12 @@ in
           opencode-go.keyFile = if config.age.secrets ? "opencode-token"
                                 then config.age.secrets."opencode-token".path
                                 else null;
-          groq.keyFile = if config.age.secrets ? "groq-token" 
-                          then config.age.secrets."groq-token".path 
+          groq.keyFile = if config.age.secrets ? "groq-token"
+                          then config.age.secrets."groq-token".path
                           else null;
-          
+
           # Default to DeepInfra Kimi K2.5 when deepinfra key is available
-      model = if (config.age.secrets ? "deepinfra-key")
+          model = if (config.age.secrets ? "deepinfra-key")
                   then lib.mkDefault null
               else if (config.age.secrets ? "clarifai-pat")
                   then lib.mkDefault "meta-llama/Meta-Llama-3.1-8B-Instruct"
@@ -88,19 +88,31 @@ in
               else lib.mkDefault null;
           enableMcpIntegration = lib.mkDefault true;
 
-          # MCP Servers - using uvx for direct PyPI installation
+          # MCP Server - using nix run for mcp-nixos
+          # Note: First run will fetch/build which may take 30-60s. Timeout set to
+          # 120s to allow for initial download. Once in nix store, starts are fast.
+          # The --option sandbox relaxed is needed for watchfiles dependency.
           mcp = lib.mkDefault {
             nixos = {
               enabled = true;
               type = "local";
-              command = [ "uvx" "mcp-nixos" ];
-            };
-            nixos-docs = {
-              enabled = true;
-              type = "local";
-              command = [ "uvx" "--from" "mcp-nixos" "mcp-nixos-docs" ];
+              command = [ "nix" "run" "--option" "sandbox" "relaxed" "github:utensils/mcp-nixos" "--" ];
+              timeout = 120000;
             };
           };
+
+          # Default skills for common tasks
+          skills = {
+            git-repo-management = lib.mkDefault (builtins.readFile ../../home/opencode/skills/git-repo-management.md);
+            nixos-configuration = lib.mkDefault (builtins.readFile ../../home/opencode/skills/nixos-configuration.md);
+            module-development = lib.mkDefault (builtins.readFile ../../home/opencode/skills/module-development.md);
+          };
+        };
+      }
+      
+      # OpenCode agents configuration
+      {
+        my.programs.opencode = {
           
           # Structured agents configuration
           agents = {

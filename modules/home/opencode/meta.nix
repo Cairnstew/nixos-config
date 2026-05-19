@@ -1,9 +1,14 @@
 {
   name = "opencode";
-  description = "Opencode AI coding agent with an expanded provider pool (Ollama, OpenAI, Anthropic, Google, Groq, Mistral, xAI, Together, OpenRouter, Fireworks, Cerebras, DeepInfra, Clarifai, Azure).";
+  description = "OpenCode AI coding agent with support for 15+ LLM providers, custom skills, agents, and MCP integration.";
   category = "programs";
-  tags = [ "ai" "llm" "coding" "opencode" ];
-  provides = [ "my.programs.opencode" ];
+  tags = [ "ai" "llm" "coding" "opencode" "skills" "mcp" ];
+  provides = [
+    "my.programs.opencode"
+    "my.programs.opencode.skills"
+    "my.programs.opencode.agents"
+    "my.programs.opencode.mcp"
+  ];
   expects = [];
   complexity = "medium";
   tested = true;

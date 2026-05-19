@@ -460,7 +460,8 @@ in {
         nixos = {
           enabled = true;
           type = "local";
-          command = [ "uvx" "mcp-nixos" ];
+          command = [ "nix" "run" "github:utensils/mcp-nixos" "--" ];
+          timeout = 120000;
         };
       };
       description = ''
@@ -470,7 +471,8 @@ in {
         Each server should have:
         - enabled: Boolean to enable/disable the server
         - type: "local" or "remote"
-        - command: Array of command and arguments (e.g., [ "uvx" "mcp-nixos" ])
+        - command: Array of command and arguments
+        - timeout: (optional) Timeout in milliseconds (default: 5000)
         - environment: (optional) Environment variables for the server
       '';
     };
@@ -478,7 +480,7 @@ in {
     extraPackages = mkOption {
       type        = types.listOf types.package;
       default     = [];
-      example     = lib.literalExpression "[ pkgs.uv pkgs.nodejs ]";
+      example     = lib.literalExpression "[ pkgs.mcp-nixos pkgs.nodejs ]";
       description = "Extra packages added to the PATH available to OpenCode.";
     };
   };
