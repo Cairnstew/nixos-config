@@ -1,78 +1,139 @@
-[![AGPL](https://img.shields.io/badge/License-AGPL%20v3-blue.svg)](https://en.wikipedia.org/wiki/Affero_General_Public_License)
-[![project chat](https://img.shields.io/badge/zulip-join_chat-brightgreen.svg)](https://nixos.zulipchat.com/#narrow/stream/413948-nixos)
-[![Naiveté Compass of Mood](https://img.shields.io/badge/naïve-FF10F0)](https://compass.naivete.me/ "This project follows the 'Naiveté Compass of Mood'")
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-This repository contains the Nix / NixOS configuration for all of my systems. See [nixos-unified](https://nixos-unified.org)—specifically [nixos-unified-template](https://github.com/juspay/nixos-unified-template)—if you wish to create your own configuration from scratch.
+This repository contains the NixOS / nix-darwin / Home Manager configuration for my personal systems. It uses [nixos-unified](https://nixos-unified.org) for autowiring and [flake-parts](https://flake.parts/) for modular flake structure.
 
-## Setup
+## Quick Start
 
-To use this repository as base configuration for your new machine running:
+### Existing Systems
 
-### NixOS Linux
+To activate the configuration on an existing NixOS system:
 
-> [!TIP]
-> For a general tutorial, see https://nixos.asia/en/nixos-install-flake
+```bash
+nix run
+```
 
-- Install NixOS
-  - Hetzner dedicated from Linux Rescue system: https://github.com/numtide/nixos-anywhere (see [blog post](https://galowicz.de/2023/04/05/single-command-server-bootstrap/); example PR: https://github.com/srid/nixos-config/pull/35 where I had to configure networking manually)
-    - Copy from existing configuration (eg: ax41.nix)
-    - Make networking configuration changes.
-    - Run nixos-anywhere from a Linux system, targetting `root@<ip>`
-    - Wait for reboot; `ssh srid@<ip>`; profit!
-  - Digital Ocean
-    - Legacy/manual approach: [nixos-infect](https://github.com/elitak/nixos-infect)
-    - Modern/automate approach: Custom image + colerama; cf. [Zulip](https://nixos.zulipchat.com/#narrow/stream/413948-nixos/topic/Deploying.20to.20DigitalOcean) and [example](https://github.com/fpindia/fpindia-chat)
-  - X1 Carbon: https://srid.ca/x1c7-install
-  - Windows (via WSL): https://github.com/nix-community/NixOS-WSL
-- Clone this repo anywhere
-- Rename `./configurations/nixos/??.nix` to match your current system hostname
-- Edit `config.nix` to set your primary user information
-- Run `nix run`. That's it. Re-open your terminal.
+Or using just:
 
-### macOS
+```bash
+just local
+```
 
-- [Install Nix](https://nixos.asia/en/install)
-- Clone this repo anywhere
-- Rename `./configurations/darwin/??.nix` to match your current system hostname
-- Edit `config.nix` to set your primary user information
-- Run `nix run`.[^cleanup] That's it. Re-open your terminal.
+### New Installation
 
-[^cleanup]: You might have to `rm -rf /etc/nix/nix.conf`, so our flake.nix can do its thing.
+1. Install NixOS (or WSL)
+2. Clone this repo: `git clone https://github.com/Cairnstew/nixos-config.git`
+3. Edit `config.nix` with your user information
+4. Rename/adjust `./configurations/nixos/<hostname>/default.nix` for your system
+5. Run `nix run`
+
+## Systems
+
+| Hostname | Type | Platform | Profile |
+|----------|------|----------|---------|
+| `laptop` | ThinkPad/Intel Laptop | `x86_64-linux` | Workstation |
+| `server` | AMD Headless Server | `x86_64-linux` | Server |
+| `wsl` | Windows Subsystem Linux | `x86_64-linux` | Minimal + Dev |
 
 ## Architecture
 
-Start from `flake.nix` (see [Flakes](https://nixos.wiki/wiki/Flakes)). [`flake-parts`](https://flake.parts/) is used as the module system.
+### Key Files
 
-### Directory layout
+| File | Purpose |
+|------|---------|
+| `flake.nix` | Entry point; defines inputs and imports flake-parts modules |
+| `config.nix` | User identity, tailnet hosts, AI model configurations |
+| `modules/nixos/common.nix` | **Import this in all NixOS hosts** — provides base functionality |
+| `modules/nixos/profiles/` | System and home profile modules (workstation, server, desktop, etc.) |
+| `justfile` | Common tasks (deploy, update, cleanup) |
 
->[!TIP]
-> See `flake-module.nix` for autowiring of flake outputs based on this directory structure.
+### Directory Layout
 
-| Path | Corresponding flake output |
-| -- | -- |
-| `./configurations/{nixos,darwin,home}/foo.nix` |  `{nixos,darwin,home}Configurations.foo` |
-| `./mdules/{nixos,darwin,home,flake-parts}/foo.nix` | `{nixos,darwin,home,flake}Modules.foo` |
-| `./overlays/foo.nix` | `overlays.foo` |
-| `./packages` | N/A (Nix packages) |
-| `./secrets` | N/A (agenix data) |
+| Path | Flake Output | Description |
+|------|--------------|-------------|
+| `configurations/nixos/<host>/` | `nixosConfigurations.<host>` | NixOS host configurations |
+| `configurations/darwin/<host>.nix` | `darwinConfigurations.<host>` | macOS host configurations (dormant) |
+| `configurations/home/<user>.nix` | `homeConfigurations.<user>` | Standalone Home Manager configs |
+| `modules/nixos/` | `nixosModules.*` | NixOS modules (import via `nixosModules.common`) |
+| `modules/home/` | `homeModules.*` | Home Manager modules |
+| `modules/flake-parts/` | `flake` options | Flake-level modules (templates, testing, etc.) |
+| `overlays/` | `overlays.*` | Package overlays |
+| `packages/` | `perSystem.packages.*` | Custom packages |
+| `secrets/` | N/A | Agenix-encrypted secrets |
 
-## Tips
+### Profile System
 
-- To update NixOS (and other inputs) run `nix flake update`
-  - You may also update a subset of inputs, e.g.
-    ```sh
-    nix flake lock --update-input nixpkgs --update-input darwin --update-input home-manager
-    # Or, `nix run .#update`
-    ```
-- To free up disk space,
-  ```sh-session
-  sudo nix-env -p /nix/var/nix/profiles/system --delete-generations +2
-  sudo nixos-rebuild boot
-  ```
-- To autoformat the project tree using nixpkgs-fmt, run `nix fmt`.
-- To build all flake outputs (locally or in CI), run `nix --accept-flake-config run github:juspay/omnix ci build`
-- For secrets management, I use [agenix](https://github.com/ryantm/agenix), because it works with SSH keys, and functions well on macOS and NixOS.
+Use profiles for common configuration patterns instead of manual service enablement:
 
-## Discussion
+**System Profiles** (`my.profiles.*`):
+- `workstation` — Desktop/laptop with GUI (audio, bluetooth, printing)
+- `server` — Headless server (SSH, Tailscale, no GUI)
+- `development` — Dev tools (git, docker, direnv)
+- `minimal` — Bare essentials only
 
-If you wish to discuss about this config, [join the Zulip](https://nixos.zulipchat.com/login/?next=/).
+**Feature Profiles**:
+- `desktop.gnome` / `desktop.plasma` — Desktop environment
+- `gpu.mesa` / `gpu.nvidia` / `gpu.nvidia-headless` — Graphics drivers
+- `battery` — Power management
+- `location` — Timezone/geolocation
+
+**Home Profiles** (`my.homeProfiles.*`):
+- `common` — Shell, direnv, git, basic tools
+- `desktop` — GUI applications (Firefox, Discord, Obsidian)
+- `development` — VSCode, dev tools
+
+Example host configuration:
+
+```nix
+{ flake, ... }:
+{
+  imports = [ flake.inputs.self.nixosModules.common ];
+  
+  networking.hostName = "myhost";
+  nixpkgs.hostPlatform = "x86_64-linux";
+  
+  # System profile
+  my.profiles.workstation.enable = true;
+  my.profiles.desktop.gnome.enable = true;
+  my.profiles.gpu.mesa.enable = true;
+  my.profiles.battery.enable = true;
+  
+  # Home profile
+  my.homeProfiles.common.enable = true;
+  my.homeProfiles.desktop.enable = true;
+}
+```
+
+## Common Tasks
+
+| Task | Command |
+|------|---------|
+| Activate current host | `nix run` or `just local` |
+| Update all flake inputs | `nix flake update` or `just update` |
+| Update specific inputs | `nix flake lock --update-input nixpkgs --update-input home-manager` |
+| Format all Nix files | `nix fmt` (or `nixpkgs-fmt **/*.nix`) |
+| Run tests | `nix run .#test run [hostname]` |
+| List hosts | `nix run .#test list` |
+| Deploy to server | `nix run . <hostname>` |
+| Clean old generations | `just fuckboot` |
+| Local CI check | `nix --accept-flake-config run github:juspay/omnix ci build` |
+
+## Secrets
+
+Secrets are managed with [agenix](https://github.com/ryantm/agenix). To edit a secret:
+
+```bash
+agenix -e secrets/<name>.age
+```
+
+SSH public keys that can decrypt secrets are defined in `secrets/secrets.nix`.
+
+## Documentation
+
+- `AGENTS.md` — Top-level project conventions and architecture
+- `modules/AGENT.md` — Module structure and conventions
+- `configurations/AGENT.md` — Host configuration guide
+- `modules/flake-parts/README.md` — Flake-parts layer documentation
+
+## License
+
+MIT — See [LICENSE](./LICENSE) for details.
