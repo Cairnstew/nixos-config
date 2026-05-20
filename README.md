@@ -31,6 +31,7 @@ just local
 | Hostname | Type | Platform | Profile |
 |----------|------|----------|---------|
 | `laptop` | ThinkPad/Intel Laptop | `x86_64-linux` | Workstation |
+| `desktop` | AMD Desktop PC | `x86_64-linux` | Workstation |
 | `server` | AMD Headless Server | `x86_64-linux` | Server |
 | `wsl` | Windows Subsystem Linux | `x86_64-linux` | Minimal + Dev |
 
