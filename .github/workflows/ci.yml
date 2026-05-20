@@ -1,0 +1,138 @@
+name: CI
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+  schedule:
+    # Run daily at 6 AM UTC to catch upstream breakages
+    - cron: '0 6 * * *'
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # ─────────────────────────────────────────────────────────────────────────────
+  # Build and cache all NixOS configurations
+  # ─────────────────────────────────────────────────────────────────────────────
+  build-nixos:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        host: [laptop, server, wsl]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Nix
+        uses: cachix/install-nix-action@v27
+        with:
+          extra_nix_config: |
+            accept-flake-config = true
+            fallback = true
+
+      - name: Setup Cachix
+        uses: cachix/cachix-action@v15
+        with:
+          name: cairnstew-nixos-config-cache
+          authToken: ${{ secrets.CACHIX_AUTH_TOKEN }}
+
+      - name: Build ${{ matrix.host }}
+        run: |
+          echo "Building .#${{ matrix.host }}..."
+          nix build .#${{ matrix.host }} --out-link result-${{ matrix.host }}
+          echo "Build successful!"
+          ls -la result-${{ matrix.host }}
+
+      - name: Push to Cachix
+        run: |
+          echo "Pushing build results to Cachix..."
+          cachix push cairnstew-nixos-config-cache ./result-${{ matrix.host }}
+
+  # ─────────────────────────────────────────────────────────────────────────────
+  # Run tests on all configurations
+  # ─────────────────────────────────────────────────────────────────────────────
+  test-configs:
+    runs-on: ubuntu-latest
+    needs: build-nixos
+    if: always() && (needs.build-nixos.result == 'success' || needs.build-nixos.result == 'skipped')
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Nix
+        uses: cachix/install-nix-action@v27
+        with:
+          extra_nix_config: |
+            accept-flake-config = true
+            fallback = true
+
+      - name: Setup Cachix
+        uses: cachix/cachix-action@v15
+        with:
+          name: cairnstew-nixos-config-cache
+          authToken: ${{ secrets.CACHIX_AUTH_TOKEN }}
+
+      - name: Run all tests
+        run: |
+          echo "Running test suite..."
+          nix run .#test -- run
+
+  # ─────────────────────────────────────────────────────────────────────────────
+  # Flake check (evaluation only, no builds)
+  # ─────────────────────────────────────────────────────────────────────────────
+  flake-check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Nix
+        uses: cachix/install-nix-action@v27
+        with:
+          extra_nix_config: |
+            accept-flake-config = true
+
+      - name: Flake check (no-build)
+        run: |
+          echo "Running nix flake check..."
+          nix flake check --no-build
+
+  # ─────────────────────────────────────────────────────────────────────────────
+  # Build dev shells for all supported systems
+  # ─────────────────────────────────────────────────────────────────────────────
+  build-devshells:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        system: [x86_64-linux, aarch64-linux]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Nix
+        uses: cachix/install-nix-action@v27
+        with:
+          extra_nix_config: |
+            accept-flake-config = true
+            fallback = true
+
+      - name: Setup Cachix
+        uses: cachix/cachix-action@v15
+        with:
+          name: cairnstew-nixos-config-cache
+          authToken: ${{ secrets.CACHIX_AUTH_TOKEN }}
+
+      - name: Build devShell for ${{ matrix.system }}
+        run: |
+          echo "Building devShell.${{ matrix.system }}.default..."
+          nix build .#devShells.${{ matrix.system }}.default --out-link result-devshell
+          echo "Dev shell build successful!"
+
+      - name: Push to Cachix
+        run: |
+          cachix push cairnstew-nixos-config-cache ./result-devshell

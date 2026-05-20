@@ -1,0 +1,106 @@
+name: PR Checks
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  # ─────────────────────────────────────────────────────────────────────────────
+  # Quick evaluation check for PRs
+  # ─────────────────────────────────────────────────────────────────────────────
+  eval-check:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        host: [laptop, server, wsl]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Nix
+        uses: cachix/install-nix-action@v27
+        with:
+          extra_nix_config: |
+            accept-flake-config = true
+
+      - name: Evaluate ${{ matrix.host }}
+        run: |
+          echo "Evaluating NixOS configuration: ${{ matrix.host }}"
+          nix eval .#nixosConfigurations.${{ matrix.host }}.config.system.build.toplevel --json > /dev/null
+          echo "✓ Evaluation successful for ${{ matrix.host }}"
+
+  # ─────────────────────────────────────────────────────────────────────────────
+  # Check for common issues
+  # ─────────────────────────────────────────────────────────────────────────────
+  lint-checks:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Nix
+        uses: cachix/install-nix-action@v27
+
+      - name: Check for common issues
+        run: |
+          echo "Running lint checks..."
+          
+          # Check for potential secrets in code
+          if grep -r "password\|secret\|token\|key" --include="*.nix" . 2>/dev/null | grep -v "age\." | grep -v "secrets\." | grep -v "lib\." | head -20; then
+            echo "⚠ Found potential hardcoded secrets - please verify these are not sensitive"
+          fi
+          
+          # Check for TODO/FIXME comments
+          echo ""
+          echo "TODO/FIXME comments in PR:"
+          git diff HEAD~1 --name-only | xargs grep -n "TODO\|FIXME\|XXX" 2>/dev/null || echo "None found"
+
+  # ─────────────────────────────────────────────────────────────────────────────
+  # Comment on PR with helpful info
+  # ─────────────────────────────────────────────────────────────────────────────
+  pr-info:
+    runs-on: ubuntu-latest
+    if: github.event.action == 'opened'
+    steps:
+      - name: Comment PR
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const body = `## NixOS Configuration PR
+
+            ### Quick Checks
+            - [ ] All configurations evaluate successfully
+            - [ ] Code is formatted (run \`nix fmt\`)
+            - [ ] No hardcoded secrets
+
+            ### Testing
+            Build a specific host locally:
+            \`\`\`bash
+            nix build .#laptop  # or server, wsl
+            \`\`\`
+
+            Run tests:
+            \`\`\`bash
+            nix run .#test -- run
+            \`\`\`
+
+            Dry-run evaluation:
+            \`\`\`bash
+            nix run .#test -- dry-run
+            \`\`\`
+
+            ---
+            *CI will build all configurations and push to Cachix cache.*
+            `;
+
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: body
+            });

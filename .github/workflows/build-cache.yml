@@ -1,0 +1,101 @@
+name: Build and Cache All
+
+on:
+  workflow_dispatch:
+  schedule:
+    # Run daily at 2 AM UTC to keep cache warm
+    - cron: '0 2 * * *'
+
+jobs:
+  # ─────────────────────────────────────────────────────────────────────────────
+  # Build all NixOS configurations with caching
+  # ─────────────────────────────────────────────────────────────────────────────
+  build-and-cache:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - host: laptop
+            system: x86_64-linux
+          - host: server
+            system: x86_64-linux
+          - host: wsl
+            system: x86_64-linux
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Nix
+        uses: cachix/install-nix-action@v27
+        with:
+          extra_nix_config: |
+            accept-flake-config = true
+            fallback = true
+
+      - name: Setup Cachix
+        uses: cachix/cachix-action@v15
+        with:
+          name: cairnstew-nixos-config-cache
+          authToken: ${{ secrets.CACHIX_AUTH_TOKEN }}
+          # Push all store paths, not just build outputs
+          pushFilter: '.*'
+
+      - name: Build and cache ${{ matrix.host }}
+        run: |
+          echo "=========================================="
+          echo "Building .#${{ matrix.host }}"
+          echo "=========================================="
+          
+          # Build with verbose output
+          nix build .#${{ matrix.host }} \
+            --out-link result-${{ matrix.host }} \
+            --print-build-logs
+          
+          echo ""
+          echo "Build successful! Closure size:"
+          nix path-info -Sh ./result-${{ matrix.host }}
+          
+          echo ""
+          echo "Pushing to Cachix..."
+          cachix push cairnstew-nixos-config-cache ./result-${{ matrix.host }}
+
+  # ─────────────────────────────────────────────────────────────────────────────
+  # Build additional packages
+  # ─────────────────────────────────────────────────────────────────────────────
+  build-packages:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        package:
+          - ci
+          - update
+          - test
+          - localsend
+          - uup-converter
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Nix
+        uses: cachix/install-nix-action@v27
+        with:
+          extra_nix_config: |
+            accept-flake-config = true
+            fallback = true
+
+      - name: Setup Cachix
+        uses: cachix/cachix-action@v15
+        with:
+          name: cairnstew-nixos-config-cache
+          authToken: ${{ secrets.CACHIX_AUTH_TOKEN }}
+
+      - name: Build ${{ matrix.package }}
+        run: |
+          echo "Building .#${{ matrix.package }}..."
+          nix build .#${{ matrix.package }} --out-link result
+          echo "Build successful!"
+          cachix push cairnstew-nixos-config-cache ./result

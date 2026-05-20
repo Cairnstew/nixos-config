@@ -1,0 +1,66 @@
+name: Cleanup Cachix Cache
+
+on:
+  workflow_dispatch:
+    inputs:
+      keep_days:
+        description: 'Keep entries newer than this many days'
+        required: false
+        type: number
+        default: 30
+
+  schedule:
+    # Run monthly on the 1st at 4 AM UTC
+    - cron: '0 4 1 * *'
+
+jobs:
+  # ─────────────────────────────────────────────────────────────────────────────
+  # Note: Cachix doesn't support direct cache deletion via API for security.
+  # This workflow serves as documentation/reminder for manual cleanup.
+  # ─────────────────────────────────────────────────────────────────────────────
+  cleanup-info:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Cache cleanup reminder
+        run: |
+          echo "=========================================="
+          echo "Cachix Cache Cleanup"
+          echo "=========================================="
+          echo ""
+          echo "Cache: cairnstew-nixos-config-cache"
+          echo ""
+          echo "NOTE: Cachix doesn't support automated deletion via API."
+          echo "To clean up old entries, use the Cachix web interface:"
+          echo "  https://app.cachix.org/cache/cairnstew-nixos-config-cache"
+          echo ""
+          echo "Recommended cleanup strategy:"
+          echo "  1. Go to the Cachix web dashboard"
+          echo "  2. Review store paths older than ${{ github.event.inputs.keep_days || 30 }} days"
+          echo "  3. Delete unused or outdated paths"
+          echo ""
+          echo "Alternatively, you can use the Cachix CLI with admin access:"
+          echo "  cachix delete cairnstew-nixos-config-cache <store-path>"
+          echo ""
+          echo "=========================================="
+
+  # ─────────────────────────────────────────────────────────────────────────────
+  # Verify cache is accessible
+  # ─────────────────────────────────────────────────────────────────────────────
+  verify-cache:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Install Nix
+        uses: cachix/install-nix-action@v27
+
+      - name: Verify Cachix access
+        env:
+          CACHIX_AUTH_TOKEN: ${{ secrets.CACHIX_AUTH_TOKEN }}
+        run: |
+          nix profile install nixpkgs#cachix
+          
+          echo "Verifying cache access..."
+          if cachix pin cairnstew-nixos-config-cache --list 2>/dev/null | head -5; then
+            echo "✓ Cache is accessible"
+          else
+            echo "⚠ Could not access cache (this is normal without admin token)"
+          fi
