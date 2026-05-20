@@ -57,7 +57,7 @@
 
     # Default editor for CLI operations (EDITOR environment variable)
     # Consumed by: shell configs, git, various CLI tools
-    editor = "nvim"; # Options: "nvim", "vim", "nano", "emacs"
+    editor = "nano"; # Options: "nvim", "vim", "nano", "emacs"
 
     # Keyboard layout
     # Consumed by: X11/Wayland keyboard settings, console keymap
