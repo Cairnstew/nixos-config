@@ -28,7 +28,7 @@ in
     ./plasma-x11.nix
     
     # ── Virtualization ─────────────────────────────────────────────────────
-    ./docker.nix
+    ./docker
     ./waydroid.nix
     ./ollama
     

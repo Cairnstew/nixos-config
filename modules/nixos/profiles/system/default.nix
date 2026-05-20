@@ -47,6 +47,23 @@ in
       my.services.plasmaX11.enable = true;
     })
 
+    # NVIDIA GPU profile (full desktop)
+    (lib.mkIf cfg.gpu.nvidia.enable {
+      hardwareProfiles.gpu.nvidia.enable = true;
+      hardwareProfiles.gpu.nvidia.headless = false;
+    })
+
+    # NVIDIA GPU profile (headless/CUDA)
+    (lib.mkIf cfg.gpu.nvidia-headless.enable {
+      hardwareProfiles.gpu.nvidia.enable = true;
+      hardwareProfiles.gpu.nvidia.headless = true;
+    })
+
+    # Mesa GPU profile
+    (lib.mkIf cfg.gpu.mesa.enable {
+      hardwareProfiles.gpu.mesa.enable = true;
+    })
+
     # Assertions to prevent conflicting profiles
     {
       assertions = [
