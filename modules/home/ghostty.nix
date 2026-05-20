@@ -1,12 +1,16 @@
-{ config, pkgs, lib, ... }:
+{ config, pkgs, lib, flake, ... }:
 let
   cfg = config.my.programs.ghostty;
+  # Get preferences from flake config
+  prefs = flake.config.preferences or { };
+  defaults = flake.config.defaults or { };
 in
 {
   options.my.programs.ghostty = {
     enable = lib.mkOption {
       type = lib.types.bool;
-      default = false;
+      # Enable by default if it's the configured default terminal
+      default = (defaults.terminal or "ghostty") == "ghostty";
       description = "Enable Ghostty terminal emulator";
     };
 
@@ -25,8 +29,9 @@ in
 
     fontSize = lib.mkOption {
       type = lib.types.int;
-      default = 13;
-      description = "Font size for Ghostty";
+      # Use font size from preferences
+      default = prefs.terminalFontSize or 13;
+      description = "Font size for Ghostty. Defaults to preferences.terminalFontSize.";
     };
 
     windowWidth = lib.mkOption {
@@ -43,8 +48,9 @@ in
 
     theme = lib.mkOption {
       type = lib.types.str;
-      default = "catppuccin-mocha";
-      description = "Theme name to use";
+      # Use theme based on dark mode preference
+      default = if (prefs.darkMode or true) then "catppuccin-mocha" else "catppuccin-latte";
+      description = "Theme name to use. Defaults based on preferences.darkMode.";
     };
 
     gtkTitlebar = lib.mkOption {
@@ -83,7 +89,7 @@ in
 
     additionalKeybindings = lib.mkOption {
       type = lib.types.listOf lib.types.str;
-      default = [];
+      default = [ ];
       description = "Additional keybindings to append to defaults";
       example = [ "ctrl+shift+t=new_tab" ];
     };
@@ -122,7 +128,7 @@ in
 
     extraSettings = lib.mkOption {
       type = lib.types.attrs;
-      default = {};
+      default = { };
       description = "Additional Ghostty settings to merge";
       example = { cursor-style = "bar"; };
     };
@@ -136,6 +142,8 @@ in
       settings = {
         gtk-titlebar = cfg.gtkTitlebar;
         font-size = cfg.fontSize;
+        # Use terminal font from preferences if specified
+        font-family = prefs.terminalFont or null;
         window-width = cfg.windowWidth;
         window-height = cfg.windowHeight;
         theme = cfg.theme;

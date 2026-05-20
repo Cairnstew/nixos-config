@@ -1,4 +1,18 @@
-{ pkgs, flake, ... }:
+{ pkgs, config, lib, flake, ... }:
+let
+  # Use flake config git settings
+  flakeGit = flake.config.git or { };
+  # Get aliases from flake config, with fallback to defaults
+  gitAliases = flakeGit.aliases or {
+    co = "checkout";
+    ci = "commit";
+    cia = "commit --amend";
+    s = "status";
+    st = "status";
+    b = "branch";
+    pu = "push";
+  };
+in
 {
   home.packages = with pkgs; [
     git-filter-repo
@@ -6,47 +20,48 @@
 
   programs.git = {
     enable = true;
-    signing.format = "openpgp";
-  
+    signing = {
+      format = "openpgp";
+      # Use flake config for signing settings
+      signByDefault = flakeGit.signCommits or false;
+      key = flakeGit.signingKey or null;
+    };
+
     lfs.enable = true;
-  
+
     ignores = [
       "*~"
       "*.swp"
     ];
-  
+
     settings = {
       user = {
         name = flake.config.me.fullname;
         email = flake.config.me.email;
       };
-  
-      alias = {
-        co  = "checkout";
-        ci  = "commit";
-        cia = "commit --amend";
-        s   = "status";
-        st  = "status";
-        b   = "branch";
-        pu  = "push";
-      };
-  
-      init.defaultBranch = "master";
-  
+
+      # Merge flake config aliases with any module-specific ones
+      alias = gitAliases;
+
+      # Use flake config for default branch
+      init.defaultBranch = flakeGit.defaultBranch or "master";
+
       credential.helper = "store --file ~/.git-credentials";
-  
-      pull.rebase = false;
-  
+
+      # Use flake config for pull rebase behavior
+      pull.rebase = flakeGit.rebaseOnPull or false;
+
       branch.sort = "-committerdate";
-  
-      rerere.enabled = true;
+
+      # Use flake config for rerere
+      rerere.enabled = flakeGit.enableRerere or true;
     };
   };
 
   programs.delta = {
     enable = true;
     enableGitIntegration = true;
-  
+
     options = {
       navigate = true;
       light = false;
@@ -55,8 +70,7 @@
       pager = "${pkgs.less}/bin/less --mouse --wheel-lines=3";
     };
   };
-  
-  	
+
   programs.lazygit = {
     enable = true;
     settings = {

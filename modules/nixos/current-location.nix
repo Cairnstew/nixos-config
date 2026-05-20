@@ -1,32 +1,37 @@
-{ lib, config, pkgs, ... }:
+{ lib, config, pkgs, flake, ... }:
 
 let
   cfg = config.my.system.location;
+  # Use flake config location settings if module not explicitly configured
+  flakeLocation = flake.config.location or { };
 in
 {
   options.my.system.location = {
     enable = lib.mkOption {
       type = lib.types.bool;
       default = false;
-      description = "Enable system timezone and geographic location";
+      description = "Enable system timezone and geographic location from config.nix";
     };
 
     timeZone = lib.mkOption {
       type = lib.types.str;
-      default = "GB";
-      description = "System time zone";
+      # Use flake config location.timeZone as default
+      default = flakeLocation.timeZone or "Europe/London";
+      description = "System time zone (IANA identifier). Defaults to config.location.timeZone.";
     };
 
     latitude = lib.mkOption {
       type = lib.types.float;
-      default = 55.8617;
-      description = "System latitude for location-based services";
+      # Use flake config location.latitude as default
+      default = flakeLocation.latitude or 55.8617;
+      description = "System latitude for location-based services. Defaults to config.location.latitude.";
     };
 
     longitude = lib.mkOption {
       type = lib.types.float;
-      default = 4.2583;
-      description = "System longitude for location-based services";
+      # Use flake config location.longitude as default
+      default = flakeLocation.longitude or (-4.2583);
+      description = "System longitude for location-based services. Defaults to config.location.longitude.";
     };
   };
 
@@ -37,5 +42,8 @@ in
       latitude = cfg.latitude;
       longitude = cfg.longitude;
     };
+
+    # Also set system locale if specified in flake config
+    i18n.defaultLocale = flakeLocation.defaultLocale or "en_GB.UTF-8";
   };
 }

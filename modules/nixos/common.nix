@@ -115,9 +115,9 @@ in
         # Override when: Different primary username on host
         user = lib.mkDefault flake.config.me.username;
 
-        # Forward SSH agent: Useful for git operations over Tailscale
-        # Override when: Agent forwarding is a security concern
-        extraHostConfig = lib.mkDefault "ForwardAgent yes";
+        # Forward SSH agent: Uses preference from config.ssh.forwardAgent
+        # Override when: Agent forwarding is a security concern on this host
+        extraHostConfig = lib.mkDefault (if (flake.config.ssh.forwardAgent or true) then "ForwardAgent yes" else "ForwardAgent no");
       };
     };
 

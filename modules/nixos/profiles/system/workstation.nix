@@ -1,8 +1,10 @@
 # modules/nixos/profiles/system/workstation.nix
 # Workstation profile for desktop/laptop systems
-{ config, lib, pkgs, ... }:
+{ config, lib, pkgs, flake, ... }:
 let
   cfg = config.my.profiles.workstation;
+  # Get preferences from flake config for defaults
+  prefs = flake.config.preferences or { };
 in
 {
   config = lib.mkIf cfg.enable {
@@ -17,9 +19,9 @@ in
     # Override when: No printers used or CUPS not desired
     services.printing.enable = lib.mkDefault true;
 
-    # UK keyboard layout as default (GB locale)
+    # Keyboard layout from preferences (defaults to GB)
     # Override when: Different regional layout needed
-    services.xserver.xkb.layout = lib.mkDefault "gb";
+    services.xserver.xkb.layout = lib.mkDefault (prefs.keyboardLayout or "gb");
 
     # ── Common workstation programs ────────────────────────────────────────
     # mkDefault for packages: Core GUI apps for daily use

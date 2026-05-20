@@ -2,5 +2,6 @@
   home.stateVersion = "24.05";
   imports = [
     ./core
+    ./user-defaults.nix
   ];
 }

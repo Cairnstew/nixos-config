@@ -31,8 +31,157 @@
     # GitHub username for gh CLI and git remote operations.
     # Consumed by: programs.gh, git remote defaults.
     github_username = "Cairnstew";
+  };
 
+  # ============================================================================
+  # User Preferences (preferences.*)
+  # ============================================================================
+  # Personal preferences used across desktop environments and applications.
+  # These are defaults that can be overridden per-host if needed.
+  # ============================================================================
+  preferences = {
+    # UI theme preference (dark/light)
+    # Consumed by: GTK settings, terminal configs, application themes
+    darkMode = true;
 
+    # Default terminal font (monospace)
+    # Consumed by: ghostty, VSCode, terminal configurations
+    terminalFont = "JetBrainsMono Nerd Font";
+
+    # Default terminal font size
+    terminalFontSize = 11;
+
+    # Preferred shell
+    # Consumed by: user shell configuration, terminal settings
+    shell = "zsh"; # Options: "bash", "zsh", "fish"
+
+    # Default editor for CLI operations (EDITOR environment variable)
+    # Consumed by: shell configs, git, various CLI tools
+    editor = "nvim"; # Options: "nvim", "vim", "nano", "emacs"
+
+    # Keyboard layout
+    # Consumed by: X11/Wayland keyboard settings, console keymap
+    keyboardLayout = "gb";
+
+    # Enable emacs-style keybindings in terminal/shell
+    # Consumed by: readline configuration, shell settings
+    emacsKeybindings = false;
+  };
+
+  # ============================================================================
+  # Default Applications (defaults.*)
+  # ============================================================================
+  # Default applications for common operations.
+  # These are used by desktop environments and xdg-mime.
+  # ============================================================================
+  defaults = {
+    # Default web browser
+    # Consumed by: xdg settings, desktop shortcuts
+    browser = "firefox";
+
+    # Default email client
+    # Consumed by: desktop entries, mailto: handlers
+    emailClient = "thunderbird";
+
+    # Default terminal emulator
+    # Consumed by: desktop shortcuts, terminal launcher
+    terminal = "ghostty";
+
+    # Default file manager
+    # Consumed by: desktop entries, file:// handlers
+    fileManager = "nautilus";
+  };
+
+  # ============================================================================
+  # Location and Locale (location.*)
+  # ============================================================================
+  # Geographic location and timezone settings.
+  # Used by: timezone configuration, location-based services,
+  #          redshift/night light, weather applications.
+  # ============================================================================
+  location = {
+    # IANA timezone identifier
+    # Consumed by: system.time.timeZone, cron jobs, scheduled tasks
+    timeZone = "Europe/London";
+
+    # Geographic coordinates for location-based services
+    # Consumed by: redshift, night light, weather apps
+    latitude = 55.8617;
+    longitude = -4.2583;
+
+    # Locale settings (affects date/time formatting, collation)
+    # Consumed by: i18n settings, application locales
+    defaultLocale = "en_GB.UTF-8";
+  };
+
+  # ============================================================================
+  # Git Configuration (git.*)
+  # ============================================================================
+  # Git-specific preferences and defaults.
+  # These are applied to all systems via home-manager.
+  # ============================================================================
+  git = {
+    # Default branch name for new repositories
+    # Consumed by: programs.git.settings.init.defaultBranch
+    defaultBranch = "master";
+
+    # Sign commits by default
+    # Consumed by: programs.git.signing.signByDefault
+    signCommits = false;
+
+    # GPG/SSH signing key (if signing is enabled)
+    # Consumed by: programs.git.signing.key
+    signingKey = null;
+
+    # Default merge strategy
+    # Consumed by: programs.git.settings.pull.rebase
+    # true = use rebase, false = use merge commits
+    rebaseOnPull = false;
+
+    # Enable git rerere (reuse recorded resolution)
+    # Consumed by: programs.git.settings.rerere.enabled
+    enableRerere = true;
+
+    # Additional git aliases
+    # Consumed by: programs.git.settings.alias
+    aliases = {
+      co = "checkout";
+      ci = "commit";
+      cia = "commit --amend";
+      s = "status";
+      st = "status";
+      b = "branch";
+      pu = "push";
+      pf = "push --force-with-lease";
+      lg = "log --oneline --graph --decorate";
+    };
+  };
+
+  # ============================================================================
+  # SSH Configuration (ssh.*)
+  # ============================================================================
+  # SSH client preferences and defaults.
+  # ============================================================================
+  ssh = {
+    # SSH key type for new key generation
+    # Consumed by: my.services.ssh.keyType
+    keyType = "ed25519";
+
+    # Default SSH key path (relative to ~)
+    # Consumed by: my.services.ssh.keyPath
+    keyPath = "~/.ssh/id_ed25519";
+
+    # Automatically add keys to SSH agent
+    # Consumed by: my.services.ssh.addKeysToAgent
+    addKeysToAgent = true;
+
+    # SSH agent forwarding (be careful with this on shared systems)
+    # Consumed by: my.services.tailscale.ssh.extraHostConfig
+    forwardAgent = true;
+
+    # Default keepalive interval in seconds (0 to disable)
+    # Consumed by: SSH match block settings
+    serverAliveInterval = 60;
   };
 
   # ============================================================================
