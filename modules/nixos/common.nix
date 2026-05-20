@@ -1,7 +1,7 @@
 # modules/nixos/common.nix
 # Common configuration imported by ALL NixOS hosts
 # This is the single entry point for shared system configuration
-{ flake, lib, config, ... }:
+{ flake, lib, config, pkgs, ... }:
 let
   inherit (flake) inputs;
   inherit (inputs) self;
@@ -156,7 +156,12 @@ in
   boot.loader.grub.enable = lib.mkDefault false;
 
   # ── Environment ──────────────────────────────────────────────────────────
-  # Packages are defined per-host or use environment.systemPackages directly
+  # Base packages available on all hosts
+  environment.systemPackages = with pkgs; [
+    nix-template-selector  # Interactive flake template selector
+  ];
+
+  # Additional packages are defined per-host or use environment.systemPackages directly
 
   # ── Assertions ───────────────────────────────────────────────────────────
   assertions = [

@@ -42,5 +42,8 @@ in
     webapp = mkTemplate "webapp" "Full-stack web application template";
     cli = mkTemplate "cli" "Command-line tool with argument parsing";
     lib = mkTemplate "lib" "Nix library with functions and tests";
+
+    # Python with uv2nix
+    uv2nix = mkTemplate "uv2nix" "Python project with uv2nix, uv, and modern tooling";
   };
 }
