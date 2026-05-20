@@ -21,6 +21,8 @@ flake evaluator itself.  They are imported automatically by `flake.nix` (only
 | `packages.nix` | Manually exports per-host `packages.<hostname>` from NixOS configurations for the matching build platform. |
 | `terranix.nix` | Infrastructure-as-code entrypoint. Exports `nixosModules.terraformInfra`, `perSystem` devShell for Terraform, and `.#tf` apps. |
 | `testing.nix` | The `my.testing` flake option. Generates per-host `test-<name>` packages and the `.#test` CLI runner. |
+| `templates.nix` | Flake templates for `nix flake init`. Provides Rust, Python, Node, Go, Haskell, and Nix-specific templates. |
+| `mcp-servers.nix` | Model Context Protocol server configuration. Defines MCP server schema and exports generated config for AI assistants. |
 
 ## Adding a new flake-parts module
 

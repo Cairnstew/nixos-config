@@ -1,3 +1,21 @@
+# =============================================================================
+# terranix.nix — Infrastructure-as-Code (Terraform) Integration
+# =============================================================================
+# Purpose: Provides a NixOS module for Terraform state management and exposes
+#          Terraform workflows via flake apps and devShell.
+#
+# Inputs:
+#   - inputs.terranix — Nix-to-Terraform configuration generator
+#
+# Outputs:
+#   - flake.nixosModules.terraformInfra — system module for Terraform setup
+#   - perSystem.devShells.default — shell with terraform, jq, gcloud
+#   - perSystem.apps.tf* — apps: tf, tf-plan, tf-apply, tf-destroy, tf-show-config
+#   - perSystem.packages.tf-config — generated Terraform JSON config
+#
+# State: Persisted to ~/.local/share/terraform/nixos-infra
+# =============================================================================
+
 { self, inputs, lib, ... }:
 
 let
@@ -96,10 +114,10 @@ in
       };
 
       apps = {
-        tf             = { type = "app"; program = "${tfRunner}/bin/tf"; };
-        tf-plan        = mkAlias "tf-plan"        "plan";
-        tf-apply       = mkAlias "tf-apply"       "apply -auto-approve";
-        tf-destroy     = mkAlias "tf-destroy"     "destroy -auto-approve";
+        tf = { type = "app"; program = "${tfRunner}/bin/tf"; };
+        tf-plan = mkAlias "tf-plan" "plan";
+        tf-apply = mkAlias "tf-apply" "apply -auto-approve";
+        tf-destroy = mkAlias "tf-destroy" "destroy -auto-approve";
         tf-show-config = mkAlias "tf-show-config" "show-config";
       };
 

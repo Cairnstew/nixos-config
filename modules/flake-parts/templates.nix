@@ -1,4 +1,16 @@
-# Flake templates for starting new projects
+# =============================================================================
+# templates.nix — Flake Templates for Project Scaffolding
+# =============================================================================
+# Purpose: Provides `nix flake init` templates for bootstrapping new projects
+#          with pre-configured development environments.
+#
+# Inputs: None (self-contained)
+#
+# Outputs: flake.templates — attrset of templates available via `nix flake init -t .#<name>`
+#
+# Consumed by: Template directories under `templates/` (relative paths)
+# =============================================================================
+
 { lib, ... }:
 let
   # Helper to create a template entry from a directory

@@ -8,7 +8,7 @@ in
   config = lib.mkIf cfg.enable {
     # ── Gaming dependencies ────────────────────────────────────────────────
     my.system.audio.enable = lib.mkDefault true;
-    
+
     # Note: Steam is configured via home-manager in home profiles
   };
 }

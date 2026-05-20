@@ -14,19 +14,20 @@ in
   # Make profiles available at both locations for convenience
   options.profiles = lib.mkOption {
     type = lib.types.attrsOf lib.types.anything;
-    default = {};
+    default = { };
     description = "System profiles available to configurations.";
   };
 
   options.homeProfiles = lib.mkOption {
     type = lib.types.attrsOf lib.types.anything;
-    default = {};
+    default = { };
     description = "Home profiles available to configurations.";
   };
 
   config = {
-    # Expose profiles under my.* namespace for consistency
-    my.profiles = lib.mkDefault {};
-    my.homeProfiles = lib.mkDefault {};
+    # mkDefault {} for my.profiles: Allows hosts to enable profiles easily
+    # Override when: Defining profile options at the host level
+    my.profiles = lib.mkDefault { };
+    my.homeProfiles = lib.mkDefault { };
   };
 }

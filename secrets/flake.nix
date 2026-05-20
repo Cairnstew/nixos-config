@@ -19,7 +19,8 @@
           inherit system;
           config.allowUnfree = true;
         };
-      in {
+      in
+      {
         devShells.default = pkgs.mkShell {
           packages = [
             agenix.packages.${system}.default

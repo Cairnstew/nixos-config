@@ -1,3 +1,19 @@
+# =============================================================================
+# config.nix — Flake-Level Identity and Configuration Schema
+# =============================================================================
+# Purpose: Defines typed options for user identity, tailnet hosts, and AI model
+#          configurations. Imports and exposes values from `../../config.nix`.
+#
+# Inputs: ../../config.nix — actual values (separated for easy editing)
+#
+# Outputs:
+#   - options.me — user identity (username, email, SSH key, etc.)
+#   - options.tailnet — Tailscale network host definitions
+#   - options.ollamaModels — AI model configurations for local inference
+#
+# Consumed by: Modules throughout the flake via `config.me.*`, `config.tailnet.*`
+# =============================================================================
+
 # Top-level configuration for everything in this repo.
 #
 # Values are set in 'config.nix' in repo root.
@@ -32,18 +48,18 @@ let
   tailnetHostSubmodule = lib.types.submodule {
     options = {
       ip = lib.mkOption {
-        type        = lib.types.str;
+        type = lib.types.str;
         description = "Stable Tailscale IP (100.x.x.x)";
-        example     = "100.64.1.5";
+        example = "100.64.1.5";
       };
       hostname = lib.mkOption {
-        type        = lib.types.str;
+        type = lib.types.str;
         description = "Short hostname as it appears in the tailnet";
-        example     = "homeserver";
+        example = "homeserver";
       };
       magicDnsName = lib.mkOption {
-        type        = lib.types.nullOr lib.types.str;
-        default     = null;
+        type = lib.types.nullOr lib.types.str;
+        default = null;
         description = "Full MagicDNS name, e.g. homeserver.tail1234.ts.net";
       };
     };
@@ -58,10 +74,10 @@ in
     };
 
     tailnet = lib.mkOption {
-      type        = lib.types.attrsOf tailnetHostSubmodule;
-      default     = {};
+      type = lib.types.attrsOf tailnetHostSubmodule;
+      default = { };
       description = "Known tailnet hosts, keyed by logical name.";
-      example     = lib.literalExpression ''
+      example = lib.literalExpression ''
         {
           homeserver = { ip = "100.64.1.5"; hostname = "homeserver"; };
           laptop     = { ip = "100.64.1.12"; hostname = "laptop"; };

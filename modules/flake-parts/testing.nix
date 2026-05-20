@@ -23,7 +23,7 @@ let
     let
       probed = builtins.tryEval nixosCfg.config.nixpkgs.hostPlatform.system;
     in
-      probed.success && probed.value == system;
+    probed.success && probed.value == system;
 
   /* Run the user-supplied extra check functions against a host. */
   runExtraChecks = arg:
@@ -31,17 +31,19 @@ let
 
   /* Turn extra-check results into shell script fragments. */
   extraCheckScript = results:
-    lib.concatMapStrings (result: ''
-      echo "  [Extra] ${result.message}: $([ ${lib.boolToString result.pass} = true ] && echo 'PASS' || echo 'FAIL')"
-      ${lib.optionalString (!result.pass) "exit_code=1"}
-    '') results;
+    lib.concatMapStrings
+      (result: ''
+        echo "  [Extra] ${result.message}: $([ ${lib.boolToString result.pass} = true ] && echo 'PASS' || echo 'FAIL')"
+        ${lib.optionalString (!result.pass) "exit_code=1"}
+      '')
+      results;
 
 in
 {
   options.my.testing = {
     extraChecks = lib.mkOption {
       type = lib.types.listOf lib.types.raw;
-      default = [];
+      default = [ ];
       description = ''
         Extra check functions to run against each host.
         Each function receives an attrset with keys:
@@ -177,9 +179,9 @@ in
             activationPackage = homeCfg.activationPackage;
             extraResults = runExtraChecks {
               hostname = name;
-              system   = homeCfg;
+              system = homeCfg;
               inherit pkgs;
-              config   = homeCfg.config;
+              config = homeCfg.config;
             };
           in
           pkgs.writeShellApplication {
@@ -237,20 +239,22 @@ in
             isTestable = name: _: ! (builtins.elem name disabledHosts);
 
             # 3. Apply the filter to your configurations
-            nixosCfgs   = lib.filterAttrs isTestable 
-                            (lib.filterAttrs (_: matchesSystem system) config.flake.nixosConfigurations);
-            darwinCfgs  = lib.filterAttrs isTestable 
-                            (lib.filterAttrs (_: matchesSystem system) (config.flake.darwinConfigurations or {}));
-            homeCfgs    = lib.filterAttrs isTestable 
-                            (lib.filterAttrs (_: homeCfg:
-                              let probed = builtins.tryEval homeCfg.config.home.homeDirectory;
-                              in probed.success
-                            ) (config.flake.homeConfigurations or {}));
+            nixosCfgs = lib.filterAttrs isTestable
+              (lib.filterAttrs (_: matchesSystem system) config.flake.nixosConfigurations);
+            darwinCfgs = lib.filterAttrs isTestable
+              (lib.filterAttrs (_: matchesSystem system) (config.flake.darwinConfigurations or { }));
+            homeCfgs = lib.filterAttrs isTestable
+              (lib.filterAttrs
+                (_: homeCfg:
+                  let probed = builtins.tryEval homeCfg.config.home.homeDirectory;
+                  in probed.success
+                )
+                (config.flake.homeConfigurations or { }));
           in
-            # Each entry: { name :: string; type :: "nixos" | "darwin" | "home"; package :: drv; }
-            (lib.mapAttrsToList (n: c: { name = n; type = "nixos";  package = mkSystemTestPackage "NixOS" n c; }) nixosCfgs)
-            ++ (lib.mapAttrsToList (n: c: { name = n; type = "darwin"; package = mkSystemTestPackage "nix-darwin" n c; }) darwinCfgs)
-            ++ (lib.mapAttrsToList (n: c: { name = n; type = "home";   package = mkHomeTestPackage n c; }) homeCfgs);
+          # Each entry: { name :: string; type :: "nixos" | "darwin" | "home"; package :: drv; }
+          (lib.mapAttrsToList (n: c: { name = n; type = "nixos"; package = mkSystemTestPackage "NixOS" n c; }) nixosCfgs)
+          ++ (lib.mapAttrsToList (n: c: { name = n; type = "darwin"; package = mkSystemTestPackage "nix-darwin" n c; }) darwinCfgs)
+          ++ (lib.mapAttrsToList (n: c: { name = n; type = "home"; package = mkHomeTestPackage n c; }) homeCfgs);
 
         # ── test-runner CLI generator ────────────────────────────────────
 
@@ -261,11 +265,13 @@ in
             mkDryRunCases = lib.concatMapStrings
               ({ name, type, ... }:
                 let
-                  flakePath = if type == "home" then
-                                ".#homeConfigurations.${name}.activationPackage"
-                              else
-                                ".#${type}Configurations.${name}.config.system.build.toplevel";
-                in ''
+                  flakePath =
+                    if type == "home" then
+                      ".#homeConfigurations.${name}.activationPackage"
+                    else
+                      ".#${type}Configurations.${name}.config.system.build.toplevel";
+                in
+                ''
                   ${name})
                     if [ -n "$verbose_flag" ]; then
                       nix build "${flakePath}" --no-link --print-build-logs --verbose
@@ -279,11 +285,13 @@ in
             mkShowCases = lib.concatMapStrings
               ({ name, type, ... }:
                 let
-                  flakePath = if type == "home" then
-                                ".#homeConfigurations.${name}.activationPackage.outPath"
-                              else
-                                ".#${type}Configurations.${name}.config.system.build.toplevel";
-                in ''
+                  flakePath =
+                    if type == "home" then
+                      ".#homeConfigurations.${name}.activationPackage.outPath"
+                    else
+                      ".#${type}Configurations.${name}.config.system.build.toplevel";
+                in
+                ''
                   ${name})
                     nix eval "${flakePath}" --raw
                     ;;
@@ -293,11 +301,13 @@ in
             mkDryRunAllCases = lib.concatMapStrings
               ({ name, type, ... }:
                 let
-                  flakePath = if type == "home" then
-                                ".#homeConfigurations.${name}.activationPackage"
-                              else
-                                ".#${type}Configurations.${name}.config.system.build.toplevel";
-                in ''
+                  flakePath =
+                    if type == "home" then
+                      ".#homeConfigurations.${name}.activationPackage"
+                    else
+                      ".#${type}Configurations.${name}.config.system.build.toplevel";
+                in
+                ''
                   ${name})
                     if [ -n "$verbose_flag" ]; then
                       nix build "${flakePath}" --no-link --verbose 2>&1 || true

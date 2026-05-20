@@ -1,6 +1,37 @@
+# =============================================================================
+# get-template.nix — Interactive Nix Template Selector
+# =============================================================================
+# Purpose: Fetches and initializes project templates from a GitHub repository
+#          using an interactive fzf interface.
+#
+# Not in nixpkgs: Personal workflow tool for template management.
+#
+# Usage: nix-template-selector
+# Prerequisites: fzf, git, jq installed (provided via runtimeInputs).
+# =============================================================================
+
 { writeShellApplication, nix, fzf, git, jq }:
 writeShellApplication {
   name = "nix-template-selector";
+  meta = {
+    description = "Interactive Nix flake template selector using fzf";
+    longDescription = ''
+      Fetches templates from a GitHub repository (Cairnstew/my-flake-templates)
+      and presents an interactive fzf menu to select and initialize a template
+      in the current directory.
+      
+      Usage: nix-template-selector
+      
+      The tool will:
+      1. Clone the template repository
+      2. Parse available templates from flake.nix
+      3. Show an interactive fzf selector
+      4. Initialize the selected template with `nix flake init`
+    '';
+    homepage = "https://github.com/Cairnstew/my-flake-templates";
+    license = "MIT";
+    mainProgram = "nix-template-selector";
+  };
   runtimeInputs = [
     nix
     fzf

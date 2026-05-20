@@ -1,14 +1,31 @@
+# =============================================================================
+# mcp-servers.nix — Model Context Protocol (MCP) Server Configuration
+# =============================================================================
+# Purpose: Defines MCP servers and generates configuration JSON for AI assistants
+#          (Claude, Cline, etc.) to access external tools and APIs.
+#
+# Inputs: Uses top-level flake config options (mcp.servers)
+#
+# Outputs:
+#   - options.mcp.servers — schema for declaring MCP servers
+#   - perSystem.packages.mcp-config — generated JSON config file
+#
+# Consumed by: AI assistant configurations (Claude Desktop, Cline, etc.)
+# =============================================================================
+
 { config, lib, ... }:
 let
   # Generate MCP server configuration JSON
   mkMcpConfig = servers:
     {
-      mcpServers = lib.mapAttrs (name: srv:
-        {
-          command = srv.command;
-          args = srv.args;
-        } // lib.optionalAttrs (srv ? env) { inherit (srv) env; }
-      ) servers;
+      mcpServers = lib.mapAttrs
+        (name: srv:
+          {
+            command = srv.command;
+            args = srv.args;
+          } // lib.optionalAttrs (srv ? env) { inherit (srv) env; }
+        )
+        servers;
     };
 in
 {
@@ -24,13 +41,13 @@ in
 
           args = lib.mkOption {
             type = lib.types.listOf lib.types.str;
-            default = [];
+            default = [ ];
             description = "Arguments to pass to the command";
           };
 
           env = lib.mkOption {
             type = lib.types.attrsOf lib.types.str;
-            default = {};
+            default = { };
             description = "Environment variables for the MCP server";
           };
 
@@ -41,7 +58,7 @@ in
           };
         };
       });
-      default = {};
+      default = { };
       description = "MCP servers to make available";
     };
   };

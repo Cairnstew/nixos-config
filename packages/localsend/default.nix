@@ -1,15 +1,27 @@
-{
-  lib,
-  stdenv,
-  fetchurl,
-  fetchFromGitHub,
-  flutter329,
-  makeDesktopItem,
-  copyDesktopItems,
-  nixosTests,
-  libayatana-appindicator,
-  undmg,
-  makeBinaryWrapper,
+# =============================================================================
+# localsend/default.nix — LocalSend Cross-Platform File Sharing
+# =============================================================================
+# Purpose: Package for LocalSend, an open source cross-platform alternative
+#          to AirDrop for local network file sharing.
+#
+# In nixpkgs: Yes, but may lag behind latest releases.
+# This version: Builds from source (Linux) or uses binary release (Darwin).
+#
+# Platforms: Linux (x86_64, aarch64), Darwin (x86_64, aarch64)
+# =============================================================================
+
+{ lib
+, stdenv
+, fetchurl
+, fetchFromGitHub
+, flutter329
+, makeDesktopItem
+, copyDesktopItems
+, nixosTests
+, libayatana-appindicator
+, undmg
+, makeBinaryWrapper
+,
 }:
 
 let
@@ -87,6 +99,7 @@ let
 
     meta = metaCommon // {
       mainProgram = "localsend_app";
+      platforms = lib.platforms.linux;
     };
   };
 
@@ -127,6 +140,17 @@ let
 
   metaCommon = {
     description = "Open source cross-platform alternative to AirDrop";
+    longDescription = ''
+      LocalSend is a free, open-source app that allows you to securely share
+      files and messages with nearby devices over your local network without
+      needing an internet connection.
+      
+      Features:
+      - End-to-end encryption
+      - No internet connection required
+      - Cross-platform (Windows, macOS, Linux, Android, iOS)
+      - No account/registration needed
+    '';
     homepage = "https://localsend.org/";
     license = lib.licenses.mit;
     maintainers = with lib.maintainers; [

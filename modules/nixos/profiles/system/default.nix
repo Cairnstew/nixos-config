@@ -26,11 +26,11 @@ in
     # ── Feature Profiles ─────────────────────────────────────────────────
     desktop.gnome.enable = lib.mkEnableOption "GNOME desktop environment";
     desktop.plasma.enable = lib.mkEnableOption "KDE Plasma desktop environment";
-    
+
     gpu.mesa.enable = lib.mkEnableOption "Mesa GPU drivers (Intel/AMD)";
     gpu.nvidia.enable = lib.mkEnableOption "NVIDIA GPU drivers";
     gpu.nvidia-headless.enable = lib.mkEnableOption "NVIDIA GPU drivers (headless/CUDA)";
-    
+
     location.enable = lib.mkEnableOption "location services (timezone, geoclue)";
     battery.enable = lib.mkEnableOption "battery/power management";
   };
