@@ -1,0 +1,197 @@
+name: Local Verification (act-compatible)
+
+# This workflow is designed to run locally with 'act' for quick verification
+# before pushing changes. It avoids heavy builds and secrets.
+#
+# Usage:
+#   act -j verify-local          # Run all local checks
+#   act -j eval-check            # Just evaluation
+#   act -j format-check          # Just formatting
+#   act -j lint-nix              # Just linting
+
+on:
+  workflow_dispatch:
+  push:
+    branches-ignore:
+      - main
+      - master
+
+jobs:
+  # ─────────────────────────────────────────────────────────────────────────────
+  # Quick evaluation check - no builds, just parsing
+  # ─────────────────────────────────────────────────────────────────────────────
+  eval-check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Nix
+        uses: cachix/install-nix-action@v27
+        with:
+          github_access_token: ${{ secrets.GITHUB_TOKEN }}
+          extra_nix_config: |
+            accept-flake-config = true
+            # Use public caches only (no auth needed)
+            substituters = https://cache.nixos.org https://nix-community.cachix.org
+            trusted-public-keys = cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY= nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs=
+
+      - name: Evaluate all configurations
+        run: |
+          echo "=== Evaluating NixOS configurations ==="
+          for host in laptop server wsl; do
+            echo ""
+            echo "→ Evaluating $host..."
+            if nix eval .#nixosConfigurations.$host.config.system.build.toplevel --json > /dev/null 2>&1; then
+              echo "  ✓ $host evaluates successfully"
+            else
+              echo "  ✗ $host evaluation failed"
+              exit 1
+            fi
+          done
+          echo ""
+          echo "=== All configurations evaluate successfully ==="
+
+      - name: Check flake metadata
+        run: |
+          echo "=== Flake metadata ==="
+          nix flake metadata
+
+  # ─────────────────────────────────────────────────────────────────────────────
+  # Format verification
+  # ─────────────────────────────────────────────────────────────────────────────
+  format-check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Nix
+        uses: cachix/install-nix-action@v27
+        with:
+          github_access_token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Check formatting
+        run: |
+          echo "=== Checking Nix formatting ==="
+          
+          # Install nixpkgs-fmt
+          nix profile install nixpkgs#nixpkgs-fmt
+          
+          # Check all nix files
+          failed=0
+          for file in $(find . -name "*.nix" -not -path "./.git/*" -not -path "./result*"); do
+            if ! nixpkgs-fmt --check "$file" 2>/dev/null; then
+              echo "  ✗ $file"
+              failed=1
+            fi
+          done
+          
+          if [ $failed -eq 1 ]; then
+            echo ""
+            echo "Run 'nix fmt' locally to fix formatting issues"
+            exit 1
+          else
+            echo "  ✓ All files are properly formatted"
+          fi
+
+  # ─────────────────────────────────────────────────────────────────────────────
+  # Static analysis / linting
+  # ─────────────────────────────────────────────────────────────────────────────
+  lint-nix:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Nix
+        uses: cachix/install-nix-action@v27
+        with:
+          github_access_token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Run static checks
+        run: |
+          echo "=== Running static analysis ==="
+          
+          # Check for common anti-patterns
+          issues=0
+          
+          # Check for potential hardcoded secrets
+          echo "→ Checking for potential secrets..."
+          if grep -r "password\s*=\s*\"" --include="*.nix" . 2>/dev/null | grep -v "example\|test\|dummy"; then
+            echo "  ⚠ Found potential hardcoded password (review needed)"
+            issues=$((issues + 1))
+          fi
+          
+          # Check for relative path imports that might break
+          echo "→ Checking import paths..."
+          if grep -r "import\s*\.\./" --include="*.nix" . 2>/dev/null; then
+            echo "  ℹ Found relative imports (verify these are intentional)"
+          fi
+          
+          # Check for TODO/FIXME
+          echo "→ Checking for TODO/FIXME comments..."
+          todos=$(grep -r "TODO\|FIXME\|XXX" --include="*.nix" . 2>/dev/null | wc -l)
+          if [ "$todos" -gt 0 ]; then
+            echo "  ℹ Found $todos TODO/FIXME comment(s)"
+            grep -r "TODO\|FIXME\|XXX" --include="*.nix" . 2>/dev/null | head -10
+          fi
+          
+          echo ""
+          if [ $issues -eq 0 ]; then
+            echo "=== No critical issues found ==="
+          else
+            echo "=== Found $issues potential issue(s) ==="
+          fi
+
+  # ─────────────────────────────────────────────────────────────────────────────
+  # Flake check (evaluation only, no builds)
+  # ─────────────────────────────────────────────────────────────────────────────
+  flake-check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Nix
+        uses: cachix/install-nix-action@v27
+        with:
+          github_access_token: ${{ secrets.GITHUB_TOKEN }}
+          extra_nix_config: |
+            accept-flake-config = true
+
+      - name: Flake check (no-build)
+        run: |
+          echo "=== Running nix flake check --no-build ==="
+          nix flake check --no-build
+          echo "✓ Flake check passed"
+
+  # ─────────────────────────────────────────────────────────────────────────────
+  # All local checks combined
+  # ─────────────────────────────────────────────────────────────────────────────
+  verify-local:
+    runs-on: ubuntu-latest
+    needs: [eval-check, format-check, lint-nix, flake-check]
+    if: always()
+    steps:
+      - name: Summary
+        run: |
+          echo "=========================================="
+          echo "Local Verification Summary"
+          echo "=========================================="
+          echo ""
+          echo "eval-check:   ${{ needs.eval-check.result }}"
+          echo "format-check: ${{ needs.format-check.result }}"
+          echo "lint-nix:     ${{ needs.lint-nix.result }}"
+          echo "flake-check:  ${{ needs.flake-check.result }}"
+          echo ""
+          
+          # Check if any required job failed
+          if [[ "${{ needs.eval-check.result }}" == "failure" ]] || \
+             [[ "${{ needs.format-check.result }}" == "failure" ]] || \
+             [[ "${{ needs.flake-check.result }}" == "failure" ]]; then
+            echo "❌ Some checks failed"
+            exit 1
+          else
+            echo "✅ All critical checks passed!"
+          fi

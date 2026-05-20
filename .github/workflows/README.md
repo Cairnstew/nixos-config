@@ -55,6 +55,17 @@ Monitors flake health:
 
 Provides information about Cachix cache maintenance. Note: Direct cache deletion requires manual action via the Cachix web interface.
 
+### Local Verification (`local-verify.yml`)
+**Triggers:** Push to non-main branches, manual dispatch
+
+Lightweight checks designed to run locally with [`act`](https://github.com/nektos/act):
+- Configuration evaluation (no builds)
+- Format checking
+- Static analysis/linting
+- Flake check (--no-build)
+
+No secrets or Cachix auth required!
+
 ## Required Secrets
 
 | Secret | Description |
@@ -88,3 +99,40 @@ gh workflow run <workflow-name>
 # Via web interface
 # Actions > Workflows > [Select Workflow] > Run workflow
 ```
+
+## Local Testing with `act`
+
+The `local-verify.yml` workflow is optimized for [act](https://github.com/nektos/act) - run GitHub Actions locally!
+
+### Quick Start
+
+```bash
+# Run all local checks
+act -j verify-local -W .github/workflows/local-verify.yml
+
+# Run specific checks
+act -j eval-check    # Just evaluation
+act -j format-check  # Just formatting
+act -j lint-nix      # Just linting
+act -j flake-check   # Just flake check
+```
+
+### Using the Local Verify App (No act needed)
+
+```bash
+# Run all checks
+nix run .#local-verify
+
+# Run specific checks
+nix run .#local-verify -- eval
+nix run .#local-verify -- fmt
+nix run .#local-verify -- lint
+nix run .#local-verify -- flake
+```
+
+### Why Local Verification?
+
+- **Fast**: No ISO builds, just evaluation and static checks
+- **No secrets**: Works without Cachix auth tokens
+- **CI-like**: Same checks that run in CI, but locally
+- **Pre-push**: Catch issues before pushing to GitHub
