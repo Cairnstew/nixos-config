@@ -6,6 +6,21 @@
 
 ---
 
+## Required Reading
+
+Before doing anything in this repo, read these files in order:
+
+1. `STRUCTURE.md` — annotated repo tree; tells you what every file does and what flake output it maps to
+2. `HEATMAP.md` — exact files to read/edit for the 8 most common tasks, plus the full `my.*` Option Registry
+3. `GOTCHAS.md` — known footguns and their fixes; check this before debugging any evaluation or build failure
+4. `modules/AGENT.md` — universal module structure, `my.*` namespace, and per-module conventions
+5. `configurations/AGENT.md` — host configuration conventions and profile usage
+6. `modules/flake-parts/README.md` — flake-parts layer documentation: identity options, `perSystem` vs `flake.*` outputs
+
+When you discover a new problem and its solution, append an entry to `GOTCHAS.md` immediately.
+
+---
+
 ## Table of Contents
 
 1. [Project Overview](#1-project-overview)
