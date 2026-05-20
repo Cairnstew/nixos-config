@@ -7,8 +7,8 @@ in
   assertions = [
     {
       assertion = !(cfg.enable && cfg.ssh.enable && config.my.secrets.enable) ||
-        (config.my.secrets.tailscale.sshKey != null);
-      message = "Tailscale SSH requires tailscale.sshKey secret when secrets are enabled.";
+        ((config.my.secrets.catalog."tailscale.sshKey".file or null) != null);
+      message = "Tailscale SSH requires tailscale.sshKey secret to be defined in my.secrets.catalog when secrets are enabled.";
     }
     {
       assertion = !(cfg.enable && cfg.exitNode) ||

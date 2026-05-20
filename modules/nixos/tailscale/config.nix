@@ -5,8 +5,17 @@ let
   sec = config.my.secrets;
   me = flake.config.me;
 
+  # Helper to get secret name from catalog (keys use dot notation like "tailscale.authKey")
+  getSecretName = path: sec.catalog.${path}.name or null;
+
+  # Get secret names from catalog (keys use dot notation)
+  tailscaleAuthKeyName = getSecretName "tailscale.authKey";
+  tailscaleSshKeyName = getSecretName "tailscale.sshKey";
+
   # Build static SSH config from config.nix tailnet data
-  sshKeyPath = config.age.secrets.${sec.names.tailscale.sshKey}.path;
+  sshKeyPath = if tailscaleSshKeyName != null
+    then config.age.secrets.${tailscaleSshKeyName}.path
+    else null;
 
   # Generate SSH config content from static tailnet configuration
   generateSshConfig = hosts:
@@ -26,8 +35,8 @@ in
       services.tailscale = {
         enable = true;
         openFirewall = cfg.openFirewall;
-        authKeyFile = mkIf sec.enable
-          config.age.secrets.${sec.names.tailscale.authKey}.path;
+        authKeyFile = mkIf (sec.enable && tailscaleAuthKeyName != null)
+          config.age.secrets.${tailscaleAuthKeyName}.path;
         extraUpFlags =
           [ "--accept-dns=true" ]
           ++ lib.optional (cfg.tags != []) "--advertise-tags=${lib.concatStringsSep "," cfg.tags}"
@@ -51,15 +60,15 @@ in
     }
 
     # ── SSH config generation ────────────────────────────────────────────────
-    (mkIf (cfg.ssh.enable && sec.enable) {
+    (mkIf (cfg.ssh.enable && sec.enable && tailscaleSshKeyName != null) {
       assertions = [
         {
-          assertion = sec.tailscale.sshKey != null;
-          message = "my.services.tailscale.ssh.enable requires my.secrets.tailscale.sshKey to be set.";
+          assertion = (sec.catalog."tailscale.sshKey".file or null) != null;
+          message = "my.services.tailscale.ssh.enable requires tailscale.sshKey secret to be defined in my.secrets.catalog.";
         }
       ];
 
-      age.secrets.${sec.names.tailscale.sshKey}.owner = cfg.ssh.user;
+      age.secrets.${tailscaleSshKeyName}.owner = cfg.ssh.user;
 
       users.users.${cfg.ssh.user}.openssh.authorizedKeys.keyFiles =
         lib.optional (cfg.ssh.publicKeyPath != null) cfg.ssh.publicKeyPath;
