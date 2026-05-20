@@ -1,5 +1,5 @@
 # Desktop Configuration
-# AMD-based desktop PC with Mesa GPU drivers
+# AMD-based desktop PC with dual-boot (NixOS + Windows 11)
 # See: ../../AGENT.md for configuration conventions
 { flake, ... }:
 {
@@ -21,10 +21,10 @@
     # Role
     workstation.enable = true;
     development.enable = true;
-    
+
     # Desktop
     desktop.gnome.enable = true;
-    
+
     # Hardware - AMD GPU uses Mesa drivers
     gpu.mesa.enable = true;
     # Note: No battery profile - this is a desktop PC
@@ -44,6 +44,26 @@
     # Update these coordinates to your location
     latitude = 55.8617;
     longitude = 4.2583;
+  };
+
+  # ── Dual-Boot Configuration ─────────────────────────────────────────────
+  # TODO: Update this disk device to match your actual hardware
+  # Use `lsblk` to find your disk (typically /dev/nvme0n1 for NVMe or /dev/sda for SATA)
+  my.disko.dualBoot = {
+    enable = true;
+    disk = "/dev/nvme0n1";  # TODO: Change to your actual disk device
+    windowsSizeGB = 150;     # 150GB for Windows 11
+    # nixosSizeGB = null;    # null = use remaining space
+  };
+
+  # ── Windows Installer ────────────────────────────────────────────────────
+  # TODO: Set localAccount via agenix secret or config.nix
+  # DO NOT commit plaintext passwords to the repository!
+  my.services.windowsInstaller = {
+    enable = true;
+    windowsDisk = "/dev/nvme0n1";  # TODO: Change to match disko disk
+    # localAccount = "username,password";  # TODO: Set securely via secrets
+    # Or use: localAccount = builtins.readFile config.age.secrets.windows-account.path;
   };
 
   # ── Service Configuration ────────────────────────────────────────────────

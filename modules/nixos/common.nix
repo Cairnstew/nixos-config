@@ -47,6 +47,10 @@ in
     ./cachix-push.nix
     ./default-build.nix
 
+    # ── Dual-boot / Windows Support ────────────────────────────────────────
+    ./disko/dual-boot.nix
+    ./windows-installer
+
     # ── Entertainment ──────────────────────────────────────────────────────
     ./spotify.nix
     ./sillytavern

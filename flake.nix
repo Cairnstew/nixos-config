@@ -71,8 +71,19 @@
       landrun-nix.url = "github:srid/landrun-nix";
 	    hyprland.url = "github:hyprwm/Hyprland";
       compose2nix.url = "github:aksiksi/compose2nix";
-      compose2nix.inputs.nixpkgs.follows = "nixpkgs";   
-	  	
+      compose2nix.inputs.nixpkgs.follows = "nixpkgs";
+
+      # Windows dual-boot support
+      uup-builder = {
+        url = "github:Cairnstew/uup-builder";
+        inputs.nixpkgs.follows = "nixpkgs";
+      };
+
+      generate-answer-file = {
+        url = "github:Cairnstew/GenerateAnswerFile";
+        inputs.nixpkgs.follows = "nixpkgs";
+      };
+
       # Neovim
       nixvim.url = "github:nix-community/nixvim";
       nixvim.inputs.nixpkgs.follows = "nixpkgs";
