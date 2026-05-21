@@ -9,11 +9,11 @@ let
 in
 {
   imports = [
-    "${flake.inputs.nixos-vscode-server}/modules/vscode-server/default.nix"
+    nm.vscode-server
     nm.default
   ];
 
-  services.vscode-server.enable = true;
+  my.programs.vscode.server.enable = true;
 
   my.services = {
     ollama = {

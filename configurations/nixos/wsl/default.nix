@@ -45,5 +45,12 @@
   };
 
   # ── Home Manager Extra ─────────────────────────────────────────────────
-  my.homeManager.extraConfig.my.programs.obsidian.enable = true;
+  my.homeManager.extraConfig.my.programs = {
+    obsidian.enable = true;
+    vscode.enable = true;
+  };
+
+  # ── VS Code Server ─────────────────────────────────────────────────────
+  # Required for VS Code Remote-WSL (fixes dynamically linked Node binaries)
+  my.programs.vscode.server.enable = true;
 }

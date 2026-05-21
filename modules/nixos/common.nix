@@ -39,6 +39,9 @@ in
     ./nebula.nix
     ./rustdesk.nix
 
+    # ── Development ────────────────────────────────────────────────────────
+    ./vscode-server.nix
+
     # ── Utilities ───────────────────────────────────────────────────────────
     ./brasero.nix
     ./udisks2.nix

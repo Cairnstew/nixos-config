@@ -10,6 +10,15 @@ in
       description = "Enable Visual Studio Code with custom configuration";
     };
 
+    server = {
+      enable = lib.mkEnableOption ''
+        VS Code server support for Remote-SSH/WSL development.
+        Note: This option only has an effect on NixOS hosts that import
+        the corresponding NixOS module (nixosModules.vscode-server).
+        On standalone Home Manager it is a no-op.
+      '';
+    };
+
     extensions = lib.mkOption {
       type = lib.types.listOf lib.types.package;
       default = with pkgs.vscode-extensions; [
@@ -24,7 +33,7 @@ in
 
     additionalExtensions = lib.mkOption {
       type = lib.types.listOf lib.types.package;
-      default = [];
+      default = [ ];
       description = "Additional VSCode extensions to install (merged with defaults)";
     };
 
@@ -39,14 +48,14 @@ in
 
       models = lib.mkOption {
         type = lib.types.listOf lib.types.str;
-        default = [];
+        default = [ ];
         example = [ "llama3.2" "mistral" ];
         description = "Ollama models to expose to Continue.";
       };
 
       extraConfig = lib.mkOption {
         type = lib.types.attrs;
-        default = {};
+        default = { };
         description = ''
           Extra configuration to merge into ~/.continue/config.yaml.
           See https://docs.continue.dev/reference for all options.
@@ -64,35 +73,6 @@ in
           }
         '';
       };
-    };
-  };
-
-  config = lib.mkIf cfg.enable {
-    programs.vscode = {
-      enable = true;
-      profiles.default = {
-        extensions = cfg.extensions
-          ++ cfg.additionalExtensions
-          ++ lib.optional cfg.continue.enable pkgs.vscode-extensions.continue.continue;
-      };
-    };
-
-    home.file.".continue/config.yaml" = lib.mkIf cfg.continue.enable {
-      text =
-        let
-          baseConfig = {
-            models = map (model: {
-              name = model;
-              provider = "ollama";
-              inherit model;
-              apiBase = cfg.continue.ollamaHost;
-            }) cfg.continue.models;
-          };
-          mergedConfig = lib.recursiveUpdate baseConfig cfg.continue.extraConfig;
-        in
-          builtins.readFile (
-            (pkgs.formats.yaml {}).generate "continue-config" mergedConfig
-          );
     };
   };
 }
