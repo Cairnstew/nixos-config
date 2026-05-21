@@ -79,11 +79,6 @@
         inputs.nixpkgs.follows = "nixpkgs";
       };
 
-      generate-answer-file = {
-        url = "github:Cairnstew/GenerateAnswerFile";
-        inputs.nixpkgs.follows = "nixpkgs";
-      };
-
       # Neovim
       nixvim.url = "github:nix-community/nixvim";
       nixvim.inputs.nixpkgs.follows = "nixpkgs";

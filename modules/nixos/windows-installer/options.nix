@@ -52,14 +52,22 @@ in
       '';
     };
 
-    localAccount = mkOption {
+    localUsername = mkOption {
+      type = types.str;
+      default = "user";
+      description = ''
+        Username for the Windows local administrator account.
+      '';
+    };
+
+    localPassword = mkOption {
       type = types.str;
       default = "";
       description = ''
-        Local account credentials in format "username,password".
+        Password for the Windows local administrator account.
         WARNING: For security, set this via agenix secret or config.nix
         instead of committing plaintext to the repository.
-        Example: config.age.secrets.windows-account.path
+        If left empty, a default password will be used (not recommended).
       '';
     };
 

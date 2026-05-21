@@ -579,26 +579,6 @@
         "type": "github"
       }
     },
-    "generate-answer-file": {
-      "inputs": {
-        "nixpkgs": [
-          "nixpkgs"
-        ]
-      },
-      "locked": {
-        "lastModified": 1771008012,
-        "narHash": "sha256-ZoguVxxdTwppgzGerJnqR7DNj5B3m/AWn7oVbTWznt0=",
-        "owner": "Cairnstew",
-        "repo": "GenerateAnswerFile",
-        "rev": "fac5660be27804937c73ba9a7d1dd7a70955b22d",
-        "type": "github"
-      },
-      "original": {
-        "owner": "Cairnstew",
-        "repo": "GenerateAnswerFile",
-        "type": "github"
-      }
-    },
     "ghostty": {
       "inputs": {
         "flake-compat": "flake-compat",
@@ -1808,7 +1788,6 @@
         "disko": "disko",
         "flake-parts": "flake-parts",
         "flake-utils": "flake-utils_2",
-        "generate-answer-file": "generate-answer-file",
         "ghostty": "ghostty",
         "git-hooks": "git-hooks",
         "github-nix-ci": "github-nix-ci",

@@ -3,9 +3,17 @@ let
   cfg = config.my.services.windowsInstaller;
   inherit (lib) mkIf;
 
-  # Get the packages from flake inputs
+  # Get uup-builder from flake inputs
   uup-builder = flake.inputs.uup-builder.packages.${pkgs.system}.default or flake.inputs.uup-builder.defaultPackage.${pkgs.system};
-  generateAnswerFile = flake.inputs.generate-answer-file.packages.${pkgs.system}.default or flake.inputs.generate-answer-file.defaultPackage.${pkgs.system};
+
+  # Generate autounattend.xml using our custom package
+  autounattendXml = pkgs.callPackage ../../../packages/autounattend-xml {
+    inherit (cfg) windowsPartitionIndex;
+    localUsername = cfg.localUsername;
+    localPassword = cfg.localPassword;
+    timeZone = cfg.timeZone;
+    windowsEdition = "Windows 11 " + (lib.toUpper cfg.windowsEdition);
+  };
 in
 mkIf cfg.enable {
   systemd.services.windows-installer = {
@@ -28,7 +36,6 @@ mkIf cfg.enable {
       # Required packages for the installation script
       path = [
         uup-builder
-        generateAnswerFile
         pkgs.efibootmgr
         pkgs.cdrkit  # provides genisoimage
         pkgs.util-linux
@@ -36,7 +43,6 @@ mkIf cfg.enable {
         pkgs.curl
         pkgs.gnutar
         pkgs.gzip
-        pkgs.mount
       ];
     };
 
@@ -50,7 +56,7 @@ mkIf cfg.enable {
       cd "${cfg.isoOutputDir}"
 
       # Step 1: Download and build Windows ISO using uup-builder
-      echo "[1/5] Downloading Windows ${cfg.windowsBuild} ${cfg.windowsEdition}..."
+      echo "[1/4] Downloading Windows ${cfg.windowsBuild} ${cfg.windowsEdition}..."
       uup-builder build \
         --search "${cfg.windowsBuild}" \
         --lang "${cfg.windowsLang}" \
@@ -65,31 +71,8 @@ mkIf cfg.enable {
       fi
       echo "ISO created: $ISO_FILE"
 
-      # Step 2: Generate autounattend.xml answer file
-      echo "[2/5] Generating autounattend.xml answer file..."
-      
-      # Handle local account - if empty, use default
-      LOCAL_ACCOUNT="${cfg.localAccount}"
-      if [ -z "$LOCAL_ACCOUNT" ]; then
-        echo "WARNING: No local account configured. Windows will require manual setup."
-        echo "Set my.services.windowsInstaller.localAccount via agenix or config.nix"
-        LOCAL_ACCOUNT_ARG=""
-      else
-        LOCAL_ACCOUNT_ARG="-LocalAccount '$LOCAL_ACCOUNT'"
-      fi
-
-      GenerateAnswerFile \
-        -Install ExistingPartition \
-        -InstallToDisk 0 \
-        -InstallToPartition ${toString cfg.windowsPartitionIndex} \
-        -TimeZone "${cfg.timeZone}" \
-        $LOCAL_ACCOUNT_ARG \
-        -OutFile "${cfg.isoOutputDir}/autounattend.xml"
-
-      echo "Answer file generated: ${cfg.isoOutputDir}/autounattend.xml"
-
-      # Step 3: Mount ISO and inject answer file
-      echo "[3/5] Injecting answer file into ISO..."
+      # Step 2: Mount ISO and inject autounattend.xml
+      echo "[2/4] Injecting autounattend.xml into ISO..."
       
       MOUNT_DIR="${cfg.isoOutputDir}/iso-mount"
       mkdir -p "$MOUNT_DIR"
@@ -97,10 +80,10 @@ mkIf cfg.enable {
       # Mount the ISO
       mount -o loop,ro "$ISO_FILE" "$MOUNT_DIR"
       
-      # Create new ISO with answer file injected
+      # Create new ISO with autounattend.xml injected
       MODIFIED_ISO="${cfg.isoOutputDir}/windows-autounattend.iso"
       
-      # Copy ISO contents and add answer file
+      # Copy ISO contents
       WORK_DIR="${cfg.isoOutputDir}/iso-work"
       rm -rf "$WORK_DIR"
       mkdir -p "$WORK_DIR"
@@ -112,8 +95,9 @@ mkIf cfg.enable {
       umount "$MOUNT_DIR"
       rmdir "$MOUNT_DIR"
       
-      # Copy autounattend.xml to ISO root
-      cp "${cfg.isoOutputDir}/autounattend.xml" "$WORK_DIR/"
+      # Copy autounattend.xml from the Nix store
+      cp "${autounattendXml}/autounattend.xml" "$WORK_DIR/"
+      echo "Injected autounattend.xml from ${autounattendXml}/autounattend.xml"
       
       # Create bootable ISO with genisoimage
       echo "Creating modified ISO..."
@@ -134,8 +118,8 @@ mkIf cfg.enable {
       
       echo "Modified ISO created: $MODIFIED_ISO"
 
-      # Step 4: Set up one-time boot entry for Windows Setup
-      echo "[4/5] Setting up one-time EFI boot entry..."
+      # Step 3: Set up one-time boot entry for Windows Setup
+      echo "[3/4] Setting up one-time EFI boot entry..."
       
       # Mount the ESP to access EFI files
       ESP_MOUNT="${cfg.isoOutputDir}/esp-mount"
@@ -155,23 +139,28 @@ mkIf cfg.enable {
         cp -r "$MOUNT_DIR/efi/microsoft"/* "$WINDOWS_EFI_DIR/" 2>/dev/null || true
       fi
       
-      # Also copy bootmgr.efi if present
-      if [ -f "$MOUNT_DIR/efi/boot/bootx64.efi" ]; then
-        cp "$MOUNT_DIR/efi/boot/bootx64.efi" "$ESP_MOUNT/EFI/Boot/bootx64.efi.windows" 2>/dev/null || true
+      # Also copy bootmgfw.efi if present
+      if [ -f "$MOUNT_DIR/bootmgr.efi" ]; then
+        cp "$MOUNT_DIR/bootmgr.efi" "$ESP_MOUNT/EFI/Microsoft/" 2>/dev/null || true
       fi
       
       umount "$MOUNT_DIR"
       rmdir "$MOUNT_DIR"
       
       # Set up one-time boot entry using efibootmgr
-      # First, find the Windows setup EFI file
       if [ -f "$WINDOWS_EFI_DIR/bootmgfw.efi" ]; then
         echo "Creating EFI boot entry for Windows Setup..."
         
-        # Get the disk and partition for ESP
-        ESP_PARTITION=$(df "$ESP_MOUNT" | tail -1 | awk '{print $1}')
+        # Remove any existing Windows Setup entries
+        efibootmgr | grep "Windows 11 Setup" | while read -r line; do
+          entry_num=$(echo "$line" | grep -oP 'Boot\K[0-9A-Fa-f]+')
+          if [ -n "$entry_num" ]; then
+            echo "Removing existing entry Boot$entry_num"
+            efibootmgr -b "$entry_num" -B 2>/dev/null || true
+          fi
+        done
         
-        # Create boot entry (will be one-time via --bootnext)
+        # Create new boot entry
         efibootmgr --create \
           --disk "${cfg.windowsDisk}" \
           --part 1 \
@@ -183,7 +172,7 @@ mkIf cfg.enable {
         BOOT_NUM=$(efibootmgr | grep "Windows 11 Setup" | head -1 | sed 's/Boot\([0-9A-Fa-f]*\).*/\1/')
         if [ -n "$BOOT_NUM" ]; then
           efibootmgr --bootnext "$BOOT_NUM"
-          echo "Set Windows 11 Setup as next boot (one-time)"
+          echo "Set Windows 11 Setup as next boot (one-time, entry $BOOT_NUM)"
         fi
       fi
       
@@ -191,8 +180,8 @@ mkIf cfg.enable {
       umount "$ESP_MOUNT"
       rmdir "$ESP_MOUNT"
 
-      # Step 5: Mark as done and reboot
-      echo "[5/5] Installation prepared successfully!"
+      # Step 4: Mark as done and reboot
+      echo "[4/4] Installation prepared successfully!"
       
       # Create .done file to prevent re-running
       touch "${cfg.isoOutputDir}/.done"
@@ -206,11 +195,6 @@ mkIf cfg.enable {
       sleep 10
       systemctl reboot
     '';
-
-    # Ensure the service can write to the output directory
-    environment = {
-      # Any environment variables needed by the tools
-    };
   };
 
   # Create the output directory with proper permissions

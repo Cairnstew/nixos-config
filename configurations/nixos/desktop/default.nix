@@ -57,13 +57,13 @@
   };
 
   # ── Windows Installer ────────────────────────────────────────────────────
-  # TODO: Set localAccount via agenix secret or config.nix
+  # TODO: Set localPassword via agenix secret or config.nix
   # DO NOT commit plaintext passwords to the repository!
   my.services.windowsInstaller = {
     enable = true;
     windowsDisk = "/dev/nvme0n1";  # TODO: Change to match disko disk
-    # localAccount = "username,password";  # TODO: Set securely via secrets
-    # Or use: localAccount = builtins.readFile config.age.secrets.windows-account.path;
+    localUsername = "user";  # TODO: Change to your preferred username
+    # localPassword = builtins.readFile config.age.secrets.windows-password.path;
   };
 
   # ── Service Configuration ────────────────────────────────────────────────
