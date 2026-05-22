@@ -128,7 +128,7 @@ in
               };
             };
             explore = {
-              model = "opencode-go/kimi-k2.5";
+              model = "opencode-go/deepseek-v4-flash";
               mode = "subagent";
               temperature = 0.1;
               permission = {
