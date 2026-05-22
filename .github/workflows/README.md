@@ -104,7 +104,39 @@ gh workflow run <workflow-name>
 
 The `local-verify.yml` workflow is optimized for [act](https://github.com/nektos/act) - run GitHub Actions locally!
 
-### Quick Start
+### Quick Start (via Nix)
+
+```bash
+# Run all local checks
+nix run .#act-verify
+
+# Run specific checks
+nix run .#act-verify -- eval-check    # Just evaluation
+nix run .#act-verify -- format-check  # Just formatting
+nix run .#act-verify -- lint-nix     # Just linting
+nix run .#act-verify -- flake-check  # Just flake check
+
+# List all available jobs
+nix run .#act -- --list -W .github/workflows/local-verify.yml
+```
+
+### Quick Start (via Just)
+
+```bash
+# Run all local checks
+just act
+
+# Run specific checks
+just act eval-check
+just act format-check
+just act lint-nix
+just act flake-check
+
+# List available jobs
+just act-list
+```
+
+### Quick Start (raw act)
 
 ```bash
 # Run all local checks

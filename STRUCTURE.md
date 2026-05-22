@@ -76,6 +76,7 @@ Flake-level modules for outputs, packages, and development tools.
 
 | File | Description |
 |------|-------------|
+| `act.nix` | Local GitHub Actions testing via `nektos/act` |
 | `config.nix` | Identity and preference options (me, preferences, defaults) |
 | `formatter.nix` | Treefmt/nixpkgs-fmt configuration for `nix fmt` |
 | `mcp-servers.nix` | MCP (Model Context Protocol) server definitions |

@@ -100,7 +100,13 @@ in
     in
     {
       devShells.default = pkgs.mkShell {
-        packages = [ pkgs.terraform pkgs.jq pkgs.openssh pkgs.google-cloud-sdk ];
+        packages = [
+          pkgs.terraform
+          pkgs.jq
+          pkgs.openssh
+          pkgs.google-cloud-sdk
+          pkgs.act
+        ];
         shellHook = ''
           echo "Terraform infra dev shell"
           echo "  nix run .#tf -- plan"
@@ -110,6 +116,11 @@ in
           echo "  nix run .#tf -- show-config"
           echo ""
           echo "  State dir: ${stateDir}"
+          echo ""
+          echo "CI / local workflow testing"
+          echo "  nix run .#act-verify              # run local-verify workflow"
+          echo "  nix run .#act -- --list            # list available jobs"
+          echo "  nix run .#act -- -j eval-check -W .github/workflows/local-verify.yml"
         '';
       };
 

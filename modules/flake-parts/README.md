@@ -16,6 +16,7 @@ flake evaluator itself.  They are imported automatically by `flake.nix` (only
 
 | File | Purpose |
 |------|---------|
+| `act.nix` | Integrates `nektos/act` for local GitHub Actions testing. Exposes `.#act` and `.#act-verify` apps. |
 | `config.nix` | Imports `../../config.nix` and exposes identity (`me`), tailnet hosts (`tailnet`), and Ollama models (`ollamaModels`) as typed flake options. |
 | `nixos-flake.nix` | Wires `nixos-unified` autoWire and primary inputs. Defines the `.#update` target. |
 | `packages.nix` | Manually exports per-host `packages.<hostname>` from NixOS configurations for the matching build platform. |
