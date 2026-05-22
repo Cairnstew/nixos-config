@@ -24,7 +24,7 @@ in
       type = lib.types.package;
       default = pkgs.ghostty;
       description = "Ghostty package to use (must be provided from flake input)";
-      example = lib.literalExpression "inputs.ghostty.packages.\${pkgs.system}.default";
+      example = lib.literalExpression "inputs.ghostty.packages.\${pkgs.stdenv.hostPlatform.system}.default";
     };
 
     fontSize = lib.mkOption {

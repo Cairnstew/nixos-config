@@ -125,6 +125,7 @@ in
     # Set global SSH keepalive from flake config
     programs.ssh = {
       enable = true;
+      enableDefaultConfig = false;
       includes = cfg.includes;
 
       extraConfig = lib.concatStringsSep "\n" (
@@ -136,7 +137,12 @@ in
         ++ lib.optional (cfg.extraConfig != "") cfg.extraConfig
       );
 
-      matchBlocks = lib.mapAttrs
+      matchBlocks = lib.recursiveUpdate {
+        "*" = {
+          sendEnv = [ "LANG" "LC_*" ];
+          hashKnownHosts = true;
+        };
+      } (lib.mapAttrs
         (_: block:
           {
             extraOptions = block.extraOptions
@@ -152,7 +158,7 @@ in
           // lib.optionalAttrs (block.port != null) { inherit (block) port; }
           // lib.optionalAttrs (block.identityFile != null) { inherit (block) identityFile; }
         )
-        cfg.matchBlocks;
+        cfg.matchBlocks);
     };
 
     home.activation.generateSSHKey = lib.mkIf cfg.generateKey (

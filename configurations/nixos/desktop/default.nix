@@ -12,6 +12,9 @@
   # Explicitly set hostPlatform to ensure pkgs is available
   nixpkgs.hostPlatform = "x86_64-linux";
 
+  # ── System State ─────────────────────────────────────────────────────────
+  system.stateVersion = "26.05";
+
   # ── System Identity ──────────────────────────────────────────────────────
   networking.hostName = "desktop";
   nixos-unified.sshTarget = "seanc@desktop";

@@ -11,13 +11,12 @@ in
     };
     package = lib.mkOption {
       type = lib.types.package;
-      # Try youtube-music first, fallback to pear-desktop, else error
-      default = pkgs.youtube-music or pkgs.pear-desktop or (throw ''
-        Neither pkgs.pear-desktop nor pkgs.youtube-music found.
+      default = pkgs.pear-desktop or (throw ''
+        pkgs.pear-desktop not found.
         Run: nix search nixpkgs pear-desktop
         Then update your flake with: nix flake update nixpkgs
       '');
-      description = "Package to install (pear-desktop or youtube-music)";
+      description = "Package to install (pear-desktop, formerly youtube-music)";
     };
   };
   

@@ -4,7 +4,7 @@ let
   inherit (lib) mkIf;
 
   # Get uup-builder from flake inputs
-  uup-builder = flake.inputs.uup-builder.packages.${pkgs.system}.default or flake.inputs.uup-builder.defaultPackage.${pkgs.system};
+  uup-builder = flake.inputs.uup-builder.packages.${pkgs.stdenv.hostPlatform.system}.default or flake.inputs.uup-builder.defaultPackage.${pkgs.stdenv.hostPlatform.system};
 
   # Generate autounattend.xml using our custom package
   autounattendXml = pkgs.callPackage ../../../packages/autounattend-xml {

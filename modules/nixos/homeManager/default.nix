@@ -43,7 +43,7 @@ in
     home-manager.users.${username} = lib.mkMerge [
       # Base configuration
       {
-        home.stateVersion = lib.mkDefault "24.05";
+        home.stateVersion = lib.mkDefault "26.05";
         
         # Import all home modules
         imports = cfg.extraModules;

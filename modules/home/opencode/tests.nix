@@ -82,7 +82,7 @@ in {
     # ── L1: Shell init — export secrets as env vars for SDK-based providers ─
     # OpenAI-compatible providers (Clarifai, etc.) use {file:...} syntax.
     # DeepInfra is handled here because defining it in opencode.json breaks it.
-    programs.zsh.initExtra = lib.optionalString cfg.enable ''
+    programs.zsh.initContent = lib.optionalString cfg.enable ''
       ${lib.optionalString (cfg.groq.keyFile != null) ''
         export GROQ_API_KEY="$(cat ${cfg.groq.keyFile})"
       ''}
