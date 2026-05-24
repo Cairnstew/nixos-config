@@ -1,7 +1,7 @@
 # Desktop Configuration
 # AMD-based desktop PC with dual-boot (NixOS + Windows 11)
 # See: ../../AGENT.md for configuration conventions
-{ flake, ... }:
+{ config, flake, ... }:
 {
   imports = [
     # Import hardware config FIRST to set hostPlatform
@@ -55,8 +55,9 @@
   my.disko.dualBoot = {
     enable = true;
     disk = "/dev/nvme0n1";  # TODO: Change to your actual disk device
+    espSizeGB = 1;           # 1GB EFI System Partition
     windowsSizeGB = 150;     # 150GB for Windows 11
-    # nixosSizeGB = null;    # null = use remaining space
+    # nixosSizeGB = null;   # null = use remaining space
   };
 
   # ── DSC v3 YAML Generation (semi-managed Windows config) ─────────────────
@@ -73,6 +74,28 @@
       "Microsoft-Windows-Subsystem-Linux" = { state = "Installed"; };
       "VirtualMachinePlatform" = { state = "Installed"; };
     };
+
+    # Desktop-appropriate registry tweaks
+    registry = {
+      "DisableCortana" = {
+        keyPath = "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\Windows Search";
+        valueName = "AllowCortana";
+        valueData = { DWord = 0; };
+      };
+      "DisableBingSearch" = {
+        keyPath = "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\Explorer";
+        valueName = "DisableSearchBoxSuggestions";
+        valueData = { DWord = 1; };
+      };
+    };
+
+    # First-boot bloatware removal
+    runCommands = {
+      "RemoveBingBloat" = {
+        executable = "powershell.exe";
+        arguments = [ "-NoProfile" "-Command" "Get-AppxPackage *bing* | Remove-AppxPackage" ];
+      };
+    };
   };
 
   # ── Windows Installer ────────────────────────────────────────────────────
@@ -83,6 +106,11 @@
     windowsDisk = "/dev/nvme0n1";  # TODO: Change to match disko disk
     localUsername = "user";  # TODO: Change to your preferred username
     # localPassword = builtins.readFile config.age.secrets.windows-password.path;
+
+    # dscConfigPath is a build-time Nix store path; interpolated at eval time.
+    # Resolves to /nix/store/...-dscnix-desktop.yaml.
+    # Runtime symlink at /etc/dscnix/desktop.yaml is created by the dscnix module.
+    dscConfigPath = "${config.my.services.dscnix.configFile}";
   };
 
   # ── Service Configuration ────────────────────────────────────────────────

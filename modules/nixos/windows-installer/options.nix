@@ -88,5 +88,15 @@ in
         Must have sufficient space (at least 10GB recommended).
       '';
     };
+
+    dscConfigPath = mkOption {
+      type = types.nullOr types.str;
+      default = null;
+      description = ''
+        Path to the dsc-configuration.yaml file produced by my.services.dscnix.
+        This is a Nix store path (build-time), e.g. config.my.services.dscnix.configFile.
+        Injected into the Windows ISO at sources\$OEM$\$$\Setup\Scripts\ for first-boot DSC apply.
+      '';
+    };
   };
 }

@@ -1,7 +1,9 @@
-{ ... }:
+{ flake, ... }:
 {
   imports = [
-    ./dual-boot.nix
+    flake.inputs.disko.nixosModules.default
+    ./options.nix
+    ./config.nix
     ./tests.nix
   ];
 }
