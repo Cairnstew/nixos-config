@@ -11,6 +11,11 @@ Each entry: **symptom → cause → fix**. One paragraph max. Newest at the top.
 
 ---
 
+**`meta.nix` imported in `default.nix` causes "option does not exist" errors**
+Symptom: `nix flake check` or `nix run` fails with `The option 'home-manager.users.<user>.<key>' does not exist` where `<key>` is something like `category`, `name`, or `tags`. Cause: `meta.nix` is a pure attrset (not a module function: `{ ... }: { ... }`), so importing it via `imports = [ ./meta.nix ]` in `default.nix` tries to set its keys as module-level options that don't exist in the home-manager user scope. Fix: Remove `./meta.nix` from the `imports` list in `default.nix`. `meta.nix` is metadata for agents/tooling only — it must NOT be imported as a Nix module.
+
+---
+
 **New files don't appear in flake outputs**
 Symptom: `nix eval` or `nix build` errors with "does not provide attribute" or similar despite the file existing.
 Cause: Nix flakes only see committed or staged files. Untracked or unstaged changes are invisible to the evaluator.
