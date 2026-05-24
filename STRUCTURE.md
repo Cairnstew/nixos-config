@@ -253,7 +253,7 @@ Home Manager modules for user-level configuration.
 | `just.nix` | Just command runner [→ homeModules.just] |
 | `localsend.nix` | LocalSend file sharing [→ homeModules.localsend] |
 | `obsidian.nix` | Obsidian note-taking [→ homeModules.obsidian] |
-| `rstudio.nix` | RStudio IDE [→ homeModules.rstudio] |
+| `rstudio/` | RStudio IDE [→ homeModules.rstudio] |
 | `ssh.nix` | SSH client configuration [→ homeModules.ssh] |
 | `steam.nix` | Steam gaming client [→ homeModules.steam] |
 | `thunderbird.nix` | Thunderbird email client [→ homeModules.thunderbird] |
