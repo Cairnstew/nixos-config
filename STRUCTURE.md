@@ -97,7 +97,7 @@ NixOS system modules.
 | File | Description |
 |------|-------------|
 | `common.nix` | Common base configuration imported by all hosts [→ nixosModules.common] |
-| `default.nix` | NixOS modules entry point and exports |
+| `disko/` | Dual-boot partition layout via disko [→ nixosModules.disko] |
 | `nix.nix` | Nix daemon and settings configuration |
 | `primary-as-admin.nix` | Primary user admin privileges |
 
@@ -177,7 +177,14 @@ System and home profile definitions.
 | File | Description |
 |------|-------------|
 | `audio.nix` | PipeWire audio configuration [→ nixosModules.audio] |
-| `battery.nix` | Power management for laptops [→ nixosModules.battery] |
+| `battery/` | Power management for laptops [→ nixosModules.battery] |
+| `battery/default.nix` | Module entry point |
+| `battery/options.nix` | Option declarations (lid switch, suspend control) |
+| `battery/config.nix` | Main implementation (auto-cpufreq, thermald, logind) |
+| `battery/services.nix` | systemd suspend target overrides |
+| `battery/meta.nix` | Machine-readable metadata |
+| `battery/tests.nix` | L0 assertions |
+| `battery/README.md` | Human documentation |
 | `bluetooth.nix` | Bluetooth support [→ nixosModules.bluetooth] |
 | `brasero.nix` | CD/DVD burning [→ nixosModules.brasero] |
 | `cachix-push.nix` | Cachix binary cache pushing [→ nixosModules.cachix-push] |
@@ -190,6 +197,7 @@ System and home profile definitions.
 | `plasma-x11.nix` | KDE Plasma X11 session [→ nixosModules.plasma-x11] |
 | `rustdesk.nix` | RustDesk remote desktop [→ nixosModules.rustdesk] |
 | `server.nix` | Base server configuration |
+| `terraform/` | Terranix GCP GPU VM deployment [→ nixosModules.terraform] |
 | `sillytavern/` | SillyTavern AI character chat |
 | `sillytavern/default.nix` | SillyTavern service |
 | `sillytavern/presets.nix` | Preset configurations |
@@ -199,7 +207,7 @@ System and home profile definitions.
 | `uup-converter.nix` | Windows ISO conversion tool [→ nixosModules.uup-converter] |
 | `ventoy.nix` | Ventoy bootable USB creator [→ nixosModules.ventoy] |
 | `waydroid.nix` | Waydroid Android container [→ nixosModules.waydroid] |
-| `wsl-wm.nix` | WSL window manager integration |
+| `wsl-wm/` | WSL window manager integration [→ nixosModules.wsl-wm] |
 | `_1password/` | 1Password integration |
 | `_1password/default.nix` | 1Password system config |
 | `_1password/home.nix` | 1Password SSH agent home config |

@@ -1,17 +1,9 @@
-{ pkgs, config, lib, ... }:
+{ config, lib, pkgs, ... }:
+let
+  cfg = config.my.services.ssh;
+in
 {
-  options.my.services.ssh = {
-    enable = lib.mkEnableOption "SSH daemon with auto-generated root key";
-
-    authorizedKeys = lib.mkOption {
-      type = lib.types.listOf lib.types.str;
-      default = [];
-      description = "SSH public keys authorized for root login.";
-    };
-  };
-
-  config = lib.mkIf config.my.services.ssh.enable {
-
+  config = lib.mkIf cfg.enable {
     services.openssh = {
       enable = true;
       settings = {
@@ -20,7 +12,7 @@
       };
     };
 
-    users.users.root.openssh.authorizedKeys.keys = config.my.services.ssh.authorizedKeys;
+    users.users.root.openssh.authorizedKeys.keys = cfg.authorizedKeys;
 
     system.activationScripts.generateRootSSHKey = ''
       if [ ! -f /root/.ssh/id_ed25519 ]; then

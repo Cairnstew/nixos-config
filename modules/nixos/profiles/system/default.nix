@@ -49,19 +49,24 @@ in
 
     # NVIDIA GPU profile (full desktop)
     (lib.mkIf cfg.gpu.nvidia.enable {
-      hardwareProfiles.gpu.nvidia.enable = true;
-      hardwareProfiles.gpu.nvidia.headless = false;
+      my.hardware.gpu.nvidia.enable = true;
+      my.hardware.gpu.nvidia.headless = false;
     })
 
     # NVIDIA GPU profile (headless/CUDA)
     (lib.mkIf cfg.gpu.nvidia-headless.enable {
-      hardwareProfiles.gpu.nvidia.enable = true;
-      hardwareProfiles.gpu.nvidia.headless = true;
+      my.hardware.gpu.nvidia.enable = true;
+      my.hardware.gpu.nvidia.headless = true;
     })
 
     # Mesa GPU profile
     (lib.mkIf cfg.gpu.mesa.enable {
-      hardwareProfiles.gpu.mesa.enable = true;
+      my.hardware.gpu.mesa.enable = true;
+    })
+
+    # Battery/power management profile
+    (lib.mkIf cfg.battery.enable {
+      my.system.battery.enable = true;
     })
 
     # Assertions to prevent conflicting profiles

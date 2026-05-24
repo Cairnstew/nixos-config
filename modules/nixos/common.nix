@@ -18,10 +18,10 @@ in
     ./_1password
 
     # ── Hardware ───────────────────────────────────────────────────────────
-    ./audio.nix
-    ./battery.nix
+    ./audio
+    ./battery
     ./bluetooth.nix
-    ./graphics.nix
+    ./graphics
 
     # ── Desktop ────────────────────────────────────────────────────────────
     ./gnome
@@ -33,7 +33,7 @@ in
     ./ollama
 
     # ── Networking ─────────────────────────────────────────────────────────
-    ./ssh.nix
+    ./ssh
     ./tailscale
     ./natShare.nix
     ./nebula.nix
@@ -47,11 +47,11 @@ in
     ./udisks2.nix
     ./ventoy.nix
     ./gitreposync
-    ./cachix-push.nix
+    ./cachix-push
     ./default-build.nix
 
     # ── Dual-boot / Windows Support ────────────────────────────────────────
-    ./disko/dual-boot.nix
+    ./disko
     ./windows-installer
 
     # ── Entertainment ──────────────────────────────────────────────────────
@@ -171,12 +171,5 @@ in
   # Additional packages are defined per-host or use environment.systemPackages directly
 
   # ── Assertions ───────────────────────────────────────────────────────────
-  assertions = [
-    {
-      assertion =
-        !(config.my.profiles.gpu.mesa.enable or false) ||
-        !(config.my.profiles.gpu.nvidia.enable or false);
-      message = "Cannot enable both Mesa and NVIDIA GPU profiles.";
-    }
-  ];
+  # Note: Profile mutual-exclusivity assertions live in profiles/system/default.nix
 }

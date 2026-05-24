@@ -1,16 +1,11 @@
 { flake, pkgs, lib, ... }:
 let
-  me   = flake.config.me;
-  user = me.username;
-  nm   = flake.inputs.self.nixosModules;
-
   ollamaModels    = flake.config.ollamaModels;
   sillytavernModel = "hf.co/Lewdiculous/DS-R1-Qwen3-8B-ArliAI-RpR-v4-Small-GGUF-IQ-Imatrixlatest";
 in
 {
   imports = [
-    nm.vscode-server
-    nm.default
+    flake.inputs.self.nixosModules.vscode-server
   ];
 
   my.programs.vscode.server.enable = true;
