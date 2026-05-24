@@ -22,21 +22,20 @@ jobs:
       - name: Check formatting
         run: |
           echo "Checking nix formatting..."
-          NIX_FILES=$(find . -name '*.nix' -not -path './.git/*' -not -path '*/node_modules/*' -not -path './secrets/*' | sort)
-          FILE_COUNT=$(echo "$NIX_FILES" | wc -l)
+          FILE_COUNT=$(find . -name '*.nix' -not -path './.git/*' -not -path '*/node_modules/*' -not -path './secrets/*' | wc -l)
           echo "Found $FILE_COUNT .nix files to check"
 
+          # Use the flake's pinned formatter (nixpkgs-fmt) via xargs to avoid ARG_MAX
           FORMATTER=$(nix eval .#formatter.x86_64-linux --raw 2>/dev/null)
           if [ -z "$FORMATTER" ] || [ ! -f "$FORMATTER/bin/nixpkgs-fmt" ]; then
             echo "Building formatter..."
             nix build .#formatter.x86_64-linux
             FORMATTER="./result"
           fi
-          if "$FORMATTER/bin/nixpkgs-fmt" --check $NIX_FILES; then
+
+          if find . -name '*.nix' -not -path './.git/*' -not -path '*/node_modules/*' -not -path './secrets/*' -print0 | xargs -0 "$FORMATTER/bin/nixpkgs-fmt" --check; then
             echo "All files are properly formatted!"
           else
             echo "::error::Formatting issues found!"
-            echo "Run the following to fix:"
-            echo "  find . -name '*.nix' -not -path './.git/*' -not -path '*/node_modules/*' -not -path './secrets/*' | xargs nix run nixpkgs#nixpkgs-fmt"
             exit 1
           fi
