@@ -32,7 +32,7 @@ in
     # Non-lighthouse hosts must have at least one lighthouse address
     {
       assertion = !cfg.enable || hostCfg == null ||
-        hostCfg.isLighthouse || hostCfg.lighthouseAddrs != [];
+        hostCfg.isLighthouse || hostCfg.lighthouseAddrs != [ ];
       message = ''
         Nebula host "${hostname}" is not a lighthouse but has no
         lighthouse addresses configured. Set `lighthouseAddrs` to at

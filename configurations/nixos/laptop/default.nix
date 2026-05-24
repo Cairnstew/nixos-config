@@ -23,10 +23,10 @@
     # Role
     workstation.enable = true;
     development.enable = true;
-    
+
     # Desktop
     desktop.gnome.enable = true;
-    
+
     # Hardware
     gpu.mesa.enable = true;
     battery.enable = true;

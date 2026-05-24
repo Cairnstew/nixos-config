@@ -19,7 +19,7 @@ in
       description = "Package to install (pear-desktop, formerly youtube-music)";
     };
   };
-  
+
   config = lib.mkIf cfg.enable {
     home.packages = [ cfg.package ];
   };

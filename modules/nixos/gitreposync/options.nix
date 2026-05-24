@@ -32,7 +32,7 @@ let
 
       branches = mkOption {
         type = types.listOf types.str;
-        default = [];
+        default = [ ];
         description = ''
           Specific branches to track. If empty, fetches all refs and applies
           the pull strategy to whatever branch is currently checked out.
@@ -150,7 +150,8 @@ let
     };
   };
 
-in {
+in
+{
   options.my.services.gitRepoSync = {
     enable = mkEnableOption "git repository sync service" // { default = false; };
 
@@ -162,7 +163,7 @@ in {
 
     repos = mkOption {
       type = types.attrsOf (types.submodule repoOpts);
-      default = {};
+      default = { };
       description = "Attribute set of repositories to keep synced.";
       example = literalExpression ''
         {

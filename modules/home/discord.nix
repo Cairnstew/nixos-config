@@ -28,7 +28,7 @@ in
 
     extraPackages = lib.mkOption {
       type = lib.types.listOf lib.types.package;
-      default = [];
+      default = [ ];
       description = "Extra packages or plugins to include with Discord.";
     };
 
@@ -53,15 +53,15 @@ in
 
     # Autostart Discord
     home.file = lib.mkIf cfg.autostart {
-    ".config/autostart/discord.desktop".text = ''
-      [Desktop Entry]
-      Type=Application
-      Name=Discord
-      Exec=${pkgs.discord}/bin/Discord
-      X-GNOME-Autostart-enabled=true
-      NoDisplay=false
-      Comment=Start Discord on login
-    '';
-  };
+      ".config/autostart/discord.desktop".text = ''
+        [Desktop Entry]
+        Type=Application
+        Name=Discord
+        Exec=${pkgs.discord}/bin/Discord
+        X-GNOME-Autostart-enabled=true
+        NoDisplay=false
+        Comment=Start Discord on login
+      '';
+    };
   };
 }

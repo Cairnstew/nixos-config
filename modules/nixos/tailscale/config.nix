@@ -13,19 +13,22 @@ let
   tailscaleSshKeyName = getSecretName "tailscale.sshKey";
 
   # Build static SSH config from config.nix tailnet data
-  sshKeyPath = if tailscaleSshKeyName != null
+  sshKeyPath =
+    if tailscaleSshKeyName != null
     then config.age.secrets.${tailscaleSshKeyName}.path
     else null;
 
   # Generate SSH config content from static tailnet configuration
   generateSshConfig = hosts:
-    lib.concatStringsSep "\n\n" (lib.mapAttrsToList (name: host: ''
-      Host ${name}
-        HostName ${host.magicDnsName}
-        IdentityFile ${sshKeyPath}
-        IdentitiesOnly yes
-        ${cfg.ssh.extraHostConfig}
-    '') hosts);
+    lib.concatStringsSep "\n\n" (lib.mapAttrsToList
+      (name: host: ''
+        Host ${name}
+          HostName ${host.magicDnsName}
+          IdentityFile ${sshKeyPath}
+          IdentitiesOnly yes
+          ${cfg.ssh.extraHostConfig}
+      '')
+      hosts);
 
 in
 {
@@ -39,7 +42,7 @@ in
           config.age.secrets.${tailscaleAuthKeyName}.path;
         extraUpFlags =
           [ "--accept-dns=true" ]
-          ++ lib.optional (cfg.tags != []) "--advertise-tags=${lib.concatStringsSep "," cfg.tags}"
+          ++ lib.optional (cfg.tags != [ ]) "--advertise-tags=${lib.concatStringsSep "," cfg.tags}"
           ++ lib.optional cfg.exitNode "--advertise-exit-node";
       };
 

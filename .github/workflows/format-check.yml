@@ -21,27 +21,22 @@ jobs:
 
       - name: Check formatting
         run: |
-          # Try to use nix fmt if available
-          if nix fmt --help >/dev/null 2>&1; then
-            echo "Using nix fmt..."
-            # Create a backup of current state
-            git stash push -m "format-check-backup" --include-untracked || true
-            
-            # Run formatter
-            nix fmt
-            
-            # Check if any files were modified
-            if ! git diff --quiet; then
-              echo "::error::Formatting issues found! Run 'nix fmt' locally to fix."
-              echo ""
-              echo "Files that need formatting:"
-              git diff --name-only
-              echo ""
-              echo "Diff:"
-              git diff
-              exit 1
-            fi
+          echo "Checking nix formatting..."
+          NIX_FILES=$(find . -name '*.nix' -not -path './.git/*' -not -path '*/node_modules/*' -not -path './secrets/*' | sort)
+          FILE_COUNT=$(echo "$NIX_FILES" | wc -l)
+          echo "Found $FILE_COUNT .nix files to check"
+
+          FORMATTER=$(nix eval .#formatter.x86_64-linux --raw 2>/dev/null)
+          if [ -z "$FORMATTER" ] || [ ! -f "$FORMATTER/bin/nixpkgs-fmt" ]; then
+            echo "Building formatter..."
+            nix build .#formatter.x86_64-linux
+            FORMATTER="./result"
+          fi
+          if "$FORMATTER/bin/nixpkgs-fmt" --check $NIX_FILES; then
+            echo "All files are properly formatted!"
           else
-            echo "No formatter configured in flake.nix"
-            echo "Consider adding a formatter package for 'nix fmt' support"
+            echo "::error::Formatting issues found!"
+            echo "Run the following to fix:"
+            echo "  find . -name '*.nix' -not -path './.git/*' -not -path '*/node_modules/*' -not -path './secrets/*' | xargs nix run nixpkgs#nixpkgs-fmt"
+            exit 1
           fi

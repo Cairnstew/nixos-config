@@ -23,7 +23,7 @@ in
       type = lib.types.package;
       default = self.packages.${pkgs.stdenv.hostPlatform.system}.localsend or pkgs.localsend;
       description = "Package to install for LocalSend";
-    };  
+    };
 
   };
 

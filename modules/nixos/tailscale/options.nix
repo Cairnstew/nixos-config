@@ -20,7 +20,7 @@ in
 
     tags = mkOption {
       type = types.listOf types.str;
-      default = [];
+      default = [ ];
       example = [ "tag:nixos" "tag:personal" ];
       description = "Tailscale ACL tags to advertise for this machine.";
     };

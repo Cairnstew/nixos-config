@@ -16,12 +16,12 @@ let
       requires-python = cfg.requiresPython;
       dependencies = cfg.dependencies;
       scripts = cfg.scripts;
-    } // lib.optionalAttrs (cfg.optionalDependencies != {}) {
+    } // lib.optionalAttrs (cfg.optionalDependencies != { }) {
       optional-dependencies = cfg.optionalDependencies;
     };
 
     # Dev dependencies group (PEP 735)
-    dependency-groups = lib.optionalAttrs (cfg.devDependencies != []) {
+    dependency-groups = lib.optionalAttrs (cfg.devDependencies != [ ]) {
       dev = cfg.devDependencies;
     };
 

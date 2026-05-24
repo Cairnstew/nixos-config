@@ -17,7 +17,7 @@ in
       type = lib.types.package;
       default = self.packages.${pkgs.stdenv.hostPlatform.system}.uup-converter;
       description = "Package to install for uup-converter";
-    };  
+    };
 
   };
 

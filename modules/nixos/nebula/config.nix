@@ -67,7 +67,7 @@ let
 
       lighthouseAddrs = mkOption {
         type = types.listOf types.str;
-        default = [];
+        default = [ ];
         description = ''
           Static addresses of lighthouse nodes in host:port format.
           Leave empty on the lighthouse itself.
@@ -109,7 +109,7 @@ in
 
     hosts = mkOption {
       type = types.attrsOf (types.submodule hostOpts);
-      default = {};
+      default = { };
       description = ''
         Per-host Nebula configuration keyed by hostname.
         The module auto-detects config.networking.hostName and applies
@@ -172,9 +172,9 @@ in
 
     # Auto-declare age.secrets for this host's key if keySecretFile is set.
     age.secrets.${secretName} = mkIf (hostCfg.keySecretFile != null) {
-      file  = hostCfg.keySecretFile;
+      file = hostCfg.keySecretFile;
       owner = "nebula-${cfg.network}";
-      mode  = "0400";
+      mode = "0400";
     };
 
     # Open firewall port if requested.
@@ -183,19 +183,19 @@ in
 
     services.nebula.networks.${cfg.network} = {
       enable = true;
-      ca     = cfg.ca;
-      cert   = hostCfg.cert;
-      key    = resolvedKeyFile;
+      ca = cfg.ca;
+      cert = hostCfg.cert;
+      key = resolvedKeyFile;
 
       isLighthouse = hostCfg.isLighthouse;
 
-      staticHostMap = mkIf (hostCfg.lighthouseAddrs != []) (
+      staticHostMap = mkIf (hostCfg.lighthouseAddrs != [ ]) (
         # Build staticHostMap from lighthouse nebula IPs
         # Users should set this explicitly if needed — placeholder here
-        {}
+        { }
       );
 
-      lighthouses = mkIf (!hostCfg.isLighthouse && hostCfg.lighthouseAddrs != [])
+      lighthouses = mkIf (!hostCfg.isLighthouse && hostCfg.lighthouseAddrs != [ ])
         # Extract just the IPs from "ip:port" strings
         (map (addr: lib.head (lib.splitString ":" addr)) hostCfg.lighthouseAddrs);
 
@@ -210,7 +210,7 @@ in
       };
 
       firewall = {
-        inbound  = cfg.firewall.inbound;
+        inbound = cfg.firewall.inbound;
         outbound = cfg.firewall.outbound;
       };
     };

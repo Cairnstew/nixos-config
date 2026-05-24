@@ -6,7 +6,8 @@
 
 {
   imports =
-    [ # Include the results of the hardware scan.
+    [
+      # Include the results of the hardware scan.
       ./hardware-configuration.nix
     ];
 
@@ -53,20 +54,20 @@
     isNormalUser = true;
     description = "Sean Cairns";
     extraGroups = [ "networkmanager" "wheel" ];
-    packages = with pkgs; [];
+    packages = with pkgs; [ ];
   };
 
 
   # List packages installed in system profile. To search, run:
   # $ nix search wget
   environment.systemPackages = with pkgs; [
-  #  vim # Do not forget to add an editor to edit configuration.nix! The Nano editor is also installed by default.
-  #  wget
-     micro
-     git
-     #nvidia-container-toolkit
-     #gh
-     #docker-compose
+    #  vim # Do not forget to add an editor to edit configuration.nix! The Nano editor is also installed by default.
+    #  wget
+    micro
+    git
+    #nvidia-container-toolkit
+    #gh
+    #docker-compose
 
   ];
 
@@ -80,7 +81,7 @@
   # List services that you want to enable:
 
   # Enable the OpenSSH daemon.
-    services.openssh.enable = true;
+  services.openssh.enable = true;
 
   # Open ports in the firewall.
   # networking.firewall.allowedTCPPorts = [ ... ];
@@ -98,9 +99,9 @@
 
 
   virtualisation.docker.daemon.settings = {
-      # Set your desired data root path
-      "data-root" = "/mnt/data/docker-data";
-    };
+    # Set your desired data root path
+    "data-root" = "/mnt/data/docker-data";
+  };
 
   fileSystems."/mnt/data" = {
     device = "/dev/disk/by-uuid/aaf609bd-e320-4d13-a9a6-fc2cc5cd0f3a";

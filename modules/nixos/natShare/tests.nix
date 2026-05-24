@@ -72,7 +72,7 @@ in
     {
       assertion = !cfg.enable ||
         (lib.hasPrefix prefix cfg.dhcpRangeStart &&
-         lib.hasPrefix prefix cfg.dhcpRangeEnd);
+          lib.hasPrefix prefix cfg.dhcpRangeEnd);
       message = ''
         NAT sharing DHCP range (${cfg.dhcpRangeStart} - ${cfg.dhcpRangeEnd})
         must be in the same /24 subnet as the LAN address (${cfg.lanAddress}).

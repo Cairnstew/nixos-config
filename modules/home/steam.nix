@@ -13,7 +13,7 @@ in
 
     extraPackages = lib.mkOption {
       type = lib.types.listOf lib.types.package;
-      default = [];
+      default = [ ];
       description = "Extra Steam-related packages to install.";
     };
 
@@ -34,7 +34,7 @@ in
       with pkgs;
       [
         steam
-        steam-run   # useful FHS env for some games
+        steam-run # useful FHS env for some games
         steamcmd
       ]
       ++ cfg.extraPackages;

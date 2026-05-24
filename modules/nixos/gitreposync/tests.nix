@@ -3,20 +3,25 @@
 let
   inherit (lib) mkIf mapAttrsToList hasPrefix;
   cfg = config.my.services.gitRepoSync;
-in {
+in
+{
   config = mkIf cfg.enable {
     # ── L0: Nix assertions ────────────────────────────────────────────────────
     assertions =
-      mapAttrsToList (name: repo: {
-        assertion = repo.agenix.enable -> (hasPrefix "https://" repo.url);
-        message   = "git-repo-sync: repo '${name}' uses agenix token injection "
-                  + "but its URL is not https://. Token injection only works with HTTPS remotes.";
-      }) cfg.repos
-      ++ mapAttrsToList (name: repo: {
-        assertion = repo.cloneBare -> !repo.autoPull;
-        message   = "git-repo-sync: repo '${name}' is a bare clone — set autoPull = false "
-                  + "(bare repos have no working tree to merge into).";
-      }) cfg.repos;
+      mapAttrsToList
+        (name: repo: {
+          assertion = repo.agenix.enable -> (hasPrefix "https://" repo.url);
+          message = "git-repo-sync: repo '${name}' uses agenix token injection "
+          + "but its URL is not https://. Token injection only works with HTTPS remotes.";
+        })
+        cfg.repos
+      ++ mapAttrsToList
+        (name: repo: {
+          assertion = repo.cloneBare -> !repo.autoPull;
+          message = "git-repo-sync: repo '${name}' is a bare clone — set autoPull = false "
+          + "(bare repos have no working tree to merge into).";
+        })
+        cfg.repos;
 
     # ── L2: Smoke-test oneshot ───────────────────────────────────────────────
     systemd.user.services."git-repo-sync-smoke-test" = {
@@ -41,7 +46,8 @@ in {
               fi
             fi
           '';
-        in ''
+        in
+        ''
           set -uo pipefail
           FAILED=0
 

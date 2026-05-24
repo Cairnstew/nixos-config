@@ -12,14 +12,14 @@ in
     enable = lib.mkEnableOption "1Password SSH agent integration";
 
     install1PasswordCli = lib.mkOption {
-      type    = lib.types.bool;
+      type = lib.types.bool;
       default = true;
       description = "Install the 1Password CLI (op).";
     };
 
     additionalMatchBlocks = lib.mkOption {
-      type    = lib.types.attrs;
-      default = {};
+      type = lib.types.attrs;
+      default = { };
       description = "Additional SSH match blocks to merge into my.services.ssh.matchBlocks.";
     };
   };
@@ -29,7 +29,7 @@ in
 
     my.services.ssh = {
       identityAgent = agentSock;
-      matchBlocks   = cfg.additionalMatchBlocks;
+      matchBlocks = cfg.additionalMatchBlocks;
     };
   };
 }

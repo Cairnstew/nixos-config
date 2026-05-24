@@ -4,7 +4,7 @@
   category = "services";
   tags = [ "git" "sync" "systemd" "agenix" ];
   provides = [ "my.services.gitRepoSync" ];
-  expects = [];
+  expects = [ ];
   complexity = "medium";
   tested = true;
 }

@@ -17,7 +17,7 @@ let
   # Filter out null values for optional fields
   mkAgentConfig = agentCfg: {
     model = agentCfg.model;
-    mode  = agentCfg.mode;
+    mode = agentCfg.mode;
   }
   // (lib.optionalAttrs (agentCfg.temperature != null) { temperature = agentCfg.temperature; })
   // (lib.optionalAttrs (agentCfg.steps != null) { steps = agentCfg.steps; })
@@ -28,7 +28,7 @@ let
     };
   });
 
-  agentSettings = lib.optionalAttrs (cfg.agents != {}) {
+  agentSettings = lib.optionalAttrs (cfg.agents != { }) {
     agent = mapAttrs (_: mkAgentConfig) cfg.agents;
   };
 
@@ -36,7 +36,7 @@ let
   # Use recursiveUpdate to merge nested attrsets properly
   settingsWithProviders = recursiveUpdate cfg.settings providers.allProviderSettings;
   settingsWithMcp = recursiveUpdate settingsWithProviders (
-    lib.optionalAttrs (cfg.mcp != {}) { inherit (cfg) mcp; }
+    lib.optionalAttrs (cfg.mcp != { }) { inherit (cfg) mcp; }
   );
   mergedSettings = recursiveUpdate settingsWithMcp agentSettings;
 
@@ -47,28 +47,28 @@ let
   # Build list of all providers that need auth.json entries
   allAuthProviders = lib.filter (p: p.keyFile != null) [
     # First-class providers
-    { name = "opencode-go";  keyFile = cfg.opencode-go.keyFile; }
+    { name = "opencode-go"; keyFile = cfg.opencode-go.keyFile; }
     { name = "opencode-zen"; keyFile = cfg.opencode-zen.keyFile; }
-    { name = "anthropic";    keyFile = cfg.anthropic.keyFile; }
-    { name = "groq";         keyFile = cfg.groq.keyFile; }
-    { name = "openai";       keyFile = cfg.openai.keyFile; }
-    { name = "google";       keyFile = cfg.google.keyFile; }
-    { name = "mistral";      keyFile = cfg.mistral.keyFile; }
-    { name = "xai";          keyFile = cfg.xai.keyFile; }
+    { name = "anthropic"; keyFile = cfg.anthropic.keyFile; }
+    { name = "groq"; keyFile = cfg.groq.keyFile; }
+    { name = "openai"; keyFile = cfg.openai.keyFile; }
+    { name = "google"; keyFile = cfg.google.keyFile; }
+    { name = "mistral"; keyFile = cfg.mistral.keyFile; }
+    { name = "xai"; keyFile = cfg.xai.keyFile; }
 
     # OpenAI-compatible providers
-    { name = "deepinfra";    keyFile = cfg.deepinfra.keyFile; }
-    { name = "clarifai";     keyFile = cfg.clarifai.patFile; }
-    { name = "together";     keyFile = cfg.together.keyFile; }
-    { name = "fireworks";    keyFile = cfg.fireworks.keyFile; }
-    { name = "cerebras";     keyFile = cfg.cerebras.keyFile; }
-    { name = "openrouter";   keyFile = cfg.openrouter.keyFile; }
+    { name = "deepinfra"; keyFile = cfg.deepinfra.keyFile; }
+    { name = "clarifai"; keyFile = cfg.clarifai.patFile; }
+    { name = "together"; keyFile = cfg.together.keyFile; }
+    { name = "fireworks"; keyFile = cfg.fireworks.keyFile; }
+    { name = "cerebras"; keyFile = cfg.cerebras.keyFile; }
+    { name = "openrouter"; keyFile = cfg.openrouter.keyFile; }
 
     # Azure
-    { name = "azure";        keyFile = cfg.azure.keyFile; }
+    { name = "azure"; keyFile = cfg.azure.keyFile; }
   ];
 
-  hasAuthProviders = allAuthProviders != [];
+  hasAuthProviders = allAuthProviders != [ ];
 
   # Script to write auth.json, merging with existing entries
   # Uses jq to merge so existing providers (e.g., from /connect) are preserved
@@ -105,23 +105,24 @@ let
     chmod 600 "$AUTH_FILE" 2>/dev/null || true
   '';
 
-in {
+in
+{
   config = mkIf cfg.enable (mkMerge [
 
     # Base opencode config
     {
       programs.opencode = {
-        enable               = true;
-        package              = cfg.package;
+        enable = true;
+        package = cfg.package;
         enableMcpIntegration = cfg.enableMcpIntegration;
-        context              = cfg.context;
-        commands             = cfg.commands;
-        themes               = cfg.themes;
-        tui                  = cfg.tui;
-        skills               = cfg.skills;
-        tools                = cfg.tools;
-        extraPackages        = cfg.extraPackages ++ lib.optionals cfg.enableLsp [ pkgs.nixd ];
-        settings             = mergedSettings // lib.optionalAttrs cfg.enableLsp { lsp = true; };
+        context = cfg.context;
+        commands = cfg.commands;
+        themes = cfg.themes;
+        tui = cfg.tui;
+        skills = cfg.skills;
+        tools = cfg.tools;
+        extraPackages = cfg.extraPackages ++ lib.optionals cfg.enableLsp [ pkgs.nixd ];
+        settings = mergedSettings // lib.optionalAttrs cfg.enableLsp { lsp = true; };
       };
     }
 
@@ -131,13 +132,13 @@ in {
     })
 
     # ── Shorthands (plain assignment = priority 100, overrides mkDefault) ───
-    (mkIf (cfg.model        != null) { programs.opencode.settings.model        = cfg.model; })
-    (mkIf (cfg.share        != null) { programs.opencode.settings.share        = cfg.share; })
-    (mkIf (cfg.autoupdate   != null) { programs.opencode.settings.autoupdate   = cfg.autoupdate; })
-    (mkIf (cfg.smallModel   != null) { programs.opencode.settings.small_model  = cfg.smallModel; })
+    (mkIf (cfg.model != null) { programs.opencode.settings.model = cfg.model; })
+    (mkIf (cfg.share != null) { programs.opencode.settings.share = cfg.share; })
+    (mkIf (cfg.autoupdate != null) { programs.opencode.settings.autoupdate = cfg.autoupdate; })
+    (mkIf (cfg.smallModel != null) { programs.opencode.settings.small_model = cfg.smallModel; })
     (mkIf (cfg.defaultAgent != null) { programs.opencode.settings.default_agent = cfg.defaultAgent; })
-    (mkIf (cfg.shell        != null) { programs.opencode.settings.shell        = cfg.shell; })
-    (mkIf (cfg.snapshot     != null) { programs.opencode.settings.snapshot     = cfg.snapshot; })
+    (mkIf (cfg.shell != null) { programs.opencode.settings.shell = cfg.shell; })
+    (mkIf (cfg.snapshot != null) { programs.opencode.settings.snapshot = cfg.snapshot; })
 
     # ── Write ALL provider credentials to auth.json ───────────────────────────
     (mkIf hasAuthProviders {

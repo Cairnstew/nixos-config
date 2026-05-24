@@ -17,12 +17,14 @@ in
       text =
         let
           baseConfig = {
-            models = map (model: {
-              name = model;
-              provider = "ollama";
-              inherit model;
-              apiBase = cfg.continue.ollamaHost;
-            }) cfg.continue.models;
+            models = map
+              (model: {
+                name = model;
+                provider = "ollama";
+                inherit model;
+                apiBase = cfg.continue.ollamaHost;
+              })
+              cfg.continue.models;
           };
           mergedConfig = lib.recursiveUpdate baseConfig cfg.continue.extraConfig;
         in

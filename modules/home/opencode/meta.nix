@@ -9,7 +9,7 @@
     "my.programs.opencode.agents"
     "my.programs.opencode.mcp"
   ];
-  expects = [];
+  expects = [ ];
   complexity = "medium";
   tested = true;
 }

@@ -12,7 +12,7 @@ in
     }
     {
       assertion = !(cfg.enable && cfg.exitNode) ||
-        (cfg.tags != []);
+        (cfg.tags != [ ]);
       message = "Tailscale exit nodes should have at least one tag in tags.";
     }
   ];

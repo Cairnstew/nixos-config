@@ -34,7 +34,7 @@ in
 
     plugins = lib.mkOption {
       type = lib.types.listOf lib.types.attrs;
-      default = [];
+      default = [ ];
       description = "Additional Zsh plugins to load";
       example = lib.literalExpression ''
         [

@@ -35,7 +35,7 @@ in
       '';
     }
     {
-      assertion = !cfg.enable || 
+      assertion = !cfg.enable ||
         !(builtins.elem "tcp://0.0.0.0:2375" cfg.listenOptions) ||
         (builtins.elem "tcp://127.0.0.1:2375" cfg.listenOptions);
       message = ''

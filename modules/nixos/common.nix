@@ -166,7 +166,7 @@ in
   # ── Environment ──────────────────────────────────────────────────────────
   # Base packages available on all hosts
   environment.systemPackages = with pkgs; [
-    nix-template-selector  # Interactive flake template selector
+    nix-template-selector # Interactive flake template selector
   ];
 
   # Additional packages are defined per-host or use environment.systemPackages directly

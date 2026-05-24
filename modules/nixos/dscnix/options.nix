@@ -77,12 +77,12 @@ in
           };
           dependsOn = mkOption {
             type = types.listOf types.str;
-            default = [];
+            default = [ ];
             description = "Dependencies on other DSC resources.";
           };
         };
       }));
-      default = {};
+      default = { };
       description = "Windows Registry keys and values (Microsoft.Windows/Registry).";
     };
 
@@ -105,11 +105,11 @@ in
             type = types.nullOr (types.enum [ "Ignore" "Normal" "Severe" "Critical" ]);
             default = null;
           };
-          dependencies = mkOption { type = types.listOf types.str; default = []; };
-          dependsOn = mkOption { type = types.listOf types.str; default = []; };
+          dependencies = mkOption { type = types.listOf types.str; default = [ ]; };
+          dependsOn = mkOption { type = types.listOf types.str; default = [ ]; };
         };
       }));
-      default = {};
+      default = { };
       description = "Windows native services (Microsoft.Windows/Service).";
     };
 
@@ -120,12 +120,12 @@ in
             type = types.enum [ "Present" "Absent" ];
             default = "Present";
           };
-          include = mkOption { type = types.listOf types.str; default = []; };
-          exclude = mkOption { type = types.listOf types.str; default = []; };
-          dependsOn = mkOption { type = types.listOf types.str; default = []; };
+          include = mkOption { type = types.listOf types.str; default = [ ]; };
+          exclude = mkOption { type = types.listOf types.str; default = [ ]; };
+          dependsOn = mkOption { type = types.listOf types.str; default = [ ]; };
         };
       }));
-      default = {};
+      default = { };
       description = "Windows features via Windows PowerShell 5.1 adapter (PSDscResources/WindowsFeature).";
     };
 
@@ -154,18 +154,18 @@ in
           enabled = mkOption { type = types.nullOr types.bool; default = null; };
           profiles = mkOption {
             type = types.listOf (types.enum [ "Domain" "Private" "Public" "All" ]);
-            default = [];
+            default = [ ];
           };
           grouping = mkOption { type = types.nullOr types.str; default = null; };
           interfaceTypes = mkOption {
             type = types.listOf (types.enum [ "RemoteAccess" "Wireless" "Lan" "All" ]);
-            default = [];
+            default = [ ];
           };
           edgeTraversal = mkOption { type = types.nullOr types.bool; default = null; };
           exist = mkOption { type = types.bool; default = true; };
         };
       }));
-      default = {};
+      default = { };
       description = "Windows Firewall rules (Microsoft.Windows/FirewallRuleList). Note: Read-only in DSC v3.1.0.";
     };
 
@@ -180,7 +180,7 @@ in
           description = mkOption { type = types.nullOr types.str; default = null; };
         };
       }));
-      default = {};
+      default = { };
       description = "Windows Optional Features (Microsoft.Windows/OptionalFeatureList). Read-only in DSC v3.1.0.";
     };
 
@@ -195,7 +195,7 @@ in
           description = mkOption { type = types.nullOr types.str; default = null; };
         };
       }));
-      default = {};
+      default = { };
       description = "Windows Features on Demand (Microsoft.Windows/FeatureOnDemandList). Read-only in DSC v3.1.0.";
     };
 
@@ -203,12 +203,12 @@ in
       type = types.attrsOf (types.submodule ({ name, ... }: {
         options = {
           executable = mkOption { type = types.str; description = "Executable to run on set."; };
-          arguments = mkOption { type = types.listOf types.str; default = []; };
+          arguments = mkOption { type = types.listOf types.str; default = [ ]; };
           exitCode = mkOption { type = types.ints.unsigned; default = 0; };
-          dependsOn = mkOption { type = types.listOf types.str; default = []; };
+          dependsOn = mkOption { type = types.listOf types.str; default = [ ]; };
         };
       }));
-      default = {};
+      default = { };
       description = "Commands to execute during DSC set (Microsoft.DSC.Transitional/RunCommandOnSet).";
     };
 
@@ -219,10 +219,10 @@ in
           setScript = mkOption { type = types.nullOr types.str; default = null; };
           testScript = mkOption { type = types.nullOr types.str; default = null; };
           input = mkOption { type = types.nullOr types.anything; default = null; };
-          dependsOn = mkOption { type = types.listOf types.str; default = []; };
+          dependsOn = mkOption { type = types.listOf types.str; default = [ ]; };
         };
       }));
-      default = {};
+      default = { };
       description = "Inline PowerShell 7 scripts (Microsoft.DSC.Transitional/PowerShellScript).";
     };
 
@@ -233,10 +233,10 @@ in
           setScript = mkOption { type = types.nullOr types.str; default = null; };
           testScript = mkOption { type = types.nullOr types.str; default = null; };
           input = mkOption { type = types.nullOr types.anything; default = null; };
-          dependsOn = mkOption { type = types.listOf types.str; default = []; };
+          dependsOn = mkOption { type = types.listOf types.str; default = [ ]; };
         };
       }));
-      default = {};
+      default = { };
       description = "Inline Windows PowerShell 5.1 scripts (Microsoft.DSC.Transitional/WindowsPowerShellScript).";
     };
 
@@ -249,10 +249,10 @@ in
           };
           sourcePath = mkOption { type = types.nullOr types.str; default = null; };
           destinationPath = mkOption { type = types.str; };
-          dependsOn = mkOption { type = types.listOf types.str; default = []; };
+          dependsOn = mkOption { type = types.listOf types.str; default = [ ]; };
         };
       }));
-      default = {};
+      default = { };
       description = "File resources via Windows PowerShell 5.1 adapter (PSDesiredStateConfiguration/File).";
     };
 
@@ -267,10 +267,10 @@ in
             type = types.enum [ "Running" "Stopped" ];
             default = "Running";
           };
-          dependsOn = mkOption { type = types.listOf types.str; default = []; };
+          dependsOn = mkOption { type = types.listOf types.str; default = [ ]; };
         };
       }));
-      default = {};
+      default = { };
       description = "Legacy Windows services (PSDesiredStateConfiguration/Service).";
     };
 
@@ -287,15 +287,15 @@ in
           bitness = mkOption { type = types.nullOr types.int; default = null; };
         };
       }));
-      default = {};
+      default = { };
       description = "OS assertion resource (Microsoft/OSInfo). Read-only.";
     };
 
     rebootPending = mkOption {
       type = types.attrsOf (types.submodule ({ name, ... }: {
-        options = {};
+        options = { };
       }));
-      default = {};
+      default = { };
       description = "Pending reboot assertion (Microsoft.Windows/RebootPending). Read-only.";
     };
   };

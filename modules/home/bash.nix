@@ -43,16 +43,16 @@ in
     shellOptions = lib.mkOption {
       type = lib.types.listOf lib.types.str;
       default = [
-        "histappend"    # Append to history file instead of overwriting
-        "checkwinsize"  # Check window size after each command
-        "cdspell"       # Correct minor spelling errors in cd commands
+        "histappend" # Append to history file instead of overwriting
+        "checkwinsize" # Check window size after each command
+        "cdspell" # Correct minor spelling errors in cd commands
       ];
       description = "Shell options to enable (shopt)";
     };
 
     additionalShellOptions = lib.mkOption {
       type = lib.types.listOf lib.types.str;
-      default = [];
+      default = [ ];
       description = "Additional shell options to enable";
       example = [ "autocd" "globstar" ];
     };

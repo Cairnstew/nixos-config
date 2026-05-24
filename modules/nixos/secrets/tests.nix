@@ -6,10 +6,13 @@ let
   secretNames = lib.attrNames cfg.catalog;
 
   # Check for duplicate secret names (same name, different paths)
-  nameCounts = lib.foldl' (acc: name:
-    let count = acc.${name} or 0;
-    in acc // { ${name} = count + 1; }
-  ) {} (lib.catAttrs "name" (lib.attrValues cfg.catalog));
+  nameCounts = lib.foldl'
+    (acc: name:
+      let count = acc.${name} or 0;
+      in acc // { ${name} = count + 1; }
+    )
+    { }
+    (lib.catAttrs "name" (lib.attrValues cfg.catalog));
 
   duplicateNames = lib.filter (n: nameCounts.${n} > 1) (lib.attrNames nameCounts);
 in
@@ -17,11 +20,11 @@ in
   # ── L0: Nix assertions ──────────────────────────────────────────────────────
   assertions = lib.mkIf cfg.enable [
     {
-      assertion = cfg.catalog != {};
+      assertion = cfg.catalog != { };
       message = "my.secrets.catalog must contain at least one secret definition when enabled.";
     }
     {
-      assertion = duplicateNames == [];
+      assertion = duplicateNames == [ ];
       message = "Duplicate secret names in my.secrets.catalog: ${lib.concatStringsSep ", " duplicateNames}";
     }
     {

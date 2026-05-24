@@ -7,35 +7,36 @@ let
   # Count how many providers are active
   # Note: deepinfra is NOT included here because defining it in opencode.json breaks it
   activeProviders = lib.filter (p: p != null) [
-    (if cfg.openai.keyFile    != null then "openai"    else null)
+    (if cfg.openai.keyFile != null then "openai" else null)
     (if cfg.anthropic.keyFile != null then "anthropic" else null)
-    (if cfg.google.keyFile    != null then "google"    else null)
-    (if cfg.groq.keyFile      != null then "groq"      else null)
-    (if cfg.mistral.keyFile   != null then "mistral"   else null)
-    (if cfg.xai.keyFile       != null then "xai"       else null)
-    (if cfg.together.keyFile  != null then "together"  else null)
+    (if cfg.google.keyFile != null then "google" else null)
+    (if cfg.groq.keyFile != null then "groq" else null)
+    (if cfg.mistral.keyFile != null then "mistral" else null)
+    (if cfg.xai.keyFile != null then "xai" else null)
+    (if cfg.together.keyFile != null then "together" else null)
     (if cfg.openrouter.keyFile != null then "openrouter" else null)
     (if cfg.fireworks.keyFile != null then "fireworks" else null)
-    (if cfg.cerebras.keyFile  != null then "cerebras"  else null)
-    (if cfg.clarifai.patFile  != null then "clarifai"  else null)
+    (if cfg.cerebras.keyFile != null then "cerebras" else null)
+    (if cfg.clarifai.patFile != null then "clarifai" else null)
     (if (cfg.azure.keyFile != null && cfg.azure.endpoint != null && cfg.azure.deployment != null) then "azure" else null)
-    (if cfg.ollamaModels != {} then "ollama" else null)
+    (if cfg.ollamaModels != { } then "ollama" else null)
   ];
 
   # Get the final opencode config that would be generated
   opencodeCfg = config.programs.opencode;
 
-in {
+in
+{
   config = mkIf cfg.enable {
     # ── L0: Nix assertions ──────────────────────────────────────────────────
     assertions = [
       {
         assertion = cfg.model != null -> (lib.length activeProviders > 0);
         message = "my.programs.opencode: model is set but no providers are configured. "
-                + "Enable at least one provider by setting its keyFile.";
+          + "Enable at least one provider by setting its keyFile.";
       }
       {
-        assertion = cfg.ollamaModels != {} -> cfg.ollamaBaseURL != "";
+        assertion = cfg.ollamaModels != { } -> cfg.ollamaBaseURL != "";
         message = "my.programs.opencode: ollamaModels is non-empty but ollamaBaseURL is empty.";
       }
       {
@@ -131,7 +132,7 @@ in {
     '';
 
     # ── L2: Config validation script ────────────────────────────────────────
-    home.file.".local/share/opencode/test-config.sh" = mkIf (cfg.clarifai.patFile != null || cfg.share != null || cfg.tui != {}) {
+    home.file.".local/share/opencode/test-config.sh" = mkIf (cfg.clarifai.patFile != null || cfg.share != null || cfg.tui != { }) {
       executable = true;
       text = ''
         #!/usr/bin/env bash

@@ -171,7 +171,7 @@ let
       };
       aliases = lib.mkOption {
         type = lib.types.attrsOf lib.types.str;
-        default = {};
+        default = { };
         description = "Additional git aliases (attribute set of alias = command).";
         example = lib.literalExpression ''
           {
@@ -245,31 +245,31 @@ in
 
     preferences = lib.mkOption {
       type = preferencesSubmodule;
-      default = {};
+      default = { };
       description = "User interface and experience preferences (theme, fonts, shell, editor).";
     };
 
     defaults = lib.mkOption {
       type = defaultsSubmodule;
-      default = {};
+      default = { };
       description = "Default applications for common operations (browser, email, terminal).";
     };
 
     location = lib.mkOption {
       type = locationSubmodule;
-      default = {};
+      default = { };
       description = "Geographic location and timezone settings.";
     };
 
     git = lib.mkOption {
       type = gitSubmodule;
-      default = {};
+      default = { };
       description = "Git configuration defaults and preferences.";
     };
 
     ssh = lib.mkOption {
       type = sshSubmodule;
-      default = {};
+      default = { };
       description = "SSH client preferences and defaults.";
     };
 

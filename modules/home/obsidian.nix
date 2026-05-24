@@ -61,7 +61,7 @@ in
       };
     };
 
-    home.activation.obsidianVaultSetup = lib.hm.dag.entryAfter ["writeBoundary"] ''
+    home.activation.obsidianVaultSetup = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
       VAULT_DIR="$HOME/${cfg.defaultDirectory}"
 
       ${lib.optionalString (cfg.repo.enable && cfg.repo.tokenFile != null) ''

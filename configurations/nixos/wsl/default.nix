@@ -12,14 +12,14 @@
 
   # ── System Identity ──────────────────────────────────────────────────────
   networking.hostName = "wsl";
-  
+
   # ── WSL Specific ───────────────────────────────────────────────────────
   wsl = {
     enable = true;
     defaultUser = flake.config.me.username;
     wslConf.network.generateResolvConf = false;
   };
-  
+
   networking.useHostResolvConf = false;
   networking.nameservers = [ "1.1.1.1" "8.8.8.8" "100.100.100.100" ];
   networking.search = [ "lan" ];

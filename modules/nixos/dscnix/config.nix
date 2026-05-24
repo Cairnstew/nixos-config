@@ -7,7 +7,7 @@ let
 
   # ── Auto-derived values from NixOS host config ──────────────────────────
 
-  autoDerivedDsc = lib.foldl lib.recursiveUpdate {} [
+  autoDerivedDsc = lib.foldl lib.recursiveUpdate { } [
     # Hostname
     (optionalAttrs (cfg.autoDerive.enable && cfg.autoDerive.hostname) {
       registry.Hostname = {

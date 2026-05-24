@@ -22,9 +22,11 @@ in
 
     (mkIf cfg.xserver.enable {
       services.xserver.enable = true;
-      services.xserver.videoDrivers = mkIf (
-        cfg.xserver.videoDriver != [ "auto" ]
-      ) cfg.xserver.videoDriver;
+      services.xserver.videoDrivers = mkIf
+        (
+          cfg.xserver.videoDriver != [ "auto" ]
+        )
+        cfg.xserver.videoDriver;
     })
 
     (mkIf nvidia.enable {

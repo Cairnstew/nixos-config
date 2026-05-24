@@ -1,5 +1,5 @@
 # Python environment setup for uv2nix
-{ pkgs, inputs, cfg, buildSystemOverrides ? {} }:
+{ pkgs, inputs, cfg, buildSystemOverrides ? { } }:
 let
   python = cfg.pythonPackage;
 
@@ -32,14 +32,17 @@ let
 
   # Create overlay for build system overrides
   mkBuildSystemOverlay = final: prev:
-    builtins.mapAttrs (name: spec:
-      if builtins.hasAttr name prev then
-        prev.${name}.overrideAttrs (old: {
-          nativeBuildInputs = (old.nativeBuildInputs or [ ]) ++ final.resolveBuildSystem spec;
-        })
-      else
-        prev.${name} or (builtins.trace "buildSystemOverrides: package '${name}' not in lockfile, skipping" null)
-    ) (builtins.intersectAttrs prev allBuildSystemOverrides);
+    builtins.mapAttrs
+      (name: spec:
+        if builtins.hasAttr name prev then
+          prev.${name}.overrideAttrs
+            (old: {
+              nativeBuildInputs = (old.nativeBuildInputs or [ ]) ++ final.resolveBuildSystem spec;
+            })
+        else
+          prev.${name} or (builtins.trace "buildSystemOverrides: package '${name}' not in lockfile, skipping" null)
+      )
+      (builtins.intersectAttrs prev allBuildSystemOverrides);
 
   # Editable packages overlay - enables editable installs for the project package
   editablesOverlay = final: prev:

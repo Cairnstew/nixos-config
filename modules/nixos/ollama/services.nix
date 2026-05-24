@@ -1,7 +1,8 @@
 { config, lib, pkgs, ... }:
 let
   cfg = config.my.services.ollama;
-  backendBin = if cfg.backend == "docker"
+  backendBin =
+    if cfg.backend == "docker"
     then "${pkgs.docker}/bin/docker"
     else "${pkgs.podman}/bin/podman";
 
@@ -123,35 +124,37 @@ in
             mcfg.topP != null || mcfg.repeatPenalty != null || mcfg.numPredict != null ||
             mcfg.seed != null || mcfg.think != null || mcfg.systemPrompt != null || mcfg.template != null;
 
-          modelCmds = lib.concatStringsSep "\n" (lib.mapAttrsToList (tag: mcfg:
-            let safeName = builtins.replaceStrings [ ":" "/" ] [ "-" "-" ] tag;
-            in
-            ''echo "--- Pulling model: ${tag} ---"
+          modelCmds = lib.concatStringsSep "\n" (lib.mapAttrsToList
+            (tag: mcfg:
+              let safeName = builtins.replaceStrings [ ":" "/" ] [ "-" "-" ] tag;
+              in
+              ''echo "--- Pulling model: ${tag} ---"
               ${backendBin} exec ollama ollama pull ${lib.escapeShellArg tag}
             '' + lib.optionalString (hasModelfile mcfg) ''
-              echo "Applying Modelfile for ${tag} -> '${safeName}'..."
-              MODELFILE=$(mktemp)
-              printf 'FROM %s\n' ${lib.escapeShellArg tag} > "$MODELFILE"
-              ${paramLines mcfg}
-            '' + lib.optionalString (mcfg.systemPrompt != null) ''
-              printf 'SYSTEM """\n' >> "$MODELFILE"
-              cat >> "$MODELFILE" << 'OLLAMA_SYSTEM_EOF'
-              ${mcfg.systemPrompt}
-              OLLAMA_SYSTEM_EOF
-              printf '"""\n' >> "$MODELFILE"
-            '' + lib.optionalString (mcfg.template != null) ''
-              printf 'TEMPLATE """\n' >> "$MODELFILE"
-              cat >> "$MODELFILE" << 'OLLAMA_TEMPLATE_EOF'
-              ${mcfg.template}
-              OLLAMA_TEMPLATE_EOF
-              printf '"""\n' >> "$MODELFILE"
-            '' + lib.optionalString (hasModelfile mcfg) ''
-              ${backendBin} cp "$MODELFILE" ollama:/tmp/Modelfile.${safeName}
-              ${backendBin} exec ollama ollama create ${lib.escapeShellArg safeName} -f /tmp/Modelfile.${safeName}
-              rm -f "$MODELFILE"
-              echo "Model '${safeName}' created."
-            ''
-          ) cfg.models);
+                echo "Applying Modelfile for ${tag} -> '${safeName}'..."
+                MODELFILE=$(mktemp)
+                printf 'FROM %s\n' ${lib.escapeShellArg tag} > "$MODELFILE"
+                ${paramLines mcfg}
+              '' + lib.optionalString (mcfg.systemPrompt != null) ''
+                printf 'SYSTEM """\n' >> "$MODELFILE"
+                cat >> "$MODELFILE" << 'OLLAMA_SYSTEM_EOF'
+                ${mcfg.systemPrompt}
+                OLLAMA_SYSTEM_EOF
+                printf '"""\n' >> "$MODELFILE"
+              '' + lib.optionalString (mcfg.template != null) ''
+                printf 'TEMPLATE """\n' >> "$MODELFILE"
+                cat >> "$MODELFILE" << 'OLLAMA_TEMPLATE_EOF'
+                ${mcfg.template}
+                OLLAMA_TEMPLATE_EOF
+                printf '"""\n' >> "$MODELFILE"
+              '' + lib.optionalString (hasModelfile mcfg) ''
+                ${backendBin} cp "$MODELFILE" ollama:/tmp/Modelfile.${safeName}
+                ${backendBin} exec ollama ollama create ${lib.escapeShellArg safeName} -f /tmp/Modelfile.${safeName}
+                rm -f "$MODELFILE"
+                echo "Model '${safeName}' created."
+              ''
+            )
+            cfg.models);
         in
         waitCmd + "\n" + modelCmds;
     };
@@ -175,12 +178,18 @@ in
         RestartSec = "5s";
         ExecStart = lib.concatStringsSep " " [
           "${ollamaMcpWrapper}/bin/supergateway"
-          "--port" (toString cfg.mcp.port)
-          "--host" "0.0.0.0"
-          "--cors" "*"
-          "--logLevel" cfg.mcp.logLevel
-          "--outputTransport" "streamableHttp"
-          "--stdio" (lib.escapeShellArg "${pkgs.nodejs_22}/bin/node ${ollamaMcpServerBin}")
+          "--port"
+          (toString cfg.mcp.port)
+          "--host"
+          "0.0.0.0"
+          "--cors"
+          "*"
+          "--logLevel"
+          cfg.mcp.logLevel
+          "--outputTransport"
+          "streamableHttp"
+          "--stdio"
+          (lib.escapeShellArg "${pkgs.nodejs_22}/bin/node ${ollamaMcpServerBin}")
         ];
         ExecStartPost =
           "${pkgs.writeShellScript "ollama-mcp-probe" ''

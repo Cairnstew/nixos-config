@@ -25,7 +25,10 @@ in
     };
     services.pulseaudio.enable = false;
     environment.systemPackages = with pkgs; [
-      pavucontrol blueman pipewire wireplumber
+      pavucontrol
+      blueman
+      pipewire
+      wireplumber
     ];
   };
 }

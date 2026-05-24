@@ -4,7 +4,7 @@ with lib;
 
 let
   defaultWaydroidPkg = pkgs.waydroid;
-  defaultHelperPkg  = pkgs.waydroid-helper;
+  defaultHelperPkg = pkgs.waydroid-helper;
 in
 {
   options.my.virtualisation = {
@@ -36,7 +36,7 @@ in
 
     environment.systemPackages = with config.my.virtualisation.waydroid; [
       helper
-      
+
     ];
   };
 }

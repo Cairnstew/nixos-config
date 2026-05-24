@@ -37,26 +37,31 @@ in
         my.programs.opencode = {
           enable = lib.mkDefault true;
           enableLsp = lib.mkDefault true;
-          clarifai.patFile = if config.age.secrets ? "clarifai-pat"
-                             then config.age.secrets."clarifai-pat".path
-                             else null;
-          deepinfra.keyFile = if config.age.secrets ? "deepinfra-key"
-                              then config.age.secrets."deepinfra-key".path
-                              else null;
-          opencode-go.keyFile = if config.age.secrets ? "opencode-token"
-                                then config.age.secrets."opencode-token".path
-                                else null;
-          groq.keyFile = if config.age.secrets ? "groq-token"
-                         then config.age.secrets."groq-token".path
-                         else null;
+          clarifai.patFile =
+            if config.age.secrets ? "clarifai-pat"
+            then config.age.secrets."clarifai-pat".path
+            else null;
+          deepinfra.keyFile =
+            if config.age.secrets ? "deepinfra-key"
+            then config.age.secrets."deepinfra-key".path
+            else null;
+          opencode-go.keyFile =
+            if config.age.secrets ? "opencode-token"
+            then config.age.secrets."opencode-token".path
+            else null;
+          groq.keyFile =
+            if config.age.secrets ? "groq-token"
+            then config.age.secrets."groq-token".path
+            else null;
 
-          model = if (config.age.secrets ? "deepinfra-key")
-                  then lib.mkDefault null
-              else if (config.age.secrets ? "clarifai-pat")
-                  then lib.mkDefault "meta-llama/Meta-Llama-3.1-8B-Instruct"
-              else if (config.age.secrets ? "groq-token")
-                  then lib.mkDefault "meta-llama/Meta-Llama-3.1-8B-Instruct"
-              else lib.mkDefault null;
+          model =
+            if (config.age.secrets ? "deepinfra-key")
+            then lib.mkDefault null
+            else if (config.age.secrets ? "clarifai-pat")
+            then lib.mkDefault "meta-llama/Meta-Llama-3.1-8B-Instruct"
+            else if (config.age.secrets ? "groq-token")
+            then lib.mkDefault "meta-llama/Meta-Llama-3.1-8B-Instruct"
+            else lib.mkDefault null;
           enableMcpIntegration = lib.mkDefault true;
 
           mcp = lib.mkDefault {

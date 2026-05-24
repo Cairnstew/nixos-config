@@ -3,16 +3,16 @@
 # =============================================================================
 # Purpose: Extends nixpkgs with custom packages and overlays from flake inputs.
 #
- # Packages added:
- #   - nuenv — Nushell-based environment management (from flake input)
- #   - fuckport — Kill processes using a specific port
- #   - twitter-convert — Twitter/X video downloader/converter
- #   - sshuttle-via — SSHuttle wrapper for easy proxying
- #   - copy-md-as-html — Markdown to HTML clipboard converter
- #   - ci — Local CI runner using omnix and zellij
- #   - touchpr — GitHub PR toucher/commenter
- #   - git-merge-and-delete — Merge branch and clean up
- #   - nix-template-selector — Interactive flake template selector
+# Packages added:
+#   - nuenv — Nushell-based environment management (from flake input)
+#   - fuckport — Kill processes using a specific port
+#   - twitter-convert — Twitter/X video downloader/converter
+#   - sshuttle-via — SSHuttle wrapper for easy proxying
+#   - copy-md-as-html — Markdown to HTML clipboard converter
+#   - ci — Local CI runner using omnix and zellij
+#   - touchpr — GitHub PR toucher/commenter
+#   - git-merge-and-delete — Merge branch and clean up
+#   - nix-template-selector — Interactive flake template selector
 #
 # Why overrides are needed:
 #   - These packages are either not in nixpkgs or need custom configurations

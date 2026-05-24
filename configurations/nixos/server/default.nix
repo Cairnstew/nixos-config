@@ -20,7 +20,7 @@
     # Role
     server.enable = true;
     development.enable = true;
-    
+
     # Hardware
     gpu.nvidia-headless.enable = true;
     location.enable = true;

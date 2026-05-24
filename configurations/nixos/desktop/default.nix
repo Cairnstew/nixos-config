@@ -54,9 +54,9 @@
   # Use `lsblk` to find your disk (typically /dev/nvme0n1 for NVMe or /dev/sda for SATA)
   my.disko.dualBoot = {
     enable = true;
-    disk = "/dev/nvme0n1";  # TODO: Change to your actual disk device
-    espSizeGB = 1;           # 1GB EFI System Partition
-    windowsSizeGB = 150;     # 150GB for Windows 11
+    disk = "/dev/nvme0n1"; # TODO: Change to your actual disk device
+    espSizeGB = 1; # 1GB EFI System Partition
+    windowsSizeGB = 150; # 150GB for Windows 11
     # nixosSizeGB = null;   # null = use remaining space
   };
 
@@ -103,8 +103,8 @@
   # DO NOT commit plaintext passwords to the repository!
   my.services.windowsInstaller = {
     enable = true;
-    windowsDisk = "/dev/nvme0n1";  # TODO: Change to match disko disk
-    localUsername = "user";  # TODO: Change to your preferred username
+    windowsDisk = "/dev/nvme0n1"; # TODO: Change to match disko disk
+    localUsername = "user"; # TODO: Change to your preferred username
     # localPassword = builtins.readFile config.age.secrets.windows-password.path;
 
     # dscConfigPath is a build-time Nix store path; interpolated at eval time.

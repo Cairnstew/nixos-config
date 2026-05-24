@@ -16,14 +16,21 @@
           set -euo pipefail
 
           usage() {
-            echo "Usage: my-cli [command] [options]"
-            echo ""
-            echo "Commands:"
-            echo "  hello     Print hello message"
-            echo "  help      Show this help"
+            echo " Usage: my-cli [ command ] [ options ] "
+            echo " "
+            echo " Commands: "
+            echo " hello
+          Print
+          hello
+          message "
+            echo "
+          help
+          Show
+          this
+          help "
           }
 
-          case "''${1:-}" in
+          case " ''${1:-}" in
             hello)
               echo "Hello, world!"
               ;;
@@ -52,3 +59,4 @@
       };
     };
 }
+

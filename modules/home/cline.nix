@@ -1,9 +1,8 @@
 # modules/home/cline.nix
-{
-  config,
-  lib,
-  pkgs,
-  ...
+{ config
+, lib
+, pkgs
+, ...
 }:
 
 let
@@ -27,7 +26,7 @@ let
     null
     (lib.attrNames cfg.ollamaModels);
 
-  usingOllama = cfg.ollamaModels != {};
+  usingOllama = cfg.ollamaModels != { };
 
   # Prefer the flagged Ollama model, then the explicit model option.
   clineDefaultModel =
@@ -43,8 +42,8 @@ let
   # always hits api.openai.com, causing auth failures with local models.
   # ---------------------------------------------------------------------------
   clineVSCodeSettings = {
-    "cline.apiProvider"   = "ollama";
-    "cline.ollamaBaseUrl" = cfg.ollamaBaseURL;  # no /v1 — ollama provider adds it
+    "cline.apiProvider" = "ollama";
+    "cline.ollamaBaseUrl" = cfg.ollamaBaseURL; # no /v1 — ollama provider adds it
     "cline.ollamaModelId" = clineDefaultModel;
   } // cfg.settings;
 
@@ -57,17 +56,17 @@ let
   # ---------------------------------------------------------------------------
   clineProvidersFile = pkgs.writeText "cline-providers.json" (
     builtins.toJSON {
-      version          = 1;
+      version = 1;
       lastUsedProvider = "ollama";
       providers = {
         ollama = {
           settings = {
             provider = "ollama";
-            model    = clineDefaultModel;
-            baseUrl  = cfg.ollamaBaseURL;  # no /v1 — ollama provider adds it
-            apiKey   = "ollama";
+            model = clineDefaultModel;
+            baseUrl = cfg.ollamaBaseURL; # no /v1 — ollama provider adds it
+            apiKey = "ollama";
           };
-          updatedAt   = "2026-04-30T01:00:00.000Z";
+          updatedAt = "2026-04-30T01:00:00.000Z";
           tokenSource = "manual";
         };
       };
@@ -88,11 +87,13 @@ let
   # Use type = "sse" + url ending in /sse only for legacy servers that don't
   # support streamableHttp (supergateway is NOT one of them).
   # ---------------------------------------------------------------------------
-  mcpServersObj = lib.mapAttrs (_name: srv:
-    { inherit (srv) type url; }
-    // lib.optionalAttrs (srv.env     != {}) { inherit (srv) env; }
-    // lib.optionalAttrs (srv.headers != {}) { inherit (srv) headers; }
-  ) cfg.mcp.servers;
+  mcpServersObj = lib.mapAttrs
+    (_name: srv:
+      { inherit (srv) type url; }
+      // lib.optionalAttrs (srv.env != { }) { inherit (srv) env; }
+      // lib.optionalAttrs (srv.headers != { }) { inherit (srv) headers; }
+    )
+    cfg.mcp.servers;
 
   clineMcpSettingsFile = pkgs.writeText "cline-mcp-settings.json" (
     builtins.toJSON { mcpServers = mcpServersObj; }
@@ -102,11 +103,11 @@ let
   # Never overwritten after creation so Cline's own OAuth tokens are preserved.
   clineMcpOAuthSettingsFile = pkgs.writeText "cline-mcp-oauth-settings.json" (
     builtins.toJSON {
-      servers = lib.mapAttrs (_name: _srv: {}) cfg.mcp.servers;
+      servers = lib.mapAttrs (_name: _srv: { }) cfg.mcp.servers;
     }
   );
 
-  hasMcpServers = cfg.mcp.servers != {};
+  hasMcpServers = cfg.mcp.servers != { };
 
   # ---------------------------------------------------------------------------
   # Health-check script
@@ -181,8 +182,8 @@ in
     # ── Ollama integration ─────────────────────────────────────────────────
 
     ollamaModels = mkOption {
-      type    = types.attrsOf types.anything;
-      default = {};
+      type = types.attrsOf types.anything;
+      default = { };
       example = literalExpression ''
         {
           "gemma4:e4b"        = { cline_default = true; };
@@ -197,7 +198,7 @@ in
     };
 
     ollamaBaseURL = mkOption {
-      type    = types.str;
+      type = types.str;
       default = "http://127.0.0.1:11434";
       example = "http://my-gpu-box:11434";
       description = ''
@@ -208,7 +209,7 @@ in
     };
 
     model = mkOption {
-      type    = types.str;
+      type = types.str;
       default = "";
       example = "gemma4:e4b";
       description = ''
@@ -224,7 +225,7 @@ in
         type = types.attrsOf (types.submodule {
           options = {
             type = mkOption {
-              type    = types.enum [ "sse" "streamableHttp" "stdio" ];
+              type = types.enum [ "sse" "streamableHttp" "stdio" ];
               default = "streamableHttp";
               description = ''
                 MCP transport type.
@@ -239,7 +240,7 @@ in
             };
 
             url = mkOption {
-              type    = types.str;
+              type = types.str;
               default = "";
               example = "http://my-server:3100/mcp";
               description = ''
@@ -250,19 +251,19 @@ in
             };
 
             env = mkOption {
-              type    = types.attrsOf types.str;
-              default = {};
+              type = types.attrsOf types.str;
+              default = { };
               description = "Environment variables for stdio servers.";
             };
 
             headers = mkOption {
-              type    = types.attrsOf types.str;
-              default = {};
+              type = types.attrsOf types.str;
+              default = { };
               description = "HTTP headers for sse/streamableHttp servers.";
             };
           };
         });
-        default = {};
+        default = { };
         example = literalExpression ''
           {
             # Local Ollama MCP via supergateway — streamableHttp at /mcp
@@ -289,8 +290,8 @@ in
     # ── VS Code settings pass-through ──────────────────────────────────────
 
     settings = mkOption {
-      type    = types.attrsOf types.anything;
-      default = {};
+      type = types.attrsOf types.anything;
+      default = { };
       example = literalExpression ''
         {
           "cline.maxTokens"               = 16384;
@@ -305,7 +306,7 @@ in
     };
 
     vsCodeSettingsPath = mkOption {
-      type    = types.str;
+      type = types.str;
       default = ".config/Code/User/settings.json";
       example = ".config/VSCodium/User/settings.json";
       description = "Path relative to HOME for VS Code settings.json.";
@@ -315,7 +316,7 @@ in
 
     kanban = {
       enable = mkOption {
-        type    = types.bool;
+        type = types.bool;
         default = false;
         description = ''
           Install the <command>cline-kanban</command> CLI — a browser-based
@@ -325,8 +326,8 @@ in
       };
 
       extraArgs = mkOption {
-        type    = types.listOf types.str;
-        default = [];
+        type = types.listOf types.str;
+        default = [ ];
         example = literalExpression ''[ "--host" "0.0.0.0" "--port" "3484" ]'';
         description = "Extra flags passed to kanban on every invocation.";
       };
@@ -397,15 +398,16 @@ in
     # ── Packages ───────────────────────────────────────────────────────────
 
     home.packages =
-      lib.optional cfg.kanban.enable (
-        pkgs.writeShellScriptBin "cline-kanban" ''
-          export NPM_CONFIG_PREFIX=$HOME/.npm-global
-          export PATH=${nodejs}/bin:$HOME/.npm-global/bin:$PATH
-          exec ${lib.getExe nodejs} $HOME/.npm-global/bin/kanban \
-            ${lib.escapeShellArgs cfg.kanban.extraArgs} \
-            "$@"
-        ''
-      )
+      lib.optional cfg.kanban.enable
+        (
+          pkgs.writeShellScriptBin "cline-kanban" ''
+            export NPM_CONFIG_PREFIX=$HOME/.npm-global
+            export PATH=${nodejs}/bin:$HOME/.npm-global/bin:$PATH
+            exec ${lib.getExe nodejs} $HOME/.npm-global/bin/kanban \
+              ${lib.escapeShellArgs cfg.kanban.extraArgs} \
+              "$@"
+          ''
+        )
       ++ lib.optional hasMcpServers mcpHealthScript;
 
     home.activation.installKanban = lib.mkIf cfg.kanban.enable (
@@ -432,19 +434,20 @@ in
     home.file."${cfg.vsCodeSettingsPath}" = mkIf
       (!(config.programs.vscode.enable or false))
       {
-        text  = builtins.toJSON clineVSCodeSettings;
+        text = builtins.toJSON clineVSCodeSettings;
         force = false;
       };
 
     # ── Environment ────────────────────────────────────────────────────────
 
     home.sessionVariables =
-      optionalAttrs usingOllama {
-        OLLAMA_HOST = cfg.ollamaBaseURL;
-      }
+      optionalAttrs usingOllama
+        {
+          OLLAMA_HOST = cfg.ollamaBaseURL;
+        }
       // optionalAttrs cfg.kanban.enable {
         NPM_CONFIG_PREFIX = "$HOME/.npm-global";
-        PATH              = "$HOME/.npm-global/bin:$PATH";
+        PATH = "$HOME/.npm-global/bin:$PATH";
       };
   };
 }

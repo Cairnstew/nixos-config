@@ -137,28 +137,30 @@ in
         ++ lib.optional (cfg.extraConfig != "") cfg.extraConfig
       );
 
-      matchBlocks = lib.recursiveUpdate {
-        "*" = {
-          sendEnv = [ "LANG" "LC_*" ];
-          hashKnownHosts = true;
-        };
-      } (lib.mapAttrs
-        (_: block:
-          {
-            extraOptions = block.extraOptions
-            // lib.optionalAttrs (block.serverAliveInterval != null) {
-              ServerAliveInterval = toString block.serverAliveInterval;
+      matchBlocks = lib.recursiveUpdate
+        {
+          "*" = {
+            sendEnv = [ "LANG" "LC_*" ];
+            hashKnownHosts = true;
+          };
+        }
+        (lib.mapAttrs
+          (_: block:
+            {
+              extraOptions = block.extraOptions
+              // lib.optionalAttrs (block.serverAliveInterval != null) {
+                ServerAliveInterval = toString block.serverAliveInterval;
+              }
+              // lib.optionalAttrs (block.serverAliveCountMax != null) {
+                ServerAliveCountMax = toString block.serverAliveCountMax;
+              };
             }
-            // lib.optionalAttrs (block.serverAliveCountMax != null) {
-              ServerAliveCountMax = toString block.serverAliveCountMax;
-            };
-          }
-          // lib.optionalAttrs (block.host != "") { hostname = block.host; }
-          // lib.optionalAttrs (block.user != "") { inherit (block) user; }
-          // lib.optionalAttrs (block.port != null) { inherit (block) port; }
-          // lib.optionalAttrs (block.identityFile != null) { inherit (block) identityFile; }
-        )
-        cfg.matchBlocks);
+            // lib.optionalAttrs (block.host != "") { hostname = block.host; }
+            // lib.optionalAttrs (block.user != "") { inherit (block) user; }
+            // lib.optionalAttrs (block.port != null) { inherit (block) port; }
+            // lib.optionalAttrs (block.identityFile != null) { inherit (block) identityFile; }
+          )
+          cfg.matchBlocks);
     };
 
     home.activation.generateSSHKey = lib.mkIf cfg.generateKey (

@@ -10,17 +10,17 @@ let
 
   # Common keyFile option for SDK-based providers
   mkKeyFileOpt = description: mkOption {
-    type        = types.nullOr types.path;
-    default     = null;
-    example     = "/run/secrets/api-key";
+    type = types.nullOr types.path;
+    default = null;
+    example = "/run/secrets/api-key";
     inherit description;
   };
 
   # Common keyFile option for OpenAI-compatible providers
   mkOpenAiKeyFileOpt = description: mkOption {
-    type        = types.nullOr types.path;
-    default     = null;
-    example     = "/run/secrets/api-key";
+    type = types.nullOr types.path;
+    default = null;
+    example = "/run/secrets/api-key";
     description = description + ''
 
       Uses {file:...} substitution because opencode has a known bug where
@@ -28,21 +28,22 @@ let
     '';
   };
 
-in {
+in
+{
   options.my.programs.opencode = {
 
     enable = mkEnableOption "opencode – AI coding agent for the terminal";
 
     package = mkOption {
-      type        = types.nullOr types.package;
-      default     = pkgs.opencode;
+      type = types.nullOr types.package;
+      default = pkgs.opencode;
       defaultText = literalExpression "pkgs.opencode";
       description = "The opencode package to use.";
     };
 
     enableMcpIntegration = mkOption {
-      type        = types.bool;
-      default     = false;
+      type = types.bool;
+      default = false;
       description = "Forward programs.mcp.servers into opencode's MCP configuration.";
     };
 
@@ -240,9 +241,9 @@ in {
 
     azure = {
       keyFile = mkOption {
-        type        = types.nullOr types.path;
-        default     = null;
-        example     = "/run/secrets/azure-openai-key";
+        type = types.nullOr types.path;
+        default = null;
+        example = "/run/secrets/azure-openai-key";
         description = ''
           Path to a file containing the Azure OpenAI API key.
           When set, AZURE_API_KEY is exported and the Azure provider is registered.
@@ -250,16 +251,16 @@ in {
       };
 
       endpoint = mkOption {
-        type        = types.nullOr types.str;
-        default     = null;
-        example     = "https://my-resource.openai.azure.com";
+        type = types.nullOr types.str;
+        default = null;
+        example = "https://my-resource.openai.azure.com";
         description = "Azure OpenAI endpoint base URL (without /openai/deployments/…).";
       };
 
       deployment = mkOption {
-        type        = types.nullOr types.str;
-        default     = null;
-        example     = "gpt-4o";
+        type = types.nullOr types.str;
+        default = null;
+        example = "gpt-4o";
         description = "Azure OpenAI deployment name.";
       };
     };
@@ -267,13 +268,13 @@ in {
     # ── Ollama ──────────────────────────────────────────────────────────────
 
     ollamaModels = mkOption {
-      type    = types.attrsOf types.anything;
-      default = {};
+      type = types.attrsOf types.anything;
+      default = { };
       example = {
         "qwen3.5:9b" = {
-          name        = "qwen3.5:9b";
-          tools       = true;
-          numCtx      = 32768;
+          name = "qwen3.5:9b";
+          tools = true;
+          numCtx = 32768;
           temperature = 0.7;
           opencode_default = true;
         };
@@ -290,150 +291,150 @@ in {
     };
 
     ollamaBaseURL = mkOption {
-      type        = types.str;
-      default     = "http://127.0.0.1:11434/v1";
-      example     = "http://100.64.0.1:11434/v1";
+      type = types.str;
+      default = "http://127.0.0.1:11434/v1";
+      example = "http://100.64.0.1:11434/v1";
       description = "Base URL for the Ollama OpenAI-compatible endpoint.";
     };
 
     # ── Shorthands ───────────────────────────────────────────────────────────
 
     model = mkOption {
-      type        = types.nullOr types.str;
-      default     = null;
-      example     = "anthropic/claude-sonnet-4-20250514";
+      type = types.nullOr types.str;
+      default = null;
+      example = "anthropic/claude-sonnet-4-20250514";
       description = "Shorthand for <option>settings.model</option>. Takes highest priority — overrides any auto-selected default.";
     };
 
     share = mkOption {
-      type        = types.nullOr (types.enum [ "manual" "auto" "disabled" ]);
-      default     = null;
-      example     = "auto";
+      type = types.nullOr (types.enum [ "manual" "auto" "disabled" ]);
+      default = null;
+      example = "auto";
       description = "Shorthand for \u003coption\u003esettings.share\u003c/option\u003e. Controls session sharing behavior: manual, auto, or disabled.";
     };
 
     autoupdate = mkOption {
-      type        = types.nullOr (types.either types.bool (types.enum [ "notify" ]));
-      default     = null;
-      example     = "notify";
+      type = types.nullOr (types.either types.bool (types.enum [ "notify" ]));
+      default = null;
+      example = "notify";
       description = "Shorthand for \u003coption\u003esettings.autoupdate\u003c/option\u003e. Set to false to disable, \"notify\" to be notified without auto-installing.";
     };
 
     smallModel = mkOption {
-      type        = types.nullOr types.str;
-      default     = null;
-      example     = "anthropic/claude-haiku-4-5";
+      type = types.nullOr types.str;
+      default = null;
+      example = "anthropic/claude-haiku-4-5";
       description = "Shorthand for \u003coption\u003esettings.small_model\u003c/option\u003e. A cheaper model for lightweight tasks like title generation.";
     };
 
     defaultAgent = mkOption {
-      type        = types.nullOr types.str;
-      default     = null;
-      example     = "plan";
+      type = types.nullOr types.str;
+      default = null;
+      example = "plan";
       description = "Shorthand for \u003coption\u003esettings.default_agent\u003c/option\u003e. Default agent to use when none is specified. Must be a primary agent (not a subagent).";
     };
 
     shell = mkOption {
-      type        = types.nullOr types.str;
-      default     = null;
-      example     = "zsh";
+      type = types.nullOr types.str;
+      default = null;
+      example = "zsh";
       description = "Shorthand for \u003coption\u003esettings.shell\u003c/option\u003e. Shell used for the interactive terminal and agent tool calls.";
     };
 
     snapshot = mkOption {
-      type        = types.nullOr types.bool;
-      default     = null;
+      type = types.nullOr types.bool;
+      default = null;
       description = "Shorthand for \u003coption\u003esettings.snapshot\u003c/option\u003e. Whether to track file changes during agent operations (enables undo/revert).";
     };
 
     # ── Pass-throughs ────────────────────────────────────────────────────────
 
     settings = mkOption {
-      type        = (pkgs.formats.json {}).type;
-      default     = {};
+      type = (pkgs.formats.json { }).type;
+      default = { };
       description = "Verbatim JSON written to \$XDG_CONFIG_HOME/opencode/config.json.";
     };
 
     context = mkOption {
-      type        = types.either types.lines types.path;
-      default     = "";
+      type = types.either types.lines types.path;
+      default = "";
       description = "Global instructions written to \$XDG_CONFIG_HOME/opencode/context.md.";
     };
 
     commands = mkOption {
-      type        = types.attrsOf (types.either types.lines types.path);
-      default     = {};
+      type = types.attrsOf (types.either types.lines types.path);
+      default = { };
       description = "Custom slash-commands.";
     };
 
     agents = mkOption {
-      type        = types.attrsOf (types.submodule {
+      type = types.attrsOf (types.submodule {
         options = {
           model = mkOption {
-            type        = types.str;
-            example     = "anthropic/claude-sonnet-4-20250514";
+            type = types.str;
+            example = "anthropic/claude-sonnet-4-20250514";
             description = "The model to use for this agent.";
           };
           mode = mkOption {
-            type        = types.enum [ "primary" "subagent" ];
-            example     = "primary";
+            type = types.enum [ "primary" "subagent" ];
+            example = "primary";
             description = "Agent mode: primary or subagent.";
           };
           temperature = mkOption {
-            type        = types.nullOr types.float;
-            default     = null;
-            example     = 0.1;
+            type = types.nullOr types.float;
+            default = null;
+            example = 0.1;
             description = "Temperature for the agent (optional).";
           };
           steps = mkOption {
-            type        = types.nullOr types.ints.positive;
-            default     = null;
-            example     = 10;
+            type = types.nullOr types.ints.positive;
+            default = null;
+            example = 10;
             description = "Number of steps for the agent (optional).";
           };
           permission = mkOption {
-            type        = types.nullOr (types.submodule {
+            type = types.nullOr (types.submodule {
               options = {
                 edit = mkOption {
-                  type        = types.nullOr (types.enum [ "allow" "deny" "ask" ]);
-                  default     = null;
+                  type = types.nullOr (types.enum [ "allow" "deny" "ask" ]);
+                  default = null;
                   description = "Permission for file edits.";
                 };
                 bash = mkOption {
-                  type        = types.nullOr (types.enum [ "allow" "deny" "ask" ]);
-                  default     = null;
+                  type = types.nullOr (types.enum [ "allow" "deny" "ask" ]);
+                  default = null;
                   description = "Permission for bash commands.";
                 };
               };
             });
-            default     = null;
+            default = null;
             description = "Permission settings for the agent.";
           };
         };
       });
-      default     = {};
-      example     = {
+      default = { };
+      example = {
         plan = {
-          model       = "opencode-go/qwen3.5-plus";
-          mode        = "primary";
+          model = "opencode-go/qwen3.5-plus";
+          mode = "primary";
           temperature = 0.1;
-          steps       = 10;
-          permission  = { edit = "deny"; bash = "deny"; };
+          steps = 10;
+          permission = { edit = "deny"; bash = "deny"; };
         };
       };
       description = "Agent configurations. Each key is an agent name.";
     };
 
     themes = mkOption {
-      type        = types.attrsOf (types.either (pkgs.formats.json {}).type types.path);
-      default     = {};
+      type = types.attrsOf (types.either (pkgs.formats.json { }).type types.path);
+      default = { };
       description = "Custom colour themes.";
     };
 
     tui = mkOption {
-      type        = (pkgs.formats.json {}).type;
-      default     = {};
-      example     = {
+      type = (pkgs.formats.json { }).type;
+      default = { };
+      example = {
         theme = "system";
         keybinds = { leader = "alt+b"; };
         scroll_speed = 3;
@@ -442,21 +443,21 @@ in {
     };
 
     skills = mkOption {
-      type        = types.attrsOf (types.either types.lines (types.either types.path types.str));
-      default     = {};
+      type = types.attrsOf (types.either types.lines (types.either types.path types.str));
+      default = { };
       description = "Custom skills. See https://opencode.ai/docs/skills/.";
     };
 
     tools = mkOption {
-      type        = types.attrsOf (types.either types.lines types.path);
-      default     = {};
+      type = types.attrsOf (types.either types.lines types.path);
+      default = { };
       description = "Custom tools. See https://opencode.ai/docs/tools/.";
     };
 
     mcp = mkOption {
-      type        = (pkgs.formats.json {}).type;
-      default     = {};
-      example     = {
+      type = (pkgs.formats.json { }).type;
+      default = { };
+      example = {
         nixos = {
           enabled = true;
           type = "local";
@@ -478,16 +479,16 @@ in {
     };
 
     extraPackages = mkOption {
-      type        = types.listOf types.package;
-      default     = [];
-      example     = lib.literalExpression "[ pkgs.mcp-nixos pkgs.nodejs ]";
+      type = types.listOf types.package;
+      default = [ ];
+      example = lib.literalExpression "[ pkgs.mcp-nixos pkgs.nodejs ]";
       description = "Extra packages added to the PATH available to OpenCode.";
     };
 
     enableLsp = mkOption {
-      type        = types.bool;
-      default     = false;
-      example     = true;
+      type = types.bool;
+      default = false;
+      example = true;
       description = ''
         Enable Language Server Protocol (LSP) support in OpenCode.
         When enabled, nixd is added to extraPackages for Nix LSP support.

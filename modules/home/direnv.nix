@@ -24,7 +24,7 @@ in
 
     globalConfig = lib.mkOption {
       type = lib.types.attrs;
-      default = {};
+      default = { };
       description = "Additional global direnv configuration options";
       example = lib.literalExpression ''
         {
@@ -39,7 +39,7 @@ in
         options = {
           vars = lib.mkOption {
             type = lib.types.attrsOf lib.types.str;
-            default = {};
+            default = { };
             description = "Map of env var names to secret file paths — exports file contents as value";
             example = lib.literalExpression ''
               {
@@ -49,7 +49,7 @@ in
           };
           paths = lib.mkOption {
             type = lib.types.attrsOf lib.types.str;
-            default = {};
+            default = { };
             description = "Map of env var names to secret file paths — exports the path itself as value";
             example = lib.literalExpression ''
               {
@@ -59,7 +59,7 @@ in
           };
           envFiles = lib.mkOption {
             type = lib.types.listOf lib.types.str;
-            default = [];
+            default = [ ];
             description = "Paths to KEY=VALUE secret files to source directly";
             example = lib.literalExpression ''
               [ config.age.secrets.aws-labs-creds.path ]
@@ -67,7 +67,7 @@ in
           };
         };
       });
-      default = {};
+      default = { };
       description = ''
         Named secret files to generate under ~/.config/direnv/secrets/.
         Paths can be anything — agenix paths, absolute paths, etc.
@@ -105,21 +105,23 @@ in
       } // cfg.globalConfig;
     };
 
-    home.file = lib.mapAttrs' (fileName: fileCfg: {
-      name = ".config/direnv/secrets/${fileName}.sh";
-      value.text = ''
-        ${lib.concatStrings (lib.mapAttrsToList (envName: path: ''
-          export ${envName}=$(cat ${path})
-        '') fileCfg.vars)}
-        ${lib.concatStrings (lib.mapAttrsToList (envName: path: ''
-          export ${envName}=${path}
-        '') fileCfg.paths)}
-        ${lib.concatMapStrings (path: ''
-          set -a
-          source ${path}
-          set +a
-        '') fileCfg.envFiles}
-      '';
-    }) cfg.secretFiles;
+    home.file = lib.mapAttrs'
+      (fileName: fileCfg: {
+        name = ".config/direnv/secrets/${fileName}.sh";
+        value.text = ''
+          ${lib.concatStrings (lib.mapAttrsToList (envName: path: ''
+            export ${envName}=$(cat ${path})
+          '') fileCfg.vars)}
+          ${lib.concatStrings (lib.mapAttrsToList (envName: path: ''
+            export ${envName}=${path}
+          '') fileCfg.paths)}
+          ${lib.concatMapStrings (path: ''
+            set -a
+            source ${path}
+            set +a
+          '') fileCfg.envFiles}
+        '';
+      })
+      cfg.secretFiles;
   };
 }

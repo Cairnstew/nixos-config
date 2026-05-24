@@ -36,32 +36,32 @@ let
       dependencies = mkOption {
         type = types.listOf types.str;
         description = "Runtime dependencies";
-        default = [];
+        default = [ ];
       };
       optionalDependencies = mkOption {
         type = types.attrsOf (types.listOf types.str);
         description = "Optional dependency groups";
-        default = {};
+        default = { };
       };
       devDependencies = mkOption {
         type = types.listOf types.str;
         description = "Development dependencies (dependency-groups.dev)";
-        default = [];
+        default = [ ];
       };
       scripts = mkOption {
         type = types.attrsOf types.str;
         description = "Entry point scripts (module:function format)";
-        default = {};
+        default = { };
       };
       extraDevPackages = mkOption {
         type = types.functionTo (types.listOf types.package);
         description = "Additional packages for dev shell";
-        default = pkgs: [];
+        default = pkgs: [ ];
       };
       shellEnv = mkOption {
         type = types.attrsOf types.str;
         description = "Environment variables for dev shell";
-        default = {};
+        default = { };
       };
       shellHints = mkOption {
         type = types.listOf types.str;
@@ -86,7 +86,7 @@ in
     buildSystemOverrides = mkOption {
       type = types.attrsOf (types.oneOf [ (types.listOf types.str) types.attrs ]);
       description = "Build system overrides for packages with missing build deps";
-      default = {};
+      default = { };
     };
   };
 

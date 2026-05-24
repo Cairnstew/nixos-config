@@ -9,7 +9,7 @@ let
   mkPullLogic = name: repo: branch:
     let
       repoPath = repo.path;
-      ref      = "${repo.remote}/${branch}";
+      ref = "${repo.remote}/${branch}";
       stashMsg = "git-repo-sync-stash-${name}-${branch}";
     in
     if repo.conflictStrategy == "ff-only" then ''
@@ -89,15 +89,18 @@ let
         fi
       '';
     in
-    if repo.branches == [] then ''
+    if repo.branches == [ ] then ''
       ${git} -C "${repo.path}" fetch ${repo.remote} ${fetchArgs}
       ${optionalString repo.autoPull guardedPullCurrent}
     ''
-    else concatMapStrings (branch: ''
-      ${git} -C "${repo.path}" fetch ${repo.remote} ${fetchArgs} "${branch}:${branch}" 2>/dev/null \
-        || ${git} -C "${repo.path}" fetch ${repo.remote} ${fetchArgs}
-      ${optionalString repo.autoPull (guardedPull branch)}
-    '') repo.branches;
+    else
+      concatMapStrings
+        (branch: ''
+          ${git} -C "${repo.path}" fetch ${repo.remote} ${fetchArgs} "${branch}:${branch}" 2>/dev/null \
+            || ${git} -C "${repo.path}" fetch ${repo.remote} ${fetchArgs}
+          ${optionalString repo.autoPull (guardedPull branch)}
+        '')
+        repo.branches;
 
   # ── Shell script for one repo ──────────────────────────────────────────────
   mkSyncScript = name: repo:
@@ -112,11 +115,13 @@ let
         fi
       '';
 
-      cloneUrl = if repo.agenix.enable
+      cloneUrl =
+        if repo.agenix.enable
         then "\${AUTHED_URL:-${repo.url}}"
         else repo.url;
 
-    in pkgs.writeShellScript "git-repo-sync-${name}" ''
+    in
+    pkgs.writeShellScript "git-repo-sync-${name}" ''
       set -euo pipefail
 
       GITHUB_TOKEN=""
@@ -179,18 +184,19 @@ let
     "git-repo-sync-${name}" = {
       description = "git repo sync timer: ${name}";
       timerConfig = {
-        OnBootSec       = repo.onBootDelaySec;
+        OnBootSec = repo.onBootDelaySec;
         OnUnitActiveSec = repo.interval;
-        OnActiveSec     = repo.interval;
-        Persistent      = repo.timerPersistent;
+        OnActiveSec = repo.interval;
+        Persistent = repo.timerPersistent;
       };
       wantedBy = [ "timers.target" ];
     };
   };
 
-in {
+in
+{
   config = mkIf cfg.enable {
     systemd.user.services = lib.mkMerge (mapAttrsToList mkService cfg.repos);
-    systemd.user.timers   = lib.mkMerge (mapAttrsToList mkTimer   cfg.repos);
+    systemd.user.timers = lib.mkMerge (mapAttrsToList mkTimer cfg.repos);
   };
 }

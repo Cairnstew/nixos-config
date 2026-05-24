@@ -1,8 +1,7 @@
-{
-  config,
-  lib,
-  pkgs,
-  ...
+{ config
+, lib
+, pkgs
+, ...
 }:
 
 let
@@ -23,7 +22,7 @@ let
     null
     (lib.attrNames cfg.ollamaModels);
 
-  usingOllama = cfg.ollamaModels != {};
+  usingOllama = cfg.ollamaModels != { };
 
   # Prefer the flagged Ollama model, then the explicit model option.
   aiderDefaultModel =
@@ -41,10 +40,10 @@ let
       python = pkgs.python3.override {
         packageOverrides = final: prev: {
           opencv4 = prev.opencv4.override {
-            enableCuda   = false;
+            enableCuda = false;
             enableCublas = false;
-            enableCudnn  = false;
-            enableCufft  = false;
+            enableCudnn = false;
+            enableCufft = false;
           };
           pydub = prev.pydub.override {
             ffmpeg-full = pkgs.ffmpeg;
@@ -52,16 +51,16 @@ let
         };
       };
     in
-      cfg.package.override { python3Packages = python.pkgs; };
+    cfg.package.override { python3Packages = python.pkgs; };
 
 
 
   # Build the YAML config by merging layers in priority order.
   # Plain // merge — mkMerge is a NixOS module construct and must not be used
   # inside pkgs.formats.yaml generate; it leaks merge metadata into the output.
-  aiderConf = (pkgs.formats.yaml {}).generate "aider-conf" (
+  aiderConf = (pkgs.formats.yaml { }).generate "aider-conf" (
     {
-      model     = aiderDefaultModel;
+      model = aiderDefaultModel;
       auto-lint = cfg.autoLint;
       auto-test = cfg.autoTest;
     }
@@ -75,8 +74,8 @@ in
     enable = mkEnableOption "aider – AI pair programming in your terminal";
 
     package = mkOption {
-      type        = types.package;
-      default     = pkgs.aider-chat;
+      type = types.package;
+      default = pkgs.aider-chat;
       defaultText = literalExpression "pkgs.aider-chat";
       description = "The aider package to use.";
     };
@@ -84,8 +83,8 @@ in
     # ── Ollama integration ─────────────────────────────────────────────────
 
     ollamaModels = mkOption {
-      type    = types.attrsOf types.anything;
-      default = {};
+      type = types.attrsOf types.anything;
+      default = { };
       example = literalExpression ''
         {
           "llama3:8b" = { aider_default = true; };
@@ -100,9 +99,9 @@ in
     };
 
     ollamaBaseURL = mkOption {
-      type        = types.str;
-      default     = "http://127.0.0.1:11434";
-      example     = "http://my-gpu-box:11434";
+      type = types.str;
+      default = "http://127.0.0.1:11434";
+      example = "http://my-gpu-box:11434";
       description = ''
         Base URL for the Ollama server.  Exported as
         <envar>OLLAMA_API_BASE</envar> so aider can reach local models via the
@@ -113,9 +112,9 @@ in
     # ── Shorthand options ──────────────────────────────────────────────────
 
     model = mkOption {
-      type        = types.str;
-      default     = "gpt-4o";
-      example     = "claude-3-5-sonnet-20240620";
+      type = types.str;
+      default = "gpt-4o";
+      example = "claude-3-5-sonnet-20240620";
       description = ''
         Default model when no Ollama model is flagged
         <literal>aider_default = true</literal>.
@@ -123,20 +122,20 @@ in
     };
 
     autoLint = mkOption {
-      type        = types.bool;
-      default     = true;
+      type = types.bool;
+      default = true;
       description = "Automatically lint changed files after each aider edit.";
     };
 
     autoTest = mkOption {
-      type        = types.bool;
-      default     = false;
+      type = types.bool;
+      default = false;
       description = "Automatically run tests after each aider edit.";
     };
 
     watch = mkOption {
-      type        = types.bool;
-      default     = false;
+      type = types.bool;
+      default = false;
       description = ''
         Enable <literal>--watch-files</literal>: aider monitors source files for
         AI comment markers and acts on them automatically.
@@ -146,9 +145,9 @@ in
     # ── Pass-throughs ──────────────────────────────────────────────────────
 
     settings = mkOption {
-      type        = (pkgs.formats.yaml {}).type;
-      default     = {};
-      example     = literalExpression ''{ dark-mode = true; vim = true; }'';
+      type = (pkgs.formats.yaml { }).type;
+      default = { };
+      example = literalExpression ''{ dark-mode = true; vim = true; }'';
       description = ''
         Verbatim options merged into <filename>~/.aider.conf.yml</filename>.
         Values here take precedence over all shorthand options above.
@@ -158,9 +157,9 @@ in
     };
 
     extraArgs = mkOption {
-      type        = types.listOf types.str;
-      default     = [];
-      example     = [ "--no-pretty" "--map-tokens" "2048" ];
+      type = types.listOf types.str;
+      default = [ ];
+      example = [ "--no-pretty" "--map-tokens" "2048" ];
       description = ''
         Extra command-line flags prepended when invoking <command>aider</command>
         via the wrapper script.  Flags that can be expressed in
@@ -174,13 +173,13 @@ in
   config = mkIf cfg.enable {
 
     home.packages = [
-    (pkgs.writeShellScriptBin "aider" ''
-      export OLLAMA_API_BASE="${cfg.ollamaBaseURL}"
-      exec ${lib.getExe aiderPackage} \
-        ${lib.escapeShellArgs cfg.extraArgs} \
-        "$@"
-    '')
-  ];
+      (pkgs.writeShellScriptBin "aider" ''
+        export OLLAMA_API_BASE="${cfg.ollamaBaseURL}"
+        exec ${lib.getExe aiderPackage} \
+          ${lib.escapeShellArgs cfg.extraArgs} \
+          "$@"
+      '')
+    ];
 
     home.file.".aider.conf.yml".source = aiderConf;
 

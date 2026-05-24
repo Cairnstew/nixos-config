@@ -57,33 +57,33 @@
   };
 
   # Optional: enable printing
-  services.printing.enable = true;  
+  services.printing.enable = true;
 
   # Enable OpenGL (helpful for graphics performance)
   hardware.graphics.enable = true;
-  
+
   # Define a user account. Don't forget to set a password with ‘passwd’.
   users.users.seanc = {
     isNormalUser = true;
     description = "Sean Cairns";
     extraGroups = [ "networkmanager" "wheel" ];
-    packages = with pkgs; [];
+    packages = with pkgs; [ ];
   };
 
   nixpkgs.config = {
-      allowUnfree = true;
-    };
-  
+    allowUnfree = true;
+  };
+
 
   # List packages installed in system profile. To search, run:
   # $ nix search wget
   environment.systemPackages = with pkgs; [
-  #  vim # Do not forget to add an editor to edit configuration.nix! The Nano editor is also installed by default.
-  #  wget
-     micro
-     #nvidia-container-toolkit
-     #gh
-	 #adwaita-icon-theme	 
+    #  vim # Do not forget to add an editor to edit configuration.nix! The Nano editor is also installed by default.
+    #  wget
+    micro
+    #nvidia-container-toolkit
+    #gh
+    #adwaita-icon-theme	 
   ];
 
   # Some programs need SUID wrappers, can be configured further or are
@@ -97,7 +97,7 @@
   # Don't suspend or shutdown when the laptop lid is closed so the machine
   # remains reachable over the network (SSH etc.).
   # This tells systemd-logind to ignore lid events.
-  
+
   # Open ports in the firewall.
   # networking.firewall.allowedTCPPorts = [ ... ];
   # networking.firewall.allowedUDPPorts = [ ... ];

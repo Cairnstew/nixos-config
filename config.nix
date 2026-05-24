@@ -17,7 +17,7 @@
     # Full display name (used for git config, user info).
     # Consumed by: programs.git.userName, various UI displays.
     fullname = "Sean Cairns";
-    
+
     # Email address (used for git, accounts, notifications).
     # Consumed by: programs.git.userEmail, service account configs.
     email = "sean.cairnsst@gmail.com";

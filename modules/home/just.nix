@@ -24,7 +24,7 @@ in
 
     additionalAliases = lib.mkOption {
       type = lib.types.attrsOf lib.types.str;
-      default = {};
+      default = { };
       description = "Additional shell aliases related to just";
       example = lib.literalExpression ''
         {
@@ -37,7 +37,7 @@ in
 
   config = lib.mkIf cfg.enable {
     home.packages = [ cfg.package ];
-    home.shellAliases = 
+    home.shellAliases =
       (lib.optionalAttrs cfg.enableShortAlias { j = "just"; })
       // cfg.additionalAliases;
   };

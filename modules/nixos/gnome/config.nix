@@ -32,14 +32,29 @@ in
     };
 
     environment.gnome.excludePackages = with pkgs; [
-      gnome-tour gnome-photos cheese gnome-music epiphany
-      gnome-characters geary tali iagno hitori atomix yelp
-      gnome-contacts gnome-initial-setup
+      gnome-tour
+      gnome-photos
+      cheese
+      gnome-music
+      epiphany
+      gnome-characters
+      geary
+      tali
+      iagno
+      hitori
+      atomix
+      yelp
+      gnome-contacts
+      gnome-initial-setup
     ];
 
     environment.systemPackages = with pkgs; [
-      gnome-tweaks adwaita-icon-theme papirus-icon-theme
-      kdePackages.breeze-gtk kdePackages.breeze-icons kdePackages.breeze
+      gnome-tweaks
+      adwaita-icon-theme
+      papirus-icon-theme
+      kdePackages.breeze-gtk
+      kdePackages.breeze-icons
+      kdePackages.breeze
     ];
 
     programs.dconf.enable = true;

@@ -61,7 +61,7 @@ jobs:
         if: steps.check-changes.outputs.changed == 'true'
         uses: peter-evans/create-pull-request@v6
         with:
-          token: ${{ secrets.GITHUB_TOKEN }}
+          token: ${{ secrets.GH_PAT || secrets.GITHUB_TOKEN }}
           branch: update-flake-inputs
           title: 'chore: update flake inputs'
           body: |
