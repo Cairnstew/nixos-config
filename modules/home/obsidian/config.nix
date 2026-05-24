@@ -1,51 +1,11 @@
-{ config, pkgs, lib, ... }:
+{ config, lib, pkgs, ... }:
+
 let
   cfg = config.my.programs.obsidian;
   vaultDir = "${config.home.homeDirectory}/${cfg.defaultDirectory}";
   vaultId = builtins.substring 0 16 (builtins.hashString "md5" vaultDir);
 in
 {
-  options.my.programs.obsidian = {
-    enable = lib.mkOption {
-      type = lib.types.bool;
-      default = false;
-      description = "Enable Obsidian with custom configuration";
-    };
-
-    package = lib.mkOption {
-      type = lib.types.package;
-      default = pkgs.obsidian;
-      defaultText = "pkgs.obsidian";
-      description = "The obsidian package to use.";
-    };
-
-    defaultDirectory = lib.mkOption {
-      type = lib.types.str;
-      default = "Documents/Obsidian_Vault";
-      description = "Default vault directory relative to HOME";
-    };
-
-    repo = {
-      enable = lib.mkOption {
-        type = lib.types.bool;
-        default = false;
-        description = "Clone the Obsidian vault from a git repo on first setup";
-      };
-
-      url = lib.mkOption {
-        type = lib.types.str;
-        default = "";
-        description = "GitHub repo URL (e.g. https://github.com/user/vault)";
-      };
-
-      tokenFile = lib.mkOption {
-        type = lib.types.nullOr lib.types.str;
-        default = null;
-        description = "Path to agenix-managed file containing a GitHub access token";
-      };
-    };
-  };
-
   config = lib.mkIf cfg.enable {
     home.packages = [ cfg.package pkgs.jq ];
 

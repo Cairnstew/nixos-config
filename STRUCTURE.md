@@ -252,7 +252,7 @@ Home Manager modules for user-level configuration.
 | `gotty.nix` | GoTTY terminal sharing [→ homeModules.gotty] |
 | `just.nix` | Just command runner [→ homeModules.just] |
 | `localsend.nix` | LocalSend file sharing [→ homeModules.localsend] |
-| `obsidian.nix` | Obsidian note-taking [→ homeModules.obsidian] |
+| `obsidian/` | Obsidian note-taking [→ homeModules.obsidian] |
 | `rstudio/` | RStudio IDE [→ homeModules.rstudio] |
 | `ssh/` | SSH client configuration [→ homeModules.ssh] |
 | `steam.nix` | Steam gaming client [→ homeModules.steam] |
