@@ -59,4 +59,6 @@ self: super: {
   # Interactive Nix flake template selector
   nix-template-selector = self.callPackage "${packages}/nix-template-selector.nix" { };
 
+  # GitHub Actions workflow run cleanup tool
+  github-actions-cleanup = self.callPackage "${packages}/github-actions-cleanup" { };
 }

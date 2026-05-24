@@ -20,7 +20,7 @@ writeShellApplication {
       Options:
         --owner OWNER       GitHub owner (auto-detected from git remote)
         --repo REPO         GitHub repo (auto-detected from git remote)
-        --token TOKEN       GitHub token (default: $GH_TOKEN)
+        --token TOKEN       GitHub token (default: $GH_TOKEN or $GITHUB_TOKEN)
         --status STATUS     Filter by status (failure, success, cancelled, etc.)
         --failed            Shorthand for --status failure
         --older-than DAYS   Delete runs older than N days (default: 30)
@@ -38,7 +38,7 @@ writeShellApplication {
 
     OWNER=""
     REPO=""
-    TOKEN="''${GH_TOKEN:-}"
+    TOKEN="''${GH_TOKEN:-''${GITHUB_TOKEN:-}}"
     FILTER_STATUS=""
     OLDER_THAN_DAYS=30
     DRY_RUN=false
@@ -100,7 +100,7 @@ writeShellApplication {
     elif [ -n "$TOKEN" ]; then
       USE_CURL=true
     else
-      echo "Error: Need either gh (authenticated) or GH_TOKEN / --token."
+      echo "Error: Need either gh (authenticated) or GH_TOKEN/GITHUB_TOKEN env or --token."
       exit 1
     fi
 

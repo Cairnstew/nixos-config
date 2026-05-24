@@ -167,6 +167,7 @@ in
   # Base packages available on all hosts
   environment.systemPackages = with pkgs; [
     nix-template-selector # Interactive flake template selector
+    github-actions-cleanup # GitHub Actions cleanup tool
   ];
 
   # Additional packages are defined per-host or use environment.systemPackages directly
