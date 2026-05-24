@@ -41,7 +41,7 @@ in
     "cloud.gcloud.auth" = secret "gcloud-auth" "/secrets/cloud/gcloud/auth.json.age" { owner = me.username; };
 
     # GitHub
-    "github.token" = secret "github-token" "/secrets/github/token.age" { owner = me.username; group = "users"; };
+    "github.token" = secret "github-token" "/secrets/github/github-token.age" { owner = me.username; group = "users"; };
     "githubRepos.nixosConfig" = secret "github-token-nixos-config" "/secrets/github/repos/token-nixos-config.age" { owner = me.username; };
     "githubRepos.obsidian" = secret "github-token-obsidian" "/secrets/github/repos/token-obsidian.age" { owner = me.username; };
 
