@@ -1,72 +1,70 @@
-{ config, pkgs, lib, flake, ... }:
+{ lib, pkgs, flake, ... }:
+
 let
-  cfg = config.my.programs.ghostty;
-  # Get preferences from flake config
+  types = lib.types;
   prefs = flake.config.preferences or { };
   defaults = flake.config.defaults or { };
 in
 {
   options.my.programs.ghostty = {
     enable = lib.mkOption {
-      type = lib.types.bool;
-      # Enable by default if it's the configured default terminal
+      type = types.bool;
       default = (defaults.terminal or "ghostty") == "ghostty";
       description = "Enable Ghostty terminal emulator";
     };
 
     enableSystemd = lib.mkOption {
-      type = lib.types.bool;
+      type = types.bool;
       default = true;
       description = "Enable systemd integration for Ghostty";
     };
 
     package = lib.mkOption {
-      type = lib.types.package;
+      type = types.package;
       default = pkgs.ghostty;
+      defaultText = lib.literalExpression "pkgs.ghostty";
       description = "Ghostty package to use (must be provided from flake input)";
       example = lib.literalExpression "inputs.ghostty.packages.\${pkgs.stdenv.hostPlatform.system}.default";
     };
 
     fontSize = lib.mkOption {
-      type = lib.types.int;
-      # Use font size from preferences
+      type = types.int;
       default = prefs.terminalFontSize or 13;
       description = "Font size for Ghostty. Defaults to preferences.terminalFontSize.";
     };
 
     windowWidth = lib.mkOption {
-      type = lib.types.int;
+      type = types.int;
       default = 100;
       description = "Default window width in columns";
     };
 
     windowHeight = lib.mkOption {
-      type = lib.types.int;
+      type = types.int;
       default = 30;
       description = "Default window height in rows";
     };
 
     theme = lib.mkOption {
-      type = lib.types.str;
-      # Use theme based on dark mode preference
+      type = types.str;
       default = if (prefs.darkMode or true) then "catppuccin-mocha" else "catppuccin-latte";
       description = "Theme name to use. Defaults based on preferences.darkMode.";
     };
 
     gtkTitlebar = lib.mkOption {
-      type = lib.types.bool;
+      type = types.bool;
       default = true;
       description = "Enable GTK titlebar (better for tiling window managers)";
     };
 
     clearDefaultKeybinds = lib.mkOption {
-      type = lib.types.bool;
+      type = types.bool;
       default = true;
       description = "Clear default keybindings before applying custom ones";
     };
 
     keybindings = lib.mkOption {
-      type = lib.types.listOf lib.types.str;
+      type = types.listOf types.str;
       default = [
         "ctrl+shift+left=new_split:left"
         "ctrl+shift+right=new_split:right"
@@ -88,14 +86,14 @@ in
     };
 
     additionalKeybindings = lib.mkOption {
-      type = lib.types.listOf lib.types.str;
+      type = types.listOf types.str;
       default = [ ];
       description = "Additional keybindings to append to defaults";
       example = [ "ctrl+shift+t=new_tab" ];
     };
 
     customThemes = lib.mkOption {
-      type = lib.types.attrsOf lib.types.attrs;
+      type = types.attrsOf types.attrs;
       default = {
         catppuccin-mocha = {
           background = "1e1e2e";
@@ -127,30 +125,10 @@ in
     };
 
     extraSettings = lib.mkOption {
-      type = lib.types.attrs;
+      type = types.attrs;
       default = { };
       description = "Additional Ghostty settings to merge";
       example = { cursor-style = "bar"; };
-    };
-  };
-
-  config = lib.mkIf cfg.enable {
-    programs.ghostty = {
-      enable = true;
-      systemd.enable = cfg.enableSystemd;
-      package = cfg.package;
-      settings = {
-        gtk-titlebar = cfg.gtkTitlebar;
-        font-size = cfg.fontSize;
-        # Use terminal font from preferences if specified
-        font-family = prefs.terminalFont or null;
-        window-width = cfg.windowWidth;
-        window-height = cfg.windowHeight;
-        theme = cfg.theme;
-        keybind = cfg.keybindings ++ cfg.additionalKeybindings;
-      } // cfg.extraSettings;
-      clearDefaultKeybinds = cfg.clearDefaultKeybinds;
-      themes = cfg.customThemes;
     };
   };
 }
