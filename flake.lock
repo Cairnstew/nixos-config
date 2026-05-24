@@ -267,6 +267,26 @@
         "type": "github"
       }
     },
+    "dscnix": {
+      "inputs": {
+        "nixpkgs": [
+          "nixpkgs"
+        ]
+      },
+      "locked": {
+        "lastModified": 1779449609,
+        "narHash": "sha256-ANabJ1Imx07layVS+iF0z/8m5DQxmvF4+QHMBcMAnd8=",
+        "owner": "Cairnstew",
+        "repo": "dscnix",
+        "rev": "e583cd95842d2ddea4e7447d2fe5956237d71de8",
+        "type": "github"
+      },
+      "original": {
+        "owner": "Cairnstew",
+        "repo": "dscnix",
+        "type": "github"
+      }
+    },
     "emacs-overlay": {
       "inputs": {
         "nixpkgs": [
@@ -1786,6 +1806,7 @@
         "auto-cpufreq": "auto-cpufreq",
         "compose2nix": "compose2nix",
         "disko": "disko",
+        "dscnix": "dscnix",
         "flake-parts": "flake-parts",
         "flake-utils": "flake-utils_2",
         "ghostty": "ghostty",

@@ -59,6 +59,22 @@
     # nixosSizeGB = null;    # null = use remaining space
   };
 
+  # ── DSC v3 YAML Generation (semi-managed Windows config) ─────────────────
+  # Generates a DSC v3 YAML file at /etc/dscnix/desktop.yaml with values
+  # auto-derived from this host config (hostname, dark mode, timezone).
+  # Add host-specific Windows configuration below.
+  my.services.dscnix = {
+    enable = true;
+    configurationName = "DesktopWindowsDSC";
+
+    # Auto-derive is enabled by default (hostname, darkMode, timezone).
+    # Add host-specific extras:
+    optionalFeatures = {
+      "Microsoft-Windows-Subsystem-Linux" = { state = "Installed"; };
+      "VirtualMachinePlatform" = { state = "Installed"; };
+    };
+  };
+
   # ── Windows Installer ────────────────────────────────────────────────────
   # TODO: Set localPassword via agenix secret or config.nix
   # DO NOT commit plaintext passwords to the repository!
