@@ -7,18 +7,10 @@ in
   config = lib.mkIf cfg.enable {
 
     # ── Auto-detect token from agenix secrets catalog ──────────────────────
-    # If the secrets catalog has "github.token" (decrypted to /run/agenix/github-token),
-    # wire it as tokenFile automatically so per-host boilerplate is unnecessary.
-    # Uses tryEval to be safe in standalone Home Manager where age.secrets may not exist.
-    my.programs.gh.tokenFile = lib.mkDefault (
-      let
-        hasSecret = builtins.tryEval (config.age.secrets ? "github-token");
-      in
-      if hasSecret.success && hasSecret.value then
-        config.age.secrets.github-token.path
-      else
-        null
-    );
+    # Defaults to the conventional agenix path (/run/agenix/github-token).
+    # The activation script checks the file at runtime, so it's safe if the
+    # file doesn't exist yet (e.g. agenix not configured).
+    my.programs.gh.tokenFile = lib.mkDefault "/run/agenix/github-token";
 
     # ── Export GITHUB_TOKEN at shell startup ────────────────────────────────
     programs.zsh.initContent = lib.mkIf (cfg.tokenFile != null) (lib.mkAfter ''
@@ -51,13 +43,18 @@ in
     '';
 
     # ── Auth login via token file ───────────────────────────────────────────
-    # This properly authenticates gh so `gh auth status` shows the user.
-    # Runs after writeBoundary so the config directory exists.
+    # Tries 'gh auth login --with-token' to properly authenticate gh.
+    # Requires PAT with repo + read:org scopes. If it fails (e.g. missing
+    # read:org), GITHUB_TOKEN env var is still exported for CLI tools.
     home.activation.ghAuthLogin = lib.mkIf (cfg.tokenFile != null) (lib.hm.dag.entryAfter [ "writeBoundary" ] ''
       if [ -f "${cfg.tokenFile}" ]; then
         token=$(cat "${cfg.tokenFile}" | tr -d '\n')
         if [ -n "$token" ]; then
-          echo "$token" | ${cfg.package}/bin/gh auth login --with-token 2>/dev/null || true
+          if echo "$token" | ${cfg.package}/bin/gh auth login --with-token 2>/dev/null; then
+            echo "[gh] Authenticated successfully"
+          else
+            echo "[gh] Token present but gh auth login failed (token needs repo + read:org scopes)"
+          fi
         fi
       fi
     '');
