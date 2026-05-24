@@ -28,7 +28,7 @@
           Show
           this
           help "
-          }
+}
 
           case " ''${1:-}" in
             hello)
