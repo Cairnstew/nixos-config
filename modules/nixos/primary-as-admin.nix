@@ -29,4 +29,16 @@
     sudo.execWheelOnly = true;
     sudo.wheelNeedsPassword = false;
   };
+
+  # ── L0: Security assertions ──────────────────────────────────────────────
+  assertions = [
+    {
+      assertion = lib.stringLength (flake.config.me.sshKey or "") > 0;
+      message = "flake.config.me.sshKey must be a non-empty string for admin SSH access.";
+    }
+    {
+      assertion = lib.stringLength (flake.config.me.username or "") > 0;
+      message = "flake.config.me.username must be a non-empty string for admin user creation.";
+    }
+  ];
 }

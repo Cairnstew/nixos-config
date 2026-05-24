@@ -35,8 +35,8 @@ in
     # ── Networking ─────────────────────────────────────────────────────────
     ./ssh
     ./tailscale
-    ./natShare.nix
-    ./nebula.nix
+    ./natShare
+    ./nebula
     ./rustdesk.nix
 
     # ── Development ────────────────────────────────────────────────────────

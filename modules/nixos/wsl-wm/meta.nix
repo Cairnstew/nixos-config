@@ -5,6 +5,6 @@
   tags = [ "wsl" "window-manager" "xpra" "wslg" ];
   provides = [ "my.services.wsl-wm" ];
   complexity = "simple";
-  tested = false;
+  tested = true;
   maintainer = "seanc";
 }

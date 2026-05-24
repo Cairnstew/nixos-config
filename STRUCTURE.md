@@ -192,8 +192,16 @@ System and home profile definitions.
 | `default-build.nix` | Default build target configuration |
 | `graphics.nix` | GPU and graphics drivers |
 | `hedgedoc.nix` | HedgeDoc collaborative markdown [→ nixosModules.hedgedoc] |
-| `natShare.nix` | NAT sharing/network bridging [→ nixosModules.natShare] |
-| `nebula.nix` | Nebula mesh VPN [→ nixosModules.nebula] |
+| `natShare/` | NAT sharing/network bridging [→ nixosModules.natShare] |
+| `natShare/default.nix` | Module entry point |
+| `natShare/config.nix` | Options and implementation |
+| `natShare/tests.nix` | L0 assertions + L2 smoke test |
+| `natShare/meta.nix` | Metadata |
+| `nebula/` | Nebula mesh VPN [→ nixosModules.nebula] |
+| `nebula/default.nix` | Module entry point |
+| `nebula/config.nix` | Options and implementation |
+| `nebula/tests.nix` | L0 assertions + L2 smoke test |
+| `nebula/meta.nix` | Metadata |
 | `plasma-x11.nix` | KDE Plasma X11 session [→ nixosModules.plasma-x11] |
 | `rustdesk.nix` | RustDesk remote desktop [→ nixosModules.rustdesk] |
 | `server.nix` | Base server configuration |
