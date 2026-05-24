@@ -53,6 +53,7 @@ in
     # ── Dual-boot / Windows Support ────────────────────────────────────────
     ./disko
     ./windows-installer
+    ./dscnix
 
     # ── Entertainment ──────────────────────────────────────────────────────
     ./spotify.nix
