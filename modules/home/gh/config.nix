@@ -49,5 +49,17 @@ in
         ${cfg.package}/bin/gh extension install "$ext" || true
       done
     '';
+
+    # ── Auth login via token file ───────────────────────────────────────────
+    # This properly authenticates gh so `gh auth status` shows the user.
+    # Runs after writeBoundary so the config directory exists.
+    home.activation.ghAuthLogin = lib.mkIf (cfg.tokenFile != null) (lib.hm.dag.entryAfter [ "writeBoundary" ] ''
+      if [ -f "${cfg.tokenFile}" ]; then
+        token=$(cat "${cfg.tokenFile}" | tr -d '\n')
+        if [ -n "$token" ]; then
+          echo "$token" | ${cfg.package}/bin/gh auth login --with-token 2>/dev/null || true
+        fi
+      fi
+    '');
   };
 }
