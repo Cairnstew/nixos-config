@@ -64,10 +64,30 @@ in
       type = types.str;
       default = "";
       description = ''
-        Password for the Windows local administrator account.
-        WARNING: For security, set this via agenix secret or config.nix
-        instead of committing plaintext to the repository.
-        If left empty, a default password will be used (not recommended).
+        Password for the Windows local administrator account (plaintext).
+        WARNING: Do not commit plaintext passwords to the repository.
+        Prefer setting localPasswordFile to a runtime secret path instead.
+        If both localPassword and localPasswordFile are set, localPasswordFile takes precedence.
+      '';
+    };
+
+    localPasswordFile = mkOption {
+      type = types.nullOr types.path;
+      default = null;
+      description = ''
+        Path to a file containing the Windows local admin password (e.g., an agenix decrypted secret).
+        Read at runtime by the installer service, so it works with agenix paths like
+        config.age.secrets.windows-password.path.
+        Takes precedence over localPassword when set.
+      '';
+    };
+
+    computerName = mkOption {
+      type = types.str;
+      default = "WINDOWS-PC";
+      description = ''
+        Computer name for the Windows system. Should match the NixOS hostname
+        for consistency with dscnix auto-derivation.
       '';
     };
 

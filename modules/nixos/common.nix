@@ -54,6 +54,8 @@ in
     ./disko
     ./windows-installer
     ./dscnix
+    ./windows-post-install
+    ./windows-dsc-sync
 
     # ── Entertainment ──────────────────────────────────────────────────────
     ./spotify.nix

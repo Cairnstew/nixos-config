@@ -207,6 +207,10 @@
     # Desktop workstation (Intel, primary development).
     # Consumed by: build distribution, remote builder configuration.
     desktop-dlstflt = { ip = "100.111.231.84"; hostname = "desktop-dlstflt"; magicDnsName = "desktop-dlstflt.tail685690.ts.net"; };
+
+    # (New) Desktop PC — dual-boot NixOS + Windows 11.
+    # TODO: Fill in IP/hostname after first install and Tailscale login.
+    # desktop = { ip = "..."; hostname = "desktop"; magicDnsName = "..."; };
   };
 
   # ============================================================================

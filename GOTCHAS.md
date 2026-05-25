@@ -132,6 +132,18 @@ When you discover a new problem and its solution:
 
 ---
 
+**Windows installer re-runs on every boot if `.done` is missing**
+Symptom: Every NixOS boot triggers the `windows-installer` service, downloading a Windows ISO and attempting a reinstall even though Windows is already installed. Cause: The service only checks for `/var/lib/windows-installer/.done` — if that file is absent, it assumes Windows isn't installed. Fix: The service now includes a pre-flight idempotency check: it probes the Windows partition for an NTFS filesystem via `ntfs-3g.probe` and checks for `bootmgfw.efi` on the ESP. If either exists, it creates `.done` and exits immediately.
+
+**Windows Setup overwrites GRUB as default EFI boot entry**
+Symptom: After a successful Windows install, the machine boots directly into Windows instead of GRUB. Cause: Windows Setup always makes itself the first EFI boot entry. Fix: The `windows-post-install` service runs once after the first NixOS boot following Windows install. It checks if GRUB is the default entry and uses `efibootmgr --bootorder` to restore GRUB to the front. It also removes the stale "Windows 11 Setup" entry.
+
+**DSC config is injected into Windows ISO but never applied**
+Symptom: The `dsc-configuration.yaml` is placed in the ISO's OEM directory (`sources\$OEM$\$$\Setup\Scripts\`) but Windows never actually runs `dsc config set` during setup. Cause: The `autounattend.xml` had no `FirstLogonCommand` to execute the DSC bootstrap, and Windows 11 doesn't ship with DSC v3. Fix: The refactored `autounattend-xml` package now generates a bootstrap PowerShell script (`apply-dsc.ps1`) that installs PowerShell 7 + DSC v3 and applies the config. The `autounattend.xml` includes a `FirstLogonCommand` (order 5) to run this script.
+
+**`autounattend.xml` heredoc in services.nix is fragile**
+Symptom: Editing the inline XML in `services.nix` breaks string interpolation, and the XML duplicates the `packages/autounattend-xml` package. Cause: The installer service contained a 100+ line XML heredoc that was hard to maintain and had no build-time validation. Fix: The service now calls `pkgs.callPackage ../../../../packages/autounattend-xml` to build the XML at evaluation time. The generated XML is copied from the Nix store path during the install script.
+
 **VM tests (runNixOSTest) fail with QEMU/KVM error**
 Symptom: `nix flake check` or `nix build .#checks.x86_64-linux.vm-test-*` fails with "Could not access KVM kernel module" or similar. Cause: `pkgs.testers.runNixOSTest` requires `/dev/kvm` to boot the QEMU guest. Most cloud CI runners (GitHub Actions shared, GitLab.com shared) lack KVM access. Fix: Use a self-hosted runner with KVM enabled, or use `nix flake check --no-build` (evaluation only) in CI — the existing workflows in this repo already do this. The `ci.yml` workflow has explicit comments about this. A separate `vm-tests.yml` workflow exists for manual dispatch on KVM-capable runners. To run locally: ensure your user is in the `kvm` group (`sudo usermod -aG kvm $USER`) and verify with `ls -l /dev/kvm`.
 

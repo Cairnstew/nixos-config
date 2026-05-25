@@ -25,6 +25,10 @@ let
   wsl = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIAKZIYbM8ac+hHEAvvScLq2lHtAHi44Zlvlew/QYU3H0 root@wsl";
 
   # All systems that should decrypt secrets
+  # TODO: Add the desktop host SSH key after first NixOS install.
+  # Generate with: sudo ssh-keygen -A && cat /etc/ssh/ssh_host_ed25519_key.pub
+  # Then add to this list and re-encrypt all .age files.
+  # desktop = "ssh-ed25519 ...";
   systems = [ laptop server wsl ];
   # Combined: user key + all system keys
   all = users ++ systems;
@@ -118,6 +122,15 @@ in
   # Hosts: Server (primary), laptop (development)
   # Keys: User + all systems
   "cloud/gcloud/auth.json.age".publicKeys = all;
+
+  # -----------------------------------------------------------------------------
+  # Windows Dual-Boot
+  # -----------------------------------------------------------------------------
+  # Service: Windows local administrator password for unattended install
+  # Hosts: Desktop (dual-boot)
+  # Keys: User + desktop (once added above)
+  # Create with: agenix -e secrets/windows-password.age
+  "windows-password.age".publicKeys = all;
 
   # -----------------------------------------------------------------------------
   # AI/ML Services
