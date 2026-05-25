@@ -160,18 +160,59 @@
   my.programs.spotify.enable = true;
 
   # ── Home Manager Extra ───────────────────────────────────────────────────
-  my.homeManager.extraConfig.my.programs = {
-    discord.enable = true;
-    localsend.enable = true;
-    firefox.enable = true;
-    obsidian.enable = true;
-    thunderbird.enable = true;
-    vscode.enable = true;
-    "whatsapp-electron".enable = true;
-    "youtube-music".enable = true;
-    thunderbird = {
-      email = flake.config.me.email;
-      username = flake.config.me.username;
+  my.homeManager.extraConfig = {
+    my.programs = {
+      discord.enable = true;
+      localsend.enable = true;
+      firefox.enable = true;
+      obsidian.enable = true;
+      thunderbird.enable = true;
+      vscode.enable = true;
+      "whatsapp-electron".enable = true;
+      "youtube-music".enable = true;
+      thunderbird = {
+        email = flake.config.me.email;
+        username = flake.config.me.username;
+      };
+    };
+
+    my.services.kanshi = {
+      enable = true;
+      settings = [
+        {
+          profile = {
+            name = "desk";
+            outputs = [
+              # Left — vertical
+              {
+                criteria = "DP-2";
+                status = "enable";
+                position = "0,0";
+                mode = "1920x1200@59.88Hz";
+                scale = 1.0;
+                transform = "90";
+              }
+              # Center — horizontal (1440p)
+              {
+                criteria = "DP-1";
+                status = "enable";
+                position = "1200,0";
+                mode = "2560x1440@59.91Hz";
+                scale = 1.0;
+              }
+              # Right — vertical
+              {
+                criteria = "DP-3";
+                status = "enable";
+                position = "3760,0";
+                mode = "1920x1200@59.88Hz";
+                scale = 1.0;
+                transform = "270";
+              }
+            ];
+          };
+        }
+      ];
     };
   };
 }
