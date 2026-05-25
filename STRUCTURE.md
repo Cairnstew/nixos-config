@@ -209,7 +209,7 @@ System and home profile definitions.
 | `sillytavern/` | SillyTavern AI character chat |
 | `sillytavern/default.nix` | SillyTavern service |
 | `sillytavern/presets.nix` | Preset configurations |
-| `spotify.nix` | Spotify client [→ nixosModules.spotify] |
+| `spotify-player/` | Terminal Spotify player with agenix auth [→ nixosModules.spotify-player] |
 | `ssh.nix` | SSH server configuration [→ nixosModules.ssh] |
 | `udisks2.nix` | UDisks2 storage management [→ nixosModules.udisks2] |
 | `uup-converter.nix` | Windows ISO conversion tool [→ nixosModules.uup-converter] |

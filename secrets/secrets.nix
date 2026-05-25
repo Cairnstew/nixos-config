@@ -134,6 +134,14 @@ in
   "windows-password.age".publicKeys = all;
 
   # -----------------------------------------------------------------------------
+  # Entertainment
+  # -----------------------------------------------------------------------------
+  # Service: Spotify API client ID for spotify-player authentication
+  # Hosts: All (workstations, laptops with music playback)
+  # Keys: User + all systems
+  "entertainment/spotify-token.age".publicKeys = all;
+
+  # -----------------------------------------------------------------------------
   # AI/ML Services
   # -----------------------------------------------------------------------------
   # Service: Hugging Face API token (for model downloads)
@@ -160,10 +168,4 @@ in
   # Hosts: All development machines
   # Keys: User + all systems
   "ai/opencode-token.age".publicKeys = all;
-
-  
-  # Service: Spotify Client ID
-  # Hosts: All machines
-  # Keys: Users + all systems
-  "entertainment/spotify-token.age".publicKeys = all;
 }
