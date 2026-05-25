@@ -11,6 +11,9 @@
   networking.hostName = "desktop";
   nixos-unified.sshTarget = "seanc@desktop";
 
+  # Always run at performance governor (desktop, always plugged in)
+  powerManagement.cpuFreqGovernor = "performance";
+
   # ── System Profiles ──────────────────────────────────────────────────────
   my.profiles = {
     workstation.enable = true;
