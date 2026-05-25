@@ -27,7 +27,6 @@ in
     # mkDefault for packages: Core GUI apps for daily use
     # Override when: Different browser/office suite preferred, or minimal setup
     environment.systemPackages = lib.mkDefault (with pkgs; [
-      firefox
       thunderbird
       libreoffice
     ]);

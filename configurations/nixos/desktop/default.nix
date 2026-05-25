@@ -21,6 +21,7 @@
     desktop.gnome.enable = true;
     gpu.mesa.enable = true;
     location.enable = true;
+    gaming.enable = true;
   };
 
   my.homeProfiles = {

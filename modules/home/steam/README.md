@@ -1,7 +1,11 @@
-# Steam
+# Steam (DEPRECATED)
 
-Steam gaming platform configured via Home Manager. Installs `steam`, `steam-run`,
-and `steamcmd`.
+**Deprecated:** Use `modules/nixos/steam/` (the unified NixOS module) instead.
+Enable via `my.programs.steam.enable = true` in host config or via
+`my.profiles.gaming.enable = true`.
+
+This home-manager module is kept for backward compatibility but will not receive
+new features.
 
 ## Options
 

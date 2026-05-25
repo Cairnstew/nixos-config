@@ -39,7 +39,10 @@ in
     # Desktop profile
     (lib.mkIf cfg.desktop.enable {
       discord.enable = lib.mkDefault true;
-      firefox.enable = lib.mkDefault true;
+      firefox = {
+        enable = lib.mkDefault true;
+        extensions = lib.mkDefault [ "ublock-origin" "1password" ];
+      };
       obsidian.enable = lib.mkDefault true;
       thunderbird.enable = lib.mkDefault true;
       thunderbird.email = lib.mkDefault flake.config.me.email;

@@ -176,7 +176,12 @@ All `my.*` options declared across module files.
 | `my.programs.direnv.enable` | bool | `false` | direnv with nix-direnv |
 | `my.programs.firefox.enable` | bool | `false` | Firefox browser |
 | `my.programs.youtube-music.enable` | bool | `false` | YouTube Music client |
-| `my.programs.steam.enable` | bool | `false` | Steam gaming client |
+| `my.programs.steam.enable` | bool | `false` | Steam gaming platform (32-bit, unfree, system-wide) |
+| `my.programs.steam.remotePlay.openFirewall` | bool | `false` | Open firewall for Steam Remote Play Together |
+| `my.programs.steam.dedicatedServer.openFirewall` | bool | `false` | Open firewall for Steam dedicated servers |
+| `my.programs.steam.gamemode.enable` | bool | `false` | Enable Feral Gamemode |
+| `my.programs.steam.extraCompatPaths` | str? | `null` | Extra Proton compatibility tool paths |
+| `my.programs.steam.extraPackages` | list | `[]` | Extra Steam-related packages |
 | `my.programs.rstudio.enable` | bool | `false` | RStudio IDE |
 | `my.programs.yazi.enable` | bool | `false` | Yazi terminal file manager |
 | `my.programs.ssh-1password.enable` | bool | `false` | 1Password SSH agent |
