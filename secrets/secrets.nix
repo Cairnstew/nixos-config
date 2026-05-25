@@ -23,13 +23,14 @@ let
   laptop = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIETE96NnwPAZ0n5y6XcCzoErkrAhulUht/Hho0V829Qy root@laptop";
   server = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAINJXLC3S2pEuIchrWMtmWiTaJOA+U02HVyRczRNbRjMX root@nixos";
   wsl = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIAKZIYbM8ac+hHEAvvScLq2lHtAHi44Zlvlew/QYU3H0 root@wsl";
+  desktop = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIGRtQOHdY9SQ+xfIY4pGzmvWTKcW/Anz8MHcefH4sJdY root@desktop";
 
   # All systems that should decrypt secrets
   # TODO: Add the desktop host SSH key after first NixOS install.
   # Generate with: sudo ssh-keygen -A && cat /etc/ssh/ssh_host_ed25519_key.pub
   # Then add to this list and re-encrypt all .age files.
   # desktop = "ssh-ed25519 ...";
-  systems = [ laptop server wsl ];
+  systems = [ laptop server wsl desktop ];
   # Combined: user key + all system keys
   all = users ++ systems;
 in

@@ -2,6 +2,7 @@
 {
   imports = [
     ./hardware-configuration.nix
+    ./configuration.nix
     flake.inputs.self.nixosModules.common
   ];
 
@@ -34,7 +35,7 @@
 
   # ── Dual-Boot Partition Layout ──────────────────────────────────────────
   my.disko.dualBoot = {
-    enable = true;
+    enable = false;
     disk = "/dev/nvme0n1";
     espSizeGB = 1;
     windowsSizeGB = 150;
@@ -44,7 +45,7 @@
   # Auto-derives hostname, timezone, dark mode from NixOS config.
   # Adds aggressive Windows Update control + telemetry reduction.
   my.services.dscnix = {
-    enable = true;
+    enable = false;
     configurationName = "DesktopWindowsDSC";
 
     # ── Gaming-only Windows: aggressive update management ────────────────
@@ -130,7 +131,7 @@
   # Password is read from agenix — create before install:
   #   agenix -e secrets/windows-password.age
   my.services.windowsInstaller = {
-    enable = true;
+    enable = false;
     windowsDisk = "/dev/nvme0n1";
     localUsername = "seanc";
     computerName = "desktop";
@@ -142,13 +143,13 @@
 
   # ── Post-Install: Restore GRUB boot order after Windows Setup ────────────
   my.services.windowsPostInstall = {
-    enable = true;
+    enable = false;
     autoFixBootOrder = true;
   };
 
   # ── Ongoing DSC Sync: Push config to Windows on every NixOS rebuild ─────
   my.services.windowsDscSync = {
-    enable = true;
+    enable = false;
     windowsPartition = "/dev/disk/by-partlabel/Windows";
   };
 
