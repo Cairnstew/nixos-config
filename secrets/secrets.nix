@@ -161,4 +161,9 @@ in
   # Keys: User + all systems
   "ai/opencode-token.age".publicKeys = all;
 
+  
+  # Service: Spotify Client ID
+  # Hosts: All machines
+  # Keys: Users + all systems
+  "entertainment/spotify-token.age".publicKeys = all;
 }
