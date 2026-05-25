@@ -1,4 +1,4 @@
-{ config, lib, flake, ... }:
+{ config, lib, pkgs, flake, ... }:
 {
   imports = [
     ./hardware-configuration.nix
@@ -159,6 +159,8 @@
   # ── Additional Programs ────────────────────────────────────────────────
   my.programs.spotify.enable = true;
 
+  environment.systemPackages = [ pkgs.gnome-monitor-config ];
+
   # ── Home Manager Extra ───────────────────────────────────────────────────
   my.homeManager.extraConfig = {
     my.programs = {
@@ -176,43 +178,23 @@
       };
     };
 
-    my.services.kanshi = {
-      enable = true;
-      settings = [
-        {
-          profile = {
-            name = "desk";
-            outputs = [
-              # Left — vertical
-              {
-                criteria = "DP-2";
-                status = "enable";
-                position = "0,0";
-                mode = "1920x1200@59.88Hz";
-                scale = 1.0;
-                transform = "90";
-              }
-              # Center — horizontal (1440p)
-              {
-                criteria = "DP-1";
-                status = "enable";
-                position = "1200,0";
-                mode = "2560x1440@59.91Hz";
-                scale = 1.0;
-              }
-              # Right — vertical
-              {
-                criteria = "DP-3";
-                status = "enable";
-                position = "3760,0";
-                mode = "1920x1200@59.88Hz";
-                scale = 1.0;
-                transform = "270";
-              }
-            ];
-          };
-        }
-      ];
+    systemd.user.services.gnome-monitors = {
+      Unit = {
+        Description = "Apply GNOME monitor layout";
+        PartOf = [ "graphical-session.target" ];
+        After = [ "graphical-session.target" ];
+      };
+      Service = {
+        Type = "oneshot";
+        ExecStart =
+          "/run/current-system/sw/bin/gnome-monitor-config set"
+          + " -Lp -t normal -x 1200 -y 0 -M DP-1 -m '2560x1440@59.951'"
+          + " -L  -t right  -x 0    -y 0 -M DP-2 -m '1920x1200@59.950'"
+          + " -L  -t left   -x 3760 -y 0 -M DP-3 -m '1920x1200@59.950'";
+      };
+      Install = {
+        WantedBy = [ "graphical-session.target" ];
+      };
     };
   };
 }
