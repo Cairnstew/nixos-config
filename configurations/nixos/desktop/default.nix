@@ -188,9 +188,9 @@
         Type = "oneshot";
         ExecStart =
           "/run/current-system/sw/bin/gnome-monitor-config set"
-          + " -Lp -t normal -x 1200 -y 0 -M DP-1 -m '2560x1440@59.951'"
-          + " -L  -t right  -x 0    -y 0 -M DP-2 -m '1920x1200@59.950'"
-          + " -L  -t left   -x 3760 -y 0 -M DP-3 -m '1920x1200@59.950'";
+          + " -Lp -t normal -x 1200 -y 0 -M DP-1 -m '2560x1440@179.998'"
+          + " -L  -t left   -x 3760 -y 0 -M DP-2 -m '1920x1200@59.950'"
+          + " -L  -t right  -x 0    -y 0 -M DP-3 -m '1920x1200@59.950'";
       };
       Install = {
         WantedBy = [ "graphical-session.target" ];
