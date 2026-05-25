@@ -43,5 +43,8 @@ my.services.kanshi = {
 ## Notes
 
 - Upstream docs: [kanshi(5)](https://man.archlinux.org/man/kanshi.5)
-- Requires a Wayland session (GNOME, KDE, Sway, Hyprland, etc.)
+- **wlroots-only** — requires a compositor that implements the
+  `wlr-output-management-unstable-v1` protocol (Sway, Hyprland, River, etc.).
+  Does **not** work with GNOME/Mutter or KDE/KWin.
+  For GNOME, use `gnome-monitor-config` instead.
 - Profile switching happens automatically based on connected outputs
