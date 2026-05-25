@@ -18,7 +18,7 @@ in
           };
           nodes = mkOption {
             type = types.attrsOf types.raw;
-            default = {};
+            default = { };
             description = "NixOS node definitions passed to runNixOSTest.";
           };
           testScript = mkOption {
@@ -30,12 +30,12 @@ in
           };
           meta = mkOption {
             type = types.attrsOf types.raw;
-            default = {};
+            default = { };
             description = "Arbitrary metadata (hostname, module origin, etc.).";
           };
         };
       });
-      default = {};
+      default = { };
       internal = true;
       description = ''
         Registry of VM test specs. Set by module tests.nix files and host configs.
