@@ -55,6 +55,15 @@ Monitors flake health:
 
 Provides information about Cachix cache maintenance. Note: Direct cache deletion requires manual action via the Cachix web interface.
 
+### VM Tests (`vm-tests.yml`)
+**Triggers:** Manual dispatch only
+
+Runs the NixOS VM integration tests (QEMU-based):
+- Requires `/dev/kvm` — **not available on GitHub Actions shared runners**
+- Intended for self-hosted runners or local execution
+- Select individual tests or run all via workflow dispatch inputs
+- Used to validate disko partitions, DSC YAML generation, and ISO building
+
 ### Local Verification (`local-verify.yml`)
 **Triggers:** Push to non-main branches, manual dispatch
 

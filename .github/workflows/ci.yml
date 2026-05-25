@@ -83,6 +83,12 @@ jobs:
 
   # ─────────────────────────────────────────────────────────────────────────────
   # Flake check (evaluation only, no builds)
+  #
+  # NOTE: Use --no-build here because `nix flake check` also evaluates VM test
+  # derivations (checks.vm-test-*). Building those requires /dev/kvm, which
+  # GitHub Actions shared runners do not provide. To run VM tests, use a
+  # self-hosted runner with KVM or run `nix build .#checks.x86_64-linux.vm-test-*`
+  # locally. See also .github/workflows/vm-tests.yml.
   # ─────────────────────────────────────────────────────────────────────────────
   flake-check:
     runs-on: ubuntu-latest

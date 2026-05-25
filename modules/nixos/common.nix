@@ -63,6 +63,9 @@ in
     ./current-location.nix
     ./secrets
 
+    # ── VM Testing ──────────────────────────────────────────────────────────
+    ./vm-test.nix
+
     # ── Profiles System ────────────────────────────────────────────────────
     ./profiles
 

@@ -11,6 +11,11 @@ Each entry: **symptom → cause → fix**. One paragraph max. Newest at the top.
 
 ---
 
+**Dual-boot disko module enables GRUB options but not GRUB itself**
+Symptom: `nix flake check` or `nix build` fails with `You must set the option 'boot.loader.grub.devices' or 'boot.loader.grub.mirroredBoots'` when `my.disko.dualBoot.enable = true`. Cause: The disko module sets `grub.useOSProber` and `grub.extraEntries` but was missing `grub.enable = true` and `grub.devices = [ "nodev" ]` (plus `grub.efiSupport` for UEFI). The common module sets `grub.enable = lib.mkDefault false` which stays in effect unless explicitly overridden. Fix: `modules/nixos/disko/config.nix` now sets `boot.loader.grub.enable = true`, `boot.loader.grub.devices = [ "nodev" ]`, `boot.loader.grub.efiSupport = true`, and `boot.loader.efi.canTouchEfiVariables = mkDefault true` when dual-boot is enabled.
+
+---
+
 **`meta.nix` imported in `default.nix` causes "option does not exist" errors**
 Symptom: `nix flake check` or `nix run` fails with `The option 'home-manager.users.<user>.<key>' does not exist` where `<key>` is something like `category`, `name`, or `tags`. Cause: `meta.nix` is a pure attrset (not a module function: `{ ... }: { ... }`), so importing it via `imports = [ ./meta.nix ]` in `default.nix` tries to set its keys as module-level options that don't exist in the home-manager user scope. Fix: Remove `./meta.nix` from the `imports` list in `default.nix`. `meta.nix` is metadata for agents/tooling only — it must NOT be imported as a Nix module.
 
@@ -125,4 +130,11 @@ When you discover a new problem and its solution:
 
 ---
 
-Last updated: 2026-05-20
+---
+
+**VM tests (runNixOSTest) fail with QEMU/KVM error**
+Symptom: `nix flake check` or `nix build .#checks.x86_64-linux.vm-test-*` fails with "Could not access KVM kernel module" or similar. Cause: `pkgs.testers.runNixOSTest` requires `/dev/kvm` to boot the QEMU guest. Most cloud CI runners (GitHub Actions shared, GitLab.com shared) lack KVM access. Fix: Use a self-hosted runner with KVM enabled, or use `nix flake check --no-build` (evaluation only) in CI — the existing workflows in this repo already do this. The `ci.yml` workflow has explicit comments about this. A separate `vm-tests.yml` workflow exists for manual dispatch on KVM-capable runners. To run locally: ensure your user is in the `kvm` group (`sudo usermod -aG kvm $USER`) and verify with `ls -l /dev/kvm`.
+
+---
+
+Last updated: 2026-05-24

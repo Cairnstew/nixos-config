@@ -20,6 +20,12 @@
       description = "Names for GNOME workspaces";
     };
 
+    wayland = lib.mkOption {
+      type = lib.types.bool;
+      default = true;
+      description = "Enable Wayland session in GDM (set false to force X11 in VMs)";
+    };
+
     enableHotCorners = lib.mkOption {
       type = lib.types.bool;
       default = true;

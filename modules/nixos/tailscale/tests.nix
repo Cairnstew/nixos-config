@@ -22,7 +22,8 @@ in
     description = "Health check for tailscale connectivity";
     after = [ "tailscaled.service" "network-online.target" ];
     requires = [ "tailscaled.service" "network-online.target" ];
-    wantedBy = [ "multi-user.target" ];
+    # Don't block boot — this is informational-only and tailscale may not
+    # be authenticated yet (especially in VMs or first-boot scenarios).
 
     serviceConfig = {
       Type = "oneshot";

@@ -1,4 +1,7 @@
 /result
+result-*
+*.qcow2
+*.qcow2.lock
 *.direnv
 **/flake-profile*
 /.pre-commit-config.yaml

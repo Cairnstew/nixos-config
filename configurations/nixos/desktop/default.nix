@@ -121,6 +121,9 @@
   #   lanInterface = "eth1";
   # };
 
+  # ── VM Testing ─────────────────────────────────────────────────────────
+  my.testing.vmTest.enable = true;
+
   # ── Additional Programs ────────────────────────────────────────────────
   my.programs.spotify.enable = true;
 
