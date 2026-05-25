@@ -58,7 +58,8 @@ in
     ./windows-dsc-sync
 
     # ── Entertainment ──────────────────────────────────────────────────────
-    ./spotify-player
+    ./spotify.nix
+    ./steam
     ./sillytavern
 
     # ── Location & Secrets ────────────────────────────────────────────────

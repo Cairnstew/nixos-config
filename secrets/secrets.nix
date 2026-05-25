@@ -132,15 +132,6 @@ in
   # Keys: User + desktop (once added above)
   # Create with: agenix -e secrets/windows-password.age
   "windows-password.age".publicKeys = all;
-
-  # -----------------------------------------------------------------------------
-  # Entertainment
-  # -----------------------------------------------------------------------------
-  # Service: Spotify API client ID for spotify-player authentication
-  # Hosts: All (workstations, laptops with music playback)
-  # Keys: User + all systems
-  "entertainment/spotify-token.age".publicKeys = all;
-
   # -----------------------------------------------------------------------------
   # AI/ML Services
   # -----------------------------------------------------------------------------

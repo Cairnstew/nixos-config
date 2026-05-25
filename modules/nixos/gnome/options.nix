@@ -9,6 +9,7 @@
         "${defaults.browser or "firefox"}.desktop"
         "code.desktop"
         "org.gnome.Terminal.desktop"
+        "spotify.desktop"
       ];
       description = "List of favorite applications in GNOME dash";
     };

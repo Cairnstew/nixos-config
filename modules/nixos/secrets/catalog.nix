@@ -51,9 +51,6 @@ in
     # Windows Dual-Boot
     "windows.password" = secret "windows-password" "/secrets/windows-password.age" { owner = "root"; };
 
-    # Entertainment
-    "spotify.token" = secret "spotify-token" "/secrets/entertainment/spotify-token.age" { owner = me.username; };
-
     # Tailscale
     "tailscale.authKey" = secret "tailscale-authkey" "/secrets/tailscale/authkey.age" { owner = me.username; };
     "tailscale.apiKey" = secret "tailscale-apikey" "/secrets/tailscale/apikey.age" { owner = me.username; };
