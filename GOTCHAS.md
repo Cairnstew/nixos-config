@@ -11,6 +11,11 @@ Each entry: **symptom → cause → fix**. One paragraph max. Newest at the top.
 
 ---
 
+**wimboot 2.8.0 fails to compile with GCC -Werror=unterminated-string-initialization**
+Symptom: `nix build` of any configuration with `my.services.pxeServer.enable = true` fails with `initializer-string for array of 'char' truncates NUL terminator` in `wimboot.h`. Cause: Newer GCC versions treat `-Wunterminated-string-initialization` as an error, but wimboot's Makefile passes `-Werror` which promotes it. Fix: Add an overlay in `overlays/default.nix` that appends `-Wno-error=unterminated-string-initialization` to `env.NIX_CFLAGS_COMPILE`. Entry added 2026-05-26.
+
+---
+
 **Dual-boot disko module enables GRUB options but not GRUB itself**
 Symptom: `nix flake check` or `nix build` fails with `You must set the option 'boot.loader.grub.devices' or 'boot.loader.grub.mirroredBoots'` when `my.disko.dualBoot.enable = true`. Cause: The disko module sets `grub.useOSProber` and `grub.extraEntries` but was missing `grub.enable = true` and `grub.devices = [ "nodev" ]` (plus `grub.efiSupport` for UEFI). The common module sets `grub.enable = lib.mkDefault false` which stays in effect unless explicitly overridden. Fix: `modules/nixos/disko/config.nix` now sets `boot.loader.grub.enable = true`, `boot.loader.grub.devices = [ "nodev" ]`, `boot.loader.grub.efiSupport = true`, and `boot.loader.efi.canTouchEfiVariables = mkDefault true` when dual-boot is enabled.
 

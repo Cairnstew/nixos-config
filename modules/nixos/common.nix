@@ -54,6 +54,7 @@ in
     ./disko
     ./dscnix
     ./windows-iso-sync.nix
+    ./pxe-server
 
     # ── Entertainment ──────────────────────────────────────────────────────
     ./spotify.nix

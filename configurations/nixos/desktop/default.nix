@@ -44,7 +44,7 @@
   # Auto-derives hostname, timezone, dark mode from NixOS config.
   # Adds aggressive Windows Update control + telemetry reduction.
   my.services.dscnix = {
-    enable = true;
+    enable = false;
     configurationName = "DesktopWindowsDSC";
 
     # ── Gaming-only Windows: aggressive update management ────────────────
@@ -112,6 +112,15 @@
         arguments = [ "-NoProfile" "-Command" "Get-AppxPackage *bing* | Remove-AppxPackage" ];
       };
     };
+  };
+
+  # ── PXE Server (testing) ───────────────────────────────────────────────
+  # TODO: set interface to your LAN interface name (check `ip link`)
+  my.services.pxeServer = {
+    enable = false;
+    interface = "eth0";
+    dhcpRange = "192.168.100.100,192.168.100.200";
+    serverIp = "192.168.100.1";
   };
 
   # ── VM Testing ─────────────────────────────────────────────────────────

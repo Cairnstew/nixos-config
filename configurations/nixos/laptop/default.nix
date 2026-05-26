@@ -33,6 +33,13 @@
     location.enable = true;
   };
 
+  my.services.pxeServer = {
+    enable = true;
+    interface = "eth0";
+    dhcpRange = "192.168.100.100,192.168.100.200";
+    serverIp = "192.168.100.1";
+  };
+
   # ── Home Profiles ──────────────────────────────────────────────────────
   my.homeProfiles = {
     common.enable = true;
