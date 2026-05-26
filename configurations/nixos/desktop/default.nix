@@ -114,36 +114,6 @@
     };
   };
 
-  # ── Windows Installer ────────────────────────────────────────────────────
-  # Downloads a pre-built Windows ISO from a GitHub release, injects
-  # autounattend.xml + DSC config, then sets up EFI boot.
-  # Password is read from agenix — create before install:
-  #   agenix -e secrets/windows-password.age
-  my.services.windowsInstaller = {
-    enable = false;
-    windowsReleaseTag = "22631.7079.23H2.PRO.X64.EN";
-    windowsImageIndex = 1;
-    windowsDisk = "/dev/sda";
-    localUsername = "seanc";
-    computerName = "desktop";
-    localPasswordFile = if config.age.secrets ? "windows-password"
-      then config.age.secrets.windows-password.path
-      else null;
-    dscConfigPath = "${config.my.services.dscnix.configFile}";
-  };
-
-  # ── Post-Install: Clean up stale EFI entries after Windows Setup ─────────
-  my.services.windowsPostInstall = {
-    enable = true;
-    autoFixBootOrder = false;
-  };
-
-  # ── Ongoing DSC Sync: Push config to Windows on every NixOS rebuild ─────
-  my.services.windowsDscSync = {
-    enable = true;
-    windowsPartition = "/dev/disk/by-partlabel/Windows";
-  };
-
   # ── VM Testing ─────────────────────────────────────────────────────────
   my.testing.vmTest.enable = true;
 

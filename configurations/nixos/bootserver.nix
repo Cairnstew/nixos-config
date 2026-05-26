@@ -30,4 +30,7 @@
     dhcpRange = "192.168.100.100,192.168.100.200";
     serverIp = "192.168.100.1";
   };
+
+  # ── Windows ISO Sync (populates the PXE server's /srv/pxe/windows/) ──
+  my.services.windowsIsoSync.enable = true;
 }

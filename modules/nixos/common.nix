@@ -52,10 +52,8 @@ in
 
     # ── Dual-boot / Windows Support ────────────────────────────────────────
     ./disko
-    ./windows-installer
     ./dscnix
-    ./windows-post-install
-    ./windows-dsc-sync
+    ./windows-iso-sync.nix
 
     # ── Entertainment ──────────────────────────────────────────────────────
     ./spotify.nix
