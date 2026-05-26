@@ -11,10 +11,11 @@ mkIf cfg.enable {
       wantedBy = [ "windows-dsc-sync.path" ];
       partOf = [ "windows-dsc-sync.path" ];
 
+      path = [ pkgs.ntfs3g pkgs.coreutils pkgs.findutils pkgs.jq ];
+
       serviceConfig = {
         Type = "oneshot";
         RemainAfterExit = true;
-        path = [ pkgs.ntfs3g pkgs.coreutils pkgs.findutils pkgs.jq ];
       };
 
       script = ''

@@ -24,6 +24,18 @@
       options = [ "fmask=0022" "dmask=0022" ];
     };
 
+  fileSystems."/mnt/shared" =
+    { device = "/dev/disk/by-uuid/05B6D61C3F40F000";
+      fsType = "ntfs-3g";
+      options = [ "uid=1000" "gid=100" "rw" "noatime" ];
+    };
+
+  fileSystems."/mnt/storage" =
+    { device = "/dev/disk/by-uuid/ea7232ce-fb29-4df8-9941-b217470e6850";
+      fsType = "ext4";
+      options = [ "defaults" "noatime" ];
+    };
+
   swapDevices = [ ];
 
   # Enables DHCP on each ethernet and wireless interface. In case of scripted networking

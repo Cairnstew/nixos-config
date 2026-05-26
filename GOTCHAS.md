@@ -119,6 +119,23 @@ Fix: Flake-parts modules configure the flake itself (outputs, packages, options)
 
 ---
 
+**genisoimage needs `-joliet-long` for some Windows ISOs**
+Symptom: ISO repacking fails with "have the same Joliet name" and "Joliet tree sort failed". Cause: Some Windows ISOs contain two CAB files whose long Joliet names collide after being truncated to the Joliet 64-char limit. Fix: Add `-joliet-long` to the `genisoimage` invocation to allow longer Joliet file names (up to 103 chars). Fixed in `modules/nixos/windows-installer/services.nix`.
+
+**Repacked ISO missing UEFI boot catalog (OVMF can't boot)**
+Symptom: After the installer repacks the ISO with `genisoimage`, UEFI firmware (e.g. OVMF) can't boot it — it only shows the legacy BIOS El Torito entry. Cause: The `genisoimage` command only passed `-b boot/etfsboot.com` for BIOS boot, with no `-eltorito-alt-boot` for UEFI. The original source ISO also lacked the UEFI El Torito entry (only had BIOS). Fix: Added `-eltorito-alt-boot -e efi/microsoft/boot/efisys.bin -no-emul-boot` so the repacked ISO has both BIOS and UEFI boot records. Fixed in `modules/nixos/windows-installer/services.nix`.
+
+**Migrated from `uup-builder` to pre-built GitHub release ISOs**
+Symptom: ISO built via `uup-builder` (downloading UUP files + converting via `convert.sh`) was producing corrupt/broken ISOs. Cause: The uup-dump API and conversion pipeline had reliability issues. Fix: Replaced `uup-builder` flake input with `windows-iso-repo` (points to `github:Cairnstew/uup-dump-build-and-get-windows-iso`). Step 1 of the installer now downloads a pre-built ISO from a GitHub release (split zip parts via aria2 + 7z extraction) instead of building one from UUP files. Removed `windowsBuild`, `windowsBuildId`, `windowsLang`, `windowsEdition` options; added `windowsReleaseTag`, `windowsImageIndex`, `isoChecksum`. Steps 2-8 (inject autounattend, DSC, repack, EFI boot) unchanged. See `modules/nixos/windows-installer/services.nix`.
+
+**`serviceConfig.path` is silently ignored by systemd**
+Symptom: Systemd services using `serviceConfig.path = [ ... ]` log `Unknown key 'path' in section [Service], ignoring` and commands from those packages aren't found at runtime (exit code 127). Cause: `path` is a NixOS-specific service option, not a systemd `[Service]` directive — it must be a **top-level** key in the service definition, not nested inside `serviceConfig`. Fix: Move `path = [ ... ]` outside `serviceConfig`, making it a sibling of `script`, `serviceConfig`, etc. Also check `services.nix` in `modules/nixos/ollama/` which has the same pattern.
+
+---
+
+
+---
+
 ## Adding New Entries
 
 When you discover a new problem and its solution:

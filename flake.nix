@@ -73,10 +73,10 @@
     compose2nix.url = "github:aksiksi/compose2nix";
     compose2nix.inputs.nixpkgs.follows = "nixpkgs";
 
-    # Windows dual-boot support
-    uup-builder = {
-      url = "github:Cairnstew/uup-builder";
-      inputs.nixpkgs.follows = "nixpkgs";
+    # Pre-built Windows ISOs from GitHub releases (pins the repo URL)
+    windows-iso-repo = {
+      url = "github:Cairnstew/uup-dump-build-and-get-windows-iso";
+      flake = false;
     };
 
     # DSC v3 YAML configuration generation (Nix → Windows DSC)

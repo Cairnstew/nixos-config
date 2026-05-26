@@ -37,48 +37,38 @@
     longitude = -4.2583;
   };
 
-  # ── Dual-Boot Partition Layout ──────────────────────────────────────────
-  my.disko.dualBoot = {
-    enable = false;
-    disk = "/dev/nvme0n1";
-    espSizeGB = 1;
-    windowsSizeGB = 150;
-  };
+  # ── UDisks2 (dynamic automount for USB/external drives) ─────────────────
+  my.services.udisks2.enable = true;
 
   # ── DSC v3 YAML Generation (Nix→Windows managed config) ─────────────────
   # Auto-derives hostname, timezone, dark mode from NixOS config.
   # Adds aggressive Windows Update control + telemetry reduction.
   my.services.dscnix = {
-    enable = false;
+    enable = true;
     configurationName = "DesktopWindowsDSC";
 
     # ── Gaming-only Windows: aggressive update management ────────────────
     registry = {
-      # Disable Cortana entirely
       "DisableCortana" = {
         keyPath = "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\Windows Search";
         valueName = "AllowCortana";
         valueData = { DWord = 0; };
       };
-      # Disable Bing search in Start menu
       "DisableBingSearch" = {
         keyPath = "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\Explorer";
         valueName = "DisableSearchBoxSuggestions";
         valueData = { DWord = 1; };
       };
-      # No auto-reboot when users are logged in
       "NoAutoRebootWithLoggedOnUsers" = {
         keyPath = "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\WindowsUpdate\\AU";
         valueName = "NoAutoRebootWithLoggedOnUsers";
         valueData = { DWord = 1; };
       };
-      # Download updates but let user choose when to install
       "AUOptions" = {
         keyPath = "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\WindowsUpdate\\AU";
         valueName = "AUOptions";
         valueData = { DWord = 3; };
       };
-      # Defer feature updates by 365 days
       "DeferFeatureUpdates" = {
         keyPath = "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\WindowsUpdate";
         valueName = "DeferFeatureUpdates";
@@ -89,25 +79,21 @@
         valueName = "DeferFeatureUpdatesPeriodInDays";
         valueData = { DWord = 365; };
       };
-      # Do not include drivers with Windows Update
       "ExcludeWUDriversInQualityUpdate" = {
         keyPath = "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\WindowsUpdate";
         valueName = "ExcludeWUDriversInQualityUpdate";
         valueData = { DWord = 1; };
       };
-      # Disable Delivery Optimization (peer-to-peer updates)
       "DisableDeliveryOptimization" = {
         keyPath = "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\DeliveryOptimization";
         valueName = "DODownloadMode";
         valueData = { DWord = 0; };
       };
-      # Telemetry: Basic (1) instead of Full (3)
       "AllowTelemetry" = {
         keyPath = "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\DataCollection";
         valueName = "AllowTelemetry";
         valueData = { DWord = 1; };
       };
-      # Disable tailored experiences (advertising ID)
       "DisableTailoredExperiences" = {
         keyPath = "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\DataCollection";
         valueName = "AllowTailoredExperiencesWithDiagnosticData";
@@ -115,13 +101,11 @@
       };
     };
 
-    # WSL for when you need Linux on Windows
     optionalFeatures = {
       "Microsoft-Windows-Subsystem-Linux" = { state = "Installed"; };
       "VirtualMachinePlatform" = { state = "Installed"; };
     };
 
-    # Post-install cleanup commands (applied by DSC on every run)
     runCommands = {
       "RemoveBingBloat" = {
         executable = "powershell.exe";
@@ -131,12 +115,15 @@
   };
 
   # ── Windows Installer ────────────────────────────────────────────────────
-  # Creates a Windows 11 Pro unattended ISO on first boot.
+  # Downloads a pre-built Windows ISO from a GitHub release, injects
+  # autounattend.xml + DSC config, then sets up EFI boot.
   # Password is read from agenix — create before install:
   #   agenix -e secrets/windows-password.age
   my.services.windowsInstaller = {
     enable = false;
-    windowsDisk = "/dev/nvme0n1";
+    windowsReleaseTag = "22631.7079.23H2.PRO.X64.EN";
+    windowsImageIndex = 1;
+    windowsDisk = "/dev/sda";
     localUsername = "seanc";
     computerName = "desktop";
     localPasswordFile = if config.age.secrets ? "windows-password"
@@ -145,15 +132,15 @@
     dscConfigPath = "${config.my.services.dscnix.configFile}";
   };
 
-  # ── Post-Install: Restore GRUB boot order after Windows Setup ────────────
+  # ── Post-Install: Clean up stale EFI entries after Windows Setup ─────────
   my.services.windowsPostInstall = {
-    enable = false;
-    autoFixBootOrder = true;
+    enable = true;
+    autoFixBootOrder = false;
   };
 
   # ── Ongoing DSC Sync: Push config to Windows on every NixOS rebuild ─────
   my.services.windowsDscSync = {
-    enable = false;
+    enable = true;
     windowsPartition = "/dev/disk/by-partlabel/Windows";
   };
 

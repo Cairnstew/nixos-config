@@ -14,10 +14,11 @@ mkIf cfg.enable {
       ConditionPathExists = "!/var/lib/windows-post-install/.done";
     };
 
+    path = [ pkgs.efibootmgr pkgs.coreutils pkgs.gnused ];
+
     serviceConfig = {
       Type = "oneshot";
       RemainAfterExit = true;
-      path = [ pkgs.efibootmgr pkgs.coreutils pkgs.gnused ];
     };
 
     script = ''

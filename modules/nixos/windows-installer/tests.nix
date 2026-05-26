@@ -5,6 +5,10 @@ in
 {
   assertions = [
     {
+      assertion = !cfg.enable || cfg.windowsReleaseTag != "";
+      message = "my.services.windowsInstaller.windowsReleaseTag must be set when enabled.";
+    }
+    {
       assertion = !cfg.enable || cfg.windowsDisk != "";
       message = "my.services.windowsInstaller.windowsDisk must be set when enabled.";
     }
@@ -28,9 +32,8 @@ in
 
       my.services.windowsInstaller = {
         enable = true;
-        windowsBuild = "windows-11";
-        windowsEdition = "pro";
-        windowsLang = "en-gb";
+        windowsReleaseTag = "26200.8521.25H2.MULTI.X64.PL.E.D.N";
+        windowsImageIndex = 2;
         windowsDisk = "/dev/vda";
         localUsername = "testuser";
         localPassword = "testpass123";

@@ -1,9 +1,7 @@
-{ config, lib, pkgs, flake, ... }:
+{ config, lib, pkgs, ... }:
 let
   cfg = config.my.services.windowsInstaller;
   inherit (lib) mkIf optionalString;
-
-  uup-builder = flake.inputs.uup-builder.packages.${pkgs.stdenv.hostPlatform.system}.default or flake.inputs.uup-builder.defaultPackage.${pkgs.stdenv.hostPlatform.system};
 
   # Build autounattend.xml at evaluation time (inline to avoid callPackage path issues)
   autounattendXml = pkgs.runCommand "autounattend-xml" { } ''
@@ -102,8 +100,8 @@ let
                   <OSImage>
                       <InstallFrom>
                           <MetaData wcm:action="add">
-                              <Key>/IMAGE/NAME</Key>
-                              <Value>Windows ${cfg.windowsEdition}</Value>
+                              <Key>/IMAGE/INDEX</Key>
+                              <Value>${toString cfg.windowsImageIndex}</Value>
                           </MetaData>
                       </InstallFrom>
                       <InstallTo>
@@ -222,21 +220,25 @@ mkIf cfg.enable {
       ConditionPathExists = "!/var/lib/windows-installer/.done";
     };
 
+    path = [
+      pkgs.bash
+      pkgs.which
+      pkgs.efibootmgr
+      pkgs.cdrkit
+      pkgs.util-linux
+      pkgs.coreutils
+      pkgs.curl
+      pkgs.jq
+      pkgs.aria2
+      pkgs.p7zip
+      pkgs.gnutar
+      pkgs.gzip
+      pkgs.ntfs3g
+    ];
+
     serviceConfig = {
       Type = "oneshot";
       RemainAfterExit = true;
-
-      path = [
-        uup-builder
-        pkgs.efibootmgr
-        pkgs.cdrkit
-        pkgs.util-linux
-        pkgs.coreutils
-        pkgs.curl
-        pkgs.gnutar
-        pkgs.gzip
-        pkgs.ntfs3g
-      ];
     };
 
     script = ''
@@ -273,20 +275,65 @@ mkIf cfg.enable {
             mkdir -p "${cfg.isoOutputDir}"
             cd "${cfg.isoOutputDir}"
 
-            # ── Step 1: Download and build Windows ISO using uup-builder ──────────
-            echo "[1/8] Downloading Windows ${cfg.windowsBuild} ${cfg.windowsEdition}..."
-            uup-builder build \
-              --search "${cfg.windowsBuild}" \
-              --lang "${cfg.windowsLang}" \
-              --edition "${cfg.windowsEdition}" \
-              --out "${cfg.isoOutputDir}"
+            # ── Step 1: Download pre-built Windows ISO from GitHub release ──────
+            echo "[1/8] Downloading Windows ISO from release ${cfg.windowsReleaseTag}..."
+            echo "  repo: ${cfg.windowsRepo}"
 
-            ISO_FILE=$(ls -t "${cfg.isoOutputDir}"/*.iso 2>/dev/null | head -n1)
-            if [ -z "$ISO_FILE" ]; then
-              echo "ERROR: No ISO file found in ${cfg.isoOutputDir}"
+            RELEASE_URL="https://api.github.com/repos/${cfg.windowsRepo}/releases/tags/${cfg.windowsReleaseTag}"
+            RELEASE_JSON=$(curl -sfL "$RELEASE_URL") || {
+              echo "ERROR: Failed to fetch release info from $RELEASE_URL"
+              exit 1
+            }
+
+            # Download all split zip parts (e.g. *.iso.zip.001, *.iso.zip.002, ...)
+            echo "$RELEASE_JSON" | jq -r '.assets[] | select(.name | test("\\.zip\\.0\\d\\d$")) | .browser_download_url' | sort > /tmp/uup-parts.txt
+
+            if [ ! -s /tmp/uup-parts.txt ]; then
+              echo "ERROR: No split zip assets found in release ${cfg.windowsReleaseTag}"
+              echo "Available assets:"
+              echo "$RELEASE_JSON" | jq -r '.assets[].name'
               exit 1
             fi
-            echo "ISO created: $ISO_FILE"
+
+            echo "Downloading $(wc -l < /tmp/uup-parts.txt) split zip parts with aria2..."
+            aria2c --input-file=/tmp/uup-parts.txt --dir="${cfg.isoOutputDir}" \
+              --auto-file-renaming=false --allow-overwrite=true --continue=true \
+              --max-concurrent-downloads=4 --console-log-level=warn --summary-interval=30
+
+            FIRST_PART=$(head -1 /tmp/uup-parts.txt)
+            FIRST_PART_FILE="${cfg.isoOutputDir}/$(basename "$FIRST_PART")"
+
+            echo "Extracting ISO from split archive with 7z..."
+            7z x "$FIRST_PART_FILE" -o"${cfg.isoOutputDir}" -y -bsp1
+
+            shopt -s nullglob
+            ISO_FILE=""
+            for _f in "${cfg.isoOutputDir}"/*.iso "${cfg.isoOutputDir}"/*.ISO; do
+              [ -f "$_f" ] || continue
+              ISO_FILE="$_f"
+              break
+            done
+            shopt -u nullglob
+            if [ -z "$ISO_FILE" ]; then
+              echo "ERROR: No ISO file found in ${cfg.isoOutputDir} (tried *.iso and *.ISO)"
+              ls -la "${cfg.isoOutputDir}/" 2>/dev/null || true
+              exit 1
+            fi
+            echo "ISO ready: $ISO_FILE"
+
+            ${optionalString (cfg.isoChecksum != null) ''
+            echo "Verifying ISO checksum..."
+            echo "${cfg.isoChecksum}" > /tmp/expected-checksum
+            EXPECTED=$(cut -d: -f2 < /tmp/expected-checksum)
+            ACTUAL=$(sha256sum "$ISO_FILE" | cut -d' ' -f1)
+            if [ "$EXPECTED" != "$ACTUAL" ]; then
+              echo "ERROR: SHA-256 checksum mismatch!"
+              echo "  Expected: $EXPECTED"
+              echo "  Actual:   $ACTUAL"
+              exit 1
+            fi
+            echo "Checksum verified OK"
+            ''}
 
             # ── Step 2: Mount ISO and extract contents ──────────────────────────
             echo "[2/8] Mounting ISO and extracting contents..."
@@ -362,8 +409,12 @@ mkIf cfg.enable {
               -no-emul-boot \
               -boot-load-size 8 \
               -boot-info-table \
+              -eltorito-alt-boot \
+              -e efi/microsoft/boot/efisys.bin \
+              -no-emul-boot \
               -iso-level 2 \
               -J \
+              -joliet-long \
               -R \
               -V "WIN11_AUTO" \
               "$WORK_DIR"
@@ -384,8 +435,13 @@ mkIf cfg.enable {
             mkdir -p "$MOUNT_DIR"
             mount -o loop,ro "$MODIFIED_ISO" "$MOUNT_DIR"
 
-            if [ -d "$MOUNT_DIR/efi/microsoft" ]; then
-              cp -r "$MOUNT_DIR/efi/microsoft"/* "$WINDOWS_EFI_DIR/" 2>/dev/null || true
+            # Windows Setup ISO uses /efi/microsoft/boot/cdboot.efi (not bootmgfw.efi)
+            if [ -d "$MOUNT_DIR/efi/microsoft/boot" ]; then
+              cp -r "$MOUNT_DIR/efi/microsoft/boot"/* "$WINDOWS_EFI_DIR/" 2>/dev/null || true
+            fi
+            # Also copy UEFI standard fallback bootloader if present
+            if [ -d "$MOUNT_DIR/efi/boot" ]; then
+              cp -r "$MOUNT_DIR/efi/boot"/* "$ESP_MOUNT/EFI/BOOT/" 2>/dev/null || true
             fi
 
             if [ -f "$MOUNT_DIR/bootmgr.efi" ]; then
@@ -398,7 +454,7 @@ mkIf cfg.enable {
             # ── Step 7: Register EFI boot entry ─────────────────────────────────
             echo "[7/8] Registering one-time EFI boot entry for Windows Setup..."
 
-            if [ -f "$WINDOWS_EFI_DIR/bootmgfw.efi" ]; then
+            if [ -f "$WINDOWS_EFI_DIR/cdboot.efi" ]; then
               efibootmgr | grep "Windows 11 Setup" | while read -r line; do
                 entry_num=$(echo "$line" | sed 's/Boot\([0-9A-Fa-f]*\).*/\1/')
                 if [ -n "$entry_num" ]; then
@@ -410,7 +466,7 @@ mkIf cfg.enable {
                 --disk "${cfg.windowsDisk}" \
                 --part 1 \
                 --label "Windows 11 Setup" \
-                --loader '\\EFI\\Microsoft\\Boot\\bootmgfw.efi' \
+                --loader '\\EFI\\Microsoft\\Boot\\cdboot.efi' \
                 --verbose || echo "Boot entry creation may have failed, continuing..."
 
               BOOT_NUM=$(efibootmgr | grep "Windows 11 Setup" | head -1 | sed 's/Boot\([0-9A-Fa-f]*\).*/\1/')
@@ -419,26 +475,31 @@ mkIf cfg.enable {
                 echo "Set Windows 11 Setup as next boot (one-time, entry $BOOT_NUM)"
               fi
             else
-              echo "WARNING: bootmgfw.efi not found — EFI boot entry not created"
-              echo "Verify disk/partition flags match target hardware"
+              echo "WARNING: cdboot.efi not found — EFI boot entry not created"
+              echo "ISO may be missing Windows Setup EFI boot files"
             fi
 
             umount "$ESP_MOUNT"
             rmdir "$ESP_MOUNT"
 
-            # ── Step 8: Mark done and reboot ─────────────────────────────────────
-            echo "[8/8] Installation prepared — marking complete and rebooting..."
+            # ── Step 8: Mark done (and optionally reboot) ─────────────────────────
+            echo "[8/8] Installation prepared — marking complete."
 
             touch "${cfg.isoOutputDir}/.done"
 
             echo ""
             echo "=================================================="
             echo "Windows installation prepared!"
-            echo "System will reboot in 10 seconds..."
+            echo "BootNext set — next boot will launch Windows Setup."
+            echo ""
+            echo "To boot into Windows now:"
+            echo "  sudo reboot"
             echo "=================================================="
 
+            ${optionalString cfg.autoReboot ''
             sleep 10
             systemctl reboot
+            ''}
     '';
   };
 
