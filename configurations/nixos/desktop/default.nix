@@ -127,6 +127,7 @@
   my.testing.vmTest.enable = true;
 
   # ── Additional Programs ────────────────────────────────────────────────
+  my.programs.ventoy.enable = true;
   my.programs.spotify.enable = true;
 
   environment.systemPackages = [ pkgs.gnome-monitor-config ];

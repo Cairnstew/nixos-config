@@ -65,7 +65,6 @@ in
     };
 
     services.xserver.enable = true;
-    services.displayManager.gdm.wayland = lib.mkDefault config.my.desktop.gnome.wayland;
 
     services.displayManager.gdm = {
       enable = true;

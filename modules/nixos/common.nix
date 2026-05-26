@@ -45,7 +45,7 @@ in
     # ── Utilities ───────────────────────────────────────────────────────────
     ./brasero.nix
     ./udisks2.nix
-    ./ventoy.nix
+    ./ventoy
     ./gitreposync
     ./cachix-push
     ./default-build.nix

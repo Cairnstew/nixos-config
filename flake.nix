@@ -73,10 +73,10 @@
     compose2nix.url = "github:aksiksi/compose2nix";
     compose2nix.inputs.nixpkgs.follows = "nixpkgs";
 
-    # Pre-built Windows ISOs from GitHub releases (pins the repo URL)
-    windows-iso-repo = {
+    # Pre-built Windows ISOs from GitHub releases
+    windows-iso-src = {
       url = "github:Cairnstew/uup-dump-build-and-get-windows-iso";
-      flake = false;
+      flake = true;
     };
 
     # DSC v3 YAML configuration generation (Nix → Windows DSC)
@@ -118,6 +118,29 @@
           nixFiles = builtins.filter (fn: builtins.match ".*\\.nix" fn != null) files;
         in
         builtins.map (fn: ./modules/flake-parts/${fn}) nixFiles;
+
+
+      # ── Ventoy: ISOs + config for multi-boot USB ───────────────────
+      ventoy = {
+        #device = "/dev/sdb";
+        settings.control = [
+          { VTOY_DEFAULT_MENU_MODE = "0"; }
+          { VTOY_TREE_VIEW_MENU_STYLE = "0"; }
+          { VTOY_DEFAULT_SEARCH_ROOT = "/iso"; }
+          { VTOY_FILT_DOT_UNDERSCORE_FILE = "1"; }
+        ];
+        settings.menu_class = [
+          { parent = "/iso/windows"; class = "windows"; }
+          { parent = "/iso/linux";   class = "linux"; }
+        ];
+
+        isos = {
+          win11-23h2 = {
+            source = inputs.windows-iso-src.packages.x86_64-linux."windows-iso-22631.7079.23H2.PRO.X64.EN";
+            target = "/iso/windows/22631.7079.23H2.PRO.X64.EN.iso";
+          };
+        };
+      };
 
       perSystem = { lib, system, ... }: {
         # Make our overlay available to the devShell

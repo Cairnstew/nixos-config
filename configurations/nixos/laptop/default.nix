@@ -62,6 +62,7 @@
   };
 
   # ── Additional Programs ────────────────────────────────────────────────
+  my.programs.ventoy.enable = true;
   my.programs.spotify.enable = true;
 
   # ── Home Manager Extra ───────────────────────────────────────────────────

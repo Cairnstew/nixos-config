@@ -213,7 +213,7 @@ System and home profile definitions.
 | `ssh.nix` | SSH server configuration [→ nixosModules.ssh] |
 | `udisks2.nix` | UDisks2 storage management [→ nixosModules.udisks2] |
 | `uup-converter.nix` | Windows ISO conversion tool [→ nixosModules.uup-converter] |
-| `ventoy.nix` | Ventoy bootable USB creator [→ nixosModules.ventoy] |
+| `ventoy/` | Ventoy multi-boot USB — ISO management, config, deploy [→ nixosModules.ventoy] |
 | `waydroid.nix` | Waydroid Android container [→ nixosModules.waydroid] |
 | `wsl-wm/` | WSL window manager integration [→ nixosModules.wsl-wm] |
 | `_1password/` | 1Password integration |
