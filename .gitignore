@@ -2,6 +2,7 @@
 result-*
 *.qcow2
 *.qcow2.lock
+*.iso
 *.direnv
 **/flake-profile*
 /.pre-commit-config.yaml
