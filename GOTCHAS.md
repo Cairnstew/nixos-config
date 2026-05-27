@@ -11,6 +11,9 @@ Each entry: **symptom → cause → fix**. One paragraph max. Newest at the top.
 
 ---
 
+**`nix run` kills GNOME/Wayland session during activation**
+Symptom: Running `nix run` (which does `nixos-rebuild switch`) kills the desktop session — GNOME Shell, pipewire, wireplumber all stop, screen goes black. The VM test (`nix run .#test run laptop`) passes fine. Cause: Home-manager's default `systemd.user.startServices` setting (`"start"`) does `systemctl --user daemon-reload` and restarts all changed user services, which includes the entire GNOME session. Fix: Set `systemd.user.startServices = "sd-switch"` in `modules/nixos/homeManager/config.nix`. The `sd-switch` method is smarter — it only restarts services whose units actually changed, avoiding the session kill.
+
 **Windows autounattend.xml password is in plaintext over HTTP**
 Symptom: The Windows admin password is visible to anyone on the PXE network. Cause: `autounattend.xml` requires a plaintext `<Password><PlainText>true</PlainText></Password>`. The file is served from `/srv/pxe/machines/<MAC>/autounattend.xml` over unencrypted HTTP during PXE boot. Fix: This is inherent to the Windows unattended install protocol. Mitigations: (1) Use an isolated PXE VLAN; (2) set a temporary password and change it after install; (3) use `password` as a plain Nix option (acceptable for lab) or `passwordFile` pointing to a file readable at eval time (agenix runtime paths like `/run/agenix/windows-password` won't work — they don't exist at eval time).
 

@@ -19,6 +19,7 @@ in
     home-manager.users.${username} = lib.mkMerge [
       {
         home.stateVersion = lib.mkDefault "26.05";
+        systemd.user.startServices = lib.mkDefault "sd-switch";
         imports = cfg.extraModules;
       }
 

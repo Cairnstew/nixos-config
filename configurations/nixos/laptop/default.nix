@@ -11,6 +11,11 @@
   # Explicitly set hostPlatform to ensure pkgs is available
   nixpkgs.hostPlatform = "x86_64-linux";
 
+  # ── Bootloader (was in configuration.nix, now inlined) ─────────────────
+  boot.loader.systemd-boot.enable = true;
+  boot.loader.efi.canTouchEfiVariables = true;
+  boot.kernelParams = [ "acpi_backlight=native" ];
+
   # ── System State ─────────────────────────────────────────────────────────
   system.stateVersion = "24.05";
 
@@ -46,6 +51,9 @@
     latitude = 55.8617;
     longitude = 4.2583;
   };
+
+  # ── Laptop-specific services ─────────────────────────────────────────────
+  services.fwupd.enable = true;
 
   # ── Service Configuration ────────────────────────────────────────────────
   my.services.natShare = {

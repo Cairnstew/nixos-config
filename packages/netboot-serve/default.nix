@@ -57,7 +57,8 @@ writeShellApplication {
         -l|--dhcp-lease)   DHCP_LEASE="$2";  shift 2 ;;
         -t|--tftp-root)    TFTP_ROOT="$2";   shift 2 ;;
         -h|--http-root)    HTTP_ROOT="$2";   shift 2 ;;
-        -v|--verbose)      VERBOSE=true;     shift ;;
+        -v|--verbose)      # shellcheck disable=SC2034
+                           VERBOSE=true;     shift ;;
         --help)            usage ;;
         *) echo "Unknown option: $1"; usage ;;
       esac
@@ -246,7 +247,7 @@ writeShellApplication {
           current="$(readlink "$HTTP_ROOT/$mac.ipxe" 2>/dev/null || echo "")"
           if [ -z "$current" ]; then
             # Init: set to first available stage
-            for s in discover windows nixos done; do
+            for s in discover windows nixos "done"; do
               if [ -f "$HTTP_ROOT/stages/$mac/stage-$s.ipxe" ]; then
                 ln -sf "stages/$mac/stage-$s.ipxe" "$HTTP_ROOT/$mac.ipxe"
                 echo "  $mac initialized → $s"
@@ -258,7 +259,7 @@ writeShellApplication {
           cur_stage="$(basename "$current" .ipxe | sed 's/^stage-//')"
           next=""
           found=0
-          for s in discover windows nixos done; do
+          for s in discover windows nixos "done"; do
             [ "$found" = "1" ] && { next="$s"; break; }
             [ "$s" = "$cur_stage" ] && found=1
           done
