@@ -2,45 +2,66 @@
 let
   cfg = config.my.disko.dualBoot;
   inherit (lib) mkIf mkDefault;
+  isExisting = cfg.mode == "useExisting";
+  isFresh = cfg.mode == "fresh";
 in
 mkIf cfg.enable {
-  disko.devices = {
-    disk.main = {
-      type = "disk";
-      device = mkDefault cfg.disk;
-      content = {
-        type = "gpt";
-        partitions = {
-          ESP = {
-            size = "${toString cfg.espSizeGB}G";
-            type = "EF00";
-            content = {
-              type = "filesystem";
-              format = "vfat";
-              mountpoint = "/boot";
-              mountOptions = [ "umask=0077" ];
-            };
-          };
 
-          windows = {
-            size = "${toString cfg.windowsSizeGB}G";
-            type = "0700";
-            label = "Windows";
+  # ── fresh mode: disko creates everything ──────────────────
+  disko.devices.disk.main = mkIf isFresh {
+    type = "disk";
+    device = mkDefault cfg.disk;
+    content = {
+      type = "gpt";
+      partitions = {
+        ESP = {
+          size = "${toString cfg.espSizeGB}G";
+          type = "EF00";
+          content = {
+            type = "filesystem";
+            format = "vfat";
+            mountpoint = "/boot";
+            mountOptions = [ "umask=0077" ];
           };
-
-          nixos = {
-            size = if cfg.nixosSizeGB == null then "100%" else "${toString cfg.nixosSizeGB}G";
-            content = {
-              type = "filesystem";
-              format = "ext4";
-              mountpoint = "/";
-            };
+        };
+        windows = {
+          size = "${toString cfg.windowsSizeGB}G";
+          type = "0700";
+          label = "Windows";
+        };
+        nixos = {
+          size = if cfg.nixosSizeGB == null then "100%" else "${toString cfg.nixosSizeGB}G";
+          content = {
+            type = "filesystem";
+            format = "ext4";
+            mountpoint = "/";
           };
         };
       };
     };
   };
 
+  # ── useExisting mode: adopt existing partitions ───────────
+  # Disks already exist — just declare filesystems so nixos-install
+  # knows what to mount. Format NixOS root manually before install:
+  #   mkfs.ext4 /dev/nvme0n1p5
+
+  fileSystems."/" = mkIf isExisting {
+    device = mkDefault cfg.nixosPartition;
+    fsType = "ext4";
+  };
+
+  fileSystems."/boot" = mkIf isExisting {
+    device = mkDefault (
+      if cfg.espPartition != null
+      then cfg.espPartition
+      else "/dev/disk/by-parttype-uuid/ESP"
+    );
+    fsType = "vfat";
+    options = [ "umask=0077" ];
+  };
+
+  # ── Bootloader ────────────────────────────────────────────
   boot.loader.grub.enable = true;
   boot.loader.grub.devices = [ "nodev" ];
   boot.loader.grub.efiSupport = true;

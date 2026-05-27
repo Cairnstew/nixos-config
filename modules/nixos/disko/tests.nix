@@ -1,8 +1,6 @@
 { config, lib, flake, ... }:
 let
   cfg = config.my.disko.dualBoot;
-  # Capture module values in the outer scope so they're available
-  # to the VM test node module without needing flake as a module arg.
   diskoMod = flake.inputs.disko.nixosModules.default;
   selfMod = flake.inputs.self.nixosModules;
   diskoOpts = ./options.nix;
@@ -15,18 +13,22 @@ in
       message = "my.disko.dualBoot.disk must not be empty when enabled.";
     }
     {
-      assertion = !cfg.enable || cfg.windowsSizeGB > 0;
-      message = "my.disko.dualBoot.windowsSizeGB must be positive when enabled.";
+      assertion = !cfg.enable || cfg.mode == "fresh" || (cfg.mode == "useExisting" && cfg.nixosPartition != null);
+      message = "my.disko.dualBoot.nixosPartition is required when mode = \"useExisting\".";
     }
     {
-      assertion = !cfg.enable || cfg.espSizeGB > 0;
-      message = "my.disko.dualBoot.espSizeGB must be positive when enabled.";
+      assertion = !cfg.enable || cfg.mode != "fresh" || cfg.windowsSizeGB > 0;
+      message = "my.disko.dualBoot.windowsSizeGB must be positive in fresh mode.";
+    }
+    {
+      assertion = !cfg.enable || cfg.mode != "fresh" || cfg.espSizeGB > 0;
+      message = "my.disko.dualBoot.espSizeGB must be positive in fresh mode.";
     }
   ];
 
   my.testing.vmTests.disko-dualboot = {
     enable = true;
-    name = "disko-dualboot";
+    name = "disko-dualboot-fresh";
     nodes.machine = { lib, ... }: {
       imports = [
         diskoMod
@@ -36,6 +38,7 @@ in
 
       my.disko.dualBoot = {
         enable = true;
+        mode = "fresh";
         disk = "/dev/vda";
         espSizeGB = 1;
         windowsSizeGB = 60;
@@ -50,13 +53,56 @@ in
     };
     testScript = ''
       start_all()
-
-      # Verify the system boots with the disko dual-boot module enabled
       machine.wait_for_unit("default.target")
-      print("Disko dual-boot VM test: PASS")
+      print("Disko dual-boot (fresh) VM test: PASS")
     '';
     meta = {
-      description = "Validates dual-boot disko partition layout and GRUB config";
+      description = "Validates fresh dual-boot disko partition layout and GRUB config";
+      module = "disko";
+    };
+  };
+
+  my.testing.vmTests.disko-dualboot-existing = {
+    enable = true;
+    name = "disko-dualboot-existing";
+    nodes.machine = { lib, ... }: {
+      imports = [
+        diskoMod
+        diskoOpts
+        diskoConfig
+      ];
+
+      my.disko.dualBoot = {
+        enable = true;
+        mode = "useExisting";
+        disk = "/dev/vda";
+        nixosPartition = "/dev/vda3";
+        espPartition = "/dev/vda1";
+
+        detection = {
+          windowsPartition = "/dev/vda2";
+          windowsSize = "60G";
+          windowsLabel = "Windows";
+          espPartition = "/dev/vda1";
+          disk = "/dev/vda";
+          freeSpace = "200G";
+        };
+      };
+
+      boot.loader.grub.enable = true;
+      boot.loader.grub.devices = [ "nodev" ];
+      boot.loader.grub.efiSupport = true;
+      boot.loader.efi.canTouchEfiVariables = true;
+
+      system.stateVersion = "25.05";
+    };
+    testScript = ''
+      start_all()
+      machine.wait_for_unit("default.target")
+      print("Disko dual-boot (useExisting) VM test: PASS")
+    '';
+    meta = {
+      description = "Validates useExisting dual-boot fileSystems and GRUB config";
       module = "disko";
     };
   };
