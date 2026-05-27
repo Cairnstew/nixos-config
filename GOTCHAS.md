@@ -11,6 +11,12 @@ Each entry: **symptom → cause → fix**. One paragraph max. Newest at the top.
 
 ---
 
+**Windows autounattend.xml password is in plaintext over HTTP**
+Symptom: The Windows admin password is visible to anyone on the PXE network. Cause: `autounattend.xml` requires a plaintext `<Password><PlainText>true</PlainText></Password>`. The file is served from `/srv/pxe/machines/<MAC>/autounattend.xml` over unencrypted HTTP during PXE boot. Fix: This is inherent to the Windows unattended install protocol. Mitigations: (1) Use an isolated PXE VLAN; (2) set a temporary password and change it after install; (3) use `password` as a plain Nix option (acceptable for lab) or `passwordFile` pointing to a file readable at eval time (agenix runtime paths like `/run/agenix/windows-password` won't work — they don't exist at eval time).
+
+**netboot module and natShare both want dnsmasq on the same interface**
+Symptom: `nixos-rebuild switch` succeeds but dnsmasq fails to start, or PXE clients get wrong DHCP leases. Cause: Both `my.services.netboot` and `my.services.natShare` enable `services.dnsmasq` and set `interface` to their own LAN interface. If both target the same interface, dnsmasq starts once with whichever config wins the merge — often the wrong one. Fix: Use different ethernet interfaces for each service, or disable one. The tests.nix assertion catches this at build time when both are on the same interface.
+
 **`ventoy-deploy` auto-detection misses already-mounted Ventoy partition or mounts to wrong path**
 Symptom: `sudo ventoy-deploy` mounts the Ventoy data partition to `/mnt/ventoy` even though udisks2 already auto-mounted it at `/run/media/$USER/Ventoy`, causing conflicts or duplicate mounts. Cause: Old script always mounted partition 2 to the hardcoded `ventoy.mountPoint` without checking if it was already mounted elsewhere. Fix: Script now calls `findmnt` to detect existing mounts before attempting its own mount. It also uses `lsblk --json`-style label matching and `ventoy -l` CLI verification for more reliable device detection. See `modules/flake-parts/ventoy.nix`.
 
@@ -19,10 +25,7 @@ Symptom: `sudo ventoy-deploy` prints "Auto-detected Ventoy USB: /dev/└─sdc" 
 
 ---
 
-**wimboot 2.8.0 fails to compile with GCC -Werror=unterminated-string-initialization**
-Symptom: `nix build` of any configuration with `my.services.pxeServer.enable = true` fails with `initializer-string for array of 'char' truncates NUL terminator` in `wimboot.h`. Cause: Newer GCC versions treat `-Wunterminated-string-initialization` as an error, but wimboot's Makefile passes `-Werror` which promotes it. Fix: Add an overlay in `overlays/default.nix` that appends `-Wno-error=unterminated-string-initialization` to `env.NIX_CFLAGS_COMPILE`. Entry added 2026-05-26.
 
----
 
 **Dual-boot disko module enables GRUB options but not GRUB itself**
 Symptom: `nix flake check` or `nix build` fails with `You must set the option 'boot.loader.grub.devices' or 'boot.loader.grub.mirroredBoots'` when `my.disko.dualBoot.enable = true`. Cause: The disko module sets `grub.useOSProber` and `grub.extraEntries` but was missing `grub.enable = true` and `grub.devices = [ "nodev" ]` (plus `grub.efiSupport` for UEFI). The common module sets `grub.enable = lib.mkDefault false` which stays in effect unless explicitly overridden. Fix: `modules/nixos/disko/config.nix` now sets `boot.loader.grub.enable = true`, `boot.loader.grub.devices = [ "nodev" ]`, `boot.loader.grub.efiSupport = true`, and `boot.loader.efi.canTouchEfiVariables = mkDefault true` when dual-boot is enabled.

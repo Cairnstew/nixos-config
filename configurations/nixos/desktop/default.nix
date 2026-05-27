@@ -114,15 +114,6 @@
     };
   };
 
-  # ── PXE Server (testing) ───────────────────────────────────────────────
-  # TODO: set interface to your LAN interface name (check `ip link`)
-  my.services.pxeServer = {
-    enable = false;
-    interface = "eth0";
-    dhcpRange = "192.168.100.100,192.168.100.200";
-    serverIp = "192.168.100.1";
-  };
-
   # ── VM Testing ─────────────────────────────────────────────────────────
   my.testing.vmTest.enable = true;
 

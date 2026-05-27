@@ -231,6 +231,32 @@ All `my.*` options declared across module files.
 | `my.services.gitRepoSync.user` | str | — | User for sync timers |
 | `my.services.gitRepoSync.repos` | attrs | `{}` | Repositories to sync |
 | `my.services.hedgedoc.enable` | bool | `false` | HedgeDoc collaborative markdown |
+| `my.services.netboot.enable` | bool | `false` | PXE netboot server (DHCP+TFTP+HTTP) |
+| `my.services.netboot.serveMode` | enum | `"cli"` | `"cli"` = interactive CLI tool, `"daemon"` = persistent services |
+| `my.services.netboot.interface` | str | `"eth0"` | Network interface to bind to |
+| `my.services.netboot.serverAddress` | str | `"192.168.100.1"` | Static IP for the PXE server |
+| `my.services.netboot.subnetPrefix` | int | `24` | Subnet prefix length |
+| `my.services.netboot.dhcpRange` | str | `"192.168.100.100,192.168.100.150"` | DHCP lease range |
+| `my.services.netboot.dhcpLeaseTime` | str | `"12h"` | DHCP lease duration |
+| `my.services.netboot.tftpRoot` | path | `"/srv/tftp"` | TFTP root directory |
+| `my.services.netboot.httpRoot` | path | `"/srv/pxe"` | HTTP root directory |
+| `my.services.netboot.windows.enable` | bool | `false` | Enable Windows installer PXE boot |
+| `my.services.netboot.windows.bootDir` | path | `"/srv/pxe/windows"` | Windows boot files directory |
+| `my.services.netboot.nixos.enable` | bool | `false` | Enable NixOS installer PXE boot |
+| `my.services.netboot.nixos.ipxeUrl` | str | upstream URL | NixOS netboot iPXE URL |
+| `my.services.netboot.nixos.label` | str | `"NixOS Unstable"` | Display name for NixOS stage |
+| `my.services.netboot.machines` | attrs | `{}` | Per-machine netboot definitions |
+| `machines.<name>.windows.unattended.enable` | bool | `false` | Unattended Windows install with autounattend.xml |
+| `machines.<name>.windows.unattended.edition` | str | `"Windows 11 Pro"` | Windows edition to install |
+| `machines.<name>.windows.unattended.localUser` | str | `"nixos"` | Local admin username |
+| `machines.<name>.windows.unattended.password` | str | `"nixos"` | Plaintext admin password (exposed over HTTP) |
+| `machines.<name>.windows.unattended.passwordFile` | path | `null` | Read password from file at eval time |
+| `machines.<name>.windows.unattended.timeZone` | str | `"GMT Standard Time"` | Windows timezone |
+| `machines.<name>.windows.unattended.computerName` | str | — | Windows computer name |
+| `machines.<name>.windows.unattended.disableRecovery` | bool | `true` | Disable recovery partition |
+| `machines.<name>.nixos.autoInstall.enable` | bool | `false` | Automated NixOS install via custom netboot |
+| `machines.<name>.nixos.autoInstall.diskoConfig` | raw | `{}` | disko configuration attrset |
+| `machines.<name>.nixos.autoInstall.nixosConfig` | str | `""` | NixOS module expression for target system |
 
 ## my.virtualisation.* (Virtualization)
 

@@ -38,6 +38,7 @@ in
     ./natShare
     ./nebula
     ./rustdesk.nix
+    ./netboot
 
     # ── Development ────────────────────────────────────────────────────────
     ./vscode-server.nix
@@ -54,7 +55,6 @@ in
     ./disko
     ./dscnix
     ./windows-iso-sync.nix
-    ./pxe-server
 
     # ── Entertainment ──────────────────────────────────────────────────────
     ./spotify.nix
