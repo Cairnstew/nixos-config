@@ -24,6 +24,10 @@ in
       assertion = !cfg.enable || cfg.mode != "fresh" || cfg.espSizeGB > 0;
       message = "my.disko.dualBoot.espSizeGB must be positive in fresh mode.";
     }
+    {
+      assertion = !cfg.enable || cfg.mode != "fresh" || cfg.msrSizeMB > 0;
+      message = "my.disko.dualBoot.msrSizeMB must be positive in fresh mode.";
+    }
   ];
 
   my.testing.vmTests.disko-dualboot = {

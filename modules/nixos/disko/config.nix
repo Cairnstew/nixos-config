@@ -8,6 +8,9 @@ in
 mkIf cfg.enable {
 
   # ── fresh mode: disko creates everything ──────────────────
+  # Layout: ESP → MSR → Windows → NixOS → [reserved free space]
+  # Windows gets installed to partition 3 (after ESP + MSR).
+  # NixOS before Windows keeps it safe from recovery partition theft.
   disko.devices.disk.main = mkIf isFresh {
     type = "disk";
     device = mkDefault cfg.disk;
@@ -24,13 +27,19 @@ mkIf cfg.enable {
             mountOptions = [ "umask=0077" ];
           };
         };
+        msr = {
+          size = "${toString cfg.msrSizeMB}M";
+          type = "E3C9E316-31B4-4298-89FA-94C9F823F8A5";
+        };
         windows = {
           size = "${toString cfg.windowsSizeGB}G";
           type = "0700";
           label = "Windows";
         };
         nixos = {
-          size = if cfg.nixosSizeGB == null then "100%" else "${toString cfg.nixosSizeGB}G";
+          size =
+            if cfg.nixosSizeGB != null then "${toString cfg.nixosSizeGB}G"
+            else "100%";
           content = {
             type = "filesystem";
             format = "ext4";
@@ -40,6 +49,12 @@ mkIf cfg.enable {
       };
     };
   };
+
+  # reservedSizeGB > 0 requires explicit nixosSizeGB
+  assertions = [{
+    assertion = !(cfg.enable && isFresh && cfg.reservedSizeGB > 0 && cfg.nixosSizeGB == null);
+    message = "my.disko.dualBoot.nixosSizeGB is required when reservedSizeGB > 0.";
+  }];
 
   # ── useExisting mode: adopt existing partitions ───────────
   # Disks already exist — just declare filesystems so nixos-install

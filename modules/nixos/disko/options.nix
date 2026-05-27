@@ -29,6 +29,15 @@ in {
       description = "Size of the EFI System Partition in GB (fresh mode only).";
     };
 
+    msrSizeMB = mkOption {
+      type = types.int;
+      default = 16;
+      description = ''
+        Size of the Microsoft Reserved Partition in MB. Windows setup
+        may refuse to install without this. 16 MB is the standard size.
+      '';
+    };
+
     windowsSizeGB = mkOption {
       type = types.int;
       default = 150;
@@ -40,7 +49,17 @@ in {
       default = null;
       description = ''
         Size of the NixOS partition in GB (fresh mode).
-        Null = remaining space after ESP + Windows.
+        Null = remaining space after ESP + MSR + Windows.
+      '';
+    };
+
+    reservedSizeGB = mkOption {
+      type = types.int;
+      default = 0;
+      description = ''
+        Unpartitioned space at end of disk (GB). Windows Setup may create
+        a recovery partition here. Set to ~1 to prevent it from stealing
+        NixOS space. Only effective when {option}`nixosSizeGB` is also set.
       '';
     };
 
