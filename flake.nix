@@ -139,9 +139,12 @@
             source = inputs.windows-iso-src.packages.x86_64-linux."windows-iso-22631.7079.23H2.PRO.X64.EN";
             target = "/iso/windows/22631.7079.23H2.PRO.X64.EN.iso";
           };
-          nixos-minimal = {
-            source = self.packages.x86_64-linux.nixos-minimal;
-            target = "/iso/linux/nixos-minimal.iso";
+          nixos-netboot = {
+            source = builtins.fetchurl {
+              url = "https://github.com/nix-community/nixos-images/releases/download/nixos-unstable/netboot-x86_64-linux.ipxe";
+              sha256 = "13fzlj3b94cckxbnzv12nr1a4gf3kbz2gvrds32azizkm0dbq2xl";
+            };
+            target = "/iso/linux/nixos-netboot.ipxe";
           };
         };
       };
