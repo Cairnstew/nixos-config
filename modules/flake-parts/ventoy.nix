@@ -167,83 +167,278 @@ in
         ISO_MAPPINGS=(
           ${lib.concatStringsSep "\n          " isoMappings}
         )
+        DEFAULT_DEVICE="${vCfg.device}"
+        MOUNT_POINT="${vCfg.mountPoint}"
+
+        CHECK_ONLY=0
+        DEVICE="$DEFAULT_DEVICE"
+        MOUNT=""
+        CLEANUP=0
 
         usage() {
-          cat <<'EOF'
-        Usage: ventoy-deploy [OPTIONS]
+          cat <<'USAGE'
+        Usage: ventoy-deploy [OPTIONS] [DEVICE|MOUNT_PATH]
 
-        Deploy Ventoy ISOs and configuration to a Ventoy USB.
+        Deploy ISOs and ventoy.json to a Ventoy USB, or check an existing installation.
 
         Options:
           -d, --device DEVICE   USB block device (e.g., /dev/sdb)
           -m, --mount PATH      Already-mounted Ventoy data partition
+          -c, --check           Verify Ventoy installation only (no deploy)
           -h, --help            Show this help
 
         If neither --device nor --mount is given, tries auto-detection.
-        EOF
+        USAGE
           exit 0
         }
 
-        DEVICE="${vCfg.device}"
-        MOUNT=""
-        CLEANUP=0
+        auto_detect() {
+          local dev labels
 
-        while [[ $# -gt 0 ]]; do
-          case "$1" in
-            -d|--device) DEVICE="$2"; shift 2 ;;
-            -m|--mount)  MOUNT="$2";  shift 2 ;;
-            -h|--help)   usage ;;
-            *)
-              if [[ "$1" == /dev/* ]] || [[ "$1" =~ ^sd[a-z]$ ]]; then
-                DEVICE="$1"
+          # Prefer removable devices, fall back to all
+          for dev in $(lsblk -dno NAME,RM 2>/dev/null | awk '$2 == "1" {print $1}'); do
+            dev="/dev/$dev"
+            labels=$(lsblk -nlo LABEL "$dev" 2>/dev/null)
+            if echo "$labels" | grep -qiE "VTOYEFI|VENTOY"; then
+              if command -v ventoy &>/dev/null; then
+                if ventoy -l "$dev" &>/dev/null 2>&1; then
+                  echo "$dev"
+                  return 0
+                fi
               else
-                MOUNT="$1"
+                echo "$dev"
+                return 0
               fi
-              shift
-              ;;
-          esac
-        done
+            fi
+          done
 
-        if [[ -z "$DEVICE" ]] && [[ -z "$MOUNT" ]]; then
-          VTOY_DEVICE=$(lsblk -o NAME,LABEL -n 2>/dev/null | grep -i "VTOYEFI" | head -1 | awk '{print "/dev/"$1}' | sed 's/[0-9]*$//')
-          if [[ -n "$VTOY_DEVICE" ]]; then
-            DEVICE="$VTOY_DEVICE"
-            echo "Auto-detected Ventoy USB: $DEVICE"
-          else
-            echo "Error: No Ventoy USB found. Specify --device or --mount." >&2
-            exit 1
+          # Fallback: check non-removable devices too
+          for dev in $(lsblk -dno NAME,RM 2>/dev/null | awk '$2 != "1" {print $1}'); do
+            dev="/dev/$dev"
+            labels=$(lsblk -nlo LABEL "$dev" 2>/dev/null)
+            if echo "$labels" | grep -qiE "VTOYEFI|VENTOY"; then
+              if command -v ventoy &>/dev/null; then
+                if ventoy -l "$dev" &>/dev/null 2>&1; then
+                  echo "$dev"
+                  return 0
+                fi
+              else
+                echo "$dev"
+                return 0
+              fi
+            fi
+          done
+
+          return 1
+        }
+
+        find_data_partition() {
+          local dev="$1" parts part label upper
+
+          # First: look for partition labeled "Ventoy"
+          parts=$(lsblk -nlo NAME,LABEL "$dev" 2>/dev/null)
+          while IFS=' ' read -r part label _; do
+            upper=$(echo "$label" | tr '[:lower:]' '[:upper:]')
+            if [[ "$upper" == "VENTOY" ]] && [[ -n "$part" ]]; then
+              echo "/dev/$part"
+              return 0
+            fi
+          done <<< "$parts"
+
+          # Second: first non-VTOYEFI partition
+          while IFS=' ' read -r part label _; do
+            upper=$(echo "$label" | tr '[:lower:]' '[:upper:]')
+            if [[ "$upper" != "VTOYEFI" ]] && [[ -n "$part" ]]; then
+              echo "/dev/$part"
+              return 0
+            fi
+          done <<< "$parts"
+
+          # Fallback: partition 2 (standard GPT layout)
+          echo "''${dev}2"
+        }
+
+        find_existing_mount() {
+          local data_part="$1"
+          findmnt -n -o TARGET --source "$data_part" 2>/dev/null || true
+        }
+
+        verify_ventoy() {
+          local dev="$1" mount="$2"
+          local errors=0 total_bytes=0 size avail_1k avail_bytes
+
+          echo ""
+          echo "=== Ventoy Installation Check ==="
+
+          if [[ -n "$dev" ]]; then
+            if command -v ventoy &>/dev/null; then
+              if ventoy -l "$dev" &>/dev/null 2>&1; then
+                echo "  [OK] ventoy -l: Device recognized as Ventoy"
+              else
+                echo "  [FAIL] ventoy -l: Device not recognized as Ventoy" >&2
+                errors=1
+              fi
+            fi
+
+            if lsblk -nlo LABEL "$dev" 2>/dev/null | grep -qi "VTOYEFI"; then
+              echo "  [OK] VTOYEFI partition found"
+            else
+              echo "  [WARN] No VTOYEFI partition found (may be MBR layout)" >&2
+            fi
           fi
-        fi
 
-        if [[ -n "$DEVICE" ]]; then
-          DATA_PART="''${DEVICE}2"
-          MOUNT="${vCfg.mountPoint}"
-          mkdir -p "$MOUNT"
-          echo "Mounting $DATA_PART to $MOUNT..."
-          mount "$DATA_PART" "$MOUNT"
-          CLEANUP=1
-        fi
+          if [[ -n "$mount" ]]; then
+            if [[ -d "$mount/ventoy" ]]; then
+              echo "  [OK] ventoy/ directory exists"
+            else
+              echo "  [INFO] ventoy/ directory will be created on deploy"
+            fi
 
-        TARGET_VENTOY_DIR="$MOUNT/ventoy"
-        mkdir -p "$TARGET_VENTOY_DIR"
-        cp "$VENTOY_JSON" "$TARGET_VENTOY_DIR/ventoy.json"
-        echo "Deployed ventoy/ventoy.json"
+            if [[ "''${#ISO_MAPPINGS[@]}" -gt 0 ]]; then
+              for mapping in "''${ISO_MAPPINGS[@]}"; do
+                local src="''${mapping%|*}"
+                if [[ -f "$src" ]]; then
+                  size=$(stat -c%s "$src" 2>/dev/null || echo 0)
+                  total_bytes=$((total_bytes + size))
+                fi
+              done
 
-        for mapping in "''${ISO_MAPPINGS[@]}"; do
-          IFS='|' read -r source target <<< "$mapping"
-          TARGET_DIR="$(dirname "$MOUNT/$target")"
-          mkdir -p "$TARGET_DIR"
-          echo "Copying $(basename "$source") → $target"
-          cp -L "$source" "$MOUNT/$target"
-        done
+              if [[ $total_bytes -gt 0 ]]; then
+                avail_1k=$(df --output=avail "$mount" 2>/dev/null | tail -1)
+                if [[ -n "$avail_1k" ]]; then
+                  avail_bytes=$((avail_1k * 1024))
+                  if [[ $total_bytes -le $avail_bytes ]]; then
+                    echo "  [OK] Disk space: $((total_bytes / 1024 / 1024))M needed, $((avail_bytes / 1024 / 1024))M available"
+                  else
+                    echo "  [FAIL] Insufficient space: $((total_bytes / 1024 / 1024))M needed, $((avail_bytes / 1024 / 1024))M available" >&2
+                    errors=1
+                  fi
+                fi
+              fi
+            fi
+          fi
 
-        echo ""
-        echo "Ventoy deploy complete!"
+          if [[ $errors -eq 0 ]]; then
+            echo "  [OK] Ventoy USB is ready"
+          fi
+          return $errors
+        }
 
-        if [[ $CLEANUP -eq 1 ]]; then
-          umount "$MOUNT"
-          echo "Unmounted $MOUNT"
-        fi
+        deploy_isos() {
+          local mount="$1" errors=0 src_size dest_size
+          local ventoy_dir="$mount/ventoy"
+
+          mkdir -p "$ventoy_dir"
+          cp "$VENTOY_JSON" "$ventoy_dir/ventoy.json"
+          src_size=$(stat -c%s "$VENTOY_JSON" 2>/dev/null || echo 0)
+          dest_size=$(stat -c%s "$ventoy_dir/ventoy.json" 2>/dev/null || echo 0)
+          if [[ "$src_size" -eq 0 ]] || [[ "$src_size" -ne "$dest_size" ]]; then
+            echo "  [FAIL] Failed to deploy ventoy.json" >&2
+            return 1
+          fi
+          echo "  [OK] Deployed ventoy/ventoy.json"
+
+          for mapping in "''${ISO_MAPPINGS[@]}"; do
+            IFS='|' read -r source target <<< "$mapping"
+            local dest="$mount/$target"
+            mkdir -p "$(dirname "$dest")"
+
+            src_size=$(stat -c%s "$source" 2>/dev/null || echo 0)
+            echo "  Copying $(basename "$source") -> $target"
+            cp -L "$source" "$dest"
+
+            dest_size=$(stat -c%s "$dest" 2>/dev/null || echo 0)
+            if [[ "$src_size" -ne "$dest_size" ]]; then
+              echo "  [FAIL] Size mismatch for $target ($src_size vs $dest_size)" >&2
+              errors=1
+            else
+              echo "  [OK] Verified $target ($((src_size / 1024 / 1024))M)"
+            fi
+          done
+
+          return $errors
+        }
+
+        main() {
+          while [[ $# -gt 0 ]]; do
+            case "$1" in
+              -d|--device) DEVICE="$2"; shift 2 ;;
+              -m|--mount)  MOUNT="$2";  shift 2 ;;
+              -c|--check)  CHECK_ONLY=1; shift ;;
+              -h|--help)   usage ;;
+              *)
+                if [[ "$1" == /dev/* ]] || [[ "$1" =~ ^sd[a-z]$ ]]; then
+                  DEVICE="$1"
+                else
+                  MOUNT="$1"
+                fi
+                shift
+                ;;
+            esac
+          done
+
+          # --- Step 1: Auto-detect ---
+          if [[ -z "$DEVICE" ]] && [[ -z "$MOUNT" ]]; then
+            local detected
+            detected=$(auto_detect) || {
+              echo "Error: No Ventoy USB found. Specify --device or --mount." >&2
+              exit 1
+            }
+            DEVICE="$detected"
+            echo "Auto-detected Ventoy USB: $DEVICE"
+          fi
+
+          # --- Step 2: Find data partition and existing mount ---
+          if [[ -n "$DEVICE" ]]; then
+            local DATA_PART EXISTING_MOUNT
+            DATA_PART=$(find_data_partition "$DEVICE")
+            EXISTING_MOUNT=$(find_existing_mount "$DATA_PART")
+
+            if [[ -n "$EXISTING_MOUNT" ]]; then
+              MOUNT="$EXISTING_MOUNT"
+              echo "Using existing mount: $MOUNT"
+            elif [[ $CHECK_ONLY -eq 0 ]]; then
+              MOUNT="$MOUNT_POINT"
+              mkdir -p "$MOUNT"
+              echo "Mounting $DATA_PART to $MOUNT..."
+              mount "$DATA_PART" "$MOUNT"
+              CLEANUP=1
+            elif [[ -z "$MOUNT" ]]; then
+              echo "Warning: --check mode but device not mounted. Limited verification." >&2
+            fi
+          fi
+
+          # --- Step 3: Verify Ventoy installation ---
+          if ! verify_ventoy "$DEVICE" "$MOUNT"; then
+            if [[ $CHECK_ONLY -eq 1 ]]; then
+              exit 1
+            fi
+            echo "Warning: Continuing despite verification issues." >&2
+          fi
+
+          # --- Step 4: Deploy ---
+          if [[ $CHECK_ONLY -eq 0 ]]; then
+            if [[ -z "$MOUNT" ]]; then
+              echo "Error: No mount point available for deploy." >&2
+              exit 1
+            fi
+            if deploy_isos "$MOUNT"; then
+              echo ""
+              echo "Ventoy deploy complete!"
+            else
+              echo ""
+              echo "Deploy completed with errors." >&2
+            fi
+          fi
+
+          # --- Step 5: Cleanup ---
+          if [[ $CLEANUP -eq 1 ]]; then
+            umount "$MOUNT" || true
+            echo "Unmounted $MOUNT"
+          fi
+        }
+
+        main "$@"
       '';
 
       packages.ventoy-bundle = pkgs.runCommand "ventoy-bundle" { } ''

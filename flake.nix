@@ -139,6 +139,10 @@
             source = inputs.windows-iso-src.packages.x86_64-linux."windows-iso-22631.7079.23H2.PRO.X64.EN";
             target = "/iso/windows/22631.7079.23H2.PRO.X64.EN.iso";
           };
+          nixos-minimal = {
+            source = self.packages.x86_64-linux.nixos-minimal;
+            target = "/iso/linux/nixos-minimal.iso";
+          };
         };
       };
 

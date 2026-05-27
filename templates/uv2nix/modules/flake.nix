@@ -46,7 +46,7 @@ let
       devDependencies = mkOption {
         type = types.listOf types.str;
         description = "Development dependencies (dependency-groups.dev)";
-        default = [ ];
+        default = [ "pytest>=8" "pytest-cov>=6" ];
       };
       scripts = mkOption {
         type = types.attrsOf types.str;
@@ -174,7 +174,8 @@ in
           name = cfg.name;
           runtimeInputs = [ prodEnv ];
           text = ''
-            export REPO_ROOT=$(git rev-parse --show-toplevel 2>/dev/null || echo ".")
+            repo_root=$(git rev-parse --show-toplevel 2>/dev/null || echo ".")
+            export REPO_ROOT="$repo_root"
             python -m ${cfg.mainModule} "$@"
           '';
         });

@@ -11,6 +11,14 @@ Each entry: **symptom → cause → fix**. One paragraph max. Newest at the top.
 
 ---
 
+**`ventoy-deploy` auto-detection misses already-mounted Ventoy partition or mounts to wrong path**
+Symptom: `sudo ventoy-deploy` mounts the Ventoy data partition to `/mnt/ventoy` even though udisks2 already auto-mounted it at `/run/media/$USER/Ventoy`, causing conflicts or duplicate mounts. Cause: Old script always mounted partition 2 to the hardcoded `ventoy.mountPoint` without checking if it was already mounted elsewhere. Fix: Script now calls `findmnt` to detect existing mounts before attempting its own mount. It also uses `lsblk --json`-style label matching and `ventoy -l` CLI verification for more reliable device detection. See `modules/flake-parts/ventoy.nix`.
+
+**`ventoy-deploy` auto-detect includes `lsblk` tree-drawing characters in device path**
+Symptom: `sudo ventoy-deploy` prints "Auto-detected Ventoy USB: /dev/└─sdc" then fails with "Can't lookup blockdev". Cause: `lsblk` default output uses tree formatting (with `└─`/`├─` characters) which get included in the constructed device path. Fix: Replaced `lsblk` tree output with `lsblk -dno NAME,RM` (disk-level list mode) combined with per-disk label queries via `lsblk -nlo LABEL`, eliminating the tree-formatting problem entirely. Applied in `modules/flake-parts/ventoy.nix`.
+
+---
+
 **wimboot 2.8.0 fails to compile with GCC -Werror=unterminated-string-initialization**
 Symptom: `nix build` of any configuration with `my.services.pxeServer.enable = true` fails with `initializer-string for array of 'char' truncates NUL terminator` in `wimboot.h`. Cause: Newer GCC versions treat `-Wunterminated-string-initialization` as an error, but wimboot's Makefile passes `-Werror` which promotes it. Fix: Add an overlay in `overlays/default.nix` that appends `-Wno-error=unterminated-string-initialization` to `env.NIX_CFLAGS_COMPILE`. Entry added 2026-05-26.
 

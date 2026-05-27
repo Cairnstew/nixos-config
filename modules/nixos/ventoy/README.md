@@ -85,10 +85,20 @@ This installs `ventoy-deploy` + Ventoy CLI tools on that system.
 ### 3. Deploy
 
 ```bash
-sudo ventoy-deploy              # auto-detect USB
-sudo ventoy-deploy /dev/sdb     # or specify device
-sudo ventoy-deploy --mount /mnt # already-mounted partition
+sudo ventoy-deploy                   # auto-detect USB, auto-mount, deploy
+sudo ventoy-deploy -c                # verify Ventoy installation only (no deploy)
+sudo ventoy-deploy --check           # same as -c
+sudo ventoy-deploy /dev/sdb          # specify device explicitly
+sudo ventoy-deploy --device /dev/sdb # same
+sudo ventoy-deploy --mount /mnt      # already-mounted partition
 ```
+
+The script now:
+- **Auto-detects** existing mounts first (e.g. udisks2 at `/run/media/$USER/Ventoy`)
+- **Verifies** Ventoy is properly installed using `ventoy -l` and label checks
+- **Checks disk space** before copying ISOs
+- **Size-verifies** each ISO after copy to catch truncation/errors
+- **`--check` mode** validates the USB without deploying
 
 ### Alternative: build bundle without the NixOS module
 
