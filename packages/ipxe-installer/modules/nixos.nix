@@ -95,7 +95,7 @@ in
   # ── Config ──
 
   config = mkIf cfg.enable {
-    environment.systemPackages = [ pkg ];
+    environment.systemPackages = with pkgs; [ pkg dnsmasq nginx nixos-anywhere sshpass ];
 
     # Tmpfiles for server directories
     systemd.tmpfiles.settings."10-ipxe-installer" = {
@@ -161,7 +161,7 @@ in
       description = "Windows ISO Sync";
       after = [ "network-online.target" ];
       wants = [ "network-online.target" ];
-      path = with pkgs; [ pkg p7zip curl ];
+      path = with pkgs; [ pkg p7zip curl util-linux ];
       serviceConfig = {
         Type = "oneshot";
         StateDirectory = "windows-iso-sync";

@@ -4,7 +4,7 @@ from pathlib import Path
 
 import pytest
 from ipxe_installer.models import PXEServerConfig
-from ipxe_installer.server import PXEServer
+from ipxe_installer.server import PXEServer, _find_binary
 
 
 @pytest.fixture
@@ -18,6 +18,34 @@ def config(tmp_path: Path) -> PXEServerConfig:
         dhcp_range_end="192.168.99.200",
         dhcp_lease_time="1d",
     )
+
+
+class TestFindBinary:
+    def test_find_binary_nixos_path(self, monkeypatch: pytest.MonkeyPatch, tmp_path: Path):
+        """Should find binary in /run/current-system/sw/bin."""
+        fake_bin = tmp_path / "run" / "current-system" / "sw" / "bin"
+        fake_bin.mkdir(parents=True)
+        (fake_bin / "dnsmasq").write_text("#!/bin/sh\necho fake")
+        (fake_bin / "dnsmasq").chmod(0o755)
+        monkeypatch.setattr("ipxe_installer.server._NIXOS_BIN", str(fake_bin))
+        assert _find_binary("dnsmasq") == str(fake_bin / "dnsmasq")
+
+    def test_find_binary_via_path(self, monkeypatch: pytest.MonkeyPatch, tmp_path: Path):
+        """Should fall back to PATH lookup."""
+        fake_bin = tmp_path / "bin"
+        fake_bin.mkdir()
+        (fake_bin / "dnsmasq").write_text("#!/bin/sh\necho fake")
+        (fake_bin / "dnsmasq").chmod(0o755)
+        monkeypatch.setattr("ipxe_installer.server._NIXOS_BIN", str(tmp_path / "nonexistent-bin"))
+        monkeypatch.setenv("PATH", str(fake_bin))
+        assert _find_binary("dnsmasq") == str(fake_bin / "dnsmasq")
+
+    def test_find_binary_not_found(self, monkeypatch: pytest.MonkeyPatch, tmp_path: Path):
+        """Should raise FileNotFoundError."""
+        monkeypatch.setattr("ipxe_installer.server._NIXOS_BIN", str(tmp_path / "nonexistent-bin"))
+        monkeypatch.setenv("PATH", str(tmp_path / "nonexistent-path"))
+        with pytest.raises(FileNotFoundError, match="not found"):
+            _find_binary("this-binary-does-not-exist-xyz")
 
 
 class TestPXEServer:

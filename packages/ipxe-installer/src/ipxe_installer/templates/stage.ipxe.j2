@@ -2,7 +2,7 @@
 echo "=== Stage: {{ stage_name|capitalize }} ({{ profile_name }}) ==="
 {% if stage_name == "nixos" %}
 echo "Booting NixOS netboot installer..."
-kernel http://{{ server_address }}/machines/{{ mac }}/vmlinuz pxe.server={{ server_address }} pxe.mac={{ mac }} console=tty0 console=ttyS0,115200n8 ip=dhcp
+kernel http://{{ server_address }}/machines/{{ mac }}/vmlinuz pxe.server={{ server_address }} pxe.mac={{ mac }} pxe.logport=8081 nousb console=tty0 console=ttyS0,115200n8 ip=dhcp
 initrd http://{{ server_address }}/machines/{{ mac }}/initrd
 boot
 {% elif stage_name == "windows" %}

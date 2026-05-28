@@ -2,7 +2,10 @@
 
 from __future__ import annotations
 
+import os
+import subprocess
 import sys
+import time
 from pathlib import Path
 from typing import Optional
 
@@ -65,6 +68,30 @@ def serve(
         mgr.setup_machine(mac, prof)
         typer.echo(f"  [✓] Machine {mac} → stage {prof.stages[0]}")
 
+        # Show kernel cmdline from stage script
+        stage_file = Path(http_root) / "stages" / mac / f"stage-{prof.stages[0]}.ipxe"
+        if stage_file.exists():
+            for line in stage_file.read_text().splitlines():
+                if line.startswith("kernel"):
+                    typer.echo(f"  ├ cmdline: {line.split('vmlinuz ')[-1]}")
+                    typer.echo(f"  └ initrd:  {line.split('kernel ')[-1].split()[1]}")
+                    break
+
+        # Show artifact sizes
+        machines_dir = Path(http_root) / "machines" / mac
+        for art in ["vmlinuz", "initrd", "disko.nix", "configuration.nix"]:
+            f = machines_dir / art
+            if f.exists():
+                size = f.stat().st_size
+                if size > 1024 * 1024:
+                    typer.echo(f"  [{art}]  {size / 1024 / 1024:.0f} MB")
+                elif size > 1024:
+                    typer.echo(f"  [{art}]  {size / 1024:.0f} KB")
+                else:
+                    typer.echo(f"  [{art}]  {size} B")
+            elif f.is_symlink():
+                typer.echo(f"  [{art}]  → {os.readlink(str(f))} (broken)" if not f.exists() else "")
+
     # Write boot.ipxe
     mgr.write_boot_ipxe()
     typer.echo(f"  [✓] boot.ipxe updated")
@@ -76,9 +103,13 @@ def serve(
             typer.echo("  [✓] DHCP/TFTP running")
             server.start_nginx()
             typer.echo("  [✓] HTTP server running")
+            server.start_log_relay()
+            typer.echo("  [✓] Log relay running on port 8081")
+            server.start_netconsole()
+            typer.echo("  [✓] Kernel log listener on UDP 6666")
 
             typer.echo("\nPXE-boot the target machine to start.")
-            typer.echo("Commands: advance <mac> | list | quit")
+            typer.echo("Commands: advance <mac> | install <mac> | logs <mac> | tail <mac> | leases | list | quit")
 
             # Interactive loop
             while True:
@@ -93,6 +124,78 @@ def serve(
                     break
                 if cmd == "list":
                     _list(mgr, False)
+                elif cmd == "leases":
+                    lease_file = Path("/var/lib/misc/dnsmasq.leases")
+                    if lease_file.exists():
+                        typer.echo("DHCP Leases:")
+                        for line in lease_file.read_text().strip().splitlines():
+                            parts = line.split()
+                            if len(parts) >= 4:
+                                expiry, mac_addr, ip, hostname = parts[0], parts[1], parts[2], parts[3]
+                                typer.echo(f"  {ip:16} {mac_addr:20} {hostname}")
+                    else:
+                        typer.echo("  No DHCP leases (target may not have booted)")
+                elif cmd.startswith("logs "):
+                    parts = cmd.split()
+                    mac_arg = parts[1]
+                    logs_dir = server.temp_dir / "logs"
+                    http_log = logs_dir / mac_arg / "installer.log"
+                    if http_log.exists():
+                        typer.echo("=== Installer output ===")
+                        typer.echo(http_log.read_text().rstrip())
+                    kernel_entries = sorted(logs_dir.glob("*/kernel.log"))
+                    for klog in kernel_entries:
+                        typer.echo(f"\n=== Kernel log ({klog.parent.name}) ===")
+                        typer.echo(klog.read_text().rstrip())
+                    if not http_log.exists() and not kernel_entries:
+                        typer.echo(f"  No logs for {mac_arg}")
+                elif cmd.startswith("tail "):
+                    parts = cmd.split()
+                    mac_arg = parts[1]
+                    log_file = server.temp_dir / "logs" / mac_arg / "installer.log"
+                    nginx_access = server.temp_dir / "nginx-access.log"
+                    pos = 0
+                    nginx_pos = 0
+                    typer.echo(f"Watching logs for {mac_arg}... (Ctrl+C to stop)")
+                    try:
+                        while True:
+                            if log_file.exists():
+                                size = log_file.stat().st_size
+                                if size > pos:
+                                    with open(log_file) as f:
+                                        f.seek(pos)
+                                        for line in f:
+                                            typer.echo(line.rstrip())
+                                    pos = size
+                            if nginx_access.exists():
+                                size = nginx_access.stat().st_size
+                                if size > nginx_pos:
+                                    with open(nginx_access) as f:
+                                        f.seek(nginx_pos)
+                                        for line in f:
+                                            typer.echo(f"[HTTP] {line.rstrip()}")
+                                    nginx_pos = size
+                            time.sleep(2)
+                    except KeyboardInterrupt:
+                        pass
+                elif cmd.startswith("install "):
+                    parts = cmd.split()
+                    mac_arg = parts[1]
+                    prof = _get_profile_for_mac(mgr, mac_arg)
+                    if not prof:
+                        typer.echo(f"  Unknown MAC: {mac_arg}")
+                        continue
+                    log_file = server.temp_dir / "logs" / mac_arg / "installer.log"
+                    log_file.parent.mkdir(parents=True, exist_ok=True)
+                    typer.echo(f"  Running nixos-anywhere for {mac_arg}...")
+                    success = mgr.nixos_anywhere(mac_arg, prof, log_file)
+                    if success:
+                        typer.echo(f"  [✓] NixOS install complete")
+                        # Auto-advance to next stage
+                        new = mgr.advance_stage(mac_arg, prof.stages, None)
+                        typer.echo(f"  {mac_arg} → stage {new}")
+                    else:
+                        typer.echo(f"  [✗] NixOS install failed — check logs")
                 elif cmd.startswith("advance "):
                     parts = cmd.split()
                     mac_arg = parts[1]

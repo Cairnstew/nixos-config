@@ -111,29 +111,65 @@ class TestStageManager:
         assert boot.exists()
         assert "NixOS Netboot Server" in boot.read_text()
 
-    def test_link_artifacts(self, mgr: StageManager, tmp_path: Path):
+    def test_link_artifacts_nonexistent_profile(self, mgr: StageManager):
+        profile = Profile(name="test", stages=["done"])
+        mgr.link_artifacts("mac1", profile)
+        mdir = mgr.http_root / mgr.MACHINES_DIR / "mac1"
+        assert mdir.exists()
+        # No artifacts should be linked when profile dir doesn't exist
+        assert not (mdir / "vmlinuz").exists()
+
+    def test_link_artifacts_with_profile_dir(self, mgr: StageManager):
         profile = Profile(name="test", stages=["done"])
         pdir = mgr.http_root / mgr.PROFILES_DIR / "test"
         pdir.mkdir(parents=True)
         (pdir / "vmlinuz").write_text("kernel")
-        (pdir / "initrd").write_text("initrd")
 
         mgr.link_artifacts("mac1", profile)
         mdir = mgr.http_root / mgr.MACHINES_DIR / "mac1"
-        assert (mdir / "vmlinuz").exists()
+        assert (mdir / "vmlinuz").is_symlink()
         assert (mdir / "vmlinuz").read_text() == "kernel"
+
+    def test_generate_artifacts_with_windows(self, mgr: StageManager):
+        from ipxe_installer.models import WindowsConfig
+
+        profile = Profile(
+            name="test",
+            stages=["windows", "done"],
+            windows=WindowsConfig(
+                unattended={
+                    "enable": True,
+                    "computer_name": "TESTPC",
+                    "local_user": "admin",
+                    "password": "secret",
+                }
+            ),
+        )
+        mgr._generate_artifacts("mac1", profile)
+        mdir = mgr.http_root / mgr.MACHINES_DIR / "mac1"
+        assert (mdir / "autounattend.xml").exists()
+        assert "TESTPC" in (mdir / "autounattend.xml").read_text()
+        assert "admin" in (mdir / "autounattend.xml").read_text()
+
+    def test_generate_artifacts_with_dsc(self, mgr: StageManager):
+        profile = Profile(
+            name="test",
+            stages=["windows", "done"],
+            dsc_config={
+                "registry": {"HKLM\\Test": {"Value": 1}},
+                "features": ["WSL"],
+            },
+        )
+        mgr._generate_artifacts("mac1", profile)
+        mdir = mgr.http_root / mgr.MACHINES_DIR / "mac1"
+        assert (mdir / "apply-dsc.ps1").exists()
 
     def test_full_setup(self, mgr: StageManager):
         profile = Profile(name="test", stages=["nixos", "done"])
-        pdir = mgr.http_root / mgr.PROFILES_DIR / "test"
-        pdir.mkdir(parents=True)
-        (pdir / "profile.json").write_text(json.dumps({"stages": ["nixos", "done"]}))
-        (pdir / "vmlinuz").write_text("kernel")
 
         mgr.setup_machine("aa:bb:cc:dd:ee:ff", profile)
         assert (mgr.http_root / "boot.ipxe").exists()
         assert (mgr.http_root / "aa:bb:cc:dd:ee:ff.ipxe").is_symlink()
-        assert (mgr.http_root / "machines" / "aa:bb:cc:dd:ee:ff" / "vmlinuz").exists()
         stages_dir = mgr.http_root / "stages" / "aa:bb:cc:dd:ee:ff"
         assert (stages_dir / "stage-nixos.ipxe").exists()
         assert (stages_dir / "stage-done.ipxe").exists()
