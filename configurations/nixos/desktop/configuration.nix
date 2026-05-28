@@ -7,10 +7,6 @@
     ./hardware-configuration.nix
   ];
 
-  # GRUB is managed by my.disko.dualBoot (disko config.nix).
-  # Hardcoded "Windows 11" entry points to the ESP label.
-  # os-prober is disabled (explicit entry replaces it).
-
   networking.networkmanager.enable = true;
 
   i18n.defaultLocale = "en_GB.UTF-8";

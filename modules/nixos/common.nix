@@ -38,7 +38,6 @@ in
     ./natShare
     ./nebula
     ./rustdesk.nix
-    ./netboot
 
     # ── Development ────────────────────────────────────────────────────────
     ./vscode-server.nix
@@ -54,7 +53,6 @@ in
     # ── Dual-boot / Windows Support ────────────────────────────────────────
     ./disko
     ./dscnix
-    ./windows-iso-sync.nix
 
     # ── Entertainment ──────────────────────────────────────────────────────
     ./spotify.nix

@@ -1,0 +1,138 @@
+<?xml version="1.0" encoding="utf-8"?>
+<unattend xmlns="urn:schemas-microsoft-com:unattend">
+    <settings pass="windowsPE">
+        <component name="Microsoft-Windows-International-Core-WinPE"
+                     processorArchitecture="amd64"
+                     publicKeyToken="31bf3856ad364e35"
+                     language="neutral"
+                     versionScope="nonSxS">
+            <SetupUILanguage>
+                <UILanguage>en-US</UILanguage>
+            </SetupUILanguage>
+            <InputLocale>en-US</InputLocale>
+            <SystemLocale>en-US</SystemLocale>
+            <UILanguage>en-US</UILanguage>
+            <UserLocale>en-US</UserLocale>
+        </component>
+        <component name="Microsoft-Windows-Setup"
+                     processorArchitecture="amd64"
+                     publicKeyToken="31bf3856ad364e35"
+                     language="neutral"
+                     versionScope="nonSxS">
+            <DiskConfiguration>
+                <WillShowUI>OnError</WillShowUI>
+                <Disk>
+                    <DiskID>0</DiskID>
+                    <WillWipeDisk>false</WillWipeDisk>
+                    <ModifyPartitions>
+                        <ModifyPartition>
+                            <Order>1</Order>
+                            <PartitionID>{{ partition_index }}</PartitionID>
+                            <Format>NTFS</Format>
+                            <Label>Windows</Label>
+                        </ModifyPartition>
+                    </ModifyPartitions>
+                </Disk>
+            </DiskConfiguration>
+            <ImageInstall>
+                <OSImage>
+                    <InstallTo>
+                        <DiskID>0</DiskID>
+                        <PartitionID>{{ partition_index }}</PartitionID>
+                    </InstallTo>
+                    <WillShowUI>OnError</WillShowUI>
+                    <InstallFrom>
+                        <MetaData wcm:action="generate">
+                            <Key>/IMAGE/INDEX</Key>
+                            <Value>{{ image_index }}</Value>
+                        </MetaData>
+                    </InstallFrom>
+                </OSImage>
+            </ImageInstall>
+            <UserData>
+                <AcceptEula>true</AcceptEula>
+                <FullName>{{ local_user }}</FullName>
+                <Organization>NixOS</Organization>
+                <ProductKey>
+                    <Key></Key>
+                    <WillShowUI>OnError</WillShowUI>
+                </ProductKey>
+            </UserData>
+        </component>
+    </settings>
+    <settings pass="oobeSystem">
+        <component name="Microsoft-Windows-Shell-Setup"
+                     processorArchitecture="amd64"
+                     publicKeyToken="31bf3856ad364e35"
+                     language="neutral"
+                     versionScope="nonSxS">
+            <UserAccounts>
+                <AdministratorPassword>
+                    <Value>{{ password }}</Value>
+                    <PlainText>true</PlainText>
+                </AdministratorPassword>
+                <LocalAccounts>
+                    <LocalAccount wcm:action="add">
+                        <Password>
+                            <Value>{{ password }}</Value>
+                            <PlainText>true</PlainText>
+                        </Password>
+                        <DisplayName>{{ local_user }}</DisplayName>
+                        <Name>{{ local_user }}</Name>
+                        <Group>Administrators</Group>
+                    </LocalAccount>
+                </LocalAccounts>
+            </UserAccounts>
+            <AutoLogon>
+                <Enabled>true</Enabled>
+                <LogonCount>1</LogonCount>
+                <Username>{{ local_user }}</Username>
+                <Password>
+                    <Value>{{ password }}</Value>
+                    <PlainText>true</PlainText>
+                </Password>
+            </AutoLogon>
+            <OOBE>
+                <HideEULAPage>true</HideEULAPage>
+                <HideOEMRegistrationScreen>true</HideOEMRegistrationScreen>
+                <HideOnlineAccountScreens>true</HideOnlineAccountScreens>
+                <HideWirelessSetupInOOBE>true</HideWirelessSetupInOOBE>
+                <NetworkLocation>Home</NetworkLocation>
+                <ProtectYourPC>1</ProtectYourPC>
+                <SkipMachineOOBE>true</SkipMachineOOBE>
+                <SkipUserOOBE>true</SkipUserOOBE>
+            </OOBE>
+            <TimeZone>{{ timezone }}</TimeZone>
+            <ComputerName>{{ computer_name }}</ComputerName>
+            <RegisteredOrganization>NixOS</RegisteredOrganization>
+            <RegisteredOwner>{{ local_user }}</RegisteredOwner>
+            <FirstLogonCommands>
+                <SynchronousCommand wcm:action="add">
+                    <Order>1</Order>
+                    <CommandLine>powershell -ExecutionPolicy Bypass -Command "Start-Process 'ms-settings:windowsupdate' -WindowStyle Hidden"</CommandLine>
+                    <Description>Open Windows Update settings</Description>
+                </SynchronousCommand>
+                {% if dsc_download_url %}
+                <SynchronousCommand wcm:action="add">
+                    <Order>2</Order>
+                    <CommandLine>powershell -ExecutionPolicy Bypass -File "%SystemRoot%\Temp\apply-dsc.ps1"</CommandLine>
+                    <Description>Apply DSC v3 configuration</Description>
+                </SynchronousCommand>
+                {% endif %}
+            </FirstLogonCommands>
+        </component>
+    </settings>
+    {% if disable_recovery %}
+    <settings pass="offlineServicing">
+        <component name="Microsoft-Windows-PartitionManager"
+                     processorArchitecture="amd64"
+                     publicKeyToken="31bf3856ad364e35"
+                     language="neutral"
+                     versionScope="nonSxS">
+            <DisableRecovery>
+                <Enabled>true</Enabled>
+            </DisableRecovery>
+        </component>
+    </settings>
+    {% endif %}
+</unattend>

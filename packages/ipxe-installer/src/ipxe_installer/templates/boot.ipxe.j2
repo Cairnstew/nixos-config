@@ -1,0 +1,7 @@
+#!ipxe
+echo "=== NixOS Netboot Server ==="
+:{{ mac }}
+chain http://{{ server_address }}/{{ mac }}.ipxe || goto next
+:next
+echo "No matching machine config — booting local disk"
+exit

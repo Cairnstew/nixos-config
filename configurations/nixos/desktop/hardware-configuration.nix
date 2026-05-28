@@ -13,9 +13,6 @@
   boot.kernelModules = [ "kvm-amd" ];
   boot.extraModulePackages = [ ];
 
-  # `/` and `/boot` are managed by my.disko.dualBoot (fresh mode).
-  # Only additional mounts (non-dual-boot disks) remain here.
-
   fileSystems."/mnt/shared" =
     { device = "/dev/disk/by-uuid/05B6D61C3F40F000";
       fsType = "ntfs-3g";
