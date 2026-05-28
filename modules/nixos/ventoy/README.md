@@ -16,19 +16,66 @@ flake.nix                          ← define ventoy.isos, ventoy.settings
 
 ## Flake-Level Options (`flake.nix`)
 
+### ISO Configuration
+
 | Option | Description |
 |--------|-------------|
 | `ventoy.isos` | Attrset of ISO derivations + target paths |
-| `ventoy.settings.control` | Ventoy control settings (VTOY_DEFAULT_MENU_MODE, etc.) |
-| `ventoy.settings.theme` | Theme configuration (file, display_mode, gfxmode, fonts) |
-| `ventoy.settings.menu_class` | Menu class mappings for CSS theming |
-| `ventoy.settings.persistence` | Persistence backend mappings |
-| `ventoy.settings.injection` | File injection rules |
-| `ventoy.settings.auto_install` | Auto-install preseed/kickstart templates |
-| `ventoy.settings.conf_replace` | GRUB config replacement snippets |
-| `ventoy.extraConfig` | Additional ventoy.json keys |
-| `ventoy.device` | Default USB device path |
+| `ventoy.device` | Default USB device path (empty = auto-detect) |
 | `ventoy.mountPoint` | Mount point for data partition (default: `/mnt/ventoy`) |
+| `ventoy.grubConfig` | Custom `ventoy_grub.cfg` for F6 menu extension |
+| `ventoy.extraConfig` | Arbitrary ventoy.json keys (for non-typed overrides) |
+
+### Plugin Settings (`ventoy.settings.*`)
+
+| Plugin | Type | Description |
+|--------|------|-------------|
+| `control` | `list of attrs` | Global control settings (VTOY_DEFAULT_MENU_MODE, etc.) |
+| `theme` | `null or submodule` | Theme configuration |
+| `menu_class` | `list of submodule` | Menu class mappings for CSS theming |
+| `menu_alias` | `list of submodule` | Friendly names for ISOs/directories |
+| `menu_tip` | `null or submodule` | Tooltip messages when ISO is selected |
+| `persistence` | `list of submodule` | Persistence backend mappings |
+| `injection` | `list of submodule` | File injection rules |
+| `auto_install` | `list of submodule` | Auto-install preseed/kickstart templates |
+| `conf_replace` | `list of submodule` | GRUB config replacement snippets |
+| `image_list` | `list of string` | ISO whitelist (replaces auto-scan) |
+| `image_blacklist` | `list of string` | ISO blacklist (hides from menu) |
+| `password` | `attrs` | Password protection (stored in /nix/store — use with care) |
+| `dud` | `list of submodule` | Driver Update Disk mappings (RHEL/CentOS/SUSE) |
+| `wimboot` | `list of submodule` | Wimboot configuration |
+| `vhdboot` | `list of submodule` | Windows VHD/VHDX boot configuration |
+| `vtoyboot` | `list of submodule` | Linux vDisk boot configuration |
+| `auto_memdisk` | `list of string` | Image paths for auto Memdisk mode |
+
+Each plugin also supports **per-BIOS-mode variants** via suffix:
+`_uefi`, `_legacy`, `_ia32`, `_aa64`, `_mips`.
+
+Example: `control_uefi`, `theme_legacy`, `menu_alias_uefi`
+
+### Install Options (`ventoy.installOptions`)
+
+| Option | Default | Description |
+|--------|---------|-------------|
+| `secureBoot` | `false` | `-s` flag when installing |
+| `gpt` | `false` | `-g` flag (GPT instead of MBR) |
+| `label` | `"Ventoy"` | `-L` flag (data partition label) |
+| `reserveSizeMb` | `null` | `-r SIZE_MB` flag |
+
+### Theme Submodule Fields
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `file` | `string or list of string` | *(required)* | Theme.txt path, or array for multi-theme |
+| `default_file` | `null or int` | `null` | 0=random, 1+=index (multi-theme only) |
+| `resolution_fit` | `null or 0/1` | `null` | Auto-select theme by screen resolution |
+| `gfxmode` | `string` | `"1024x768"` | GRUB resolution |
+| `display_mode` | `string` | `"GUI"` | GUI, CLI, serial, or serial_console |
+| `serial_param` | `null or string` | `null` | Serial port params |
+| `ventoy_left` | `null or string` | `null` | Version info left position |
+| `ventoy_top` | `null or string` | `null` | Version info top position |
+| `ventoy_color` | `null or string` | `null` | Version info color |
+| `fonts` | `list of string` | `[]` | Font .pf2 paths |
 
 ## Host-Level Options (`my.programs.ventoy`)
 
@@ -49,23 +96,21 @@ flake.nix                          ← define ventoy.isos, ventoy.settings
   };
 
   outputs = inputs: inputs.flake-parts.lib.mkFlake { inherit inputs; } {
-    # ...systems, imports (autowired from modules/flake-parts/)...
-
     ventoy = {
-      device = "/dev/sdb";
+      settings = {
+        control = [
+          { VTOY_DEFAULT_MENU_MODE = "0"; }
+          { VTOY_DEFAULT_SEARCH_ROOT = "/iso"; }
+          { VTOY_WIN11_BYPASS_CHECK = "1"; }
+        ];
+        menu_alias = [
+          { image = "/iso/windows/win11.iso"; alias = "Windows 11 Pro"; }
+        ];
+      };
 
-      settings.control = [
-        { VTOY_DEFAULT_MENU_MODE = "0"; }
-        { VTOY_DEFAULT_SEARCH_ROOT = "/iso"; }
-      ];
-
-      settings.menu_class = [
-        { parent = "/iso/windows"; class = "windows"; }
-      ];
-
-      isos.win11-23h2 = {
-        source = inputs.windows-iso-src.packages.x86_64-linux."windows-iso-22631.7079.23H2.PRO.X64.EN";
-        target = "/iso/windows/22631.7079.23H2.PRO.X64.EN.iso";
+      isos.win11 = {
+        source = inputs.windows-iso-src.packages.x86_64-linux.windows-iso;
+        target = "/iso/windows/win11.iso";
       };
     };
   };
@@ -80,29 +125,31 @@ flake.nix                          ← define ventoy.isos, ventoy.settings
 }
 ```
 
-This installs `ventoy-deploy` + Ventoy CLI tools on that system.
-
 ### 3. Deploy
 
 ```bash
-sudo ventoy-deploy                   # auto-detect USB, auto-mount, deploy
-sudo ventoy-deploy -c                # verify Ventoy installation only (no deploy)
-sudo ventoy-deploy --check           # same as -c
-sudo ventoy-deploy /dev/sdb          # specify device explicitly
-sudo ventoy-deploy --device /dev/sdb # same
-sudo ventoy-deploy --mount /mnt      # already-mounted partition
+sudo ventoy-deploy                         # auto-detect, mount, deploy
+sudo ventoy-deploy --check                 # verify USB only
+sudo ventoy-deploy /dev/sdb                # explicit device
+sudo ventoy-deploy --mount /mnt/ventoy     # already-mounted partition
+
+sudo ventoy-deploy --install /dev/sdb      # install Ventoy to USB
+sudo ventoy-deploy --update /dev/sdb       # update Ventoy on USB
+sudo ventoy-deploy --info /dev/sdb         # show Ventoy version info
 ```
 
-The script now:
-- **Auto-detects** existing mounts first (e.g. udisks2 at `/run/media/$USER/Ventoy`)
-- **Verifies** Ventoy is properly installed using `ventoy -l` and label checks
+The script:
+- **Auto-detects** Ventoy USB via label + `ventoy -l` verification
+- **Finds existing mounts** first (e.g. udisks2 at `/run/media/$USER/Ventoy`)
+- **Verifies** Ventoy installation before deploying
 - **Checks disk space** before copying ISOs
-- **Size-verifies** each ISO after copy to catch truncation/errors
-- **`--check` mode** validates the USB without deploying
+- **Size-verifies** each ISO after copy to catch truncation
+- Deploys `ventoy.json` to `<partition>/ventoy/ventoy.json`
+- Deploys `ventoy_grub.cfg` if `ventoy.grubConfig` is set
 
 ### Alternative: build bundle without the NixOS module
 
 ```bash
-nix build .#ventoy-bundle       # all ISOs + ventoy.json as a derivation
-nix run .#ventoy-deploy         # run the deploy script directly
+nix build .#ventoy-bundle       # all ISOs + ventoy.json + grub.cfg as derivation
+nix run .#ventoy-deploy         # run deploy script directly
 ```

@@ -73,10 +73,22 @@
     compose2nix.url = "github:aksiksi/compose2nix";
     compose2nix.inputs.nixpkgs.follows = "nixpkgs";
 
+    # ISOS
+
     # Pre-built Windows ISOs from GitHub releases
     windows-iso-src = {
       url = "github:Cairnstew/uup-dump-build-and-get-windows-iso";
       flake = true;
+    };
+
+    gparted-iso = {
+      url = "https://downloads.sourceforge.net/gparted/gparted-live-1.6.0-1-amd64.iso?sha256=18v0w9pcdyqx69w82paadgcniii2zcm52rn2h3fhasp7nr0pdims";
+      flake = false;
+    };
+
+    # Windows unattended answer file generator
+    GenerateAnswerFile = {
+      url = "github:Cairnstew/GenerateAnswerFile";
     };
 
     # DSC v3 YAML configuration generation (Nix → Windows DSC)
@@ -110,7 +122,8 @@
 
   # Wired using https://nixos-unified.org/autowiring.html
   outputs = inputs@{ self, ... }:
-    inputs.flake-parts.lib.mkFlake { inherit inputs; } {
+    inputs.flake-parts.lib.mkFlake { inherit inputs; }
+    ({ config, lib, ... }: {
       systems = [ "x86_64-linux" "aarch64-linux" "aarch64-darwin" ];
       imports =
         let
@@ -123,30 +136,81 @@
       # ── Ventoy: ISOs + config for multi-boot USB ───────────────────
       ventoy = {
         #device = "/dev/sdb";
-        settings.control = [
-          { VTOY_DEFAULT_MENU_MODE = "0"; }
-          { VTOY_TREE_VIEW_MENU_STYLE = "0"; }
-          { VTOY_DEFAULT_SEARCH_ROOT = "/iso"; }
-          { VTOY_FILT_DOT_UNDERSCORE_FILE = "1"; }
-        ];
-        settings.menu_class = [
-          { parent = "/iso/windows"; class = "windows"; }
-          { parent = "/iso/linux";   class = "linux"; }
-        ];
+        settings = {
+          control = [
+            { VTOY_DEFAULT_MENU_MODE = "0"; }
+            { VTOY_TREE_VIEW_MENU_STYLE = "0"; }
+            { VTOY_DEFAULT_SEARCH_ROOT = "/iso"; }
+            { VTOY_FILT_DOT_UNDERSCORE_FILE = "1"; }
+            { VTOY_WIN11_BYPASS_CHECK = "1"; }
+            { VTOY_WIN11_BYPASS_NRO = "1"; }
+          ];
+          menu_class = [
+            { parent = "/iso/windows"; class = "windows"; }
+            { parent = "/iso/linux";   class = "linux"; }
+          ];
+          # Friendly names in the boot menu
+          menu_alias = [
+            { image = "/iso/windows/22631.7079.23H2.PRO.X64.EN.iso"; alias = "Windows 11 23H2 Pro"; }
+            { dir   = "/iso/linux";   alias = "[ Linux ISOs ]"; }
+          ];
+          # Custom GRUB menu extension (F6 in Ventoy menu)
+          # grubConfig = ./ventoy_grub.cfg;
+        };
+
+        installOptions = {
+          # secureBoot = true;
+          # gpt = true;
+        };
+
+        answerFileSettings = {
+          username = config.me.username;
+          hostname = config.me.username + "-win";
+          diskId = "0";
+        };
 
         isos = {
           win11-23h2 = {
             source = inputs.windows-iso-src.packages.x86_64-linux."windows-iso-22631.7079.23H2.PRO.X64.EN";
             target = "/iso/windows/22631.7079.23H2.PRO.X64.EN.iso";
           };
-          nixos-netboot = {
-            source = builtins.fetchurl {
-              url = "https://github.com/nix-community/nixos-images/releases/download/nixos-unstable/netboot-x86_64-linux.ipxe";
-              sha256 = "13fzlj3b94cckxbnzv12nr1a4gf3kbz2gvrds32azizkm0dbq2xl";
-            };
-            target = "/iso/linux/nixos-netboot.ipxe";
+          nixos-installer = {
+            source = self.packages.x86_64-linux.nixos-installer;
+            target = "/iso/linux/nixos-installer.iso";
+          };
+          gparted = {
+            source = inputs.gparted-iso;
+            target = "/iso/linux/gparted-live-1.6.0-1-amd64.iso";
           };
         };
+
+        # Extra files deployed alongside ISOs — answer file profiles
+        deployFiles = inputs.nixpkgs.lib.mapAttrs' (n: v:
+          inputs.nixpkgs.lib.nameValuePair "windows-answer-${n}" {
+            source = self.packages.x86_64-linux."windows-answ-pro-${n}";
+            target = "/ventoy/scripts/${n}.xml";
+          }
+        ) {
+          dev      = {};
+          minimal  = {};
+          domain   = {};
+          kiosk    = {};
+          dual-boot = {};
+        };
+
+        # Windows auto-install: pick from multiple answer profiles at boot
+        settings.auto_install = [
+          {
+            image = "/iso/windows/22631.7079.23H2.PRO.X64.EN.iso";
+            template = [
+              "/ventoy/scripts/dev.xml"
+              "/ventoy/scripts/minimal.xml"
+              "/ventoy/scripts/domain.xml"
+              "/ventoy/scripts/kiosk.xml"
+              "/ventoy/scripts/dual-boot.xml"
+            ];
+          }
+        ];
       };
 
       perSystem = { lib, system, ... }: {
@@ -159,5 +223,5 @@
           config.allowUnfree = true;
         };
       };
-    };
+    });
 }
