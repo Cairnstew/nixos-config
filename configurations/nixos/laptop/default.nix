@@ -96,21 +96,75 @@
 
     machines = {
       desktop = {
-        macAddress = "00:11:22:33:44:55"; # TODO: replace with actual MAC
-        # discover → windows → nixos → done
-        # discover: boots live env, user selects disk/hostname, POSTs to PXE server
-        # windows:  automated unattended Windows install
-        # nixos:    automated NixOS install with disko + nixos-install
-        # done:     boot from local disk
-        stages = [ "discover" "windows" "nixos" "done" ];
-        # Note: diskoConfig and nixosConfig below are defaults for the automated
-        # install stage. If discover runs first, it POSTs new values that override.
+        macAddress = "a8:a1:59:8d:28:ec";
+        # nixos → windows → done
+        # nixos:  disko partitions disk (ESP→MSR→Windows→NixOS), then nixos-install
+        #         to partition 4. Must run before Windows so disko's fresh GPT
+        #         table doesn't wipe the Windows install.
+        # windows: automated unattended Windows 11 install to pre-existing partition 3.
+        # done:    boot from local disk.
+        stages = [ "nixos" "windows" "done" ];
 
         windows.unattended = {
           enable = true;
           computerName = "DESKTOP";
           localUser = "nixos";
           password = "nixos123";  # temporary — change post-install
+        };
+
+        dscConfig = {
+          registry = {
+            "DisableCortana" = {
+              keyPath = "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\Windows Search";
+              valueName = "AllowCortana";
+              valueData = { DWord = 0; };
+            };
+            "DisableBingSearch" = {
+              keyPath = "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\Explorer";
+              valueName = "DisableSearchBoxSuggestions";
+              valueData = { DWord = 1; };
+            };
+            "NoAutoRebootWithLoggedOnUsers" = {
+              keyPath = "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\WindowsUpdate\\AU";
+              valueName = "NoAutoRebootWithLoggedOnUsers";
+              valueData = { DWord = 1; };
+            };
+            "AUOptions" = {
+              keyPath = "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\WindowsUpdate\\AU";
+              valueName = "AUOptions";
+              valueData = { DWord = 3; };
+            };
+            "DeferFeatureUpdates" = {
+              keyPath = "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\WindowsUpdate";
+              valueName = "DeferFeatureUpdates";
+              valueData = { DWord = 1; };
+            };
+            "ExcludeWUDriversInQualityUpdate" = {
+              keyPath = "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\WindowsUpdate";
+              valueName = "ExcludeWUDriversInQualityUpdate";
+              valueData = { DWord = 1; };
+            };
+            "DisableDeliveryOptimization" = {
+              keyPath = "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\DeliveryOptimization";
+              valueName = "DODownloadMode";
+              valueData = { DWord = 0; };
+            };
+            "AllowTelemetry" = {
+              keyPath = "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\DataCollection";
+              valueName = "AllowTelemetry";
+              valueData = { DWord = 1; };
+            };
+          };
+          optionalFeatures = {
+            "Microsoft-Windows-Subsystem-Linux" = { state = "Installed"; };
+            "VirtualMachinePlatform" = { state = "Installed"; };
+          };
+          runCommands = {
+            "RemoveBingBloat" = {
+              executable = "powershell.exe";
+              arguments = [ "-NoProfile" "-Command" "Get-AppxPackage *bing* | Remove-AppxPackage" ];
+            };
+          };
         };
 
         nixos.autoInstall = {
@@ -185,6 +239,160 @@
           '';
           # TODO: generate hardware-configuration.nix on the target
           # and add: imports = [ ./hardware-configuration.nix ];
+        };
+      };
+    };
+
+    # ── Reusable Boot Profiles (used by netboot-serve wizard) ──────────────
+    profiles = {
+      dual-boot = {
+        enable = true;
+        description = "NixOS + Windows 11 dual boot (fully automated)";
+        stages = [ "nixos" "windows" "done" ];
+        windows.unattended = {
+          enable = true;
+          computerName = "DESKTOP";
+          localUser = "nixos";
+          password = "nixos123";
+        };
+        dscConfig = {
+          registry = {
+            "DisableCortana" = {
+              keyPath = "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\Windows Search";
+              valueName = "AllowCortana";
+              valueData = { DWord = 0; };
+            };
+            "DisableBingSearch" = {
+              keyPath = "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\Explorer";
+              valueName = "DisableSearchBoxSuggestions";
+              valueData = { DWord = 1; };
+            };
+            "NoAutoRebootWithLoggedOnUsers" = {
+              keyPath = "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\WindowsUpdate\\AU";
+              valueName = "NoAutoRebootWithLoggedOnUsers";
+              valueData = { DWord = 1; };
+            };
+            "AUOptions" = {
+              keyPath = "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\WindowsUpdate\\AU";
+              valueName = "AUOptions";
+              valueData = { DWord = 3; };
+            };
+            "DeferFeatureUpdates" = {
+              keyPath = "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\WindowsUpdate";
+              valueName = "DeferFeatureUpdates";
+              valueData = { DWord = 1; };
+            };
+            "ExcludeWUDriversInQualityUpdate" = {
+              keyPath = "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\WindowsUpdate";
+              valueName = "ExcludeWUDriversInQualityUpdate";
+              valueData = { DWord = 1; };
+            };
+            "DisableDeliveryOptimization" = {
+              keyPath = "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\DeliveryOptimization";
+              valueName = "DODownloadMode";
+              valueData = { DWord = 0; };
+            };
+            "AllowTelemetry" = {
+              keyPath = "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\DataCollection";
+              valueName = "AllowTelemetry";
+              valueData = { DWord = 1; };
+            };
+          };
+          optionalFeatures = {
+            "Microsoft-Windows-Subsystem-Linux" = { state = "Installed"; };
+            "VirtualMachinePlatform" = { state = "Installed"; };
+          };
+          runCommands = {
+            "RemoveBingBloat" = {
+              executable = "powershell.exe";
+              arguments = [ "-NoProfile" "-Command" "Get-AppxPackage *bing* | Remove-AppxPackage" ];
+            };
+          };
+        };
+        nixos.autoInstall = {
+          enable = true;
+          diskoConfig = {
+            disko.devices.disk.main = {
+              type = "disk";
+              device = "/dev/nvme0n1";
+              content = {
+                type = "gpt";
+                partitions = {
+                  esp = { size = "1G"; type = "EF00"; content.type = "filesystem"; format = "vfat"; mountpoint = "/boot"; };
+                  msr = { size = "16M"; type = "MSR"; content = null; };
+                  windows = { size = "150G"; content.type = "filesystem"; format = "ntfs"; mountpoint = null; };
+                  nixos = { size = "100%"; content.type = "filesystem"; format = "ext4"; mountpoint = "/"; };
+                };
+              };
+            };
+          };
+          nixosConfig = ''
+            { config, pkgs, lib, ... }: {
+              system.stateVersion = "25.05";
+              networking.hostName = "desktop";
+              nixpkgs.hostPlatform = "x86_64-linux";
+              boot.loader = {
+                efi.canTouchEfiVariables = true;
+                grub = {
+                  enable = true;
+                  devices = [ "nodev" ];
+                  efiSupport = true;
+                  extraEntries = '''
+                    menuentry "Windows 11" {
+                      search --set=root --label ESP
+                      chainloader /EFI/Microsoft/Boot/bootmgfw.efi
+                    }
+                  ''';
+                };
+              };
+              services.xserver.enable = true;
+              services.xserver.desktopManager.gnome.enable = true;
+            }
+          '';
+        };
+      };
+
+      nixos-minimal = {
+        enable = true;
+        description = "NixOS only (erase entire disk)";
+        stages = [ "nixos" "done" ];
+        nixos.autoInstall = {
+          enable = true;
+          diskoConfig = {
+            disko.devices.disk.main = {
+              type = "disk";
+              device = "/dev/nvme0n1";
+              content = {
+                type = "gpt";
+                partitions = {
+                  esp = { size = "1G"; type = "EF00"; content.type = "filesystem"; format = "vfat"; mountpoint = "/boot"; };
+                  nixos = { size = "100%"; content.type = "filesystem"; format = "ext4"; mountpoint = "/"; };
+                };
+              };
+            };
+          };
+          nixosConfig = ''
+            { config, pkgs, lib, ... }: {
+              system.stateVersion = "25.05";
+              networking.hostName = "nixos";
+              nixpkgs.hostPlatform = "x86_64-linux";
+              boot.loader.grub = { enable = true; devices = [ "nodev" ]; efiSupport = true; };
+              services.xserver.enable = true;
+              services.xserver.desktopManager.gnome.enable = true;
+            }
+          '';
+        };
+      };
+
+      windows-only = {
+        enable = true;
+        description = "Pure Windows 11 (entire disk)";
+        stages = [ "windows" "done" ];
+        windows.unattended = {
+          enable = true;
+          computerName = "WINDOWS-PC";
+          localUser = "nixos";
+          password = "nixos123";
         };
       };
     };

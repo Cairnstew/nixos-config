@@ -1,7 +1,230 @@
 { lib, ... }:
 let
   inherit (lib) mkOption mkEnableOption types;
-  inherit (lib.types) attrsOf bool enum int listOf nullOr path str submodule raw;
+  inherit (lib.types) attrs attrsOf bool enum int listOf nullOr path str submodule raw;
+
+  # Shared submodule for machine + profile options
+  machineModule = { ... }: {
+    options = {
+      macAddress = mkOption {
+        type = str;
+        default = "";
+        description = "MAC address of the target machine (ignored in profiles)";
+      };
+
+      stages = mkOption {
+        type = listOf (enum [ "discover" "windows" "nixos" "done" ]);
+        default = [ "windows" "nixos" "done" ];
+        description = "Ordered list of boot stages";
+      };
+
+      dscConfig = mkOption {
+        type = attrs;
+        default = { };
+        description = ''
+          DSC v3 configuration data passed to dscnix's evalDscConfiguration.
+          Mirrors the shape of my.services.dscnix.* options.
+          Keys: configurationName, registry, optionalFeatures, runCommands, etc.
+          Hostname is auto-derived from windows.unattended.computerName.
+          Set to {} to skip DSC bootstrap entirely.
+        '';
+      };
+
+      windows = {
+        unattended = {
+          enable = mkEnableOption "unattended Windows install with autounattend.xml";
+
+          edition = mkOption {
+            type = str;
+            default = "Windows 11 Pro";
+            description = "Windows edition matched via /IMAGE/NAME in boot.wim";
+          };
+
+          localUser = mkOption {
+            type = str;
+            default = "nixos";
+            description = "Local administrator username created during Windows setup";
+          };
+
+          password = mkOption {
+            type = str;
+            default = "nixos";
+            description = ''
+              Plaintext Windows admin password embedded in autounattend.xml.
+              Windows Setup requires the password in plaintext in the answer file.
+              The XML is served over HTTP during PXE boot — anyone on the network
+              can see this password. Use 'passwordFile' to read from an agenix
+              secret instead.
+            '';
+          };
+
+          passwordFile = mkOption {
+            type = nullOr path;
+            default = null;
+            description = ''
+              Path to a file containing the plaintext Windows admin password.
+              If set, overrides the 'password' option. The file is read at
+              evaluation time with builtins.readFile. For agenix secrets, use
+              config.age.secrets.windows-password.path — but note this won't
+              exist at eval time if it's a runtime path.
+            '';
+          };
+
+          timeZone = mkOption {
+            type = str;
+            default = "GMT Standard Time";
+            description = "Windows timezone identifier";
+          };
+
+          computerName = mkOption {
+            type = str;
+            default = "";
+            description = "Windows computer name";
+          };
+
+          disableRecovery = mkOption {
+            type = bool;
+            default = true;
+            description = "Disable automatic recovery partition creation";
+          };
+        };
+      };
+
+      nixos = {
+        autoInstall = {
+          enable = mkEnableOption "automated NixOS install via custom netboot image";
+
+          diskoConfig = mkOption {
+            type = raw;
+            default = { };
+            description = "disko configuration attrset defining the target's disk layout";
+          };
+
+          nixosConfig = mkOption {
+            type = str;
+            default = "";
+            description = ''
+              NixOS module expression for the target system.
+              Must be a valid Nix expression string, e.g.:
+              { config, pkgs, lib, ... }: { networking.hostName = "desktop"; ... }
+            '';
+          };
+        };
+      };
+    };
+  };
+
+  profileModule = { ... }: {
+    options = {
+      enable = mkEnableOption "this netboot profile";
+
+      description = mkOption {
+        type = str;
+        default = "Netboot profile";
+        description = "Human-readable description of this profile";
+      };
+
+      stages = mkOption {
+        type = listOf (enum [ "discover" "windows" "nixos" "done" ]);
+        default = [ "windows" "nixos" "done" ];
+        description = "Ordered list of boot stages";
+      };
+
+      dscConfig = mkOption {
+        type = attrs;
+        default = { };
+        description = ''
+          DSC v3 configuration data passed to dscnix's evalDscConfiguration.
+          Mirrors the shape of my.services.dscnix.* options.
+          Keys: configurationName, registry, optionalFeatures, runCommands, etc.
+          Hostname is auto-derived from windows.unattended.computerName.
+          Set to {} to skip DSC bootstrap entirely.
+        '';
+      };
+
+      windows = {
+        unattended = {
+          enable = mkEnableOption "unattended Windows install with autounattend.xml";
+
+          edition = mkOption {
+            type = str;
+            default = "Windows 11 Pro";
+            description = "Windows edition matched via /IMAGE/NAME in boot.wim";
+          };
+
+          localUser = mkOption {
+            type = str;
+            default = "nixos";
+            description = "Local administrator username created during Windows setup";
+          };
+
+          password = mkOption {
+            type = str;
+            default = "nixos";
+            description = ''
+              Plaintext Windows admin password embedded in autounattend.xml.
+              Windows Setup requires the password in plaintext in the answer file.
+              The XML is served over HTTP during PXE boot — anyone on the network
+              can see this password. Use 'passwordFile' to read from an agenix
+              secret instead.
+            '';
+          };
+
+          passwordFile = mkOption {
+            type = nullOr path;
+            default = null;
+            description = ''
+              Path to a file containing the plaintext Windows admin password.
+              If set, overrides the 'password' option. The file is read at
+              evaluation time with builtins.readFile. For agenix secrets, use
+              config.age.secrets.windows-password.path — but note this won't
+              exist at eval time if it's a runtime path.
+            '';
+          };
+
+          timeZone = mkOption {
+            type = str;
+            default = "GMT Standard Time";
+            description = "Windows timezone identifier";
+          };
+
+          computerName = mkOption {
+            type = str;
+            default = "";
+            description = "Windows computer name";
+          };
+
+          disableRecovery = mkOption {
+            type = bool;
+            default = true;
+            description = "Disable automatic recovery partition creation";
+          };
+        };
+      };
+
+      nixos = {
+        autoInstall = {
+          enable = mkEnableOption "automated NixOS install via custom netboot image";
+
+          diskoConfig = mkOption {
+            type = raw;
+            default = { };
+            description = "disko configuration attrset defining the target's disk layout";
+          };
+
+          nixosConfig = mkOption {
+            type = str;
+            default = "";
+            description = ''
+              NixOS module expression for the target system.
+              Must be a valid Nix expression string, e.g.:
+              { config, pkgs, lib, ... }: { networking.hostName = "desktop"; ... }
+            '';
+          };
+        };
+      };
+    };
+  };
 in
 {
   options.my.services.netboot = {
@@ -95,100 +318,7 @@ in
     };
 
     machines = mkOption {
-      type = attrsOf (submodule {
-        options = {
-          macAddress = mkOption {
-            type = str;
-            description = "MAC address of the target machine (e.g. 00:11:22:33:44:55)";
-          };
-
-          stages = mkOption {
-            type = listOf (enum [ "discover" "windows" "nixos" "done" ]);
-            default = [ "windows" "nixos" "done" ];
-            description = "Ordered list of boot stages for this machine";
-          };
-
-          windows = {
-            unattended = {
-              enable = mkEnableOption "unattended Windows install with autounattend.xml";
-
-              edition = mkOption {
-                type = str;
-                default = "Windows 11 Pro";
-                description = "Windows edition matched via /IMAGE/NAME in boot.wim";
-              };
-
-              localUser = mkOption {
-                type = str;
-                default = "nixos";
-                description = "Local administrator username created during Windows setup";
-              };
-
-              password = mkOption {
-                type = str;
-                default = "nixos";
-                description = ''
-                  Plaintext Windows admin password embedded in autounattend.xml.
-                  Windows Setup requires the password in plaintext in the answer file.
-                  The XML is served over HTTP during PXE boot — anyone on the network
-                  can see this password. Use 'passwordFile' to read from an agenix
-                  secret instead.
-                '';
-              };
-
-              passwordFile = mkOption {
-                type = nullOr path;
-                default = null;
-                description = ''
-                  Path to a file containing the plaintext Windows admin password.
-                  If set, overrides the 'password' option. The file is read at
-                  evaluation time with builtins.readFile. For agenix secrets, use
-                  config.age.secrets.windows-password.path — but note this won't
-                  exist at eval time if it's a runtime path.
-                '';
-              };
-
-              timeZone = mkOption {
-                type = str;
-                default = "GMT Standard Time";
-                description = "Windows timezone identifier";
-              };
-
-              computerName = mkOption {
-                type = str;
-                description = "Windows computer name (defaults to the machine attr name)";
-              };
-
-              disableRecovery = mkOption {
-                type = bool;
-                default = true;
-                description = "Disable automatic recovery partition creation";
-              };
-            };
-          };
-
-          nixos = {
-            autoInstall = {
-              enable = mkEnableOption "automated NixOS install via custom netboot image";
-
-              diskoConfig = mkOption {
-                type = raw;
-                description = "disko configuration attrset defining the target's disk layout";
-              };
-
-          nixosConfig = mkOption {
-            type = str;
-            default = "";
-            description = ''
-              NixOS module expression for the target system.
-              Must be a valid Nix expression string, e.g.:
-              { config, pkgs, lib, ... }: { networking.hostName = "desktop"; ... }
-            '';
-          };
-            };
-          };
-        };
-      });
+      type = attrsOf (submodule machineModule);
       default = { };
       example = {
         my-desktop = {
@@ -205,7 +335,25 @@ in
           };
         };
       };
-      description = "Machine definitions for multi-stage netboot";
+      description = "Per-MAC machine definitions for multi-stage netboot (used by daemon mode)";
+    };
+
+    profiles = mkOption {
+      type = attrsOf (submodule profileModule);
+      default = { };
+      example = {
+        dual-boot = {
+          enable = true;
+          description = "NixOS + Windows 11 dual boot";
+          stages = [ "discover" "windows" "nixos" "done" ];
+        };
+        nixos-minimal = {
+          enable = true;
+          description = "NixOS only (erase entire disk)";
+          stages = [ "nixos" "done" ];
+        };
+      };
+      description = "Reusable boot profile templates (used by netboot-serve wizard)";
     };
   };
 }

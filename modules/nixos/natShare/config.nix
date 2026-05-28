@@ -41,6 +41,16 @@ in
       default = "192.168.99.254";
       description = "End of DHCP range handed out to connected devices";
     };
+
+    extraDnsmasqSettings = lib.mkOption {
+      type = lib.types.attrs;
+      default = {};
+      description = ''
+        Extra dnsmasq settings merged into the main settings attrset.
+        Used by the netboot module to inject PXE boot options
+        (enable-tftp, dhcp-boot, dhcp-match) when co-located.
+      '';
+    };
   };
 
   config = lib.mkIf cfg.enable {
@@ -66,7 +76,7 @@ in
         interface = cfg.lanInterface;
         bind-interfaces = true;
         dhcp-range = "${cfg.dhcpRangeStart},${cfg.dhcpRangeEnd},24h";
-      };
+      } // cfg.extraDnsmasqSettings;
     };
 
     # Allow traffic forwarding and DNS/DHCP through the firewall

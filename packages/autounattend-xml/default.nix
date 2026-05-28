@@ -1,5 +1,6 @@
 # packages/autounattend-xml/default.nix
 # Generates autounattend.xml for unattended Windows install to an existing partition
+# plus apply-dsc.ps1 for DSC v3 configuration bootstrap
 { lib
 , runCommand
 , writeText
@@ -17,20 +18,26 @@
   computerName ? "WINDOWS-PC"
 , # Whether to disable automatic recovery partition creation
   disableRecoveryPartition ? true
-, # Path to a DSC v3 YAML config on the OEM scripts volume.
-  # The injected file is copied to C:\Windows\Setup\Scripts\ during install.
-  # Set null to skip DSC bootstrap entirely.
-  dscConfigPath ? null
+, # DSC v3 YAML configuration content (string).
+  # When non-null, an apply-dsc.ps1 bootstrap script embedding this YAML is
+  # generated alongside the XML, and the autounattend includes a FirstLogonCommand
+  # that downloads the script from {dscDownloadUrl} and executes it.
+  dscConfigYaml ? null
+, # URL from which the target Windows machine can download apply-dsc.ps1.
+  # Required when dscConfigYaml is set. Typically:
+  # http://$PXE_SERVER/machines/$MAC/apply-dsc.ps1
+  dscDownloadUrl ? null
 ,
 }:
 
 let
-  # Inline bootstrap script that installs PS7 + DSC v3 and applies the config.
-  dscBootstrapScript = if dscConfigPath == null then null else writeText "apply-dsc.ps1" ''
+  # Bootstrap script with YAML embedded as a PowerShell here-string.
+  # Served via HTTP during PXE boot; the FirstLogonCommand downloads and runs it.
+  dscBootstrapScript = if dscConfigYaml == null then null else writeText "apply-dsc.ps1" ''
     <#
     .SYNOPSIS
         Bootstrap DSC v3 apply on first Windows boot.
-        Injected via $OEM$ and referenced by autounattend.xml FirstLogonCommands.
+        Downloaded from PXE HTTP server and executed via iex.
     #>
     $ErrorActionPreference = "Continue"
     $logFile = "$env:SystemRoot\Temp\dsc-bootstrap.log"
@@ -69,30 +76,34 @@ let
         Write-Output "[DSC Bootstrap] DSC v3 already present."
     }
 
-    # ── 3. Apply DSC configuration ──────────────────────────────────────────
-    $dscYaml = "$env:SystemRoot\Setup\Scripts\dsc-configuration.yaml"
-    if (Test-Path $dscYaml) {
-        Write-Output "[DSC Bootstrap] Applying DSC config from $dscYaml..."
-        $dscCmd = Get-Command "dsc.exe" -ErrorAction SilentlyContinue
-        if ($dscCmd) {
-            & $dscCmd.Source config set --file $dscYaml 2>&1 | ForEach-Object { Write-Output "[DSC] $_" }
-            Write-Output "[DSC Bootstrap] DSC apply completed (exit code: $LASTEXITCODE)."
-        } else {
-            Write-Output "[DSC Bootstrap] WARNING: dsc.exe not found, skipping apply."
-        }
+    # ── 3. Write the embedded YAML to a temp file ────────────────────────────
+    $dscYamlContent = @'
+${dscConfigYaml}
+'@
+    $dscYamlPath = "$env:TEMP\dsc-config.yaml"
+    $dscYamlContent | Out-File -FilePath $dscYamlPath -Encoding utf8 -Force
+    Write-Output "[DSC Bootstrap] Wrote DSC config to $dscYamlPath"
+
+    # ── 4. Apply DSC configuration ──────────────────────────────────────────
+    $dscCmd = Get-Command "dsc.exe" -ErrorAction SilentlyContinue
+    if ($dscCmd) {
+        Write-Output "[DSC Bootstrap] Applying DSC config from $dscYamlPath..."
+        & $dscCmd.Source config set --file $dscYamlPath 2>&1 | ForEach-Object { Write-Output "[DSC] $_" }
+        Write-Output "[DSC Bootstrap] DSC apply completed (exit code: $LASTEXITCODE)."
     } else {
-        Write-Output "[DSC Bootstrap] No dsc-configuration.yaml found at $dscYaml — skipping apply."
+        Write-Output "[DSC Bootstrap] WARNING: dsc.exe not found, skipping apply."
     }
 
+    Remove-Item $dscYamlPath -ErrorAction SilentlyContinue
     Stop-Transcript
   '';
 
 in
-runCommand "autounattend-xml" { inherit dscConfigPath; } ''
+runCommand "autounattend-xml" { inherit dscConfigYaml; } ''
     mkdir -p $out
 
-    # If we have a DSC bootstrap script, copy it alongside the XML
-    ${lib.optionalString (dscConfigPath != null) ''
+    # If we have a DSC config, copy the self-contained bootstrap script
+    ${lib.optionalString (dscConfigYaml != null) ''
     cp "${dscBootstrapScript}" "$out/apply-dsc.ps1"
     ''}
 
@@ -211,9 +222,9 @@ runCommand "autounattend-xml" { inherit dscConfigPath; } ''
                       <Description>Remove Bing bloat</Description>
                       <Order>4</Order>
                   </SynchronousCommand>
-                  ${lib.optionalString (dscConfigPath != null) ''
+                  ${lib.optionalString (dscConfigYaml != null) ''
                   <SynchronousCommand wcm:action="add">
-                      <CommandLine>powershell.exe -NoProfile -ExecutionPolicy Bypass -File "C:\Windows\Setup\Scripts\apply-dsc.ps1"</CommandLine>
+                      <CommandLine>powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "iex (iwr '${dscDownloadUrl}').Content"</CommandLine>
                       <Description>Apply DSC configuration</Description>
                       <Order>5</Order>
                   </SynchronousCommand>

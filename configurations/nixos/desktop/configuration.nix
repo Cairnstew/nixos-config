@@ -7,22 +7,9 @@
     ./hardware-configuration.nix
   ];
 
-  # GRUB with os-prober for NixOS + Windows dual-boot (separate disk /dev/sda)
-  boot.loader.grub.enable = true;
-  boot.loader.grub.devices = [ "nodev" ];
-  boot.loader.grub.efiSupport = true;
-  boot.loader.grub.useOSProber = true;
-  boot.loader.grub.configurationLimit = 10;
-  boot.loader.grub.extraEntries = ''
-    menuentry "Windows 11 Setup" {
-      insmod part_gpt
-      insmod fat
-      insmod chain
-      search --no-floppy --set=root --file /EFI/Microsoft/Boot/cdboot.efi
-      chainloader /EFI/Microsoft/Boot/cdboot.efi
-    }
-  '';
-  boot.loader.efi.canTouchEfiVariables = true;
+  # GRUB is managed by my.disko.dualBoot (disko config.nix).
+  # Hardcoded "Windows 11" entry points to the ESP label.
+  # os-prober is disabled (explicit entry replaces it).
 
   networking.networkmanager.enable = true;
 

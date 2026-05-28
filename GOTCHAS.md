@@ -11,6 +11,21 @@ Each entry: **symptom → cause → fix**. One paragraph max. Newest at the top.
 
 ---
 
+**DSC config always null in netboot autounattend — Windows installs come unconfigured**
+Symptom: Every PXE-installed Windows machine has no registry tweaks, WSL features, or telemetry reduction applied, even though the `autounattend.xml` bootstraps DSC. Cause: The autounattend builder parameter `dscConfigPath` was always passed as `null` from the netboot module, and the `apply-dsc.ps1` bootstrap script looked for a YAML file at `C:\Windows\Setup\Scripts\dsc-configuration.yaml` that was never injected. Fix: Refactored into three parts: (1) autounattend-xml package now takes `dscConfigYaml` (string) instead of `dscConfigPath` (path), and generates `apply-dsc.ps1` with the YAML embedded as a PowerShell here-string; (2) netboot/options.nix adds a `dscConfig` attrs option on both machine and profile submodules; (3) netboot/config.nix calls `flake.inputs.dscnix.lib.evalDscConfiguration` to render the YAML from the machine's `dscConfig`, passes it to the builder, and symlinks `apply-dsc.ps1` into the HTTP root alongside `autounattend.xml`. The `FirstLogonCommand` downloads the script via `iex (iwr ...).Content` from the PXE HTTP server. See `packages/autounattend-xml/default.nix` and `modules/nixos/netboot/config.nix`.
+
+---
+
+**natShare and netboot both enable dnsmasq on the same interface, silently merging configs**
+Symptom: The desktop PXE client gets a DHCP lease but never receives iPXE binaries — it gets stuck at "DHCP lease acquired, then nothing". Cause: natShare enables dnsmasq with a plain `dhcp-range` for internet sharing, and netboot (in daemon mode) enables its own dnsmasq with `dhcp-range` + PXE boot options on the same interface. Nix's attrset merge silently combines both configs, but dnsmasq only uses one `dhcp-range` directive, usually the wrong one, and the PXE-specific `dhcp-boot`/`dhcp-match` options may be lost entirely. Fix: When netboot detects natShare is co-located on the same interface (`sameAsNatShare`), it skips its own dnsmasq and delegates PXE options to natShare via `my.services.natShare.extraDnsmasqSettings`. The natShare module merges these extra settings into its dnsmasq `settings` attrset via `//` merge. See `modules/nixos/netboot/config.nix` lines 297-308 and `modules/nixos/natShare/config.nix` lines 45-53 for the delegation plumbing.
+
+---
+
+**`netboot-serve` heredocs fail build with `writeShellApplication`**
+Symptom: Building `netboot-serve` fails with `syntax error near unexpected token '}'` or shellcheck SC2034 warnings after editing the script. Cause: `writeShellApplication` runs `shellcheck --severity=error` and `bash -n` on the script. Heredoc delimiters (like `IPXE`) must be at column 0 in the generated script, but Nix indented strings (`''...''`) strip the common prefix, leaving them indented. Also, unused variables cause SC2034 which is treated as error. Fix: Use `{ echo '...'; echo '...'; } > file` blocks instead of heredocs. Delete or prefix unused variables with `_`. Test locally with `nix build .#netboot-serve`.
+
+---
+
 **`nix run` kills GNOME/Wayland session during activation**
 Symptom: Running `nix run` (which does `nixos-rebuild switch`) kills the desktop session — GNOME Shell, pipewire, wireplumber all stop, screen goes black. The VM test (`nix run .#test run laptop`) passes fine. Cause: Home-manager's default `systemd.user.startServices` setting (`"start"`) does `systemctl --user daemon-reload` and restarts all changed user services, which includes the entire GNOME session. Fix: Set `systemd.user.startServices = "sd-switch"` in `modules/nixos/homeManager/config.nix`. The `sd-switch` method is smarter — it only restarts services whose units actually changed, avoiding the session kill.
 

@@ -1,4 +1,4 @@
-{ config, lib, ... }:
+{ config, lib, pkgs, ... }:
 let
   cfg = config.my.disko.dualBoot;
   inherit (lib) mkIf mkDefault;
@@ -81,7 +81,7 @@ mkIf cfg.enable {
   boot.loader.grub.devices = [ "nodev" ];
   boot.loader.grub.efiSupport = true;
   boot.loader.efi.canTouchEfiVariables = mkDefault true;
-  boot.loader.grub.useOSProber = mkDefault true;
+  boot.loader.grub.useOSProber = cfg.useOSProber;
 
   boot.loader.grub.extraEntries = mkDefault ''
     menuentry "Windows 11" {
@@ -92,4 +92,65 @@ mkIf cfg.enable {
       chainloader /EFI/Microsoft/Boot/bootmgfw.efi
     }
   '';
+
+  # ── Windows post-install: restore GRUB EFI boot order ──
+  # Windows Setup always sets itself as the first EFI boot entry.
+  # This oneshot service runs once after first boot to repair the order
+  # so GRUB comes before Windows Boot Manager.
+  systemd.services.windows-post-install = {
+    description = "Restore GRUB EFI boot order after Windows install";
+    after = [ "boot-complete.target" ];
+    wants = [ "boot-complete.target" ];
+
+    path = [ pkgs.efibootmgr ];
+
+    serviceConfig = {
+      Type = "oneshot";
+      RemainAfterExit = true;
+      StateDirectory = "windows-post-install";
+    };
+
+    script = ''
+      set -euo pipefail
+
+      STAMP="/var/lib/windows-post-install/.done"
+      if [ -f "$STAMP" ]; then
+        exit 0
+      fi
+      mkdir -p "$(dirname "$STAMP")"
+
+      echo "[windows-post-install] Checking EFI boot order..."
+      BOOTMGR="$(efibootmgr -v 2>/dev/null || true)"
+      echo "$BOOTMGR"
+
+      CURRENT_ORDER=$(echo "$BOOTMGR" | grep "^BootOrder:" | sed 's/^BootOrder: //')
+
+      NIXOS_ID=$(echo "$BOOTMGR" | grep -i "NixOS\|GRUB" | grep "^Boot[0-9a-fA-F]\{4\}" | sed 's/^Boot\([0-9a-fA-F]\{4\}\).*/\1/' | head -1)
+      WIN_ID=$(echo "$BOOTMGR" | grep -i "Windows Boot Manager" | grep "^Boot[0-9a-fA-F]\{4\}" | sed 's/^Boot\([0-9a-fA-F]\{4\}\).*/\1/' | head -1)
+
+      # Remove stale "Windows 11 Setup" entries from installer ISO
+      STALE=$(echo "$BOOTMGR" | grep -i "Windows 11 Setup" | grep "^Boot[0-9a-fA-F]\{4\}" | sed 's/^Boot\([0-9a-fA-F]\{4\}\).*/\1/')
+      for entry in $STALE; do
+        echo "[windows-post-install] Removing stale entry Boot$entry..."
+        efibootmgr -b "$entry" -B 2>/dev/null || true
+      done
+
+      if [ -n "$NIXOS_ID" ] && [ -n "$WIN_ID" ]; then
+        NEW_ORDER="$NIXOS_ID"
+        for entry in $(echo "$CURRENT_ORDER" | tr ',' ' '); do
+          if [ "$entry" != "$NIXOS_ID" ]; then
+            NEW_ORDER="$NEW_ORDER,$entry"
+          fi
+        done
+        echo "[windows-post-install] Setting boot order: $NEW_ORDER"
+        efibootmgr -o "$NEW_ORDER" 2>/dev/null || true
+        echo "[windows-post-install] Boot order repaired."
+      else
+        echo "[windows-post-install] Could not find NixOS entry ($NIXOS_ID) or Windows entry ($WIN_ID) — skipping"
+      fi
+
+      touch "$STAMP"
+      echo "[windows-post-install] Complete."
+    '';
+  };
 }

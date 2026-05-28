@@ -85,6 +85,17 @@ in {
     };
 
     # ── Detection metadata (set manually or via detect-dualboot) ─
+    useOSProber = mkOption {
+      type = types.bool;
+      default = false;
+      description = ''
+        Whether to enable os-prober for automatic boot entry detection.
+        Default false because the module already has a hardcoded "Windows 11"
+        GRUB entry pointing to the ESP. os-prober often duplicates entries
+        and is unreliable in automated installs.
+      '';
+    };
+
     detection = {
       windowsPartition = mkOption {
         type = types.nullOr types.str;

@@ -30,6 +30,14 @@
     development.enable = true;
   };
 
+  # ── Dual-Boot (NixOS + Windows 11) ──────────────────────────────────────
+  # Wipes the entire disk and creates a fresh ESP→MSR→Windows→NixOS layout.
+  my.disko.dualBoot = {
+    enable = true;
+    mode = "fresh";
+    disk = "/dev/nvme0n1";
+  };
+
   # ── Location ────────────────────────────────────────────────────────────
   my.system.location = {
     timeZone = "GB";

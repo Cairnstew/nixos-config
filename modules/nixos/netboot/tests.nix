@@ -55,21 +55,20 @@ in
         message = "Netboot: nixos.ipxeUrl must not be empty when nixos.enable is true.";
       }
 
-      # ── dnsmasq coexistence check ──
+      # ── natShare co-location: verify subnet agreement ──
+      # When co-located, netboot delegates DHCP+TFTP to natShare via
+      # extraDnsmasqSettings, so they must share the same IP address.
       {
         assertion = !cfg.enable
           || !config.my.services.natShare.enable
           || config.my.services.natShare.lanInterface != cfg.interface
           || cfg.serverAddress == config.my.services.natShare.lanAddress;
         message = ''
-          Netboot and natShare are both active on interface '${cfg.interface}'.
-          netboot uses serverAddress ${cfg.serverAddress} but natShare uses
-          LAN address ${config.my.services.natShare.lanAddress}.
-          If they differ, dnsmasq's dhcp-range from both modules will conflict.
-          Either:
-          - Set netboot.serverAddress and netboot.dhcpRange to natShare's subnet
-          - Use different interfaces for each service
-          - Disable one of the services
+          Netboot and natShare share interface '${cfg.interface}' but differ on the
+          server IP. netboot uses ${cfg.serverAddress}, natShare uses
+          ${config.my.services.natShare.lanAddress}.
+          When co-located, both must use the same IP address.
+          Set netboot.serverAddress to match natShare.lanAddress (or vice versa).
         '';
       }
 
@@ -110,6 +109,24 @@ in
           ) (lib.attrValues cfg.machines);
         message = ''
           Netboot: Machines with unattended Windows install must have a computerName set.
+        '';
+      }
+
+      # ── Placeholder MAC guard ──
+      {
+        assertion = cfg.machines == { }
+          || lib.all (m:
+            !lib.hasPrefix "00:00:00" m.macAddress
+            && !lib.hasPrefix "00:11:22" m.macAddress
+            && !lib.hasPrefix "ff:ff:ff" m.macAddress
+            && m.macAddress != "00:00:00:00:00:00"
+            && m.macAddress != "ff:ff:ff:ff:ff:ff"
+          ) (lib.attrValues cfg.machines);
+        message = ''
+          Netboot: One or more machines has a placeholder MAC address.
+          Placeholder MACs (00:00:00:*, 00:11:22:*, ff:ff:ff:*, or all-zeros/ones)
+          will silently fail to match any real hardware. Replace with the actual
+          MAC address of the target machine (check BIOS or DHCP lease log).
         '';
       }
 

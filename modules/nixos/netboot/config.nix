@@ -1,9 +1,32 @@
-{ config, lib, pkgs, ... }:
+{ config, lib, pkgs, flake, ... }:
 let
   inherit (lib) mkIf mkMerge mkDefault;
   cfg = config.my.services.netboot;
 
   hasMachines = cfg.machines != { };
+
+  # Detect if natShare is co-located on the same interface.
+  # When true, netboot delegates DHCP+TFTP to natShare's dnsmasq
+  # instead of running its own, injecting PXE options via
+  # my.services.natShare.extraDnsmasqSettings.
+  natShare = config.my.services.natShare;
+  sameAsNatShare = natShare.enable && natShare.lanInterface == cfg.interface;
+
+  # Render DSC YAML from a machine/profile's dscConfig attrset.
+  # Returns null when dscConfig is empty (no DSC bootstrap).
+  renderDscYaml = name: dscConfig:
+    if dscConfig == { }
+    then null
+    else flake.inputs.dscnix.lib.evalDscConfiguration [
+      {
+        dsc = {
+          configurationName = "${name}-WindowsDSC";
+          registry = dscConfig.registry or { };
+          optionalFeatures = dscConfig.optionalFeatures or { };
+          runCommands = dscConfig.runCommands or { };
+        };
+      }
+    ];
 
   # ── Packages ──
   autounattendBuilder = args: pkgs.callPackage ../../../packages/autounattend-xml args;
@@ -73,6 +96,91 @@ let
       '';
     }.${stage};
 
+  # Build per-profile artifacts at evaluation time
+  profileArtifacts = lib.mapAttrs (name: profile:
+    let
+      winUnattended = profile.windows.unattended;
+      nixAuto = profile.nixos.autoInstall;
+
+      autounattend = lib.optionalAttrs winUnattended.enable (
+        let
+          dscYaml = renderDscYaml name profile.dscConfig;
+        in
+        {
+          autounattend-xml = autounattendBuilder {
+            # Partition 3 = Windows in disko fresh layout (ESP=1, MSR=2, Win=3, NixOS=4)
+            windowsPartitionIndex = 3;
+            localPassword = resolvePassword winUnattended;
+            localUsername = winUnattended.localUser;
+            timeZone = winUnattended.timeZone;
+            windowsEdition = winUnattended.edition;
+            computerName = winUnattended.computerName;
+            disableRecoveryPartition = winUnattended.disableRecovery;
+            dscConfigYaml = dscYaml;
+            dscDownloadUrl = if dscYaml != null
+              then "http://${cfg.serverAddress}/profiles/${name}/apply-dsc.ps1"
+              else null;
+          };
+        }
+      );
+
+      installBundle = lib.optionalAttrs nixAuto.enable (
+        let
+          diskoJson = pkgs.writeText "disko.json" (builtins.toJSON nixAuto.diskoConfig);
+          diskoFile = pkgs.writeText "disko.nix" ''
+            { lib, config, ... }:
+            builtins.fromJSON (builtins.readFile ./disko.json)
+          '';
+          nixosConfigFile = pkgs.writeText "configuration.nix" nixAuto.nixosConfig;
+        in
+        {
+          install-bundle = pkgs.runCommandLocal "install-bundle" { } ''
+            mkdir -p $out
+            cp ${diskoFile} $out/disko.nix
+            cp ${diskoJson} $out/disko.json
+            cp ${nixosConfigFile} $out/configuration.nix
+            tar czf $out/bundle.tar.gz -C $out disko.nix disko.json configuration.nix
+          '';
+        }
+      );
+    in
+    autounattend // installBundle
+  ) (lib.filterAttrs (n: p: p.enable) cfg.profiles);
+
+  # Build profile artifact directories (each gets a profile.json + symlinks to store artifacts)
+  profileDirs = lib.mapAttrs' (name: profile:
+    let
+      artifacts = profileArtifacts.${name} or {};
+      hasDiscover = builtins.elem "discover" profile.stages;
+      meta = builtins.toJSON {
+        description = profile.description;
+        stages = profile.stages;
+        autoInstall = profile.nixos.autoInstall.enable;
+        autoInstallWindows = profile.windows.unattended.enable;
+      };
+      dir = pkgs.runCommandLocal "profile-${name}" { } ''
+        mkdir -p "$out"
+        cat > "$out/profile.json" <<'EOF'
+    ${meta}
+    EOF
+        ${lib.optionalString (artifacts ? autounattend-xml) ''
+          ln -s "${artifacts.autounattend-xml}/autounattend.xml" "$out/autounattend.xml"
+          ${lib.optionalString (profile.dscConfig != {}) ''
+          ln -s "${artifacts.autounattend-xml}/apply-dsc.ps1" "$out/apply-dsc.ps1"
+          ''}
+        ''}
+        ${lib.optionalString (artifacts ? install-bundle && !hasDiscover) ''
+          ln -s "${artifacts.install-bundle}/bundle.tar.gz" "$out/config.tar.gz"
+        ''}
+        ${lib.optionalString (profile.nixos.autoInstall.enable || builtins.elem "discover" profile.stages) ''
+          ln -s "${netbootInstaller.kernel}/bzImage" "$out/vmlinuz"
+          ln -s "${netbootInstaller.netbootRamdisk}/initrd" "$out/initrd"
+        ''}
+      '';
+    in
+    lib.nameValuePair name dir
+  ) (lib.filterAttrs (n: p: p.enable) cfg.profiles);
+
   # Build per-machine artifacts at evaluation time
   machineArtifacts = lib.mapAttrs (name: machine:
     let
@@ -81,17 +189,27 @@ let
       nixAuto = machine.nixos.autoInstall;
 
       # autounattend.xml derivation
-      autounattend = lib.optionalAttrs winUnattended.enable {
-        autounattend-xml = autounattendBuilder {
-          windowsPartitionIndex = 2;
-          localPassword = resolvePassword winUnattended;
-          localUsername = winUnattended.localUser;
-          timeZone = winUnattended.timeZone;
-          windowsEdition = winUnattended.edition;
-          computerName = winUnattended.computerName;
-          disableRecoveryPartition = winUnattended.disableRecovery;
-        };
-      };
+      autounattend = lib.optionalAttrs winUnattended.enable (
+        let
+          dscYaml = renderDscYaml name machine.dscConfig;
+        in
+        {
+          autounattend-xml = autounattendBuilder {
+            # Partition 3 = Windows in disko fresh layout (ESP=1, MSR=2, Win=3, NixOS=4)
+            windowsPartitionIndex = 3;
+            localPassword = resolvePassword winUnattended;
+            localUsername = winUnattended.localUser;
+            timeZone = winUnattended.timeZone;
+            windowsEdition = winUnattended.edition;
+            computerName = winUnattended.computerName;
+            disableRecoveryPartition = winUnattended.disableRecovery;
+            dscConfigYaml = dscYaml;
+            dscDownloadUrl = if dscYaml != null
+              then "http://${cfg.serverAddress}/machines/${mac}/apply-dsc.ps1"
+              else null;
+          };
+        }
+      );
 
       # Install bundle for autoInstall
       installBundle = lib.optionalAttrs nixAuto.enable (
@@ -109,7 +227,7 @@ let
             cp ${diskoFile} $out/disko.nix
             cp ${diskoJson} $out/disko.json
             cp ${nixosConfigFile} $out/configuration.nix
-            tar czf $out/bundle.tar.gz -C $out . --transform 's|^\./||'
+            tar czf $out/bundle.tar.gz -C $out disko.nix disko.json configuration.nix
           '';
         }
       );
@@ -148,8 +266,8 @@ let
           ''}
           ${lib.optionalString (artifacts ? install-bundle) ''
             cp "${artifacts.install-bundle}/bundle.tar.gz" "$out/machines/${mac}/config.tar.gz"
-            ln -sf "${netbootInstaller.kernel}" "$out/machines/${mac}/vmlinuz"
-            ln -sf "${netbootInstaller.netbootRamdisk}" "$out/machines/${mac}/initrd"
+            ln -sf "${netbootInstaller.kernel}/bzImage" "$out/machines/${mac}/vmlinuz"
+            ln -sf "${netbootInstaller.netbootRamdisk}/initrd" "$out/machines/${mac}/initrd"
           ''}
         ''
       ) cfg.machines);
@@ -191,7 +309,9 @@ in
     }
 
     # ── DHCP + TFTP (dnsmasq) — daemon mode only ──
-    (mkIf (cfg.serveMode == "daemon") {
+    # When natShare is on the same interface, delegate PXE options to it
+    # and skip our own dnsmasq to avoid conflicting dhcp-range directives.
+    (mkIf (cfg.serveMode == "daemon" && !sameAsNatShare) {
       services.dnsmasq = {
         enable = true;
         settings = {
@@ -213,6 +333,23 @@ in
       };
     })
 
+    # ── PXE delegation via natShare (daemon, co-located on same interface) ──
+    (mkIf (cfg.serveMode == "daemon" && sameAsNatShare) {
+      my.services.natShare.extraDnsmasqSettings = {
+        enable-tftp = true;
+        tftp-root = cfg.tftpRoot;
+        "dhcp-boot" = [
+          "undionly.kpxe"
+          "tag:efi-x86_64,ipxe.efi"
+          "tag:ipxe,http://${cfg.serverAddress}/boot.ipxe"
+        ];
+        "dhcp-match" = [
+          "set:efi-x86_64,option:client-arch,7"
+          "set:ipxe,175"
+        ];
+      };
+    })
+
     # ── HTTP (nginx) — daemon mode only ──
     (mkIf (cfg.serveMode == "daemon") {
       services.nginx = {
@@ -229,7 +366,7 @@ in
     (mkIf (cfg.serveMode == "daemon") {
       networking.firewall = {
         allowedUDPPorts = [ 67 69 ];
-        allowedTCPPorts = [ 69 80 ];
+        allowedTCPPorts = [ 69 80 8888 ];
       };
     })
 
@@ -247,10 +384,10 @@ in
           group = "root";
         };
         "${cfg.tftpRoot}/undionly.kpxe".L = {
-          argument = "${pkgs.ipxe}/share/ipxe/undionly.kpxe";
+          argument = "${pkgs.ipxe}/undionly.kpxe";
         };
         "${cfg.tftpRoot}/ipxe.efi".L = {
-          argument = "${pkgs.ipxe}/share/ipxe/ipxe.efi";
+          argument = "${pkgs.ipxe}/ipxe.efi";
         };
         "${cfg.httpRoot}/boot.ipxe".L = {
           argument = "${netbootContent}/boot.ipxe";
@@ -278,17 +415,24 @@ in
               group = "root";
             };
           };
-          autounattendLink = name: mac: artifacts: lib.optionalAttrs (artifacts ? autounattend-xml) {
-            "${cfg.httpRoot}/machines/${mac}/autounattend.xml".L = {
-              argument = "${artifacts.autounattend-xml}/autounattend.xml";
-            };
-          };
+          autounattendLink = name: mac: artifacts: lib.optionalAttrs (artifacts ? autounattend-xml) (
+            let hasDsc = (cfg.machines.${name}.dscConfig or {}) != {}; in
+            {
+              "${cfg.httpRoot}/machines/${mac}/autounattend.xml".L = {
+                argument = "${artifacts.autounattend-xml}/autounattend.xml";
+              };
+            } // lib.optionalAttrs hasDsc {
+              "${cfg.httpRoot}/machines/${mac}/apply-dsc.ps1".L = {
+                argument = "${artifacts.autounattend-xml}/apply-dsc.ps1";
+              };
+            }
+          );
           vmlinuzLink = name: mac: artifacts: lib.optionalAttrs (artifacts ? install-bundle) {
             "${cfg.httpRoot}/machines/${mac}/vmlinuz".L = {
-              argument = "${netbootInstaller.kernel}";
+              argument = ''${netbootInstaller.kernel}/bzImage'';
             };
             "${cfg.httpRoot}/machines/${mac}/initrd".L = {
-              argument = "${netbootInstaller.netbootRamdisk}";
+              argument = ''${netbootInstaller.netbootRamdisk}/initrd'';
             };
             # Only symlink config bundle if discover stage is NOT in the list
             # (discover uses the webhook to generate it at runtime)
@@ -310,6 +454,19 @@ in
             ]
           ) cfg.machines)
         );
+    })
+
+    # ── Profiles (symlink per-profile artifact dirs to a well-known location) ──
+    (mkIf (cfg.profiles != { }) {
+      systemd.tmpfiles.settings."10-netboot" =
+        let
+          profileEntry = name: dir: {
+            "${cfg.httpRoot}/profiles/${name}".L = {
+              argument = "${dir}";
+            };
+          };
+        in
+        lib.mkMerge (lib.mapAttrsToList profileEntry profileDirs);
     })
 
     # ── Windows boot files ──

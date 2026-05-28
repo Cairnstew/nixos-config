@@ -9,14 +9,37 @@ let
       {
         systemd.services.nixos-auto-install = {
           description = "NixOS Automatic Installer";
-          after = [ "network.target" "network-online.target" ];
-          wants = [ "network-online.target" ];
+          # Do NOT depend on network-online.target — netboot-minimal has no
+          # network manager to signal it (NetworkManager disabled). Kernel IP
+          # autoconfig (ip=dhcp on cmdline) sets up the NIC before userspace.
+          after = [ "network.target" ];
+          wants = [ "network.target" ];
           wantedBy = [ "multi-user.target" ];
           serviceConfig.Type = "oneshot";
+          # Log to console so boot messages are visible on the target screen
           script = ''
-            set -euo pipefail
+            set -xeu
 
-            sleep 5
+            # Log everything to the physical console screen
+            exec > /dev/tty0 2>&1
+
+            echo ""
+            echo "╔══════════════════════════════════════════════════════════╗"
+            echo "║     NixOS Auto-Installer — Debug Mode                   ║"
+            echo "╚══════════════════════════════════════════════════════════╝"
+            echo ""
+
+            # Wait for kernel IP autoconfig (ip=dhcp) to complete
+            sleep 10
+
+            echo "[DEBUG] Kernel cmdline: $(cat /proc/cmdline)"
+            echo ""
+            echo "[DEBUG] Network interfaces:"
+            ip addr show 2>/dev/null || echo "  (ip command not available)"
+            echo ""
+            echo "[DEBUG] Route:"
+            ip route show 2>/dev/null || true
+            echo ""
 
             CMDLINE=$(cat /proc/cmdline)
             SERVER=""
@@ -30,24 +53,24 @@ let
               esac
             done
 
+            echo "[DEBUG] SERVER=$SERVER MAC=$MAC STAGE=$STAGE"
+            echo ""
+
             if [ -z "$SERVER" ] || [ -z "$MAC" ]; then
-              echo "ERROR: Missing pxe.server or pxe.mac kernel parameters"
-              echo "Kernel cmdline: $CMDLINE"
-              exit 1
+              echo "[FAIL] Missing pxe.server or pxe.mac kernel parameters"
+              echo "[FAIL] Kernel cmdline: $CMDLINE"
+              echo "[FAIL] Sleeping 60s so you can read this — then rebooting..."
+              sleep 60
+              reboot
             fi
 
             # ── Discover stage: interactive disk/hostname selection ──
             if [ "$STAGE" = "discover" ]; then
-              echo "╔══════════════════════════════════════════════════════════╗"
-              echo "║     NixOS Provisioning — Disk & Hostname Setup          ║"
-              echo "╚══════════════════════════════════════════════════════════╝"
-
               echo ""
               echo "Available disks:"
               lsblk -dno NAME,SIZE,MODEL,TYPE 2>/dev/null | grep disk || lsblk -d 2>/dev/null || echo "(no lsblk)"
               echo ""
 
-              # Prompt for target disk
               DEFAULT_DISK="/dev/nvme0n1"
               read -p "Target disk [$DEFAULT_DISK]: " DISK_CHOICE
               DISK_CHOICE=''${DISK_CHOICE:-$DEFAULT_DISK}
@@ -58,69 +81,78 @@ let
               read -p "Hostname [desktop]: " HOSTNAME
               HOSTNAME=''${HOSTNAME:-desktop}
 
-              echo ""
               echo "Sending config to PXE server $SERVER..."
               ${pkgs.curl}/bin/curl -sS -X POST "http://$SERVER:8888" \
                 -H "Content-Type: application/json" \
                 -d "{\"mac\":\"$MAC\",\"disk\":\"$DISK_CHOICE\",\"hostname\":\"$HOSTNAME\",\"windowsSize\":\"$WIN_SIZE\"}" \
                 --retry 3 --retry-delay 2 || {
-                echo "Failed to reach PXE server at $SERVER:8888"
-                echo "Make sure the netboot-webhook service is running on the server."
+                echo "[WARN] Failed to reach PXE server at $SERVER:8888"
               }
-
-              echo ""
-              echo "Config submitted!"
               echo "On the PXE server, run: sudo netboot-advance advance $MAC"
-              echo "Then reboot this machine to continue."
               echo "Rebooting in 10 seconds..."
               sleep 10
               reboot
             fi
 
             # ── Install stage: auto-install with fetched config ──
+            echo ""
             echo "=== NixOS Auto-Installer ==="
             echo "Server: $SERVER"
             echo "MAC: $MAC"
+            echo ""
 
             CONFIG_URL="http://$SERVER/machines/$MAC/config.tar.gz"
             CONFIG_DIR="/etc/auto-install"
 
-            echo "Fetching config bundle from $CONFIG_URL..."
+            echo "[STEP] Fetching config bundle from $CONFIG_URL..."
             mkdir -p "$CONFIG_DIR"
-            ${pkgs.curl}/bin/curl -sS --retry 5 --retry-delay 3 -o "$CONFIG_DIR/config.tar.gz" "$CONFIG_URL" || {
-              echo "Failed to fetch config bundle — dropping to shell"
-              exit 1
+            ${pkgs.curl}/bin/curl -v --connect-timeout 10 --retry 3 --retry-delay 3 \
+              -o "$CONFIG_DIR/config.tar.gz" "$CONFIG_URL" 2>&1 || {
+                echo "[FAIL] curl exit code $?"
+                echo "[FAIL] Could not fetch config bundle — sleeping 60s"
+                sleep 60
+                reboot
             }
+            echo "[OK] Downloaded $(du -h "$CONFIG_DIR/config.tar.gz" | cut -f1)"
+            echo ""
 
+            echo "[STEP] Extracting config bundle..."
             tar xzf "$CONFIG_DIR/config.tar.gz" -C "$CONFIG_DIR"
+            ls -la "$CONFIG_DIR/"
+            echo ""
 
             if [ -f "$CONFIG_DIR/disko.nix" ]; then
-              echo "=== Creating partitions with disko ==="
+              echo "[STEP] Partitioning with disko..."
+              cat "$CONFIG_DIR/disko.nix" 2>/dev/null || true
+              echo ""
               ${pkgs.disko}/bin/disko --mode disko "$CONFIG_DIR/disko.nix" || {
-                echo "disko failed — dropping to shell"
-                exit 1
+                echo "[FAIL] disko failed — sleeping 60s"
+                sleep 60
+                reboot
               }
-            fi
+              echo "[OK] Disko partitioning complete"
+              echo ""
 
-            if [ -f "$CONFIG_DIR/disko.nix" ]; then
-              echo "=== Mounting partitions under /mnt ==="
-              mkdir -p /mnt
-              ${pkgs.disko}/bin/disko --mode mount "$CONFIG_DIR/disko.nix" 2>/dev/null || {
-                echo "disko mount failed — partitions may need manual mounting"
+              echo "[STEP] Mounting partitions..."
+              ${pkgs.disko}/bin/disko --mode mount "$CONFIG_DIR/disko.nix" 2>&1 || {
+                echo "[WARN] mount failed — continuing anyway"
               }
+            else
+              echo "[WARN] No disko.nix found — skipping partitioning"
             fi
 
             if [ -f "$CONFIG_DIR/configuration.nix" ]; then
-              echo "=== Running nixos-install ==="
+              echo "[STEP] Running nixos-install..."
+              cat "$CONFIG_DIR/configuration.nix" 2>/dev/null || true
+              echo ""
               mkdir -p /mnt/etc/nixos
               cp "$CONFIG_DIR/configuration.nix" /mnt/etc/nixos/configuration.nix
-              if [ -f "$CONFIG_DIR/hardware-configuration.nix" ]; then
-                cp "$CONFIG_DIR/hardware-configuration.nix" /mnt/etc/nixos/hardware-configuration.nix
-              fi
-              nixos-install --root /mnt --no-root-passwd --keep-going || {
-                echo "nixos-install failed — dropping to shell"
-                exit 1
+              nixos-install --root /mnt --no-root-passwd --keep-going 2>&1 || {
+                echo "[FAIL] nixos-install failed — sleeping 60s"
+                sleep 60
+                reboot
               }
+              echo "[OK] nixos-install complete"
             fi
 
             echo "=== Installation complete ==="
@@ -134,6 +166,8 @@ let
         };
 
         services.openssh.enable = true;
+        # Set root password so we can SSH in for debugging
+        users.users.root.password = "nixos123";
         environment.systemPackages = with pkgs; [ disko curl ];
       }
     ];

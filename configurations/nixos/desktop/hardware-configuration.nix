@@ -13,16 +13,8 @@
   boot.kernelModules = [ "kvm-amd" ];
   boot.extraModulePackages = [ ];
 
-  fileSystems."/" =
-    { device = "/dev/disk/by-uuid/3863d79e-2232-42b0-9f18-ac1b8cbd17a0";
-      fsType = "ext4";
-    };
-
-  fileSystems."/boot" =
-    { device = "/dev/disk/by-uuid/0B97-3BD0";
-      fsType = "vfat";
-      options = [ "fmask=0022" "dmask=0022" ];
-    };
+  # `/` and `/boot` are managed by my.disko.dualBoot (fresh mode).
+  # Only additional mounts (non-dual-boot disks) remain here.
 
   fileSystems."/mnt/shared" =
     { device = "/dev/disk/by-uuid/05B6D61C3F40F000";

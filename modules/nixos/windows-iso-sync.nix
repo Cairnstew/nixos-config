@@ -113,7 +113,7 @@ in
           echo "[windows-iso-sync] Running bundled reassembly script..."
           chmod +x reassemble.sh
           bash reassemble.sh
-          ISO_FILE="$(ls -t *.iso 2>/dev/null | head -1 || true)"
+          ISO_FILE="$(ls -t *.{iso,ISO} 2>/dev/null | head -1 || true)"
         fi
 
         if [ -z "$ISO_FILE" ]; then
@@ -121,12 +121,12 @@ in
           if [ -n "$PART" ]; then
             echo "[windows-iso-sync] Extracting split archive via 7z..."
             ${sevenz} x -y "$PART" 2>/dev/null
-            ISO_FILE="$(ls -t *.iso 2>/dev/null | head -1 || true)"
+            ISO_FILE="$(ls -t *.{iso,ISO} 2>/dev/null | head -1 || true)"
           fi
         fi
 
         if [ -z "$ISO_FILE" ]; then
-          PARTS="$(ls *.part* *.iso.* 2>/dev/null | sort || true)"
+          PARTS="$(ls *.part* *.iso.* *.ISO.* 2>/dev/null | sort || true)"
           if [ -n "$PARTS" ]; then
             echo "[windows-iso-sync] Concatenating split parts..."
             cat $PARTS > combined.iso
@@ -135,7 +135,7 @@ in
         fi
 
         if [ -z "$ISO_FILE" ]; then
-          ISO_FILE="$(ls -t *.iso 2>/dev/null | head -1 || true)"
+          ISO_FILE="$(ls -t *.{iso,ISO} 2>/dev/null | head -1 || true)"
         fi
 
         if [ -z "$ISO_FILE" ] || [ ! -f "$ISO_FILE" ]; then
@@ -152,7 +152,7 @@ in
         mkdir -p "$MNT"
         ${mount} -o loop,ro "$LOOP_DEV" "$MNT"
 
-        mkdir -p "${cfg.outputDir}"/boot
+        mkdir -p "${cfg.outputDir}"/boot "${cfg.outputDir}"/sources
 
         if [ -f "$MNT/bootmgfw.efi" ]; then
           cp "$MNT/bootmgfw.efi" "${cfg.outputDir}/bootmgfw.efi"
