@@ -138,6 +138,7 @@ All `my.*` options declared across module files.
 | `my.programs.ventoy.enable` | bool | `false` | Ventoy bootable USB creator |
 | `my.ventoy.enable` | bool | `false` | Contribute ISOs to Ventoy USB |
 | `my.ventoy.isos` | attrs | `{}` | ISOs this host contributes to Ventoy USB |
+| `my.ventoy.hostIso.enable` | bool | `false` | Build this host's NixOS ISO and add to Ventoy |
 | `my.programs.uup-converter.enable` | bool | `false` | Windows ISO conversion tool |
 | `my.programs.whatsapp-electron.enable` | bool | `false` | WhatsApp Electron client |
 | `my.programs.udiskie.enable` | bool | `false` | Udiskie automount daemon |

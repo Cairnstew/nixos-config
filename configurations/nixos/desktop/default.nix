@@ -167,11 +167,11 @@
   # ── VM Testing ─────────────────────────────────────────────────────────
   my.testing.vmTest.enable = true;
 
-  # ── Ventoy: multi-boot USB ───────────────────────────────────────────
+  # ── Ventoy: multi-boot USB (Windows + host NixOS installer ISO) ───────
   my.programs.ventoy.enable = true;
 
-  # Contribute Windows ISO to the Ventoy USB deployment
   my.ventoy.enable = true;
+  my.ventoy.hostIso.enable = true;
   my.ventoy.isos = {
     win11-23h2 = {
       source = flake.inputs.windows-iso-src.packages.x86_64-linux."windows-iso-22631.7079.23H2.PRO.X64.EN";

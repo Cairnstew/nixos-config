@@ -62,5 +62,17 @@ in
         };
       };
     };
+
+    hostIso = {
+      enable = mkOption {
+        type = types.bool;
+        default = false;
+        description = ''
+          Build this host's NixOS installer ISO and add it to the Ventoy USB.
+          The ISO is built by extending the host configuration with the
+          installation-cd-minimal module — no changes are made to the running system.
+        '';
+      };
+    };
   };
 }

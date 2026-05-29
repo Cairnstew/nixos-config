@@ -2,6 +2,16 @@
 let
   inherit (lib) mapAttrsToList;
 
+  # ISO builder module — injected via extendModules so host configs stay clean
+  isoBuilderModule = "${inputs.nixpkgs}/nixos/modules/installer/cd-dvd/installation-cd-minimal.nix";
+
+  # Disable ventoy in the extended ISO config to break the cycle:
+  #   ventoy-deploy → hostIso → extended config → ventoy-deploy
+  ventoyFreeModule = { lib, ... }: {
+    my.programs.ventoy.enable = lib.mkForce false;
+    my.ventoy.hostIso.enable = lib.mkForce false;
+  };
+
   # Collect every host's ISOs into one flat attrset, NOT via mkMerge.
   # mkMerge would leak _type / list keys into the attrset, confusing
   # the attrsOf submodule type check.
@@ -9,9 +19,29 @@ let
     let
       hostCfg = config.flake.nixosConfigurations.${hostName} or { };
       ventoyCfg = hostCfg.config.my.ventoy or { };
+      isos = ventoyCfg.isos or { };
+
+      # When hostIso.enable, build the host config as an installer ISO
+      # by extending with installation-cd-minimal (no effect on running system)
+      hostIso = if ventoyCfg.hostIso.enable or false then let
+        # extended = host config + ISO builder + ventoy disabled
+        # ventoy must be disabled to break the cycle:
+        #   ventoy-deploy → hostIso → extended config → ventoy-deploy
+        extended = hostCfg.extendModules {
+          modules = [
+            isoBuilderModule
+            ventoyFreeModule
+          ];
+        };
+      in {
+        "nixos-${hostName}" = {
+          source = extended.config.system.build.isoImage;
+          target = "/iso/linux/nixos-${hostName}-x86_64-linux.iso";
+        };
+      } else { };
     in
     if ventoyCfg.enable or false then
-      acc // ventoyCfg.isos or { }
+      acc // isos // hostIso
     else
       acc
   ) { } (builtins.attrNames (config.flake.nixosConfigurations or { }));
