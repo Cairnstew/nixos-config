@@ -2,7 +2,6 @@
   imports = [
     ./configuration.nix
     ./hardware-configuration.nix
-    ./disk-config.nix
     flake.inputs.self.nixosModules.common
   ];
 
@@ -29,5 +28,5 @@
   my.services.ssh.authorizedKeys = [ flake.config.me.sshKey ];
 
   my.ventoy.enable = true;
-  my.ventoy.hostIso.enable = true;
+  my.ventoy.hostIso.enable = false;
 }

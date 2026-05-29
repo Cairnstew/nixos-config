@@ -6,11 +6,11 @@
   boot.extraModulePackages = [ ];
 
   fileSystems."/" = {
-    device = "/dev/disk/by-uuid/00000000-0000-0000-0000-000000000000";
+    device = lib.mkDefault "/dev/disk/by-uuid/00000000-0000-0000-0000-000000000000";
     fsType = "ext4";
   };
   fileSystems."/boot" = {
-    device = "/dev/disk/by-uuid/0000-0000";
+    device = lib.mkDefault "/dev/disk/by-uuid/0000-0000";
     fsType = "vfat";
     options = [ "fmask=0022" "dmask=0022" ];
   };

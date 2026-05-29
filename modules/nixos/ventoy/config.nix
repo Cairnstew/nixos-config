@@ -1,4 +1,4 @@
-{ config, lib, pkgs, flake, ... }:
+{ config, lib, pkgs, ... }:
 let
   cfg = config.my.programs.ventoy;
   inherit (lib) mkIf;
@@ -12,7 +12,7 @@ in
     ];
 
     environment.systemPackages =
-      (if cfg.package == null then
+      if cfg.package == null then
         with pkgs; [ ventoy ventoy-full ventoy-full-qt ventoy-full-gtk ]
       else if cfg.package == "ventoy" then
         with pkgs; [ ventoy ]
@@ -21,7 +21,6 @@ in
       else if cfg.package == "ventoy-full-qt" then
         with pkgs; [ ventoy-full-qt ]
       else
-        with pkgs; [ ventoy-full-gtk ])
-      ++ [ flake.inputs.self.packages.${pkgs.system}.ventoy-deploy ];
+        with pkgs; [ ventoy-full-gtk ];
   };
 }

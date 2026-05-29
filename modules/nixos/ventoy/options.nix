@@ -21,7 +21,7 @@ in
     enable = mkOption {
       type = types.bool;
       default = false;
-      description = "Enable Ventoy support — installs CLI tools and the deploy script.";
+      description = "Enable Ventoy support — installs CLI tools (ventoy2disk.sh, etc.). Use `nix run .#ventoy-deploy` to deploy.";
     };
 
     package = mkOption {

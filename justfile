@@ -46,6 +46,16 @@ register-host host ip:
 
 # ── ISO & Ventoy ─────────────────────────────────────────────────────────────
 
+# Deploy ISOs + config to a Ventoy USB (auto-detect or specify device)
+# e.g., just ventoy-deploy, just ventoy-deploy /dev/sdb, just ventoy-deploy --install /dev/sdb
+[group('deploy')]
+ventoy-deploy *args:
+    nix run .#ventoy-deploy -- {{args}}
+
+# Build the ventoy-bundle (all ISOs in a directory tree, no deploy)
+ventoy-bundle:
+    nix build .#ventoy-bundle
+
 # Build a custom NixOS installer ISO
 build-iso:
     mkdir -p packages/installer-iso/secrets
@@ -62,7 +72,7 @@ deploy-iso mount="":
     just build-iso
     mkdir -p "{{mount}}/ISO"
     cp ISO/nixos-installer.iso "{{mount}}/ISO/"
-    @echo "Done — ISO copied to {{mount}}/ISO/. Run 'ventoy-deploy' to deploy config files."
+    @echo "Done — ISO copied to {{mount}}/ISO/. Run 'just ventoy-deploy' to deploy config files."
 
 # ── Testing ──────────────────────────────────────────────────────────────────
 
