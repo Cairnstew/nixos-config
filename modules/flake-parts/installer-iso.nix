@@ -1,7 +1,7 @@
 { config, inputs, lib, ... }: {
-  perSystem = { pkgs, system, ... }: {
-    packages.installer-iso = pkgs.callPackage ../../packages/installer-iso { };
-
+  perSystem = { pkgs, system, ... }: let
+    selfPkgs = config.packages.${system} or { };
+  in {
     apps.build-iso = {
       type = "app";
       program = pkgs.writeShellApplication {
