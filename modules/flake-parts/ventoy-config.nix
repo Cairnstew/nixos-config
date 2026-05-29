@@ -10,7 +10,6 @@ let
       { }
   ) (config.flake.nixosConfigurations or {}));
 
-  gparted-iso = inputs.gparted-iso.outPath;
 in
 {
   ventoy = {
@@ -43,7 +42,7 @@ in
 
     isos = {
       gparted = {
-        source = gparted-iso;
+        source = "${inputs.gparted-iso}";
         target = "/iso/linux/gparted-live-1.6.0-1-amd64.iso";
       };
     } // hostIsos;
