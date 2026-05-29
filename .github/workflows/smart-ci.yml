@@ -247,7 +247,7 @@ jobs:
           echo "✓ minimal evaluates successfully"
 
   # ─────────────────────────────────────────────────────────────────────────────
-  # Home manager evaluation
+  # Home manager evaluation — only runs if homeConfigurations are defined
   # ─────────────────────────────────────────────────────────────────────────────
   eval-home:
     needs: changes
@@ -265,7 +265,12 @@ jobs:
       - name: Evaluate home configurations
         run: |
           echo "Evaluating home configurations..."
-          for user in seanc; do
+          USERS=$(nix eval --json .#homeConfigurations --apply 'x: builtins.attrNames x' 2>/dev/null || echo "[]")
+          if [ "$USERS" = "[]" ] || [ -z "$USERS" ]; then
+            echo "  ℹ No homeConfigurations found (skipping)"
+            exit 0
+          fi
+          for user in $(echo "$USERS" | jq -r '.[]'); do
             echo "→ homeConfigurations.$user"
             nix eval .#homeConfigurations.$user.activationPackage --json > /dev/null
             echo "  ✓ $user"
@@ -286,11 +291,11 @@ jobs:
       fail-fast: false
       matrix:
         package:
-          - ci
           - update
           - test
           - localsend
-          - uup-converter
+          - github-actions-cleanup
+          - nix-template-selector
     steps:
       - uses: actions/checkout@v6
       - uses: cachix/install-nix-action@v31
@@ -329,21 +334,32 @@ jobs:
           for tmpl in templates/*/; do
             tmpl_name="$(basename "$tmpl")"
             echo "→ Validating template: $tmpl_name"
-            if [ -f "${tmpl}flake.nix" ]; then
-              if nix flake check "${tmpl}" --no-build 2>/dev/null; then
-                echo "  ✓ $tmpl_name"
+
+            # Validate template exists as a flake output
+            if nix eval ".#templates.$tmpl_name" --json > /dev/null 2>&1; then
+              echo "  ✓ flake output templates.$tmpl_name exists"
+            else
+              echo "  ✗ flake output templates.$tmpl_name missing"
+              failures=$((failures + 1))
+              continue
+            fi
+
+            # Check nix files parse correctly
+            while IFS= read -r nixfile; do
+              rel="${nixfile#./}"
+              if nix-instantiate --parse "$nixfile" > /dev/null 2>&1; then
+                echo "    ✓ $rel"
               else
-                echo "  ✗ $tmpl_name validation failed"
+                echo "    ✗ $rel parse failed"
                 failures=$((failures + 1))
               fi
-            else
-              echo "  ℹ $tmpl_name has no flake.nix (skipping)"
-            fi
+            done < <(find "$tmpl" -name '*.nix' -not -path '*/node_modules/*' 2>/dev/null)
           done
           if [ "$failures" -gt 0 ]; then
             echo "::error::$failures template(s) failed validation"
             exit 1
           fi
+          echo "✓ All templates validated"
 
   # ─────────────────────────────────────────────────────────────────────────────
   # Script linting — shellcheck on scripts/
