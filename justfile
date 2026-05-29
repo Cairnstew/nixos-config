@@ -1,141 +1,94 @@
-# Show all available recipes (default)
-# Usage: just
-# Prerequisites: just (command runner)
 default:
     @just --list
 
+# ── Flake Management ─────────────────────────────────────────────────────────
+
 # Update all flake inputs and commit lockfile
-# Usage: just update
-# Prerequisites: Nix with flakes enabled
-# Flake output: .#update (nixos-unified primary-inputs update)
 update:
     nix run .#update
 
-# Deploy configuration to Beelink (pureintent host)
-# Usage: just pureintent
-# Prerequisites: SSH access to pureintent, Nix with flakes
-# Flake output: nixosConfigurations.pureintent (remote deployment)
-[group('deploy')]
-pureintent:
-    nix run . pureintent
+# Check flake evaluation (no build)
+check:
+    nix flake check --no-build
 
-# Deploy configuration to infinitude (macOS host)
-# Usage: just infinitude
-# Prerequisites: SSH access to infinitude, nix-darwin
-# Flake output: darwinConfigurations.infinitude (remote deployment)
+# Format all Nix files
+fmt:
+    nix fmt
+
+# ── Activation ───────────────────────────────────────────────────────────────
+
+# Activate local configuration
+local:
+    nix run
+
+# Remotely activate a host over SSH (e.g., just activate laptop)
 [group('deploy')]
-infinitude:
-    nix run . infinitude
+activate host:
+    nix run .#activate {{host}}
+
+# ── Fresh Install ────────────────────────────────────────────────────────────
 
 # Deploy a NixOS host via nixos-anywhere (fresh install)
-# Usage: just deploy <hostname> <ssh-address> [-- nixos-anywhere flags]
-# Examples:
-#   just deploy server 192.168.1.100         # root@ (after initial install)
-#   just deploy desktop nixos@192.168.1.100  # nixos@ (from NixOS installer ISO)
-# Prerequisites: Nix with flakes, SSH access to target
-# Flake output: apps.deploy (calls nixos-anywhere)
+# e.g., just deploy server 192.168.1.100
 [group('deploy')]
 deploy host ip *args:
     nix run .#deploy -- {{host}} {{ip}} {{args}}
 
-# Register a freshly deployed host with agenix
-# Connects via SSH, fetches host key, prints instructions
-# Usage: just register-host <hostname> <ssh-address>
-# Examples:
-#   just register-host server 192.168.1.100
-#   just register-host desktop 192.168.1.100
-# Prerequisites: SSH access to target as root
+# Register a freshly deployed host with agenix (e.g., just register-host server 192.168.1.100)
 [group('deploy')]
 register-host host ip:
     @echo "Fetching SSH host key for {{host}}..."
     KEY=$$(ssh "root@{{ip}}" "cat /etc/ssh/ssh_host_ed25519_key.pub")
     @echo ""
-    @echo "Host key for {{host}}:"
-    @echo "  $$KEY"
+    @echo "Host key for {{host}}:  $$KEY"
     @echo ""
-    @echo "Next steps:"
-    @echo "  1. Add this key to secrets/secrets.nix under {{host}}'s recipients"
-    @echo "  2. Run: agenix -r"
-    @echo "  3. Rebuild: nix run .#deploy -- {{host}} {{ip}}"
+    @echo "Next: add this key to secrets/secrets.nix, run 'agenix -r', then rebuild."
 
-# Build a custom NixOS installer ISO with Tailscale auto-connect
-# Builds to ./ISO/nixos-installer.iso
-# Usage: just build-iso
-# Prerequisites: Nix with flakes, agenix (for tailscale key decryption)
-# Flake output: packages.installer-iso (pure build — no more apps.build-iso)
-[group('deploy')]
+# ── ISO & Ventoy ─────────────────────────────────────────────────────────────
+
+# Build a custom NixOS installer ISO
 build-iso:
-    # Step 1: Inject secrets into the ISO source tree
     mkdir -p packages/installer-iso/secrets
-    if [ -f secrets/tailscale/authkey.age ]; then
-        agenix -r secrets/secrets.nix --decrypt secrets/tailscale/authkey.age \
-            > packages/installer-iso/secrets/ts.key
-        if [ ! -s packages/installer-iso/secrets/ts.key ]; then
-            echo "Error: agenix decryption produced empty ts.key" >&2
-            exit 1
-        fi
-    else
-        echo "Warning: no Tailscale key at secrets/tailscale/authkey.age — using placeholder"
-        echo "PLACEHOLDER" > packages/installer-iso/secrets/ts.key
-    fi
-    # Ensure git-tracked fallback files exist for the pure build
-    # (authorized_keys, ssh_host_ed25519_key* are tracked; recreate SSH host key ephemerally)
+    if [ -f secrets/tailscale/authkey.age ]; then agenix -r secrets/secrets.nix --decrypt secrets/tailscale/authkey.age > packages/installer-iso/secrets/ts.key; fi
+    if [ ! -s packages/installer-iso/secrets/ts.key ]; then echo "PLACEHOLDER" > packages/installer-iso/secrets/ts.key; echo "Warning: no Tailscale key — using placeholder" >&2; fi
     ssh-keygen -t ed25519 -f packages/installer-iso/secrets/ssh_host_ed25519_key -N "" -q 2>/dev/null || true
-    # Step 2: Build the ISO
     nix build .#installer-iso --out-link ISO/result-iso --no-link
-    # Step 3: Copy to ISO/
     ISO_FILE=$$(find ISO/result-iso -name "*.iso" -type f | head -1)
-    if [ -n "$$ISO_FILE" ]; then
-        cp "$$ISO_FILE" ISO/nixos-installer.iso
-        echo "-> ISO built: ISO/nixos-installer.iso"
-    else
-        echo "Error: no ISO file found in build result" >&2
-        exit 1
-    fi
+    if [ -n "$$ISO_FILE" ]; then cp "$$ISO_FILE" ISO/nixos-installer.iso && echo "-> ISO built: ISO/nixos-installer.iso"; else echo "Error: no ISO file found in build result" >&2 && exit 1; fi
 
-# Build installer ISO and deploy to Ventoy USB
-# Usage: just deploy-iso <ventoy-mount-point>
-# Example: just deploy-iso /run/media/{{user}}/VENTOY
-# Prerequisites: Ventoy USB mounted at <ventoy-mount-point>
+# Build ISO and deploy to Ventoy USB (e.g., just deploy-iso /run/media/seanc/VENTOY)
 [group('deploy')]
 deploy-iso mount="":
     just build-iso
-    @echo "Copying ISO to {{mount}}/ISO/..."
     mkdir -p "{{mount}}/ISO"
     cp ISO/nixos-installer.iso "{{mount}}/ISO/"
-    @echo "Done! Run ventoy-deploy to deploy config files."
+    @echo "Done — ISO copied to {{mount}}/ISO/. Run 'ventoy-deploy' to deploy config files."
 
-# Run all pre-commit hooks on all files
-# Usage: just pca
-# Prerequisites: pre-commit installed, .pre-commit-config.yaml exists
-pca:
-    pre-commit run --all-files
+# ── Testing ──────────────────────────────────────────────────────────────────
 
-# Clean up old generations and EFI boot entries
-# Usage: just fuckboot
-# Prerequisites: root access (sudo), NixOS
-# See: https://discourse.nixos.org/t/why-doesnt-nix-collect-garbage-remove-old-generations-from-efi-menu/17592/4
+# List all testable hosts
+test-list:
+    nix run .#test list
+
+# Run a VM test for a host (e.g., just test laptop)
+test host:
+    nix run .#test run {{host}}
+
+# ── Maintenance ──────────────────────────────────────────────────────────────
+
+# Clean old generations and EFI boot entries
 fuckboot:
     sudo nix-collect-garbage -d
     sudo /run/current-system/bin/switch-to-configuration boot
 
-# Activate local configuration (build and switch current host)
-# Usage: just local
-# Prerequisites: Running on a NixOS/nix-darwin host with this flake
-# Flake output: packages.default (activate script)
-# Note: For faster builds, use `just nom local` (if nom output is configured)
-local:
-    nix run
+# ── CI / Act ─────────────────────────────────────────────────────────────────
 
-# Test GitHub Actions workflows locally with act
+# Test GitHub Actions workflows locally
 # Usage: just act [job]
-# Prerequisites: act (available in devShell)
 # Default job: verify-local
-# Jobs: verify-local, eval-check, format-check, lint-nix, flake-check
 act job="verify-local":
     act -j {{job}} -W .github/workflows/local-verify.yml
 
-# List all workflow jobs available for local testing with act
-# Usage: just act-list
+# List available workflow jobs
 act-list:
     act --list -W .github/workflows/local-verify.yml
