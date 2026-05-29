@@ -12,10 +12,11 @@ Before doing anything in this repo, read these files in order:
 
 1. `STRUCTURE.md` — annotated repo tree; tells you what every file does and what flake output it maps to
 2. `HEATMAP.md` — exact files to read/edit for the 8 most common tasks, plus the full `my.*` Option Registry
-3. `GOTCHAS.md` — known footguns and their fixes; check this before debugging any evaluation or build failure
-4. `modules/AGENT.md` — universal module structure, `my.*` namespace, and per-module conventions
-5. `configurations/AGENT.md` — host configuration conventions and profile usage
-6. `modules/flake-parts/README.md` — flake-parts layer documentation: identity options, `perSystem` vs `flake.*` outputs
+3. `SECRETS.md` — agenix secrets: catalog, consumption, encryption, nixos-unified integration
+4. `GOTCHAS.md` — known footguns and their fixes; check this before debugging any evaluation or build failure
+5. `modules/AGENT.md` — universal module structure, `my.*` namespace, and per-module conventions
+6. `configurations/AGENT.md` — host configuration conventions and profile usage
+7. `modules/flake-parts/README.md` — flake-parts layer documentation: identity options, `perSystem` vs `flake.*` outputs
 
 When you discover a new problem and its solution, append an entry to `GOTCHAS.md` immediately.
 
@@ -311,15 +312,22 @@ my.services.cachix-push.tokenFile = config.age.secrets.cache-token.path;
 
 ## 7. Secrets
 
-Secrets are managed with **agenix**.
+Secrets are managed with **agenix**. See `SECRETS.md` for the full reference.
 
-* Secret definitions: `secrets/secrets.nix`
-* Encrypted blobs: `secrets/*.age`
-* Decryption keys: SSH host keys or user SSH keys (declared in `secrets.nix`)
+* Encryption rules: `secrets/secrets.nix` — which keys can decrypt which `.age` files
+* Encrypted blobs: `secrets/<category>/<name>.age`
+* Catalog: `modules/nixos/secrets/catalog.nix` — maps logical paths to agenix names
+* Decryption: At activation time via SSH host keys → `/run/agenix/<name>`
 
-**Agent rule:** Never commit plaintext secrets. If you need to add a new
-secret, update `secrets/secrets.nix`, place the `.age` file, and reference it in
-a module via `config.age.secrets.(name).path`.
+**Key patterns:**
+```nix
+config.age.secrets."<name>".path   # → /run/agenix/<name>
+config.age.secrets ? "<name>"      # existence guard (use this!)
+```
+
+**Agent rule:** Never commit plaintext secrets. Always guard secret access with
+the `?` existence check — CI builds disable secrets and will fail on bare
+`config.age.secrets.<name>.path` references.
 
 ---
 
