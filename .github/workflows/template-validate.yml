@@ -30,7 +30,7 @@ jobs:
             tmpl_name="$(basename "$tmpl")"
             echo "→ Validating template: $tmpl_name"
             if [ -f "${tmpl}flake.nix" ]; then
-              if nix flake check "${tmpl}" --no-build 2>/dev/null; then
+              if nix flake check "./${tmpl}" --no-build 2>/dev/null; then
                 echo "  ✓ $tmpl_name"
               else
                 echo "  ✗ $tmpl_name validation failed"

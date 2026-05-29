@@ -31,7 +31,7 @@
             uv
             ruff
             mypy
-            pytest
+            python3Packages.pytest
           ];
           shellHook = ''
             echo "Python project with uv"

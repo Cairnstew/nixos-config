@@ -11,7 +11,7 @@
       systems = [ "x86_64-linux" "aarch64-linux" "aarch64-darwin" "x86_64-darwin" ];
 
       perSystem = { config, self', inputs', pkgs, system, ... }: {
-        packages.default = pkgs.writeShellScriptBin "my-cli'''
+        packages.default = pkgs.writeShellScriptBin "my-cli" ''
           #!/usr/bin/env bash
           set -euo pipefail
 
@@ -43,7 +43,7 @@
               exit 1
               ;;
           esac
-        ''';
+        '';
 
         apps.default = {
           type = "app";

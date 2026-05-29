@@ -14,15 +14,9 @@
 
       perSystem = { config, self', inputs', pkgs, system, ... }: {
         haskellProjects.default = {
-          # See https://github.com/srid/haskell-flake for options
-        };
-
-        devShells.default = pkgs.mkShell {
-          packages = with pkgs; [
-            ghc
-            cabal-install
-            haskell-language-server
-          ];
+          devShell = {
+            tools = hp: { inherit (hp) cabal-install haskell-language-server; };
+          };
         };
       };
     };
