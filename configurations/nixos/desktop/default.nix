@@ -38,48 +38,38 @@
   };
 
   # ── Dual-Boot / Partition Layout
-  # Expected disk: /dev/nvme0n1 (AMD desktop)
-  #   p1: ESP (vfat, 100M) — Windows EFI boot
-  #   p2: MSR (16M) — Microsoft Reserved
-  #   p3: Windows (NTFS, ~150GB)
-  #   p5: NixOS (ext4, rest) — created before first deploy
+  # Windows is on /dev/sda with free space left at the end for NixOS.
+  # Expected layout after creating the NixOS partition in free space:
+  #   sda1: ESP (vfat, ~100M) — Windows EFI boot
+  #   sda2: MSR (16M) — Microsoft Reserved
+  #   sda3: Windows (NTFS, C: drive)
+  #   sda4: NixOS (ext4, rest) — created before first deploy
+  #         (or sda5 if Windows created a recovery partition)
   #
-  # First-time deploy (Windows exists with unallocated space):
-  #   1. Create NixOS bootable USB:
-  #        sudo dd if=<nixos-minimal-iso> of=/dev/sdX bs=4M status=progress
-  #   2. Boot the USB on the desktop, select "NixOS installer" (not "live")
-  #   3. Set the nixos user password (needed for SSH):
-  #        passwd
-  #   4. Find the desktop IP:
-  #        ip a        # look for your LAN interface (e.g. enp4s0), note the IP
-  #      Expected: 192.168.x.x or 100.x.x.x (Tailscale, if running)
-  #   5. Check the partition table to confirm free space partition number:
+  # First install (from NixOS installer USB on the desktop itself):
+  #   1. Boot the NixOS minimal ISO on the desktop
+  #   2. Check the partition table:
   #        lsblk -o NAME,SIZE,FSTYPE,MOUNTPOINT
-  #      You should see:
-  #        nvme0n1       (disk)
-  #        ├─nvme0n1p1   (ESP, vfat, ~100M)
-  #        ├─nvme0n1p2   (MSR, 16M)
-  #        ├─nvme0n1p3   (Windows, NTFS, ~150G)
-  #        └─nvme0n1p5   (free space — this is what we want)
-  #      If the free space is at a different partition number (e.g. p4),
-  #      update nixosPartition below before continuing.
-  #   6. Format the NixOS partition:
-  #        sudo mkfs.ext4 -L nixos /dev/nvme0n1p5   # adjust p5 if needed
-  #   7. Add your SSH public key for passwordless auth:
-  #        mkdir -p ~/.ssh
-  #        curl -L https://github.com/Cairnstew.keys >> ~/.ssh/authorized_keys
-  #      Or manually paste: echo "ssh-ed25519 AAAA..." >> ~/.ssh/authorized_keys
-  #   8. From your source machine (laptop or wherever this repo is):
-  #        nix run .#deploy -- desktop nixos@<desktop-IP>
-  #      (uses nixos user because that's the user on the installer ISO;
-  #       nixos-anywhere uses sudo to become root)
-  #   9. After first boot, grab the host key and register with agenix:
-  #        just register-host desktop <desktop-IP>
+  #   3. Format the free space partition:
+  #        sudo mkfs.ext4 -L nixos /dev/sda4   # adjust if sda5 etc.
+  #   4. Mount and install directly (simpler than nixos-anywhere):
+  #        sudo mount /dev/sda4 /mnt
+  #        sudo mkdir -p /mnt/boot
+  #        sudo mount /dev/sda1 /mnt/boot
+  #        sudo mkdir -p /mnt/etc
+  #        git clone https://github.com/Cairnstew/nixos-config /mnt/etc/nixos
+  #        sudo nixos-install --flake /mnt/etc/nixos#desktop
+  #        sudo reboot
+  #   5. After first boot, register the host key with agenix:
+  #        just register-host desktop <IP>
+  #
+  # Future reinstalls (via SSH, no physical access needed):
+  #   nix run .#deploy -- desktop root@<IP>
   my.disko.dualBoot = {
     enable = true;
     mode = "useExisting";
-    disk = "/dev/nvme0n1";
-    nixosPartition = "/dev/nvme0n1p5";
+    disk = "/dev/sda";
+    nixosPartition = "/dev/sda4";
   };
 
   # ── SSH Access
