@@ -17,10 +17,11 @@
           mkdir -p "$SECRETS_DIR" "$ISO_DIR"
 
           echo "-> Decrypting Tailscale auth key..."
-          if [ -f "$FLAKE_ROOT/secrets/tailscale/ts-key.age" ]; then
-            agenix --decrypt "$FLAKE_ROOT/secrets/tailscale/ts-key.age" > "$SECRETS_DIR/ts.key"
+          if [ -f "$FLAKE_ROOT/secrets/tailscale/authkey.age" ]; then
+            echo "  Using: secrets/tailscale/authkey.age"
+            agenix --decrypt "$FLAKE_ROOT/secrets/tailscale/authkey.age" > "$SECRETS_DIR/ts.key"
           else
-            echo "Warning: no Tailscale key found at secrets/tailscale/ts-key.age"
+            echo "Warning: no Tailscale auth key found at secrets/tailscale/authkey.age"
             echo "Creating placeholder — ISO won't auto-connect to Tailscale."
             echo "PLACEHOLDER" > "$SECRETS_DIR/ts.key"
           fi
