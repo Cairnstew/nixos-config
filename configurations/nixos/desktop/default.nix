@@ -117,8 +117,18 @@
   # ── VM Testing ─────────────────────────────────────────────────────────
   my.testing.vmTest.enable = true;
 
-  # ── Additional Programs ────────────────────────────────────────────────
+  # ── Ventoy: multi-boot USB ───────────────────────────────────────────
   my.programs.ventoy.enable = true;
+
+  # Contribute Windows ISO to the Ventoy USB deployment
+  my.ventoy.enable = true;
+  my.ventoy.isos = {
+    win11-23h2 = {
+      source = flake.inputs.windows-iso-src.packages.x86_64-linux."windows-iso-22631.7079.23H2.PRO.X64.EN";
+      target = "/iso/windows/22631.7079.23H2.PRO.X64.EN.iso";
+    };
+  };
+
   my.programs.spotify.enable = true;
 
   environment.systemPackages = [ pkgs.gnome-monitor-config ];

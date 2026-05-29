@@ -446,6 +446,7 @@ in
       # Each profile becomes packages.windows-answ-pro-<name>.
       # Reference them in ventoy.deployFiles + ventoy.settings.auto_install.
       answerSettings = vCfg.answerFileSettings;
+      diskCfg = vCfg.answerFileSettings;
       buildAnswer = { name, productKey, computerName, username, password
                     , autoLogonCount ? "1"
                     , lang ? "en-GB"
@@ -453,10 +454,10 @@ in
                     , arch ? "amd64"
                     , networkLocale ? "Work"
                     , protectYourPC ? "3"
+                    , wipeDisk ? false
                     }: let
         archId = if arch == "amd64" then "x86_64" else arch;
-      in pkgs.runCommand "${name}.xml" { nativeBuildInputs = [ pkgs.gnused ]; } ''
-        PASSWORD_B64=$(printf '%s' "${password}" | base64 -w0)
+      in pkgs.runCommand "${name}.xml" {} ''
         cat > "$out" << 'XML_EOF'
         <?xml version="1.0" encoding="utf-8"?>
         <unattend xmlns="urn:schemas-microsoft-com:unattend" xmlns:wcm="http://schemas.microsoft.com/WMIConfig/2002/State">
@@ -469,6 +470,59 @@ in
                 </ProductKey>
                 <AcceptEula>true</AcceptEula>
               </UserData>
+              ${lib.optionalString wipeDisk ''
+              <DiskConfiguration>
+                <Disk wcm:action="add">
+                  <DiskID>${diskCfg.diskId}</DiskID>
+                  <WillWipeDisk>true</WillWipeDisk>
+                  <CreatePartitions>
+                    <CreatePartition wcm:action="add">
+                      <Order>1</Order>
+                      <Type>EFI</Type>
+                      <Size>512</Size>
+                    </CreatePartition>
+                    <CreatePartition wcm:action="add">
+                      <Order>2</Order>
+                      <Type>MSR</Type>
+                      <Size>16</Size>
+                    </CreatePartition>
+                    <CreatePartition wcm:action="add">
+                      <Order>3</Order>
+                      <Type>Primary</Type>
+                      <Size>81920</Size>
+                    </CreatePartition>
+                  </CreatePartitions>
+                  <ModifyPartitions>
+                    <ModifyPartition wcm:action="add">
+                      <Order>1</Order>
+                      <PartitionID>1</PartitionID>
+                      <Format>FAT32</Format>
+                      <Label>EFI</Label>
+                    </ModifyPartition>
+                    <ModifyPartition wcm:action="add">
+                      <Order>2</Order>
+                      <PartitionID>2</PartitionID>
+                    </ModifyPartition>
+                    <ModifyPartition wcm:action="add">
+                      <Order>3</Order>
+                      <PartitionID>3</PartitionID>
+                      <Format>NTFS</Format>
+                      <Label>Windows</Label>
+                      <Letter>C</Letter>
+                    </ModifyPartition>
+                  </ModifyPartitions>
+                </Disk>
+              </DiskConfiguration>
+              <ImageInstall>
+                <OSImage>
+                  <InstallTo>
+                    <DiskID>${diskCfg.diskId}</DiskID>
+                    <PartitionID>3</PartitionID>
+                  </InstallTo>
+                  <WillShowUI>OnError</WillShowUI>
+                </OSImage>
+              </ImageInstall>
+              ''}
               <RunSynchronous>
                 <RunSynchronousCommand wcm:action="add">
                   <Order>1</Order>
@@ -535,8 +589,8 @@ in
                 <LocalAccounts>
                   <LocalAccount wcm:action="add">
                     <Password>
-                      <Value>@@PASSWORD_B64@@</Value>
-                      <PlainText>false</PlainText>
+                      <Value>${password}</Value>
+                      <PlainText>true</PlainText>
                     </Password>
                     <Description>${username}</Description>
                     <DisplayName>${username}</DisplayName>
@@ -550,8 +604,8 @@ in
                 <LogonCount>${autoLogonCount}</LogonCount>
                 <Username>${username}</Username>
                 <Password>
-                  <Value>@@PASSWORD_B64@@</Value>
-                  <PlainText>false</PlainText>
+                  <Value>${password}</Value>
+                  <PlainText>true</PlainText>
                 </Password>
               </AutoLogon>
               <OOBE>
@@ -580,7 +634,6 @@ in
           </settings>
         </unattend>
         XML_EOF
-        sed -i "s|@@PASSWORD_B64@@|$PASSWORD_B64|g" "$out"
       '';
 
       answerFileConfigs = {
@@ -621,6 +674,7 @@ in
           username = answerSettings.username;
           password = answerSettings.password;
           autoLogonCount = "1";
+          wipeDisk = true;
         };
       };
       answerFilePackages = lib.mapAttrs' (n: v:
@@ -628,6 +682,7 @@ in
           inherit (v) name computerName username password;
           productKey = "VK7JG-NPHTM-C97JM-9MPGT-3V66T";
           autoLogonCount = v.autoLogonCount or "1";
+          wipeDisk = v.wipeDisk or false;
           lang = "en-GB";
           timezone = "GMT Standard Time";
           arch = "amd64";
@@ -706,9 +761,13 @@ in
         ''"${iso.source}|${iso.target}|${storeHash iso.source}"''
       ) vCfg.isos;
 
-      fileMappings = lib.mapAttrsToList (name: f:
-        ''"${f.source}|${f.target}|${storeHash f.source}"''
-      ) vCfg.deployFiles;
+      fileMappings = lib.mapAttrsToList (name: pkg:
+        let
+          profileName = lib.removePrefix "windows-answ-pro-" name;
+          target = "/ventoy/scripts/${profileName}.xml";
+        in
+        ''"${pkg}|${target}|${storeHash pkg}"''
+      ) answerFilePackages;
 
       grubConfigRef = vCfg.grubConfig;
 
@@ -1299,7 +1358,7 @@ in
         main "$@"
       '';
 
-      packages.ventoy-bundle = pkgs.runCommand "ventoy-bundle" { } ''
+      ventoy-bundle = pkgs.runCommand "ventoy-bundle" { } ''
         mkdir -p $out/ventoy
         cp "${ventoyJsonFile}" $out/ventoy/ventoy.json
         ${lib.optionalString (vCfg.grubConfig != null) ''
@@ -1310,11 +1369,13 @@ in
           mkdir -p "$(dirname "$TARGET")"
           ln -s "${iso.source}" "$TARGET"
         '') vCfg.isos)}
-        ${lib.concatStringsSep "\n" (lib.mapAttrsToList (name: f: ''
-          TARGET="$out/${f.target}"
-          mkdir -p "$(dirname "$TARGET")"
-          cp "${f.source}" "$TARGET"
-        '') vCfg.deployFiles)}
+        ${lib.concatStringsSep "\n" (lib.mapAttrsToList (name: pkg: let
+          profileName = lib.removePrefix "windows-answ-pro-" name;
+          target = "/ventoy/scripts/${profileName}.xml";
+        in ''
+          mkdir -p "$out/ventoy/scripts"
+          cp "${pkg}" "$out${target}"
+        '') answerFilePackages)}
       '';
     };
     in {

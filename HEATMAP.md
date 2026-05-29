@@ -146,6 +146,8 @@ All `my.*` options declared across module files.
 |--------|------|---------|-------------|
 | `my.programs.spotify.enable` | bool | `false` | Spotify music client |
 | `my.programs.ventoy.enable` | bool | `false` | Ventoy bootable USB creator |
+| `my.ventoy.enable` | bool | `false` | Contribute ISOs to Ventoy USB |
+| `my.ventoy.isos` | attrs | `{}` | ISOs this host contributes to Ventoy USB |
 | `my.programs.uup-converter.enable` | bool | `false` | Windows ISO conversion tool |
 | `my.programs.whatsapp-electron.enable` | bool | `false` | WhatsApp Electron client |
 | `my.programs.udiskie.enable` | bool | `false` | Udiskie automount daemon |

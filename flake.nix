@@ -133,86 +133,6 @@
         builtins.map (fn: ./modules/flake-parts/${fn}) nixFiles;
 
 
-      # ── Ventoy: ISOs + config for multi-boot USB ───────────────────
-      ventoy = {
-        #device = "/dev/sdb";
-        settings = {
-          control = [
-            { VTOY_DEFAULT_MENU_MODE = "0"; }
-            { VTOY_TREE_VIEW_MENU_STYLE = "0"; }
-            { VTOY_DEFAULT_SEARCH_ROOT = "/iso"; }
-            { VTOY_FILT_DOT_UNDERSCORE_FILE = "1"; }
-            { VTOY_WIN11_BYPASS_CHECK = "1"; }
-            { VTOY_WIN11_BYPASS_NRO = "1"; }
-          ];
-          menu_class = [
-            { parent = "/iso/windows"; class = "windows"; }
-            { parent = "/iso/linux";   class = "linux"; }
-          ];
-          # Friendly names in the boot menu
-          menu_alias = [
-            { image = "/iso/windows/22631.7079.23H2.PRO.X64.EN.iso"; alias = "Windows 11 23H2 Pro"; }
-            { dir   = "/iso/linux";   alias = "[ Linux ISOs ]"; }
-          ];
-          # Custom GRUB menu extension (F6 in Ventoy menu)
-          # grubConfig = ./ventoy_grub.cfg;
-        };
-
-        installOptions = {
-          # secureBoot = true;
-          # gpt = true;
-        };
-
-        answerFileSettings = {
-          username = config.me.username;
-          hostname = config.me.username + "-win";
-          diskId = "0";
-        };
-
-        isos = {
-          win11-23h2 = {
-            source = inputs.windows-iso-src.packages.x86_64-linux."windows-iso-22631.7079.23H2.PRO.X64.EN";
-            target = "/iso/windows/22631.7079.23H2.PRO.X64.EN.iso";
-          };
-          nixos-installer = {
-            source = self.packages.x86_64-linux.nixos-installer;
-            target = "/iso/linux/nixos-installer.iso";
-          };
-          gparted = {
-            source = inputs.gparted-iso;
-            target = "/iso/linux/gparted-live-1.6.0-1-amd64.iso";
-          };
-        };
-
-        # Extra files deployed alongside ISOs — answer file profiles
-        deployFiles = inputs.nixpkgs.lib.mapAttrs' (n: v:
-          inputs.nixpkgs.lib.nameValuePair "windows-answer-${n}" {
-            source = self.packages.x86_64-linux."windows-answ-pro-${n}";
-            target = "/ventoy/scripts/${n}.xml";
-          }
-        ) {
-          dev      = {};
-          minimal  = {};
-          domain   = {};
-          kiosk    = {};
-          dual-boot = {};
-        };
-
-        # Windows auto-install: pick from multiple answer profiles at boot
-        settings.auto_install = [
-          {
-            image = "/iso/windows/22631.7079.23H2.PRO.X64.EN.iso";
-            template = [
-              "/ventoy/scripts/dev.xml"
-              "/ventoy/scripts/minimal.xml"
-              "/ventoy/scripts/domain.xml"
-              "/ventoy/scripts/kiosk.xml"
-              "/ventoy/scripts/dual-boot.xml"
-            ];
-          }
-        ];
-      };
-
       perSystem = { lib, system, ... }: {
         # Make our overlay available to the devShell
         # "Flake parts does not yet come with an endorsed module that initializes the pkgs argument.""
@@ -225,3 +145,4 @@
       };
     });
 }
+ 

@@ -1,6 +1,20 @@
 { lib, ... }:
 let
   inherit (lib) mkOption types;
+
+  isoSubmodule = types.submodule {
+    options = {
+      source = mkOption {
+        type = types.package;
+        description = "ISO derivation or store path.";
+      };
+      target = mkOption {
+        type = types.str;
+        description = "Target path on the Ventoy USB (e.g., /iso/windows/win11.iso).";
+        example = "/iso/windows/22631.7079.23H2.PRO.X64.EN.iso";
+      };
+    };
+  };
 in
 {
   options.my.programs.ventoy = {
@@ -27,6 +41,26 @@ in
         - "ventoy-full-gtk": CLI + GTK GUI
       '';
       example = "ventoy-full";
+    };
+  };
+
+  options.my.ventoy = {
+    enable = mkOption {
+      type = types.bool;
+      default = false;
+      description = "This host contributes ISOs and config to the Ventoy multi-boot USB.";
+    };
+
+    isos = mkOption {
+      type = types.attrsOf isoSubmodule;
+      default = { };
+      description = "ISOs this host contributes to the Ventoy USB deployment.";
+      example = {
+        win11-23h2 = {
+          source = "/nix/store/...-windows.iso";
+          target = "/iso/windows/win11.iso";
+        };
+      };
     };
   };
 }
