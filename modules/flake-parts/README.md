@@ -163,12 +163,11 @@ stdenv.mkDerivation { ... }
 
 The auto-wired package becomes `packages.${system}.foo` / `packages.${system}.bar`.
 
-**Caveat:** If a file in `packages/` requires custom arguments not provided by
-nixpkgs (like `ventoyJson` in `packages/_ventoy-deploy/`), it will fail when
-autowired. Either:
-- Prefix the dir with `_` to exclude it from autowiring, then manually call
-  `callPackage` from a flake-parts module.
-- Or keep the package definition entirely inside the flake-parts module.
+**Caveat:** nixos-unified's autowire scans all files/dirs under `packages/`
+with no exclude mechanism (underscore prefix does *not* skip it). If a
+package needs custom arguments (like `ventoyJson`), it must live *outside*
+`packages/` — e.g. in a flake-parts module directory — and be referenced
+via `callPackage ./relative/path` from a flake-parts `perSystem` block.
 
 ---
 

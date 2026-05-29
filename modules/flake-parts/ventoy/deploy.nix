@@ -122,7 +122,7 @@ in {
 
     in {
       packages = {
-        ventoy-deploy = pkgs.callPackage ../../../packages/_ventoy-deploy {
+        ventoy-deploy = pkgs.callPackage ./deploy-script {
           inherit (vCfg) device mountPoint buildInstallerIso;
           ventoyJson = ventoyJsonFile;
           grubConfig = vCfg.grubConfig;
@@ -139,7 +139,7 @@ in {
         ventoy-bundle = ventoy-bundle;
       };
       checks = {
-        ventoy-deploy-tests = pkgs.callPackage ../../../packages/_ventoy-deploy/tests.nix { };
+        ventoy-deploy-tests = pkgs.callPackage ./deploy-script/tests.nix { };
       };
     };
 }

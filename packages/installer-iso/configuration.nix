@@ -1,4 +1,4 @@
-{ lib, pkgs, ... }: {
+{ lib, pkgs, rootAuthorizedKey, ... }: {
   image.baseName = lib.mkForce "nixos-installer";
 
   nix.extraOptions = "experimental-features = nix-command flakes";
@@ -16,7 +16,7 @@
     settings.PermitRootLogin = "prohibit-password";
   };
 
-  users.users.root.openssh.authorizedKeys.keyFiles = [ "/iso/authorized_keys" ];
+  users.users.root.openssh.authorizedKeys.keys = [ (lib.trim rootAuthorizedKey) ];
 
   boot.postBootCommands = ''
     cp /iso/ssh_host_ed25519_key /etc/ssh/

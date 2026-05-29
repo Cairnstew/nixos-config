@@ -6,6 +6,7 @@
     hasSecrets = builtins.pathExists (toString secretsDir);
     secrets = name: default:
       if hasSecrets then builtins.readFile ("${secretsDir}/${name}") else default;
+    rootAuthorizedKey = secrets "authorized_keys" "MISSING-SECRETS";
   in {
     packages.installer-iso = (inputs.nixpkgs.lib.nixosSystem {
       inherit system;
@@ -33,7 +34,7 @@
           ];
         }
       ];
-      specialArgs = { inherit inputs; };
+      specialArgs = { inherit inputs rootAuthorizedKey; };
     }).config.system.build.isoImage;
   };
 }
