@@ -1,5 +1,5 @@
 { lib, pkgs, ... }: {
-  isoImage.isoBaseName = "nixos-installer";
+  image.baseName = lib.mkForce "nixos-installer";
 
   nix.extraOptions = "experimental-features = nix-command flakes";
 

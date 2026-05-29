@@ -1,7 +1,41 @@
 { config, inputs, lib, ... }: {
   perSystem = { pkgs, system, ... }: let
-    selfPkgs = config.packages.${system} or { };
+    isoDir = ../../packages/installer-iso;
+    configurationModule = "${toString isoDir}/configuration.nix";
+    secretsDir = "${toString isoDir}/secrets";
+    hasSecrets = builtins.pathExists (toString secretsDir);
+    secrets = name: default:
+      if hasSecrets then builtins.readFile ("${secretsDir}/${name}") else default;
   in {
+    packages.installer-iso = (inputs.nixpkgs.lib.nixosSystem {
+      inherit system;
+      modules = [
+        "${pkgs.path}/nixos/modules/installer/cd-dvd/installation-cd-minimal.nix"
+        configurationModule
+        {
+          isoImage.contents = [
+            {
+              source = pkgs.writeText "ts.key" (secrets "ts.key" "MISSING-SECRETS-RUN-just-build-iso");
+              target = "/iso/ts.key";
+            }
+            {
+              source = pkgs.writeText "authorized_keys" (secrets "authorized_keys" "MISSING-SECRETS");
+              target = "/iso/authorized_keys";
+            }
+            {
+              source = pkgs.writeText "ssh_host_ed25519_key" (secrets "ssh_host_ed25519_key" "MISSING-SECRETS");
+              target = "/iso/ssh_host_ed25519_key";
+            }
+            {
+              source = pkgs.writeText "ssh_host_ed25519_key.pub" (secrets "ssh_host_ed25519_key.pub" "MISSING-SECRETS");
+              target = "/iso/ssh_host_ed25519_key.pub";
+            }
+          ];
+        }
+      ];
+      specialArgs = { inherit inputs; };
+    }).config.system.build.isoImage;
+
     apps.build-iso = {
       type = "app";
       program = pkgs.writeShellApplication {
@@ -18,11 +52,10 @@
 
           echo "-> Decrypting Tailscale auth key..."
           if [ -f "$FLAKE_ROOT/secrets/tailscale/authkey.age" ]; then
-            echo "  Using: secrets/tailscale/authkey.age"
             agenix -r "$FLAKE_ROOT/secrets/secrets.nix" --decrypt "$FLAKE_ROOT/secrets/tailscale/authkey.age" > "$SECRETS_DIR/ts.key"
           else
-            echo "Warning: no Tailscale auth key found at secrets/tailscale/authkey.age"
-            echo "Creating placeholder — ISO won't auto-connect to Tailscale."
+            echo "Warning: no Tailscale key found at secrets/tailscale/authkey.age"
+            echo "Creating placeholder..."
             echo "PLACEHOLDER" > "$SECRETS_DIR/ts.key"
           fi
 
@@ -32,10 +65,9 @@
           echo "-> Generating ephemeral SSH host key..."
           ssh-keygen -t ed25519 -f "$SECRETS_DIR/ssh_host_ed25519_key" -N "" -q
 
-          echo "-> Building installer ISO (path-based, includes secrets)..."
+          echo "-> Building installer ISO..."
           nix build "path:$FLAKE_ROOT#installer-iso" --out-link "$ISO_DIR/result-iso" --no-link
 
-          # Copy the ISO from the build result
           ISO_FILE=$(find "$ISO_DIR/result-iso" -name "*.iso" -type f 2>/dev/null | head -1)
           if [ -n "$ISO_FILE" ]; then
             cp "$ISO_FILE" "$ISO_DIR/nixos-installer.iso"
@@ -44,12 +76,6 @@
             echo "Error: no ISO file found in build result"
             exit 1
           fi
-
-          echo ""
-          echo "Done! Place the Ventoy USB at $FLAKE_ROOT/ventoy and run:"
-          echo "  cp -r $ISO_DIR/* $FLAKE_ROOT/ventoy/ISO/"
-          echo ""
-          echo "Or just copy nixos-installer.iso to your Ventoy USB's ISO directory."
         '';
       };
     };

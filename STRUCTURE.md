@@ -298,7 +298,7 @@ Custom packages exposed via the flake.
 | `ci/default.nix` | CI/CD helper package |
 | `ci/layout.kdl` | Zellij layout for CI |
 | `complex-app/default.nix` | Complex application package |
-| `installer-iso/default.nix` | Custom NixOS installer ISO builder (Tailscale + SSH auto-connect, used with Ventoy) |
+| `installer-iso/` | ISO NixOS config module (`configuration.nix`) + metadata (`meta.nix`) — package defined in `modules/flake-parts/installer-iso.nix` |
 | `installer-iso/configuration.nix` | NixOS config for the installer ISO |
 | `installer-iso/meta.nix` | Metadata |
 | `copy-md-as-html.nix` | Markdown-to-HTML clipboard utility |
