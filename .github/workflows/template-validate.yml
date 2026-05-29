@@ -1,0 +1,47 @@
+name: Template Validate
+
+on:
+  pull_request:
+    branches: [main, master]
+    paths:
+      - 'templates/**'
+  push:
+    branches: [main, master]
+    paths:
+      - 'templates/**'
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: cachix/install-nix-action@v31
+        with:
+          extra_nix_config: accept-flake-config = true
+      - name: Validate each template
+        run: |
+          echo "=== Validating templates ==="
+          failures=0
+          for tmpl in templates/*/; do
+            tmpl_name="$(basename "$tmpl")"
+            echo "→ Validating template: $tmpl_name"
+            if [ -f "${tmpl}flake.nix" ]; then
+              if nix flake check "${tmpl}" --no-build 2>/dev/null; then
+                echo "  ✓ $tmpl_name"
+              else
+                echo "  ✗ $tmpl_name validation failed"
+                failures=$((failures + 1))
+              fi
+            else
+              echo "  ℹ $tmpl_name has no flake.nix (skipping)"
+            fi
+          done
+          if [ "$failures" -gt 0 ]; then
+            echo "::error::$failures template(s) failed validation"
+            exit 1
+          fi
+          echo "✓ All templates validated"

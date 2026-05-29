@@ -66,7 +66,7 @@ jobs:
           fi
 
   # ─────────────────────────────────────────────────────────────────────────────
-  # Comment on PR with helpful info
+  # Comment on PR with helpful info and impact analysis
   # ─────────────────────────────────────────────────────────────────────────────
   pr-info:
     runs-on: ubuntu-latest
@@ -100,7 +100,7 @@ jobs:
             \`\`\`
 
             ---
-            *CI will build all configurations and push to Cachix cache.*
+            *CI will evaluate only the affected hosts. Full builds run on merge.*
             `;
 
             github.rest.issues.createComment({
@@ -108,4 +108,151 @@ jobs:
               owner: context.repo.owner,
               repo: context.repo.repo,
               body: body
+            });
+
+  # ─────────────────────────────────────────────────────────────────────────────
+  # PR Impact Summary — categorizes changes, warns about stale lock
+  # ─────────────────────────────────────────────────────────────────────────────
+  pr-summary:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+      - name: Analyze PR impact
+        id: impact
+        run: |
+          BASE="${{ github.event.pull_request.base.sha }}"
+          HEAD="${{ github.event.pull_request.head.sha }}"
+
+          # Get changed files
+          CHANGED_FILES=$(git diff --name-only "$BASE..$HEAD" || git diff --name-only "$BASE".."$HEAD")
+          echo "Changed files:"
+          echo "$CHANGED_FILES"
+
+          # Categorize changes
+          HOSTS=""
+          MODULES=""
+          OTHER=""
+
+          while IFS= read -r file; do
+            case "$file" in
+              configurations/nixos/laptop/*)
+                HOSTS="$HOSTS laptop";;
+              configurations/nixos/desktop/*)
+                HOSTS="$HOSTS desktop";;
+              configurations/nixos/server/*)
+                HOSTS="$HOSTS server";;
+              configurations/nixos/wsl/*)
+                HOSTS="$HOSTS wsl";;
+              configurations/nixos/minimal/*)
+                HOSTS="$HOSTS minimal";;
+              modules/nixos/*)
+                MODULES="$MODULES nixos";;
+              modules/home/*)
+                MODULES="$MODULES home";;
+              modules/flake-parts/*)
+                MODULES="$MODULES flake-parts";;
+              flake.nix|flake.lock|config.nix)
+                MODULES="$MODULES core";;
+              packages/*)
+                OTHER="$OTHER packages";;
+              overlays/*)
+                OTHER="$OTHER overlays";;
+              templates/*)
+                OTHER="$OTHER templates";;
+              secrets/*)
+                OTHER="$OTHER secrets";;
+              scripts/*)
+                OTHER="$OTHER scripts";;
+              .github/*)
+                OTHER="$OTHER workflows";;
+            esac
+          done <<< "$CHANGED_FILES"
+
+          # Determine affected hosts
+          AFFECTED=""
+          if echo "$HOSTS" | grep -q "laptop\|nixos\|core\|overlays"; then
+            AFFECTED="$AFFECTED laptop"
+          fi
+          if echo "$HOSTS" | grep -q "desktop\|nixos\|core\|overlays"; then
+            AFFECTED="$AFFECTED desktop"
+          fi
+          if echo "$HOSTS" | grep -q "server\|nixos\|core\|overlays"; then
+            AFFECTED="$AFFECTED server"
+          fi
+          if echo "$HOSTS" | grep -q "wsl\|nixos\|core\|overlays"; then
+            AFFECTED="$AFFECTED wsl"
+          fi
+          if echo "$HOSTS" | grep -q "minimal\|nixos\|core\|overlays"; then
+            AFFECTED="$AFFECTED minimal"
+          fi
+          if echo "$HOSTS" | grep -q "home\|core"; then
+            AFFECTED="$AFFECTED home"
+          fi
+
+          # Check flake.lock staleness via nixpkgs lastModified
+          STALE_WARNING=""
+          if [ -f flake.lock ]; then
+            NIXPKGS_TS=$(jq -r '.nodes.nixpkgs.locked.lastModified // 0' flake.lock 2>/dev/null)
+            if [ "$NIXPKGS_TS" -gt 0 ] 2>/dev/null; then
+              NOW_TS=$(date +%s)
+              DAYS_OLD=$(( (NOW_TS - NIXPKGS_TS) / 86400 ))
+              if [ "$DAYS_OLD" -gt 7 ]; then
+                STALE_WARNING="true"
+                echo "stale_days=$DAYS_OLD" >> "$GITHUB_OUTPUT"
+              fi
+            fi
+          fi
+
+          echo "affected=${AFFECTED# }" >> "$GITHUB_OUTPUT"
+          echo "hosts=${HOSTS# }" >> "$GITHUB_OUTPUT"
+          echo "modules=${MODULES# }" >> "$GITHUB_OUTPUT"
+          echo "other=${OTHER# }" >> "$GITHUB_OUTPUT"
+          echo "stale=$STALE_WARNING" >> "$GITHUB_OUTPUT"
+          echo "changed_files<<EOF" >> "$GITHUB_OUTPUT"
+          echo "$CHANGED_FILES" >> "$GITHUB_OUTPUT"
+          echo "EOF" >> "$GITHUB_OUTPUT"
+
+      - name: Post PR summary comment
+        if: github.event.action == 'opened'
+        uses: actions/github-script@v7
+        env:
+          AFFECTED: ${{ steps.impact.outputs.affected }}
+          MODULES: ${{ steps.impact.outputs.modules }}
+          OTHER: ${{ steps.impact.outputs.other }}
+          STALE: ${{ steps.impact.outputs.stale }}
+          STALE_DAYS: ${{ steps.impact.outputs.stale_days }}
+        with:
+          script: |
+            const affected = process.env.AFFECTED || 'none';
+            const modules = process.env.MODULES || 'none';
+            const other = process.env.OTHER || 'none';
+            const stale = process.env.STALE === 'true';
+
+            const hostCount = affected.split(/\s+/).filter(Boolean).length;
+
+            let staleSection = '';
+            if (stale) {
+              staleSection = `\n### ⚠️ Stale flake.lock\nThis branch's \`flake.lock\` (**nixpkgs**) is **${process.env.STALE_DAYS || '?'} days old**. Consider running \`nix flake update\` to get the latest packages and security fixes.\n`;
+            }
+
+            let summary = `## PR Impact Summary\n\n`;
+            summary += `### Affected Areas\n`;
+            summary += `| Category | Status |\n|----------|--------|\n`;
+            summary += `| **Hosts** | ${affected} |\n`;
+            summary += `| **Modules** | ${modules} |\n`;
+            summary += `| **Other** | ${other} |\n`;
+            summary += `\n**${hostCount} evaluation target(s) will be checked** by Smart CI.\n`;
+            if (hostCount < 5) {
+              summary += `\n> Hosts not affected by these changes will be skipped. Full builds still run on merge to main.\n`;
+            }
+            summary += staleSection;
+            summary += `\n---\n*Generated by PR Summary — Smart CI decides which checks to run based on changed paths.*`;
+
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: summary
             });

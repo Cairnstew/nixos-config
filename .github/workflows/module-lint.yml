@@ -1,0 +1,76 @@
+name: Module Lint
+
+on:
+  pull_request:
+    branches: [main, master]
+    paths:
+      - 'modules/nixos/**'
+      - 'modules/home/**'
+  push:
+    branches: [main, master]
+    paths:
+      - 'modules/nixos/**'
+      - 'modules/home/**'
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  module-structure:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: cachix/install-nix-action@v31
+        with:
+          extra_nix_config: accept-flake-config = true
+
+      - name: Check default.nix is import-only
+        run: |
+          echo "=== Checking default.nix files are import-only ==="
+          failures=0
+          while IFS= read -r f; do
+            rel="${f#./}"
+            if grep -qE '^\s*(config|options)\s*=' "$f" 2>/dev/null; then
+              echo "  ✗ $rel contains config/options (violates import-only rule)"
+              failures=$((failures + 1))
+            fi
+          done < <(find modules/nixos modules/home -name 'default.nix' -not -path '*/node_modules/*' 2>/dev/null)
+          if [ "$failures" -gt 0 ]; then
+            echo "::error::$failures default.nix file(s) contain logic; must be import-only"
+            exit 1
+          fi
+          echo "  ✓ All default.nix files are import-only"
+
+      - name: Verify multi-file modules have meta.nix
+        run: |
+          echo "=== Checking multi-file module structure ==="
+          while IFS= read -r dir; do
+            rel="${dir#./}"
+            if [ -f "$dir/default.nix" ]; then
+              file_count=$(find "$dir" -maxdepth 1 -name '*.nix' | wc -l)
+              has_meta=false
+              has_options=false
+              has_config=false
+              [ -f "$dir/meta.nix" ] && has_meta=true
+              [ -f "$dir/options.nix" ] && has_options=true
+              [ -f "$dir/config.nix" ] && has_config=true
+
+              if [ "$file_count" -gt 1 ] && [ "$has_meta" = false ]; then
+                echo "  ⚠ $rel has $file_count files but no meta.nix (recommended)"
+              fi
+              if [ "$has_options" = true ] && [ "$has_config" = false ]; then
+                echo "  ⚠ $rel has options.nix but no config.nix"
+              fi
+              if [ "$has_config" = true ] && [ "$has_options" = false ]; then
+                echo "  ⚠ $rel has config.nix but no options.nix"
+              fi
+            fi
+          done < <(find modules/nixos modules/home -type d -not -path '*/node_modules/*' 2>/dev/null)
+          echo "  ✓ Module structure check complete"
+
+      - name: Run flake check for module evaluation
+        run: |
+          echo "=== Running nix flake check (module impact) ==="
+          nix flake check --no-build
+          echo "✓ flake check passed"

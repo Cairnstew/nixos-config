@@ -1,0 +1,509 @@
+name: Smart CI
+
+on:
+  pull_request:
+    branches: [main, master]
+  push:
+    branches: [main, master]
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  NIX_CONFIG: accept-flake-config = true
+
+jobs:
+  # ─────────────────────────────────────────────────────────────────────────────
+  # Detect which paths changed — all downstream jobs gate on these outputs
+  # ─────────────────────────────────────────────────────────────────────────────
+  changes:
+    runs-on: ubuntu-latest
+    outputs:
+      flake-core: ${{ steps.filter.outputs.flake-core }}
+      flake-parts: ${{ steps.filter.outputs.flake-parts }}
+      nixos-modules: ${{ steps.filter.outputs.nixos-modules }}
+      home-modules: ${{ steps.filter.outputs.home-modules }}
+      configs: ${{ steps.filter.outputs.configs }}
+      laptop: ${{ steps.filter.outputs.laptop }}
+      desktop: ${{ steps.filter.outputs.desktop }}
+      server: ${{ steps.filter.outputs.server }}
+      wsl: ${{ steps.filter.outputs.wsl }}
+      minimal: ${{ steps.filter.outputs.minimal }}
+      packages: ${{ steps.filter.outputs.packages }}
+      overlays: ${{ steps.filter.outputs.overlays }}
+      secrets: ${{ steps.filter.outputs.secrets }}
+      templates: ${{ steps.filter.outputs.templates }}
+      scripts: ${{ steps.filter.outputs.scripts }}
+      workflows: ${{ steps.filter.outputs.workflows }}
+      any-nix: ${{ steps.filter.outputs.any-nix }}
+    steps:
+      - uses: actions/checkout@v6
+      - id: filter
+        uses: dorny/paths-filter@v3
+        with:
+          filters: |
+            flake-core:
+              - 'flake.nix'
+              - 'flake.lock'
+              - 'config.nix'
+            flake-parts:
+              - 'modules/flake-parts/**/*.nix'
+            nixos-modules:
+              - 'modules/nixos/**/*.nix'
+            home-modules:
+              - 'modules/home/**/*.nix'
+            configs:
+              - 'configurations/nixos/**/*.nix'
+            laptop:
+              - 'configurations/nixos/laptop/**'
+            desktop:
+              - 'configurations/nixos/desktop/**'
+            server:
+              - 'configurations/nixos/server/**'
+            wsl:
+              - 'configurations/nixos/wsl/**'
+            minimal:
+              - 'configurations/nixos/minimal/**'
+            packages:
+              - 'packages/**'
+            overlays:
+              - 'overlays/**/*.nix'
+            secrets:
+              - 'secrets/**'
+            templates:
+              - 'templates/**'
+            scripts:
+              - 'scripts/**'
+            workflows:
+              - '.github/workflows/**'
+            any-nix:
+              - '**/*.nix'
+
+  # ─────────────────────────────────────────────────────────────────────────────
+  # Format check — runs when any .nix file changes
+  # ─────────────────────────────────────────────────────────────────────────────
+  format-check:
+    needs: changes
+    if: |
+      needs.changes.outputs.any-nix == 'true' ||
+      needs.changes.outputs.flake-core == 'true' ||
+      github.event_name == 'push' ||
+      github.event_name == 'schedule'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: cachix/install-nix-action@v31
+        with:
+          extra_nix_config: ${{ env.NIX_CONFIG }}
+      - name: Check formatting
+        run: |
+          echo "Checking nix formatting..."
+          nix build .#formatter.x86_64-linux --out-link /tmp/nix-fmt-result 2>/dev/null
+          FORMATTER="/tmp/nix-fmt-result"
+          if find . -name '*.nix' \
+            -not -path './.git/*' \
+            -not -path '*/node_modules/*' \
+            -not -path './secrets/*' \
+            -not -path './templates/*' \
+            -print0 | xargs -0 "$FORMATTER/bin/nixpkgs-fmt" --check; then
+            echo "All files are properly formatted!"
+          else
+            echo "::error::Formatting issues found!"
+            exit 1
+          fi
+
+  # ─────────────────────────────────────────────────────────────────────────────
+  # Flake check (evaluation only, no builds)
+  # ─────────────────────────────────────────────────────────────────────────────
+  flake-check:
+    needs: changes
+    if: |
+      needs.changes.outputs.flake-core == 'true' ||
+      needs.changes.outputs.flake-parts == 'true' ||
+      needs.changes.outputs.workflows == 'true' ||
+      github.event_name == 'push' ||
+      github.event_name == 'schedule'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: cachix/install-nix-action@v31
+        with:
+          extra_nix_config: ${{ env.NIX_CONFIG }}
+      - name: Flake check (no-build)
+        run: |
+          echo "Running nix flake check..."
+          nix flake check --no-build
+
+  # ─────────────────────────────────────────────────────────────────────────────
+  # Host evaluations — only eval the hosts actually affected by the change
+  # Each host runs when: itself touched, any nixos module touched, overlays,
+  # flake core touched, or on push/schedule.
+  # ─────────────────────────────────────────────────────────────────────────────
+  eval-laptop:
+    needs: changes
+    if: |
+      needs.changes.outputs.laptop == 'true' ||
+      needs.changes.outputs.nixos-modules == 'true' ||
+      needs.changes.outputs.flake-core == 'true' ||
+      needs.changes.outputs.overlays == 'true' ||
+      github.event_name == 'push' ||
+      github.event_name == 'schedule'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: cachix/install-nix-action@v31
+        with:
+          extra_nix_config: ${{ env.NIX_CONFIG }}
+      - name: Evaluate laptop
+        run: |
+          echo "Evaluating NixOS configuration: laptop"
+          nix eval .#nixosConfigurations.laptop.config.system.build.toplevel --json > /dev/null
+          echo "✓ laptop evaluates successfully"
+
+  eval-desktop:
+    needs: changes
+    if: |
+      needs.changes.outputs.desktop == 'true' ||
+      needs.changes.outputs.nixos-modules == 'true' ||
+      needs.changes.outputs.flake-core == 'true' ||
+      needs.changes.outputs.overlays == 'true' ||
+      github.event_name == 'push' ||
+      github.event_name == 'schedule'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: cachix/install-nix-action@v31
+        with:
+          extra_nix_config: ${{ env.NIX_CONFIG }}
+      - name: Evaluate desktop
+        run: |
+          echo "Evaluating NixOS configuration: desktop"
+          nix eval .#nixosConfigurations.desktop.config.system.build.toplevel --json > /dev/null
+          echo "✓ desktop evaluates successfully"
+
+  eval-server:
+    needs: changes
+    if: |
+      needs.changes.outputs.server == 'true' ||
+      needs.changes.outputs.nixos-modules == 'true' ||
+      needs.changes.outputs.flake-core == 'true' ||
+      needs.changes.outputs.overlays == 'true' ||
+      github.event_name == 'push' ||
+      github.event_name == 'schedule'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: cachix/install-nix-action@v31
+        with:
+          extra_nix_config: ${{ env.NIX_CONFIG }}
+      - name: Evaluate server
+        run: |
+          echo "Evaluating NixOS configuration: server"
+          nix eval .#nixosConfigurations.server.config.system.build.toplevel --json > /dev/null
+          echo "✓ server evaluates successfully"
+
+  eval-wsl:
+    needs: changes
+    if: |
+      needs.changes.outputs.wsl == 'true' ||
+      needs.changes.outputs.nixos-modules == 'true' ||
+      needs.changes.outputs.flake-core == 'true' ||
+      needs.changes.outputs.overlays == 'true' ||
+      github.event_name == 'push' ||
+      github.event_name == 'schedule'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: cachix/install-nix-action@v31
+        with:
+          extra_nix_config: ${{ env.NIX_CONFIG }}
+      - name: Evaluate wsl
+        run: |
+          echo "Evaluating NixOS configuration: wsl"
+          nix eval .#nixosConfigurations.wsl.config.system.build.toplevel --json > /dev/null
+          echo "✓ wsl evaluates successfully"
+
+  eval-minimal:
+    needs: changes
+    if: |
+      needs.changes.outputs.minimal == 'true' ||
+      needs.changes.outputs.nixos-modules == 'true' ||
+      needs.changes.outputs.flake-core == 'true' ||
+      needs.changes.outputs.overlays == 'true' ||
+      github.event_name == 'push' ||
+      github.event_name == 'schedule'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: cachix/install-nix-action@v31
+        with:
+          extra_nix_config: ${{ env.NIX_CONFIG }}
+      - name: Evaluate minimal
+        run: |
+          echo "Evaluating NixOS configuration: minimal"
+          nix eval .#nixosConfigurations.minimal.config.system.build.toplevel --json > /dev/null
+          echo "✓ minimal evaluates successfully"
+
+  # ─────────────────────────────────────────────────────────────────────────────
+  # Home manager evaluation
+  # ─────────────────────────────────────────────────────────────────────────────
+  eval-home:
+    needs: changes
+    if: |
+      needs.changes.outputs.home-modules == 'true' ||
+      needs.changes.outputs.flake-core == 'true' ||
+      github.event_name == 'push' ||
+      github.event_name == 'schedule'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: cachix/install-nix-action@v31
+        with:
+          extra_nix_config: ${{ env.NIX_CONFIG }}
+      - name: Evaluate home configurations
+        run: |
+          echo "Evaluating home configurations..."
+          for user in seanc; do
+            echo "→ homeConfigurations.$user"
+            nix eval .#homeConfigurations.$user.activationPackage --json > /dev/null
+            echo "  ✓ $user"
+          done
+
+  # ─────────────────────────────────────────────────────────────────────────────
+  # Package builds — only builds packages whose source directories changed
+  # ─────────────────────────────────────────────────────────────────────────────
+  build-packages:
+    needs: changes
+    if: |
+      needs.changes.outputs.packages == 'true' ||
+      needs.changes.outputs.flake-core == 'true' ||
+      github.event_name == 'push' ||
+      github.event_name == 'schedule'
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        package:
+          - ci
+          - update
+          - test
+          - localsend
+          - uup-converter
+    steps:
+      - uses: actions/checkout@v6
+      - uses: cachix/install-nix-action@v31
+        with:
+          extra_nix_config: ${{ env.NIX_CONFIG }}
+      - uses: cachix/cachix-action@v17
+        with:
+          name: cairnstew-nixos-config-cache
+          authToken: ${{ secrets.CACHIX_AUTH_TOKEN }}
+      - name: Build ${{ matrix.package }}
+        run: |
+          echo "Building .#${{ matrix.package }}..."
+          nix build .#${{ matrix.package }} --out-link result-${{ matrix.package }}
+          echo "Build successful!"
+          cachix push cairnstew-nixos-config-cache ./result-${{ matrix.package }}
+
+  # ─────────────────────────────────────────────────────────────────────────────
+  # Template validation — ensures each template's flake evaluates
+  # ─────────────────────────────────────────────────────────────────────────────
+  validate-templates:
+    needs: changes
+    if: |
+      needs.changes.outputs.templates == 'true' ||
+      github.event_name == 'push' ||
+      github.event_name == 'schedule'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: cachix/install-nix-action@v31
+        with:
+          extra_nix_config: ${{ env.NIX_CONFIG }}
+      - name: Validate templates
+        run: |
+          echo "Validating templates..."
+          failures=0
+          for tmpl in templates/*/; do
+            tmpl_name="$(basename "$tmpl")"
+            echo "→ Validating template: $tmpl_name"
+            if [ -f "${tmpl}flake.nix" ]; then
+              if nix flake check "${tmpl}" --no-build 2>/dev/null; then
+                echo "  ✓ $tmpl_name"
+              else
+                echo "  ✗ $tmpl_name validation failed"
+                failures=$((failures + 1))
+              fi
+            else
+              echo "  ℹ $tmpl_name has no flake.nix (skipping)"
+            fi
+          done
+          if [ "$failures" -gt 0 ]; then
+            echo "::error::$failures template(s) failed validation"
+            exit 1
+          fi
+
+  # ─────────────────────────────────────────────────────────────────────────────
+  # Script linting — shellcheck on scripts/
+  # ─────────────────────────────────────────────────────────────────────────────
+  lint-scripts:
+    needs: changes
+    if: |
+      needs.changes.outputs.scripts == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - name: Shellcheck scripts
+        run: |
+          echo "Running shellcheck on scripts..."
+          if command -v shellcheck &> /dev/null; then
+            shellcheck scripts/*.sh
+          elif command -v apt-get &> /dev/null; then
+            sudo apt-get update -qq && sudo apt-get install -y -qq shellcheck
+            shellcheck scripts/*.sh
+          else
+            echo "::warning::shellcheck not available, skipping"
+          fi
+
+  # ─────────────────────────────────────────────────────────────────────────────
+  # Secrets validation — verifies secrets catalog structure
+  # ─────────────────────────────────────────────────────────────────────────────
+  validate-secrets:
+    needs: changes
+    if: |
+      needs.changes.outputs.secrets == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: cachix/install-nix-action@v31
+        with:
+          extra_nix_config: ${{ env.NIX_CONFIG }}
+      - name: Validate secrets
+        run: |
+          echo "Validating secrets structure..."
+          failures=0
+
+          # Check secrets.nix evaluates
+          if [ -f secrets/secrets.nix ]; then
+            echo "→ secrets/secrets.nix exists"
+          fi
+
+          # Verify catalog evaluates
+          if nix eval .#nixosModules.secrets --no-build 2>/dev/null; then
+            echo "✓ secrets module evaluates"
+          else
+            echo "::error::secrets module failed to evaluate"
+            failures=$((failures + 1))
+          fi
+
+          if [ "$failures" -gt 0 ]; then
+            exit 1
+          fi
+
+  # ─────────────────────────────────────────────────────────────────────────────
+  # Test suite — runs only when eval checks pass
+  # Only runs on push to main or schedule (not on PR by default)
+  # ─────────────────────────────────────────────────────────────────────────────
+  run-tests:
+    needs:
+      - changes
+      - eval-laptop
+      - eval-desktop
+      - eval-server
+      - eval-wsl
+      - eval-minimal
+    if: |
+      always() && !cancelled() && (
+        github.event_name == 'push' ||
+        github.event_name == 'schedule'
+      )
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: cachix/install-nix-action@v31
+        with:
+          extra_nix_config: ${{ env.NIX_CONFIG }}
+      - uses: cachix/cachix-action@v17
+        with:
+          name: cairnstew-nixos-config-cache
+          authToken: ${{ secrets.CACHIX_AUTH_TOKEN }}
+      - name: Run test suite
+        run: |
+          echo "Running test suite..."
+          nix run .#test -- run
+
+  # ─────────────────────────────────────────────────────────────────────────────
+  # Summary — shows which paths were detected and which jobs ran
+  # ─────────────────────────────────────────────────────────────────────────────
+  summary:
+    needs:
+      - changes
+      - format-check
+      - flake-check
+      - eval-laptop
+      - eval-desktop
+      - eval-server
+      - eval-wsl
+      - eval-minimal
+      - eval-home
+      - build-packages
+      - validate-templates
+      - lint-scripts
+      - validate-secrets
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Print CI summary
+        run: |
+          echo "=========================================="
+          echo "Smart CI Summary"
+          echo "=========================================="
+          echo ""
+          echo "Changed paths detected:"
+          echo "  flake-core:    ${{ needs.changes.outputs.flake-core }}"
+          echo "  flake-parts:   ${{ needs.changes.outputs.flake-parts }}"
+          echo "  nixos-modules: ${{ needs.changes.outputs.nixos-modules }}"
+          echo "  home-modules:  ${{ needs.changes.outputs.home-modules }}"
+          echo "  laptop:        ${{ needs.changes.outputs.laptop }}"
+          echo "  desktop:       ${{ needs.changes.outputs.desktop }}"
+          echo "  server:        ${{ needs.changes.outputs.server }}"
+          echo "  wsl:           ${{ needs.changes.outputs.wsl }}"
+          echo "  minimal:       ${{ needs.changes.outputs.minimal }}"
+          echo "  packages:      ${{ needs.changes.outputs.packages }}"
+          echo "  overlays:      ${{ needs.changes.outputs.overlays }}"
+          echo "  secrets:       ${{ needs.changes.outputs.secrets }}"
+          echo "  templates:     ${{ needs.changes.outputs.templates }}"
+          echo "  scripts:       ${{ needs.changes.outputs.scripts }}"
+          echo "  workflows:     ${{ needs.changes.outputs.workflows }}"
+          echo ""
+          echo "Job results:"
+          echo "  format-check:      ${{ needs.format-check.result }}"
+          echo "  flake-check:       ${{ needs.flake-check.result }}"
+          echo "  eval-laptop:       ${{ needs.eval-laptop.result }}"
+          echo "  eval-desktop:      ${{ needs.eval-desktop.result }}"
+          echo "  eval-server:       ${{ needs.eval-server.result }}"
+          echo "  eval-wsl:          ${{ needs.eval-wsl.result }}"
+          echo "  eval-minimal:      ${{ needs.eval-minimal.result }}"
+          echo "  eval-home:         ${{ needs.eval-home.result }}"
+          echo "  build-packages:    ${{ needs.build-packages.result }}"
+          echo "  validate-templates: ${{ needs.validate-templates.result }}"
+          echo "  lint-scripts:      ${{ needs.lint-scripts.result }}"
+          echo "  validate-secrets:  ${{ needs.validate-secrets.result }}"
+
+          # Check for failures
+          if [[ "${{ needs.format-check.result }}" == "failure" ]] || \
+             [[ "${{ needs.flake-check.result }}" == "failure" ]] || \
+             [[ "${{ needs.eval-laptop.result }}" == "failure" ]] || \
+             [[ "${{ needs.eval-desktop.result }}" == "failure" ]] || \
+             [[ "${{ needs.eval-server.result }}" == "failure" ]] || \
+             [[ "${{ needs.eval-wsl.result }}" == "failure" ]] || \
+             [[ "${{ needs.eval-minimal.result }}" == "failure" ]]; then
+            echo ""
+            echo "❌ Some critical checks failed"
+            exit 1
+          else
+            echo ""
+            echo "✅ All critical checks passed!"
+          fi
