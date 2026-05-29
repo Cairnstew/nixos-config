@@ -13,7 +13,7 @@
       packages.installer-iso = (inputs.nixpkgs.lib.nixosSystem {
         inherit system;
         modules = [
-          "${pkgs.path}/nixos/modules/installer/cd-dvd/installation-cd-minimal.nix"
+          "${inputs.nixpkgs}/nixos/modules/installer/cd-dvd/installation-cd-minimal.nix"
           configurationModule
           {
             isoImage.contents = [

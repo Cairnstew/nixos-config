@@ -12,6 +12,12 @@
 #
 # Also available in the default devShell (via direnv / nix develop).
 # =============================================================================
+#
+# NOTE: --bind is used by default to work around Docker 27+ security hardening
+# that rejects docker cp relative paths with "path escapes from parent".
+# The ubuntu-latest image is pinned to act-fixed:latest which replaces the
+# /var/run symlink with a real directory to avoid "mkdirat var/run: file exists".
+# Run `just act-image` to build the fixed image. See GOTCHAS.md for details.
 
 { ... }: {
   perSystem = { pkgs, ... }:
@@ -59,14 +65,14 @@
               echo "==> Running act for job: $JOB"
               echo "    Workflow: $WORKFLOW"
               echo ""
-              exec act -j "$JOB" -W "$WORKFLOW" "$@"
+              exec act --bind -P ubuntu-latest=act-fixed:latest --action-offline-mode -j "$JOB" -W "$WORKFLOW" "$@"
               ;;
             --*)
               # If first arg is an act flag, use default job and pass everything through
               echo "==> Running act for job: $DEFAULT_JOB (with flags)"
               echo "    Workflow: $WORKFLOW"
               echo ""
-              exec act -j "$DEFAULT_JOB" -W "$WORKFLOW" "$JOB" "$@"
+              exec act --bind -P ubuntu-latest=act-fixed:latest --action-offline-mode -j "$DEFAULT_JOB" -W "$WORKFLOW" "$JOB" "$@"
               ;;
             *)
               echo "Unknown job: $JOB"
@@ -74,6 +80,21 @@
               exit 1
               ;;
           esac
+        '';
+      };
+
+      act-wrapper = pkgs.writeShellApplication {
+        name = "act";
+        runtimeInputs = [ pkgs.act ];
+        text = ''
+          set -euo pipefail
+          # Check if the fixed image exists; warn if not
+          if ! docker image inspect act-fixed:latest >/dev/null 2>&1; then
+            echo "Warning: act-fixed:latest image not found." >&2
+            echo "  Run 'just act-image' to build it." >&2
+            echo "  Falling back to default ubuntu-latest image (may fail with Docker 29+)." >&2
+          fi
+          exec act --bind "$@"
         '';
       };
     in
@@ -86,8 +107,8 @@
       apps = {
         act = {
           type = "app";
-          program = "${pkgs.act}/bin/act";
-          meta.description = "Run GitHub Actions workflows locally with nektos/act";
+          program = "${act-wrapper}/bin/act";
+          meta.description = "Run GitHub Actions workflows locally with nektos/act (--bind enabled by default)";
         };
         act-verify = {
           type = "app";

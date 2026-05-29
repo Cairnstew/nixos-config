@@ -7,7 +7,15 @@
 
 ## Format
 
+## Format
+
 Each entry: **symptom → cause → fix**. One paragraph max. Newest at the top.
+
+---
+
+**`sudo act` fails on Docker 29+ — two separate errors with different fixes**
+Symptom 1: Running `sudo act` fails with `Error response from daemon: mkdirat var/run/act: path escapes from parent`. Cause: Docker 27+ hardened `docker cp` to reject relative paths. `act` copies the workspace into the container via `docker cp` which triggers this check. Fix: Use `act --bind` to bind-mount the workspace instead of copying.
+Symptom 2: Even with `--bind`, act fails with `Error response from daemon: mkdirat var/run: file exists` when extracting workflow metadata to `/var/run/act/`. Docker 29.x's `mkdirat` check fails because `/var/run -> /run` is a symlink in the container image, and `docker cp` cannot follow it. Fix: Use a custom image where `/var/run` is a real directory (not a symlink). Run `just act-image` to build `act-fixed:latest` from `modules/flake-parts/act-fixed.Dockerfile` which replaces the symlink with a real directory. Pass `-P ubuntu-latest=act-fixed:latest` to act. The `act-verify` wrapper, `.#act` app, and all `just act*` recipes include both `--bind` and `-P ubuntu-latest=act-fixed:latest` by default.
 
 ---
 

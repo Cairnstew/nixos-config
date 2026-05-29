@@ -120,8 +120,10 @@ in
           echo ""
           echo "CI / local workflow testing"
           echo "  nix run .#act-verify              # run local-verify workflow"
-          echo "  nix run .#act -- --list            # list available jobs"
-          echo "  nix run .#act -- -j eval-check -W .github/workflows/local-verify.yml"
+
+          echo "  nix run .#act -- --list            # list available jobs (--bind auto-enabled)"
+
+          echo "  nix run .#act -- -j eval-check     # run eval-check (--bind auto-enabled)"
         '';
       };
 
