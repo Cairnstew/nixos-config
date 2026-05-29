@@ -377,6 +377,15 @@ in
       description = "Mount point for the Ventoy data partition.";
     };
 
+    buildInstallerIso = mkOption {
+      type = types.bool;
+      default = false;
+      description = ''
+        Auto-build the custom NixOS installer ISO (with Tailscale + SSH keys)
+        as a pre-deploy step. Requires the installer-iso flake package.
+      '';
+    };
+
     grubConfig = mkOption {
       type = types.nullOr types.package;
       default = null;
@@ -883,6 +892,7 @@ in
         )
         DEFAULT_DEVICE="${vCfg.device}"
         MOUNT_POINT="${vCfg.mountPoint}"
+        BUILD_INSTALLER_ISO=${if vCfg.buildInstallerIso then "1" else "0"}
 
         CHECK_ONLY=0
         ASSUME_YES=0
@@ -1346,13 +1356,39 @@ in
             fi
           fi
 
-          # Step 4: Deploy
+          # Step 4: Auto-build custom installer ISO (if configured)
+          CUSTOM_ISO=""
+          if [[ $BUILD_INSTALLER_ISO -eq 1 ]] && [[ $CHECK_ONLY -eq 0 ]]; then
+            echo ""
+            echo "=== Building custom NixOS installer ISO (Tailscale + SSH) ==="
+            if command -v nix &>/dev/null; then
+              if nix run "path:$PWD#build-iso" 2>&1; then
+                CUSTOM_ISO="$PWD/ISO/nixos-installer.iso"
+                echo "  Custom ISO built: $CUSTOM_ISO"
+              else
+                echo "Warning: installer ISO build failed — continuing without it." >&2
+              fi
+            else
+              echo "Warning: nix not found in PATH — skipping installer ISO build." >&2
+            fi
+          fi
+
+          # Step 5: Deploy
           if [[ $CHECK_ONLY -eq 0 ]]; then
             if [[ -z "$MOUNT" ]]; then
               echo "Error: No mount point available for deploy." >&2
               exit 1
             fi
             if deploy_isos "$MOUNT"; then
+              # Also copy the custom installer ISO if it was built
+              if [[ -n "$CUSTOM_ISO" ]] && [[ -f "$CUSTOM_ISO" ]]; then
+                local target="/iso/linux/nixos-installer-x86_64-linux.iso"
+                echo ""
+                echo "  Deploying custom NixOS installer ISO -> $target"
+                mkdir -p "$(dirname "$MOUNT$target")"
+                cp "$CUSTOM_ISO" "$MOUNT$target"
+                echo "  [OK] Custom ISO deployed ($(stat -c%s "$MOUNT$target" 2>/dev/null | numfmt --to=iec) MB)"
+              fi
               echo ""
               echo "Ventoy deploy complete!"
             else
@@ -1361,7 +1397,7 @@ in
             fi
           fi
 
-          # Step 5: Cleanup
+          # Step 6: Cleanup
           if [[ $CLEANUP -eq 1 ]]; then
             umount "$MOUNT" || true
             echo "Unmounted $MOUNT"

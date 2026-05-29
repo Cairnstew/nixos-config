@@ -39,6 +39,8 @@ in
 
     installOptions = { };
 
+    buildInstallerIso = true;
+
     answerFileSettings = {
       username = config.me.username;
       hostname = config.me.username + "-win";

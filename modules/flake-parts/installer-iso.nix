@@ -10,7 +10,7 @@
         text = ''
           set -euo pipefail
 
-          FLAKE_ROOT="${inputs.self}"
+          FLAKE_ROOT="$PWD"
           SECRETS_DIR="$FLAKE_ROOT/packages/installer-iso/secrets"
           ISO_DIR="$FLAKE_ROOT/ISO"
 
