@@ -43,7 +43,7 @@ in
     ./udisks2.nix
     ./ventoy
     ./gitreposync
-    ./cachix-push
+    ./caches
     ./default-build.nix
 
     # ── Dual-boot / Windows Support ────────────────────────────────────────

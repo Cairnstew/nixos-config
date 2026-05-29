@@ -29,6 +29,6 @@ in
     # ── Cache ──────────────────────────────────────────────────────────────
     # mkDefault false: Cachix push is opt-in (avoid accidental pushes)
     # Override when: Build host that should push to binary cache
-    my.services.cachix-push.enable = lib.mkDefault false;
+    my.caches.personal.push.enable = lib.mkDefault false;
   };
 }
