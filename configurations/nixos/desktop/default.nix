@@ -44,13 +44,37 @@
   #   p3: Windows (NTFS, ~150GB)
   #   p5: NixOS (ext4, rest) — created before first deploy
   #
-  # Before first nixos-anywhere deploy:
-  #   1. Boot NixOS live USB on the desktop
-  #   2. Check partition table: lsblk -o NAME,SIZE,FSTYPE,MOUNTPOINT
-  #   3. Create partition in free space: mkfs.ext4 /dev/nvme0n1p5
-  #   4. Update nixosPartition below if different
-  #   5. From source machine: nix run .#deploy -- desktop <IP>
-  #      (disko skipped — useExisting mode mounts existing partitions)
+  # First-time deploy (Windows exists with unallocated space):
+  #   1. Create NixOS bootable USB:
+  #        sudo dd if=<nixos-minimal-iso> of=/dev/sdX bs=4M status=progress
+  #   2. Boot the USB on the desktop, select "NixOS installer" (not "live")
+  #   3. Set the nixos user password (needed for SSH):
+  #        passwd
+  #   4. Find the desktop IP:
+  #        ip a        # look for your LAN interface (e.g. enp4s0), note the IP
+  #      Expected: 192.168.x.x or 100.x.x.x (Tailscale, if running)
+  #   5. Check the partition table to confirm free space partition number:
+  #        lsblk -o NAME,SIZE,FSTYPE,MOUNTPOINT
+  #      You should see:
+  #        nvme0n1       (disk)
+  #        ├─nvme0n1p1   (ESP, vfat, ~100M)
+  #        ├─nvme0n1p2   (MSR, 16M)
+  #        ├─nvme0n1p3   (Windows, NTFS, ~150G)
+  #        └─nvme0n1p5   (free space — this is what we want)
+  #      If the free space is at a different partition number (e.g. p4),
+  #      update nixosPartition below before continuing.
+  #   6. Format the NixOS partition:
+  #        sudo mkfs.ext4 -L nixos /dev/nvme0n1p5   # adjust p5 if needed
+  #   7. Add your SSH public key for passwordless auth:
+  #        mkdir -p ~/.ssh
+  #        curl -L https://github.com/Cairnstew.keys >> ~/.ssh/authorized_keys
+  #      Or manually paste: echo "ssh-ed25519 AAAA..." >> ~/.ssh/authorized_keys
+  #   8. From your source machine (laptop or wherever this repo is):
+  #        nix run .#deploy -- desktop nixos@<desktop-IP>
+  #      (uses nixos user because that's the user on the installer ISO;
+  #       nixos-anywhere uses sudo to become root)
+  #   9. After first boot, grab the host key and register with agenix:
+  #        just register-host desktop <desktop-IP>
   my.disko.dualBoot = {
     enable = true;
     mode = "useExisting";
@@ -150,6 +174,10 @@
     win11-23h2 = {
       source = flake.inputs.windows-iso-src.packages.x86_64-linux."windows-iso-22631.7079.23H2.PRO.X64.EN";
       target = "/iso/windows/22631.7079.23H2.PRO.X64.EN.iso";
+    };
+    nixos-installer = {
+      source = flake.inputs.nixos-installer-iso;
+      target = "/iso/linux/nixos-installer-x86_64-linux.iso";
     };
   };
 

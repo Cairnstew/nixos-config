@@ -28,9 +28,11 @@ infinitude:
     nix run . infinitude
 
 # Deploy a NixOS host via nixos-anywhere (fresh install)
-# Usage: just deploy <hostname> <ip> [-- nixos-anywhere flags]
-# Example: just deploy server 192.168.1.100
-# Prerequisites: Nix with flakes, SSH access to target as root
+# Usage: just deploy <hostname> <ssh-address> [-- nixos-anywhere flags]
+# Examples:
+#   just deploy server 192.168.1.100         # root@ (after initial install)
+#   just deploy desktop nixos@192.168.1.100  # nixos@ (from NixOS installer ISO)
+# Prerequisites: Nix with flakes, SSH access to target
 # Flake output: apps.deploy (calls nixos-anywhere)
 [group('deploy')]
 deploy host ip *args:
@@ -38,12 +40,15 @@ deploy host ip *args:
 
 # Register a freshly deployed host with agenix
 # Connects via SSH, fetches host key, prints instructions
-# Usage: just register-host <hostname> <ip>
+# Usage: just register-host <hostname> <ssh-address>
+# Examples:
+#   just register-host server 192.168.1.100
+#   just register-host desktop 192.168.1.100
 # Prerequisites: SSH access to target as root
 [group('deploy')]
 register-host host ip:
     @echo "Fetching SSH host key for {{host}}..."
-    KEY=$$(ssh root@{{ip}} "cat /etc/ssh/ssh_host_ed25519_key.pub")
+    KEY=$$(ssh "root@{{ip}}" "cat /etc/ssh/ssh_host_ed25519_key.pub")
     @echo ""
     @echo "Host key for {{host}}:"
     @echo "  $$KEY"

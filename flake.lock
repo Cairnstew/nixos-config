@@ -1370,6 +1370,18 @@
         "type": "github"
       }
     },
+    "nixos-installer-iso": {
+      "flake": false,
+      "locked": {
+        "narHash": "sha256-8U9/KxuwFFljPgUU05KpqDXwQb2+WPA9WBhfBURbJ4g=",
+        "type": "file",
+        "url": "https://github.com/nix-community/nixos-images/releases/download/nixos-unstable/nixos-installer-x86_64-linux.iso"
+      },
+      "original": {
+        "type": "file",
+        "url": "https://github.com/nix-community/nixos-images/releases/download/nixos-unstable/nixos-installer-x86_64-linux.iso"
+      }
+    },
     "nixos-stable": {
       "locked": {
         "lastModified": 1779622335,
@@ -1796,6 +1808,7 @@
         "nix-index-database": "nix-index-database",
         "nixos-anywhere": "nixos-anywhere",
         "nixos-hardware": "nixos-hardware",
+        "nixos-installer-iso": "nixos-installer-iso",
         "nixos-unified": "nixos-unified",
         "nixos-vscode-server": "nixos-vscode-server",
         "nixos-wsl": "nixos-wsl",

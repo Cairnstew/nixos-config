@@ -36,9 +36,19 @@
   boot.kernelModules = [ "kvm-amd" ];
   boot.extraModulePackages = [ ];
 
-  # fileSystems and swapDevices are defined by configurations/nixos/server/disk-config.nix (disko).
-  # After nixos-anywhere generates a new hardware config, nixos-generate-config will
-  # produce fileSystems entries with lib.mkDefault that coexist with disko.
+  fileSystems."/" = {
+    device = "/dev/disk/by-uuid/4079b1c2-d485-43f1-9e82-e7fa1ad30a09";
+    fsType = "ext4";
+  };
+
+  fileSystems."/boot" = {
+    device = "/dev/disk/by-uuid/AB94-2222";
+    fsType = "vfat";
+    options = [ "fmask=0022" "dmask=0022" ];
+  };
+
+  swapDevices = [ ];
+
   # Enables DHCP on each ethernet and wireless interface. In case of scripted networking
   # (the default) this is the recommended approach. When using systemd-networkd it's
   # still possible to use this option, but it's recommended to use it in conjunction

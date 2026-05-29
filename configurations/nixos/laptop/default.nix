@@ -3,7 +3,6 @@
 { flake, ... }:
 {
   imports = [
-    ./disk-config.nix
     # Import hardware config FIRST to set hostPlatform
     ./hardware-configuration.nix
     flake.inputs.self.nixosModules.common
@@ -72,6 +71,16 @@
 
   # ── Additional Programs ────────────────────────────────────────────────
   my.programs.ventoy.enable = true;
+
+  # Contribute NixOS installer ISO to the Ventoy USB deployment
+  my.ventoy.enable = true;
+  my.ventoy.isos = {
+    nixos-installer = {
+      source = flake.inputs.nixos-installer-iso;
+      target = "/iso/linux/nixos-installer-x86_64-linux.iso";
+    };
+  };
+
   my.programs.spotify.enable = true;
 
   # ── Home Manager Extra ───────────────────────────────────────────────────

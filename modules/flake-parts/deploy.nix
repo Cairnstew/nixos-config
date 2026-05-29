@@ -10,6 +10,10 @@
 
           if [ $# -lt 2 ]; then
             echo "Usage: deploy-nixos <hostname> <ssh-address> [-- nixos-anywhere options]"
+            echo ""
+            echo "Examples:"
+            echo "  deploy-nixos server 192.168.1.100"
+            echo "  deploy-nixos desktop nixos@192.168.1.100"
             exit 1
           fi
           host="$1"
@@ -25,21 +29,27 @@
             exit 1
           fi
 
+          # Only prepend root@ if no user part is present in the address
+          case "$addr" in
+            *@*) target_host="$addr" ;;
+            *)   target_host="root@$addr" ;;
+          esac
+
           if [ -f "$disk_config" ]; then
             echo "Deploying $host with disko (disk-config.nix found)"
             exec nixos-anywhere \
               --flake ".#$host" \
               --generate-hardware-config nixos-generate-config "$hw_config" \
-              --target-host "root@$addr" \
+              --target-host "$target_host" \
               "$@"
           else
             echo "Deploying $host without disko (useExisting or manual partition layout)"
-            echo "Note: Target must already be partitioned. Use --phases to customize."
+            echo "Note: Target must already be partitioned."
             exec nixos-anywhere \
               --phases kexec,install,reboot \
               --flake ".#$host" \
               --generate-hardware-config nixos-generate-config "$hw_config" \
-              --target-host "root@$addr" \
+              --target-host "$target_host" \
               "$@"
           fi
         '';
