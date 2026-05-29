@@ -20,10 +20,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Install Nix
-        uses: cachix/install-nix-action@v27
+        uses: cachix/install-nix-action@v31
         with:
           extra_nix_config: |
             accept-flake-config = true
@@ -34,10 +34,12 @@ jobs:
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
       - name: Update flake inputs
+        env:
+          INPUTS_TO_UPDATE: ${{ github.event.inputs.inputs_to_update }}
         run: |
-          if [ -n "${{ github.event.inputs.inputs_to_update }}" ]; then
-            echo "Updating specific inputs: ${{ github.event.inputs.inputs_to_update }}"
-            for input in ${{ github.event.inputs.inputs_to_update }}; do
+          if [ -n "$INPUTS_TO_UPDATE" ]; then
+            echo "Updating specific inputs: $INPUTS_TO_UPDATE"
+            for input in $INPUTS_TO_UPDATE; do
               nix flake lock --update-input "$input"
             done
           else

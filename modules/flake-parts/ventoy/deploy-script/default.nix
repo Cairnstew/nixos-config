@@ -1,8 +1,9 @@
-{ pkgs, lib
+{ pkgs
+, lib
 , ventoyJson       # store path to ventoy.json
 , grubConfig ? null # optional ventoy_grub.cfg
-, isoMappings ? []  # list of "source|target|hash"
-, fileMappings ? [] # list of "source|target|hash"
+, isoMappings ? [ ]  # list of "source|target|hash"
+, fileMappings ? [ ] # list of "source|target|hash"
 , device ? ""
 , mountPoint ? "/mnt/ventoy"
 , buildInstallerIso ? false

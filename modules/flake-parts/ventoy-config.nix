@@ -15,36 +15,42 @@ let
   # Collect every host's ISOs into one flat attrset, NOT via mkMerge.
   # mkMerge would leak _type / list keys into the attrset, confusing
   # the attrsOf submodule type check.
-  hostIsos = builtins.foldl' (acc: hostName:
-    let
-      hostCfg = config.flake.nixosConfigurations.${hostName} or { };
-      ventoyCfg = hostCfg.config.my.ventoy or { };
-      isos = ventoyCfg.isos or { };
+  hostIsos = builtins.foldl'
+    (acc: hostName:
+      let
+        hostCfg = config.flake.nixosConfigurations.${hostName} or { };
+        ventoyCfg = hostCfg.config.my.ventoy or { };
+        isos = ventoyCfg.isos or { };
 
-      # When hostIso.enable, build the host config as an installer ISO
-      # by extending with installation-cd-minimal (no effect on running system)
-      hostIso = if ventoyCfg.hostIso.enable or false then let
-        # extended = host config + ISO builder + ventoy disabled
-        # ventoy must be disabled to break the cycle:
-        #   ventoy-deploy → hostIso → extended config → ventoy-deploy
-        extended = hostCfg.extendModules {
-          modules = [
-            isoBuilderModule
-            ventoyFreeModule
-          ];
-        };
-      in {
-        "nixos-${hostName}" = {
-          source = extended.config.system.build.isoImage;
-          target = "/iso/linux/nixos-${hostName}-x86_64-linux.iso";
-        };
-      } else { };
-    in
-    if ventoyCfg.enable or false then
-      acc // isos // hostIso
-    else
-      acc
-  ) { } (builtins.attrNames (config.flake.nixosConfigurations or { }));
+        # When hostIso.enable, build the host config as an installer ISO
+        # by extending with installation-cd-minimal (no effect on running system)
+        hostIso =
+          if ventoyCfg.hostIso.enable or false then
+            let
+              # extended = host config + ISO builder + ventoy disabled
+              # ventoy must be disabled to break the cycle:
+              #   ventoy-deploy → hostIso → extended config → ventoy-deploy
+              extended = hostCfg.extendModules {
+                modules = [
+                  isoBuilderModule
+                  ventoyFreeModule
+                ];
+              };
+            in
+            {
+              "nixos-${hostName}" = {
+                source = extended.config.system.build.isoImage;
+                target = "/iso/linux/nixos-${hostName}-x86_64-linux.iso";
+              };
+            } else { };
+      in
+      if ventoyCfg.enable or false then
+        acc // isos // hostIso
+      else
+        acc
+    )
+    { }
+    (builtins.attrNames (config.flake.nixosConfigurations or { }));
 in
 {
   ventoy = {
@@ -59,17 +65,17 @@ in
       ];
       menu_class = [
         { parent = "/iso/windows"; class = "windows"; }
-        { parent = "/iso/linux";   class = "linux"; }
+        { parent = "/iso/linux"; class = "linux"; }
       ];
       menu_alias = [
         { image = "/iso/windows/22631.7079.23H2.PRO.X64.EN.iso"; alias = "Windows 11 23H2 Pro"; }
-        { dir   = "/iso/linux";   alias = "[ Linux ISOs ]"; }
+        { dir = "/iso/linux"; alias = "[ Linux ISOs ]"; }
       ];
     };
 
     installOptions = { };
 
-    buildInstallerIso = true;
+    buildInstallerIso = false;
 
     answerFileSettings = {
       username = config.me.username;

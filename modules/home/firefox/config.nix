@@ -6,16 +6,18 @@ let
 
   # Build the ExtensionSettings policy entries from the configured names.
   extensionPolicies = lib.listToAttrs (
-    builtins.map (
-      name:
-      let
-        ext = knownExtensions.${name};
-      in
-      lib.nameValuePair ext.guid {
-        install_url = "https://addons.mozilla.org/firefox/downloads/latest/${ext.shortId}/latest.xpi";
-        installation_mode = cfg.extensionsInstallMode;
-      }
-    ) cfg.extensions
+    builtins.map
+      (
+        name:
+        let
+          ext = knownExtensions.${name};
+        in
+        lib.nameValuePair ext.guid {
+          install_url = "https://addons.mozilla.org/firefox/downloads/latest/${ext.shortId}/latest.xpi";
+          installation_mode = cfg.extensionsInstallMode;
+        }
+      )
+      cfg.extensions
   );
 in
 {

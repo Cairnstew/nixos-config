@@ -20,10 +20,10 @@ jobs:
         host: [laptop, server, wsl]
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Install Nix
-        uses: cachix/install-nix-action@v27
+        uses: cachix/install-nix-action@v31
         with:
           extra_nix_config: |
             accept-flake-config = true
@@ -41,10 +41,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Install Nix
-        uses: cachix/install-nix-action@v27
+        uses: cachix/install-nix-action@v31
 
       - name: Check for common issues
         run: |
@@ -58,7 +58,12 @@ jobs:
           # Check for TODO/FIXME comments
           echo ""
           echo "TODO/FIXME comments in PR:"
-          git diff HEAD~1 --name-only | xargs grep -n "TODO\|FIXME\|XXX" 2>/dev/null || echo "None found"
+          BASE_SHA="${{ github.event.pull_request.base.sha }}"
+          if [ -n "$BASE_SHA" ]; then
+            git diff "$BASE_SHA" --name-only | xargs grep -n "TODO\|FIXME\|XXX" 2>/dev/null || echo "None found"
+          else
+            git diff HEAD~1 --name-only | xargs grep -n "TODO\|FIXME\|XXX" 2>/dev/null || echo "None found"
+          fi
 
   # ─────────────────────────────────────────────────────────────────────────────
   # Comment on PR with helpful info

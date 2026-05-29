@@ -8,9 +8,10 @@ let
 
   # ── JSON helpers (mirrors old ventoy.nix) ─────────────────────────
 
-  mkThemeJson = theme: lib.filterAttrs (_: v: v != null && v != [ ]) {
-    inherit (theme) file gfxmode display_mode fonts;
-  } // lib.optionalAttrs (theme.default_file != null) {
+  mkThemeJson = theme: lib.filterAttrs (_: v: v != null && v != [ ])
+    {
+      inherit (theme) file gfxmode display_mode fonts;
+    } // lib.optionalAttrs (theme.default_file != null) {
     default_file = theme.default_file;
   } // lib.optionalAttrs (theme.resolution_fit != null) {
     resolution_fit = theme.resolution_fit;
@@ -49,22 +50,27 @@ let
   pluginNames = vCfg._internal.pluginNames;
   modeSuffixes = vCfg._internal.modeSuffixes;
 
-in {
+in
+{
   config.perSystem = { pkgs, system, config, ... }:
     let
       # ── ventoy.json ───────────────────────────────────────────────
-      ventoyJson = let
-        entries = lib.flatten (lib.forEach pluginNames (baseName:
-          lib.forEach modeSuffixes (suffix: let
-            key = if suffix == "" then baseName else "${baseName}_${suffix}";
-            raw = vCfg.settings.${key} or null;
-            cleaned = cleanPluginValue baseName raw;
-          in lib.optional (shouldInclude cleaned) {
-            name = key;
-            value = cleaned;
-          })
-        ));
-      in builtins.listToAttrs entries // vCfg.extraConfig;
+      ventoyJson =
+        let
+          entries = lib.flatten (lib.forEach pluginNames (baseName:
+            lib.forEach modeSuffixes (suffix:
+              let
+                key = if suffix == "" then baseName else "${baseName}_${suffix}";
+                raw = vCfg.settings.${key} or null;
+                cleaned = cleanPluginValue baseName raw;
+              in
+              lib.optional (shouldInclude cleaned) {
+                name = key;
+                value = cleaned;
+              })
+          ));
+        in
+        builtins.listToAttrs entries // vCfg.extraConfig;
 
       ventoyJsonFile = pkgs.writeText "ventoy.json" (builtins.toJSON ventoyJson);
 
@@ -80,24 +86,33 @@ in {
         };
       };
 
-      isoMappings = lib.mapAttrsToList (name: iso:
-        ''"${iso.source}|${iso.target}|${storeHash iso.source}"''
-      ) allIsos;
+      isoMappings = lib.mapAttrsToList
+        (name: iso:
+          ''"${iso.source}|${iso.target}|${storeHash iso.source}"''
+        )
+        allIsos;
 
       # ── File mappings ─────────────────────────────────────────────
       # Answer-file packages are exported by answer-files.nix into the
       # same perSystem evaluation. Reference via forward-reference:
       # they are in config.packages because that module's perSystem has
       # already merged.
-      fileMappings = let
-        answerPkgNames = builtins.attrNames config.packages;
-        answerXmlPkgs = builtins.filter
-          (n: lib.hasPrefix "windows-answ-pro-" n) answerPkgNames;
-      in map (name: let
-        pkg = config.packages.${name};
-        profileName = lib.removePrefix "windows-answ-pro-" name;
-        target = "/ventoy/scripts/${profileName}.xml";
-      in ''"${pkg}|${target}|${storeHash pkg}"'') answerXmlPkgs;
+      fileMappings =
+        let
+          answerPkgNames = builtins.attrNames config.packages;
+          answerXmlPkgs = builtins.filter
+            (n: lib.hasPrefix "windows-answ-pro-" n)
+            answerPkgNames;
+        in
+        map
+          (name:
+            let
+              pkg = config.packages.${name};
+              profileName = lib.removePrefix "windows-answ-pro-" name;
+              target = "/ventoy/scripts/${profileName}.xml";
+            in
+            ''"${pkg}|${target}|${storeHash pkg}"'')
+          answerXmlPkgs;
 
       # ── ventoy-bundle ─────────────────────────────────────────────
       ventoy-bundle = pkgs.runCommand "ventoy-bundle" { } ''
@@ -120,7 +135,8 @@ in {
         '') (lib.filterAttrs (n: _: lib.hasPrefix "windows-answ-pro-" n) config.packages))}
       '';
 
-    in {
+    in
+    {
       packages = {
         ventoy-deploy = pkgs.callPackage ./deploy-script {
           inherit (vCfg) device mountPoint buildInstallerIso;
@@ -128,7 +144,8 @@ in {
           grubConfig = vCfg.grubConfig;
           isoMappings = isoMappings;
           fileMappings = fileMappings;
-          installerIso = if vCfg.buildInstallerIso
+          installerIso =
+            if vCfg.buildInstallerIso
             then config.packages.installer-iso or null
             else null;
           secureBoot = vCfg.installOptions.secureBoot;

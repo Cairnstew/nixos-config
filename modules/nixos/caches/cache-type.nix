@@ -54,9 +54,10 @@ let
 
       cacheName = lib.mkOption {
         type = lib.types.str;
-        default = let
-          stripped = lib.removePrefix "https://" (lib.removeSuffix "/" config.substituter);
-        in
+        default =
+          let
+            stripped = lib.removePrefix "https://" (lib.removeSuffix "/" config.substituter);
+          in
           lib.optionalString (lib.hasSuffix ".cachix.org" stripped) (lib.removeSuffix ".cachix.org" stripped);
         defaultText = lib.literalExpression ''
           Derived from substituter URL for Cachix caches,
@@ -80,70 +81,86 @@ in
   enabledCaches = caches: lib.filterAttrs (n: v: v.enable) caches;
 
   # Build the substituter list sorted by priority (ascending)
-  mkSubstituters = caches: let
-    enabled = lib.filterAttrs (n: v: v.enable) caches;
-    sorted = lib.sort (a: b: a.priority < b.priority) (lib.attrValues enabled);
-  in
+  mkSubstituters = caches:
+    let
+      enabled = lib.filterAttrs (n: v: v.enable) caches;
+      sorted = lib.sort (a: b: a.priority < b.priority) (lib.attrValues enabled);
+    in
     map (c: c.substituter) sorted;
 
-  mkPublicKeys = caches: let
-    enabled = lib.filterAttrs (n: v: v.enable) caches;
-  in
+  mkPublicKeys = caches:
+    let
+      enabled = lib.filterAttrs (n: v: v.enable) caches;
+    in
     map (c: c.publicKey) (lib.attrValues enabled);
 
   # Build systemd push services for caches with push enabled
-  mkPushServices = caches: pkgs': let
-    pushes = lib.filterAttrs (n: v: v.push.enable) caches;
-  in {
-    services = lib.mapAttrs' (name: cache: let
-      p = cache.push;
-      cname = if cache.cacheName != "" then cache.cacheName else name;
-    in {
-      name = "cachix-push-${name}";
-      value = {
-        description = "Push to Cachix cache: ${cname}";
-        after = [ "network-online.target" ];
-        wants = [ "network-online.target" ];
-        serviceConfig = {
-          Type = "oneshot";
-          ExecStart = (pkgs'.writeShellScript "cachix-push-${name}" ''
-            export CACHIX_AUTH_TOKEN=$(cat ${p.tokenFile})
-            ${if p.paths == [ ]
-              then "${pkgs'.cachix}/bin/cachix push ${cname} /run/current-system"
-              else lib.concatMapStringsSep "\n" (path: "${pkgs'.cachix}/bin/cachix push ${cname} ${path}") p.paths
-            }
-          '');
-        };
-      };
-    }) pushes;
-    timers = lib.mapAttrs' (name: cache: let
-      cname = if cache.cacheName != "" then cache.cacheName else name;
-    in {
-      name = "cachix-push-${name}";
-      value = {
-        description = "Timer for Cachix push: ${cname}";
-        wantedBy = [ "timers.target" ];
-        timerConfig = {
-          OnCalendar = cache.push.onCalendar;
-          Persistent = true;
-        };
-      };
-    }) pushes;
-  };
+  mkPushServices = caches: pkgs':
+    let
+      pushes = lib.filterAttrs (n: v: v.push.enable) caches;
+    in
+    {
+      services = lib.mapAttrs'
+        (name: cache:
+          let
+            p = cache.push;
+            cname = if cache.cacheName != "" then cache.cacheName else name;
+          in
+          {
+            name = "cachix-push-${name}";
+            value = {
+              description = "Push to Cachix cache: ${cname}";
+              after = [ "network-online.target" ];
+              wants = [ "network-online.target" ];
+              serviceConfig = {
+                Type = "oneshot";
+                ExecStart = (pkgs'.writeShellScript "cachix-push-${name}" ''
+                  export CACHIX_AUTH_TOKEN=$(cat ${p.tokenFile})
+                  ${if p.paths == [ ]
+                    then "${pkgs'.cachix}/bin/cachix push ${cname} /run/current-system"
+                    else lib.concatMapStringsSep "\n" (path: "${pkgs'.cachix}/bin/cachix push ${cname} ${path}") p.paths
+                  }
+                '');
+              };
+            };
+          })
+        pushes;
+      timers = lib.mapAttrs'
+        (name: cache:
+          let
+            cname = if cache.cacheName != "" then cache.cacheName else name;
+          in
+          {
+            name = "cachix-push-${name}";
+            value = {
+              description = "Timer for Cachix push: ${cname}";
+              wantedBy = [ "timers.target" ];
+              timerConfig = {
+                OnCalendar = cache.push.onCalendar;
+                Persistent = true;
+              };
+            };
+          })
+        pushes;
+    };
 
   # Assertions for push config
-  mkPushAssertions = caches: lib.flatten (lib.mapAttrsToList (name: cache: let
-    p = cache.push;
-  in [
-    {
-      assertion = !p.enable || cache.cacheName != "";
-      message = "my.caches.${name}.cacheName must be set when push is enabled. "
-        + "Either set it explicitly, or use a Cachix substituter URL. "
-        + "Hint: for https://<name>.cachix.org, cacheName = \"<name>\".";
-    }
-    {
-      assertion = !p.enable || p.tokenFile != null;
-      message = "my.caches.${name}.push.tokenFile must be set when push is enabled.";
-    }
-  ]) (lib.filterAttrs (n: v: v.push.enable) caches));
+  mkPushAssertions = caches: lib.flatten (lib.mapAttrsToList
+    (name: cache:
+      let
+        p = cache.push;
+      in
+      [
+        {
+          assertion = !p.enable || cache.cacheName != "";
+          message = "my.caches.${name}.cacheName must be set when push is enabled. "
+            + "Either set it explicitly, or use a Cachix substituter URL. "
+            + "Hint: for https://<name>.cachix.org, cacheName = \"<name>\".";
+        }
+        {
+          assertion = !p.enable || p.tokenFile != null;
+          message = "my.caches.${name}.push.tokenFile must be set when push is enabled.";
+        }
+      ])
+    (lib.filterAttrs (n: v: v.push.enable) caches));
 }

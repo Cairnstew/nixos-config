@@ -24,10 +24,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Install Nix
-        uses: cachix/install-nix-action@v27
+        uses: cachix/install-nix-action@v31
         with:
           github_access_token: ${{ secrets.GITHUB_TOKEN }}
           extra_nix_config: |
@@ -64,10 +64,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Install Nix
-        uses: cachix/install-nix-action@v27
+        uses: cachix/install-nix-action@v31
         with:
           github_access_token: ${{ secrets.GITHUB_TOKEN }}
 
@@ -75,13 +75,13 @@ jobs:
         run: |
           echo "=== Checking Nix formatting ==="
           
-          # Install nixpkgs-fmt
-          nix profile install nixpkgs#nixpkgs-fmt
+          # Build pinned formatter from flake
+          nix build .#formatter.x86_64-linux --out-link /tmp/nix-fmt-result
           
           # Check all nix files
           failed=0
           for file in $(find . -name "*.nix" -not -path "./.git/*" -not -path "./result*"); do
-            if ! nixpkgs-fmt --check "$file" 2>/dev/null; then
+            if ! /tmp/nix-fmt-result/bin/nixpkgs-fmt --check "$file" 2>/dev/null; then
               echo "  ✗ $file"
               failed=1
             fi
@@ -102,10 +102,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Install Nix
-        uses: cachix/install-nix-action@v27
+        uses: cachix/install-nix-action@v31
         with:
           github_access_token: ${{ secrets.GITHUB_TOKEN }}
 
@@ -151,10 +151,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Install Nix
-        uses: cachix/install-nix-action@v27
+        uses: cachix/install-nix-action@v31
         with:
           github_access_token: ${{ secrets.GITHUB_TOKEN }}
           extra_nix_config: |

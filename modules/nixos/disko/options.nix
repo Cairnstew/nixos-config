@@ -1,7 +1,8 @@
 { config, lib, ... }:
 let
   inherit (lib) mkEnableOption mkOption types mkIf;
-in {
+in
+{
   options.my.disko.dualBoot = {
     enable = mkEnableOption "dual-boot with NixOS and Windows";
 

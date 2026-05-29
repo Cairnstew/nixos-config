@@ -234,88 +234,94 @@ let
 
   # ── Helper to flatten dual-mode plugin options ────────────────────
   pluginOptionTypes = {
-    control           = types.listOf types.attrs;
-    theme             = types.nullOr (types.submodule themeSubmodule);
-    menu_class        = types.listOf menuClassSubmodule;
-    persistence       = types.listOf persistenceSubmodule;
-    injection         = types.listOf injectionSubmodule;
-    auto_install      = types.listOf autoInstallSubmodule;
-    conf_replace      = types.listOf confReplaceSubmodule;
-    menu_alias        = types.listOf menuAliasSubmodule;
-    menu_tip          = types.nullOr (types.submodule menuTipSubmodule);
-    image_list        = types.listOf types.str;
-    image_blacklist   = types.listOf types.str;
-    password          = types.attrs;
-    dud               = types.listOf dudSubmodule;
-    wimboot           = types.listOf wimbootSubmodule;
-    vhdboot           = types.listOf vhdbootSubmodule;
-    vtoyboot          = types.listOf vtoybootSubmodule;
-    auto_memdisk      = types.listOf types.str;
+    control = types.listOf types.attrs;
+    theme = types.nullOr (types.submodule themeSubmodule);
+    menu_class = types.listOf menuClassSubmodule;
+    persistence = types.listOf persistenceSubmodule;
+    injection = types.listOf injectionSubmodule;
+    auto_install = types.listOf autoInstallSubmodule;
+    conf_replace = types.listOf confReplaceSubmodule;
+    menu_alias = types.listOf menuAliasSubmodule;
+    menu_tip = types.nullOr (types.submodule menuTipSubmodule);
+    image_list = types.listOf types.str;
+    image_blacklist = types.listOf types.str;
+    password = types.attrs;
+    dud = types.listOf dudSubmodule;
+    wimboot = types.listOf wimbootSubmodule;
+    vhdboot = types.listOf vhdbootSubmodule;
+    vtoyboot = types.listOf vtoybootSubmodule;
+    auto_memdisk = types.listOf types.str;
   };
 
   modeSuffixes = [ "" "legacy" "uefi" "ia32" "aa64" "mips" ];
 
   pluginDescriptions = {
-    control         = "Global control settings";
-    theme           = "Theme configuration";
-    menu_class      = "Menu class mappings for CSS theming";
-    persistence     = "Persistence backend mappings";
-    injection       = "File injection rules";
-    auto_install    = "Auto-install preseed/kickstart templates";
-    conf_replace    = "GRUB config replacement snippets";
-    menu_alias      = "Menu alias definitions (friendly names)";
-    menu_tip        = "Menu tip configuration";
-    image_list      = "Image whitelist — only listed files shown in menu";
+    control = "Global control settings";
+    theme = "Theme configuration";
+    menu_class = "Menu class mappings for CSS theming";
+    persistence = "Persistence backend mappings";
+    injection = "File injection rules";
+    auto_install = "Auto-install preseed/kickstart templates";
+    conf_replace = "GRUB config replacement snippets";
+    menu_alias = "Menu alias definitions (friendly names)";
+    menu_tip = "Menu tip configuration";
+    image_list = "Image whitelist — only listed files shown in menu";
     image_blacklist = "Image blacklist — hide listed files from menu";
-    password        = "Password protection settings (use with caution — stored in /nix/store)";
-    dud             = "Driver Update Disk mappings (RHEL/CentOS/SUSE)";
-    wimboot         = "Wimboot configuration";
-    vhdboot         = "Windows VHD/VHDX boot configuration";
-    vtoyboot        = "Linux vDisk boot configuration";
-    auto_memdisk    = "Image paths to auto-boot in Memdisk mode";
+    password = "Password protection settings (use with caution — stored in /nix/store)";
+    dud = "Driver Update Disk mappings (RHEL/CentOS/SUSE)";
+    wimboot = "Wimboot configuration";
+    vhdboot = "Windows VHD/VHDX boot configuration";
+    vtoyboot = "Linux vDisk boot configuration";
+    auto_memdisk = "Image paths to auto-boot in Memdisk mode";
   };
 
   modeDescriptions = {
-    ""      = "all boot modes";
-    legacy  = "x86 Legacy BIOS mode";
-    uefi    = "x86_64 UEFI mode";
-    ia32    = "IA32 UEFI mode";
-    aa64    = "ARM64 UEFI mode";
-    mips    = "MIPS64 UEFI mode";
+    "" = "all boot modes";
+    legacy = "x86 Legacy BIOS mode";
+    uefi = "x86_64 UEFI mode";
+    ia32 = "IA32 UEFI mode";
+    aa64 = "ARM64 UEFI mode";
+    mips = "MIPS64 UEFI mode";
   };
 
   pluginDefaults = {
-    control         = [ ];
-    theme           = null;
-    menu_class      = [ ];
-    persistence     = [ ];
-    injection       = [ ];
-    auto_install    = [ ];
-    conf_replace    = [ ];
-    menu_alias      = [ ];
-    menu_tip        = null;
-    image_list      = [ ];
+    control = [ ];
+    theme = null;
+    menu_class = [ ];
+    persistence = [ ];
+    injection = [ ];
+    auto_install = [ ];
+    conf_replace = [ ];
+    menu_alias = [ ];
+    menu_tip = null;
+    image_list = [ ];
     image_blacklist = [ ];
-    password        = { };
-    dud             = [ ];
-    wimboot         = [ ];
-    vhdboot         = [ ];
-    vtoyboot        = [ ];
-    auto_memdisk    = [ ];
+    password = { };
+    dud = [ ];
+    wimboot = [ ];
+    vhdboot = [ ];
+    vtoyboot = [ ];
+    auto_memdisk = [ ];
   };
 
-  pluginOptions = lib.listToAttrs (lib.flatten (lib.mapAttrsToList (name: optType:
-    map (suffix: let
-      key = if suffix == "" then name else "${name}_${suffix}";
-    in {
-      name = key;
-      value = mkOption {
-        type = optType;
-        default = pluginDefaults.${name};
-        description = "${pluginDescriptions.${name}}. Applied in ${modeDescriptions.${suffix}}.";
-      };
-    }) modeSuffixes
-  ) pluginOptionTypes));
+  pluginOptions = lib.listToAttrs (lib.flatten (lib.mapAttrsToList
+    (name: optType:
+      map
+        (suffix:
+          let
+            key = if suffix == "" then name else "${name}_${suffix}";
+          in
+          {
+            name = key;
+            value = mkOption {
+              type = optType;
+              default = pluginDefaults.${name};
+              description = "${pluginDescriptions.${name}}. Applied in ${modeDescriptions.${suffix}}.";
+            };
+          })
+        modeSuffixes
+    )
+    pluginOptionTypes));
 
 in
 {

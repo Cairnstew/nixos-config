@@ -2,16 +2,17 @@
 let
   vCfg = config.ventoy;
 
-in {
+in
+{
   config.perSystem = { pkgs, ... }:
     let
       answerSettings = vCfg.answerFileSettings;
 
       answerTemplates = {
-        dev       = ../../../packages/ventoy/answer-files/dev.xml;
-        minimal   = ../../../packages/ventoy/answer-files/minimal.xml;
-        domain    = ../../../packages/ventoy/answer-files/domain.xml;
-        kiosk     = ../../../packages/ventoy/answer-files/kiosk.xml;
+        dev = ../../../packages/ventoy/answer-files/dev.xml;
+        minimal = ../../../packages/ventoy/answer-files/minimal.xml;
+        domain = ../../../packages/ventoy/answer-files/domain.xml;
+        kiosk = ../../../packages/ventoy/answer-files/kiosk.xml;
         dual-boot = ../../../packages/ventoy/answer-files/dual-boot.xml;
       };
 
@@ -25,15 +26,20 @@ in {
         in
         builtins.replaceStrings from to templateText;
 
-      buildAnswer = { name, productKey, computerName, username, password
-                    , autoLogonCount ? "1"
-                    , lang ? "en-GB"
-                    , timezone ? "GMT Standard Time"
-                    , arch ? "amd64"
-                    , networkLocale ? "Work"
-                    , protectYourPC ? "3"
-                    , wipeDisk ? false
-                    }:
+      buildAnswer =
+        { name
+        , productKey
+        , computerName
+        , username
+        , password
+        , autoLogonCount ? "1"
+        , lang ? "en-GB"
+        , timezone ? "GMT Standard Time"
+        , arch ? "amd64"
+        , networkLocale ? "Work"
+        , protectYourPC ? "3"
+        , wipeDisk ? false
+        }:
         let
           archId = if arch == "amd64" then "x86_64" else arch;
           attest = {
@@ -91,19 +97,22 @@ in {
         };
       };
 
-      answerFilePackages = lib.mapAttrs' (n: v:
-        lib.nameValuePair "windows-answ-pro-${n}" (buildAnswer {
-          inherit (v) name computerName username password;
-          productKey = "VK7JG-NPHTM-C97JM-9MPGT-3V66T";
-          autoLogonCount = v.autoLogonCount or "1";
-          wipeDisk = v.wipeDisk or false;
-          lang = "en-GB";
-          timezone = "GMT Standard Time";
-          arch = "amd64";
-        })
-      ) answerFileConfigs;
+      answerFilePackages = lib.mapAttrs'
+        (n: v:
+          lib.nameValuePair "windows-answ-pro-${n}" (buildAnswer {
+            inherit (v) name computerName username password;
+            productKey = "VK7JG-NPHTM-C97JM-9MPGT-3V66T";
+            autoLogonCount = v.autoLogonCount or "1";
+            wipeDisk = v.wipeDisk or false;
+            lang = "en-GB";
+            timezone = "GMT Standard Time";
+            arch = "amd64";
+          })
+        )
+        answerFileConfigs;
 
-    in {
+    in
+    {
       packages = answerFilePackages;
     };
 }

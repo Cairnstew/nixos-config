@@ -86,26 +86,26 @@
   # Wired using https://nixos-unified.org/autowiring.html
   outputs = inputs@{ self, ... }:
     inputs.flake-parts.lib.mkFlake { inherit inputs; }
-    ({ config, lib, ... }: {
-      systems = [ "x86_64-linux" "aarch64-linux" "aarch64-darwin" ];
-      imports =
-        let
-          files = builtins.attrNames (builtins.readDir ./modules/flake-parts);
-          nixFiles = builtins.filter (fn: builtins.match ".*\\.nix" fn != null) files;
-        in
-        builtins.map (fn: ./modules/flake-parts/${fn}) nixFiles;
+      ({ config, lib, ... }: {
+        systems = [ "x86_64-linux" "aarch64-linux" "aarch64-darwin" ];
+        imports =
+          let
+            files = builtins.attrNames (builtins.readDir ./modules/flake-parts);
+            nixFiles = builtins.filter (fn: builtins.match ".*\\.nix" fn != null) files;
+          in
+          builtins.map (fn: ./modules/flake-parts/${fn}) nixFiles;
 
 
-      perSystem = { lib, system, ... }: {
-        # Make our overlay available to the devShell
-        # "Flake parts does not yet come with an endorsed module that initializes the pkgs argument.""
-        # So we must do this manually; https://flake.parts/overlays#consuming-an-overlay
-        _module.args.pkgs = import inputs.nixpkgs {
-          inherit system;
-          overlays = lib.attrValues self.overlays;
-          config.allowUnfree = true;
+        perSystem = { lib, system, ... }: {
+          # Make our overlay available to the devShell
+          # "Flake parts does not yet come with an endorsed module that initializes the pkgs argument.""
+          # So we must do this manually; https://flake.parts/overlays#consuming-an-overlay
+          _module.args.pkgs = import inputs.nixpkgs {
+            inherit system;
+            overlays = lib.attrValues self.overlays;
+            config.allowUnfree = true;
+          };
         };
-      };
-    });
+      });
 }
  

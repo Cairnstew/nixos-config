@@ -17,9 +17,10 @@ let
   deployScript = pkgs.callPackage ./. minimalInputs;
 
   # Test 1: Derivation builds with minimal inputs
-  test-builds = pkgs.runCommand "test-ventoy-deploy-builds" {
-    buildInputs = [ deployScript ];
-  } ''
+  test-builds = pkgs.runCommand "test-ventoy-deploy-builds"
+    {
+      buildInputs = [ deployScript ];
+    } ''
     # Verify the binary was created and is executable
     if [[ -x "${deployScript}/bin/ventoy-deploy" ]]; then
       echo "PASS: ventoy-deploy binary found and executable"
@@ -38,9 +39,10 @@ let
   '';
 
   # Test 2: Missing VENTOY_JSON causes non-zero exit
-  test-missing-ventoy-json = pkgs.runCommand "test-ventoy-deploy-missing-ventoy-json" {
-    buildInputs = [ deployScript ];
-  } ''
+  test-missing-ventoy-json = pkgs.runCommand "test-ventoy-deploy-missing-ventoy-json"
+    {
+      buildInputs = [ deployScript ];
+    } ''
     set +e
     output=$(VENTOY_JSON="" ${deployScript}/bin/ventoy-deploy --help 2>&1)
     rc=$?
@@ -55,9 +57,10 @@ let
   '';
 
   # Test 3: Help flag works when inputs are valid
-  test-help-exits-zero = pkgs.runCommand "test-ventoy-deploy-help" {
-    buildInputs = [ deployScript ];
-  } ''
+  test-help-exits-zero = pkgs.runCommand "test-ventoy-deploy-help"
+    {
+      buildInputs = [ deployScript ];
+    } ''
     set +e
     output=$(${deployScript}/bin/ventoy-deploy --help 2>&1)
     rc=$?

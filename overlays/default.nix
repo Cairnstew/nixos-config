@@ -34,7 +34,7 @@ self: super: {
   # wimboot 2.8.0 fails with GCC -Werror=unterminated-string-initialization
   # Suppress the specific warning until upstream fixes it
   wimboot = super.wimboot.overrideAttrs (old: {
-    env = (old.env or {}) // {
+    env = (old.env or { }) // {
       NIX_CFLAGS_COMPILE = (old.env.NIX_CFLAGS_COMPILE or "") + " -Wno-error=unterminated-string-initialization";
     };
   });

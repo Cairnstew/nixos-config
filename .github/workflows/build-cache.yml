@@ -25,17 +25,17 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Install Nix
-        uses: cachix/install-nix-action@v27
+        uses: cachix/install-nix-action@v31
         with:
           extra_nix_config: |
             accept-flake-config = true
             fallback = true
 
       - name: Setup Cachix
-        uses: cachix/cachix-action@v15
+        uses: cachix/cachix-action@v17
         with:
           name: cairnstew-nixos-config-cache
           authToken: ${{ secrets.CACHIX_AUTH_TOKEN }}
@@ -78,17 +78,17 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Install Nix
-        uses: cachix/install-nix-action@v27
+        uses: cachix/install-nix-action@v31
         with:
           extra_nix_config: |
             accept-flake-config = true
             fallback = true
 
       - name: Setup Cachix
-        uses: cachix/cachix-action@v15
+        uses: cachix/cachix-action@v17
         with:
           name: cairnstew-nixos-config-cache
           authToken: ${{ secrets.CACHIX_AUTH_TOKEN }}
@@ -96,6 +96,6 @@ jobs:
       - name: Build ${{ matrix.package }}
         run: |
           echo "Building .#${{ matrix.package }}..."
-          nix build .#${{ matrix.package }} --out-link result
+          nix build .#${{ matrix.package }} --out-link result-${{ matrix.package }}
           echo "Build successful!"
-          cachix push cairnstew-nixos-config-cache ./result
+          cachix push cairnstew-nixos-config-cache ./result-${{ matrix.package }}

@@ -44,7 +44,7 @@ in
 
     extraDnsmasqSettings = lib.mkOption {
       type = lib.types.attrs;
-      default = {};
+      default = { };
       description = ''
         Extra dnsmasq settings merged into the main settings attrset.
         Used by the netboot module to inject PXE boot options
