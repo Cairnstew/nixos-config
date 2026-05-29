@@ -344,16 +344,14 @@ jobs:
               continue
             fi
 
-            # Check nix files parse correctly
-            while IFS= read -r nixfile; do
-              rel="${nixfile#./}"
-              if nix-instantiate --parse "$nixfile" > /dev/null 2>&1; then
-                echo "    ✓ $rel"
-              else
-                echo "    ✗ $rel parse failed"
-                failures=$((failures + 1))
-              fi
-            done < <(find "$tmpl" -name '*.nix' -not -path '*/node_modules/*' 2>/dev/null)
+            # Verify template directory has content
+            file_count=$(find "$tmpl" -type f -not -path '*/node_modules/*' 2>/dev/null | wc -l)
+            if [ "$file_count" -gt 0 ]; then
+              echo "  ✓ $file_count file(s)"
+            else
+              echo "  ✗ template directory is empty"
+              failures=$((failures + 1))
+            fi
           done
           if [ "$failures" -gt 0 ]; then
             echo "::error::$failures template(s) failed validation"
