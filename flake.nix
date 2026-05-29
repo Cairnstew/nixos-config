@@ -74,11 +74,6 @@
       flake = false;
     };
 
-    nixos-installer-iso = {
-      url = "https://github.com/nix-community/nixos-images/releases/download/nixos-unstable/nixos-installer-x86_64-linux.iso";
-      flake = false;
-    };
-
     # Windows unattended answer file generator
     GenerateAnswerFile = {
       url = "github:Cairnstew/GenerateAnswerFile";

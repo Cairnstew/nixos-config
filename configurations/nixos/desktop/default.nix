@@ -177,10 +177,6 @@
       source = flake.inputs.windows-iso-src.packages.x86_64-linux."windows-iso-22631.7079.23H2.PRO.X64.EN";
       target = "/iso/windows/22631.7079.23H2.PRO.X64.EN.iso";
     };
-    nixos-installer = {
-      source = flake.inputs.nixos-installer-iso;
-      target = "/iso/linux/nixos-installer-x86_64-linux.iso";
-    };
   };
 
   my.programs.spotify.enable = true;
