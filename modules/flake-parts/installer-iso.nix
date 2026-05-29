@@ -1,4 +1,4 @@
-{ inputs, lib, flake, ... }: {
+{ config, inputs, lib, ... }: {
   perSystem = { pkgs, system, ... }: {
     packages.installer-iso = pkgs.callPackage ../../packages/installer-iso { };
 
@@ -26,7 +26,7 @@
           fi
 
           echo "-> Copying SSH authorized key..."
-          echo "${flake.config.me.sshKey}" > "$SECRETS_DIR/authorized_keys"
+          echo "${config.me.sshKey}" > "$SECRETS_DIR/authorized_keys"
 
           echo "-> Generating ephemeral SSH host key..."
           ssh-keygen -t ed25519 -f "$SECRETS_DIR/ssh_host_ed25519_key" -N "" -q
