@@ -6,7 +6,7 @@
       type = "app";
       program = pkgs.writeShellApplication {
         name = "build-installer-iso";
-        runtimeInputs = with pkgs; [ agenix openssh ];
+        runtimeInputs = [ inputs.agenix.packages.${system}.default pkgs.openssh ];
         text = ''
           set -euo pipefail
 
