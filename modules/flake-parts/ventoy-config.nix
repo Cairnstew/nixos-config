@@ -1,14 +1,20 @@
 { config, lib, inputs, ... }:
 let
-  inherit (lib) mkMerge mapAttrsToList;
+  inherit (lib) mapAttrsToList;
 
-  hostIsos = mkMerge (mapAttrsToList (hostName: hostCfg:
-    let ventoyCfg = hostCfg.config.my.ventoy or { }; in
+  # Collect every host's ISOs into one flat attrset, NOT via mkMerge.
+  # mkMerge would leak _type / list keys into the attrset, confusing
+  # the attrsOf submodule type check.
+  hostIsos = builtins.foldl' (acc: hostName:
+    let
+      hostCfg = config.flake.nixosConfigurations.${hostName} or { };
+      ventoyCfg = hostCfg.config.my.ventoy or { };
+    in
     if ventoyCfg.enable or false then
-      ventoyCfg.isos or { }
+      acc // ventoyCfg.isos or { }
     else
-      { }
-  ) (config.flake.nixosConfigurations or {}));
+      acc
+  ) { } (builtins.attrNames (config.flake.nixosConfigurations or { }));
 in
 {
   ventoy = {
@@ -39,12 +45,7 @@ in
       diskId = "0";
     };
 
-    isos = {
-      gparted = {
-        source = inputs.gparted-iso.outPath;
-        target = "/iso/linux/gparted-live-1.6.0-1-amd64.iso";
-      };
-    } // hostIsos;
+    isos = hostIsos;
 
     settings.auto_install = [
       {

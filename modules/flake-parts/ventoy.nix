@@ -757,9 +757,22 @@ in
         let name = builtins.baseNameOf p;
         in lib.head (lib.splitString "-" name);
 
+      # GParted ISO: flake=false input is an attrset that fails types.package;
+      # wrap in runCommand to produce a real derivation.
+      gpartedIso = pkgs.runCommand "gparted-live-1.6.0-1-amd64.iso" { } ''
+        cp ${inputs.gparted-iso} $out
+      '';
+
+      allIsos = vCfg.isos // {
+        gparted = {
+          source = gpartedIso;
+          target = "/iso/linux/gparted-live-1.6.0-1-amd64.iso";
+        };
+      };
+
       isoMappings = lib.mapAttrsToList (name: iso:
         ''"${iso.source}|${iso.target}|${storeHash iso.source}"''
-      ) vCfg.isos;
+      ) allIsos;
 
       fileMappings = lib.mapAttrsToList (name: pkg:
         let
