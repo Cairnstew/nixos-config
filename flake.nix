@@ -58,20 +58,8 @@
     };
 
     # Software inputs
-    github-nix-ci.url = "github:juspay/github-nix-ci";
     nixos-vscode-server.flake = false;
     nixos-vscode-server.url = "github:nix-community/nixos-vscode-server";
-    flake-utils.url = "github:numtide/flake-utils";
-    nix-index-database.url = "github:nix-community/nix-index-database";
-    nix-index-database.inputs.nixpkgs.follows = "nixpkgs";
-    try.url = "github:tobi/try";
-    vira.url = "github:juspay/vira";
-    nix-ai-tools.url = "github:numtide/nix-ai-tools";
-    nix-ai-tools.inputs.nixpkgs.follows = "nixpkgs";
-    landrun-nix.url = "github:srid/landrun-nix";
-    hyprland.url = "github:hyprwm/Hyprland";
-    compose2nix.url = "github:aksiksi/compose2nix";
-    compose2nix.inputs.nixpkgs.follows = "nixpkgs";
 
     # ISOS
 
@@ -102,12 +90,7 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
-    # Neovim
-    nixvim.url = "github:nix-community/nixvim";
-    nixvim.inputs.nixpkgs.follows = "nixpkgs";
-    # Emacs
-    nix-doom-emacs-unstraightened.url = "github:marienz/nix-doom-emacs-unstraightened";
-    nix-doom-emacs-unstraightened.inputs.nixpkgs.follows = "nixpkgs";
+
 
     zig-overlay.url = "github:mitchellh/zig-overlay";
 
@@ -120,9 +103,7 @@
       };
     };
 
-    # Devshell
-    git-hooks.url = "github:cachix/git-hooks.nix";
-    git-hooks.flake = false;
+
   };
 
   # Wired using https://nixos-unified.org/autowiring.html

@@ -72,7 +72,7 @@ Use profiles for common configuration patterns instead of manual service enablem
 - `minimal` — Bare essentials only
 
 **Feature Profiles**:
-- `desktop.gnome` / `desktop.plasma` — Desktop environment
+- `desktop.gnome` — Desktop environment
 - `gpu.mesa` / `gpu.nvidia` / `gpu.nvidia-headless` — Graphics drivers
 - `battery` — Power management
 - `location` — Timezone/geolocation

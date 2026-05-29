@@ -28,16 +28,7 @@ Quick reference for common maintenance tasks. Lists files to read and edit in or
 
 ---
 
-## Add a new Home Manager standalone config
 
-**Read:**
-1. `configurations/home/seanc@laptop.nix` (reference implementation)
-2. `modules/home/default.nix` (see available home modules)
-
-**Edit:**
-1. `configurations/home/<username>@<hostname>.nix` (create new)
-
----
 
 ## Create a new my.* NixOS module
 
@@ -123,7 +114,6 @@ All `my.*` options declared across module files.
 | `my.profiles.gaming.enable` | bool | `false` | Gaming profile (Steam, games, etc.) |
 | `my.profiles.development.enable` | bool | `false` | Development profile (dev tools, containers) |
 | `my.profiles.desktop.gnome.enable` | bool | `false` | GNOME desktop environment |
-| `my.profiles.desktop.plasma.enable` | bool | `false` | KDE Plasma desktop environment |
 | `my.profiles.gpu.mesa.enable` | bool | `false` | Mesa GPU drivers (Intel/AMD) |
 | `my.profiles.gpu.nvidia.enable` | bool | `false` | NVIDIA GPU drivers (full desktop) |
 | `my.profiles.gpu.nvidia-headless.enable` | bool | `false` | NVIDIA GPU drivers (headless/CUDA) |
@@ -220,7 +210,7 @@ All `my.*` options declared across module files.
 | `my.services.ssh.enableAgent` | bool | `false` | Enable SSH agent |
 | `my.services.udisks2.enable` | bool | `false` | UDisks2 storage management |
 | `my.services.udiskie.enable` | bool | `false` | Udiskie automount (user service) |
-| `my.services.plasmaX11.enable` | bool | `false` | KDE Plasma X11 session |
+
 | `my.services.natShare.enable` | bool | `false` | NAT sharing/network bridge |
 | `my.services.natShare.wanInterface` | str | — | WAN interface name |
 | `my.services.natShare.lanInterface` | str | — | LAN interface name |

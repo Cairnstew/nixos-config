@@ -7,7 +7,7 @@
     "my.profiles"
     "my.homeProfiles"
   ];
-  expects = [ "my.hardware" "my.desktop.gnome" "my.services.plasmaX11" "my.system.battery" ];
+  expects = [ "my.hardware" "my.desktop.gnome" "my.system.battery" ];
   complexity = "medium";
   tested = true;
   maintainer = "seanc";

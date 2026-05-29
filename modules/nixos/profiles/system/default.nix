@@ -25,7 +25,6 @@ in
 
     # ── Feature Profiles ─────────────────────────────────────────────────
     desktop.gnome.enable = lib.mkEnableOption "GNOME desktop environment";
-    desktop.plasma.enable = lib.mkEnableOption "KDE Plasma desktop environment";
 
     gpu.mesa.enable = lib.mkEnableOption "Mesa GPU drivers (Intel/AMD)";
     gpu.nvidia.enable = lib.mkEnableOption "NVIDIA GPU drivers";
@@ -40,11 +39,6 @@ in
     # GNOME desktop profile
     (lib.mkIf cfg.desktop.gnome.enable {
       my.desktop.gnome.enable = true;
-    })
-
-    # Plasma desktop profile
-    (lib.mkIf cfg.desktop.plasma.enable {
-      my.services.plasmaX11.enable = true;
     })
 
     # NVIDIA GPU profile (full desktop)
@@ -75,10 +69,6 @@ in
         {
           assertion = !(cfg.gpu.mesa.enable && cfg.gpu.nvidia.enable);
           message = "Cannot enable both Mesa and NVIDIA GPU profiles.";
-        }
-        {
-          assertion = !(cfg.desktop.gnome.enable && cfg.desktop.plasma.enable);
-          message = "Cannot enable both GNOME and Plasma desktop profiles.";
         }
       ];
     }

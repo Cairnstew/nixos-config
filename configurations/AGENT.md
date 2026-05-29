@@ -162,7 +162,7 @@ my.profiles = {
   minimal.enable = false;         # Bare bones
   
   # Feature profiles (toggle as needed)
-  desktop.gnome.enable = true;      # Or plasma
+  desktop.gnome.enable = true;
   gpu.mesa.enable = true;          # Or nvidia
   battery.enable = true;
   location.enable = true;

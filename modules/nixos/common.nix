@@ -25,11 +25,9 @@ in
 
     # ── Desktop ────────────────────────────────────────────────────────────
     ./gnome
-    ./plasma-x11.nix
 
     # ── Virtualization ─────────────────────────────────────────────────────
     ./docker
-    ./waydroid.nix
     ./ollama
 
     # ── Networking ─────────────────────────────────────────────────────────
@@ -37,13 +35,11 @@ in
     ./tailscale
     ./natShare
     ./nebula
-    ./rustdesk.nix
 
     # ── Development ────────────────────────────────────────────────────────
     ./vscode-server.nix
 
     # ── Utilities ───────────────────────────────────────────────────────────
-    ./brasero.nix
     ./udisks2.nix
     ./ventoy
     ./gitreposync

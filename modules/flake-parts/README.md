@@ -12,20 +12,167 @@ Unlike `modules/nixos/` (which configures a NixOS machine) or `modules/home/`
 flake evaluator itself.  They are imported automatically by `flake.nix` (only
 `.nix` files are picked up) — see `flake.nix` lines 103–106.
 
+---
+
+## nixos-unified: What It Is
+
+[nixos-unified](https://nixos-unified.org) is a **flake-parts module** (not a
+separate tool or framework) that provides:
+
+1. **Autowiring** — Automatically maps files in standard directories to flake
+   outputs (e.g., `configurations/nixos/laptop/` → `nixosConfigurations.laptop`).
+2. **Activation** — A single `.#activate` app that replaces `nixos-rebuild switch`,
+   `darwin-rebuild switch`, and `home-manager switch`, including remote activation
+   over SSH.
+3. **Module arguments** — Every NixOS/darwin/home-manager module receives a
+   `flake` specialArg containing `{ inputs, config, ... }` from the flake-parts
+   evaluator.
+
+### Why This Repo Uses It
+
+- **No manual registration** — Add a file in `configurations/nixos/` and it
+  automatically becomes `nixosConfigurations.<name>`. No editing `flake.nix`.
+- **Unified activation** — `nix run .#activate` works on NixOS, and `nix run .#activate <host>`
+  does remote deployment over SSH without extra tooling.
+- **Shared config** — The `flake` specialArg lets all module types (NixOS,
+  darwin, home-manager) access the same identity data from
+  `modules/flake-parts/config.nix`.
+
+---
+
+## Autowiring: Directory → Flake Output Map
+
+The `nixos-unified.flakeModules.autoWire` module (imported via
+`nixos-flake.nix`) scans these directories and wires them automatically:
+
+| Path | Flake Output |
+|------|-------------|
+| `configurations/nixos/<name>.nix` or `<name>/default.nix` | `nixosConfigurations.<name>` |
+| `configurations/darwin/<name>.nix` or `<name>/default.nix` | `darwinConfigurations.<name>` |
+| `configurations/home/<name>.nix` | `legacyPackages.${system}.homeConfigurations.<name>` |
+| `modules/nixos/<name>.nix` or `<name>/default.nix` | `nixosModules.<name>` |
+| `modules/darwin/<name>.nix` or `<name>/default.nix` | `darwinModules.<name>` |
+| `modules/flake/<name>.nix` | `flakeModules.<name>` |
+| `modules/home/<name>.nix` or `<name>/default.nix` | `homeModules.<name>` |
+| `overlays/<name>.nix` | `overlays.<name>` |
+| `packages/<name>.nix` or `<name>/default.nix` | `packages.${system}.<name>` (via `pkgs.callPackage`) |
+
+**Key rules for agents:**
+
+- **Never add imports in `flake.nix`** for files in these directories — they
+  are already auto-wired. Doing so causes "attribute defined multiple times"
+  errors (see `GOTCHAS.md`).
+- **`packages/` autowiring calls `pkgs.callPackage`** on each file. If a
+  package requires arguments that aren't in nixpkgs (e.g., `ventoyJson`), it
+  **must not** be in `packages/`. Use an underscore prefix (`_foo/`) or place
+  it elsewhere.
+- **Module name = file/dir name**. `modules/nixos/foo.nix` →
+  `nixosModules.foo`.
+
+---
+
+## The `flake` SpecialArg
+
+Every NixOS, darwin, and home-manager module automatically receives a `flake`
+argument (via `specialArgs`). It contains:
+
+| Attribute | Description |
+|-----------|-------------|
+| `flake.inputs` | The `inputs` of your flake; `flake.inputs.self` refers to the flake itself |
+| `flake.config` | The flake-parts `perSystem` config (includes options like `config.me`) |
+
+### Usage pattern
+
+```nix
+{ flake, pkgs, lib, ... }:
+let
+  inherit (flake) config inputs;
+  inherit (inputs) self;
+in {
+  imports = [
+    # Reference a flake input as a module
+    inputs.agenix.nixosModules.default
+  ];
+
+  # Use flake-parts config for shared data
+  users.users.${config.me.username} = { ... };
+}
+```
+
+This is how host configs in `configurations/nixos/` access `flake.config.me`
+(username, email, ssh key) and `flake.inputs.self.nixosModules.common` without
+any manual wiring.
+
+**Important:** The `flake` argument is only passed to modules listed in a
+`nixosSystem`/`darwinSystem`/`home-manager` `modules` list or their
+`imports`. It is **not** automatically available in bare `callPackage` calls.
+
+---
+
+## Activation
+
+`nixos-unified` provides `.#activate` (aliased as `packages.default` in
+`nixos-flake.nix`), which replaces traditional activation commands:
+
+| Command | What it does |
+|---------|-------------|
+| `nix run` | Activate the local NixOS system (uses `nixos-rebuild switch --sudo`) |
+| `nix run .#activate <hostname>` | Remotely activate over SSH (uses `nixos-unified.sshTarget` option) |
+| `nix run .#activate $USER@` | Activate home-manager for current user |
+| `nix run .#activate $USER@$HOST` | Remotely activate home-manager over SSH |
+
+### How remote activation works
+
+1. Copies the flake to the remote machine via `rsync` over SSH
+2. Builds the configuration on the remote machine
+3. Runs the activation command (`nixos-rebuild switch` / `home-manager switch`)
+
+**No deployment tool (deploy-rs, colmena) is needed.** For simple deploys,
+`nix run .#activate <hostname>` from any machine with SSH access to the
+target is sufficient.
+
+---
+
+## Key Flake Outputs Provided by nixos-unified
+
+| Output | Description |
+|--------|-------------|
+| `packages.${system}.activate` | The activation app |
+| `packages.${system}.update` | Update primary flake inputs (configured in `nixos-flake.nix`) |
+| `nixos-unified.lib` | Utility functions: `mkLinuxSystem`, `mkMacosSystem`, `mkHomeConfiguration` |
+
+---
+
+## Package Autowiring Details
+
+Files in `packages/` are auto-wired using `pkgs.callPackage`. This means each
+file should export a function compatible with `callPackage`:
+
+```nix
+# packages/foo.nix — simple package
+{ lib, writeShellApplication }:
+writeShellApplication {
+  name = "foo";
+  text = "echo hello";
+}
+
+# packages/bar/default.nix — directory package
+{ lib, stdenv }:
+stdenv.mkDerivation { ... }
+```
+
+The auto-wired package becomes `packages.${system}.foo` / `packages.${system}.bar`.
+
+**Caveat:** If a file in `packages/` requires custom arguments not provided by
+nixpkgs (like `ventoyJson` in `packages/_ventoy-deploy/`), it will fail when
+autowired. Either:
+- Prefix the dir with `_` to exclude it from autowiring, then manually call
+  `callPackage` from a flake-parts module.
+- Or keep the package definition entirely inside the flake-parts module.
+
+---
+
 ## Files
-
-| File | Purpose |
-|------|---------|
-| `act.nix` | Integrates `nektos/act` for local GitHub Actions testing. Exposes `.#act` and `.#act-verify` apps. |
-| `config.nix` | Imports `../../config.nix` and exposes identity (`me`), tailnet hosts (`tailnet`), and Ollama models (`ollamaModels`) as typed flake options. |
-| `nixos-flake.nix` | Wires `nixos-unified` autoWire and primary inputs. Defines the `.#update` target. |
-| `packages.nix` | Manually exports per-host `packages.<hostname>` from NixOS configurations for the matching build platform. |
-| `terranix.nix` | Infrastructure-as-code entrypoint. Exports `nixosModules.terraformInfra`, `perSystem` devShell for Terraform, and `.#tf` apps. |
-| `testing.nix` | The `my.testing` flake option. Generates per-host `test-<name>` packages and the `.#test` CLI runner. |
-| `templates.nix` | Flake templates for `nix flake init`. Provides Rust, Python, Node, Go, Haskell, and Nix-specific templates. |
-| `mcp-servers.nix` | Model Context Protocol server configuration. Defines MCP server schema and exports generated config for AI assistants. |
-
-## Adding a new flake-parts module
 
 1. Create a new `.nix` file in this directory.
 2. It will be automatically imported by `flake.nix` (only `.nix` files are

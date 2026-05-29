@@ -12,7 +12,6 @@ System and home profiles for easy host configuration.
 | `my.profiles.development` | Dev tools |
 | `my.profiles.gaming` | Gaming setup |
 | `my.profiles.desktop.gnome` | GNOME desktop |
-| `my.profiles.desktop.plasma` | KDE Plasma |
 | `my.profiles.gpu.mesa` | Intel/AMD graphics |
 | `my.profiles.gpu.nvidia` | NVIDIA graphics |
 | `my.profiles.gpu.nvidia-headless` | NVIDIA headless/CUDA |

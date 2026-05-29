@@ -18,7 +18,7 @@ Core flake and repository metadata files.
 
 ## configurations/
 
-Host configurations for NixOS systems and standalone Home Manager setups.
+Host configurations for NixOS systems.
 
 ### configurations/nixos/laptop/
 
@@ -61,13 +61,6 @@ WSL (Windows Subsystem for Linux) host configuration.
 | `default.nix` | WSL-specific configuration [→ nixosConfigurations.wsl] |
 | `configuration.nix` | WSL base configuration |
 
-### configurations/home/
-
-Standalone Home Manager configurations.
-
-| File | Description |
-|------|-------------|
-| `seanc@laptop.nix` | Standalone home configuration for user seanc on laptop [→ homeConfigurations.seanc@laptop] |
 
 ## modules/
 
@@ -167,12 +160,6 @@ System and home profile definitions.
 | `gitreposync/README.md` | Documentation |
 | `gitreposync/AGENT.md` | Module-specific agent policy |
 | `homeManager/default.nix` | Home-manager NixOS integration [→ nixosModules.homeManager] |
-| `hyprland/` | Hyprland Wayland compositor |
-| `hyprland/default.nix` | Hyprland system configuration |
-| `hyprland/home/default.nix` | Hyprland home-manager configuration |
-| `hyprland/home/settings.nix` | Hyprland settings |
-| `hyprland/home/waybar.nix` | Waybar configuration |
-| `hyprland/home/fix-cursor.nix` | Cursor fixes |
 | `gnome/` | GNOME desktop environment |
 | `gnome/default.nix` | GNOME system configuration [→ nixosModules.gnome] |
 | `gnome/home.nix` | GNOME home-manager settings |
@@ -191,12 +178,10 @@ System and home profile definitions.
 | `battery/tests.nix` | L0 assertions |
 | `battery/README.md` | Human documentation |
 | `bluetooth.nix` | Bluetooth support [→ nixosModules.bluetooth] |
-| `brasero.nix` | CD/DVD burning [→ nixosModules.brasero] |
 | `cachix-push.nix` | Cachix binary cache pushing [→ nixosModules.cachix-push] |
 | `current-location.nix` | Timezone and geolocation [→ nixosModules.current-location] |
 | `default-build.nix` | Default build target configuration |
 | `graphics.nix` | GPU and graphics drivers |
-| `hedgedoc.nix` | HedgeDoc collaborative markdown [→ nixosModules.hedgedoc] |
 | `natShare/` | NAT sharing/network bridging [→ nixosModules.natShare] |
 | `natShare/default.nix` | Module entry point |
 | `natShare/config.nix` | Options and implementation |
@@ -207,9 +192,6 @@ System and home profile definitions.
 | `nebula/config.nix` | Options and implementation |
 | `nebula/tests.nix` | L0 assertions + L2 smoke test |
 | `nebula/meta.nix` | Metadata |
-| `plasma-x11.nix` | KDE Plasma X11 session [→ nixosModules.plasma-x11] |
-| `rustdesk.nix` | RustDesk remote desktop [→ nixosModules.rustdesk] |
-| `server.nix` | Base server configuration |
 | `terraform/` | Terranix GCP GPU VM deployment [→ nixosModules.terraform] |
 | `sillytavern/` | SillyTavern AI character chat |
 | `sillytavern/default.nix` | SillyTavern service |
@@ -217,10 +199,7 @@ System and home profile definitions.
 | `spotify.nix` | Spotify client [→ nixosModules.spotify] |
 | `ssh.nix` | SSH server configuration [→ nixosModules.ssh] |
 | `udisks2.nix` | UDisks2 storage management [→ nixosModules.udisks2] |
-| `uup-converter.nix` | Windows ISO conversion tool [→ nixosModules.uup-converter] |
 | `ventoy/` | Ventoy multi-boot USB — ISO management, config, deploy [→ nixosModules.ventoy] |
-| `waydroid.nix` | Waydroid Android container [→ nixosModules.waydroid] |
-| `wsl-wm/` | WSL window manager integration [→ nixosModules.wsl-wm] |
 | `_1password/` | 1Password integration |
 | `_1password/default.nix` | 1Password system config |
 | `_1password/home.nix` | 1Password SSH agent home config |
@@ -295,22 +274,13 @@ Custom packages exposed via the flake.
 
 | File | Description |
 |------|-------------|
-| `ci/default.nix` | CI/CD helper package |
-| `ci/layout.kdl` | Zellij layout for CI |
-| `complex-app/default.nix` | Complex application package |
 | `installer-iso/` | ISO NixOS config module (`configuration.nix`) + metadata (`meta.nix`) — package defined in `modules/flake-parts/installer-iso.nix` |
 | `installer-iso/configuration.nix` | NixOS config for the installer ISO |
 | `installer-iso/meta.nix` | Metadata |
-| `copy-md-as-html.nix` | Markdown-to-HTML clipboard utility |
-| `git-merge-and-delete.nix` | Git workflow helper |
 | `localsend/default.nix` | LocalSend package |
 | `localsend/pubspec.lock.json` | Dart dependency lock |
 | `localsend/update.sh` | Update script |
 | `nix-template-selector.nix` | Template selection helper |
-| `sshuttle-via.nix` | SSHuttle wrapper |
-| `uup-converter/default.nix` | Windows ISO converter |
-| `uup-converter/flake.nix` | Standalone flake for converter |
-| `uup-converter/Readme.md` | Documentation |
 
 ## overlays/
 
@@ -351,17 +321,6 @@ Flake templates for `nix flake init`.
 | `webapp/` | Web application template |
 | `zig/` | Zig development template |
 
-## webapps/
-
-Web application configurations.
-
-| File | Description |
-|------|-------------|
-| `default.nix` | Web apps entry point |
-| `host.nix` | Host configuration |
-| `proxy.nix` | Reverse proxy configuration |
-| `README.md` | Documentation |
-
 ## .github/
 
 GitHub Actions workflows.
@@ -390,8 +349,3 @@ VSCode editor settings.
 ## scripts/
 
 Utility scripts.
-
-| File | Description |
-|------|-------------|
-| `join-iso.sh` | ISO joining script |
-| `join-iso.ps1` | ISO joining PowerShell script |

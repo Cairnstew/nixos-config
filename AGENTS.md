@@ -159,7 +159,7 @@ Profiles provide convenient bundles of related configuration.
 | Profile | Purpose |
 |---------|---------|
 | `desktop.gnome` | GNOME desktop |
-| `desktop.plasma` | KDE Plasma desktop |
+
 | `gpu.mesa` | Intel/AMD graphics |
 | `gpu.nvidia` | NVIDIA graphics |
 | `gpu.nvidia-headless` | NVIDIA (headless/CUDA) |

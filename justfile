@@ -62,10 +62,36 @@ register-host host ip:
 # Builds to ./ISO/nixos-installer.iso
 # Usage: just build-iso
 # Prerequisites: Nix with flakes, agenix (for tailscale key decryption)
-# Flake output: apps.build-iso (calls nixos-anywhere)
+# Flake output: packages.installer-iso (pure build — no more apps.build-iso)
 [group('deploy')]
 build-iso:
-    nix run .#build-iso
+    # Step 1: Inject secrets into the ISO source tree
+    mkdir -p packages/installer-iso/secrets
+    if [ -f secrets/tailscale/authkey.age ]; then
+        agenix -r secrets/secrets.nix --decrypt secrets/tailscale/authkey.age \
+            > packages/installer-iso/secrets/ts.key
+        if [ ! -s packages/installer-iso/secrets/ts.key ]; then
+            echo "Error: agenix decryption produced empty ts.key" >&2
+            exit 1
+        fi
+    else
+        echo "Warning: no Tailscale key at secrets/tailscale/authkey.age — using placeholder"
+        echo "PLACEHOLDER" > packages/installer-iso/secrets/ts.key
+    fi
+    # Ensure git-tracked fallback files exist for the pure build
+    # (authorized_keys, ssh_host_ed25519_key* are tracked; recreate SSH host key ephemerally)
+    ssh-keygen -t ed25519 -f packages/installer-iso/secrets/ssh_host_ed25519_key -N "" -q 2>/dev/null || true
+    # Step 2: Build the ISO
+    nix build .#installer-iso --out-link ISO/result-iso --no-link
+    # Step 3: Copy to ISO/
+    ISO_FILE=$$(find ISO/result-iso -name "*.iso" -type f | head -1)
+    if [ -n "$$ISO_FILE" ]; then
+        cp "$$ISO_FILE" ISO/nixos-installer.iso
+        echo "-> ISO built: ISO/nixos-installer.iso"
+    else
+        echo "Error: no ISO file found in build result" >&2
+        exit 1
+    fi
 
 # Build installer ISO and deploy to Ventoy USB
 # Usage: just deploy-iso <ventoy-mount-point>
@@ -73,11 +99,11 @@ build-iso:
 # Prerequisites: Ventoy USB mounted at <ventoy-mount-point>
 [group('deploy')]
 deploy-iso mount="":
-    nix run .#build-iso
+    just build-iso
     @echo "Copying ISO to {{mount}}/ISO/..."
     mkdir -p "{{mount}}/ISO"
     cp ISO/nixos-installer.iso "{{mount}}/ISO/"
-    @echo "Done! Add ventoy/ventoy.json to {{mount}}/ for auto-boot config."
+    @echo "Done! Run ventoy-deploy to deploy config files."
 
 # Run all pre-commit hooks on all files
 # Usage: just pca

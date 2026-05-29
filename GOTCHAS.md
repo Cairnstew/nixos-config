@@ -11,6 +11,9 @@ Each entry: **symptom → cause → fix**. One paragraph max. Newest at the top.
 
 ---
 
+**ventoy-deploy env-var contract — packages/ventoy-deploy/default.nix → ventoy-deploy.sh**
+Symptom: Calling `ventoy-deploy` outside the Nix wrapper (e.g. sourcing ventoy-deploy.sh directly in a test) fails with confusing errors about missing variables, or succeeds silently but does nothing. Cause: The script reads all its configuration from environment variables set by `packages/ventoy-deploy/default.nix`. `VENTOY_JSON` is mandatory (must point to a valid `ventoy.json` file path) — without it the script hits `cp '' destin`. `BUILD_INSTALLER_ISO`, `ISO_MAPPINGS`, `FILE_MAPPINGS`, `DEFAULT_DEVICE`, `MOUNT_POINT`, `SECURE_BOOT`, `GPT`, `LABEL` are required by the Nix wrapper but can be empty/zero. `GRUB_CFG`, `INSTALLER_ISO`, `RESERVE_SIZE_MB` are optional and only accessed when their enabling flags are set. Fix: Always run `ventoy-deploy` as the built binary (`nix build .#ventoy-deploy`). For testing, export the mandatory vars manually before sourcing the script. See `packages/ventoy-deploy/default.nix` lines 1-14 for the full parameter list.
+
 **nixos-anywhere deploy fails — `nixos-anywhere` not found or wrong flake path**
 Symptom: `nix run .#deploy -- server <ip>` errors with `nixos-anywhere: command not found` or `error: flake 'path:...' does not provide attribute 'nixosConfigurations.server'`. Cause 1: Deploy script uses a `runtimeInputs` reference to `inputs.nixos-anywhere.packages.${system}.default` which may not be accessible on all systems (e.g., `aarch64-darwin`). Cause 2: `--flake ".#$host"` resolves relative to CWD — if run outside the flake root, the config won't be found. Fix: Only define `apps.deploy` on Linux systems via `lib.optionalAttrs (builtins.elem system [ "x86_64-linux" "aarch64-linux" ])`. Always run deploy from the flake root. Use `just deploy` which ensures correct CWD.
 
@@ -210,6 +213,23 @@ Symptom: Editing the inline XML in `services.nix` breaks string interpolation, a
 **VM tests (runNixOSTest) fail with QEMU/KVM error**
 Symptom: `nix flake check` or `nix build .#checks.x86_64-linux.vm-test-*` fails with "Could not access KVM kernel module" or similar. Cause: `pkgs.testers.runNixOSTest` requires `/dev/kvm` to boot the QEMU guest. Most cloud CI runners (GitHub Actions shared, GitLab.com shared) lack KVM access. Fix: Use a self-hosted runner with KVM enabled, or use `nix flake check --no-build` (evaluation only) in CI — the existing workflows in this repo already do this. The `ci.yml` workflow has explicit comments about this. A separate `vm-tests.yml` workflow exists for manual dispatch on KVM-capable runners. To run locally: ensure your user is in the `kvm` group (`sudo usermod -aG kvm $USER`) and verify with `ls -l /dev/kvm`.
 
+
+
+**`ventoy-deploy` errors after refactor — script moved to packages/ventoy-deploy/**
+Symptom: `ventoy-deploy` fails with `command not found` or wrong behavior after the refactor. Cause: The monolithic `modules/flake-parts/ventoy.nix` was split into `ventoy/options.nix`, `ventoy/answer-files.nix`, and `ventoy/deploy.nix`. The bash script moved from a Nix string to `packages/ventoy-deploy/ventoy-deploy.sh` and is now built via `pkgs.callPackage`. Fix: Run `nix build .#ventoy-deploy` to verify the script builds. The `ventoy-deploy` script no longer calls `nix run .#build-iso` — it receives `packages.installer-iso` as a store-path argument at eval time. If you need the custom ISO deployed, set `ventoy.buildInstallerIso = true` in `ventoy-config.nix` (it already is) and ensure `packages.installer-iso` builds.
+
+**`just build-iso` fails — `apps.build-iso` was removed, workflow changed**
+Symptom: Running `nix run .#build-iso` or an old script referencing the flake app fails with `flake does not provide attribute 'apps.x86_64-linux.build-iso'`. Cause: `apps.build-iso` was removed in the refactor. All its logic (agenix decrypt, SSH key generation, build, copy) moved into the Justfile `build-iso` recipe. Fix: Use `just build-iso` instead. If you relied on the flake app programmatically, replicate the steps from the Justfile.
+
+**Answer file XML refactor — templates moved to packages/ventoy/answer-files/**
+Symptom: Changes to Windows unattended answer XML aren't reflected after rebuild. Cause: The answer file XML was extracted from inline Nix strings to standalone `packages/ventoy/answer-files/{dev,minimal,domain,kiosk,dual-boot}.xml` templates with `@VAR@` placeholders. The `buildAnswer` function now uses `pkgs.substituteAll` instead of `pkgs.runCommand` with heredocs. Fix: Edit the `.xml` files directly. The `@VAR@` placeholders are substituted from the Nix `answerFileConfigs` and `answerFileSettings`. The product key (`VK7JG-NPHTM-C97JM-9MPGT-3V66T`) is still hardcoded in `answer-files.nix`.
+
+
 ---
 
-Last updated: 2026-05-24
+**`nix flake check` fails on laptop with `access to absolute path '/iso/authorized_keys' is forbidden in pure evaluation mode`**
+Symptom: `nix flake check --no-build` or building `packages.x86_64-linux.laptop` errors with `error: access to absolute path '/iso/authorized_keys' is forbidden in pure evaluation mode`. Cause: `packages/installer-iso/configuration.nix` sets `users.users.root.openssh.authorizedKeys.keyFiles = [ "/iso/authorized_keys" ]`. This absolute path is only valid inside the built ISO at runtime, but Nix checks it during pure evaluation. Fix: The installer-iso package references this path and bleeds into host evals. Either make the installer-iso build conditional, or override `authorizedKeys.keyFiles` to empty in host configs.
+
+---
+
+Last updated: 2026-05-29
