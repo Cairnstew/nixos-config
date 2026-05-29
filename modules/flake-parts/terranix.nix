@@ -90,11 +90,12 @@ in
         ${pkgs.terraform}/bin/terraform "$@"
       '';
 
-      mkAlias = name: args: {
+      mkAlias = name: args: description: {
         type = "app";
         program = "${pkgs.writeShellScriptBin name ''
           exec ${tfRunner}/bin/tf ${args} "$@"
         ''}/bin/${name}";
+        meta.description = description;
       };
 
     in
@@ -125,11 +126,15 @@ in
       };
 
       apps = {
-        tf = { type = "app"; program = "${tfRunner}/bin/tf"; };
-        tf-plan = mkAlias "tf-plan" "plan";
-        tf-apply = mkAlias "tf-apply" "apply -auto-approve";
-        tf-destroy = mkAlias "tf-destroy" "destroy -auto-approve";
-        tf-show-config = mkAlias "tf-show-config" "show-config";
+        tf = {
+          type = "app";
+          program = "${tfRunner}/bin/tf";
+          meta.description = "Run Terraform commands for NixOS infrastructure";
+        };
+        tf-plan = mkAlias "tf-plan" "plan" "Preview Terraform infrastructure changes (terraform plan)";
+        tf-apply = mkAlias "tf-apply" "apply -auto-approve" "Apply Terraform infrastructure changes";
+        tf-destroy = mkAlias "tf-destroy" "destroy -auto-approve" "Destroy Terraform-managed infrastructure";
+        tf-show-config = mkAlias "tf-show-config" "show-config" "Show the generated Terraform JSON config";
       };
 
       packages.tf-config = terraformConfiguration;

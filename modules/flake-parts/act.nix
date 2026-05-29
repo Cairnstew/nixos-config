@@ -87,10 +87,12 @@
         act = {
           type = "app";
           program = "${pkgs.act}/bin/act";
+          meta.description = "Run GitHub Actions workflows locally with nektos/act";
         };
         act-verify = {
           type = "app";
           program = "${act-verify}/bin/act-verify";
+          meta.description = "Run the local-verify GitHub Actions workflow via act";
         };
       };
     };

@@ -162,6 +162,10 @@ in
   # Override when: System needs grub (BIOS) or systemd-boot (UEFI)
   boot.loader.grub.enable = lib.mkDefault false;
 
+  # ZFS: Don't force-import root pool by default (safer)
+  # Hosts that need it can set boot.zfs.forceImportRoot = true
+  boot.zfs.forceImportRoot = lib.mkDefault false;
+
   # ── Environment ──────────────────────────────────────────────────────────
   # Base packages available on all hosts
   environment.systemPackages = with pkgs; [

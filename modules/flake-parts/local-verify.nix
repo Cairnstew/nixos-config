@@ -228,6 +228,7 @@
         local-verify = {
           type = "app";
           program = "${local-verify-script}/bin/local-verify";
+          meta.description = "Run local verification checks (eval, fmt, lint, flake)";
         };
       };
     };

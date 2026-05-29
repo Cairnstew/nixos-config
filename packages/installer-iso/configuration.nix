@@ -18,6 +18,8 @@
 
   users.users.root.openssh.authorizedKeys.keys = [ (lib.trim rootAuthorizedKey) ];
 
+  boot.zfs.forceImportRoot = false;
+
   boot.postBootCommands = ''
     cp /iso/ssh_host_ed25519_key /etc/ssh/
     chmod 400 /etc/ssh/ssh_host_ed25519_key

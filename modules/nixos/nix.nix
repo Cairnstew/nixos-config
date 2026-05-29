@@ -26,6 +26,10 @@ in
 
     settings = {
       max-jobs = "auto";
+      cores = 0;
+      min-free = lib.mkDefault (5 * 1024 * 1024 * 1024);
+      max-free = lib.mkDefault (30 * 1024 * 1024 * 1024);
+      auto-optimise-store = true;
       experimental-features = "nix-command flakes";
       # I don't have an Intel mac.
       extra-platforms = lib.mkIf pkgs.stdenv.isDarwin "aarch64-darwin x86_64-darwin";

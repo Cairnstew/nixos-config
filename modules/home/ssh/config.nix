@@ -19,28 +19,26 @@ in
         ++ lib.optional (cfg.extraConfig != "") cfg.extraConfig
       );
 
-      matchBlocks = lib.recursiveUpdate
+      settings = lib.recursiveUpdate
         {
           "*" = {
-            sendEnv = [ "LANG" "LC_*" ];
-            hashKnownHosts = true;
+            SendEnv = "LANG LC_*";
+            HashKnownHosts = true;
           };
         }
         (lib.mapAttrs
           (_: block:
-            {
-              extraOptions = block.extraOptions
-              // lib.optionalAttrs (block.serverAliveInterval != null) {
-                ServerAliveInterval = toString block.serverAliveInterval;
-              }
-              // lib.optionalAttrs (block.serverAliveCountMax != null) {
-                ServerAliveCountMax = toString block.serverAliveCountMax;
-              };
+            block.extraOptions
+            // lib.optionalAttrs (block.serverAliveInterval != null) {
+              ServerAliveInterval = block.serverAliveInterval;
             }
-            // lib.optionalAttrs (block.host != "") { hostname = block.host; }
-            // lib.optionalAttrs (block.user != "") { inherit (block) user; }
-            // lib.optionalAttrs (block.port != null) { inherit (block) port; }
-            // lib.optionalAttrs (block.identityFile != null) { inherit (block) identityFile; }
+            // lib.optionalAttrs (block.serverAliveCountMax != null) {
+              ServerAliveCountMax = block.serverAliveCountMax;
+            }
+            // lib.optionalAttrs (block.host != "") { HostName = block.host; }
+            // lib.optionalAttrs (block.user != "") { User = block.user; }
+            // lib.optionalAttrs (block.port != null) { Port = block.port; }
+            // lib.optionalAttrs (block.identityFile != null) { IdentityFile = block.identityFile; }
           )
           cfg.matchBlocks);
     };

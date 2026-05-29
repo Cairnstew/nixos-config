@@ -54,6 +54,7 @@
           fi
         '';
       };
+      meta.description = "Deploy NixOS to a remote host using nixos-anywhere";
     };
   };
 }
