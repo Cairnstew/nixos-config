@@ -6,3 +6,5 @@ result-*
 *.direnv
 **/flake-profile*
 /.pre-commit-config.yaml
+/packages/installer-iso/secrets/
+/ISO/

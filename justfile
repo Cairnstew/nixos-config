@@ -58,6 +58,27 @@ register-host host ip:
     @echo "  2. Run: agenix -r"
     @echo "  3. Rebuild: nix run .#deploy -- {{host}} {{ip}}"
 
+# Build a custom NixOS installer ISO with Tailscale auto-connect
+# Builds to ./ISO/nixos-installer.iso
+# Usage: just build-iso
+# Prerequisites: Nix with flakes, agenix (for tailscale key decryption)
+# Flake output: apps.build-iso (calls nixos-anywhere)
+[group('deploy')]
+build-iso:
+    nix run .#build-iso
+
+# Build installer ISO and deploy to Ventoy USB
+# Usage: just deploy-iso <ventoy-mount-point>
+# Example: just deploy-iso /run/media/{{user}}/VENTOY
+# Prerequisites: Ventoy USB mounted at <ventoy-mount-point>
+[group('deploy')]
+deploy-iso mount="":
+    nix run .#build-iso
+    @echo "Copying ISO to {{mount}}/ISO/..."
+    mkdir -p "{{mount}}/ISO"
+    cp ISO/nixos-installer.iso "{{mount}}/ISO/"
+    @echo "Done! Add ventoy/ventoy.json to {{mount}}/ for auto-boot config."
+
 # Run all pre-commit hooks on all files
 # Usage: just pca
 # Prerequisites: pre-commit installed, .pre-commit-config.yaml exists

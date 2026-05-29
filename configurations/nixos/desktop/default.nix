@@ -46,22 +46,34 @@
   #   sda4: NixOS (ext4, rest) — created before first deploy
   #         (or sda5 if Windows created a recovery partition)
   #
-  # First install (from NixOS installer USB on the desktop itself):
+  # First install (two options):
+  #
+  # Option A — Stock NixOS minimal ISO (simpler, no build step):
   #   1. Boot the NixOS minimal ISO on the desktop
-  #   2. Check the partition table:
+  #   2. Check partition table:
   #        lsblk -o NAME,SIZE,FSTYPE,MOUNTPOINT
-  #   3. Format the free space partition:
+  #   3. Format the free space:
   #        sudo mkfs.ext4 -L nixos /dev/sda4   # adjust if sda5 etc.
-  #   4. Mount and install directly (simpler than nixos-anywhere):
+  #   4. Mount and install:
   #        sudo mount /dev/sda4 /mnt
-  #        sudo mkdir -p /mnt/boot
-  #        sudo mount /dev/sda1 /mnt/boot
+  #        sudo mkdir -p /mnt/boot && sudo mount /dev/sda1 /mnt/boot
   #        sudo mkdir -p /mnt/etc
   #        git clone https://github.com/Cairnstew/nixos-config /mnt/etc/nixos
   #        sudo nixos-install --flake /mnt/etc/nixos#desktop
   #        sudo reboot
-  #   5. After first boot, register the host key with agenix:
-  #        just register-host desktop <IP>
+  #
+  # Option B — Custom Ventoy ISO (auto-connects to Tailscale, SSH keys baked in):
+  #   1. Build the custom ISO from this repo:
+  #        just build-iso   # produces ISO/nixos-installer.iso
+  #   2. Copy it + Windows ISO onto a Ventoy USB
+  #   3. Boot the USB on the desktop
+  #   4. It auto-connects to your tailnet — find it via MagicDNS
+  #   5. SSH in from your laptop:
+  #        ssh root@nixos-installer.tailXXXXX.ts.net
+  #   6. Partition and install (same commands as Option A, steps 2-5)
+  #
+  # After first boot (both options):
+  #   just register-host desktop <IP>
   #
   # Future reinstalls (via SSH, no physical access needed):
   #   nix run .#deploy -- desktop root@<IP>

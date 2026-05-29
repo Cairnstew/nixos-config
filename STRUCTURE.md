@@ -81,6 +81,7 @@ Flake-level modules for outputs, packages, and development tools.
 |------|-------------|
 | `act.nix` | Local GitHub Actions testing via `nektos/act` |
 | `deploy.nix` | nixos-anywhere deploy app (`apps.deploy`) — generic CLI wrapper for remote NixOS installation |
+| `installer-iso.nix` | Installer ISO builder (`packages.installer-iso` + `apps.build-iso`) — custom NixOS ISO with Tailscale + Ventoy integration |
 | `config.nix` | Identity and preference options (me, preferences, defaults) |
 | `formatter.nix` | Treefmt/nixpkgs-fmt configuration for `nix fmt` |
 | `mcp-servers.nix` | MCP (Model Context Protocol) server definitions |
@@ -297,6 +298,9 @@ Custom packages exposed via the flake.
 | `ci/default.nix` | CI/CD helper package |
 | `ci/layout.kdl` | Zellij layout for CI |
 | `complex-app/default.nix` | Complex application package |
+| `installer-iso/default.nix` | Custom NixOS installer ISO builder (Tailscale + SSH auto-connect, used with Ventoy) |
+| `installer-iso/configuration.nix` | NixOS config for the installer ISO |
+| `installer-iso/meta.nix` | Metadata |
 | `copy-md-as-html.nix` | Markdown-to-HTML clipboard utility |
 | `git-merge-and-delete.nix` | Git workflow helper |
 | `localsend/default.nix` | LocalSend package |
