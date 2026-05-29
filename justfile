@@ -27,6 +27,32 @@ pureintent:
 infinitude:
     nix run . infinitude
 
+# Deploy a NixOS host via nixos-anywhere (fresh install)
+# Usage: just deploy <hostname> <ip> [-- nixos-anywhere flags]
+# Example: just deploy server 192.168.1.100
+# Prerequisites: Nix with flakes, SSH access to target as root
+# Flake output: apps.deploy (calls nixos-anywhere)
+[group('deploy')]
+deploy host ip *args:
+    nix run .#deploy -- {{host}} {{ip}} {{args}}
+
+# Register a freshly deployed host with agenix
+# Connects via SSH, fetches host key, prints instructions
+# Usage: just register-host <hostname> <ip>
+# Prerequisites: SSH access to target as root
+[group('deploy')]
+register-host host ip:
+    @echo "Fetching SSH host key for {{host}}..."
+    KEY=$$(ssh root@{{ip}} "cat /etc/ssh/ssh_host_ed25519_key.pub")
+    @echo ""
+    @echo "Host key for {{host}}:"
+    @echo "  $$KEY"
+    @echo ""
+    @echo "Next steps:"
+    @echo "  1. Add this key to secrets/secrets.nix under {{host}}'s recipients"
+    @echo "  2. Run: agenix -r"
+    @echo "  3. Rebuild: nix run .#deploy -- {{host}} {{ip}}"
+
 # Run all pre-commit hooks on all files
 # Usage: just pca
 # Prerequisites: pre-commit installed, .pre-commit-config.yaml exists

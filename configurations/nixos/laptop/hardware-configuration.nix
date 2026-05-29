@@ -35,20 +35,9 @@
   boot.kernelModules = [ "kvm-intel" ];
   boot.extraModulePackages = [ ];
 
-  fileSystems."/" =
-    {
-      device = "/dev/disk/by-uuid/220dc7c6-6a08-446d-ab6f-c9ce5638b022";
-      fsType = "ext4";
-    };
-
-  fileSystems."/boot" =
-    {
-      device = "/dev/disk/by-uuid/BE6C-86F6";
-      fsType = "vfat";
-      options = [ "fmask=0022" "dmask=0022" ];
-    };
-
-  swapDevices = [ ];
+  # fileSystems and swapDevices are defined by configurations/nixos/laptop/disk-config.nix (disko).
+  # After nixos-anywhere generates a new hardware config, nixos-generate-config will
+  # produce fileSystems entries with lib.mkDefault that coexist with disko.
 
   nixpkgs.hostPlatform = lib.mkDefault "x86_64-linux";
   hardware.cpu.intel.updateMicrocode = lib.mkDefault config.hardware.enableRedistributableFirmware;

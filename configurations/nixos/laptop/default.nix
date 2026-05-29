@@ -3,6 +3,7 @@
 { flake, ... }:
 {
   imports = [
+    ./disk-config.nix
     # Import hardware config FIRST to set hostPlatform
     ./hardware-configuration.nix
     flake.inputs.self.nixosModules.common
@@ -51,6 +52,9 @@
     latitude = 55.8617;
     longitude = 4.2583;
   };
+
+  # ── SSH Access
+  my.services.ssh.authorizedKeys = [ flake.config.me.sshKey ];
 
   # ── Laptop-specific services ─────────────────────────────────────────────
   services.fwupd.enable = true;

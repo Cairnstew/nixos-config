@@ -37,6 +37,30 @@
     longitude = -4.2583;
   };
 
+  # ── Dual-Boot / Partition Layout
+  # Expected disk: /dev/nvme0n1 (AMD desktop)
+  #   p1: ESP (vfat, 100M) — Windows EFI boot
+  #   p2: MSR (16M) — Microsoft Reserved
+  #   p3: Windows (NTFS, ~150GB)
+  #   p5: NixOS (ext4, rest) — created before first deploy
+  #
+  # Before first nixos-anywhere deploy:
+  #   1. Boot NixOS live USB on the desktop
+  #   2. Check partition table: lsblk -o NAME,SIZE,FSTYPE,MOUNTPOINT
+  #   3. Create partition in free space: mkfs.ext4 /dev/nvme0n1p5
+  #   4. Update nixosPartition below if different
+  #   5. From source machine: nix run .#deploy -- desktop <IP>
+  #      (disko skipped — useExisting mode mounts existing partitions)
+  my.disko.dualBoot = {
+    enable = true;
+    mode = "useExisting";
+    disk = "/dev/nvme0n1";
+    nixosPartition = "/dev/nvme0n1p5";
+  };
+
+  # ── SSH Access
+  my.services.ssh.authorizedKeys = [ flake.config.me.sshKey ];
+
   # ── UDisks2 (dynamic automount for USB/external drives) ─────────────────
   my.services.udisks2.enable = true;
 
