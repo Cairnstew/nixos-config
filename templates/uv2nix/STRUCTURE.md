@@ -12,6 +12,7 @@
 ├── HEATMAP.md                  # Codebase complexity & hot spots
 ├── GOTCHAS.md                  # Common pitfalls when working with this template
 ├── README.md                   # Quick-start and overview
+├── STRUCTURE.md                # This file — detailed architecture
 │
 ├── modules/
 │   ├── flake.nix               # Central module: options, shells, apps, packages, checks
@@ -47,7 +48,7 @@ flake.nix (top-level)
 |---|---|
 | `modules/flake.nix` | Defines `project.*` options, builds dev shells, app runner, test check |
 | `modules/python-env.nix` | Loads `uv.lock`, overlays build systems, produces `basePythonSets` and `devEnv` |
-| `modules/pyproject.nix` | Converts Nix config to `pyproject.toml` via an embedded Python TOML writer |
+| `modules/pyproject.nix` | Converts Nix config to `pyproject.toml` via an embedded Python TOML writer. Also declares `tool.hatch.build.targets.wheel.packages` so hatchling finds source under `src/`. |
 
 ### Python Layer
 
@@ -58,8 +59,26 @@ The Python source lives under `src/<package_name>/`.  The package name is set vi
 1. `modules/flake.nix` reads `project.*` options → produces `cfg`
 2. `cfg` is passed to `python-env.nix` (loads uv.lock, builds package sets) and `pyproject.nix` (generates pyproject.toml)
 3. Virtual envs (`prodEnv`, `testEnv`, `devEnv`) are created from the package sets using `workspace.deps.default` (runtime) or `workspace.deps.all` (including dev)
-4. `devShells.default` wraps `devEnv` + `uv` + extras
+4. `devShells.default` wraps `devEnv` + `uv` + `cfg.extraDevPackages` + `cfg.shellEnv`
 5. `checks.tests` wraps `testEnv` and runs `pytest`
+
+## Available Options (`project.*`)
+
+| Option | Type | Default | Description |
+|---|---|---|---|
+| `name` | `str` | `"my-project"` | Project / package name |
+| `version` | `str` | `"0.1.0"` | Project version |
+| `description` | `str` | `"A Python project…"` | Short description |
+| `requiresPython` | `str` | `">=3.12"` | Python version constraint |
+| `pythonPackage` | `package` | `pkgs.python312` | Nix Python interpreter |
+| `dependencies` | `list of str` | `[]` | Runtime dependencies |
+| `devDependencies` | `list of str` | `["pytest>=8", "pytest-cov>=6"]` | Dev dependencies |
+| `optionalDependencies` | `attrs of list of str` | `{}` | Optional groups |
+| `scripts` | `attrs of str` | `{}` | CLI entry points |
+| `extraDevPackages` | `pkgs → list of package` | `pkgs: []` | System packages in dev shell |
+| `shellEnv` | `attrs of str` | `{}` | Environment variables |
+| `shellHints` | `list of str` | hints | Dev shell banner hints |
+| `mainModule` | `str` | `"my_project"` | Module for `nix run` |
 
 ## Key Design Decisions
 

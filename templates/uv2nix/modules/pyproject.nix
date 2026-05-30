@@ -25,6 +25,11 @@ let
       dev = cfg.devDependencies;
     };
 
+    # Hatch build targets — tells hatchling to look for packages under src/
+    tool.hatch.build.targets.wheel = {
+      packages = [ "src/${cfg.name}" ];
+    };
+
     # Ruff configuration
     tool.ruff = {
       line-length = 100;

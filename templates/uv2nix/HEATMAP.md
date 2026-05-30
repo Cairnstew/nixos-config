@@ -10,9 +10,9 @@ Hotter components = more frequently modified or higher complexity.
 - **Touch frequency**: Every project configuration change.
 
 ### `modules/pyproject.nix` — pyproject.toml generator
-- **Why hot**: The embedded TOML writer is custom Python code. If a new tool config section is needed (`[tool.mypy]`, `[tool.black]`, etc.), add it in the Nix attrset here. The writer itself has subtle logic for dotted-key sub-sections.
+- **Why hot**: The embedded TOML writer is custom Python code. If a new tool config section is needed (`[tool.mypy]`, `[tool.black]`, etc.), add it in the Nix attrset here. The writer itself has subtle logic for dotted-key sub-sections. Also handles `tool.hatch.build.targets.wheel.packages` which must match the source layout.
 - **Complexity**: Medium. Python TOML serialization is non-trivial; the inline-table vs section logic is easy to get wrong.
-- **Risk areas**: Nested dicts become dotted sub-sections; empty dicts are skipped; `lib.optionalAttrs` gates conditional sections.
+- **Risk areas**: Nested dicts become dotted sub-sections; empty dicts are skipped; `lib.optionalAttrs` gates conditional sections. Hatch build target `packages` must be correct for the source layout.
 
 ## 🔥 Warm
 
@@ -54,6 +54,7 @@ modules/python-env.nix
 modules/pyproject.nix
     ├── reads project.* options
     ├── builds attrs attrset (build-system, project, tool.*, etc.)
+    ├── includes hatch build target wheel.packages for src/ layout
     ├── emits JSON + TOML writer script
     └── used by sync-pyproject app and bootstrap shell
 ```
@@ -64,7 +65,7 @@ modules/pyproject.nix
 |---|---|---|---|---|
 | `modules/flake.nix` | Heavy | Medium | Light | Light |
 | `modules/python-env.nix` | Once | Never | Never | Never |
-| `modules/pyproject.nix` | Once | Never | Never | Medium |
+| `modules/pyproject.nix` | Once | Never | Never | Medium (tool config, hatch targets) |
 | `src/my_project/` | Light | Heavy | Light | Never |
 | `tests/` | Light | Medium | Never | Never |
 | `pyproject.toml` | Auto | Auto | Auto | Auto |

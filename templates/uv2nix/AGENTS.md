@@ -21,6 +21,8 @@ Guidance for AI coding agents (opencode, Copilot, etc.) working with this flake 
 | `uv.lock` | Lockfile — must be committed, do not edit by hand |
 | `src/my_project/` | Python package source |
 | `tests/` | Test suite (pytest) |
+| `.envrc` | direnv config — auto-enters dev shell, loads `.env` |
+| `.env` | Local secrets/config (gitignored) |
 
 ## Workflow (in order)
 
@@ -40,6 +42,39 @@ nix flake check            # run all checks (including tests)
 4. Run `nix build` or `nix flake check` to verify.
 
 Alternatively, use `uv add <pkg>` / `uv add --dev <pkg>` and commit the updated `uv.lock`.
+
+## Adding Optional Dependencies
+
+Use `config.project.optionalDependencies` in `modules/flake.nix`:
+
+```nix
+config.project.optionalDependencies = {
+  web = [ "fastapi>=0.115" ];
+  db = [ "sqlalchemy>=2.0" ];
+};
+```
+
+This generates `[project.optional-dependencies]` in `pyproject.toml`.
+
+## Adding System Packages to the Dev Shell
+
+Use `config.project.extraDevPackages` to add system-level tools (CLIs, services, etc.):
+
+```nix
+config.project.extraDevPackages = pkgs: [ pkgs.postgresql pkgs.redis ];
+```
+
+## Setting Shell Environment Variables
+
+Use `config.project.shellEnv` in `modules/flake.nix`:
+
+```nix
+config.project.shellEnv = {
+  DATABASE_URL = "postgresql://localhost/mydb";
+};
+```
+
+For secrets, place them in `.env` (loaded automatically by `.envrc` via direnv).
 
 ## Build System Overrides
 
@@ -69,6 +104,7 @@ nix build .#my-project-dev # dev environment explicitly
 - `UV_NO_SYNC=1` to prevent uv from syncing automatically.
 - `UV_PYTHON_DOWNLOADS=never` — must use Nix-provided Python.
 - Editable install of the project package is active (changes to `src/` picked up live).
+- `.env` file is **not** automatically loaded in `nix develop` (only via direnv's `dotenv`). Add shellHook sourcing if needed.
 
 ## Testing
 
@@ -78,6 +114,8 @@ Tests run via `nix flake check` (builds test environment, runs `pytest --tb=shor
 
 The TOML writer in `modules/pyproject.nix` emits dotted-key sections (`[tool.ruff]`). Nested dicts become sub-sections. Empty dicts are omitted.  `build-system` uses the `hatchling.build` backend (not the deprecated `hatchling.build.api`).
 
+Hatch build targets in `pyproject.nix` include `tool.hatch.build.targets.wheel.packages` pointing to `src/${cfg.name}`. If you change the source layout, update this config.
+
 ## .envrc
 
-If `direnv` is installed, `direnv allow` auto-enters the dev shell on `cd`.
+If `direnv` is installed, `direnv allow` auto-enters the dev shell on `cd`.  It also loads `.env` via `dotenv` if present — variables from `.env` are available in the shell environment.
