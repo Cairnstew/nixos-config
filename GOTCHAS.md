@@ -13,6 +13,11 @@ Each entry: **symptom → cause → fix**. One paragraph max. Newest at the top.
 
 ---
 
+**`mcp-server-git` crashes with "Connection closed" — protocol mismatch**
+Symptom: OpenCode's git tools (`git_git_diff_unstaged`, `git_git_log`, etc.) fail with `MCP error -32000: Connection closed` followed by `Not connected`. Other MCP servers (nixos, sqlite, fetch) work fine. Cause: `mcp-server-git` (PyPI) uses MCP Python SDK v1.27.2 which implements an **old line-based protocol** — it reads raw JSON lines from stdin, one per message. OpenCode v1.15.7 sends messages using the **standard MCP Content-Length header format** (`Content-Length: N\r\n\r\n{...}`). The server parses `Content-Length:` as a JSON line, fails validation, and with `raise_exceptions=True`, the exception propagates and crashes the server — hence "Connection closed". Fix: Added a protocol adapter (`modules/mcp-servers/mcp-git-proxy.py`) that sits between OpenCode and `uvx mcp-server-git`, translating Content-Length framing to raw JSON lines and back. See `modules/mcp-servers/registry.nix` and `modules/mcp-servers/mcp-git-proxy.py`. After rebuilding, the `mcp-server-git` binary runs the proxy.
+
+---
+
 **`sudo act` fails on Docker 29+ — two separate errors with different fixes**
 Symptom 1: Running `sudo act` fails with `Error response from daemon: mkdirat var/run/act: path escapes from parent`. Cause: Docker 27+ hardened `docker cp` to reject relative paths. `act` copies the workspace into the container via `docker cp` which triggers this check. Fix: Use `act --bind` to bind-mount the workspace instead of copying.
 Symptom 2: Even with `--bind`, act fails with `Error response from daemon: mkdirat var/run: file exists` when extracting workflow metadata to `/var/run/act/`. Docker 29.x's `mkdirat` check fails because `/var/run -> /run` is a symlink in the container image, and `docker cp` cannot follow it. Fix: Use a custom image where `/var/run` is a real directory (not a symlink). Run `just act-image` to build `act-fixed:latest` from `modules/flake-parts/act-fixed.Dockerfile` which replaces the symlink with a real directory. Pass `-P ubuntu-latest=act-fixed:latest` to act. The `act-verify` wrapper, `.#act` app, and all `just act*` recipes include both `--bind` and `-P ubuntu-latest=act-fixed:latest` by default.

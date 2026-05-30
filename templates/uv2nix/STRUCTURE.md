@@ -2,88 +2,127 @@
 
 ```
 .
-├── flake.nix                   # Top-level flake — pins inputs from GitHub
-├── flake.lock                  # Locked flake inputs (auto-generated)
-├── pyproject.toml              # Python project metadata (auto-generated)
-├── uv.lock                     # Pinned dependency versions (uv)
-├── .envrc                      # direnv: auto-enters dev shell on cd
-├── .gitignore
-├── AGENTS.md                   # Guidance for AI coding agents
-├── HEATMAP.md                  # Codebase complexity & hot spots
-├── GOTCHAS.md                  # Common pitfalls when working with this template
-├── README.md                   # Quick-start and overview
-├── STRUCTURE.md                # This file — detailed architecture
+├── .github/                    # CI/CD & dependency management
+│   ├── actions/
+│   │   └── setup-nix/
+│   │       └── action.yml      #   Reusable: Nix installer + cache + uv
+│   ├── workflows/
+│   │   ├── ci.yml              #   Push/PR — lint, typecheck, test, build
+│   │   ├── release.yml         #   Tag v* — Nix build, PyPI publish, GH release
+│   │   └── update-flake-lock.yml # Weekly — nix flake lock update PR
+│   └── renovate.json           #   Renovate config — batches Python & Nix dep PRs
 │
-├── modules/
-│   ├── flake.nix               # Central module: options, shells, apps, packages, checks
-│   ├── python-env.nix          # uv2nix workspace → Nix Python package set
-│   └── pyproject.nix           # Generates pyproject.toml from Nix config
+├── flake.nix                 # Nix flake — thin orchestrator, delegates to nix/
+├── flake.lock                # Nix lock file — pins all flake input versions
+├── pyproject.toml            # Python project metadata & dependency declarations
+├── uv.lock                   # uv lock file — exact dependency resolution, drives uv2nix overlay
+│
+├── nix/                      # Modular Nix building blocks
+│   ├── default.nix           #   Derivation — wraps app via mkApplication
+│   ├── overlay.nix           #   pkgs overlay — adds uv2nix-template & env
+│   ├── module.nix            #   NixOS module — optional systemd service
+│   ├── home-module.nix       #   Home Manager module — user env package
+│   ├── devshell.nix          #   Dev shells — default (uv2nix) + bootstrap (raw)
+│   └── checks.nix            #   Flake checks — build & venv smoke tests
 │
 ├── src/
-│   └── my_project/             # Python package (rename in modules/flake.nix)
-│       ├── __init__.py         # Package metadata
-│       ├── __main__.py         # Entry point (python -m my_project)
-│       └── utils.py            # Example module
+│   ├── uv2nix_template/         # Application package (see layer rules in AGENTS.md)
+│   │   ├── __init__.py
+│   │   ├── py.typed
+│   │   ├── core/
+│   │   ├── models/
+│   │   ├── services/
+│   │   ├── repositories/
+│   │   ├── utils/
+│   │   └── cli/
+│   │
+│   └── textual_ui/              # TUI package — optional, add as dependency when needed
+│       ├── __init__.py           #   Exports TextualApp
+│       ├── py.typed              #   PEP 561 marker
+│       ├── app.py                #   TextualApp base class
+│       ├── DOCS.md               #   Textual reference & lookup
+│       ├── core/                 #   Base utilities (config, exceptions)
+│       │   ├── __init__.py
+│       │   ├── config.py
+│       │   ├── constants.py
+│       │   ├── exceptions.py
+│       │   └── logging.py
+│       ├── widgets/              #   Custom widgets
+│       │   └── __init__.py
+│       └── cli/                  #   CLI entrypoint
+│           ├── __init__.py
+│           └── main.py
 │
-└── tests/
-    ├── __init__.py
-    ├── conftest.py
-    └── test_utils.py           # Example tests
+├── tests/                     # Tiered test suite
+│   ├── conftest.py            # Root: sys.path, session-scoped setup
+│   ├── unit/                  # Fast, no I/O — mocks & fakes only
+│   │   ├── conftest.py
+│   │   └── test_example.py
+│   ├── integration/           # Needs services (DB, network)
+│   │   ├── conftest.py
+│   │   └── test_example.py
+│   ├── e2e/                   # Full app spin-up, CLI runner
+│   │   ├── conftest.py
+│   │   └── test_example.py
+│   ├── fixtures/              # Pure data & factories (no test logic)
+│   │   ├── __init__.py
+│   │   ├── factories.py
+│   │   ├── mocks.py
+│   │   └── data/
+│   │       ├── sample.json
+│   │       └── sample.csv
+│   └── utils/                 # Reusable helpers (assertions, builders)
+│       ├── __init__.py
+│       ├── assertions.py
+│       └── builders.py
+│
+├── UV2NIX.md                 # uv2nix reference & lookup table
+├── AGENTS.md                 # Instructions for AI coding agents
+├── GOTCHAS.md                # Common pitfalls
+├── HEATMAP.md                # Complexity/fragility heatmap
+├── STRUCTURE.md              # This file
+├── README.md                 # Project readme
+│
+├── .gitignore                # Git ignore rules
 ```
 
-## Architecture Overview
-
-### Nix Layer
-
-The Nix configuration is split across three files in `modules/`, each with a single responsibility:
+## Architecture
 
 ```
-flake.nix (top-level)
-  └─ imports ./modules/flake.nix  (options, shells, apps, checks)
-       ├─ imports ./python-env.nix  (uv2nix workspace → Python set)
-       └─ imports ./pyproject.nix   (pyproject.toml generator)
+pyproject.toml  ──uv add/lock──►  uv.lock
+                                      │
+                                      ▼
+flatten.nix  ──workspace.mkPyprojectOverlay──►  Nix overlay
+  │                                                  │
+  │  pyproject-build-systems.overlays.wheel ─────────┤
+  │                                                  │
+  └── composeManyExtensions ─────────────────────────► pythonSet
+                                                           │
+                                               ┌───────────┼───────────────────┐
+                                               ▼           ▼                   ▼
+                                    nix/default.nix   nix/devshell.nix    nix/module.nix
+                                    (mkApplication)   (mkShell)           (systemd service)
 ```
 
-| File | Role |
-|---|---|
-| `modules/flake.nix` | Defines `project.*` options, builds dev shells, app runner, test check |
-| `modules/python-env.nix` | Loads `uv.lock`, overlays build systems, produces `basePythonSets` and `devEnv` |
-| `modules/pyproject.nix` | Converts Nix config to `pyproject.toml` via an embedded Python TOML writer. Also declares `tool.hatch.build.targets.wheel.packages` so hatchling finds source under `src/`. |
+The flake.nix is a thin orchestrator. Each `nix/` file receives the system-specific `pythonSet`, `pkgs`, `workspace`, etc. and handles one concern.
 
-### Python Layer
+## Key concepts
 
-The Python source lives under `src/<package_name>/`.  The package name is set via `config.project.name` in `modules/flake.nix` (hyphens in the Nix name become underscores in Python imports — uv/hatchling handle this automatically).
+- **workspace** — uv2nix treats every project as a workspace (even single-project ones). `loadWorkspace` discovers & parses all members.
+- **overlay** — generated from `uv.lock` via `mkPyprojectOverlay`. Adds every dependency as a Nix package attribute.
+- **editableOverlay** — variant for development: installs your local package as editable (source-linked) so changes take effect immediately.
+- **pythonSet** — Nixpkgs Python package set extended with the uv2nix overlays. Contains every Python package as a buildable derivation.
+- **virtualenv** — aggregate derivation that combines all selected packages into a single environment (via `mkVirtualEnv`).
+- **mkApplication** — wraps a venv into a standalone Nix package, hiding Python internals (interpreter, activation scripts, etc.).
 
-### Data Flow
+## Nix Flake outputs
 
-1. `modules/flake.nix` reads `project.*` options → produces `cfg`
-2. `cfg` is passed to `python-env.nix` (loads uv.lock, builds package sets) and `pyproject.nix` (generates pyproject.toml)
-3. Virtual envs (`prodEnv`, `testEnv`, `devEnv`) are created from the package sets using `workspace.deps.default` (runtime) or `workspace.deps.all` (including dev)
-4. `devShells.default` wraps `devEnv` + `uv` + `cfg.extraDevPackages` + `cfg.shellEnv`
-5. `checks.tests` wraps `testEnv` and runs `pytest`
-
-## Available Options (`project.*`)
-
-| Option | Type | Default | Description |
-|---|---|---|---|
-| `name` | `str` | `"my-project"` | Project / package name |
-| `version` | `str` | `"0.1.0"` | Project version |
-| `description` | `str` | `"A Python project…"` | Short description |
-| `requiresPython` | `str` | `">=3.12"` | Python version constraint |
-| `pythonPackage` | `package` | `pkgs.python312` | Nix Python interpreter |
-| `dependencies` | `list of str` | `[]` | Runtime dependencies |
-| `devDependencies` | `list of str` | `["pytest>=8", "pytest-cov>=6"]` | Dev dependencies |
-| `optionalDependencies` | `attrs of list of str` | `{}` | Optional groups |
-| `scripts` | `attrs of str` | `{}` | CLI entry points |
-| `extraDevPackages` | `pkgs → list of package` | `pkgs: []` | System packages in dev shell |
-| `shellEnv` | `attrs of str` | `{}` | Environment variables |
-| `shellHints` | `list of str` | hints | Dev shell banner hints |
-| `mainModule` | `str` | `"my_project"` | Module for `nix run` |
-
-## Key Design Decisions
-
-- **uv2nix** for Python dependency management — single source of truth is `uv.lock`
-- **flake-parts** for modular Nix flake structure — extensible without editing top-level flake
-- **hatchling** build backend — modern, fast, PEP 621 compliant
-- **pyproject.toml is auto-generated** — edit Nix config, not TOML directly (or use `uv add`)
-- **Editable install** in dev shell — source changes take effect immediately
+| Output | Source file | Description |
+|---|---|---|
+| `packages.default` | `nix/default.nix` | Production build via `mkApplication` |
+| `devShells.default` | `nix/devshell.nix` | Full dev environment with editable installs |
+| `devShells.bootstrap` | `nix/devshell.nix` | Python + uv only (no uv2nix dependency) |
+| `overlays.default` | `flake.nix` (inline) | Adds `uv2nix-template` to `pkgs` |
+| `nixosModules.default` | `nix/module.nix` | Optional systemd service |
+| `homeManagerModules.default` | `nix/home-module.nix` | User environment package |
+| `checks` | `nix/checks.nix` | Build & venv smoke tests |

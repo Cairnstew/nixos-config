@@ -59,7 +59,7 @@ let
       };
     };
 
-  # Protocol proxy for mcp-server-git.
+  # Protocol proxy for mcp-server-git (see README.md for details).
   # mcp-server-git (MCP Python SDK 1.x) uses line-based protocol (raw JSON
   # lines), but modern MCP clients like OpenCode use the standard
   # Content-Length header format. This proxy translates between the two.

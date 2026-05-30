@@ -1,121 +1,87 @@
-# Agent Guide
+# Agent Instructions
 
-Guidance for AI coding agents (opencode, Copilot, etc.) working with this flake template.
+## About this project
 
-## Project Identity
+Python project managed with `uv2nix` — uv's `uv.lock` drives Nix derivations via pure Nix code.
 
-- **Python project** managed with **uv** and **Nix** (uv2nix).
-- Flake-based build with `flake-parts` for modular configuration.
-- Build backend: **hatchling**.
-- Python version: **3.12** (configurable in `modules/flake.nix`).
+## Reference files
 
-## Key Files
-
-| File | Purpose |
+| File | Role |
 |---|---|
-| `flake.nix` | Top-level flake — pins inputs, imports `modules/flake.nix` |
-| `modules/flake.nix` | All options, shells, apps, packages, checks |
-| `modules/python-env.nix` | uv2nix workspace → Python package set |
-| `modules/pyproject.nix` | Generates `pyproject.toml` from Nix config |
-| `pyproject.toml` | Auto-generated — edit `modules/flake.nix` then run `nix run .#sync-pyproject` |
-| `uv.lock` | Lockfile — must be committed, do not edit by hand |
-| `src/my_project/` | Python package source |
-| `tests/` | Test suite (pytest) |
-| `.envrc` | direnv config — auto-enters dev shell, loads `.env` |
-| `.env` | Local secrets/config (gitignored) |
+| `UV2NIX.md` | Full uv2nix reference & lookup table |
+| `GOTCHAS.md` | Common pitfalls — read before debugging build issues |
+| `HEATMAP.md` | Complexity/fragility heatmap of every project file |
+| `STRUCTURE.md` | Project structure, architecture diagram, devShells & packages |
+| `TESTS.md` | Test tier layout, design decisions, and conventions |
+| `AGENTS.md` | This file — agent instructions |
 
-## Workflow (in order)
+## Key files
 
+| File | Role |
+|---|---|
+| `flake.nix` | Nix flake — thin orchestrator, delegates to `nix/` modules |
+| `nix/default.nix` | Package derivation (mkApplication) |
+| `nix/devshell.nix` | Dev shell definitions (default + bootstrap) |
+| `nix/overlay.nix` | pkgs overlay reference |
+| `nix/module.nix` | NixOS module (systemd service) |
+| `nix/home-module.nix` | Home Manager module (user env) |
+| `nix/checks.nix` | Flake checks |
+| `pyproject.toml` | Python project metadata, dependencies |
+| `uv.lock` | Lock file — drives the Nix overlay. **Must be regenerated after any pyproject.toml change.** |
+| `src/uv2nix_template/` | Application package source |
+| `src/textual_ui/` | TUI package (Textual) — optional, add as dependency when needed |
+| `tests/` | Test suite |
+| `.github/workflows/ci.yml` | CI — lint, typecheck, test, build on push/PR |
+| `.github/workflows/release.yml` | Release — Nix build + PyPI publish on tag |
+| `.github/workflows/update-flake-lock.yml` | Weekly flake.lock update (Monday) |
+| `.github/renovate.json` | Renovate config — batches Python & Nix dep PRs |
+
+## Workflows
+
+### Add a dependency
 ```
-nix run .#sync-pyproject   # regenerate pyproject.toml after config changes
-uv sync                    # update uv.lock after dependency changes
-nix build                  # build production environment
-nix run                    # run the application
-nix flake check            # run all checks (including tests)
-```
-
-## Adding Dependencies
-
-1. Add to `modules/flake.nix` under `config.project.dependencies` (runtime) or `config.project.devDependencies` (dev).
-2. Run `nix run .#sync-pyproject` to regenerate `pyproject.toml`.
-3. Run `uv sync` to regenerate `uv.lock`.
-4. Run `nix build` or `nix flake check` to verify.
-
-Alternatively, use `uv add <pkg>` / `uv add --dev <pkg>` and commit the updated `uv.lock`.
-
-## Adding Optional Dependencies
-
-Use `config.project.optionalDependencies` in `modules/flake.nix`:
-
-```nix
-config.project.optionalDependencies = {
-  web = [ "fastapi>=0.115" ];
-  db = [ "sqlalchemy>=2.0" ];
-};
+nix develop .#bootstrap   # or nix develop (if uv.lock is current)
+uv add <package>
+# uv.lock updated, flake.nix picks it up automatically
 ```
 
-This generates `[project.optional-dependencies]` in `pyproject.toml`.
+### Enter dev environment
+```
+nix develop
+```
+This builds a Nix-managed venv with all deps. Never use `uv run` inside it — `uv2nix` provisions the venv, not `uv`.
 
-## Adding System Packages to the Dev Shell
-
-Use `config.project.extraDevPackages` to add system-level tools (CLIs, services, etc.):
-
-```nix
-config.project.extraDevPackages = pkgs: [ pkgs.postgresql pkgs.redis ];
+### Build for production
+```
+nix build .#default
 ```
 
-## Setting Shell Environment Variables
+### CI workflows
 
-Use `config.project.shellEnv` in `modules/flake.nix`:
+The `.github/workflows/` directory has three workflows that run out of the box:
 
-```nix
-config.project.shellEnv = {
-  DATABASE_URL = "postgresql://localhost/mydb";
-};
-```
+| Workflow | Trigger | What it does |
+|---|---|---|
+| `ci.yml` | Push to main, PR | Detect project capabilities → lint (ruff) → typecheck (mypy) → test (pytest matrix by tier) → Nix checks (`nix flake check` + `nix build`). Test tiers are auto-detected from existing directories. `unit` is required; `integration` and `e2e` are soft-fail. |
+| `release.yml` | Tag push `v*` | Build via Nix → publish to PyPI (if CLI detected) → create GitHub release. PyPI publishing is gated behind `has_cli`. |
+| `update-flake-lock.yml` | Weekly (Monday) | Runs `nix flake lock --update`, opens a PR. |
 
-For secrets, place them in `.env` (loaded automatically by `.envrc` via direnv).
+Lint and typecheck run inside `nix develop .#bootstrap` (fast, no uv2nix venv build). Tests run inside `nix develop` (full hermetic environment). See `TESTS.md` for test tier conventions.
 
-## Build System Overrides
+## Rules for agents
 
-If a package in `uv.lock` fails to build because its build-system deps aren't declared, add overrides via `config.uv2nix.buildSystemOverrides` in `modules/flake.nix`:
-
-```nix
-config.uv2nix.buildSystemOverrides = {
-  some-package = { setuptools = [ ]; cython = [ ]; };
-};
-```
-
-## Common Nix Commands
-
-```bash
-nix build                  # package (alias for packages.default)
-nix run                    # run the app
-nix run .#sync-pyproject   # regenerate pyproject.toml
-nix develop                # dev shell (with editable install + uv)
-nix develop .#bootstrap    # bootstrap shell (for initial setup)
-nix flake check            # full check (build + tests)
-nix build .#my-project-dev # dev environment explicitly
-```
-
-## Dev Shell Behavior
-
-- `$REPO_ROOT` is set to the git root (or CWD fallback).
-- `UV_NO_SYNC=1` to prevent uv from syncing automatically.
-- `UV_PYTHON_DOWNLOADS=never` — must use Nix-provided Python.
-- Editable install of the project package is active (changes to `src/` picked up live).
-- `.env` file is **not** automatically loaded in `nix develop` (only via direnv's `dotenv`). Add shellHook sourcing if needed.
-
-## Testing
-
-Tests run via `nix flake check` (builds test environment, runs `pytest --tb=short -q`).  All dev dependencies from `dependency-groups.dev` are available.
-
-## Python Backend
-
-The TOML writer in `modules/pyproject.nix` emits dotted-key sections (`[tool.ruff]`). Nested dicts become sub-sections. Empty dicts are omitted.  `build-system` uses the `hatchling.build` backend (not the deprecated `hatchling.build.api`).
-
-Hatch build targets in `pyproject.nix` include `tool.hatch.build.targets.wheel.packages` pointing to `src/${cfg.name}`. If you change the source layout, update this config.
-
-## .envrc
-
-If `direnv` is installed, `direnv allow` auto-enters the dev shell on `cd`.  It also loads `.env` via `dotenv` if present — variables from `.env` are available in the shell environment.
+1. **Never edit `uv.lock` directly** — always use `uv lock` or `uv add`/`uv remove`.
+2. **After editing `pyproject.toml`**, tell the user to run `uv lock` to regenerate `uv.lock`.
+3. **After editing `flake.nix`**, run `nix flake lock` to update `flake.lock`.
+4. **Source filtering**: avoid filtering at the workspace root level (causes IFD + breaks editables). Filter per-package via overlay in `flake.nix`.
+5. **Python version**: controlled by `requires-python` in `pyproject.toml` and the `python` variable in `flake.nix`. Keep in sync.
+6. **Setuptools backend**: `pyproject.toml` uses `setuptools.build_meta`. If switching backends (hatchling, pdm, etc.), update `build-system.requires` accordingly and ensure the build system is covered by `pyproject-build-systems` inputs.
+7. **Adding Nix-specific overrides** — place them in `flake.nix` as an additional extension in `composeManyExtensions`. See `UV2NIX.md` > Overriding Packages for patterns.
+8. **Package layer conventions** — follow the import direction rules in `src/uv2nix_template/`:
+   - `core/` imports nothing from the rest of the package — safe to import anywhere
+   - `models/` is pure data shapes with no business logic
+   - `services/` imports `models/` and `repositories/` but never the reverse
+   - `repositories/` handles data access, imported by services
+   - `utils/` is stateless pure functions only — never imports config or services
+   - The top-level `__init__.py` is the public API contract — explicit re-exports only
+9. **New features**: add one file per layer (e.g. `models/user.py` + `services/user.py` + `repositories/user.py`), not feature folders. This keeps layers coherent.

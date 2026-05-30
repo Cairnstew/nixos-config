@@ -1,111 +1,57 @@
-# Gotchas & Common Pitfalls
+# Gotchas
 
-## Nix-Side Gotchas
+## uv2nix
 
-### 1. `uv.lock` must exist for `nix build`
+### uv.lock required for evaluation
+The flake won't evaluate without a `uv.lock`. Use `nix develop .#bootstrap` to get Python + uv, then run `uv lock`.
 
-The Nix build reads `uv.lock` at evaluation time via `loadWorkspace`. If it's missing, evaluation fails with `No such file or directory`. Run `uv sync` first, and **commit `uv.lock`** to version control. This template's `.gitignore` does not ignore `uv.lock` — if you copy it into another project, make sure it stays tracked.
+### uv.lock doesn't contain build systems
+uv [doesn't lock build systems](https://github.com/astral-sh/uv/issues/5190). uv2nix uses `pyproject-build-systems` overlay to supply them. If a build system isn't in that repo, you must supply it via an overlay.
 
-### 2. Infinite recursion with build-system overrides
+### Don't use `uv run` inside the dev shell
+`uv run` creates its own venv, defeating uv2nix's provisioning. The dev shell already makes all scripts/entry points available directly.
 
-The `config.uv2nix.buildSystemOverrides` option is **declared but currently unused** in the simplified `python-env.nix`. If you re-add a custom `mkBuildSystemOverlay`, be careful with `final` vs `prev` references — using both can create circular dependency loops during evaluation.
+### Don't filter sources at workspace root
+`uv2nix.lib.workspace.loadWorkspace` reads from the workspace root at evaluation time. Filtering there causes IFD and breaks editables. Filter per-package instead.
 
-### 3. Python version mismatch
+### Editable packages need `REPO_ROOT`
+The editable overlay uses `$REPO_ROOT` to locate the source tree. The dev shell `shellHook` sets it via `git rev-parse --show-toplevel`. If you're not in a git repo, set it manually.
 
-`modules/flake.nix` hardcodes `pkgs.python312`. If you change `requiresPython` to `>=3.13` but don't update the Python package, Nix will build against 3.12 while uv resolves for 3.13. Always update both:
+### `unset PYTHONPATH`
+Nixpkgs Python builders set `PYTHONPATH`, which leaks into unrelated builds. Always unset it in the dev shell `shellHook`.
 
-```nix
-config.project = {
-  requiresPython = ">=3.13";
-  # pythonPackage is set in the evalModules block — change pkgs.python312 → pkgs.python313
-};
-```
+### MacOS wheels may not match
+Nixpkgs doesn't know your actual macOS version. Set `darwinSdkVersion` explicitly in the `stdenv` override if wheel compatibility fails.
 
-### 4. `writeShellApplication` is strict about shellcheck
+## uv / Python
 
-All scripts passed to `writeShellApplication` are checked with shellcheck. Warnings like SC2155 (`Declare and assign separately`) are treated as errors. Use two-step assignment:
+### setuptools.backends._legacy is gone
+`setuptools.backends._legacy._Backend` was removed in modern setuptools. Use `setuptools.build_meta` instead.
 
-```bash
-# BAD — fails shellcheck
-export VAR=$(some_command)
+### `tool.uv.dev-dependencies` is deprecated
+Use `[dependency-groups] dev = [...]` instead (modern uv convention).
 
-# GOOD
-var=$(some_command)
-export VAR="$var"
-```
+## Nix
 
-### 5. `builtins.toJSON` flattens attribute names with dots
+### Python version mismatch
+If `flake.nix` uses `pkgs.python3` but `pyproject.toml` says `requires-python = ">=3.12"`, you may get interpreter incompatibilities. Either pin `python = pkgs.python312` in `flake.nix`, or use the auto-filter approach from the uv2nix docs.
 
-Nix attrsets like `{ "tool.ruff" = { ... }; }` are preserved as-is in JSON. The TOML writer expects dotted keys and converts them to `[tool.ruff]` sections. If you add a key with a dot in the name (not as a path separator), it will be misinterpreted.
+### result symlinks
+`nix build` creates `result` symlinks. These are in `.gitignore` but can confuse tooling if you build inside the repo.
 
-### 6. Hatch build target must declare `packages` for `src/` layout
+### Flake lock drift
+After changing flake inputs, run `nix flake lock` to update `flake.lock`. Otherwise you'll silently use the old pinned versions.
 
-If your source lives under `src/<package_name>/`, hatchling needs to know where to find it. The template's `modules/pyproject.nix` includes:
+## CI / GitHub Actions
 
-```nix
-tool.hatch.build.targets.wheel = {
-  packages = [ "src/${cfg.name}" ];
-};
-```
+### `flake-checker-action` telemetry
+The `flake-checker-action` (used in setup-nix) phones home to Determinate Systems' telemetry service. This is fine for most projects — worth knowing for audit-sensitive environments.
 
-Without this, hatchling won't discover your package and the wheel will be empty. If you move your source to the project root, remove this config.
+### Test tiers are detected by directory presence
+The CI `detect` job checks if `tests/$tier/test_*.py` exists. If you add a new tier directory, it won't be run until you add it to the `for dir in` loop in `ci.yml`.
 
-### 7. `.env` file interaction with dev shell
+### `nix develop .#bootstrap` vs `nix develop`
+Lint and typecheck use `.#bootstrap` (fast, no uv2nix venv). Tests use `nix develop` (full hermetic environment). If lint/typecheck fail but tests pass, the issue is tool version mismatch between the two shells — check both have the same ruff/mypy version.
 
-The dev shell does **not** automatically load a `.env` file unless you add sourcing logic to `shellHook` in `modules/flake.nix`. If you rely on API keys or config overrides from `.env`, add:
-
-```bash
-if [ -f "$REPO_ROOT/.env" ]; then
-  set -a
-  . "$REPO_ROOT/.env"
-  set +a
-fi
-```
-
-The template's `.envrc` loads `.env` via `dotenv` (direnv built-in), so variables are available when using direnv — but not in a bare `nix develop` shell.
-
-## Python-Side Gotchas
-
-### 8. Package name hyphens → underscores
-
-In `modules/flake.nix`, `project.name` uses hyphens (e.g., `my-project`). Python imports use underscores (`my_project`). uv and hatchling handle the conversion automatically when building, but your source directory must use underscores.
-
-### 9. Editable install requires `$REPO_ROOT`
-
-The dev shell sets `REPO_ROOT` so the editable overlay can find your source. If you run `python -m my_project` outside the dev shell, `$REPO_ROOT` won't be set and the editable install will fall back to the non-editable build. Always use `nix develop` or set `REPO_ROOT` manually.
-
-### 10. pyproject.toml is auto-generated — two sources of truth
-
-The `pyproject.toml` is generated from `modules/pyproject.nix`. If you edit `pyproject.toml` directly, your changes will be overwritten on the next `nix run .#sync-pyproject`. To add deps, either:
-- Use `uv add <pkg>` (updates `uv.lock` only, pyproject.toml stays in sync if uv updates it)
-- Add to `modules/flake.nix` and regenerate
-
-### 11. `dependency-groups.dev` uses PEP 735
-
-Dev dependencies are declared under `[dependency-groups] dev = [...]` (PEP 735), not `[project.optional-dependencies] dev`. Older tools may not recognize this. uv and pytest do; coverage configuration in `pyproject.nix` checks for `"pytest-cov"` in the dev deps list (exact match, not substring).
-
-## uv-Side Gotchas
-
-### 12. uv downloads its own Python if not constrained
-
-Set `UV_PYTHON_DOWNLOADS=never` and `UV_PYTHON` to the Nix-provided interpreter (already done in the dev shell). Without these, uv will download a generic CPython binary that won't run on NixOS.
-
-### 13. `uv sync` creates a `.venv` in the project root
-
-This `.venv` is not used by Nix builds — it's only for uv's own operations. The `.gitignore` ignores it, but be aware it exists. Delete it if disk space is a concern; `uv sync` will recreate it.
-
-## hatchling Gotchas
-
-### 14. Build backend changed in hatchling 1.28+
-
-Hatchling moved its build backend from `hatchling.build.api` to `hatchling.build` in version 1.28+. If you pin hatchling to an older version in `pyproject.nix`, use the old path; for >=1.28, use `hatchling.build`.
-
-## Test Gotchas
-
-### 15. Test check requires `pytest` in dev dependencies
-
-`nix flake check` runs `pytest --tb=short -q` in the check phase. If pytest isn't in `workspace.deps.all` (i.e., not in `dependency-groups.dev`), the check will fail with `pytest: command not found`.
-
-### 16. Check derivation copies entire source tree
-
-The `checks.tests` derivation sets `src = ../.`, copying the entire project into the Nix store. Large assets or `node_modules`-like directories will slow down the check. Add exclusion patterns via `src = pkgs.lib.cleanSource ../.` if needed.
+### `continue-on-error` for integration/e2e
+`unit` tests are required (hard failure). `integration` and `e2e` use `continue-on-error: true`. If CI is green but integration tests are red, check the workflow run summary — they're reported separately.
