@@ -4,8 +4,8 @@
 # Purpose: Thin uvx wrappers for MCP servers. Each server is a
 #          writeShellApplication that exec's `uvx <package>` at runtime.
 #
-# To add a new server, add a line to the `servers` attrset below AND
-# a re-export line in modules/flake-parts/mcp-server-packages.nix.
+# To add a new server, add a line to the `servers` attrset below.
+# It is automatically re-exported as .#<name> via the flake-parts module.
 # =============================================================================
 
 { lib, uv, writeShellApplication, python3 }:
@@ -33,8 +33,13 @@ let
     };
 
   servers = {
-    mcp-nixos  = mkUvxMcp { name = "mcp-nixos"; };
-    mcp-python = mkUvxMcp { name = "mcp-python"; };
+    # Dev workflow
+    mcp-nixos            = mkUvxMcp { name = "mcp-nixos"; };
+    mcp-server-fetch     = mkUvxMcp { name = "mcp-server-fetch"; };
+    mcp-server-git       = mkUvxMcp { name = "mcp-server-git"; };
+
+    # Python / data work
+    mcp-server-sqlite    = mkUvxMcp { name = "mcp-server-sqlite"; };
   };
 in
 servers
