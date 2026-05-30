@@ -7,3 +7,5 @@ result-*
 **/flake-profile*
 /.pre-commit-config.yaml
 /ISO/
+*.db
+*.sqlite

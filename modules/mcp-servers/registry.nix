@@ -34,12 +34,12 @@ let
 
   servers = {
     # Dev workflow
-    mcp-nixos            = mkUvxMcp { name = "mcp-nixos"; };
-    mcp-server-fetch     = mkUvxMcp { name = "mcp-server-fetch"; };
-    mcp-server-git       = mkUvxMcp { name = "mcp-server-git"; };
+    mcp-nixos = mkUvxMcp { name = "mcp-nixos"; };
+    mcp-server-fetch = mkUvxMcp { name = "mcp-server-fetch"; };
+    mcp-server-git = mkUvxMcp { name = "mcp-server-git"; };
 
     # Python / data work
-    mcp-server-sqlite    = mkUvxMcp { name = "mcp-server-sqlite"; };
+    mcp-server-sqlite = mkUvxMcp { name = "mcp-server-sqlite"; };
   };
 in
 servers
