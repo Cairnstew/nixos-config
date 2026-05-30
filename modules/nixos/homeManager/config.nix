@@ -4,6 +4,7 @@ let
   inherit (inputs) self;
   inherit (flake.config.me) username;
   cfg = config.my.homeManager;
+  mcpServers = self.packages.${pkgs.system};
 in
 {
   imports = [
@@ -65,12 +66,37 @@ in
             else lib.mkDefault null;
           enableMcpIntegration = lib.mkDefault true;
 
+          extraPackages = with mcpServers; [
+            mcp-nixos
+            mcp-server-fetch
+            mcp-server-git
+            mcp-server-sqlite
+          ];
+
           mcp = lib.mkDefault {
             nixos = {
               enabled = true;
               type = "local";
-              command = [ "nix" "run" "--option" "sandbox" "relaxed" "github:utensils/mcp-nixos" "--" ];
+              command = [ "mcp-nixos" ];
               timeout = 120000;
+            };
+            fetch = {
+              enabled = true;
+              type = "local";
+              command = [ "mcp-server-fetch" ];
+              timeout = 30000;
+            };
+            git = {
+              enabled = true;
+              type = "local";
+              command = [ "mcp-server-git" "--repository" "/home/seanc/nixos-config" ];
+              timeout = 30000;
+            };
+            sqlite = {
+              enabled = true;
+              type = "local";
+              command = [ "mcp-server-sqlite" ];
+              timeout = 30000;
             };
           };
 
