@@ -90,10 +90,23 @@
         systems = [ "x86_64-linux" "aarch64-linux" "aarch64-darwin" ];
         imports =
           let
-            files = builtins.attrNames (builtins.readDir ./modules/flake-parts);
-            nixFiles = builtins.filter (fn: builtins.match ".*\\.nix" fn != null) files;
+            entries = builtins.readDir ./modules/flake-parts;
+            names = builtins.attrNames entries;
+
+            # All .nix files at the top level (existing behaviour)
+            nixFiles = builtins.filter (fn: builtins.match ".*\\.nix" fn != null) names;
+            flatImports = builtins.map (fn: ./modules/flake-parts/${fn}) nixFiles;
+
+            # Subdirectories containing default.nix (like autowiring)
+            dirs = builtins.filter (name: entries.${name} == "directory") names;
+            dirImports = builtins.filter (p: p != null) (builtins.map
+              (name:
+                let p = ./modules/flake-parts/${name}/default.nix;
+                in if builtins.pathExists p then p else null
+              )
+              dirs);
           in
-          builtins.map (fn: ./modules/flake-parts/${fn}) nixFiles;
+          flatImports ++ dirImports;
 
 
         perSystem = { lib, system, ... }: {

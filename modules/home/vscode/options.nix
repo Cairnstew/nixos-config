@@ -37,6 +37,56 @@ in
       description = "Additional VSCode extensions to install (merged with defaults)";
     };
 
+    userSettings = lib.mkOption {
+      type = lib.types.attrs;
+      default = {
+        # ── Editor & Code Quality ──────────────────────────────────────────
+        "editor.formatOnSave" = true;
+        "editor.codeActionsOnSave" = {
+          "source.fixAll.eslint" = "explicit";
+        };
+        "files.insertFinalNewline" = true;
+        "files.trimTrailingWhitespace" = true;
+
+        # ── Visuals & UI Polish ────────────────────────────────────────────
+        "workbench.sideBar.location" = "right";
+        "editor.cursorBlinking" = "smooth";
+        "editor.cursorSmoothCaretAnimation" = "on";
+        "editor.rulers" = [ 80 120 ];
+        "editor.renderWhitespace" = "selection";
+        "breadcrumbs.enabled" = true;
+
+        # ── File & Explorer Management ─────────────────────────────────────
+        "editor.wordWrap" = "on";
+        "files.exclude" = {
+          "**/.git" = true;
+          "**/.DS_Store" = true;
+          "**/node_modules" = true;
+        };
+        "files.watcherExclude" = {
+          "**/node_modules/**" = true;
+        };
+
+        # ── Integrated Terminal ────────────────────────────────────────────
+        "terminal.integrated.wordWrap" = true;
+        "terminal.integrated.cursorBlinking" = true;
+        "terminal.integrated.copyOnSelection" = true;
+
+        # ── Language-Specific ──────────────────────────────────────────────
+        "[markdown]" = {
+          "editor.wordWrap" = "on";
+          "editor.quickSuggestions" = {
+            "comments" = "on";
+            "strings" = "on";
+            "other" = "on";
+          };
+        };
+        "workbench.preferredDarkColorTheme" = "Dracula Theme";
+        "workbench.iconTheme" = "vs-minimal";
+      };
+      description = "VS Code user settings (settings.json).";
+    };
+
     continue = {
       enable = lib.mkEnableOption "Continue AI coding assistant";
 

@@ -1,11 +1,6 @@
-{ config, lib, inputs, ... }:
+{ config, lib, ... }:
 let
-  inherit (lib) mapAttrsToList;
-
-  # Collect every host's ISOs into one flat attrset, NOT via mkMerge.
-  # mkMerge would leak _type / list keys into the attrset, confusing
-  # the attrsOf submodule type check.
-  defaultTsKey = ./ventoy/ts.key;
+  defaultTsKey = ./ts.key;
   hasDefaultTsKey = builtins.pathExists defaultTsKey;
 
   hostIsos = builtins.foldl'
@@ -24,20 +19,6 @@ let
     (builtins.attrNames (config.flake.nixosConfigurations or { }));
 in
 {
-  imports = [
-    # Declare the ventoy.* flake-parts options (from subdirectory — not auto-loaded)
-    ./ventoy/options.nix
-
-    # Generate Windows unattended answer files from ventoy.answerFileSettings
-    ./ventoy/answer-files.nix
-
-    # Build the ventoy-deploy script + ventoy-bundle package
-    ./ventoy/deploy.nix
-
-    # Build the nixpkgs-native installer ISO
-    ./ventoy/installer-iso.nix
-  ];
-
   ventoy = {
     settings = {
       control = [
@@ -89,6 +70,5 @@ in
         ];
       }
     ];
-
   };
 }

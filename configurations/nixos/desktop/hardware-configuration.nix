@@ -14,30 +14,6 @@
   boot.kernelModules = [ "kvm-amd" ];
   boot.extraModulePackages = [ ];
 
-  fileSystems."/mnt/shared" =
-    {
-      device = "/dev/disk/by-uuid/05B6D61C3F40F000";
-      fsType = "ntfs-3g";
-      options = [ "uid=1000" "gid=100" "rw" "noatime" ];
-    };
-
-  fileSystems."/mnt/storage" =
-    {
-      device = "/dev/disk/by-uuid/ea7232ce-fb29-4df8-9941-b217470e6850";
-      fsType = "ext4";
-      options = [ "defaults" "noatime" ];
-    };
-
-  swapDevices = [ ];
-
-  # Enables DHCP on each ethernet and wireless interface. In case of scripted networking
-  # (the default) this is the recommended approach. When using systemd-networkd it's
-  # still possible to use this option, but it's recommended to use it in conjunction
-  # with explicit per-interface declarations with `networking.interfaces.<interface>.useDHCP`.
-  networking.useDHCP = lib.mkDefault true;
-  # networking.interfaces.enp4s0.useDHCP = lib.mkDefault true;
-
   nixpkgs.hostPlatform = lib.mkDefault "x86_64-linux";
   hardware.cpu.amd.updateMicrocode = lib.mkDefault config.hardware.enableRedistributableFirmware;
 }
-

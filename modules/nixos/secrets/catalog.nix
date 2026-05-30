@@ -51,6 +51,9 @@ in
     # Windows Dual-Boot
     "windows.password" = secret "windows-password" "/secrets/windows-password.age" { owner = "root"; };
 
+    # MCP Servers
+    "mcp.better-email.password" = secret "better-email-password" "/secrets/mail/gmail/cairnsst-pas.age" { owner = me.username; };
+
     # Tailscale
     "tailscale.authKey" = secret "tailscale-authkey" "/secrets/tailscale/authkey.age" { owner = me.username; };
     "tailscale.apiKey" = secret "tailscale-apikey" "/secrets/tailscale/apikey.age" { owner = me.username; };

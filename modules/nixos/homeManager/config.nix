@@ -5,6 +5,23 @@ let
   inherit (flake.config.me) username;
   cfg = config.my.homeManager;
   mcpServers = self.packages.${pkgs.system};
+
+  # Better Email MCP — conditional on agenix secret
+  hasEmailSecret = config.age.secrets ? "better-email-password";
+  betterEmailPkg =
+    if hasEmailSecret then
+      pkgs.writeShellApplication
+        {
+          name = "better-email";
+          runtimeInputs = [ pkgs.nodejs ];
+          text = ''
+            EMAIL_APP_PASSWORD=$(cat ${config.age.secrets."better-email-password".path})
+            export EMAIL_APP_PASSWORD
+            exec npx -y @n24q02m/better-email-mcp "$@"
+          '';
+          meta.description = "MCP server: better-email (IMAP/SMTP for AI agents)";
+        }
+    else null;
 in
 {
   imports = [
@@ -71,9 +88,9 @@ in
             mcp-server-fetch
             mcp-server-git
             mcp-server-sqlite
-          ];
+          ] ++ lib.optional hasEmailSecret betterEmailPkg;
 
-          mcp = lib.mkDefault {
+          mcp = lib.mkDefault ({
             nixos = {
               enabled = true;
               type = "local";
@@ -98,7 +115,18 @@ in
               command = [ "mcp-server-sqlite" ];
               timeout = 30000;
             };
-          };
+          } // lib.optionalAttrs hasEmailSecret {
+            better-email = {
+              enabled = true;
+              type = "local";
+              command = [ "better-email" ];
+              environment = {
+                EMAIL_PROVIDER = "gmail";
+                EMAIL_USER = flake.config.me.email;
+              };
+              timeout = 30000;
+            };
+          });
 
           skills = {
             git-repo-management = lib.mkDefault (builtins.readFile ../../home/opencode/skills/git-repo-management.md);

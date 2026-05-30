@@ -290,5 +290,50 @@ in
       default = { };
       description = "Ollama language model configurations for local AI inference.";
     };
+
+    mail = lib.mkOption {
+      type = lib.types.submodule {
+        options = {
+          tags = lib.mkOption {
+            type = lib.types.attrsOf (lib.types.submodule {
+              options = {
+                path = lib.mkOption {
+                  type = lib.types.str;
+                  description = "Gmail IMAP folder/label path.";
+                };
+                description = lib.mkOption {
+                  type = lib.types.str;
+                  description = "Human-readable description of this tag.";
+                };
+                matchers = lib.mkOption {
+                  type = lib.types.listOf lib.types.str;
+                  default = [ ];
+                  description = "Keywords/senders that match this tag for auto-sorting.";
+                };
+                aliases = lib.mkOption {
+                  type = lib.types.listOf lib.types.str;
+                  default = [ ];
+                  description = "Alternative tag names for searching.";
+                };
+              };
+            });
+            default = { };
+            description = "Canonical mail folder/tag taxonomy for email organization.";
+            example = lib.literalExpression ''
+              {
+                "Security/1Password" = {
+                  path = "Security/1Password";
+                  description = "1Password sign-in alerts and security notifications";
+                  matchers = [ "1password" "hello@1password.com" ];
+                  aliases = [ "passwords" "auth" ];
+                };
+              }
+            '';
+          };
+        };
+      };
+      default = { };
+      description = "Mail organization configuration: tag taxonomy and sorting rules.";
+    };
   };
 }

@@ -9,8 +9,8 @@ and integration with `nixos-unified`.
 `flake-parts` is the module system used to compose the flake's `outputs`.
 Unlike `modules/nixos/` (which configures a NixOS machine) or `modules/home/`
 (which configures a user environment), files in this directory configure the
-flake evaluator itself.  They are imported automatically by `flake.nix` (only
-`.nix` files are picked up) — see `flake.nix` lines 103–106.
+flake evaluator itself.  They are imported automatically by `flake.nix` (both
+`.nix` files and subdirectories with a `default.nix`) — see `flake.nix` imports.
 
 ---
 
@@ -173,9 +173,8 @@ via `callPackage ./relative/path` from a flake-parts `perSystem` block.
 
 ## Files
 
-1. Create a new `.nix` file in this directory.
-2. It will be automatically imported by `flake.nix` (only `.nix` files are
-   picked up thanks to the `builtins.filter` in `flake.nix`).
+1. Create a new `.nix` file in this directory, or a subdirectory with a
+   `default.nix`. Both are auto-imported by `flake.nix`.
 3. Decide if your module produces:
    - **`perSystem`** outputs (packages, apps, checks, devShells, formatter)
    - **`flake`** outputs (exported modules, overlays, top-level options)
@@ -186,10 +185,10 @@ via `callPackage ./relative/path` from a flake-parts `perSystem` block.
 6. Keep system-level implementation out of this directory.  If you need to add
    a NixOS module, create it under `modules/nixos/` and only *export* it here
    via `flake.nixosModules.<name> = import ../nixos/<name>;`.
-7. **Subdirectories** (e.g., `ventoy/`) used by a flake-parts `.nix` file can
-   hold helper files (scripts, templates, options, etc.) but are not
-   auto-imported themselves. See `modules/flake-parts/ventoy/README.md` for
-   the Ventoy system.
+7. **Subdirectories** with a `default.nix` are auto-imported (like nixos-unified
+   autowiring). Organize related modules into a directory with a `default.nix`
+   that imports sidecar files. See `modules/flake-parts/ventoy/README.md` and
+   `modules/flake-parts/deploy/README.md` for examples.
 8. Run `nix fmt` and ensure `nix eval .#flake` succeeds before committing.
 
 ## Conventions

@@ -66,6 +66,7 @@ The two structural pillars are:
 | `modules/darwin/(name).nix` or `…/(name)/default.nix` | `darwinModules.(name)` |
 | `modules/home/(name).nix` or `…/(name)/default.nix` | `homeModules.(name)` |
 | `modules/flake-parts/(name).nix` | imported into `flake-parts` top-level |
+| `modules/flake-parts/(name)/default.nix` | auto-imported from subdirectories (like autowiring) |
 | `overlays/(name).nix` | `overlays.(name)` |
 | `packages/(name)/` or `packages/(name).nix` | auto-wired via `perSystem` |
 | `secrets/` | agenix secrets (not a flake output) |

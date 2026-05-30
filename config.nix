@@ -294,4 +294,220 @@
       opencode_default = true;
     };
   };
+
+  # ============================================================================
+  # Mail Organization (mail.*)
+  # ============================================================================
+  # Canonical tag/folder taxonomy for email organization in Gmail/Thunderbird.
+  # Each entry maps to a Gmail label (folder path). Used for manual sorting,
+  # auto-filtering rules, and as a searchable reference.
+  #
+  # Consumed by: manual inbox sorting, Gmail filter definitions, Thunderbird config.
+  # See: modules/flake-parts/config.nix for option declarations.
+  # ============================================================================
+  mail = {
+    tags = {
+      # ── Action Required ──────────────────────────────────────────────
+      "Action/@todo" = {
+        path = "Action/@todo";
+        description = "Emails requiring a response or action from me";
+        matchers = [ ];
+        aliases = [ "todo" "action" "inbox" ];
+      };
+      "Action/@waiting" = {
+        path = "Action/@waiting";
+        description = "Emails I'm waiting on someone else to respond to";
+        matchers = [ "waiting" "follow up" ];
+        aliases = [ "waiting" "deferred" ];
+      };
+      "Action/@followup" = {
+        path = "Action/@followup";
+        description = "Emails to check back on later";
+        matchers = [ "follow" "remind" ];
+        aliases = [ "fup" "check" ];
+      };
+
+      # ── Security ─────────────────────────────────────────────────────
+      "Security/1Password" = {
+        path = "Security/1Password";
+        description = "1Password sign-in alerts and security notifications";
+        matchers = [ "1password" "hello@1password.com" ];
+        aliases = [ "passwords" "auth" ];
+      };
+      "Security/Google" = {
+        path = "Security/Google";
+        description = "Google account security alerts and sign-in notifications";
+        matchers = [ "google" "accounts.google.com" "security alert" ];
+        aliases = [ "gmail" "google-auth" ];
+      };
+      "Security/Spotify" = {
+        path = "Security/Spotify";
+        description = "Spotify login codes and account alerts";
+        matchers = [ "spotify" "alerts.spotify.com" "login code" ];
+        aliases = [ "spotify-auth" ];
+      };
+      "Security/GitHub" = {
+        path = "Security/GitHub";
+        description = "GitHub security alerts, token creation, and access notifications";
+        matchers = [ "github.com" "personal access token" "security" ];
+        aliases = [ "github-security" ];
+      };
+
+      # ── Finance ──────────────────────────────────────────────────────
+      "Finance/Orders" = {
+        path = "Finance/Orders";
+        description = "Purchase confirmations, receipts, and order status";
+        matchers = [ "amazon" "order" "receipt" "confirmation" "purchase" ];
+        aliases = [ "receipts" "purchases" "shopping" ];
+      };
+      "Finance/Banking" = {
+        path = "Finance/Banking";
+        description = "Bank statements, transaction alerts, and account notices";
+        matchers = [ "monzo" "peakbank" "truwest" "bank" "statement" ];
+        aliases = [ "bank" "accounts" ];
+      };
+      "Finance/PayPal" = {
+        path = "Finance/PayPal";
+        description = "PayPal transactions, offers, and account notifications";
+        matchers = [ "paypal" "venmo" ];
+        aliases = [ "payments" ];
+      };
+
+      # ── Education ────────────────────────────────────────────────────
+      "Education/GCU" = {
+        path = "Education/GCU";
+        description = "GCU coursework, admin, and university communications";
+        matchers = [ "gcu" "grand canyon" ];
+        aliases = [ "gcu" "university" ];
+      };
+      "Education/UTD" = {
+        path = "Education/UTD";
+        description = "UT Dallas coursework, admin, and university communications";
+        matchers = [ "utd" "ut dallas" "dallas" ];
+        aliases = [ "utd" "university" ];
+      };
+      "Education/Gradcracker" = {
+        path = "Education/Gradcracker";
+        description = "Gradcracker job listings and career opportunities";
+        matchers = [ "gradcracker" "jessica@gradcracker" ];
+        aliases = [ "jobs" "careers" "graduate" ];
+      };
+
+      # ── Work ─────────────────────────────────────────────────────────
+      "Work/GitHub" = {
+        path = "Work/GitHub";
+        description = "GitHub notifications: CI, PRs, issues, actions";
+        matchers = [ "notifications@github.com" "github.com" "ci" "check-suites" ];
+        aliases = [ "dev" "code" ];
+      };
+      "Work/Applications" = {
+        path = "Work/Applications";
+        description = "Job applications, interviews, and recruitment";
+        matchers = [ "application" "interview" "job" "hiring" "recruit" ];
+        aliases = [ "jobs" "career" "hiring" ];
+      };
+      "Work/Infra" = {
+        path = "Work/Infra";
+        description = "Infrastructure, Tableau, Cloudflare, and platform tools";
+        matchers = [ "tableau" "cloudflare" "infra" "platform" "salesforce" ];
+        aliases = [ "devops" "platform" ];
+      };
+      "Work/General" = {
+        path = "Work/General";
+        description = "General work correspondence and misc professional";
+        matchers = [ ];
+        aliases = [ "professional" ];
+      };
+
+      # ── Personal ─────────────────────────────────────────────────────
+      "Personal/Family" = {
+        path = "Personal/Family";
+        description = "Family communications and updates";
+        matchers = [ "family" "mum" "dad" "brother" "sister" ];
+        aliases = [ "family" ];
+      };
+      "Personal/Health" = {
+        path = "Personal/Health";
+        description = "Medical appointments, dental, fitness, and wellness";
+        matchers = [ "dental" "dentist" "doctor" "appointment" "fitness" "gym" "24 hour" ];
+        aliases = [ "medical" "fitness" "doctor" ];
+      };
+      "Personal/Travel" = {
+        path = "Personal/Travel";
+        description = "Travel bookings, itineraries, trip planning";
+        matchers = [ "travel" "flight" "hotel" "booking" "itinerary" "scotland" ];
+        aliases = [ "trips" "vacation" "holiday" ];
+      };
+      "Personal/Events" = {
+        path = "Personal/Events";
+        description = "Events, invitations, social gatherings";
+        matchers = [ "event" "invite" "rsvp" "party" "gathering" ];
+        aliases = [ "social" "calendar" ];
+      };
+      "Personal/Social" = {
+        path = "Personal/Social";
+        description = "Social media notifications (Instagram, etc.)";
+        matchers = [ "instagram" "facebook" "social" "notification" ];
+        aliases = [ "instagram" "social-media" ];
+      };
+      "Personal/Community" = {
+        path = "Personal/Community";
+        description = "Community groups, art league, local organizations";
+        matchers = [ "art league" "dsal" "artindripping" "habitat" "volunteer" ];
+        aliases = [ "art" "community" "volunteer" ];
+      };
+
+      # ── Promo ────────────────────────────────────────────────────────
+      "Promo/Retail" = {
+        path = "Promo/Retail";
+        description = "Retail promotions and marketing (Lowe's, Target, etc.)";
+        matchers = [ "lowes" "target" "elegoo" "kiiroo" "ancestry" "sale" "deal" ];
+        aliases = [ "marketing" "deals" "sales" "ads" ];
+      };
+      "Promo/Food" = {
+        path = "Promo/Food";
+        description = "Food and drink promotions and offers";
+        matchers = [ "velvet taco" "taco" "restaurant" "food" "marg" ];
+        aliases = [ "food" "dining" "restaurants" ];
+      };
+      "Promo/Services" = {
+        path = "Promo/Services";
+        description = "Service promotions (Grammarly, etc.)";
+        matchers = [ "grammarly" "service" "premium" "offer" "upgrade" ];
+        aliases = [ "subscriptions" "services" ];
+      };
+
+      # ── Delivery ─────────────────────────────────────────────────────
+      "Delivery/Parcels" = {
+        path = "Delivery/Parcels";
+        description = "Parcel tracking, shipping updates, delivery notifications";
+        matchers = [ "royal mail" "parcel" "shipping" "dispatched" "tracking" "delivered" ];
+        aliases = [ "packages" "shipping" "tracking" ];
+      };
+
+      # ── Notifications ────────────────────────────────────────────────
+      "Notifications/Updates" = {
+        path = "Notifications/Updates";
+        description = "Service updates, privacy policy changes, account notices";
+        matchers = [ "privacy policy" "update" "terms" "notice" ];
+        aliases = [ "updates" "notices" ];
+      };
+
+      # ── Volunteer ────────────────────────────────────────────────────
+      "Volunteer" = {
+        path = "Volunteer";
+        description = "Volunteer opportunities and coordination";
+        matchers = [ "volunteer" "signupgenius" "hh thursday" ];
+        aliases = [ "charity" "community-service" ];
+      };
+
+      # ── Gaming ───────────────────────────────────────────────────────
+      "Gaming" = {
+        path = "Gaming";
+        description = "Gaming-related emails, promotions, and registrations";
+        matchers = [ "g2a" "call of duty" "steam" "gaming" "activision" ];
+        aliases = [ "games" "steam" ];
+      };
+    };
+  };
 }

@@ -26,6 +26,8 @@ in
         in
         builtins.replaceStrings from to templateText;
 
+      # Two-pass substitution: first substitute partials (@wipeDiskBlock@),
+      # then substitute everything else (catches @diskId@ inside partials).
       buildAnswer =
         { name
         , productKey
@@ -42,7 +44,15 @@ in
         }:
         let
           archId = if arch == "amd64" then "x86_64" else arch;
-          attest = {
+          wipeDiskContent = if wipeDisk then builtins.readFile wipeDiskPart else "";
+
+          # Pass 1: substitute partials only (these insert text containing @tokens@)
+          pass1 = replaceInXml answerTemplates.${name} {
+            "@wipeDiskBlock@" = wipeDiskContent;
+          };
+
+          # Pass 2: substitute all variables (catches @diskId@ inside partials)
+          pass2 = replaceInXml (builtins.toFile "${name}-pass1.xml" pass1) {
             "@productKey@" = productKey;
             "@computerName@" = computerName;
             "@username@" = username;
@@ -55,10 +65,9 @@ in
             "@networkLocale@" = networkLocale;
             "@protectYourPC@" = protectYourPC;
             "@diskId@" = answerSettings.diskId;
-            "@wipeDiskBlock@" = if wipeDisk then builtins.readFile wipeDiskPart else "";
           };
         in
-        pkgs.writeText "${name}.xml" (replaceInXml answerTemplates.${name} attest);
+        pkgs.writeText "${name}.xml" pass2;
 
       answerFileConfigs = {
         dev = {

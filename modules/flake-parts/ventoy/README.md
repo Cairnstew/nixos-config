@@ -6,6 +6,9 @@ script with hash-based incremental updates and integrity verification.
 
 ## Architecture
 
+The entry point is `modules/flake-parts/ventoy/default.nix`, auto-imported
+by the flake's subdirectory autowiring (see `flake.nix`).
+
 ```
 modules/flake-parts/ventoy/
 ├── README.md              # This file
@@ -150,12 +153,12 @@ Hosts can contribute ISOs to the Ventoy deploy by enabling `my.ventoy.enable`:
 }
 ```
 
-These ISOs are collected by `ventoy-config.nix` via a foldl over all
+These ISOs are collected by `ventoy/config.nix` via a foldl over all
 `nixosConfigurations` and merged into the deploy.
 
 ### Answer File Customization
 
-Override defaults in `ventoy-config.nix`:
+Override defaults in `ventoy/config.nix`:
 
 ```nix
 ventoy.answerFileSettings = {

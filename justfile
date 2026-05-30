@@ -29,30 +29,23 @@ activate host:
 # ── Fresh Install ────────────────────────────────────────────────────────────
 
 # Deploy a NixOS host via nixos-anywhere (fresh install)
-# e.g., just deploy server 192.168.1.100
+# Defaults to Tailscale MagicDNS (installer ISO hostname is "nixos").
+# e.g., just deploy desktop
+#       just deploy server 192.168.1.100
 [group('deploy')]
-deploy host ip *args:
-    nix run .#deploy -- {{host}} {{ip}} {{args}}
+deploy host addr="nixos@nixos" *args:
+    nix run .#deploy -- {{host}} {{addr}} {{args}}
 
-# Register a freshly deployed host with agenix (e.g., just register-host server 192.168.1.100)
+# Register a freshly deployed host with agenix
+# e.g., just register-host desktop 192.168.1.100
 [group('deploy')]
-register-host host ip:
+register-host host addr:
     @echo "Fetching SSH host key for {{host}}..."
-    KEY=$$(ssh "root@{{ip}}" "cat /etc/ssh/ssh_host_ed25519_key.pub")
+    KEY=$$(ssh "root@{{addr}}" "cat /etc/ssh/ssh_host_ed25519_key.pub")
     @echo ""
     @echo "Host key for {{host}}:  $$KEY"
     @echo ""
     @echo "Next: add this key to secrets/secrets.nix, run 'agenix -r', then rebuild."
-
-# Deploy via Tailscale MagicDNS (installer ISO hostname is "nixos")
-[group('deploy')]
-deploy-tailscale host *args:
-    nix run .#deploy -- {{host}} nixos@nixos.tail685690.ts.net {{args}}
-
-# Register host key via Tailscale MagicDNS
-[group('deploy')]
-register-host-tailscale host:
-    just register-host {{host}} nixos.tail685690.ts.net
 
 # Interactive deploy wizard: SSH into live ISO, pick/partition disk, install
 [group('deploy')]

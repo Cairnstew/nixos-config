@@ -10,6 +10,7 @@ Visual Studio Code editor configuration with extensions and Continue AI integrat
 | `my.programs.vscode.server.enable` | `false` | Enable VS Code server (NixOS only) |
 | `my.programs.vscode.extensions` | `[dracula, python, jupyter, nix, remote]` | Default extensions |
 | `my.programs.vscode.additionalExtensions` | `[]` | Extra extensions to install |
+| `my.programs.vscode.userSettings` | _(see options.nix)_ | VS Code user settings (settings.json) |
 | `my.programs.vscode.continue.enable` | `false` | Enable Continue AI assistant |
 | `my.programs.vscode.continue.ollamaHost` | `http://127.0.0.1:11434` | Ollama API URL |
 | `my.programs.vscode.continue.models` | `[]` | Ollama models for Continue |

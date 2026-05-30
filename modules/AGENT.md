@@ -199,7 +199,7 @@ devShells, and exported modules.
 | **Options** | **Exempt** from the `my.*` rule when configuring the flake *itself* (e.g. `me`, `tailnet`, `ollamaModels`). However, options that control per-host behavior (e.g. `my.testing`) **must** still live under `my.*` so that NixOS/darwin/home modules can consume them. |
 | **`perSystem`** | Use `perSystem = { system, pkgs, ... }:` for packages, apps, checks, devShells, and formatter. These are evaluated once per supported platform. |
 | **`flake.*`** | Use `flake.nixosModules.*`, `flake.homeModules.*`, `flake.overlays.*` to export reusable modules. Do NOT instantiate NixOS system config directly here (e.g. do not set `services.foo.enable` at the flake level). |
-| **Autoload** | `flake.nix` imports **all** `.nix` files in this directory automatically. Any new file becomes a live flake module. |
+| **Autoload** | `flake.nix` imports **all** `.nix` files in this directory automatically, plus any subdirectory containing a `default.nix`. Any new file or subdirectory becomes a live flake module. |
 | **Identity Pattern** | `config.nix` (repo root) is imported by `modules/flake-parts/config.nix`. Extend the submodule there when adding new identity fields; consume via `config.me.*` / `config.tailnet.*`. |
 | **`pkgs` wiring** | Use the existing `_module.args.pkgs` pattern in `perSystem` (see root `AGENTS.md` §3.4). Do not shadow `pkgs` with a custom import unless you are adding overlays. |
 | **Manual Wiring** | Packages/apps are often exposed explicitly in `perSystem.packages` / `perSystem.apps` (see `packages.nix` and `terranix.nix` for examples). Autowiring does not cover these. |

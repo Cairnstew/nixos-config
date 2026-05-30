@@ -159,4 +159,13 @@ in
   # Hosts: All development machines
   # Keys: User + all systems
   "ai/opencode-token.age".publicKeys = all;
+
+  # -----------------------------------------------------------------------------
+  # MCP Servers
+  # -----------------------------------------------------------------------------
+  # Service: Better Email MCP app password (Gmail IMAP/SMTP for AI agents)
+  # Hosts: All development machines (where opencode runs)
+  # Keys: User + all systems
+  # Create with: agenix -e secrets/mail/gmail/cairnsst-pas.age
+  "mail/gmail/cairnsst-pas.age".publicKeys = all;
 }
