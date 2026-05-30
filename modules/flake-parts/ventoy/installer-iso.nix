@@ -3,7 +3,7 @@ let
   vCfg = config.ventoy;
   cfg = vCfg.installerIso;
 
-  tsKeyPath = "/ts.key";          # path inside ISO image (isoImage.contents target)
+  tsKeyPath = "/ts.key"; # path inside ISO image (isoImage.contents target)
   tsKeyRuntimePath = "/iso/ts.key"; # path at runtime in the booted live environment
   hasTsKey = cfg.tailscale.enable && cfg.tailscale.authKeyFile != null;
   tsKeyContent = if hasTsKey then builtins.readFile cfg.tailscale.authKeyFile else null;
