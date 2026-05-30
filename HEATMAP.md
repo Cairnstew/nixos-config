@@ -83,6 +83,49 @@ Quick reference for common maintenance tasks. Lists files to read and edit in or
 
 ---
 
+## Add a new Ventoy ISO (from a per-host config)
+
+**Read:**
+1. `AGENTS.md` (§2 Directory → Flake Output Map)
+2. `modules/flake-parts/ventoy/README.md` (full ventoy system docs)
+3. `modules/nixos/ventoy/default.nix` (current host ISO options)
+
+**Edit:**
+1. `configurations/nixos/<hostname>/default.nix` (add `my.ventoy.enable = true` and `my.ventoy.isos.<name> = { source = ...; target = "..."; }`)
+2. Rebuild + redeploy: `just ventoy-deploy`
+
+---
+
+## Build and deploy the NixOS installer ISO
+
+**Read:**
+1. `modules/flake-parts/ventoy/README.md` (workflow section)
+2. `modules/flake-parts/ventoy/installer-iso.nix` (ISO builder)
+
+**Edit:**
+1. (Optional) `modules/flake-parts/ventoy/ts.key` — put an ephemeral Tailscale auth key here
+2. `just ventoy-iso` — build the ISO
+3. `just ventoy-deploy` — deploy to USB
+4. Verify: `sha256sum <store-iso> <usb-iso>` — hashes must match
+
+---
+
+## Debug a Ventoy boot failure
+
+**Read:**
+1. `modules/flake-parts/ventoy/README.md` (debugging section)
+2. `GOTCHAS.md` (installer ISO corruption entry)
+
+**Diagnostic steps:**
+1. Check if ISO is corrupt: `sha256sum <store-iso> <usb-iso>`
+2. Check disk space: `df -h /run/media/*/VENTOY`
+3. Check deploy state: `cat /run/media/*/VENTOY/ventoy/.deploy-state`
+4. Check USB for partial files: `ls -lah /run/media/*/VENTOY/iso/linux/`
+5. Re-deploy: `rm /run/media/*/VENTOY/iso/linux/nixos-installer*.iso && just ventoy-deploy`
+6. Verify integrity passes before rebooting
+
+---
+
 ## Add a new agenix secret and wire it to a module
 
 **Read:**
@@ -138,7 +181,7 @@ All `my.*` options declared across module files.
 | `my.programs.ventoy.enable` | bool | `false` | Ventoy bootable USB creator |
 | `my.ventoy.enable` | bool | `false` | Contribute ISOs to Ventoy USB |
 | `my.ventoy.isos` | attrs | `{}` | ISOs this host contributes to Ventoy USB |
-| `my.ventoy.hostIso.enable` | bool | `false` | Build this host's NixOS ISO and add to Ventoy |
+| `my.ventoy.hostIso.enable` | bool | `false` | Build this host's NixOS ISO and add to Ventoy (deprecated — use ventoy.installerIso) |
 | `my.programs.uup-converter.enable` | bool | `false` | Windows ISO conversion tool |
 | `my.programs.whatsapp-electron.enable` | bool | `false` | WhatsApp Electron client |
 | `my.programs.udiskie.enable` | bool | `false` | Udiskie automount daemon |

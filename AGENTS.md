@@ -17,6 +17,7 @@ Before doing anything in this repo, read these files in order:
 5. `modules/AGENT.md` — universal module structure, `my.*` namespace, and per-module conventions
 6. `configurations/AGENT.md` — host configuration conventions and profile usage
 7. `modules/flake-parts/README.md` — flake-parts layer documentation: identity options, `perSystem` vs `flake.*` outputs
+8. `modules/flake-parts/ventoy/README.md` — Ventoy multi-boot USB system: ISO build, deploy, answer files, debugging
 
 When you discover a new problem and its solution, append an entry to `GOTCHAS.md` immediately.
 

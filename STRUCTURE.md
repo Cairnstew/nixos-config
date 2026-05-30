@@ -74,13 +74,23 @@ Flake-level modules for outputs, packages, and development tools.
 |------|-------------|
 | `act.nix` | Local GitHub Actions testing via `nektos/act` |
 | `deploy.nix` | nixos-anywhere deploy app (`apps.deploy`) — generic CLI wrapper for remote NixOS installation |
-| `installer-iso.nix` | Installer ISO builder (`packages.installer-iso` + `apps.build-iso`) — custom NixOS ISO with Tailscale + Ventoy integration |
+
 | `config.nix` | Identity and preference options (me, preferences, defaults) |
 | `formatter.nix` | Treefmt/nixpkgs-fmt configuration for `nix fmt` |
 | `mcp-servers.nix` | MCP (Model Context Protocol) server definitions |
 | `nixos-flake.nix` | nixos-unified integration and primary inputs |
 | `packages.nix` | Package exports and autowiring |
 | `templates.nix` | Flake templates exposed via `nix flake init` |
+| `ventoy-config.nix` | Ventoy multi-boot USB — top-level config: collects host ISOs, enables installer ISO, wires options/defaults [→ packages.ventoy-deploy + packages.ventoy-installer-iso] |
+| `ventoy/options.nix` | `ventoy.*` option declarations (ventoy.json schema, install options, answer file settings, installer ISO) |
+| `ventoy/deploy.nix` | Builds `ventoy-deploy` package: generates ventoy.json, assembles ISO/file mappings, calls deploy-script |
+| `ventoy/deploy-script/default.nix` | Nix wrapper for ventoy-deploy.sh — sets env vars from eval-time config |
+| `ventoy/deploy-script/ventoy-deploy.sh` | Deploy script: device detection, mount, copy ISOs, verify integrity, deploy config |
+| `ventoy/deploy-script/tests.nix` | ShellCheck tests for deploy script |
+| `ventoy/answer-files.nix` | Windows unattended XML answer file generation from templates |
+| `ventoy/installer-iso.nix` | Standalone NixOS installer ISO builder (nixpkgs.nixosSystem) |
+| `ventoy/ts.key` | Ephemeral Tailscale auth key for installer ISO |
+| `ventoy/README.md` | Full documentation: architecture, workflow, CLI reference, debugging |
 | `terranix.nix` | Terraform/terranix integration |
 | `testing.nix` | Testing framework and `my.testing` options |
 | `README.md` | Documentation for flake-parts conventions |
@@ -199,7 +209,13 @@ System and home profile definitions.
 | `spotify.nix` | Spotify client [→ nixosModules.spotify] |
 | `ssh.nix` | SSH server configuration [→ nixosModules.ssh] |
 | `udisks2.nix` | UDisks2 storage management [→ nixosModules.udisks2] |
-| `ventoy/` | Ventoy multi-boot USB — ISO management, config, deploy [→ nixosModules.ventoy] |
+| `ventoy/` | Ventoy multi-boot USB — ISOs contributed from per-host config [→ nixosModules.ventoy] |
+| `ventoy/default.nix` | Module entry point (import manifest) |
+| `ventoy/options.nix` | `my.ventoy.*` option declarations (enable, isos, hostIso) |
+| `ventoy/config.nix` | Implementation — host ISO export wiring |
+| `ventoy/tests.nix` | Module tests |
+| `ventoy/meta.nix` | Module metadata |
+| `ventoy/README.md` | Documentation (cross-refs flake-parts ventoy docs) |
 | `_1password/` | 1Password integration |
 | `_1password/default.nix` | 1Password system config |
 | `_1password/home.nix` | 1Password SSH agent home config |
@@ -274,12 +290,17 @@ Custom packages exposed via the flake.
 
 | File | Description |
 |------|-------------|
-| `installer-iso/` | ISO NixOS config module (`configuration.nix`) + metadata (`meta.nix`) — package defined in `modules/flake-parts/installer-iso.nix` |
-| `installer-iso/configuration.nix` | NixOS config for the installer ISO |
-| `installer-iso/meta.nix` | Metadata |
 | `localsend/default.nix` | LocalSend package |
 | `localsend/pubspec.lock.json` | Dart dependency lock |
 | `localsend/update.sh` | Update script |
+| `ventoy/answer-files/` | Windows unattended XML answer file templates |
+| `ventoy/answer-files/dev.xml` | Developer workstation (auto-logon) |
+| `ventoy/answer-files/minimal.xml` | Minimal install (manual account) |
+| `ventoy/answer-files/domain.xml` | Corporate domain join |
+| `ventoy/answer-files/kiosk.xml` | Kiosk mode (999 auto-logons) |
+| `ventoy/answer-files/dual-boot.xml` | Dual-boot setup (wipes disk) |
+| `ventoy/answer-files/partials/wipe-disk.xml` | Wipe disk XML partial |
+| `ventoy/answer-files/README.md` | Answer file documentation |
 | `nix-template-selector.nix` | Template selection helper |
 
 ## overlays/

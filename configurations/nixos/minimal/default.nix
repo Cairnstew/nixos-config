@@ -28,5 +28,4 @@
   my.services.ssh.authorizedKeys = [ flake.config.me.sshKey ];
 
   my.ventoy.enable = true;
-  my.ventoy.hostIso.enable = false;
 }

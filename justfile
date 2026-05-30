@@ -44,6 +44,21 @@ register-host host ip:
     @echo ""
     @echo "Next: add this key to secrets/secrets.nix, run 'agenix -r', then rebuild."
 
+# Deploy via Tailscale MagicDNS (installer ISO hostname is "nixos")
+[group('deploy')]
+deploy-tailscale host *args:
+    nix run .#deploy -- {{host}} nixos@nixos.tail685690.ts.net {{args}}
+
+# Register host key via Tailscale MagicDNS
+[group('deploy')]
+register-host-tailscale host:
+    just register-host {{host}} nixos.tail685690.ts.net
+
+# Interactive deploy wizard: SSH into live ISO, pick/partition disk, install
+[group('deploy')]
+deploy-wizard host:
+    nix run .#deploy-wizard -- {{host}}
+
 # ── ISO & Ventoy ─────────────────────────────────────────────────────────────
 
 # Deploy ISOs + config to a Ventoy USB (auto-detect or specify device)
@@ -56,23 +71,9 @@ ventoy-deploy *args:
 ventoy-bundle:
     nix build .#ventoy-bundle
 
-# Build a custom NixOS installer ISO
-build-iso:
-    mkdir -p packages/installer-iso/secrets
-    if [ -f secrets/tailscale/authkey.age ]; then agenix -r secrets/secrets.nix --decrypt secrets/tailscale/authkey.age > packages/installer-iso/secrets/ts.key; fi
-    if [ ! -s packages/installer-iso/secrets/ts.key ]; then echo "PLACEHOLDER" > packages/installer-iso/secrets/ts.key; echo "Warning: no Tailscale key — using placeholder" >&2; fi
-    ssh-keygen -t ed25519 -f packages/installer-iso/secrets/ssh_host_ed25519_key -N "" -q 2>/dev/null || true
-    nix build .#installer-iso --out-link ISO/result-iso --no-link
-    ISO_FILE=$$(find ISO/result-iso -name "*.iso" -type f | head -1)
-    if [ -n "$$ISO_FILE" ]; then cp "$$ISO_FILE" ISO/nixos-installer.iso && echo "-> ISO built: ISO/nixos-installer.iso"; else echo "Error: no ISO file found in build result" >&2 && exit 1; fi
-
-# Build ISO and deploy to Ventoy USB (e.g., just deploy-iso /run/media/seanc/VENTOY)
-[group('deploy')]
-deploy-iso mount="":
-    just build-iso
-    mkdir -p "{{mount}}/ISO"
-    cp ISO/nixos-installer.iso "{{mount}}/ISO/"
-    @echo "Done — ISO copied to {{mount}}/ISO/. Run 'just ventoy-deploy' to deploy config files."
+# Build the Ventoy installer ISO (put your ephemeral Tailscale key in modules/flake-parts/ventoy/ts.key)
+ventoy-iso:
+    nix build .#ventoy-installer-iso
 
 # ── Testing ──────────────────────────────────────────────────────────────────
 

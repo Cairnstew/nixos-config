@@ -348,6 +348,14 @@ deploy_isos() {
     local dest="$mount/$target"
     mkdir -p "$(dirname "$dest")"
 
+    # NixOS ISO builder outputs are directories containing iso/*.iso
+    if [[ -d "$source" ]] && [[ -z "${source##*.iso}" ]]; then
+      local iso_files=( "$source/iso/"*.iso )
+      if [[ -f "${iso_files[0]}" ]]; then
+        source="${iso_files[0]}"
+      fi
+    fi
+
     # Check if hash changed since last deploy (source was rebuilt)
     local prev_hash="${prev_hashes[$target]:-}"
     if [[ -n "$prev_hash" ]] && [[ "$prev_hash" != "$hash" ]]; then
@@ -579,10 +587,31 @@ main() {
     echo ""
     echo "=== Deploying pre-built NixOS installer ISO ==="
     local target="/iso/linux/nixos-installer-x86_64-linux.iso"
-    echo "  Copying -> $target"
-    mkdir -p "$(dirname "$MOUNT$target")"
-    cp "$INSTALLER_ISO" "$MOUNT$target"
-    echo "  [OK] Custom ISO deployed ($(stat -c%s "$MOUNT$target" 2>/dev/null | numfmt --to=iec) MB)"
+    local dest="$MOUNT$target"
+    local src_iso=( "$INSTALLER_ISO/iso/"*.iso )
+    src_size=$(stat -c%s "${src_iso[0]}" 2>/dev/null || echo 0)
+    dest_size=$(stat -c%s "$dest" 2>/dev/null || echo 0)
+    if [[ -f "$dest" ]] && [[ "$src_size" -eq "$dest_size" ]]; then
+      echo "  [SKIP] $target (up to date, $((src_size / 1024 / 1024))M)"
+    else
+      echo "  Copying -> $target"
+      mkdir -p "$(dirname "$dest")"
+      cp "${src_iso[0]}" "$dest"
+      echo "Verifying installer ISO integrity..."
+      SRC_HASH=$(sha256sum "${src_iso[0]}" | cut -d' ' -f1)
+      DST_HASH=$(sha256sum "$dest" | cut -d' ' -f1)
+      if [ "$SRC_HASH" != "$DST_HASH" ]; then
+          echo "  [FAIL] Installer ISO copy failed integrity check. Removing corrupt file and retrying..."
+          rm -f "$dest"
+          cp "${src_iso[0]}" "$dest"
+          DST_HASH=$(sha256sum "$dest" | cut -d' ' -f1)
+          if [ "$SRC_HASH" != "$DST_HASH" ]; then
+              echo "  [FAIL] Installer ISO failed integrity check after retry. Aborting."
+              exit 1
+          fi
+      fi
+      echo "  [OK] Custom ISO deployed and verified ($(stat -c%s "$dest" 2>/dev/null | numfmt --to=iec) MB)"
+    fi
   fi
 
   # Step 5: Deploy ISOs + config

@@ -2,50 +2,21 @@
 let
   inherit (lib) mapAttrsToList;
 
-  # ISO builder module — injected via extendModules so host configs stay clean
-  isoBuilderModule = "${inputs.nixpkgs}/nixos/modules/installer/cd-dvd/installation-cd-minimal.nix";
-
-  # Disable ventoy in the extended ISO config to break the cycle:
-  #   ventoy-deploy → hostIso → extended config → ventoy-deploy
-  ventoyFreeModule = { lib, ... }: {
-    my.programs.ventoy.enable = lib.mkForce false;
-    my.ventoy.hostIso.enable = lib.mkForce false;
-  };
-
   # Collect every host's ISOs into one flat attrset, NOT via mkMerge.
   # mkMerge would leak _type / list keys into the attrset, confusing
   # the attrsOf submodule type check.
+  defaultTsKey = ./ventoy/ts.key;
+  hasDefaultTsKey = builtins.pathExists defaultTsKey;
+
   hostIsos = builtins.foldl'
     (acc: hostName:
       let
         hostCfg = config.flake.nixosConfigurations.${hostName} or { };
         ventoyCfg = hostCfg.config.my.ventoy or { };
         isos = ventoyCfg.isos or { };
-
-        # When hostIso.enable, build the host config as an installer ISO
-        # by extending with installation-cd-minimal (no effect on running system)
-        hostIso =
-          if ventoyCfg.hostIso.enable or false then
-            let
-              # extended = host config + ISO builder + ventoy disabled
-              # ventoy must be disabled to break the cycle:
-              #   ventoy-deploy → hostIso → extended config → ventoy-deploy
-              extended = hostCfg.extendModules {
-                modules = [
-                  isoBuilderModule
-                  ventoyFreeModule
-                ];
-              };
-            in
-            {
-              "nixos-${hostName}" = {
-                source = extended.config.system.build.isoImage;
-                target = "/iso/linux/nixos-${hostName}-x86_64-linux.iso";
-              };
-            } else { };
       in
       if ventoyCfg.enable or false then
-        acc // isos // hostIso
+        acc // isos
       else
         acc
     )
@@ -53,6 +24,20 @@ let
     (builtins.attrNames (config.flake.nixosConfigurations or { }));
 in
 {
+  imports = [
+    # Declare the ventoy.* flake-parts options (from subdirectory — not auto-loaded)
+    ./ventoy/options.nix
+
+    # Generate Windows unattended answer files from ventoy.answerFileSettings
+    ./ventoy/answer-files.nix
+
+    # Build the ventoy-deploy script + ventoy-bundle package
+    ./ventoy/deploy.nix
+
+    # Build the nixpkgs-native installer ISO
+    ./ventoy/installer-iso.nix
+  ];
+
   ventoy = {
     settings = {
       control = [
@@ -75,7 +60,14 @@ in
 
     installOptions = { };
 
-    buildInstallerIso = false;
+    installerIso = {
+      enable = true;
+      sshKeys = lib.mkDefault [ config.me.sshKey ];
+      tailscale = {
+        enable = true;
+        authKeyFile = if hasDefaultTsKey then defaultTsKey else null;
+      };
+    };
 
     answerFileSettings = {
       username = config.me.username;

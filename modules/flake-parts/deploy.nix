@@ -39,6 +39,7 @@
             echo "Deploying $host with disko (disk-config.nix found)"
             exec nixos-anywhere \
               --flake ".#$host" \
+              --disk-config "$disk_config" \
               --generate-hardware-config nixos-generate-config "$hw_config" \
               --target-host "$target_host" \
               "$@"

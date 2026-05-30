@@ -139,14 +139,15 @@ in
     {
       packages = {
         ventoy-deploy = pkgs.callPackage ./deploy-script {
-          inherit (vCfg) device mountPoint buildInstallerIso;
+          inherit (vCfg) device mountPoint;
+          buildInstallerIso = vCfg.installerIso.enable;
           ventoyJson = ventoyJsonFile;
           grubConfig = vCfg.grubConfig;
           isoMappings = isoMappings;
           fileMappings = fileMappings;
           installerIso =
-            if vCfg.buildInstallerIso
-            then config.packages.installer-iso or null
+            if vCfg.installerIso.enable
+            then config.packages.ventoy-installer-iso or null
             else null;
           secureBoot = vCfg.installOptions.secureBoot;
           gpt = vCfg.installOptions.gpt;

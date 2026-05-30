@@ -186,7 +186,11 @@ via `callPackage ./relative/path` from a flake-parts `perSystem` block.
 6. Keep system-level implementation out of this directory.  If you need to add
    a NixOS module, create it under `modules/nixos/` and only *export* it here
    via `flake.nixosModules.<name> = import ../nixos/<name>;`.
-7. Run `nix fmt` and ensure `nix eval .#flake` succeeds before committing.
+7. **Subdirectories** (e.g., `ventoy/`) used by a flake-parts `.nix` file can
+   hold helper files (scripts, templates, options, etc.) but are not
+   auto-imported themselves. See `modules/flake-parts/ventoy/README.md` for
+   the Ventoy system.
+8. Run `nix fmt` and ensure `nix eval .#flake` succeeds before committing.
 
 ## Conventions
 

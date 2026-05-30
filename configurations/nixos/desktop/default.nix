@@ -63,9 +63,11 @@
   #        sudo reboot
   #
   # Option B — Custom Ventoy ISO (auto-connects to Tailscale, SSH keys baked in):
-  #   1. Build the custom ISO from this repo:
-  #        just build-iso   # produces ISO/nixos-installer.iso
-  #   2. Copy it + Windows ISO onto a Ventoy USB
+  #   1. Build the custom ISO:
+  #        just ventoy-iso   # produces packages.ventoy-installer-iso
+  #   2. Deploy to USB:
+  #        just ventoy-deploy
+  #   3. Or copy ISO + Windows ISO onto a Ventoy USB manually
   #   3. Boot the USB on the desktop
   #   4. It auto-connects to your tailnet — find it via MagicDNS
   #   5. SSH in from your laptop:
@@ -167,11 +169,10 @@
   # ── VM Testing ─────────────────────────────────────────────────────────
   my.testing.vmTest.enable = true;
 
-  # ── Ventoy: multi-boot USB (Windows + host NixOS installer ISO) ───────
+  # ── Ventoy: multi-boot USB (Windows ISO) ───────────────────────────────
   my.programs.ventoy.enable = true;
 
   my.ventoy.enable = true;
-  my.ventoy.hostIso.enable = true;
   my.ventoy.isos = {
     win11-23h2 = {
       source = flake.inputs.windows-iso-src.packages.x86_64-linux."windows-iso-22631.7079.23H2.PRO.X64.EN";

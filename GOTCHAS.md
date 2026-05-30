@@ -193,6 +193,11 @@ Symptom: Systemd services using `serviceConfig.path = [ ... ]` log `Unknown key 
 
 ---
 
+**Installer ISO copy to Ventoy USB silently corrupts 1.5GB squashfs**
+Symptom: ISO boots via Ventoy but fails with `fsconfig() failed: unable to read id index table`. The file size on the USB matches the store, and the first 10MB are identical, but the last 10MB differ (MD5 mismatch). Cause: The deploy script's `cp` to exfat silently corrupted the tail of the 1.5GB file. The `deploy_isos()` function uses hash-based `.deploy-state` tracking to verify copies, but the installer ISO was deployed by a separate code path (`deploy_installer_iso()`) that used plain `cp` with no checksum verification. Fix: Added SHA-256 integrity verification after every installer ISO copy with automatic retry. The fix is in `modules/flake-parts/ventoy/deploy-script/ventoy-deploy.sh` — the `cp` is now followed by `sha256sum` comparison of source and destination. On mismatch it deletes and retries once; if still mismatched, it exits with error. Always verify manually with `sha256sum $STORE_ISO $USB_ISO` before booting the target machine.
+
+---
+
 ## Adding New Entries
 
 When you discover a new problem and its solution:
@@ -223,11 +228,6 @@ Symptom: `nix flake check` or `nix build .#checks.x86_64-linux.vm-test-*` fails 
 
 
 
-**`ventoy-deploy` errors after refactor — script moved to packages/ventoy-deploy/**
-Symptom: `ventoy-deploy` fails with `command not found` or wrong behavior after the refactor. Cause: The monolithic `modules/flake-parts/ventoy.nix` was split into `ventoy/options.nix`, `ventoy/answer-files.nix`, and `ventoy/deploy.nix`. The bash script moved from a Nix string to `packages/ventoy-deploy/ventoy-deploy.sh` and is now built via `pkgs.callPackage`. Fix: Run `nix build .#ventoy-deploy` to verify the script builds. The `ventoy-deploy` script no longer calls `nix run .#build-iso` — it receives `packages.installer-iso` as a store-path argument at eval time. If you need the custom ISO deployed, set `ventoy.buildInstallerIso = true` in `ventoy-config.nix` (it already is) and ensure `packages.installer-iso` builds.
-
-**`just build-iso` fails — `apps.build-iso` was removed, workflow changed**
-Symptom: Running `nix run .#build-iso` or an old script referencing the flake app fails with `flake does not provide attribute 'apps.x86_64-linux.build-iso'`. Cause: `apps.build-iso` was removed in the refactor. All its logic (agenix decrypt, SSH key generation, build, copy) moved into the Justfile `build-iso` recipe. Fix: Use `just build-iso` instead. If you relied on the flake app programmatically, replicate the steps from the Justfile.
 
 **Answer file XML refactor — templates moved to packages/ventoy/answer-files/**
 Symptom: Changes to Windows unattended answer XML aren't reflected after rebuild. Cause: The answer file XML was extracted from inline Nix strings to standalone `packages/ventoy/answer-files/{dev,minimal,domain,kiosk,dual-boot}.xml` templates with `@VAR@` placeholders. The `buildAnswer` function now uses `pkgs.substituteAll` instead of `pkgs.runCommand` with heredocs. Fix: Edit the `.xml` files directly. The `@VAR@` placeholders are substituted from the Nix `answerFileConfigs` and `answerFileSettings`. The product key (`VK7JG-NPHTM-C97JM-9MPGT-3V66T`) is still hardcoded in `answer-files.nix`.
@@ -235,9 +235,5 @@ Symptom: Changes to Windows unattended answer XML aren't reflected after rebuild
 
 ---
 
-**`nix flake check` fails on laptop with `access to absolute path '/iso/authorized_keys' is forbidden in pure evaluation mode`**
-Symptom: `nix flake check --no-build` or building `packages.x86_64-linux.laptop` errors with `error: access to absolute path '/iso/authorized_keys' is forbidden in pure evaluation mode`. Cause: `packages/installer-iso/configuration.nix` sets `users.users.root.openssh.authorizedKeys.keyFiles = [ "/iso/authorized_keys" ]`. This absolute path is only valid inside the built ISO at runtime, but Nix checks it during pure evaluation. Fix: The installer-iso package references this path and bleeds into host evals. Either make the installer-iso build conditional, or override `authorizedKeys.keyFiles` to empty in host configs.
-
----
 
 Last updated: 2026-05-29

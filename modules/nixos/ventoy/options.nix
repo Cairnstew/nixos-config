@@ -68,9 +68,9 @@ in
         type = types.bool;
         default = false;
         description = ''
-          Build this host's NixOS installer ISO and add it to the Ventoy USB.
-          The ISO is built by extending the host configuration with the
-          installation-cd-minimal module — no changes are made to the running system.
+          Deprecated: Use `ventoy.installerIso.enable` in the flake-parts config instead.
+          This per-host ISO builder (extendModules) has been replaced by a standalone
+          nixpkgs.nixosSystem evaluation — faster, no recursion issues, no tty errors.
         '';
       };
     };
