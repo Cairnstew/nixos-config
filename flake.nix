@@ -80,6 +80,11 @@
       };
     };
 
+    # Tailscale auth key management via Terraform
+    tailscale-manager = {
+      url = "github:Cairnstew/tailscale-manager";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
 
   };
 

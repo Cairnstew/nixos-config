@@ -59,5 +59,8 @@ in
     "tailscale.apiKey" = secret "tailscale-apikey" "/secrets/tailscale/apikey.age" { owner = me.username; };
     "tailscale.sshKey" = secret "tailscale-ssh-key" "/secrets/tailscale/ssh-key.age" { owner = me.username; };
     "tailscale.cloudAuth" = secret "tailscale-cloud-auth" "/secrets/tailscale/cloud-authkey.age" { owner = me.username; };
+
+    # Tailscale Manager
+    "tailscale-manager.oauth" = secret "tailscale-manager-oauth" "/secrets/tailscale-manager/oauth.age" { owner = "root"; };
   };
 }

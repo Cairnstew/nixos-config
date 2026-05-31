@@ -161,6 +161,17 @@ in
   "ai/opencode-token.age".publicKeys = all;
 
   # -----------------------------------------------------------------------------
+  # Tailscale Manager
+  # -----------------------------------------------------------------------------
+  # Service: Tailscale OAuth client credentials (client ID + secret) for
+  #          declarative auth key management via tailscale-manager
+  # Hosts: Hosts that need to manage Tailscale auth keys (server, CI builders)
+  # Keys: User + all systems
+  # Create with: agenix -e secrets/tailscale-manager/oauth.age
+  # Format: EnvironmentFile with TAILSCALE_OAUTH_CLIENT_ID and TAILSCALE_OAUTH_CLIENT_SECRET
+  "tailscale-manager/oauth.age".publicKeys = all;
+
+  # -----------------------------------------------------------------------------
   # MCP Servers
   # -----------------------------------------------------------------------------
   # Service: Better Email MCP app password (Gmail IMAP/SMTP for AI agents)

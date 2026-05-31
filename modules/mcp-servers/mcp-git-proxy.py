@@ -9,6 +9,7 @@ the standard Content-Length header format. With raise_exceptions=True, parse
 errors from header lines crash the server, causing "Connection closed".
 """
 
+import json
 import os
 import subprocess
 import sys
@@ -46,6 +47,7 @@ def main() -> None:
     t.start()
 
     # MCP is request-response: read one request, forward, read response, repeat
+    # JSON-RPC notifications (no "id" field) have no response — skip readline.
     while True:
         line = sys.stdin.buffer.readline()
         if not line:
@@ -63,8 +65,18 @@ def main() -> None:
         if body is None:
             continue
 
+        is_notification = False
+        try:
+            parsed = json.loads(body)
+            is_notification = "id" not in parsed
+        except json.JSONDecodeError:
+            pass
+
         child.stdin.write(body + b"\n")
         child.stdin.flush()
+
+        if is_notification:
+            continue
 
         resp = child.stdout.readline()
         if not resp:

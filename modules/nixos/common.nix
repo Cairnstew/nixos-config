@@ -33,6 +33,7 @@ in
     # ── Networking ─────────────────────────────────────────────────────────
     ./ssh
     ./tailscale
+    ./tailscale-manager
     ./natShare
     ./nebula
 
