@@ -4,6 +4,7 @@ let
   types = lib.types;
   prefs = flake.config.preferences or { };
   defaults = flake.config.defaults or { };
+  scheme = flake.config.me.colorScheme or { };
 in
 {
   options.my.programs.ghostty = {
@@ -47,8 +48,10 @@ in
 
     theme = lib.mkOption {
       type = types.str;
-      default = if (prefs.darkMode or true) then "catppuccin-mocha" else "catppuccin-latte";
-      description = "Theme name to use. Defaults based on preferences.darkMode.";
+      default = if scheme ? slug then scheme.slug
+        else if (prefs.darkMode or true) then "catppuccin-mocha"
+        else "catppuccin-latte";
+      description = "Theme name to use. Defaults from me.colorScheme.slug, else preferences.darkMode.";
     };
 
     gtkTitlebar = lib.mkOption {
@@ -94,7 +97,35 @@ in
 
     customThemes = lib.mkOption {
       type = types.attrsOf types.attrs;
-      default = {
+      default = let
+        strip = lib.removePrefix "#";
+      in if scheme ? base00 then {
+        "${scheme.slug}" = {
+          background = strip scheme.background;
+          cursor-color = strip scheme.cursor;
+          foreground = strip scheme.foreground;
+          palette = [
+            "0=#${strip scheme.base03}"
+            "1=#${strip scheme.base08}"
+            "2=#${strip scheme.base0B}"
+            "3=#${strip scheme.base0A}"
+            "4=#${strip scheme.base0D}"
+            "5=#${strip scheme.base0E}"
+            "6=#${strip scheme.base0C}"
+            "7=#${strip scheme.base05}"
+            "8=#${strip scheme.base04}"
+            "9=#${strip scheme.base08}"
+            "10=#${strip scheme.base0B}"
+            "11=#${strip scheme.base0A}"
+            "12=#${strip scheme.base0D}"
+            "13=#${strip scheme.base0E}"
+            "14=#${strip scheme.base0C}"
+            "15=#${strip scheme.base07}"
+          ];
+          selection-background = strip scheme.base02;
+          selection-foreground = strip scheme.foreground;
+        };
+      } else {
         catppuccin-mocha = {
           background = "1e1e2e";
           cursor-color = "f5e0dc";
@@ -121,7 +152,7 @@ in
           selection-foreground = "cdd6f4";
         };
       };
-      description = "Custom theme definitions";
+      description = "Custom theme definitions. Defaults derived from me.colorScheme when available.";
     };
 
     extraSettings = lib.mkOption {

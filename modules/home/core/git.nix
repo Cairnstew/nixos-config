@@ -2,6 +2,7 @@
 let
   # Use flake config git settings
   flakeGit = flake.config.git or { };
+  scheme = flake.config.me.colorScheme or { };
   # Get aliases from flake config, with fallback to defaults
   gitAliases = flakeGit.aliases or {
     co = "checkout";
@@ -74,12 +75,11 @@ in
   programs.lazygit = {
     enable = true;
     settings = {
-      # This looks better with the kitty theme.
       gui.theme = {
         lightTheme = false;
-        activeBorderColor = [ "white" "bold" ];
-        inactiveBorderColor = [ "white" ];
-        selectedLineBgColor = [ "reverse" "white" ];
+        activeBorderColor = [ (scheme.accent or "white") "bold" ];
+        inactiveBorderColor = [ (scheme.base04 or "white") ];
+        selectedLineBgColor = [ "reverse" (scheme.accent or "white") ];
       };
     };
   };

@@ -80,7 +80,7 @@ mkIf cfg.enable {
   boot.loader.grub.enable = true;
   boot.loader.grub.devices = [ "nodev" ];
   boot.loader.grub.efiSupport = true;
-  boot.loader.efi.canTouchEfiVariables = mkDefault true;
+  boot.loader.efi.canTouchEfiVariables = mkDefault (!config.boot.loader.grub.efiInstallAsRemovable);
   boot.loader.grub.useOSProber = cfg.useOSProber;
 
   boot.loader.grub.extraEntries = mkDefault ''

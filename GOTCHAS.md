@@ -54,6 +54,11 @@ Symptom: Building `netboot-serve` fails with `syntax error near unexpected token
 
 ---
 
+**`tailscale-manager` structured policy serialization includes empty nested fields, breaking Tailscale API**
+Symptom: `tailscale-manager.service` fails with `json: unknown field "appConnectors" (400)` after migrating to `services.tailscale-manager.policy` structured options. Cause: The upstream v0.3.2 `policyToJSON` uses shallow `lib.filterAttrs` that only cleans top-level keys. Empty submodule defaults like `autoApprovers = { appConnectors = []; exitNode = []; routes = {}; }` pass through, and Tailscale's API rejects `appConnectors` when it's not yet supported or recognized. Fix: Use the raw `services.tailscale-manager.acl.policy` string instead of structured `policy.*` options. The raw string passes through without serialization and avoids the nested-defaults issue.
+
+---
+
 **`nix run` kills GNOME/Wayland session during activation**
 Symptom: Running `nix run` (which does `nixos-rebuild switch`) kills the desktop session — GNOME Shell, pipewire, wireplumber all stop, screen goes black. The VM test (`nix run .#test run laptop`) passes fine. Cause: Home-manager's default `systemd.user.startServices` setting (`"start"`) does `systemctl --user daemon-reload` and restarts all changed user services, which includes the entire GNOME session. Fix: Set `systemd.user.startServices = "sd-switch"` in `modules/nixos/homeManager/config.nix`. The `sd-switch` method is smarter — it only restarts services whose units actually changed, avoiding the session kill.
 

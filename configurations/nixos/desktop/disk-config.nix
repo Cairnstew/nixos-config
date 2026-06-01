@@ -1,9 +1,21 @@
 { lib, ... }: {
-  # Dual-boot: ESP + MSR + Windows + NixOS.
-  # Matches the layout created by the Windows answer file (wipe-disk.xml) +
-  # the NixOS partition created in free space.
-  # For fresh installs, nixos-anywhere will create this layout.
-  # For reinstalls on existing partitions, pass --disko-mode mount.
+  # Expected layout when installing NixOS on a disk with existing Windows:
+  #   sda1: ESP      (vfat, ~100M) — Windows EFI boot
+  #   sda2: MSR      (16M)          — Microsoft Reserved
+  #   sda3: Windows  (NTFS, 80G)    — C: drive
+  #   sda4: NixOS    (ext4, rest)   — created in free space before first deploy
+  #
+  # This file is NOT imported by the NixOS config (the dual-boot module
+  # handles disko.devices in fresh mode, and fileSystems in useExisting mode).
+  # It exists here for nixos-anywhere's deploy.nix to detect that this host
+  # uses nixos-anywhere, and for reference documentation of the layout.
+  #
+  # Usage with nixos-anywhere:
+  #   Fresh install (full disk, no Windows): nix run .#deploy desktop root@<IP>
+  #   Reinstall (Windows on sda1-3, mount existing):
+  #     nix run .#deploy desktop root@<IP> -- --disko-mode mount
+  #   VM test:
+  #     nix run .#deploy-test desktop   # requires disko devices to be imported
   disko.devices.disk.main = {
     type = "disk";
     device = lib.mkDefault "/dev/sda";

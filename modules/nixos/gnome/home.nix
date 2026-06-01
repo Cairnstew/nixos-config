@@ -4,6 +4,7 @@ let
   # Get preferences from flake config for defaults
   prefs = flake.config.preferences or { };
   defaults = flake.config.defaults or { };
+  scheme = flake.config.me.colorScheme or { };
 in
 {
   options.my.desktop.gnome = {
@@ -163,8 +164,8 @@ in
       };
       "org/gnome/desktop/screensaver" = {
         picture-uri = cfg.screensaverImage;
-        primary-color = "#3465a4";
-        secondary-color = "#000000";
+        primary-color = scheme.accent or "#3465a4";
+        secondary-color = scheme.background or "#000000";
       };
       "org/gnome/desktop/session" = {
         idle-delay = lib.hm.gvariant.mkUint32 cfg.screenBlankTimeout;

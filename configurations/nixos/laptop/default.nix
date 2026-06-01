@@ -1,10 +1,12 @@
 # Laptop Configuration
 # See: ../../AGENT.md for configuration conventions
-{ flake, ... }:
+{ flake, config, lib, ... }:
 {
   imports = [
     # Import hardware config FIRST to set hostPlatform
     ./hardware-configuration.nix
+    # Import disko partition layout for installer/VMT support
+    ./disk-config.nix
     flake.inputs.self.nixosModules.common
   ];
 
@@ -54,6 +56,9 @@
 
   # ── SSH Access
   my.services.ssh.authorizedKeys = [ flake.config.me.sshKey ];
+
+  # ── Tailscale: expose pixrate web app to tag:nixos nodes ──────────────────
+  my.services.tailscale.manager.policy.interNodePorts = [ "tcp:22" "tcp:8000" ];
 
   # ── Laptop-specific services ─────────────────────────────────────────────
   services.fwupd.enable = true;

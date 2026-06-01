@@ -47,6 +47,11 @@ register-host host addr:
     @echo ""
     @echo "Next: add this key to secrets/secrets.nix, run 'agenix -r', then rebuild."
 
+# VM-test a host config via nixos-anywhere (no target machine, validates disko layout)
+[group('deploy')]
+deploy-test host *args:
+    nix run .#deploy-test -- {{host}} {{args}}
+
 # Interactive deploy wizard: SSH into live ISO, pick/partition disk, install
 [group('deploy')]
 deploy-wizard host:

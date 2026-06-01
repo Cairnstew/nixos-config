@@ -31,6 +31,10 @@ in
       assertion = lib.all (n: cfg.catalog.${n}.name != "") secretNames;
       message = "All secrets in my.secrets.catalog must have a non-empty name.";
     }
+    {
+      assertion = lib.all (n: cfg.catalog.${n}.fileRel != null) secretNames;
+      message = "All secrets in my.secrets.catalog must have a fileRel set (no null-file entries). Add the .age file first, then add the catalog entry.";
+    }
   ];
 
   # ── L1: Secret file existence checks (runtime) ─────────────────────────────

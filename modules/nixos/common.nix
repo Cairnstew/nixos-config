@@ -33,7 +33,7 @@ in
     # ── Networking ─────────────────────────────────────────────────────────
     ./ssh
     ./tailscale
-    ./tailscale-manager
+    inputs.tailscale-manager.nixosModules.default
     ./natShare
     ./nebula
 
@@ -126,6 +126,51 @@ in
         # Forward SSH agent: Uses preference from config.ssh.forwardAgent
         # Override when: Agent forwarding is a security concern on this host
         extraHostConfig = lib.mkDefault (if (flake.config.ssh.forwardAgent or true) then "ForwardAgent yes" else "ForwardAgent no");
+      };
+
+      manager = {
+        enable = lib.mkDefault true;
+        acl.enable = lib.mkDefault true;
+
+        policy = {
+          enable = lib.mkDefault true;
+
+          tagOwners = lib.mkDefault {
+            "tag:nixos" = [ "autogroup:admin" ];
+          };
+
+          interNodePorts = lib.mkDefault [ "tcp:22" ];
+
+          grants = lib.mkDefault [
+            {
+              src = [ "autogroup:member" ];
+              dst = [ "tag:nixos" ];
+              ip = [ "tcp:22" ];
+            }
+          ];
+
+          ssh = lib.mkDefault [
+            {
+              action = "accept";
+              src = [ "autogroup:admin" ];
+              dst = [ "tag:nixos" ];
+              users = [ "autogroup:nonroot" "root" ];
+            }
+            {
+              action = "check";
+              src = [ "autogroup:member" ];
+              dst = [ "tag:nixos" ];
+              users = [ "autogroup:nonroot" ];
+              checkPeriod = "12h";
+            }
+            {
+              action = "accept";
+              src = [ "tag:nixos" ];
+              dst = [ "tag:nixos" ];
+              users = [ "root" ];
+            }
+          ];
+        };
       };
     };
 

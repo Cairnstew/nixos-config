@@ -10,6 +10,12 @@ let
         description = "The agenix secret name (used for age.secrets.<name>).";
       };
 
+      fileRel = mkOption {
+        type = types.nullOr types.str;
+        default = null;
+        description = "Relative path from repo root to the .age file (e.g., \"/secrets/ai/token.age\"). Used for auto-generation.";
+      };
+
       file = mkOption {
         type = types.nullOr types.path;
         default = null;

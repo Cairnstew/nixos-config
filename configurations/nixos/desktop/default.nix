@@ -3,7 +3,6 @@
   imports = [
     ./hardware-configuration.nix
     ./configuration.nix
-    ./disk-config.nix
     flake.inputs.self.nixosModules.common
   ];
 

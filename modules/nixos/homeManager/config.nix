@@ -4,10 +4,19 @@ let
   inherit (inputs) self;
   inherit (flake.config.me) username;
   cfg = config.my.homeManager;
+  sec = config.my.secrets;
   mcpServers = self.packages.${pkgs.system};
 
+  # Helper: check if a catalog secret exists and is available
+  hasSecret = path: sec.enable && (sec.catalog ? ${path})
+    && builtins.hasAttr (sec.catalog.${path}.name) config.age.secrets;
+
+  # Get secret name from catalog
+  secretName = path: sec.catalog.${path}.name or null;
+
   # Better Email MCP — conditional on agenix secret
-  hasEmailSecret = config.age.secrets ? "better-email-password";
+  hasEmailSecret = hasSecret "mcp.better-email.password";
+  betterEmailSecretName = secretName "mcp.better-email.password";
   betterEmailPkg =
     if hasEmailSecret then
       pkgs.writeShellApplication
@@ -15,7 +24,7 @@ let
           name = "better-email";
           runtimeInputs = [ pkgs.nodejs ];
           text = ''
-            EMAIL_APP_PASSWORD=$(cat ${config.age.secrets."better-email-password".path})
+            EMAIL_APP_PASSWORD=$(cat ${config.age.secrets.${betterEmailSecretName}.path})
             export EMAIL_APP_PASSWORD
             exec npx -y @n24q02m/better-email-mcp "$@"
           '';
@@ -57,28 +66,28 @@ in
           enable = lib.mkDefault true;
           enableLsp = lib.mkDefault true;
           clarifai.patFile =
-            if config.age.secrets ? "clarifai-pat"
-            then config.age.secrets."clarifai-pat".path
+            if hasSecret "ai.clarifai.pat"
+            then config.age.secrets.${secretName "ai.clarifai.pat"}.path
             else null;
           deepinfra.keyFile =
-            if config.age.secrets ? "deepinfra-key"
-            then config.age.secrets."deepinfra-key".path
+            if hasSecret "ai.deepinfra.key"
+            then config.age.secrets.${secretName "ai.deepinfra.key"}.path
             else null;
           opencode-go.keyFile =
-            if config.age.secrets ? "opencode-token"
-            then config.age.secrets."opencode-token".path
+            if hasSecret "ai.opencode.token"
+            then config.age.secrets.${secretName "ai.opencode.token"}.path
             else null;
           groq.keyFile =
-            if config.age.secrets ? "groq-token"
-            then config.age.secrets."groq-token".path
+            if hasSecret "ai.groq.token"
+            then config.age.secrets.${secretName "ai.groq.token"}.path
             else null;
 
           model =
-            if (config.age.secrets ? "deepinfra-key")
+            if (hasSecret "ai.deepinfra.key")
             then lib.mkDefault null
-            else if (config.age.secrets ? "clarifai-pat")
+            else if (hasSecret "ai.clarifai.pat")
             then lib.mkDefault "meta-llama/Meta-Llama-3.1-8B-Instruct"
-            else if (config.age.secrets ? "groq-token")
+            else if (hasSecret "ai.groq.token")
             then lib.mkDefault "meta-llama/Meta-Llama-3.1-8B-Instruct"
             else lib.mkDefault null;
           enableMcpIntegration = lib.mkDefault true;

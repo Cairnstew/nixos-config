@@ -864,11 +864,11 @@
         "uv2nix": "uv2nix"
       },
       "locked": {
-        "lastModified": 1780192551,
-        "narHash": "sha256-GKc6r7olo04LHFWKiARuAsrIOvRkDMBMomP1FOEEo0E=",
+        "lastModified": 1780331486,
+        "narHash": "sha256-VC34vZa07U6TAm6iRX4kuGpsZqM+qIRre2r3H44clHc=",
         "owner": "Cairnstew",
         "repo": "tailscale-manager",
-        "rev": "b4b3637675f7c57b1bb1f00fe202cd57ec80b9f4",
+        "rev": "d9ea00f8afbde4bc2546d0cb40579e510e42b3e7",
         "type": "github"
       },
       "original": {

@@ -3,7 +3,12 @@
 { lib, config, flake, ... }:
 let
   cfg = config.my.homeProfiles;
+  sec = config.my.secrets;
   inherit (flake.config.me) username;
+
+  # Helper: check if a catalog secret exists and is available
+  hasSecret = path: sec.enable && (sec.catalog ? ${path})
+    && builtins.hasAttr (sec.catalog.${path}.name) config.age.secrets;
 in
 {
   imports = [
@@ -30,7 +35,7 @@ in
       bash.enable = lib.mkDefault true;
       zsh.enable = lib.mkDefault true;
       direnv.enable = lib.mkDefault true;
-      gh.enable = lib.mkDefault (config.age.secrets ? "github-token");
+      gh.enable = lib.mkDefault (hasSecret "github.token");
       ghostty.enable = lib.mkDefault true;
       just.enable = lib.mkDefault true;
       yazi.enable = lib.mkDefault true;
@@ -55,6 +60,7 @@ in
       cudatext.enable = lib.mkDefault true;
       vscode.enable = lib.mkDefault true;
       obsidian.enable = lib.mkDefault true;
+      helix-ide.enable = lib.mkDefault true;
     })
 
     # Server profile (minimal GUI)

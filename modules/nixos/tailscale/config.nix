@@ -11,25 +11,6 @@ let
   # Get secret names from catalog (keys use dot notation)
   tailscaleAuthKeyName = getSecretName "tailscale.authKey";
   tailscaleSshKeyName = getSecretName "tailscale.sshKey";
-
-  # Build static SSH config from config.nix tailnet data
-  sshKeyPath =
-    if tailscaleSshKeyName != null
-    then config.age.secrets.${tailscaleSshKeyName}.path
-    else null;
-
-  # Generate SSH config content from static tailnet configuration
-  generateSshConfig = hosts:
-    lib.concatStringsSep "\n\n" (lib.mapAttrsToList
-      (name: host: ''
-        Host ${name}
-          HostName ${host.magicDnsName}
-          IdentityFile ${sshKeyPath}
-          IdentitiesOnly yes
-          ${cfg.ssh.extraHostConfig}
-      '')
-      hosts);
-
 in
 {
   config = mkIf cfg.enable (mkMerge [
@@ -60,9 +41,15 @@ in
           RestartSec = "5";
         };
       };
+
+      # tailscale-manager needs tailscaled active before it can reach the API
+      systemd.services.tailscale-manager = mkIf config.my.services.tailscale.manager.enable {
+        after = [ "tailscaled.service" ];
+        wants = [ "tailscaled.service" ];
+      };
     }
 
-    # ── SSH config generation ────────────────────────────────────────────────
+    # ── SSH config generation (live from tailscale status) ────────────────────
     (mkIf (cfg.ssh.enable && sec.enable && tailscaleSshKeyName != null) {
       assertions = [
         {
@@ -81,16 +68,58 @@ in
           enable = true;
           includes = [ "config.d/tailscale" ];
         };
+      };
 
-        # Static SSH config file generated at build time
-        home.file.".ssh/config.d/tailscale".text = ''
-          # BEGIN tailscale-managed — do not edit, generated at build time
-          # Static configuration from config.nix tailnet entries
+      # Runtime SSH config generator — fetches live device list from tailscale status
+      systemd.services.tailscale-ssh-config = {
+        description = "Generate SSH config from live tailscale device list";
+        after = [ "tailscaled.service" "network-online.target" ];
+        wants = [ "tailscaled.service" "network-online.target" ];
+        wantedBy = [ "multi-user.target" ];
+        serviceConfig = {
+          Type = "oneshot";
+          RemainAfterExit = true;
+          ExecStart = let
+            sshKey = config.age.secrets.${tailscaleSshKeyName}.path;
+          in pkgs.writeShellScript "tailscale-ssh-config" ''
+            set -euo pipefail
 
-          ${generateSshConfig flake.config.tailnet}
+            SSH_DIR="/home/${cfg.ssh.user}/.ssh/config.d"
+            SSH_FILE="$SSH_DIR/tailscale"
+            SSH_KEY="${sshKey}"
+            EXTRA="${cfg.ssh.extraHostConfig}"
 
-          # END tailscale-managed
-        '';
+            mkdir -p "$SSH_DIR"
+
+            cat > "$SSH_FILE" << 'EOF'
+            # BEGIN tailscale-managed — generated from live tailscale status
+            # Do not edit manually. Regenerate: systemctl start tailscale-ssh-config
+
+            EOF
+
+            ${pkgs.tailscale}/bin/tailscale status --json | ${pkgs.jq}/bin/jq --arg key "$SSH_KEY" --arg extra "$EXTRA" -r '
+              def clean: rtrimstr(".");
+              def short: split(".")[0];
+              [.Self, .Peer[]] | .[] | select(.DNSName != null) |
+                # Short-name alias (e.g. "Host laptop")
+                "Host \(.DNSName | short)",
+                "  HostName \(.DNSName | clean)",
+                "  IdentityFile \($key)",
+                "  IdentitiesOnly yes",
+                (if $extra != "" then "  \($extra)" else "" end),
+                "",
+                # FQDN host block
+                "Host \(.DNSName | clean)",
+                "  HostName \(.DNSName | clean)",
+                "  IdentityFile \($key)",
+                "  IdentitiesOnly yes",
+                (if $extra != "" then "  \($extra)" else "" end),
+                ""
+            ' >> "$SSH_FILE"
+
+            chmod 644 "$SSH_FILE"
+          '';
+        };
       };
     })
   ]);

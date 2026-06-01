@@ -49,6 +49,66 @@ let
         type = lib.types.str;
         description = "GitHub username for gh CLI and git remotes.";
       };
+
+      colorScheme = lib.mkOption {
+        type = lib.types.submodule ({ config, ... }: let
+          mkHex = desc: default: lib.mkOption {
+            type = lib.types.str;
+            default = default;
+            description = desc;
+          };
+        in {
+          options = {
+            slug = lib.mkOption {
+              type = lib.types.str;
+              default = "catppuccin-mocha";
+              description = "Theme slug for programs that reference themes by name (e.g. helix, ghostty)";
+            };
+
+            # Base16 00-0F palette
+            base00 = mkHex "Base16 00 - Default Background" "#1e1e2e";
+            base01 = mkHex "Base16 01 - Lighter Background" "#181825";
+            base02 = mkHex "Base16 02 - Selection Background" "#313244";
+            base03 = mkHex "Base16 03 - Comments / Invisibles" "#45475a";
+            base04 = mkHex "Base16 04 - Dark Foreground" "#585b70";
+            base05 = mkHex "Base16 05 - Default Foreground" "#cdd6f4";
+            base06 = mkHex "Base16 06 - Light Foreground" "#f5f5f5";
+            base07 = mkHex "Base16 07 - Light Background" "#ffffff";
+            base08 = mkHex "Base16 08 - Red" "#f38ba8";
+            base09 = mkHex "Base16 09 - Orange" "#fab387";
+            base0A = mkHex "Base16 0A - Yellow" "#f9e2af";
+            base0B = mkHex "Base16 0B - Green" "#a6e3a1";
+            base0C = mkHex "Base16 0C - Cyan" "#94e2d5";
+            base0D = mkHex "Base16 0D - Blue / Accent" "#89b4fa";
+            base0E = mkHex "Base16 0E - Magenta / Purple" "#f5c2e7";
+            base0F = mkHex "Base16 0F - Brown / Mauve" "#cba6f7";
+
+            # Semantic aliases (default to Base16 equivalents)
+            background = lib.mkOption {
+              type = lib.types.str;
+              default = config.base00;
+              description = "Default background color";
+            };
+            foreground = lib.mkOption {
+              type = lib.types.str;
+              default = config.base05;
+              description = "Default foreground/text color";
+            };
+            cursor = lib.mkOption {
+              type = lib.types.str;
+              default = "#f5e0dc";
+              description = "Cursor color";
+            };
+            accent = lib.mkOption {
+              type = lib.types.str;
+              default = config.base0D;
+              description = "Primary accent / highlight color";
+            };
+          };
+        });
+        default = { };
+        description = "System color palette. Base16 00-0F with semantic aliases. All values with # prefix.";
+      };
     };
   };
 

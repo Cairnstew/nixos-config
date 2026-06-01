@@ -7,6 +7,10 @@ Helix editor + Zellij terminal multiplexer IDE environment. Enables both tools w
 | Option | Default | Description |
 |--------|---------|-------------|
 | `my.programs.helix-ide.enable` | `false` | Enable Helix + Zellij IDE environment |
+| `my.programs.helix-ide.inlineDiagnostics` | `"hint"` | Display diagnostics inline. Options: `"none"`, `"hint"`, or `"warning"` |
+| `my.programs.helix-ide.inlayHints` | `true` | Show inline type hints and parameter names from the LSP |
+| `my.programs.helix-ide.relativeLines` | `true` | Use relative line numbering for faster modal vertical motions |
+| `my.programs.helix-ide.rainbowRulers` | `true` | Add modern visual color column indicators for clean indentation |
 
 ## Usage
 

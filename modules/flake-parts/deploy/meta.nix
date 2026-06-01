@@ -1,9 +1,9 @@
 {
   name = "deploy";
-  description = "nixos-anywhere deploy app and interactive deploy wizard";
+  description = "nixos-anywhere deploy app, VM test, and interactive deploy wizard";
   category = "deployment";
-  tags = [ "deploy" "nixos-anywhere" "wizard" ];
-  provides = [ "apps.deploy" "apps.deploy-wizard" ];
-  complexity = "simple";
+  tags = [ "deploy" "nixos-anywhere" "wizard" "vm-test" ];
+  provides = [ "apps.deploy" "apps.deploy-test" "apps.deploy-wizard" ];
+  complexity = "moderate";
   tested = false;
 }
