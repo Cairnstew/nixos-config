@@ -57,21 +57,36 @@ deploy-test host *args:
 deploy-wizard host:
     nix run .#deploy-wizard -- {{host}}
 
+# Deploy with pre-generated SSH host key (agenix works on first boot)
+# Generates an ed25519 key, registers host in secrets.nix, rekeys, then deploys.
+# Auto-discovers target via Tailscale. Uses local SSH host key for rekeying by default.
+# e.g., just deploy-with-keys desktop
+#       just deploy-with-keys desktop key=/path/to/other-key
+#       just deploy-with-keys desktop 192.168.1.100
+[group('deploy')]
+deploy-with-keys host key="/etc/ssh/ssh_host_ed25519_key" addr="nixos@nixos" *args:
+    @if [ -f "{{key}}" ]; then \
+        sudo nix run .#deploy-with-keys -- --key {{key}} {{host}} {{addr}} {{args}}; \
+    else \
+        sudo nix run .#deploy-with-keys -- {{host}} {{addr}} {{args}}; \
+    fi
+
 # ── ISO & Ventoy ─────────────────────────────────────────────────────────────
 
 # Deploy ISOs + config to a Ventoy USB (auto-detect or specify device)
 # e.g., just ventoy-deploy, just ventoy-deploy /dev/sdb, just ventoy-deploy --install /dev/sdb
-[group('deploy')]
+
 ventoy-deploy *args:
-    nix run .#ventoy-deploy -- {{args}}
+    sudo rm -f /run/media/seanc/Ventoy/iso/linux/deploy.iso
+    sudo nix run --impure .#ventoy-deploy -- {{args}}
 
 # Build the ventoy-bundle (all ISOs in a directory tree, no deploy)
 ventoy-bundle:
-    nix build .#ventoy-bundle
+    sudo nix build --impure .#ventoy-bundle
 
-# Build the Ventoy installer ISO (put your ephemeral Tailscale key in modules/flake-parts/ventoy/ts.key)
+# Build the Ventoy installer ISO (via live-iso system, auth key auto-generated at deploy time)
 ventoy-iso:
-    nix build .#ventoy-installer-iso
+    sudo nix build --impure .#live-iso-deploy
 
 # ── Testing ──────────────────────────────────────────────────────────────────
 

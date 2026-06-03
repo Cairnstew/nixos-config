@@ -23,8 +23,8 @@ let
   laptop = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIETE96NnwPAZ0n5y6XcCzoErkrAhulUht/Hho0V829Qy root@laptop";
   server = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAINJXLC3S2pEuIchrWMtmWiTaJOA+U02HVyRczRNbRjMX root@nixos";
   wsl = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIAKZIYbM8ac+hHEAvvScLq2lHtAHi44Zlvlew/QYU3H0 root@wsl";
-  desktop = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIGRtQOHdY9SQ+xfIY4pGzmvWTKcW/Anz8MHcefH4sJdY root@desktop";
 
+  desktop = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIKWiP0JxNaeWS30gzg4A2zLnSRdZutWzCP0mjZit7/De root@desktop";
   systems = [ laptop server wsl desktop ];
   all = users ++ systems;
 in
@@ -45,7 +45,6 @@ in
   "github/repos/github-token-obsidian.age".publicKeys = all;
   "mail/gmail/better-email-password.age".publicKeys = all;
   "tailscale/tailscale-authkey.age".publicKeys = all;
-  "tailscale/tailscale-cloud-auth.age".publicKeys = all;
   "tailscale/tailscale-oauthkey.age".publicKeys = all;
   "tailscale/tailscale-ssh-key.age".publicKeys = all;
   "windows-password.age".publicKeys = all;

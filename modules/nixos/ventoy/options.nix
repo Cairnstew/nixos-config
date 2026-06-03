@@ -68,9 +68,8 @@ in
         type = types.bool;
         default = false;
         description = ''
-          Deprecated: Use `ventoy.installerIso.enable` in the flake-parts config instead.
-          This per-host ISO builder (extendModules) has been replaced by a standalone
-          nixpkgs.nixosSystem evaluation — faster, no recursion issues, no tty errors.
+          Deprecated: The installer ISO is now defined via the live-iso system
+          (`live.isos.ventoy` in `modules/flake-parts/ventoy/config.nix`).
         '';
       };
     };

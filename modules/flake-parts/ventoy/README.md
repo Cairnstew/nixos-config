@@ -19,8 +19,7 @@ modules/flake-parts/ventoy/
 │   ├── default.nix        # Nix wrapper — sets env vars, then sources ventoy-deploy.sh
 │   ├── ventoy-deploy.sh   # Main deploy logic (device detection, copy, verification)
 │   └── tests.nix          # ShellCheck-based tests for the deploy script
-├── installer-iso.nix      # Standalone NixOS installer ISO (nixosSystem, not nixos-generators)
-└── ts.key                 # Ephemeral Tailscale auth key (one-time-use, tracked in git)
+└── config.nix             # Defines ventoy.live.isos.ventoy via live-iso system
 ```
 
 ### Components
@@ -38,7 +37,7 @@ Each plugin has mode-suffixed variants (`_legacy`, `_uefi`, `_ia32`, `_aa64`,
 Also declares:
 - `ventoy.isos` — which ISOs to deploy (source store path + target USB path)
 - `ventoy.installOptions.*` — `Ventoy2Disk.sh` flags (Secure Boot, GPT, label)
-- `ventoy.installerIso.*` — NixOS installer ISO builder options
+- `ventoy.live.isos.ventoy` — NixOS installer ISO defined via the live-iso system
 - `ventoy.answerFileSettings.*` — defaults for Windows answer file generation
 
 #### 2. Answer Files (`answer-files.nix` + `packages/ventoy/answer-files/`)
@@ -80,24 +79,31 @@ The script (`ventoy-deploy.sh`) performs:
 7. **Deploy files** — Copies answer files to `/ventoy/scripts/`.
 8. **Deploy JSON** — Copies `ventoy.json` and optional `ventoy_grub.cfg`.
 
-#### 4. Installer ISO (`installer-iso.nix`)
+#### 4. Live ISOs with `ventoy = true`
 
-Builds a minimal NixOS live installer ISO using a **standalone `nixosSystem`
-evaluation** — not your laptop/server config, but a fresh evaluation of
-`installation-cd-minimal.nix` with extras:
+Any live-iso entry (see `modules/flake-parts/live-iso/`) can be marked for
+automatic Ventoy deployment by setting `ventoy = true`:
 
-- `copytoram` kernel param (forces squashfs into RAM at boot, avoids
-  Ventoy's loopback race condition)
-- `boot.initrd.systemd.enable = lib.mkForce false` (systemd stage 1 does not
-  work with ISO boot infrastructure — uses classic bash stage 1)
-- `gzip -Xcompression-level 1` squashfs compression
-- SSH enabled with `PermitRootLogin = yes` + your SSH keys
-- Tailscale with optional auth key (`ts.key`), `--ssh` and `--accept-routes`
-- `nix-command` + `flakes` experimental features
+```nix
+live.isos.deploy = {
+  ventoy = true;
+  # ... other ISO settings
+};
+```
 
-The auth key is baked into the ISO at build time via `isoImage.contents` to
-`/ts.key`. At boot, the custom `tailscale-autoconnect` service reads it from
-the runtime path `/iso/ts.key` (which is where the ISO filesystem exposes it).
+When `ventoy-deploy` runs, it collects all `live.isos.*` entries with
+`ventoy = true`, looks up their `packages.live-iso-<name>`, and copies them
+to the Ventoy USB at `/iso/linux/<name>.iso`.
+
+This replaces the old approach of defining a dedicated `ventoy.installerIso`
+or hardcoded `live.isos.ventoy`. Users have full control over the ISO
+contents (baseModule, extraPackages, tailscale config, etc.) via standard
+live-iso options.
+at deploy time and writes it to the USB's `/ventoy/ts.key`. At boot, the custom
+`tailscale-autoconnect` service finds the VENTOY data partition (via
+`blkid -L VENTOY`), reads the key, and auto-authenticates. If no key is found
+(e.g. booted from a non-Ventoy source), the service falls back to
+`tailscale up` without an auth key (manual auth via LAN SSH is still available).
 
 ## Workflow
 
@@ -105,28 +111,24 @@ the runtime path `/iso/ts.key` (which is where the ISO filesystem exposes it).
 
 - A Ventoy-capable USB drive (auto-detected or specified via `--device`)
 - `ventoy-full` or `ventoy` package available on the deploy machine
-- (Optional) An ephemeral Tailscale auth key for the installer ISO
+- Tailscale installed and authenticated on the deploy machine (for auto-generating the installer ISO's auth key)
 
 ### Quick Start
 
 ```bash
-# 1. Generate an ephemeral Tailscale auth key from the admin console
-#    and put it in the ts.key file:
-echo "tskey-auth-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx" > modules/flake-parts/ventoy/ts.key
-
-# 2. Build the installer ISO (optional — ventoy-deploy does this too)
+# 1. Build the installer ISO (optional — ventoy-deploy does this too)
 just ventoy-iso
 
-# 3. Deploy everything to a Ventoy USB
+# 2. Deploy everything to a Ventoy USB (auto-generates Tailscale auth key)
 just ventoy-deploy
 
-# 4. Or deploy to a specific device
+# 3. Or deploy to a specific device
 just ventoy-deploy --device /dev/sdb
 
-# 5. Or check the USB without deploying
+# 4. Or check the USB without deploying
 just ventoy-deploy --check
 
-# 6. Or install Ventoy + deploy to a fresh USB
+# 5. Or install Ventoy + deploy to a fresh USB
 just ventoy-deploy --install /dev/sdb
 ```
 
@@ -173,7 +175,7 @@ ventoy.answerFileSettings = {
 
 | Command | What it does |
 |---------|-------------|
-| `just ventoy-iso` | `nix build .#ventoy-installer-iso` — builds ISO only |
+| `just ventoy-iso` | `nix build .#live-iso-ventoy` — builds ISO only |
 | `just ventoy-deploy` | `nix run .#ventoy-deploy` — builds all + deploys to USB |
 | `just ventoy-deploy --check` | Verify USB only, no write |
 | `just ventoy-deploy /dev/sdb` | Deploy to specific device |
@@ -182,7 +184,7 @@ ventoy.answerFileSettings = {
 | `just ventoy-deploy --device /dev/sdb --mount /path` | Specify both |
 | `just ventoy-bundle` | `nix build .#ventoy-bundle` — build file tree only |
 | `nix build .#ventoy-deploy` | Build the deploy script (without running) |
-| `nix build .#ventoy-installer-iso` | Build the installer ISO |
+| `nix build .#live-iso-ventoy` | Build the installer ISO |
 | `nix build .#ventoy-bundle` | Build the bundle (JSON + ISOs in a tree) |
 
 ### Deploy Script CLI
@@ -229,16 +231,21 @@ ventoy.settings = {
 };
 ```
 
-### ventoy.installerIso.*
+### `live.isos.*.ventoy = true`
 
-| Option | Type | Default | Description |
-|--------|------|---------|-------------|
-| `enable` | bool | `false` | Build and deploy a NixOS live installer ISO |
-| `sshKeys` | list of str | `[]` | SSH public keys for root |
-| `extraPackages` | list of pkg | `[]` | Extra packages in the ISO |
-| `system` | str | `"x86_64-linux"` | System architecture |
-| `tailscale.enable` | bool | `false` | Enable Tailscale on boot |
-| `tailscale.authKeyFile` | null or path | `null` | Path to auth key file (in flake source) |
+Any live-iso entry can be auto-deployed by Ventoy. See
+`modules/flake-parts/live-iso/options.nix` for all ISO options.
+
+Mark an ISO for Ventoy:
+```nix
+live.isos.deploy = {
+  ventoy = true;
+  # ... other options
+};
+```
+
+The ISO is copied to `/iso/linux/<name>.iso` on the Ventoy USB during
+`ventoy-deploy`. Multiple ISOs can be tagged — each gets its own entry.
 
 ### ventoy.installOptions.*
 
@@ -326,8 +333,8 @@ main "$@"
 
 ### Not in `packages/`
 
-The `ventoy-deploy` and `ventoy-installer-iso` packages are **not** in
-`packages/` because they require custom arguments (`ventoyJson`, `isoMappings`,
+The `ventoy-deploy` package is **not** in
+`packages/` because it requires custom arguments (`ventoyJson`, `isoMappings`,
 etc.) that `pkgs.callPackage` can't provide. They're built in
 `deploy.nix`'s `perSystem` block via `pkgs.callPackage ./deploy-script` with
 all args wired from the `ventoy.*` options.

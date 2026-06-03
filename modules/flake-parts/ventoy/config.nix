@@ -1,8 +1,5 @@
 { config, lib, ... }:
 let
-  defaultTsKey = ./ts.key;
-  hasDefaultTsKey = builtins.pathExists defaultTsKey;
-
   hostIsos = builtins.foldl'
     (acc: hostName:
       let
@@ -37,18 +34,17 @@ in
         { image = "/iso/windows/22631.7079.23H2.PRO.X64.EN.iso"; alias = "Windows 11 23H2 Pro"; }
         { dir = "/iso/linux"; alias = "[ Linux ISOs ]"; }
       ];
+      menu_tip = {
+        tips = [
+          {
+            image = "/iso/linux/nixos-installer-x86_64-linux.iso";
+            tip = "Auto-connects to Tailscale (tag:temp). SSH: root@<hostname>";
+          }
+        ];
+      };
     };
 
     installOptions = { };
-
-    installerIso = {
-      enable = true;
-      sshKeys = lib.mkDefault [ config.me.sshKey ];
-      tailscale = {
-        enable = true;
-        authKeyFile = if hasDefaultTsKey then defaultTsKey else null;
-      };
-    };
 
     answerFileSettings = {
       username = config.me.username;

@@ -5,8 +5,6 @@
   imports = [
     # Import hardware config FIRST to set hostPlatform
     ./hardware-configuration.nix
-    # Import disko partition layout for installer/VMT support
-    ./disk-config.nix
     flake.inputs.self.nixosModules.common
   ];
 

@@ -38,15 +38,16 @@
           # Auto-detect hardware config strategy:
           #   facter.json > hardware-configuration.nix > generate
           if [ -f "$host_dir/facter.json" ]; then
-            hw_flag="--generate-hardware-config nixos-facter $host_dir/facter.json"
+            hw_args=(--generate-hardware-config nixos-facter "$host_dir/facter.json")
           else
-            hw_flag="--generate-hardware-config nixos-generate-config $host_dir/hardware-configuration.nix"
+            hw_args=(--generate-hardware-config nixos-generate-config "$host_dir/hardware-configuration.nix")
           fi
 
           # Auto-enable password auth when SSHPASS is set
-          env_pass_flag=""
           if [ -n "''${SSHPASS:-}" ]; then
-            env_pass_flag="--env-password"
+            pass_args=(--env-password)
+          else
+            pass_args=()
           fi
 
           # If a disk-config.nix exists the host uses disko — let nixos-anywhere
@@ -57,8 +58,8 @@
             exec nixos-anywhere \
               --print-build-logs \
               --flake ".#$host" \
-              $hw_flag \
-              $env_pass_flag \
+              "''${hw_args[@]}" \
+              "''${pass_args[@]}" \
               --target-host "$target_host" \
               "$@"
           else
@@ -67,8 +68,8 @@
               --print-build-logs \
               --phases kexec,install,reboot \
               --flake ".#$host" \
-              $hw_flag \
-              $env_pass_flag \
+              "''${hw_args[@]}" \
+              "''${pass_args[@]}" \
               --target-host "$target_host" \
               "$@"
           fi

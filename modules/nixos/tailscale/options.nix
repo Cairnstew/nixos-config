@@ -2,6 +2,51 @@
 let
   inherit (lib) mkEnableOption mkOption types literalExpression;
 
+  appCapabilityType = types.attrsOf (types.listOf (
+    types.submodule {
+      freeformType = types.attrs;
+    }
+  ));
+
+  derpNodeType = types.submodule {
+    options = {
+      name = mkOption {
+        type = types.str;
+      };
+      regionID = mkOption {
+        type = types.int;
+      };
+      hostName = mkOption {
+        type = types.str;
+      };
+      stunPort = mkOption {
+        type = types.int;
+        default = 3478;
+      };
+      stunOnly = mkOption {
+        type = types.bool;
+        default = false;
+      };
+    };
+  };
+
+  derpRegionType = types.submodule {
+    options = {
+      regionID = mkOption {
+        type = types.int;
+      };
+      regionCode = mkOption {
+        type = types.str;
+      };
+      regionName = mkOption {
+        type = types.str;
+      };
+      nodes = mkOption {
+        type = types.listOf derpNodeType;
+      };
+    };
+  };
+
   grantSubmodule = types.submodule {
     options = {
       src = mkOption {
@@ -19,9 +64,9 @@ let
         example = [ "tcp:22" "100.0.0.0/8" ];
       };
       app = mkOption {
-        type = types.nullOr (types.listOf types.str);
+        type = types.nullOr appCapabilityType;
         default = null;
-        description = "Allow access to specific applications.";
+        description = "Application-layer capabilities (e.g. tailsql, golink).";
       };
       via = mkOption {
         type = types.listOf types.str;
@@ -51,7 +96,8 @@ let
         description = "Destination hosts or tags.";
       };
       users = mkOption {
-        type = types.listOf types.str;
+        type = types.nullOr (types.listOf types.str);
+        default = null;
         description = "Destination users to allow SSH access to.";
       };
       checkPeriod = mkOption {
@@ -63,6 +109,12 @@ let
         type = types.nullOr (types.listOf types.str);
         default = null;
         description = "Environment variables to accept from the client.";
+      };
+      srcPosture = mkOption {
+        type = types.listOf types.str;
+        default = [ ];
+        description = "Posture conditions restricting the SSH client.";
+        example = [ "posture:latestMac" ];
       };
     };
   };
@@ -86,6 +138,197 @@ let
         type = types.nullOr types.str;
         default = null;
         description = "Protocol to allow (e.g. 'tcp', 'udp', 'icmp').";
+      };
+    };
+  };
+
+  testSubmodule = types.submodule {
+    options = {
+      src = mkOption {
+        type = types.str;
+        description = "Source identity to test from (user, group, tag, or host).";
+      };
+      srcPostureAttrs = mkOption {
+        type = types.nullOr (types.attrsOf types.str);
+        default = null;
+        description = "Posture attributes to simulate for this test.";
+      };
+      proto = mkOption {
+        type = types.nullOr types.str;
+        default = null;
+        description = "Protocol to test (tcp, udp, icmp).";
+      };
+      accept = mkOption {
+        type = types.listOf types.str;
+        default = [ ];
+        description = "Destinations that should be reachable.";
+      };
+      deny = mkOption {
+        type = types.listOf types.str;
+        default = [ ];
+        description = "Destinations that should be blocked.";
+      };
+    };
+  };
+
+  sshTestSubmodule = types.submodule {
+    options = {
+      src = mkOption {
+        type = types.str;
+        description = "SSH client identity.";
+      };
+      dst = mkOption {
+        type = types.listOf types.str;
+        description = "SSH destinations.";
+      };
+      accept = mkOption {
+        type = types.listOf types.str;
+        default = [ ];
+        description = "SSH usernames that should be accepted without checks.";
+      };
+      check = mkOption {
+        type = types.listOf types.str;
+        default = [ ];
+        description = "SSH usernames that should require re-auth checks.";
+      };
+      deny = mkOption {
+        type = types.listOf types.str;
+        default = [ ];
+        description = "SSH usernames that should be denied.";
+      };
+      srcPostureAttrs = mkOption {
+        type = types.nullOr (types.attrsOf types.str);
+        default = null;
+        description = "Posture attributes to simulate for this test.";
+      };
+    };
+  };
+
+  appConnectorSubmodule = types.submodule {
+    options = {
+      name = mkOption {
+        type = types.str;
+        description = "Human-readable connector name.";
+      };
+      connectors = mkOption {
+        type = types.listOf types.str;
+        description = "Tags of devices acting as app connectors.";
+      };
+      domains = mkOption {
+        type = types.listOf types.str;
+        description = "Domains the connector proxies.";
+      };
+      routes = mkOption {
+        type = types.listOf types.str;
+        default = [ ];
+        description = "Optional CIDR routes the connector proxies.";
+      };
+    };
+  };
+
+  authKeySubmodule = types.submodule ({ name, config, ... }: {
+    options = {
+      description = mkOption {
+        type = types.str;
+        description = "Human-readable description for this auth key.";
+      };
+      tags = mkOption {
+        type = types.listOf types.str;
+        default = [ ];
+        description = "Tags to apply to this auth key.";
+      };
+      reusable = mkOption {
+        type = types.bool;
+        default = true;
+        description = "Allow multiple devices to use this key.";
+      };
+      ephemeral = mkOption {
+        type = types.bool;
+        default = false;
+        description = "Ephemeral devices are removed on disconnect.";
+      };
+      preauthorized = mkOption {
+        type = types.bool;
+        default = true;
+        description = "Pre-approve devices using this key.";
+      };
+      recreateIfInvalid = mkOption {
+        type = types.enum [ "always" "never" ];
+        default = "always";
+        description = "Whether to recreate key if invalid (expired, revoked, deleted).";
+      };
+
+      exportPath = {
+        enable = mkOption {
+          type = types.bool;
+          default = false;
+          description = "Write the auth key value to a file on disk after terraform apply.";
+        };
+
+        path = mkOption {
+          type = types.path;
+          default = "/var/lib/tailscale-manager/keys/${name}";
+          defaultText = literalExpression ''"/var/lib/tailscale-manager/keys/<name>"'';
+          description = "Path where the key value is written.";
+        };
+
+        owner = mkOption {
+          type = types.str;
+          default = "root";
+          description = "Owner of the key file.";
+        };
+
+        group = mkOption {
+          type = types.str;
+          default = "root";
+          description = "Group of the key file.";
+        };
+
+        mode = mkOption {
+          type = types.str;
+          default = "0600";
+          description = "File permissions (octal string, e.g. \"0600\", \"0640\").";
+        };
+      };
+
+    };
+  });
+
+  nodeAttrsSubmodule = types.submodule {
+    options = {
+      target = mkOption {
+        type = types.listOf types.str;
+        description = "Which nodes the attributes apply to.";
+      };
+      attr = mkOption {
+        type = types.nullOr (types.listOf types.str);
+        default = null;
+        description = "Device attributes (funnel, nextdns:<id>, disable-ipv4, etc.).";
+      };
+      app = mkOption {
+        type = types.nullOr appCapabilityType;
+        default = null;
+        description = "App-layer capabilities (app connectors).";
+      };
+    };
+  };
+
+  autoApproversSubmodule = types.submodule {
+    options = {
+      routes = mkOption {
+        type = types.attrsOf (types.listOf types.str);
+        default = { };
+        description = "CIDR range to authorized approvers.";
+      };
+      exitNode = mkOption {
+        type = types.listOf types.str;
+        default = [ ];
+        description = "Authorized approvers for exit node advertisements.";
+      };
+      appConnectors = mkOption {
+        type = types.listOf types.str;
+        default = [ ];
+        description = "Authorized approvers for app connector advertisements.";
       };
     };
   };
@@ -164,6 +407,22 @@ in
         description = "Tailscale Terraform provider version constraint.";
       };
 
+      authKeys = mkOption {
+        type = types.attrsOf authKeySubmodule;
+        default = { };
+        description = ''
+          Declare multiple auth keys. When non-empty, these replace the
+          top-level tags and recreateIfInvalid options.
+        '';
+        example = {
+          ci-key = {
+            description = "CI pipeline key";
+            tags = [ "tag:ci" ];
+            ephemeral = true;
+          };
+        };
+      };
+
       policy = {
         enable = mkEnableOption "Structured Tailscale policy (grants, SSH rules, tag owners)";
 
@@ -204,12 +463,112 @@ in
           description = "Additional ACL rules beyond grants (accept/deny).";
         };
 
+        groups = mkOption {
+          type = types.attrsOf (types.listOf types.str);
+          default = { };
+          description = "Named groups of users.";
+          example = {
+            "group:engineering" = [ "alice@example.com" "bob@example.com" ];
+          };
+        };
+
+        hosts = mkOption {
+          type = types.attrsOf types.str;
+          default = { };
+          description = "Named IP/CIDR aliases for use in access rules.";
+          example = {
+            "jump-box" = "100.100.100.100";
+          };
+        };
+
+        ipsets = mkOption {
+          type = types.attrsOf (types.listOf types.str);
+          default = { };
+          description = "Named IP collections.";
+        };
+
+        postures = mkOption {
+          type = types.attrsOf (types.listOf types.str);
+          default = { };
+          description = "Device posture condition expressions.";
+        };
+
+        nodeAttrs = mkOption {
+          type = types.listOf nodeAttrsSubmodule;
+          default = [ ];
+          description = "Per-device attributes (NextDNS, Funnel, randomize-client-port, app connectors).";
+        };
+
+        appConnectors = mkOption {
+          type = types.listOf appConnectorSubmodule;
+          default = [ ];
+          description = ''
+            Declarative app connector configuration.
+            Synthesizes the correct nodeAttrs entry with tailscale.com/app-connectors capability.
+          '';
+        };
+
+        autoApprovers = mkOption {
+          type = autoApproversSubmodule;
+          default = { };
+          description = "Users/groups/tags that can bypass approval for routes and exit nodes.";
+        };
+
+        derpMap = mkOption {
+          type = types.nullOr (types.submodule {
+            options = {
+              omitDefaultRegions = mkOption {
+                type = types.bool;
+                default = false;
+                description = "Disable Tailscale-provided DERP servers.";
+              };
+              regions = mkOption {
+                type = types.attrsOf derpRegionType;
+                default = { };
+                description = "Custom DERP regions.";
+              };
+            };
+          });
+          default = null;
+          description = "Custom DERP relay server configuration.";
+        };
+
+        tests = mkOption {
+          type = types.listOf testSubmodule;
+          default = [ ];
+          description = "ACL/grant assertion tests — policy is rejected if they fail.";
+        };
+
+        sshTests = mkOption {
+          type = types.listOf sshTestSubmodule;
+          default = [ ];
+          description = "SSH assertion tests — policy is rejected if they fail.";
+        };
+
+        disableIPv4 = mkOption {
+          type = types.bool;
+          default = false;
+          description = "Stop assigning IPv4 Tailscale addresses.";
+        };
+
+        randomizeClientPort = mkOption {
+          type = types.bool;
+          default = false;
+          description = "Use random WireGuard port instead of 41641.";
+        };
+
+        oneCGNATRoute = mkOption {
+          type = types.str;
+          default = "";
+          description = "CGNAT route behavior: '' (default), 'mac-always', or 'mac-never'.";
+        };
+
         extraConfig = mkOption {
           type = types.attrsOf types.raw;
           default = { };
           description = ''
-            Extra top-level policy fields not covered by the typed options
-            (e.g. groups, hosts, nodeAttrs, autoApprovers, derpMap).
+            Extra top-level policy fields not covered by the typed options above
+            (e.g. groups, hosts, derpMap).
             These are merged directly into the serialized policy JSON.
           '';
           example = {

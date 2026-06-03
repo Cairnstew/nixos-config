@@ -15,12 +15,12 @@ in
       tags = cfg.tags;
       acl.enable = cfg.acl.enable;
       providerVersion = cfg.providerVersion;
+      authKeys = cfg.authKeys;
       credentialsFile = "/run/agenix/${oauthKeyName}";
       policy = {
         enable = cfg.policy.enable;
         tagOwners = cfg.policy.tagOwners;
         grants =
-          # Prepend inter-node grants from interNodePorts
           (map (port: {
             src = [ "tag:nixos" ];
             dst = [ "tag:nixos" ];
@@ -29,6 +29,19 @@ in
           ++ cfg.policy.grants;
         ssh = cfg.policy.ssh;
         acls = cfg.policy.acls;
+        groups = cfg.policy.groups;
+        hosts = cfg.policy.hosts;
+        ipsets = cfg.policy.ipsets;
+        postures = cfg.policy.postures;
+        nodeAttrs = cfg.policy.nodeAttrs;
+        appConnectors = cfg.policy.appConnectors;
+        autoApprovers = cfg.policy.autoApprovers;
+        derpMap = cfg.policy.derpMap;
+        tests = cfg.policy.tests;
+        sshTests = cfg.policy.sshTests;
+        disableIPv4 = cfg.policy.disableIPv4;
+        randomizeClientPort = cfg.policy.randomizeClientPort;
+        oneCGNATRoute = cfg.policy.oneCGNATRoute;
       } // cfg.policy.extraConfig;
     };
 

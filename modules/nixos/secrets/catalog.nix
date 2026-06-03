@@ -60,6 +60,6 @@ in
     "tailscale.authKey" = secret "/secrets/tailscale/tailscale-authkey.age" { owner = me.username; };
     "tailscale.oauthKey" = secret "/secrets/tailscale/tailscale-oauthkey.age" { owner = me.username; };
     "tailscale.sshKey" = secret "/secrets/tailscale/tailscale-ssh-key.age" { owner = me.username; };
-    "tailscale.cloudAuth" = secret "/secrets/tailscale/tailscale-cloud-auth.age" { owner = me.username; };
+
   };
 }

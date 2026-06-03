@@ -100,7 +100,7 @@ Quick reference for common maintenance tasks. Lists files to read and edit in or
 
 **Read:**
 1. `modules/flake-parts/ventoy/README.md` (workflow section)
-2. `modules/flake-parts/ventoy/installer-iso.nix` (ISO builder)
+2. `modules/flake-parts/live-iso/` (live-iso builder — ISO is `live.isos.ventoy` in `ventoy/config.nix`)
 
 **Edit:**
 1. (Optional) `modules/flake-parts/ventoy/ts.key` — put an ephemeral Tailscale auth key here
@@ -234,6 +234,12 @@ All `my.*` options declared across module files.
 | `my.services.tailscale.ssh.user` | str | — | Local user for SSH config |
 | `my.services.tailscale.ssh.publicKeyPath` | path | `null` | Path to Tailscale SSH public key |
 | `my.services.tailscale.ssh.extraHostConfig` | lines | `""` | Extra SSH config lines |
+| `my.services.tailscale.manager.authKeys.<name>.exportPath.enable` | bool | `false` | Write auth key value to disk after terraform apply |
+| `my.services.tailscale.manager.authKeys.<name>.exportPath.path` | path | `"/var/lib/tailscale-manager/keys/<name>"` | Path where key value is written |
+| `my.services.tailscale.manager.authKeys.<name>.exportPath.owner` | str | `"root"` | Owner of the key file |
+| `my.services.tailscale.manager.authKeys.<name>.exportPath.group` | str | `"root"` | Group of the key file |
+| `my.services.tailscale.manager.authKeys.<name>.exportPath.mode` | str | `"0600"` | File permissions (octal string) |
+| `my.services.tailscale.manager.authKeys.<name>.path` | path | `null` | Resolved export path (readOnly) |
 | `my.services.ollama.enable` | bool | `false` | Ollama OCI container service |
 | `my.services.ollama.image` | str | `"ollama/ollama:latest"` | Docker image |
 | `my.services.ollama.dataDir` | str | `"/var/lib/ollama"` | Host data directory |

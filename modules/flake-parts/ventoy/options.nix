@@ -394,16 +394,6 @@ in
       description = "Mount point for the Ventoy data partition.";
     };
 
-    buildInstallerIso = mkOption {
-      type = types.bool;
-      default = false;
-      description = ''
-        Include the pre-built NixOS installer ISO (packages.installer-iso) as a
-        pure build input to the deploy script. The ISO is baked into the script
-        at eval time — no nix run side-effect.
-      '';
-    };
-
     grubConfig = mkOption {
       type = types.nullOr types.package;
       default = null;
@@ -433,47 +423,6 @@ in
         type = types.nullOr types.int;
         default = null;
         description = "Preserve space at bottom of disk (-r SIZE_MB). Only for install.";
-      };
-    };
-
-    installerIso = {
-      enable = mkOption {
-        type = types.bool;
-        default = false;
-        description = "Build a minimal NixOS installer ISO via nixpkgs.nixosSystem for Ventoy deployment.";
-      };
-      sshKeys = mkOption {
-        type = types.listOf types.str;
-        default = [ ];
-        description = "SSH public keys added to the installer ISO's root user.";
-      };
-      extraPackages = mkOption {
-        type = types.listOf types.package;
-        default = [ ];
-        description = "Extra packages to include in the installer ISO.";
-      };
-      system = mkOption {
-        type = types.str;
-        default = "x86_64-linux";
-        description = "System architecture for the nixosSystem evaluation.";
-      };
-      tailscale = {
-        enable = mkOption {
-          type = types.bool;
-          default = false;
-          description = "Enable Tailscale on the installer ISO for remote SSH access over Tailscale.";
-        };
-        authKeyFile = mkOption {
-          type = types.nullOr types.path;
-          default = null;
-          description = ''
-            Path to a file containing a Tailscale auth key. The file must be within the
-            flake source (resolved in pure eval mode). Leave unset for manual
-            `tailscale up` via LAN SSH.
-            Recommended: use ephemeral or tag-based auth keys to limit blast radius.
-          '';
-          example = ./ts.key;
-        };
       };
     };
 

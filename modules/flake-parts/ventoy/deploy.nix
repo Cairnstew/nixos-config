@@ -2,6 +2,21 @@
 let
   vCfg = config.ventoy;
 
+  # Collect ventoy-tagged live ISOs from all NixOS host configs.
+  hostVentoyIsos = builtins.foldl'
+    (acc: hostName:
+      let
+        hostCfg = config.flake.nixosConfigurations.${hostName} or { };
+        hostLive = hostCfg.config.my.live or { };
+      in
+      if hostLive ? isos then
+        acc // lib.filterAttrs (_: iso: iso.ventoy or false) hostLive.isos
+      else
+        acc
+    )
+    { }
+    (builtins.attrNames (config.flake.nixosConfigurations or { }));
+
   storeHash = p:
     let name = builtins.baseNameOf p;
     in lib.head (lib.splitString "-" name);
@@ -74,12 +89,23 @@ in
 
       ventoyJsonFile = pkgs.writeText "ventoy.json" (builtins.toJSON ventoyJson);
 
+      # ── Auto-detect ventoy-tagged live ISOs ──────────────────────────
+      # Collected from NixOS host configs at the top level above.
+      ventoyLiveIsos = lib.mapAttrs'
+        (name: iso:
+          lib.nameValuePair "live-${name}" {
+            source = config.packages.${"live-iso-${name}"} or (throw "live-iso-${name} not found — is the live-iso module enabled?");
+            target = "/iso/linux/${name}.iso";
+          }
+        )
+        hostVentoyIsos;
+
       # ── ISO mappings ──────────────────────────────────────────────
       gpartedIso = pkgs.runCommand "gparted-live-1.6.0-1-amd64.iso" { } ''
         cp ${inputs.gparted-iso} $out
       '';
 
-      allIsos = vCfg.isos // {
+      allIsos = vCfg.isos // ventoyLiveIsos // {
         gparted = {
           source = gpartedIso;
           target = "/iso/linux/gparted-live-1.6.0-1-amd64.iso";
@@ -135,20 +161,18 @@ in
         '') (lib.filterAttrs (n: _: lib.hasPrefix "windows-answ-pro-" n) config.packages))}
       '';
 
+      ventoyIso = config.packages.live-iso-ventoy or null;
     in
     {
       packages = {
         ventoy-deploy = pkgs.callPackage ./deploy-script {
           inherit (vCfg) device mountPoint;
-          buildInstallerIso = vCfg.installerIso.enable;
+          buildInstallerIso = ventoyIso != null;
           ventoyJson = ventoyJsonFile;
           grubConfig = vCfg.grubConfig;
           isoMappings = isoMappings;
           fileMappings = fileMappings;
-          installerIso =
-            if vCfg.installerIso.enable
-            then config.packages.ventoy-installer-iso or null
-            else null;
+          installerIso = ventoyIso;
           secureBoot = vCfg.installOptions.secureBoot;
           gpt = vCfg.installOptions.gpt;
           label = vCfg.installOptions.label;

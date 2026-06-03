@@ -37,6 +37,9 @@ pkgs.writeShellScriptBin "ventoy-deploy" ''
   export LABEL="${label}"
   ${lib.optionalString (reserveSizeMb != null) "export RESERVE_SIZE_MB='${toString reserveSizeMb}'"}
 
+  # ── Runtime dependencies for deploy logic ──────────────────────────
+  export PATH="${pkgs.curl}/bin:${pkgs.jq}/bin:${pkgs.coreutils}/bin:$PATH"
+
   # ── Execute the deploy logic ───────────────────────────────────────
   . ${script}
   main "$@"

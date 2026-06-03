@@ -30,6 +30,6 @@
   users.users.seanc = {
     isNormalUser = true;
     description = "Sean Cairns";
-    extraGroups = [ "networkmanager" "wheel" "docker" "terraform" ];
+    extraGroups = [ "networkmanager" "wheel" "terraform" ];
   };
 }

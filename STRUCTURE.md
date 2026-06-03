@@ -81,16 +81,19 @@ Flake-level modules for outputs, packages, and development tools.
 | `nixos-flake.nix` | nixos-unified integration and primary inputs |
 | `packages.nix` | Package exports and autowiring |
 | `templates.nix` | Flake templates exposed via `nix flake init` |
-| `ventoy-config.nix` | Ventoy multi-boot USB — top-level config: collects host ISOs, enables installer ISO, wires options/defaults [→ packages.ventoy-deploy + packages.ventoy-installer-iso] |
-| `ventoy/options.nix` | `ventoy.*` option declarations (ventoy.json schema, install options, answer file settings, installer ISO) |
+| `ventoy-config.nix` | Ventoy multi-boot USB — top-level config: collects host ISOs, wires options/defaults [→ packages.ventoy-deploy + packages.live-iso-ventoy] |
+| `ventoy/options.nix` | `ventoy.*` option declarations (ventoy.json schema, install options, answer file settings) |
 | `ventoy/deploy.nix` | Builds `ventoy-deploy` package: generates ventoy.json, assembles ISO/file mappings, calls deploy-script |
 | `ventoy/deploy-script/default.nix` | Nix wrapper for ventoy-deploy.sh — sets env vars from eval-time config |
 | `ventoy/deploy-script/ventoy-deploy.sh` | Deploy script: device detection, mount, copy ISOs, verify integrity, deploy config |
 | `ventoy/deploy-script/tests.nix` | ShellCheck tests for deploy script |
 | `ventoy/answer-files.nix` | Windows unattended XML answer file generation from templates |
-| `ventoy/installer-iso.nix` | Standalone NixOS installer ISO builder (nixpkgs.nixosSystem) |
 | `ventoy/ts.key` | Ephemeral Tailscale auth key for installer ISO |
 | `ventoy/README.md` | Full documentation: architecture, workflow, CLI reference, debugging |
+| `live-iso/` | Custom NixOS live ISO builder — defines `live.isos` option [→ packages.live-iso-<name>] |
+| `live-iso/default.nix` | Import manifest |
+| `live-iso/options.nix` | `live.isos` option declarations (baseModule, extraPackages, sshKeys, tailscale, etc.) |
+| `live-iso/config.nix` | ISO builder: calls nixpkgs.lib.nixosSystem + `config.system.build.isoImage` per entry |
 | `terranix.nix` | Terraform/terranix integration |
 | `testing.nix` | Testing framework and `my.testing` options |
 | `README.md` | Documentation for flake-parts conventions |
@@ -216,6 +219,10 @@ System and home profile definitions.
 | `ventoy/tests.nix` | Module tests |
 | `ventoy/meta.nix` | Module metadata |
 | `ventoy/README.md` | Documentation (cross-refs flake-parts ventoy docs) |
+| `live-iso/` | Custom NixOS live ISO configuration [→ nixosModules.live-iso] |
+| `live-iso/default.nix` | Module entry point (import manifest) |
+| `live-iso/options.nix` | `my.live.isos` option declarations |
+| `live-iso/meta.nix` | Module metadata |
 | `_1password/` | 1Password integration |
 | `_1password/default.nix` | 1Password system config |
 | `_1password/home.nix` | 1Password SSH agent home config |

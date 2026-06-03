@@ -1,20 +1,14 @@
-# modules/flake-parts/secrets.nix
-# Secrets management CLI — devShell + packages for secret lifecycle
 { config, lib, inputs, ... }:
 let
-  # The repo root, relative to this file (modules/flake-parts/secrets.nix → ./../..)
-  root = ../..;
+  root = ../../..;
 
-  # Minimal flake-like object for catalog evaluation
   flakeMock = {
     inputs = { self = root; };
     config = { me = config.me; };
   };
 
-  # Import catalog to bake data into scripts
-  catalog = (import ../nixos/secrets/catalog.nix { flake = flakeMock; inherit lib; }).secretsCatalog;
+  catalog = (import ../../nixos/secrets/catalog.nix { flake = flakeMock; inherit lib; }).secretsCatalog;
 
-  # Build list of non-null-file entries for generation
   catalogEntries = lib.filter (e: e.fileRel != null) (lib.mapAttrsToList (name: def: {
     logicalPath = name;
     secretName = def.name;
@@ -24,7 +18,6 @@ let
     mode = def.mode or "0400";
   }) catalog);
 
-  # Also collect entries with null files for warnings
   catalogNullEntries = lib.filter (e: e.fileRel == null) (lib.mapAttrsToList (name: def: {
     logicalPath = name;
     secretName = def.name;
@@ -39,7 +32,6 @@ in
     let
       agenix = inputs.agenix.packages.${system}.default;
 
-      # Write catalog JSON to files referenced at script runtime
       catalogJsonFile = pkgs.writeText "secrets-catalog.json" catalogJson;
       catalogNullJsonFile = pkgs.writeText "secrets-null-catalog.json" catalogNullJson;
 
@@ -86,23 +78,15 @@ in
             exit 1
           fi
 
-          # Extract the let-block: everything from start up to and including the last
-          # let assignment (a line starting with non-whitespace non-comment before in {)
-          # This matches everything before `in` on its own line
           LET_BLOCK=$(sed -n '1,/^in$/p' "$SECRETS_FILE" | head -n -1)
           if [ -z "$LET_BLOCK" ]; then
             echo "ERROR: Could not find let-block in $SECRETS_FILE"
             exit 1
           fi
 
-          # Also capture the rest of the file after `in` to delete it
-          # (the `{` after `in` might be on the same or next line)
-
-          # Generate the attrset from catalog JSON
           ENTRIES=$(cat "''${CATALOG_JSON}" | jq -r '.[] | select(.fileRel != null) | "  \"\(.fileRel | ltrimstr("/secrets/"))\".publicKeys = all;"' | sort)
           NULL_ENTRIES=$(cat "''${CATALOG_NULL_JSON}" | jq -r '.[] | "  # \(.logicalPath) → \(.secretName) (file not yet created)"' | sort)
 
-          # Build the generated file
           OUTPUT="$LET_BLOCK
           in
           {
@@ -111,7 +95,6 @@ in
           $NULL_ENTRIES
           }"
 
-          # Format
           FORMATTED=$(echo "$OUTPUT" | nixpkgs-fmt 2>/dev/null || echo "$OUTPUT")
 
           if [ "$CHECK" = true ]; then
@@ -159,7 +142,7 @@ in
             exit 0
           fi
 
-          FILE="''${1#./}"  # strip leading ./
+          FILE="''${1#./}"
           SECRETS_DIR="./secrets"
 
           mkdir -p "$SECRETS_DIR/$(dirname "$FILE")"
@@ -175,26 +158,53 @@ in
         text = ''
           set -euo pipefail
 
-          echo "=== Rekeying all secrets from 1Password ==="
+          usage() {
+            cat <<EOF
+          Usage: secrets-rekey [-i <private-key-file>]
 
-          if ! op account list &>/dev/null || [ -z "$(op account list)" ]; then
-            echo "No 1Password accounts configured. Run: op account add"
-            exit 1
+          Re-encrypt all secrets with current recipients.
+
+          Options:
+            -i <path>   Path to age private key file (e.g. /etc/ssh/ssh_host_ed25519_key)
+                        If omitted, reads the key from 1Password (op://Private/Nixos/private key).
+            --help, -h  Show this help
+          EOF
+          }
+
+          KEYFILE=""
+
+          while [ $# -gt 0 ]; do
+            case "$1" in
+              -i) KEYFILE="$2"; shift 2 ;;
+              --help|-h) usage; exit 0 ;;
+              *) echo "Unknown arg: $1"; usage; exit 1 ;;
+            esac
+          done
+
+          if [ -z "$KEYFILE" ]; then
+            echo "=== Rekeying all secrets via 1Password ==="
+
+            if ! op account list &>/dev/null || [ -z "$(op account list)" ]; then
+              echo "No 1Password accounts configured. Run: op account add"
+              exit 1
+            fi
+
+            if ! op account get &>/dev/null; then
+              eval "$(op signin)"
+            fi
+
+            KEYFILE=$(mktemp)
+            trap 'rm -f $KEYFILE' EXIT
+
+            echo "Reading private key from 1Password..."
+            op read "op://Private/Nixos/private key" > "$KEYFILE"
+            chmod 600 "$KEYFILE"
           fi
-
-          if ! op account get &>/dev/null; then
-            eval "$(op signin)"
-          fi
-
-          TMPKEY=$(mktemp)
-          trap 'rm -f $TMPKEY' EXIT
-
-          echo "Reading private key from 1Password..."
-          op read "op://Private/Nixos/private key" > "$TMPKEY"
-          chmod 600 "$TMPKEY"
 
           echo "Rekeying all secrets..."
-          exec agenix -r -i "$TMPKEY"
+          FLAKE_ROOT=$(git rev-parse --show-toplevel 2>/dev/null || echo "$PWD")
+          cd "$FLAKE_ROOT/secrets"
+          exec agenix -r -i "$KEYFILE"
         '';
       };
 
@@ -212,7 +222,6 @@ in
 
           echo "=== Secrets Validation ==="
 
-          # Check 1: Every catalog entry with fileRel has a .age file
           echo "--- Check 1: Catalog entries → .age files ---"
           cat "$CATALOG_JSON" | jq -r '.[].fileRel | ltrimstr("/secrets/")' | while read -r rel; do
             FILE="$FLAKE_ROOT/secrets/$rel"
@@ -224,7 +233,6 @@ in
             fi
           done
 
-          # Check 2: Every .age file has a catalog entry
           echo "--- Check 2: .age files → catalog entries ---"
           find "$FLAKE_ROOT/secrets" -name '*.age' -not -path '*/\.*' -printf '%P\n' | while IFS= read -r rel; do
             FOUND=$(cat "$CATALOG_JSON" | jq -r --arg rel "/secrets/$rel" '.[] | select(.fileRel == $rel) | .logicalPath')
@@ -235,7 +243,6 @@ in
             fi
           done
 
-          # Check 3: Verify secrets-generate --check
           echo "--- Check 3: secrets/secrets.nix in sync ---"
           if ! "$SECRETS_GENERATE" --check 2>&1; then
             EXIT_CODE=1
@@ -257,7 +264,6 @@ in
         text = ''
           CATALOG_JSON='${catalogJsonFile}'
 
-          set -euo pipefail
           set -euo pipefail
 
           usage() {
@@ -304,14 +310,11 @@ in
           FLAKE_ROOT="''${FLAKE_ROOT:-$PWD}"
           CATALOG_FILE="$FLAKE_ROOT/modules/nixos/secrets/catalog.nix"
 
-          # Validate: check catalog doesn't already have this path
           if cat "$CATALOG_JSON" | jq -e --arg path "$LOGICAL_PATH" '.[] | select(.logicalPath == $path)' > /dev/null 2>&1; then
             echo "ERROR: '$LOGICAL_PATH' already exists in the catalog!"
             exit 1
           fi
 
-          # Derive fileRel from logical path: dots → /, last segment is filename
-          # ai.myNewToken → ai/my-new-token.age
           DIR_PART=$(echo "$LOGICAL_PATH" | sed 's/\.[^.]*$//' | tr '.' '/')
           BASE_PART=$(echo "$LOGICAL_PATH" | sed 's/.*\.//' | sed 's/\([a-z]\)\([A-Z]\)/\1-\2/g' | tr '[:upper:]' '[:lower:]')
           FILE_REL="/$DIR_PART/$BASE_PART.age"
@@ -338,6 +341,156 @@ in
           echo "  config.age.secrets.\"$SECRET_NAME\".path"
         '';
       };
+
+      secrets-add-host = pkgs.writeShellApplication {
+        name = "secrets-add-host";
+        runtimeInputs = with pkgs; [ gnused gnugrep nixpkgs-fmt coreutils ];
+        text = ''
+          set -euo pipefail
+
+          usage() {
+            cat <<EOF
+          Usage: secrets-add-host <hostname> <ssh-public-key>
+
+          Add a new SSH host key to secrets/secrets.nix.
+          The host key is added to the let-block and the systems list,
+          so future rekey operations will include this host.
+
+          After adding, run 'secrets-rekey' to re-encrypt secrets for the new host.
+
+          Arguments:
+            hostname         Host name (e.g., "mynewbox")
+            ssh-public-key   SSH public key string (e.g., "ssh-ed25519 AAAA... root@hostname")
+          EOF
+          }
+
+          if [ $# -ne 2 ] || [ "$1" = "--help" ] || [ "$1" = "-h" ]; then
+            usage
+            exit 0
+          fi
+
+          host="$1"
+          pubkey="$2"
+
+          FLAKE_ROOT="''${FLAKE_ROOT:-$PWD}"
+          SECRETS_FILE="$FLAKE_ROOT/secrets/secrets.nix"
+
+          if [ ! -f "$SECRETS_FILE" ]; then
+            echo "ERROR: $SECRETS_FILE not found. Run from repo root or set FLAKE_ROOT."
+            exit 1
+          fi
+
+          if ! echo "$pubkey" | grep -qE '^ssh-ed25519 [A-Za-z0-9+/]+=* '; then
+            echo "ERROR: Invalid SSH public key format. Expected: ssh-ed25519 <base64> <comment>"
+            exit 1
+          fi
+
+          if grep -q "^  $host = " "$SECRETS_FILE"; then
+            echo "ERROR: Host '$host' already exists in $SECRETS_FILE"
+            echo "If you want to replace it, remove the old entry first."
+            exit 1
+          fi
+
+          tmpfile=$(mktemp)
+          awk -v h="$host" -v k="$pubkey" '
+          {
+            if ($0 ~ /^[[:space:]]*systems = \[/) {
+              print "  " h " = \"" k "\";"
+              sub(/];([[:space:]]*)$/, " " h " ];")
+              print
+            } else {
+              print
+            }
+          }
+          ' "$SECRETS_FILE" > "$tmpfile" && mv "$tmpfile" "$SECRETS_FILE"
+
+          nixpkgs-fmt "$SECRETS_FILE"
+
+          echo "Added host '$host' to $SECRETS_FILE"
+          echo "Run 'secrets-rekey' to re-encrypt secrets for the new host."
+        '';
+      };
+
+      secrets-set = pkgs.writeShellApplication {
+        name = "secrets-set";
+        runtimeInputs = [ agenix ] ++ (with pkgs; [ age nix jq coreutils ]);
+        text = ''
+          CATALOG_JSON='${catalogJsonFile}'
+
+          set +x
+          set -euo pipefail
+
+          usage() {
+            cat <<EOF
+          Usage: secrets-set <relative-age-file>
+
+          Re-encrypt an existing secret with a new value read from stdin.
+          The encrypted .age file must already exist in the catalog.
+
+          The path is relative to the secrets/ directory.
+          Examples:
+            echo -n "new-token" | secrets-set ai/huggingface-token.age
+            op read "op://Private/MySecret/credential" | secrets-set github/github-token.age
+
+          Security:
+            - Secret value is read ONLY from stdin (never from CLI args)
+            - Temp files are securely deleted on exit
+          EOF
+          }
+
+          if [ $# -eq 0 ] || [ "$1" = "--help" ] || [ "$1" = "-h" ]; then
+            usage
+            exit 0
+          fi
+
+          FILE_REL="''${1#./}"
+          FLAKE_ROOT="''${FLAKE_ROOT:-$PWD}"
+
+          # Validate: must exist in catalog
+          if ! cat "$CATALOG_JSON" | jq -e --arg rel "/secrets/$FILE_REL" '.[] | select(.fileRel == $rel)' > /dev/null 2>&1; then
+            echo "ERROR: '$FILE_REL' not found in catalog. Use 'secrets-new' to create a new secret."
+            exit 1
+          fi
+
+          # Validate: .age file must already exist
+          AGE_FILE="$FLAKE_ROOT/secrets/$FILE_REL"
+          if [ ! -f "$AGE_FILE" ]; then
+            echo "ERROR: $AGE_FILE does not exist. Use 'secrets-new' to create it first."
+            exit 1
+          fi
+
+          # Read stdin into secure temp file
+          TMPFILE=$(mktemp)
+          trap 'rm -f "$TMPFILE"' EXIT
+          chmod 600 "$TMPFILE"
+          cat > "$TMPFILE"
+
+          if [ ! -s "$TMPFILE" ]; then
+            echo "ERROR: empty secret value. Refusing to write."
+            exit 1
+          fi
+
+          # Extract public keys from secrets/secrets.nix
+          RECIPIENTS_FILE=$(mktemp)
+          trap 'rm -f "$TMPFILE" "$RECIPIENTS_FILE"' EXIT
+
+          nix eval --file "$FLAKE_ROOT/secrets/secrets.nix" \
+            --apply 'x: builtins.toJSON (builtins.concatLists (builtins.map (n: (builtins.getAttr n x).publicKeys or []) (builtins.attrNames x)))' \
+            --json 2>/dev/null | jq 'unique | .[]' -r > "$RECIPIENTS_FILE"
+
+          if [ ! -s "$RECIPIENTS_FILE" ]; then
+            echo "ERROR: could not extract public keys from secrets/secrets.nix"
+            exit 1
+          fi
+
+          # Encrypt with age using all recipients
+          age -R "$RECIPIENTS_FILE" -o "$AGE_FILE" "$TMPFILE"
+
+          # Clear secret from memory before trap deletes
+          : > "$TMPFILE"
+          echo "Updated: $FILE_REL"
+        '';
+      };
     in
     {
       devShells.secrets = pkgs.mkShell {
@@ -348,7 +501,7 @@ in
           nixpkgs-fmt
         ]);
 
-        AGENIX_RULES = toString ./../../secrets/secrets.nix;
+        AGENIX_RULES = toString ../../../secrets/secrets.nix;
 
         shellHook = ''
           export EDITOR=''${EDITOR:-nano}
@@ -377,6 +530,14 @@ in
             ${secrets-new}/bin/secrets-new "$@"
           }
 
+          secrets-add-host() {
+            ${secrets-add-host}/bin/secrets-add-host "$@"
+          }
+
+          secrets-set() {
+            ${secrets-set}/bin/secrets-set "$@"
+          }
+
           echo ""
           echo "=== Secrets DevShell ==="
           echo "Available commands (run from repo root):"
@@ -385,6 +546,8 @@ in
           echo "  secrets-rekey       → rekey all secrets using 1Password"
           echo "  secrets-validate    → validate catalog vs secrets.nix vs files"
           echo "  secrets-new <path>  → interactive secret creation workflow"
+          echo "  secrets-set <file>  → re-encrypt an existing secret from stdin"
+          echo "  secrets-add-host    → add a new SSH host key to secrets/secrets.nix"
           echo ""
           echo "Also available via nix run .#secrets-<cmd>"
           echo ""
@@ -393,19 +556,23 @@ in
 
       packages = {
         inherit
+          secrets-add-host
           secrets-generate
           secrets-edit
           secrets-rekey
           secrets-validate
-          secrets-new;
+          secrets-new
+          secrets-set;
       };
 
       apps = {
+        secrets-add-host = { type = "app"; program = "${secrets-add-host}/bin/secrets-add-host"; meta.description = "Add a new SSH host key to secrets/secrets.nix let-block"; };
         secrets-generate = { type = "app"; program = "${secrets-generate}/bin/secrets-generate"; meta.description = "Regenerate secrets/secrets.nix from catalog (outputs to stdout)"; };
         secrets-edit = { type = "app"; program = "${secrets-edit}/bin/secrets-edit"; meta.description = "Create/edit an encrypted .age file"; };
         secrets-rekey = { type = "app"; program = "${secrets-rekey}/bin/secrets-rekey"; meta.description = "Rekey all secrets using 1Password"; };
         secrets-validate = { type = "app"; program = "${secrets-validate}/bin/secrets-validate"; meta.description = "Validate catalog vs secrets.nix vs .age files"; };
         secrets-new = { type = "app"; program = "${secrets-new}/bin/secrets-new"; meta.description = "Interactive secret creation workflow"; };
+        secrets-set = { type = "app"; program = "${secrets-set}/bin/secrets-set"; meta.description = "Re-encrypt an existing secret with a new value from stdin"; };
       };
     };
 }

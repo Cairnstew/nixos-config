@@ -7,5 +7,6 @@ result-*
 **/flake-profile*
 /.pre-commit-config.yaml
 /ISO/
+modules/flake-parts/ventoy/ts.key
 *.db
 *.sqlite

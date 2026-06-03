@@ -47,6 +47,9 @@ in
     ./caches
     ./default-build.nix
 
+    # ── ISO Building ────────────────────────────────────────────────────────
+    ./live-iso
+
     # ── Dual-boot / Windows Support ────────────────────────────────────────
     ./disko
     ./dscnix
@@ -84,10 +87,16 @@ in
     isNormalUser = lib.mkDefault true;
 
     # mkDefault for groups: Allows hosts to add additional groups
-    # Default groups: terraform (for IaC), docker (for containers), wheel (for sudo)
-    # Override when: Host needs additional groups (e.g., video, audio, plugdev)
-    extraGroups = lib.mkDefault [ "terraform" "docker" "wheel" ];
+    # Default groups: terraform (for IaC), wheel (for sudo)
+    # NOTE: docker group is managed by my.virtualisation.docker.users below,
+    #       not here, so host extraGroups overrides can't drop it.
+    extraGroups = lib.mkDefault [ "terraform" "wheel" ];
   };
+
+  # Ensure the primary user is always in the docker group when docker is enabled.
+  # Using the docker module's users option (not extraGroups) so host-level
+  # extraGroups overrides can't accidentally drop docker access.
+  my.virtualisation.docker.users = [ flake.config.me.username ];
 
   # ── Sensible Defaults ────────────────────────────────────────────────────
 
@@ -132,11 +141,28 @@ in
         enable = lib.mkDefault true;
         acl.enable = lib.mkDefault true;
 
+        authKeys = lib.mkDefault {
+          temp-key = {
+            description = "Temporary live environment key";
+            tags = [ "tag:temp" ];
+            ephemeral = true;
+            preauthorized = false;
+            recreateIfInvalid = "always";
+        exportPath = {
+          enable = true;
+          owner = "root";
+          group = "root";
+          mode = "0644";
+        };
+          };
+        };
+
         policy = {
           enable = lib.mkDefault true;
 
           tagOwners = lib.mkDefault {
             "tag:nixos" = [ "autogroup:admin" ];
+            "tag:temp" = [ "tag:nixos" ];
           };
 
           interNodePorts = lib.mkDefault [ "tcp:22" ];
@@ -146,6 +172,11 @@ in
               src = [ "autogroup:member" ];
               dst = [ "tag:nixos" ];
               ip = [ "tcp:22" ];
+            }
+            {
+              src = [ "tag:nixos" ];
+              dst = [ "tag:temp" ];
+              ip = [ "*:*" ];
             }
           ];
 
@@ -169,9 +200,57 @@ in
               dst = [ "tag:nixos" ];
               users = [ "root" ];
             }
+            # 3. Allow your NixOS administrators or NixOS nodes to securely Tailscale-SSH
+            # into the temporary live environments for troubleshooting or automation.
+            {
+              action = "accept";
+              src = [ "tag:nixos" ];
+              dst = [ "tag:temp" ];
+              users = [ "root" "autogroup:nonroot" "nixos" ];
+            }
           ];
         };
       };
+    };
+
+    # ── Live ISO Definitions ────────────────────────────────────────────
+    # Minimal deploy ISO with tailscale auto-auth via pre-provisioned temp key.
+    # Auto-deploys to Ventoy USB when ventoy-deploy runs.
+    # Build: nix build .#live-iso-deploy
+    live.isos.deploy = {
+      baseModule = lib.mkDefault "minimal";
+      system = lib.mkDefault "x86_64-linux";
+      enableSSH = lib.mkDefault true;
+      enableFlakes = lib.mkDefault true;
+      squashfsCompression = lib.mkDefault "gzip -Xcompression-level 1";
+      isoName = lib.mkDefault "nixos-deploy-x86_64.iso";
+      volumeID = lib.mkDefault "NIXOS_DEPLOY";
+
+      ventoy = lib.mkDefault true;
+
+      # Tailscale with auto-auth via pre-provisioned temp key
+      tailscale.enable = lib.mkDefault true;
+      tailscale.authKeyFile = lib.mkDefault "/var/lib/tailscale/authkey";
+
+      extraContents = let
+        keyPath = config.services.tailscale-manager.authKeys.temp-key.path;
+        keyStorePath = builtins.path {
+          path = keyPath;
+          name = "tailscale-authkey";
+        };
+      in [
+        {
+          source = keyStorePath;
+          target = "/var/lib/tailscale/authkey";
+        }
+      ];
+
+      extraModules = lib.mkDefault [
+        { services.tailscale.authKeyFile = "/var/lib/tailscale/authkey"; }
+        { services.tailscale.extraUpFlags = lib.mkForce [ "--accept-routes" "--ssh" ]; }
+      ];
+
+      extraPackages = lib.mkDefault (with pkgs; [ ]);
     };
 
     # Git repo sync: Automatically syncs this flake to GitHub
