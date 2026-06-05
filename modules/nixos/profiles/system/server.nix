@@ -30,6 +30,6 @@ in
     # ── Secrets ────────────────────────────────────────────────────────────
     # mkDefault true: Servers typically need secrets for services
     # Override when: Minimal server without secret-dependent services
-    my.secrets.enable = lib.mkDefault true;
+    agenixManager.enable = lib.mkDefault true;
   };
 }

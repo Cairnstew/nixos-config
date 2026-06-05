@@ -153,14 +153,12 @@ System and home profile definitions.
 | `ollama/` | Ollama LLM service in containers [→ nixosModules.ollama] |
 | `ollama/default.nix` | Full module with options and config |
 | `ollama/mcp-package-lock.json` | NPM lockfile for MCP wrapper |
-| `secrets/` | agenix secrets management [→ nixosModules.secrets] |
-| `secrets/default.nix` | Module entry point |
-| `secrets/options.nix` | Secrets catalog options |
-| `secrets/config.nix` | agenix wiring implementation |
-| `secrets/catalog.nix` | Secret definitions catalog |
-| `secrets/secrets.nix` | Secret metadata and option |
+| `secrets/` | agenix secrets management via agenix-manager [→ nixosModules.secrets] |
+| `secrets/default.nix` | Module entry point (imports agenix + tests) |
+| `secrets/secrets-manifest.json` | Declarative secret manifest (SSOT) |
+| `secrets/{name}.age` | Encrypted secret blobs (flat, one per secret) |
 | `secrets/meta.nix` | Metadata |
-| `secrets/tests.nix` | Tests |
+| `secrets/tests.nix` | L1/L2 validation services |
 | `secrets/README.md` | Documentation |
 | `gitreposync/` | Git repository auto-sync service [→ nixosModules.gitreposync] |
 | `gitreposync/default.nix` | Module entry point |

@@ -25,7 +25,7 @@ in
       To enable pushing to a cache:
         my.caches.personal.push.enable = true;
         my.caches.personal.push.tokenFile =
-          config.age.secrets.${config.my.secrets.catalog."system.cache".name}.path;
+          config.age.secrets.nixos-config-cache-token.path;
     '';
     example = lib.literalExpression ''
       {

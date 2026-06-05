@@ -52,7 +52,7 @@ let
           private key. The module declares age.secrets automatically.
           Use this OR keyFile, not both.
         '';
-        example = literalExpression "flake.inputs.self + /secrets/nebula-server.key.age";
+        example = literalExpression "flake.inputs.self + /modules/nixos/secrets/nebula-server.key.age";
       };
 
       keyFile = mkOption {
@@ -121,18 +121,18 @@ in
             ip           = "10.10.0.1/24";
             isLighthouse = true;
             cert         = flake.inputs.self + /certs/server.crt;
-            keySecretFile = flake.inputs.self + /secrets/nebula-server.key.age;
+            keySecretFile = flake.inputs.self + /modules/nixos/secrets/nebula-server.key.age;
           };
           laptop = {
             ip              = "10.10.0.2/24";
             cert            = flake.inputs.self + /certs/laptop.crt;
-            keySecretFile   = flake.inputs.self + /secrets/nebula-laptop.key.age;
+            keySecretFile   = flake.inputs.self + /modules/nixos/secrets/nebula-laptop.key.age;
             lighthouseAddrs = [ "1.2.3.4:4242" ];
           };
           wsl = {
             ip              = "10.10.0.3/24";
             cert            = flake.inputs.self + /certs/wsl.crt;
-            keySecretFile   = flake.inputs.self + /secrets/nebula-wsl.key.age;
+            keySecretFile   = flake.inputs.self + /modules/nixos/secrets/nebula-wsl.key.age;
             lighthouseAddrs = [ "1.2.3.4:4242" ];
           };
         }

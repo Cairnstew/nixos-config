@@ -1,11 +1,11 @@
 {
   name = "secrets";
-  description = "Agenix secrets management with declarative secret catalog";
+  description = "Agenix secrets managed via agenix-manager with flat .age files";
   category = "system";
-  tags = [ "secrets" "agenix" "encryption" "security" ];
-  provides = [ "my.secrets" ];
+  tags = [ "secrets" "agenix" "agenix-manager" "encryption" "security" ];
+  provides = [ ];
   expects = [ ];
-  complexity = "medium";
+  complexity = "low";
   tested = true;
   maintainer = "seanc";
 }

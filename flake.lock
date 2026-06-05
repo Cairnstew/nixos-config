@@ -39,6 +39,32 @@
         "type": "github"
       }
     },
+    "agenix-manager": {
+      "inputs": {
+        "agenix": [
+          "agenix"
+        ],
+        "nixpkgs": [
+          "nixpkgs"
+        ],
+        "pyproject-build-systems": "pyproject-build-systems",
+        "pyproject-nix": "pyproject-nix",
+        "uv2nix": "uv2nix"
+      },
+      "locked": {
+        "lastModified": 1780603227,
+        "narHash": "sha256-N/cZXBNjArunha0HTDQyfNzYjl5eZ+w+SB6xwzbpKH0=",
+        "owner": "Cairnstew",
+        "repo": "agenix-manager",
+        "rev": "5ac7e2196fd71500deabd9b393edffeee8a93c4e",
+        "type": "github"
+      },
+      "original": {
+        "owner": "Cairnstew",
+        "repo": "agenix-manager",
+        "type": "github"
+      }
+    },
     "auto-cpufreq": {
       "inputs": {
         "nixpkgs": [
@@ -683,6 +709,35 @@
     "pyproject-build-systems": {
       "inputs": {
         "nixpkgs": [
+          "agenix-manager",
+          "nixpkgs"
+        ],
+        "pyproject-nix": [
+          "agenix-manager",
+          "pyproject-nix"
+        ],
+        "uv2nix": [
+          "agenix-manager",
+          "uv2nix"
+        ]
+      },
+      "locked": {
+        "lastModified": 1779676664,
+        "narHash": "sha256-MbXylBTkWqVm8/VYjoULtMoVRgWBN1gSHbeRKsOsPlU=",
+        "owner": "pyproject-nix",
+        "repo": "build-system-pkgs",
+        "rev": "7bff980f37fc24e09dbc986643719900c139bf12",
+        "type": "github"
+      },
+      "original": {
+        "owner": "pyproject-nix",
+        "repo": "build-system-pkgs",
+        "type": "github"
+      }
+    },
+    "pyproject-build-systems_2": {
+      "inputs": {
+        "nixpkgs": [
           "tailscale-manager",
           "nixpkgs"
         ],
@@ -712,6 +767,27 @@
     "pyproject-nix": {
       "inputs": {
         "nixpkgs": [
+          "agenix-manager",
+          "nixpkgs"
+        ]
+      },
+      "locked": {
+        "lastModified": 1780416763,
+        "narHash": "sha256-rRK3IFixgsrK6S3e14Xz9HAZm7+kMAIl3oi5zZlcwYI=",
+        "owner": "pyproject-nix",
+        "repo": "pyproject.nix",
+        "rev": "ad83f1ead0e78e57b188f35cb57298affb06fc5f",
+        "type": "github"
+      },
+      "original": {
+        "owner": "pyproject-nix",
+        "repo": "pyproject.nix",
+        "type": "github"
+      }
+    },
+    "pyproject-nix_2": {
+      "inputs": {
+        "nixpkgs": [
           "tailscale-manager",
           "nixpkgs"
         ]
@@ -734,6 +810,7 @@
       "inputs": {
         "GenerateAnswerFile": "GenerateAnswerFile",
         "agenix": "agenix",
+        "agenix-manager": "agenix-manager",
         "auto-cpufreq": "auto-cpufreq",
         "disko": "disko",
         "dscnix": "dscnix",
@@ -859,9 +936,9 @@
         "nixpkgs": [
           "nixpkgs"
         ],
-        "pyproject-build-systems": "pyproject-build-systems",
-        "pyproject-nix": "pyproject-nix",
-        "uv2nix": "uv2nix"
+        "pyproject-build-systems": "pyproject-build-systems_2",
+        "pyproject-nix": "pyproject-nix_2",
+        "uv2nix": "uv2nix_2"
       },
       "locked": {
         "lastModified": 1780438158,
@@ -921,6 +998,31 @@
       }
     },
     "uv2nix": {
+      "inputs": {
+        "nixpkgs": [
+          "agenix-manager",
+          "nixpkgs"
+        ],
+        "pyproject-nix": [
+          "agenix-manager",
+          "pyproject-nix"
+        ]
+      },
+      "locked": {
+        "lastModified": 1780418295,
+        "narHash": "sha256-yZVQNvmDx1SFjvlwevywsXWJnieSRqmQr7/fCTMyyd0=",
+        "owner": "pyproject-nix",
+        "repo": "uv2nix",
+        "rev": "0497ccef038da091002be7c05263a7f27820974f",
+        "type": "github"
+      },
+      "original": {
+        "owner": "pyproject-nix",
+        "repo": "uv2nix",
+        "type": "github"
+      }
+    },
+    "uv2nix_2": {
       "inputs": {
         "nixpkgs": [
           "tailscale-manager",

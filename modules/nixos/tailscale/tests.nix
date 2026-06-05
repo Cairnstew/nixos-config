@@ -6,11 +6,6 @@ in
   # ── L0: Nix assertions ──────────────────────────────────────────────────────
   assertions = [
     {
-      assertion = !(cfg.enable && cfg.ssh.enable && config.my.secrets.enable) ||
-        ((config.my.secrets.catalog."tailscale.sshKey".file or null) != null);
-      message = "Tailscale SSH requires tailscale.sshKey secret to be defined in my.secrets.catalog when secrets are enabled.";
-    }
-    {
       assertion = !(cfg.enable && cfg.exitNode) ||
         (cfg.tags != [ ]);
       message = "Tailscale exit nodes should have at least one tag in tags.";

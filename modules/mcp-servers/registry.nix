@@ -13,7 +13,7 @@
 # It is automatically re-exported as .#<name> via the flake-parts module.
 # =============================================================================
 
-{ lib, uv, nodejs, writeScript, writeShellApplication, python3 }:
+{ lib, pkgs, uv, nodejs, writeShellApplication, python3 }:
 
 let
   # Build a thin npx wrapper for an npm-based MCP server.
@@ -59,35 +59,14 @@ let
       };
     };
 
-  # Protocol proxy for mcp-server-git (see README.md for details).
-  # mcp-server-git (MCP Python SDK 1.x) uses line-based protocol (raw JSON
-  # lines), but modern MCP clients like OpenCode use the standard
-  # Content-Length header format. This proxy translates between the two.
-  mcpGitProxy = writeScript "mcp-git-proxy" ''
-    #!${python3}/bin/python3
-    ${builtins.readFile ./mcp-git-proxy.py}
-  '';
-
   servers = {
     # Dev workflow
     mcp-nixos = mkUvxMcp { name = "mcp-nixos"; };
     mcp-server-fetch = mkUvxMcp { name = "mcp-server-fetch"; };
 
-    # Git MCP server with protocol proxy.
-    # Translates between Content-Length (OpenCode) and line-based (SDK 1.x).
-    mcp-server-git = writeShellApplication {
-      name = "mcp-server-git";
-      runtimeInputs = [ uv python3 ];
-      text = ''
-        export UV_PYTHON="${python3}/bin/python3"
-        export UV_PYTHON_DOWNLOADS=never
-        exec ${mcpGitProxy} "$@"
-      '';
-      meta = {
-        description = "MCP server: mcp-server-git (with protocol proxy)";
-        platforms = lib.platforms.all;
-      };
-    };
+    # Git MCP server — Node.js implementation using @modelcontextprotocol/sdk
+    # which handles Content-Length framing natively (no protocol proxy needed).
+    mcp-server-git = pkgs.callPackage ./git-server { };
 
     # Python / data work
     mcp-server-sqlite = mkUvxMcp { name = "mcp-server-sqlite"; };

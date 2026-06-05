@@ -129,17 +129,16 @@ Quick reference for common maintenance tasks. Lists files to read and edit in or
 ## Add a new agenix secret and wire it to a module
 
 **Read:**
-1. `secrets/secrets.nix` (see existing secret definitions)
-2. `modules/nixos/secrets/catalog.nix` (secret catalog schema)
-3. `modules/nixos/secrets/options.nix` (how secrets are declared)
-4. Target module that will consume the secret (e.g., `modules/nixos/gitreposync/options.nix` for `agenix.enable` pattern)
+1. `modules/nixos/secrets/secrets-manifest.json` (existing secret declarations)
+2. Target module that will consume the secret (e.g., `modules/nixos/gitreposync/options.nix`)
 
 **Edit:**
-1. `secrets/secrets.nix` (add new secret entry with recipients)
-2. `modules/nixos/secrets/catalog.nix` (add to catalog if using catalog pattern)
-3. Create `secrets/<name>.age` (encrypt with `agenix -e secrets/<name>.age`)
+1. `modules/nixos/common.nix` (add new host key if needed to `agenixManager.keys.systems`)
+2. `modules/nixos/secrets/secrets-manifest.json` (add entry: `{"name": "<name>", "scope": "all", "owner": "root"}`)
+3. Create `modules/nixos/secrets/<name>.age` (encrypt with `agenix-manager new` or `agenix -e modules/nixos/secrets/<name>.age`)
 4. Target module `options.nix` (add `secretPath` or similar option if needed)
 5. Target module `config.nix` (wire `config.age.secrets.<name>.path` to service)
+6. Add ownership override if needed: `age.secrets.<name>.owner = lib.mkForce "user";` in the consumer module
 
 ---
 

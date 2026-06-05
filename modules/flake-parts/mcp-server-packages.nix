@@ -12,7 +12,8 @@
 { lib, ... }: {
   perSystem = { pkgs, ... }: {
     packages = import ../../modules/mcp-servers/registry.nix {
-      inherit (pkgs) lib uv nodejs writeScript writeShellApplication python3;
+      inherit pkgs;
+      inherit (pkgs) lib uv nodejs writeShellApplication python3;
     };
   };
 }

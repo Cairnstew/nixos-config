@@ -2,15 +2,7 @@
 let
   inherit (lib) mkIf mkMerge;
   cfg = config.my.services.tailscale;
-  sec = config.my.secrets;
   me = flake.config.me;
-
-  # Helper to get secret name from catalog (keys use dot notation like "tailscale.authKey")
-  getSecretName = path: sec.catalog.${path}.name or null;
-
-  # Get secret names from catalog (keys use dot notation)
-  tailscaleAuthKeyName = getSecretName "tailscale.authKey";
-  tailscaleSshKeyName = getSecretName "tailscale.sshKey";
 in
 {
   config = mkIf cfg.enable (mkMerge [
@@ -19,8 +11,7 @@ in
       services.tailscale = {
         enable = true;
         openFirewall = cfg.openFirewall;
-        authKeyFile = mkIf (sec.enable && tailscaleAuthKeyName != null)
-          config.age.secrets.${tailscaleAuthKeyName}.path;
+        authKeyFile = config.age.secrets.tailscale-authkey.path;
         extraUpFlags =
           [ "--accept-dns=true" ]
           ++ lib.optional (cfg.tags != [ ]) "--advertise-tags=${lib.concatStringsSep "," cfg.tags}"
@@ -50,15 +41,9 @@ in
     }
 
     # ── SSH config generation (live from tailscale status) ────────────────────
-    (mkIf (cfg.ssh.enable && sec.enable && tailscaleSshKeyName != null) {
-      assertions = [
-        {
-          assertion = (sec.catalog."tailscale.sshKey".file or null) != null;
-          message = "my.services.tailscale.ssh.enable requires tailscale.sshKey secret to be defined in my.secrets.catalog.";
-        }
-      ];
+    (mkIf cfg.ssh.enable {
 
-      age.secrets.${tailscaleSshKeyName}.owner = cfg.ssh.user;
+      age.secrets.tailscale-ssh-key.owner = lib.mkForce cfg.ssh.user;
 
       users.users.${cfg.ssh.user}.openssh.authorizedKeys.keyFiles =
         lib.optional (cfg.ssh.publicKeyPath != null) cfg.ssh.publicKeyPath;
@@ -80,7 +65,7 @@ in
           Type = "oneshot";
           RemainAfterExit = true;
           ExecStart = let
-            sshKey = config.age.secrets.${tailscaleSshKeyName}.path;
+            sshKey = config.age.secrets.tailscale-ssh-key.path;
           in pkgs.writeShellScript "tailscale-ssh-config" ''
             set -euo pipefail
 

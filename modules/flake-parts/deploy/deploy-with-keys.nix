@@ -30,8 +30,8 @@
             echo "Deploy NixOS with a pre-generated SSH host key:"
             echo "  1. Auto-discover target via Tailscale (if address omitted)"
             echo "  2. Generate ed25519 host key in a secure temp dir"
-            echo "  3. Register the public key in secrets/secrets.nix"
-            echo "  4. Rekey all secrets for the new host"
+            echo "  3. Register the public key in modules/nixos/common.nix (agenixManager.keys.systems)"
+            echo "  4. Rekey all secrets for the new host (agenix-manager rekey)"
             echo "  5. Deploy via nixos-anywhere with --extra-files"
             echo ""
             echo "Options:"
@@ -92,7 +92,7 @@
           chmod 0700 "$TMPDIR"
           trap cleanup EXIT
           cleanup() {
-            chown -R "$ORIGINAL_USER:" "$FLAKE_ROOT/secrets" 2>/dev/null || true
+            chown -R "$ORIGINAL_USER:" "$FLAKE_ROOT/modules/nixos/secrets" 2>/dev/null || true
             echo "Cleaning up..."; rm -rf "$TMPDIR"
           }
 
@@ -108,18 +108,17 @@
           # ── Step 3: Register host with secrets ────────────────────────────
           echo ""
           echo "=== Registering $host with secrets system ==="
-          nix run .#secrets-add-host -- "$host" "$PUBKEY"
+          echo "Add this key to agenixManager.keys.systems in modules/nixos/common.nix:"
+          echo "  \"$PUBKEY\""
+          echo ""
 
-          # ── Step 4: Rekey secrets ─────────────────────────────────────────
-          rekey_args=()
+          # ── Step 4: Rekey secrets (run manually after adding host key) ────
+          echo "=== Rekeying secrets ==="
+          echo "After adding the key to common.nix, rekey with:"
+          echo "  agenix-manager rekey"
           if [ -n "$KEYFILE" ]; then
-            rekey_args=(-i "$KEYFILE")
-            echo "=== Rekeying secrets (using provided key) ==="
-          else
-            echo "=== Rekeying secrets (via 1Password) ==="
-            echo "You may be prompted to authenticate with 1Password."
+            echo "  Or with a specific key: agenix-manager rekey --key $KEYFILE"
           fi
-          nix run .#secrets-rekey -- "''${rekey_args[@]}"
 
           # ── Step 5: Deploy with extra-files ───────────────────────────────
           echo ""
@@ -162,7 +161,7 @@
           fi
         '';
       };
-      meta.description = "Deploy NixOS with pre-generated SSH host key — auto-discovers target via Tailscale, registers host key in secrets.nix, rekeys, and deploys via nixos-anywhere with --extra-files";
+      meta.description = "Deploy NixOS with pre-generated SSH host key — auto-discovers target via Tailscale, prints host key for common.nix registration, and deploys via nixos-anywhere with --extra-files";
     };
   };
 }

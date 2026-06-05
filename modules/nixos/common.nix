@@ -74,6 +74,7 @@ in
 
     # ── External Modules ───────────────────────────────────────────────────
     inputs.agenix.nixosModules.default
+    inputs.agenix-manager.nixosModules.default
     inputs.nixos-wsl.nixosModules.default
   ];
 
@@ -97,6 +98,20 @@ in
   # Using the docker module's users option (not extraGroups) so host-level
   # extraGroups overrides can't accidentally drop docker access.
   my.virtualisation.docker.users = [ flake.config.me.username ];
+
+  agenixManager = {
+    enable      = true;
+    secretsPath = ./secrets;
+
+    keys.systems = [
+      "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIETE96NnwPAZ0n5y6XcCzoErkrAhulUht/Hho0V829Qy root@laptop" # laptop
+      "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAINJXLC3S2pEuIchrWMtmWiTaJOA+U02HVyRczRNbRjMX root@nixos" # server
+      "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIKWiP0JxNaeWS30gzg4A2zLnSRdZutWzCP0mjZit7/De root@desktop" # desktop
+    ];
+    keys.users = [ flake.config.me.sshKey ];
+
+    identities = [ "/etc/ssh/ssh_host_ed25519_key" ];
+  };
 
   # ── Sensible Defaults ────────────────────────────────────────────────────
 

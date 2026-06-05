@@ -18,7 +18,7 @@
       (hostName: nixosCfg:
         (nixosCfg.extendModules {
           modules = [
-            { my.secrets.enable = false; }
+            { agenixManager.enable = false; }
           ];
         }).config.system.build.default
       )

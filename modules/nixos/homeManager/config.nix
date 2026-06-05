@@ -4,33 +4,19 @@ let
   inherit (inputs) self;
   inherit (flake.config.me) username;
   cfg = config.my.homeManager;
-  sec = config.my.secrets;
   mcpServers = self.packages.${pkgs.system};
 
-  # Helper: check if a catalog secret exists and is available
-  hasSecret = path: sec.enable && (sec.catalog ? ${path})
-    && builtins.hasAttr (sec.catalog.${path}.name) config.age.secrets;
-
-  # Get secret name from catalog
-  secretName = path: sec.catalog.${path}.name or null;
-
-  # Better Email MCP — conditional on agenix secret
-  hasEmailSecret = hasSecret "mcp.better-email.password";
-  betterEmailSecretName = secretName "mcp.better-email.password";
   betterEmailPkg =
-    if hasEmailSecret then
-      pkgs.writeShellApplication
-        {
-          name = "better-email";
-          runtimeInputs = [ pkgs.nodejs ];
-          text = ''
-            EMAIL_APP_PASSWORD=$(cat ${config.age.secrets.${betterEmailSecretName}.path})
-            export EMAIL_APP_PASSWORD
-            exec npx -y @n24q02m/better-email-mcp "$@"
-          '';
-          meta.description = "MCP server: better-email (IMAP/SMTP for AI agents)";
-        }
-    else null;
+    pkgs.writeShellApplication {
+      name = "better-email";
+      runtimeInputs = [ pkgs.nodejs ];
+      text = ''
+        EMAIL_APP_PASSWORD=$(cat ${config.age.secrets.mcp-better-email-password.path})
+        export EMAIL_APP_PASSWORD
+        exec npx -y @n24q02m/better-email-mcp "$@"
+      '';
+      meta.description = "MCP server: better-email (IMAP/SMTP for AI agents)";
+    };
 in
 {
   imports = [
@@ -40,6 +26,15 @@ in
   config = lib.mkIf cfg.enable {
     home-manager.backupFileExtension = "backup";
     home-manager.sharedModules = builtins.attrValues self.homeModules;
+
+    age.secrets = {
+      mcp-better-email-password = { owner = lib.mkForce username; group = lib.mkForce "users"; };
+      clarifai-pat = { owner = lib.mkForce username; };
+      deepinfra-key = { owner = lib.mkForce username; };
+      opencode-token = { owner = lib.mkForce username; };
+      groq-token = { owner = lib.mkForce username; };
+      github-token = { owner = lib.mkForce username; group = lib.mkForce "users"; };
+    };
 
     users.users.${username}.isNormalUser = lib.mkDefault true;
 
@@ -65,39 +60,23 @@ in
         my.programs.opencode = {
           enable = lib.mkDefault true;
           enableLsp = lib.mkDefault true;
-          clarifai.patFile =
-            if hasSecret "ai.clarifai.pat"
-            then config.age.secrets.${secretName "ai.clarifai.pat"}.path
-            else null;
-          deepinfra.keyFile =
-            if hasSecret "ai.deepinfra.key"
-            then config.age.secrets.${secretName "ai.deepinfra.key"}.path
-            else null;
-          opencode-go.keyFile =
-            if hasSecret "ai.opencode.token"
-            then config.age.secrets.${secretName "ai.opencode.token"}.path
-            else null;
-          groq.keyFile =
-            if hasSecret "ai.groq.token"
-            then config.age.secrets.${secretName "ai.groq.token"}.path
-            else null;
+          clarifai.patFile = config.age.secrets.clarifai-pat.path;
+          deepinfra.keyFile = config.age.secrets.deepinfra-key.path;
+          opencode-go.keyFile = config.age.secrets.opencode-token.path;
+          groq.keyFile = config.age.secrets.groq-token.path;
 
-          model =
-            if (hasSecret "ai.deepinfra.key")
-            then lib.mkDefault null
-            else if (hasSecret "ai.clarifai.pat")
-            then lib.mkDefault "meta-llama/Meta-Llama-3.1-8B-Instruct"
-            else if (hasSecret "ai.groq.token")
-            then lib.mkDefault "meta-llama/Meta-Llama-3.1-8B-Instruct"
-            else lib.mkDefault null;
+          model = lib.mkDefault null;
           enableMcpIntegration = lib.mkDefault true;
 
-          extraPackages = with mcpServers; [
+          extraPackages = with pkgs; with mcpServers; [
             mcp-nixos
             mcp-server-fetch
             mcp-server-git
             mcp-server-sqlite
-          ] ++ lib.optional hasEmailSecret betterEmailPkg;
+            betterEmailPkg
+            terraform
+            nixpkgs-fmt
+          ];
 
           mcp = lib.mkDefault ({
             nixos = {
@@ -124,7 +103,6 @@ in
               command = [ "mcp-server-sqlite" ];
               timeout = 30000;
             };
-          } // lib.optionalAttrs hasEmailSecret {
             better-email = {
               enabled = true;
               type = "local";

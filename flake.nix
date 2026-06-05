@@ -19,6 +19,9 @@
     disko.url = "github:nix-community/disko";
     disko.inputs.nixpkgs.follows = "nixpkgs";
     agenix.url = "github:ryantm/agenix";
+    agenix-manager.url = "github:Cairnstew/agenix-manager";
+    agenix-manager.inputs.nixpkgs.follows = "nixpkgs";
+    agenix-manager.inputs.agenix.follows = "agenix";
     nuenv.url = "github:hallettj/nuenv/writeShellApplication";
     nixpkgs-unstable.url = "github:NixOS/nixpkgs/nixos-unstable";
     nixos-wsl.url = "github:nix-community/NixOS-WSL/main";

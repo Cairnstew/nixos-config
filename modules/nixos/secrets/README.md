@@ -1,71 +1,69 @@
-# Secrets
+# Secrets Module
 
-Agenix secrets management with declarative secret catalog.
+Agenix secrets managed via [agenix-manager](https://github.com/Cairnstew/agenix-manager) with flat `.age` files.
 
 ## Overview
 
-This module provides centralized secrets management using [agenix](https://github.com/ryantm/agenix).
-It defines a catalog of secrets that are automatically declared as `age.secrets` when the module is enabled.
+Secrets are declared in `secrets-manifest.json` and automatically wired to `age.secrets.*` by the agenix-manager NixOS module. The encrypted `.age` files live flat (no subdirectories) in this directory.
 
-## Options
-
-| Option | Default | Description |
-|--------|---------|-------------|
-| `my.secrets.enable` | `false` | Enable agenix secrets management |
-| `my.secrets.catalog` | `{}` | Secret catalog (read-only, defined in module) |
-
-### Secret Structure
-
-Each secret in the catalog has:
-- `name`: The agenix secret name (used for `age.secrets.<name>`)
-- `file`: Path to the `.age` encrypted file
-- `owner`: File owner (default: `"root"`)
-- `group`: File group (default: `"root"`)
-- `mode`: File permissions (default: `"0400"`)
-
-## Usage Example
-
-```nix
-# In host configuration
-my.secrets.enable = true;
-```
-
-Accessing secrets in other modules:
+## Accessing Secrets
 
 ```nix
 # Check if secret exists before using
 config.age.secrets ? "github-token"
 
-# Get secret path
-config.age.secrets."github-token".path
+# Get decrypted path
+config.age.secrets."github-token".path  # → /run/agenix/github-token
 
-# Get secret name from catalog
-config.my.secrets.catalog.github.token.name  # returns "github-token"
+# Override ownership (in consuming module)
+age.secrets."github-token" = {
+  owner = lib.mkForce "seanc";
+  group = lib.mkForce "users";
+};
 ```
 
-## Adding New Secrets
+## Adding a New Secret
 
-1. Create the encrypted `.age` file in `secrets/<category>/<name>.age`
-2. Add the secret definition to `secrets.nix` in this module
-3. Reference the secret via `config.age.secrets.<name>.path` in consuming modules
+### Via agenix-manager TUI:
+```bash
+nix develop .#secrets
+agenix-manager new
+```
+
+### Via plain agenix:
+```bash
+agenix -e modules/nixos/secrets/<name>.age -r /etc/agenix/secrets.nix
+```
+
+Then add to `secrets-manifest.json`.
 
 ## Secret Catalog
 
-Secrets are organized by category:
-
-| Category | Secrets |
-|----------|---------|
-| `ai` | huggingface-token, groq-token, clarifai-pat, deepinfra-key, opencode-token |
-| `cloud/aws` | auth, ssh-key, ssh-pub-key, lab-ssh-key |
-| `cloud/gcloud` | auth.json |
-| `github` | github-token |
-| `github/repos` | token-nixos-config, token-obsidian |
-| `cachix` | nixos-config-cache-token |
-| `tailscale` | authkey, apikey, ssh-key, cloud-authkey |
+| Secret name | Purpose |
+|---|---|
+| huggingface-token | HuggingFace API token |
+| groq-token | Groq API token |
+| clarifai-pat | Clarifai personal access token |
+| deepinfra-key | DeepInfra API key |
+| opencode-token | OpenCode API token |
+| aws-cloud | AWS credentials |
+| aws-ssh-key | AWS SSH private key |
+| aws-ssh-pub-key | AWS SSH public key |
+| aws-lab-ssh-key | AWS lab SSH key |
+| gcloud-auth | GCloud authentication |
+| github-token | GitHub personal access token |
+| github-token-nixos-config | GitHub token for nixos-config repo |
+| github-token-obsidian | GitHub token for Obsidian sync |
+| nixos-config-cache-token | Cachix push token |
+| windows-password | Windows dual-boot password |
+| better-email-password | MCP better-email password |
+| tailscale-authkey | Tailscale pre-auth key |
+| tailscale-oauthkey | Tailscale OAuth client secret |
+| tailscale-ssh-key | Tailscale SSH key |
+| onepassword-token | 1Password service account token |
 
 ## Notes
 
-- Secrets are only accessible when `my.secrets.enable = true`
-- Always check `config.age.secrets ? "name"` before referencing a secret
-- The `secrets.nix` file in this module defines the complete secret catalog
-- Encrypted secret files are stored in the `secrets/` directory at flake root
+- Ownership overrides are set in consuming modules via `config.age.secrets.<name>.owner`
+- Always check `config.age.secrets ? "name"` before referencing a secret path
+- CI builds disable agenix-manager via `{ agenixManager.enable = false; }` in `packages.nix`

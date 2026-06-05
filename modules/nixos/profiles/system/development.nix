@@ -25,7 +25,7 @@ in
     # ── Secrets Management ─────────────────────────────────────────────────
     # mkDefault true: Development often needs API keys, tokens, etc.
     # Override when: All secrets injected via other means
-    my.secrets.enable = lib.mkDefault true;
+    agenixManager.enable = lib.mkDefault true;
 
     # ── Cache ──────────────────────────────────────────────────────────────
     # mkDefault false: Cachix push is opt-in (avoid accidental pushes)

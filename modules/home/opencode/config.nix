@@ -11,6 +11,19 @@ let
     ;
 
   cfg = config.my.programs.opencode;
+
+  # Wrap opencode so libstdc++.so.6 is available for the native file watcher
+  # binding (e.g. chokidar / fsevents). On NixOS this is not in the default
+  # library path.
+  opencodeWrapped = pkgs.symlinkJoin {
+    name = "opencode-wrapped";
+    paths = [ cfg.package ];
+    nativeBuildInputs = [ pkgs.makeWrapper ];
+    postBuild = ''
+      wrapProgram "$out/bin/opencode" \
+        --prefix LD_LIBRARY_PATH : "${pkgs.lib.makeLibraryPath [ pkgs.stdenv.cc.cc.lib ]}"
+    '';
+  };
   providers = import ./providers.nix { inherit lib cfg; };
 
   # Transform agent config to opencode.json format
@@ -113,7 +126,7 @@ in
     {
       programs.opencode = {
         enable = true;
-        package = cfg.package;
+        package = opencodeWrapped;
         enableMcpIntegration = cfg.enableMcpIntegration;
         context = cfg.context;
         commands = cfg.commands;

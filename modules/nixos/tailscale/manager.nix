@@ -2,10 +2,6 @@
 let
   inherit (lib) mkIf;
   cfg = config.my.services.tailscale.manager;
-  sec = config.my.secrets;
-  oauthKey = sec.catalog."tailscale.oauthKey" or null;
-  hasOauth = sec.enable && oauthKey != null && oauthKey.file or null != null;
-  oauthKeyName = oauthKey.name or "tailscale-oauthkey";
 in
 {
   config = mkIf cfg.enable {
@@ -16,7 +12,7 @@ in
       acl.enable = cfg.acl.enable;
       providerVersion = cfg.providerVersion;
       authKeys = cfg.authKeys;
-      credentialsFile = "/run/agenix/${oauthKeyName}";
+      credentialsFile = config.age.secrets.tailscale-oauthkey.path;
       policy = {
         enable = cfg.policy.enable;
         tagOwners = cfg.policy.tagOwners;
@@ -43,15 +39,6 @@ in
         randomizeClientPort = cfg.policy.randomizeClientPort;
         oneCGNATRoute = cfg.policy.oneCGNATRoute;
       } // cfg.policy.extraConfig;
-    };
-
-    age.secrets = lib.optionalAttrs hasOauth {
-      ${oauthKeyName} = {
-        file = oauthKey.file;
-        owner = "root";
-        group = "root";
-        mode = "0400";
-      };
     };
   };
 }

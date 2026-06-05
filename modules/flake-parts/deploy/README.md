@@ -25,22 +25,18 @@ Wraps nixos-anywhere with auto-detection:
 
 ## `deploy-with-keys` — Deploy with Secrets Wiring
 
-Wraps `deploy` with SSH host key pre-generation and automatic agenix rekeying.
+Wraps `deploy` with SSH host key pre-generation and instructions for agenix rekeying.
 Use this for first-time deployments of hosts that need encrypted secrets on boot.
 
 **Workflow:**
 
 1. Generates an ed25519 keypair in `mktemp -d` (never touches the Nix store or git)
-2. Reads the public key and calls `nix run .#secrets-add-host -- <host> <pubkey>` to insert it into `secrets/secrets.nix`
-3. Calls `nix run .#secrets-rekey` to re-encrypt all secrets for the new host
-4. Runs `nix run .#deploy` with `--extra-files <tmpdir>`, copying the private key to `/etc/ssh/ssh_host_ed25519_key` on the target
+2. Prints the public key — add it to `agenixManager.keys.systems` in `modules/nixos/common.nix`
+3. After adding the key, run `agenix-manager rekey` to re-encrypt all secrets
+4. Re-run `just deploy <host>` with `--extra-files <tmpdir>`, copying the private key to `/etc/ssh/ssh_host_ed25519_key` on the target
 
 **Result:** The target boots with the pre-placed host key. OpenSSH skips key generation,
 so agenix finds the matching host key and decrypts all secrets on first boot.
-
-**Idempotency:** If the host already exists in `secrets/secrets.nix`, the command
-will error out rather than duplicate. Remove the old entry from the let-block
-and systems list before re-deploying.
 
 ```
 just deploy-with-keys desktop 192.168.1.100

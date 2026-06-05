@@ -1,12 +1,10 @@
-{ flake, ... }:
-{
+{ lib, flake, config, ... }: {
   imports = [
-    # Import agenix module
     flake.inputs.agenix.nixosModules.default
-
-    ./options.nix
-    ./secrets.nix
-    ./config.nix
     ./tests.nix
   ];
+
+  options.my.secrets.enable = lib.mkEnableOption "agenix-managed secrets" // {
+    description = "Enable agenix secrets management. Delegates to agenixManager.enable at the system level.";
+  };
 }
