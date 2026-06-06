@@ -13,8 +13,8 @@ Each entry: **symptom → cause → fix**. One paragraph max. Newest at the top.
 
 ---
 
-**`mcp-server-git` replaced with Node.js implementation using `@modelcontextprotocol/sdk`**
-Symptom: MCP git server always fails with `Invalid JSON: expected value at line 1 column 1 [type=json_invalid, input_value='Content-Length: 153\n', input_type=str]` and 30s timeout. Root cause: The Python `mcp-server-git` (from modelcontextprotocol/servers repo) uses MCP Python SDK 1.x which implements line-based stdio (raw JSON lines). Opencode sends standard Content-Length header format. The Python SDK tries to parse "Content-Length:" as a JSON line, fails, and with `raise_exceptions=True`, the exception crashes the server. Fix: Replaced the Python server entirely with a minimal Node.js/TypeScript server in `modules/mcp-servers/git-server/` using `@modelcontextprotocol/sdk`, which handles Content-Length framing natively. All 12 git tools are implemented. The proxy script (`mcp-git-proxy.py`) has been removed.
+**OpenCode global tool with `import { tool } from "@opencode-ai/plugin"` crashes server**
+Symptom: Adding `my.programs.opencode.tools.print-test = ''import { tool } from "@opencode-ai/plugin" ...''` causes opencode to fail with `Unexpected server error` on any request. Without the tool, opencode works. Cause: Global tools at `~/.config/opencode/tools/` have no `package.json`/`node_modules/` (unlike project-level `.opencode/tools/` which do), so the `@opencode-ai/plugin` import can't be resolved and opencode's tool runtime crashes. The `tool()` function is a runtime identity function (returns `input` unchanged) — it only provides TypeScript types. `tool.schema` is just `zod`. Fix: Define tools as plain object exports without the import: `export default { description: "...", args: { key: { type: "string", description: "..." } }, async execute(args) { return "..."; } }`. The `{ type: "string", ... }` format is native JSON Schema that opencode's runtime consumes directly. The `tool()` wrapper adds no runtime behavior.
 
 ---
 

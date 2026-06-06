@@ -71,38 +71,16 @@ in
           extraPackages = with pkgs; with mcpServers; [
             mcp-nixos
             mcp-server-fetch
-            mcp-server-git
             mcp-server-sqlite
             betterEmailPkg
             terraform
             nixpkgs-fmt
           ];
 
-          mcp = lib.mkDefault ({
-            nixos = {
-              enabled = true;
-              type = "local";
-              command = [ "mcp-nixos" ];
-              timeout = 120000;
-            };
-            fetch = {
-              enabled = true;
-              type = "local";
-              command = [ "mcp-server-fetch" ];
-              timeout = 30000;
-            };
-            git = {
-              enabled = true;
-              type = "local";
-              command = [ "mcp-server-git" "--repository" "/home/seanc/nixos-config" ];
-              timeout = 30000;
-            };
-            sqlite = {
-              enabled = true;
-              type = "local";
-              command = [ "mcp-server-sqlite" ];
-              timeout = 30000;
-            };
+          # Host-specific: better-email MCP references agenix secret and flake identity
+          # Uses mkDefault so it merges with home module's MCP defaults (nixos, fetch, sqlite)
+          # at the same priority — host configs can still override with a direct assignment.
+          mcp = lib.mkDefault {
             better-email = {
               enabled = true;
               type = "local";
@@ -113,35 +91,6 @@ in
               };
               timeout = 30000;
             };
-          });
-
-          skills = {
-            git-repo-management = lib.mkDefault (builtins.readFile ../../home/opencode/skills/git-repo-management.md);
-            nixos-configuration = lib.mkDefault (builtins.readFile ../../home/opencode/skills/nixos-configuration.md);
-            module-development = lib.mkDefault (builtins.readFile ../../home/opencode/skills/module-development.md);
-          };
-        };
-      }
-
-      {
-        my.programs.opencode.agents = {
-          plan = {
-            model = "opencode-go/deepseek-v4-flash";
-            mode = "primary";
-            temperature = 0.1;
-            steps = 10;
-            permission = { edit = "deny"; bash = "deny"; };
-          };
-          explore = {
-            model = "opencode-go/deepseek-v4-flash";
-            mode = "subagent";
-            temperature = 0.1;
-            permission = { edit = "deny"; bash = "deny"; };
-          };
-          build = {
-            model = "opencode-go/deepseek-v4-flash";
-            mode = "primary";
-            permission = { edit = "allow"; bash = "allow"; };
           };
         };
       }

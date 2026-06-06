@@ -161,7 +161,7 @@ in
         '') (lib.filterAttrs (n: _: lib.hasPrefix "windows-answ-pro-" n) config.packages))}
       '';
 
-      ventoyIso = config.packages.live-iso-ventoy or null;
+      ventoyIso = config.packages.live-iso-deploy or null;
     in
     {
       packages = {

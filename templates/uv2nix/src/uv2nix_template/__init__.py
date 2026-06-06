@@ -1,4 +1,3 @@
-from uv2nix_template.core.exceptions import TemplateError
-from uv2nix_template.models.base import BaseModel
+from __future__ import annotations
 
-__all__ = ["TemplateError", "BaseModel"]
+__version__ = "0.1.0"

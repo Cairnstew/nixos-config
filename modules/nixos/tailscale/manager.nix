@@ -39,6 +39,13 @@ in
         randomizeClientPort = cfg.policy.randomizeClientPort;
         oneCGNATRoute = cfg.policy.oneCGNATRoute;
       } // cfg.policy.extraConfig;
+
+      agenixIntegration = {
+        enable = cfg.agenixIntegration.enable;
+        secretName = cfg.agenixIntegration.secretName;
+        secretScope = cfg.agenixIntegration.secretScope;
+        agenixManagerBin = cfg.agenixIntegration.agenixManagerBin;
+      };
     };
   };
 }

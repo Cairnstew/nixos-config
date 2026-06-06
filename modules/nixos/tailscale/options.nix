@@ -365,6 +365,12 @@ in
         example = "alice";
       };
 
+      identityFile = mkOption {
+        type = types.nullOr types.path;
+        default = null;
+        description = "Path to the SSH private key used to connect to tailnet machines.";
+      };
+
       publicKeyPath = mkOption {
         type = types.nullOr types.path;
         default = null;
@@ -576,6 +582,28 @@ in
               "group:dev" = [ "alice@example.com" "bob@example.com" ];
             };
           };
+        };
+      };
+
+      agenixIntegration = {
+        enable = mkEnableOption "Extract the generated auth key into agenix-manager after terraform apply";
+
+        secretName = mkOption {
+          type = types.str;
+          default = "tailscale-auth-key";
+          description = "Name of the agenix secret to create or overwrite.";
+        };
+
+        secretScope = mkOption {
+          type = types.str;
+          default = "systems";
+          description = "Key scope passed to agenix-manager new --scope.";
+        };
+
+        agenixManagerBin = mkOption {
+          type = types.path;
+          description = "Path to the agenix-manager binary.";
+          example = literalExpression ''"''${pkgs.agenix-manager}/bin/agenix-manager"'';
         };
       };
     };

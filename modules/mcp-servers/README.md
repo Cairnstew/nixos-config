@@ -9,7 +9,6 @@ the flake-parts module (`modules/flake-parts/mcp-server-packages.nix`).
 | File | Purpose |
 |------|---------|
 | `registry.nix` | Central registry of all MCP servers |
-| `git-server/` | Node.js git MCP server (uses `@modelcontextprotocol/sdk`) |
 
 ## Adding a new MCP server
 

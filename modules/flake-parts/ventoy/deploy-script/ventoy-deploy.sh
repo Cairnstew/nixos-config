@@ -601,64 +601,7 @@ main() {
     fi
   fi
 
-  # Step 4: Copy pre-built installer ISO (if configured)
-  if [[ $BUILD_INSTALLER_ISO -eq 1 ]] && [[ $CHECK_ONLY -eq 0 ]] && [[ -n "${INSTALLER_ISO:-}" ]]; then
-    echo ""
-    echo "=== Deploying pre-built NixOS installer ISO ==="
-    local target="/iso/linux/nixos-installer-x86_64-linux.iso"
-    local dest="$MOUNT$target"
-    local src_iso=( "$INSTALLER_ISO/iso/"*.iso )
-    src_iso="${src_iso[0]}"
-
-    # Derive store hash from INSTALLER_ISO directory path (not the iso filename inside it)
-    local src_name src_hash
-    src_name=$(basename "$INSTALLER_ISO")
-    src_hash="${src_name%%-*}"
-
-    # Check previous state
-    local ventoy_dir="$MOUNT/ventoy"
-    local state_file="$ventoy_dir/.deploy-state"
-    local prev_hash=""
-    if [[ -f "$state_file" ]]; then
-      while IFS='|' read -r prev_target prev_hash_val; do
-        if [[ "$prev_target" == "$target" ]]; then
-          prev_hash="$prev_hash_val"
-        fi
-      done < "$state_file"
-    fi
-
-    src_size=$(stat -c%s "$src_iso" 2>/dev/null || echo 0)
-    dest_size=$(stat -c%s "$dest" 2>/dev/null || echo 0)
-
-    if [[ -f "$dest" ]] && [[ "$src_size" -eq "$dest_size" ]] && [[ "$src_hash" == "$prev_hash" ]]; then
-      echo "  [SKIP] $target (up to date, $((src_size / 1024 / 1024))M)"
-    else
-      echo "  Copying -> $target"
-      mkdir -p "$(dirname "$dest")"
-      cp -L "$src_iso" "$dest"
-      sync "$dest" 2>/dev/null || sync
-      echo "Verifying installer ISO integrity..."
-      SRC_HASH=$(sha256sum "$src_iso" | cut -d' ' -f1)
-      DST_HASH=$(sha256sum "$dest" | cut -d' ' -f1)
-      if [ "$SRC_HASH" != "$DST_HASH" ]; then
-          echo "  [FAIL] Installer ISO copy failed integrity check. Removing corrupt file and retrying..."
-          rm -f "$dest"
-          cp -L "$src_iso" "$dest"
-          sync "$dest" 2>/dev/null || sync
-          DST_HASH=$(sha256sum "$dest" | cut -d' ' -f1)
-          if [ "$SRC_HASH" != "$DST_HASH" ]; then
-              echo "  [FAIL] Installer ISO failed integrity check after retry. Aborting."
-              exit 1
-          fi
-      fi
-      # Record in state file
-      mkdir -p "$ventoy_dir"
-      echo "${target}|${src_hash}" >> "$state_file"
-      echo "  [OK] Custom ISO deployed and verified ($(stat -c%s "$dest" 2>/dev/null | numfmt --to=iec) MB)"
-    fi
-  fi
-
-  # Step 5: Deploy ISOs + config
+  # Step 4: Deploy ISOs + config
   if [[ $CHECK_ONLY -eq 0 ]]; then
     if [[ -z "$MOUNT" ]]; then
       echo "Error: No mount point available for deploy." >&2
@@ -666,71 +609,6 @@ main() {
     fi
     if deploy_isos "$MOUNT"; then
       echo ""
-
-      # Step 6: Generate ephemeral Tailscale auth key for installer ISO
-      # Uses the Tailscale API with OAuth credentials from agenix.
-      # The key is written to the USB's ventoy/ directory; the ISO reads it at boot
-      # from the VENTOY data partition.
-      if [[ $BUILD_INSTALLER_ISO -eq 1 ]]; then
-        local oauth_file="/run/agenix/tailscale-oauthkey"
-        if [[ -f "$oauth_file" ]] && command -v curl &>/dev/null && command -v jq &>/dev/null; then
-          echo "=== Generating ephemeral Tailscale auth key ==="
-          mkdir -p "$MOUNT/ventoy"
-
-          # Source OAuth credentials (TAILSCALE_OAUTH_CLIENT_ID, TAILSCALE_OAUTH_CLIENT_SECRET)
-          eval "$(sudo cat "$oauth_file" 2>/dev/null)"
-
-          # Exchange OAuth credentials for an access token
-          TOKEN=$(curl -s -d "grant_type=client_credentials" \
-            -d "client_id=$TAILSCALE_OAUTH_CLIENT_ID" \
-            -d "client_secret=$TAILSCALE_OAUTH_CLIENT_SECRET" \
-            -d "scope=devices:create_keys" \
-            https://api.tailscale.com/api/v2/oauth/token 2>/dev/null | jq -r '.access_token' 2>/dev/null || true)
-
-          if [[ -n "$TOKEN" ]] && [[ "$TOKEN" != "null" ]]; then
-            # Create reusable ephemeral auth key (tag:temp, 7-day expiry)
-            # Reusable so the same USB key works across multiple ISO boots.
-            # Ephemeral nodes are removed when they disconnect.
-            TS_AUTH_KEY=$(curl -s -X POST \
-              -H "Authorization: Bearer $TOKEN" \
-              -H "Content-Type: application/json" \
-              -d '{
-                "capabilities": {
-                  "devices": {
-                    "create": {
-                      "reusable": true,
-                      "ephemeral": true,
-                      "preauthorized": true,
-                      "tags": ["tag:temp"]
-                    }
-                  }
-                },
-                "expirySeconds": 604800
-              }' \
-              https://api.tailscale.com/api/v2/tailnet/-/keys 2>/dev/null | jq -r '.key' 2>/dev/null || true)
-
-            if [[ -n "$TS_AUTH_KEY" ]] && [[ "$TS_AUTH_KEY" != "null" ]]; then
-              echo "$TS_AUTH_KEY" > "$MOUNT/ventoy/ts.key"
-              chmod 600 "$MOUNT/ventoy/ts.key"
-              echo "  [OK] Auth key written to /ventoy/ts.key (tag:temp, reusable, 7-day expiry)"
-            else
-              echo "  [WARN] Failed to generate Tailscale auth key via API."
-              echo "  Check that the OAuth key has devices:create_keys scope."
-            fi
-          else
-            echo "  [WARN] Failed to obtain Tailscale OAuth token. Check OAuth credentials."
-          fi
-        else
-          if [[ ! -f "$oauth_file" ]]; then
-            echo "  [WARN] OAuth credentials not found at $oauth_file."
-          else
-            echo "  [WARN] curl or jq not available. Install them to enable auto key generation."
-          fi
-          echo "  Installer ISO will not auto-connect to Tailscale."
-          echo "  Use LAN SSH (root + your SSH key) or run 'tailscale up' manually."
-        fi
-      fi
-
       echo "Ventoy deploy complete!"
     else
       echo ""
@@ -738,7 +616,7 @@ main() {
     fi
   fi
 
-  # Step 7: Cleanup
+  # Step 5: Cleanup
   if [[ $CLEANUP -eq 1 ]]; then
     umount "$MOUNT" || true
     echo "Unmounted $MOUNT"

@@ -64,10 +64,6 @@ let
     mcp-nixos = mkUvxMcp { name = "mcp-nixos"; };
     mcp-server-fetch = mkUvxMcp { name = "mcp-server-fetch"; };
 
-    # Git MCP server — Node.js implementation using @modelcontextprotocol/sdk
-    # which handles Content-Length framing natively (no protocol proxy needed).
-    mcp-server-git = pkgs.callPackage ./git-server { };
-
     # Python / data work
     mcp-server-sqlite = mkUvxMcp { name = "mcp-server-sqlite"; };
   };

@@ -103,10 +103,9 @@ Quick reference for common maintenance tasks. Lists files to read and edit in or
 2. `modules/flake-parts/live-iso/` (live-iso builder — ISO is `live.isos.ventoy` in `ventoy/config.nix`)
 
 **Edit:**
-1. (Optional) `modules/flake-parts/ventoy/ts.key` — put an ephemeral Tailscale auth key here
-2. `just ventoy-iso` — build the ISO
-3. `just ventoy-deploy` — deploy to USB
-4. Verify: `sha256sum <store-iso> <usb-iso>` — hashes must match
+1. `sudo just ventoy-iso` — build the deploy ISO (requires `--impure` for agenix secrets)
+2. `just ventoy-deploy` — deploy to USB
+3. Verify: `sha256sum <store-iso> <usb-iso>` — hashes must match
 
 ---
 

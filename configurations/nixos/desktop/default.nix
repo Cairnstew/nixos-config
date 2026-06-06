@@ -63,8 +63,8 @@
   #        sudo reboot
   #
   # Option B — Custom Ventoy ISO (auto-connects to Tailscale, SSH keys baked in):
-  #   1. Build the custom ISO:
-  #        just ventoy-iso   # produces packages.live-iso-ventoy
+   #   1. Build the custom ISO:
+   #        just ventoy-iso   # produces packages.live-iso-deploy
   #   2. Deploy to USB:
   #        just ventoy-deploy
   #   3. Or copy ISO + Windows ISO onto a Ventoy USB manually

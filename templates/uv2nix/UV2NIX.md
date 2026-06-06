@@ -276,12 +276,13 @@ produces:
 └── uv.lock
 ```
 
-### Flat layout (this template)
+### src layout (this template)
 
 ```
 ├── pyproject.toml
-├── <package_name>/           # underscored: e.g. uv2nix_template/
-│   └── __init__.py
+├── src/
+│   └── <package_name>/       # underscored: e.g. uv2nix_template/
+│       └── __init__.py
 └── uv.lock
 ```
 

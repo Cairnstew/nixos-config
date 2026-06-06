@@ -101,27 +101,120 @@ no Nix evaluation needed). Falls back gracefully if module dirs exist without me
 
 ## Adding New Tools
 
-1. Create a `.ts` file in `.opencode/tools/` following the pattern:
-   ```ts
-   import { tool } from "@opencode-ai/plugin";
+There are two approaches, each with different tradeoffs.
 
-   export default tool({
-     description: "Brief description for the model",
-     args: { /* Zod schema */ },
-     async execute(args, context) {
-       // Implementation using context.worktree
-       return "result";
+### A. File-based Nix tools (recommended for global tools)
+
+Tools live as `.ts` files in `modules/home/opencode/tools/` and are referenced by **path** in the home module — no inline Nix strings, no escaping issues.
+
+Adding a new tool:
+
+1. Create a `.ts` file in `modules/home/opencode/tools/`:
+   ```ts
+   // modules/home/opencode/tools/my-tool.ts
+   import { execSync } from "node:child_process";
+
+   export default {
+     description: "Describe what the tool does for the AI model",
+     args: {
+       exampleArg: { type: "string", description: "What this arg is for" },
      },
-   });
+     async execute(args) {
+       try {
+         const out = execSync("sudo some-command --json", {
+           encoding: "utf-8",
+           timeout: 15_000,
+         });
+         return JSON.stringify(JSON.parse(out), null, 2);
+       } catch (e: any) {
+         return `command failed:\n${e.stderr || e.message}`;
+       }
+     },
+   };
    ```
-2. The filename becomes the tool name (minus `.ts`).
-3. Rebuild/reload opencode to pick up new tools.
+
+2. Add a path reference in `modules/home/opencode/config.nix` under the `tools` attrset:
+   ```nix
+   tools = lib.mkDefault {
+     my-tool = ./tools/my-tool.ts;
+   };
+   ```
+
+3. `git add` the new `.ts` file (must be staged for the flake evaluator to see it), then `nixos-rebuild switch`.
+
+**CRITICAL:** Do NOT `import { tool } from "@opencode-ai/plugin"` — the global tools directory has no `node_modules/` and the import crashes opencode. The `tool()` wrapper is a runtime identity function anyway (see `GOTCHAS.md`). Use a plain object export.
+
+**`args` format (JSON Schema, NOT Zod):**
+- `{ type: "string", description: "..." }` — string arg
+- `{ type: "number", description: "..." }` — number arg
+- `{ type: "boolean", description: "..." }` — boolean arg
+- Add `optional: true` for optional args
+- Add `default: value` for defaults
+
+**Available imports (no npm needed):**
+- `node:child_process` — `execSync`, `execFileSync`, `spawnSync`
+- `node:fs` — `readFileSync`, `writeFileSync`, `existsSync`
+- `node:path` — `join`, `resolve`, `dirname`
+- `node:os` — platform info
+- `node:crypto` — hashing, UUIDs
+
+**Error handling pattern:** Always wrap `execSync` in try/catch and return the stderr as a string — uncaught exceptions in the execute function cause opaque server errors just like the unresolvable import does.
+
+### B. Inline Nix tools (legacy, for simple one-liners)
+
+Define the TypeScript directly as a Nix indented string:
+
+```nix
+my-tool = ''
+  export default {
+    description: "A simple tool",
+    args: {},
+    async execute() { return "hello"; },
+  }
+'';
+```
+
+Same restrictions as file-based (no `@opencode-ai/plugin` import, plain object export).
+
+**Syntax rules for Nix indented strings (`'' ... ''`):**
+| Nix source | Output | Purpose |
+|---|---|---|
+| `''${foo}` | `${foo}` | Escape `${}` for JS template literals |
+| `''''` | `'` | Escape a literal single quote |
+
+---
+
+## Tool lifecycle (file-based)
+
+```
+Create .ts file  →  Add path ref in config.nix  →  git add .ts  →  nixos-rebuild switch
+                                                                          ↓
+                                                            ~/.config/opencode/tools/<name>.ts
+                                                              (symlink from Nix store)
+                                                                          ↓
+                                                            restart opencode → tool available
+```
+
+---
+
+## Priority chain for overrides
+
+| Source | Merge priority | Overrides |
+|---|---|---|
+| Home module (`lib.mkDefault`) | 1000 (lowest) | — |
+| NixOS config (direct assignment) | 100 | Home module defaults |
+| `cfg.extraConfig` (host config) | 100 (last in mkMerge) | NixOS config (same priority, last wins) |
+| Explicit `lib.mkForce` | 50 (highest) | Everything |
 
 ---
 
 ## See Also
 
 - [OpenCode Custom Tools Documentation](https://opencode.ai/docs/custom-tools/)
-- `.opencode/tools/` — tool source files
+- `.opencode/tools/` — project-level tool source files (with `node_modules/`)
+- `modules/home/opencode/tools/` — Nix-managed tool `.ts` files
+- `modules/home/opencode/config.nix` — tool path references and defaults
+- `modules/nixos/homeManager/config.nix` — host-specific opencode wiring
+- `GOTCHAS.md` — known footgun: `import { tool }` crashes global tools
 - `HEATMAP.md` — option registry and task heatmap
 - `STRUCTURE.md` — repository structure reference

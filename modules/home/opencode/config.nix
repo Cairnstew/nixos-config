@@ -122,6 +122,64 @@ in
 {
   config = mkIf cfg.enable (mkMerge [
 
+    # ── Default agents, tools, skills, MCP (mkDefault = overridable by host configs) ─
+    # Tools use path references to .ts files in ./tools/ — these resolve relative to
+    # this file at parse time.  Host configs can override individual entries or replace
+    # the entire attrset (plain assignment beats mkDefault).
+    {
+      my.programs.opencode = {
+        agents = lib.mkDefault {
+          plan = {
+            model = "opencode-go/deepseek-v4-flash";
+            mode = "primary";
+            temperature = 0.1;
+            steps = 10;
+            permission = { edit = "deny"; bash = "deny"; };
+          };
+          explore = {
+            model = "opencode-go/deepseek-v4-flash";
+            mode = "subagent";
+            temperature = 0.1;
+            permission = { edit = "deny"; bash = "deny"; };
+          };
+          build = {
+            model = "opencode-go/deepseek-v4-flash";
+            mode = "primary";
+            permission = { edit = "allow"; bash = "allow"; };
+          };
+        };
+        tools = lib.mkDefault {
+          tailscale-manager = ./tools/tailscale-manager.ts;
+          agenix-manager = ./tools/agenix-manager.ts;
+        };
+        skills = lib.mkDefault {
+          git-repo-management = builtins.readFile ./skills/git-repo-management.md;
+          nixos-configuration = builtins.readFile ./skills/nixos-configuration.md;
+          module-development = builtins.readFile ./skills/module-development.md;
+        };
+        mcp = lib.mkDefault {
+          nixos = {
+            enabled = true;
+            type = "local";
+            command = [ "mcp-nixos" ];
+            timeout = 120000;
+          };
+          fetch = {
+            enabled = true;
+            type = "local";
+            command = [ "mcp-server-fetch" ];
+            timeout = 30000;
+          };
+          sqlite = {
+            enabled = true;
+            type = "local";
+            command = [ "mcp-server-sqlite" ];
+            timeout = 30000;
+          };
+        };
+      };
+    }
+
     # Base opencode config
     {
       programs.opencode = {

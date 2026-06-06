@@ -78,15 +78,16 @@ deploy-with-keys host key="/etc/ssh/ssh_host_ed25519_key" addr="nixos@nixos" *ar
 
 ventoy-deploy *args:
     sudo rm -f /run/media/seanc/Ventoy/iso/linux/deploy.iso
-    sudo nix run --impure .#ventoy-deploy -- {{args}}
+    sudo nix run .#ventoy-deploy --impure -- {{args}}
 
 # Build the ventoy-bundle (all ISOs in a directory tree, no deploy)
 ventoy-bundle:
-    sudo nix build --impure .#ventoy-bundle
+    sudo nix build .#ventoy-bundle
 
 # Build the Ventoy installer ISO (via live-iso system, auth key auto-generated at deploy time)
+# Requires --impure because agenix-decrypted secrets live outside the Nix store.
 ventoy-iso:
-    sudo nix build --impure .#live-iso-deploy
+    sudo nix build .#live-iso-deploy --impure
 
 # ── Testing ──────────────────────────────────────────────────────────────────
 

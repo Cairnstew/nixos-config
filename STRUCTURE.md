@@ -88,7 +88,6 @@ Flake-level modules for outputs, packages, and development tools.
 | `ventoy/deploy-script/ventoy-deploy.sh` | Deploy script: device detection, mount, copy ISOs, verify integrity, deploy config |
 | `ventoy/deploy-script/tests.nix` | ShellCheck tests for deploy script |
 | `ventoy/answer-files.nix` | Windows unattended XML answer file generation from templates |
-| `ventoy/ts.key` | Ephemeral Tailscale auth key for installer ISO |
 | `ventoy/README.md` | Full documentation: architecture, workflow, CLI reference, debugging |
 | `live-iso/` | Custom NixOS live ISO builder — defines `live.isos` option [→ packages.live-iso-<name>] |
 | `live-iso/default.nix` | Import manifest |

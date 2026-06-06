@@ -49,7 +49,7 @@ let
           isoName = null;
           volumeID = null;
           extraContents = [ ];
-          tailscale = { enable = false; };
+          tailscale = { enable = false; authKeyFile = null; authKeyEncryptedSource = null; };
         };
       }
     );
@@ -62,12 +62,21 @@ let
       isoSettings = {
         boot.kernelParams = isoConfig.kernelParams;
 
-        boot.postBootCommands = lib.mkIf (isoConfig.tailscale.authKeyFile != null) ''
-          echo "live-iso: copying tailscale auth key from ISO overlay..."
-          mkdir -p "$(dirname ${isoConfig.tailscale.authKeyFile})"
-          cp "/iso${isoConfig.tailscale.authKeyFile}" "${isoConfig.tailscale.authKeyFile}"
-          chmod 600 "${isoConfig.tailscale.authKeyFile}"
-        '';
+        boot.postBootCommands =
+          if isoConfig.tailscale.authKeyEncryptedSource or null != null then ''
+            echo "live-iso: copying encrypted secrets from ISO overlay..."
+            mkdir -p /var/lib/tailscale
+            cp /iso/var/lib/tailscale/tailscale-live-key.age /var/lib/tailscale/tailscale-live-key.age
+            cp /iso/var/lib/tailscale/live-iso-ssh-key /var/lib/tailscale/live-iso-ssh-key
+            chmod 600 /var/lib/tailscale/tailscale-live-key.age /var/lib/tailscale/live-iso-ssh-key
+          ''
+          else if isoConfig.tailscale.authKeyFile or null != null then ''
+            echo "live-iso: copying tailscale auth key from ISO overlay..."
+            mkdir -p "$(dirname ${isoConfig.tailscale.authKeyFile})"
+            cp "/iso${isoConfig.tailscale.authKeyFile}" "${isoConfig.tailscale.authKeyFile}"
+            chmod 600 "${isoConfig.tailscale.authKeyFile}"
+          ''
+          else "";
 
         isoImage.squashfsCompression =
           if isoConfig.squashfsCompression != null
@@ -104,20 +113,61 @@ let
         };
 
         # Extra files placed at specific paths in the ISO
-        isoImage.contents = isoConfig.extraContents;
+        isoImage.contents = isoConfig.extraContents
+          ++ lib.optional (isoConfig.tailscale.authKeyEncryptedSource or null != null) {
+            source = isoConfig.tailscale.authKeyEncryptedSource;
+            target = "/var/lib/tailscale/tailscale-live-key.age";
+          };
       };
 
-      tailscaleAutoconnect = { pkgs, ... }: lib.mkIf isoConfig.tailscale.enable {
-        systemd.services.tailscale-autoconnect = {
-          description = "Automatically connect Tailscale at boot";
-          after = [ "network-online.target" "tailscale.service" ];
-          wants = [ "network-online.target" ];
+      tailscaleAutoconnect = { pkgs, ... }: lib.mkIf isoConfig.tailscale.enable (
+        let
+          authKeyFile = isoConfig.tailscale.authKeyFile or null;
+        in
+        {
+          systemd.services.tailscale-autoconnect = {
+            description = "Automatically connect Tailscale at boot";
+            after = [ "network-online.target" "tailscale.service" "tailscale-decrypt-secrets.service" ];
+            wants = [ "network-online.target" ];
+            requires = [ "tailscale-decrypt-secrets.service" ];
+            wantedBy = [ "multi-user.target" ];
+            serviceConfig.Type = "oneshot";
+            script = ''
+              set -euo pipefail
+              echo "Attempting Tailscale login..."
+              ${if authKeyFile != null then ''
+                if [ -f "${authKeyFile}" ]; then
+                  ${pkgs.tailscale}/bin/tailscale up --accept-routes --authkey "$(cat ${authKeyFile})"
+                else
+                  echo "Auth key file not found at ${authKeyFile} — falling back to manual auth"
+                  ${pkgs.tailscale}/bin/tailscale up --accept-routes
+                fi
+              '' else ''
+                ${pkgs.tailscale}/bin/tailscale up --accept-routes
+              ''}
+            '';
+          };
+        }
+      );
+
+      tailscaleDecryptSecrets = { pkgs, ... }: lib.mkIf (isoConfig.tailscale.authKeyEncryptedSource or null != null) {
+        environment.systemPackages = [ pkgs.age ];
+        systemd.services.tailscale-decrypt-secrets = {
+          description = "Decrypt ISO secrets using embedded age key";
+          after = [ "local-fs.target" ];
+          before = [ "tailscale-autoconnect.service" ];
+          requiredBy = [ "tailscale-autoconnect.service" ];
           wantedBy = [ "multi-user.target" ];
           serviceConfig.Type = "oneshot";
           script = ''
             set -euo pipefail
-            echo "Attempting Tailscale login (no authkey — manual auth required)..."
-            ${pkgs.tailscale}/bin/tailscale up --accept-routes
+            echo "live-iso: decrypting tailscale auth key..."
+            mkdir -p "$(dirname ${isoConfig.tailscale.authKeyFile})"
+            ${pkgs.age}/bin/age -d \
+              -i /var/lib/tailscale/live-iso-ssh-key \
+              -o ${isoConfig.tailscale.authKeyFile} \
+              /var/lib/tailscale/tailscale-live-key.age
+            chmod 600 ${isoConfig.tailscale.authKeyFile}
           '';
         };
       };
@@ -131,6 +181,7 @@ let
         basePath
         isoSettings
         tailscaleAutoconnect
+        tailscaleDecryptSecrets
       ] ++ channelMod ++ isoConfig.extraModules;
     }).config.system.build.isoImage;
 in

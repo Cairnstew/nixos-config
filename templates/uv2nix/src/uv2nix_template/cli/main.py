@@ -1,7 +1,17 @@
-def main() -> None:
-    """Entrypoint placeholder.
+from __future__ import annotations
 
-    Replace with typer/click/argparse when adding CLI functionality,
-    or delete this directory entirely if the project is library-only.
-    """
-    print("uv2nix-template — ready")
+import typer
+
+from uv2nix_template.cli.context import AppContext
+from uv2nix_template.cli.commands import init, generate, validate
+
+app = typer.Typer(no_args_is_help=True)
+app.add_typer(init.app, name="init")
+app.add_typer(generate.app, name="generate")
+app.add_typer(validate.app, name="validate")
+
+
+@app.callback()
+def main(ctx: typer.Context, verbose: bool = False) -> None:
+    ctx.ensure_object(dict)
+    ctx.obj = AppContext(verbose=verbose)

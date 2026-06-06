@@ -1,13 +1,13 @@
 { config, lib, pkgs, ... }:
 
 let
-  cfg = config.homeManagerModules.uv2nix-template;
+  cfg = config.programs.uv2nix-template;
 in
 
 {
 
-  options.homeManagerModules.uv2nix-template = {
-    enable = lib.mkEnableOption "uv2nix-template user packages";
+  options.programs.uv2nix-template = {
+    enable = lib.mkEnableOption "uv2nix-template home-manager integration";
 
     package = lib.mkOption {
       type = lib.types.package;

@@ -37,8 +37,8 @@ in
       menu_tip = {
         tips = [
           {
-            image = "/iso/linux/nixos-installer-x86_64-linux.iso";
-            tip = "Auto-connects to Tailscale (tag:temp). SSH: root@<hostname>";
+            image = "/iso/linux/deploy.iso";
+            tip = "Auto-connects to Tailscale (tag:temp, encrypted auth). SSH: root@<hostname>";
           }
         ];
       };

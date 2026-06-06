@@ -43,8 +43,6 @@ in
     # ── SSH config generation (live from tailscale status) ────────────────────
     (mkIf cfg.ssh.enable {
 
-      age.secrets.tailscale-ssh-key.owner = lib.mkForce cfg.ssh.user;
-
       users.users.${cfg.ssh.user}.openssh.authorizedKeys.keyFiles =
         lib.optional (cfg.ssh.publicKeyPath != null) cfg.ssh.publicKeyPath;
 
@@ -65,7 +63,7 @@ in
           Type = "oneshot";
           RemainAfterExit = true;
           ExecStart = let
-            sshKey = config.age.secrets.tailscale-ssh-key.path;
+            sshKey = if cfg.ssh.identityFile != null then toString cfg.ssh.identityFile else "";
           in pkgs.writeShellScript "tailscale-ssh-config" ''
             set -euo pipefail
 
@@ -82,22 +80,27 @@ in
 
             EOF
 
-            ${pkgs.tailscale}/bin/tailscale status --json | ${pkgs.jq}/bin/jq --arg key "$SSH_KEY" --arg extra "$EXTRA" -r '
+            ${pkgs.tailscale}/bin/tailscale status --json | ${pkgs.jq}/bin/jq \
+              --arg key "$SSH_KEY" \
+              --arg extra "$EXTRA" -r '
               def clean: rtrimstr(".");
               def short: split(".")[0];
+              def identityBlock:
+                if $key != "" then
+                  "  IdentityFile \($key)",
+                  "  IdentitiesOnly yes"
+                else empty end;
               [.Self, .Peer[]] | .[] | select(.DNSName != null) |
                 # Short-name alias (e.g. "Host laptop")
                 "Host \(.DNSName | short)",
                 "  HostName \(.DNSName | clean)",
-                "  IdentityFile \($key)",
-                "  IdentitiesOnly yes",
+                identityBlock,
                 (if $extra != "" then "  \($extra)" else "" end),
                 "",
                 # FQDN host block
                 "Host \(.DNSName | clean)",
                 "  HostName \(.DNSName | clean)",
-                "  IdentityFile \($key)",
-                "  IdentitiesOnly yes",
+                identityBlock,
                 (if $extra != "" then "  \($extra)" else "" end),
                 ""
             ' >> "$SSH_FILE"

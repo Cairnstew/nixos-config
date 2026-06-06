@@ -52,11 +52,11 @@
         "uv2nix": "uv2nix"
       },
       "locked": {
-        "lastModified": 1780603227,
-        "narHash": "sha256-N/cZXBNjArunha0HTDQyfNzYjl5eZ+w+SB6xwzbpKH0=",
+        "lastModified": 1780770979,
+        "narHash": "sha256-vXGPqQnT3qkOQYQut2jyPXp2dVgH9NwTl+NNXsIAPow=",
         "owner": "Cairnstew",
         "repo": "agenix-manager",
-        "rev": "5ac7e2196fd71500deabd9b393edffeee8a93c4e",
+        "rev": "7c9b4ab064fb7a726bdcfbeb67ab11a10eb0b1c3",
         "type": "github"
       },
       "original": {
@@ -941,11 +941,11 @@
         "uv2nix": "uv2nix_2"
       },
       "locked": {
-        "lastModified": 1780438158,
-        "narHash": "sha256-2d57xZCVREZ6bdSgPy7kWBjDY4eMLiN2xcaD8t/SX1w=",
+        "lastModified": 1780747798,
+        "narHash": "sha256-FYQBP6jpylq2logV4Mz68Eq75sCsacAi8F5E5WgU9gA=",
         "owner": "Cairnstew",
         "repo": "tailscale-manager",
-        "rev": "d30bd3bc4b2d4a3bbc8c8b96ae3e310eea3dc13b",
+        "rev": "4edd06326e6e355a3c76ab1dba9d72e4bb12d120",
         "type": "github"
       },
       "original": {

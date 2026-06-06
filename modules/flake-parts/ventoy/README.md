@@ -37,7 +37,7 @@ Each plugin has mode-suffixed variants (`_legacy`, `_uefi`, `_ia32`, `_aa64`,
 Also declares:
 - `ventoy.isos` — which ISOs to deploy (source store path + target USB path)
 - `ventoy.installOptions.*` — `Ventoy2Disk.sh` flags (Secure Boot, GPT, label)
-- `ventoy.live.isos.ventoy` — NixOS installer ISO defined via the live-iso system
+- `ventoy.live.isos.deploy` — NixOS deploy ISO defined via the live-iso system (`ventoy = true` auto-detects it)
 - `ventoy.answerFileSettings.*` — defaults for Windows answer file generation
 
 #### 2. Answer Files (`answer-files.nix` + `packages/ventoy/answer-files/`)
@@ -59,8 +59,7 @@ Generated XML files become Nix store paths exported as
 #### 3. Deploy Script (`deploy.nix` + `deploy-script/`)
 
 Builds the `ventoy-deploy` package — a shell script wired into `ventoy.json`
-config, ISO mappings, answer file mappings, and the installer ISO store path
-at eval time.
+config, ISO mappings, and answer file mappings at eval time.
 
 The script (`ventoy-deploy.sh`) performs:
 
@@ -70,14 +69,10 @@ The script (`ventoy-deploy.sh`) performs:
    `Ventoy2Disk.sh -i` (formats the drive), with interactive confirmation.
 3. **Mount** — Mounts the data partition, detects existing mounts via `findmnt`.
 4. **Verify** — Checks `ventoy -l`, finds `VTOYEFI`, estimates disk space.
-5. **Deploy installer ISO** — Copies the NixOS live installer ISO to
-   `/iso/linux/nixos-installer-x86_64-linux.iso`, with **SHA-256 integrity
-   verification** after copy (retries once on failure, aborts on second
-   failure).
-6. **Deploy ISOs** — Copies each mapped ISO to its target, skips if hash
+5. **Deploy ISOs** — Copies each mapped ISO to its target, skips if hash
    unchanged (tracked in `ventoy/.deploy-state`).
-7. **Deploy files** — Copies answer files to `/ventoy/scripts/`.
-8. **Deploy JSON** — Copies `ventoy.json` and optional `ventoy_grub.cfg`.
+6. **Deploy files** — Copies answer files to `/ventoy/scripts/`.
+7. **Deploy JSON** — Copies `ventoy.json` and optional `ventoy_grub.cfg`.
 
 #### 4. Live ISOs with `ventoy = true`
 
@@ -99,11 +94,10 @@ This replaces the old approach of defining a dedicated `ventoy.installerIso`
 or hardcoded `live.isos.ventoy`. Users have full control over the ISO
 contents (baseModule, extraPackages, tailscale config, etc.) via standard
 live-iso options.
-at deploy time and writes it to the USB's `/ventoy/ts.key`. At boot, the custom
-`tailscale-autoconnect` service finds the VENTOY data partition (via
-`blkid -L VENTOY`), reads the key, and auto-authenticates. If no key is found
-(e.g. booted from a non-Ventoy source), the service falls back to
-`tailscale up` without an auth key (manual auth via LAN SSH is still available).
+
+The Tailscale auth key is embedded in the ISO as an encrypted `.age` file and
+decrypted at boot by `tailscale-decrypt-secrets.service` using an embedded age
+private key. No runtime network access or USB-side auth key is required.
 
 ## Workflow
 
@@ -111,15 +105,15 @@ at deploy time and writes it to the USB's `/ventoy/ts.key`. At boot, the custom
 
 - A Ventoy-capable USB drive (auto-detected or specified via `--device`)
 - `ventoy-full` or `ventoy` package available on the deploy machine
-- Tailscale installed and authenticated on the deploy machine (for auto-generating the installer ISO's auth key)
+- Agenix secrets decrypted on the build machine (`sudo nix build --impure`)
 
 ### Quick Start
 
 ```bash
-# 1. Build the installer ISO (optional — ventoy-deploy does this too)
-just ventoy-iso
+# 1. Build the deploy ISO (requires --impure for agenix secrets)
+sudo just ventoy-iso
 
-# 2. Deploy everything to a Ventoy USB (auto-generates Tailscale auth key)
+# 2. Deploy everything to a Ventoy USB
 just ventoy-deploy
 
 # 3. Or deploy to a specific device
@@ -184,7 +178,7 @@ ventoy.answerFileSettings = {
 | `just ventoy-deploy --device /dev/sdb --mount /path` | Specify both |
 | `just ventoy-bundle` | `nix build .#ventoy-bundle` — build file tree only |
 | `nix build .#ventoy-deploy` | Build the deploy script (without running) |
-| `nix build .#live-iso-ventoy` | Build the installer ISO |
+| `sudo nix build .#live-iso-deploy --impure` | Build the deploy ISO |
 | `nix build .#ventoy-bundle` | Build the bundle (JSON + ISOs in a tree) |
 
 ### Deploy Script CLI
@@ -286,7 +280,7 @@ Common symptoms and fixes:
    - **Cause:** The ISO was deployed to a path that doesn't match Ventoy's
      search root (`VTOY_DEFAULT_SEARCH_ROOT` which defaults to `/iso`).
    - **Fix:** Check `ventoy.json` has `VTOY_DEFAULT_SEARCH_ROOT` set to `/iso`.
-     The ISO path is `/iso/linux/nixos-installer-x86_64-linux.iso`.
+     The ISO path is `/iso/linux/deploy.iso`.
 
 ### Deploy Script Issues
 
@@ -305,11 +299,11 @@ Common symptoms and fixes:
      ```
 
 3. **`cp to exfat corrupts large files`**
-   - **Cause:** The installer ISO copy step lacked checksum verification,
-     allowing silent corruption of 1.5GB files on exfat.
+   - **Cause:** ISO copy lacked checksum verification, allowing silent
+     corruption of 1.5GB files on exfat.
    - **Fix:** This has been fixed — the deploy script now verifies SHA-256
-     after every installer ISO copy, with an automatic retry on failure. If
-     you still see corruption, try `rsync --checksum` or a different USB drive.
+     after every ISO copy, with an automatic retry on failure. If you still
+     see corruption, try `rsync --checksum` or a different USB drive.
 
 ### Deploying Without the Nix Wrapper
 
