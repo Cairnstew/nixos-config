@@ -6,6 +6,6 @@
   provides = [ ];
   expects = [ "my.live.isos" ];
   complexity = "low";
-  tested = false;
+  tested = true;
   maintainer = "seanc";
 }
