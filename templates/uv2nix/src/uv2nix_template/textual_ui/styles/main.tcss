@@ -1,0 +1,7 @@
+MainScreen {
+    background: $panel;
+}
+
+DataTable {
+    border: solid $accent;
+}

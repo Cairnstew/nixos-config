@@ -8,6 +8,15 @@ let
 
   # Helper to check if this is a WSL system
   isWSL = config.wsl.enable or false;
+
+  # agenix-manager key groups — defined here to avoid circular config references
+  # in keys.groups.main below.
+  systemsKeys = [
+    "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIETE96NnwPAZ0n5y6XcCzoErkrAhulUht/Hho0V829Qy root@laptop" # laptop
+    "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAINJXLC3S2pEuIchrWMtmWiTaJOA+U02HVyRczRNbRjMX root@nixos" # server
+    "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIKWiP0JxNaeWS30gzg4A2zLnSRdZutWzCP0mjZit7/De root@desktop" # desktop
+  ];
+  usersKeys = [ flake.config.me.sshKey ];
 in
 {
   imports = [
@@ -59,9 +68,10 @@ in
     ./steam
     ./sillytavern
 
-    # ── Location & Secrets ────────────────────────────────────────────────
+    # ── Location, Secrets & Deploy ────────────────────────────────────────
     ./current-location.nix
     ./secrets
+    ./deploy
 
     # ── VM Testing ──────────────────────────────────────────────────────────
     ./vm-test.nix
@@ -103,12 +113,11 @@ in
     enable      = true;
     secretsPath = ./secrets;
 
-    keys.systems = [
-      "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIETE96NnwPAZ0n5y6XcCzoErkrAhulUht/Hho0V829Qy root@laptop" # laptop
-      "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAINJXLC3S2pEuIchrWMtmWiTaJOA+U02HVyRczRNbRjMX root@nixos" # server
-      "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIKWiP0JxNaeWS30gzg4A2zLnSRdZutWzCP0mjZit7/De root@desktop" # desktop
-    ];
-    keys.users = [ flake.config.me.sshKey ];
+    keys.groups.systems = systemsKeys;
+    keys.groups.users = usersKeys;
+    keys.groups.main = systemsKeys ++ usersKeys;
+
+    keys.groups.deployment = [ "age1hd4asmw7agdq8ygy8hu4w8mdxalevkmne9x3zwcawsjdze9spcnqpmhtse" ];
 
     identities = [ "/etc/ssh/ssh_host_ed25519_key" ];
   };
@@ -157,18 +166,21 @@ in
         acl.enable = lib.mkDefault true;
 
         authKeys = lib.mkDefault {
-          temp-key = {
+          tailscale-live-key = {
             description = "Temporary live environment key";
             tags = [ "tag:temp" ];
             ephemeral = true;
+            reusable = true;
             preauthorized = false;
             recreateIfInvalid = "always";
-        exportPath = {
-          enable = true;
-          owner = "root";
-          group = "root";
-          mode = "0644";
-        };
+          };
+          nixos-machine-key = {
+            description = "NixOS machine key";
+            tags = [ "tag:nixos" ];
+            reusable = true;
+            ephemeral = false;
+            preauthorized = true;
+            recreateIfInvalid = "always";
           };
         };
 
@@ -226,46 +238,6 @@ in
           ];
         };
       };
-    };
-
-    # ── Live ISO Definitions ────────────────────────────────────────────
-    # Minimal deploy ISO with tailscale auto-auth via pre-provisioned temp key.
-    # Auto-deploys to Ventoy USB when ventoy-deploy runs.
-    # Build: nix build .#live-iso-deploy
-    live.isos.deploy = {
-      baseModule = lib.mkDefault "minimal";
-      system = lib.mkDefault "x86_64-linux";
-      enableSSH = lib.mkDefault true;
-      enableFlakes = lib.mkDefault true;
-      squashfsCompression = lib.mkDefault "gzip -Xcompression-level 1";
-      isoName = lib.mkDefault "nixos-deploy-x86_64.iso";
-      volumeID = lib.mkDefault "NIXOS_DEPLOY";
-
-      ventoy = lib.mkDefault true;
-
-      # Tailscale with auto-auth via pre-provisioned temp key
-      tailscale.enable = lib.mkDefault true;
-      tailscale.authKeyFile = lib.mkDefault "/var/lib/tailscale/authkey";
-
-      extraContents = let
-        keyPath = config.services.tailscale-manager.authKeys.temp-key.path;
-        keyStorePath = builtins.path {
-          path = keyPath;
-          name = "tailscale-authkey";
-        };
-      in [
-        {
-          source = keyStorePath;
-          target = "/var/lib/tailscale/authkey";
-        }
-      ];
-
-      extraModules = lib.mkDefault [
-        { services.tailscale.authKeyFile = "/var/lib/tailscale/authkey"; }
-        { services.tailscale.extraUpFlags = lib.mkForce [ "--accept-routes" "--ssh" ]; }
-      ];
-
-      extraPackages = lib.mkDefault (with pkgs; [ ]);
     };
 
     # Git repo sync: Automatically syncs this flake to GitHub
