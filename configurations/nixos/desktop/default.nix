@@ -3,6 +3,7 @@
   imports = [
     ./hardware-configuration.nix
     ./configuration.nix
+    ./disk-config.nix
     flake.inputs.self.nixosModules.common
   ];
 
@@ -83,7 +84,8 @@
     enable = true;
     mode = "useExisting";
     disk = "/dev/sda";
-    nixosPartition = "/dev/sda4";
+    espPartition = "/dev/disk/by-partlabel/disk-main-ESP";
+    nixosPartition = "/dev/disk/by-partlabel/disk-main-nixos";
   };
 
   # ── SSH Access

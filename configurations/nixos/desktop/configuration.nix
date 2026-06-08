@@ -31,5 +31,6 @@
     isNormalUser = true;
     description = "Sean Cairns";
     extraGroups = [ "networkmanager" "wheel" "terraform" ];
+    initialPassword = "changeme";
   };
 }

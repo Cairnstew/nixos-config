@@ -78,10 +78,10 @@ in
     espPartition = mkOption {
       type = types.nullOr types.str;
       default = null;
-      example = "/dev/nvme0n1p1";
+      example = "/dev/disk/by-partlabel/disk-main-ESP";
       description = ''
-        Existing EFI System Partition. If unset in useExisting mode,
-        the module auto-selects the first vfat partition on {option}`disk`.
+        Existing EFI System Partition. Required when mode = "useExisting".
+        Use a stable path like /dev/disk/by-partlabel/... or a PARTUUID.
       '';
     };
 

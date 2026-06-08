@@ -89,6 +89,11 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
+    nixos-deploy-tool = {
+      url = "github:Cairnstew/nixos-deploy-tool";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+
   };
 
   # Wired using https://nixos-unified.org/autowiring.html

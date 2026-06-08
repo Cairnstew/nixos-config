@@ -4,78 +4,74 @@
       type = "app";
       program = pkgs.writeShellApplication {
         name = "deploy-nixos";
-        runtimeInputs = [ inputs.nixos-anywhere.packages.${system}.default ];
+        runtimeInputs = [
+          inputs.nixos-deploy-tool.packages.${system}.default
+          inputs.nixos-anywhere.packages.${system}.default
+        ];
         text = ''
           set -euo pipefail
 
-          if [ $# -lt 2 ]; then
-            echo "Usage: deploy-nixos <hostname> [<ssh-address>] [-- nixos-anywhere options]"
-            echo ""
-            echo "Examples:"
-            echo "  deploy-nixos desktop                    # Tailscale (nixos@nixos)"
-            echo "  deploy-nixos server 192.168.1.100"
-            echo "  deploy-nixos desktop nixos@nixos -- --disko-mode mount"
+          # Usage: deploy-nixos [--extra-args <args>] <hostname> [<ssh-address>]
+          EXTRA_ARGS=""
+
+          while [[ $# -gt 0 ]]; do
+            case "$1" in
+              --extra-args)
+                EXTRA_ARGS="$2"
+                shift 2
+                ;;
+              --help|-h)
+                echo "Usage: deploy-nixos [--extra-args <args>] <hostname> [<ssh-address>]"
+                echo ""
+                echo "Examples:"
+                echo "  deploy-nixos desktop"
+                echo "  deploy-nixos desktop nixos@nixos"
+                echo "  deploy-nixos --extra-args '--disko-mode mount' desktop nixos@nixos"
+                exit 0
+                ;;
+              --*)
+                echo "Unknown option: $1"
+                exit 1
+                ;;
+              *)
+                break
+                ;;
+            esac
+          done
+
+          if [ $# -lt 1 ]; then
+            echo "Usage: deploy-nixos [--extra-args <args>] <hostname> [<ssh-address>]"
             exit 1
           fi
 
-          host="$1"
-          addr="$2"
-          shift 2
+          HOST="$1"
+          ADDR="''${2:-}"
 
-          host_dir="./configurations/nixos/$host"
+          # Change to flake root so relative paths resolve
+          cd "''${FLAKE_ROOT:-.}"
 
-          if [ ! -d "$host_dir" ]; then
-            echo "Error: host directory not found at $host_dir"
-            echo "Make sure you are in the flake root and the host directory exists."
-            exit 1
-          fi
+          # Warm flake eval cache so nixos-deploy's internal eval shows progress
+          nix flake show --json . > /dev/null || true
 
-          case "$addr" in
-            *@*) target_host="$addr" ;;
-            *)   target_host="root@$addr" ;;
-          esac
-
-          # Auto-detect hardware config strategy:
-          #   facter.json > hardware-configuration.nix > generate
-          if [ -f "$host_dir/facter.json" ]; then
-            hw_args=(--generate-hardware-config nixos-facter "$host_dir/facter.json")
+          if [ -n "$EXTRA_ARGS" ]; then
+            # Word-split EXTRA_ARGS into an array for safe passing
+            eval "set -- $EXTRA_ARGS"
+            EXTRA_ARR=("$@")
+            if [ -n "$ADDR" ]; then
+              exec nixos-anywhere --flake ".#$HOST" "''${EXTRA_ARR[@]}" "$ADDR"
+            else
+              exec nixos-anywhere --flake ".#$HOST" "''${EXTRA_ARR[@]}" "$HOST"
+            fi
           else
-            hw_args=(--generate-hardware-config nixos-generate-config "$host_dir/hardware-configuration.nix")
-          fi
-
-          # Auto-enable password auth when SSHPASS is set
-          if [ -n "''${SSHPASS:-}" ]; then
-            pass_args=(--env-password)
-          else
-            pass_args=()
-          fi
-
-          # If a disk-config.nix exists the host uses disko — let nixos-anywhere
-          # auto-discover disko.devices from the flake config.  Otherwise skip
-          # partitioning and assume the disk is already laid out.
-          if [ -f "$host_dir/disk-config.nix" ]; then
-            echo "Deploying $host with disko (disk-config.nix found)"
-            exec nixos-anywhere \
-              --print-build-logs \
-              --flake ".#$host" \
-              "''${hw_args[@]}" \
-              "''${pass_args[@]}" \
-              --target-host "$target_host" \
-              "$@"
-          else
-            echo "Deploying $host without disko — target must already be partitioned."
-            exec nixos-anywhere \
-              --print-build-logs \
-              --phases kexec,install,reboot \
-              --flake ".#$host" \
-              "''${hw_args[@]}" \
-              "''${pass_args[@]}" \
-              --target-host "$target_host" \
-              "$@"
+            if [ -n "$ADDR" ]; then
+              exec nixos-deploy deploy run "$HOST" --addr "$ADDR"
+            else
+              exec nixos-deploy deploy run "$HOST"
+            fi
           fi
         '';
       };
-      meta.description = "Deploy NixOS to a remote host using nixos-anywhere — auto-detects disko, hardware config, and SSH auth strategy";
+      meta.description = "Deploy NixOS to a remote host using nixos-deploy-tool — replaces the old nixos-anywhere shell wrapper";
     };
   };
 }

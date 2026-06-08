@@ -90,7 +90,10 @@ let
 
         services.openssh = lib.mkIf isoConfig.enableSSH {
           enable = true;
-          settings.PermitRootLogin = "yes";
+          settings = {
+            PermitRootLogin = "yes";
+            PermitEmptyPasswords = "yes";
+          };
         };
 
         users.users.root = {
@@ -98,6 +101,8 @@ let
           initialHashedPassword = lib.mkIf (isoConfig.rootPassword != null)
             (lib.mkForce isoConfig.rootPassword);
         };
+
+        users.users.nixos.openssh.authorizedKeys.keys = isoConfig.sshKeys;
 
         environment.systemPackages = isoConfig.extraPackages;
 

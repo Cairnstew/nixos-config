@@ -47,7 +47,8 @@
 
   # ── Location ────────────────────────────────────────────────────────────
   my.system.location = {
-    timeZone = "GB";
+    enable = true;
+    timeZone = "Europe/London";
     latitude = 55.8617;
     longitude = 4.2583;
   };

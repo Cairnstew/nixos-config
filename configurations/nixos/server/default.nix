@@ -1,6 +1,6 @@
 # Server Configuration
 # See: ../../AGENT.md for configuration conventions
-{ flake, ... }:
+{ flake, lib, ... }:
 {
   imports = [
     ./configuration.nix
@@ -65,4 +65,10 @@
 
   # ── VSCode Server ───────────────────────────────────────────────────────
   # Imported via the server module which sets this up
+
+  # ── Disko / Hardware Config Resolution ────────────────────────────────────
+  # The hardware-configuration.nix sets fileSystems by UUID, while disko sets
+  # them by partlabel.  Disko wins for disko-managed systems.
+  fileSystems."/".device = lib.mkForce "/dev/disk/by-partlabel/disk-main-root";
+  fileSystems."/boot".device = lib.mkForce "/dev/disk/by-partlabel/disk-main-boot";
 }

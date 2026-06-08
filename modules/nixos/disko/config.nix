@@ -1,7 +1,7 @@
 { config, lib, pkgs, ... }:
 let
   cfg = config.my.disko.dualBoot;
-  inherit (lib) mkIf mkDefault;
+  inherit (lib) mkIf mkDefault mkForce;
   isExisting = cfg.mode == "useExisting";
   isFresh = cfg.mode == "fresh";
 in
@@ -50,31 +50,33 @@ mkIf cfg.enable {
     };
   };
 
-  # reservedSizeGB > 0 requires explicit nixosSizeGB
-  assertions = [{
-    assertion = !(cfg.enable && isFresh && cfg.reservedSizeGB > 0 && cfg.nixosSizeGB == null);
-    message = "my.disko.dualBoot.nixosSizeGB is required when reservedSizeGB > 0.";
-  }];
+  assertions = [
+    {
+      assertion = !(cfg.enable && isFresh && cfg.reservedSizeGB > 0 && cfg.nixosSizeGB == null);
+      message = "my.disko.dualBoot.nixosSizeGB is required when reservedSizeGB > 0.";
+    }
+    {
+      assertion = !(cfg.enable && isExisting && cfg.espPartition == null);
+      message = "my.disko.dualBoot.espPartition must be set when mode = \"useExisting\". "
+        + "Example: espPartition = \"/dev/disk/by-partlabel/disk-main-ESP\";";
+    }
+  ];
 
   # ── useExisting mode: adopt existing partitions ───────────
   # Disks already exist — just declare filesystems so nixos-install
   # knows what to mount. Format NixOS root manually before install:
   #   mkfs.ext4 /dev/nvme0n1p5
 
-  fileSystems."/" = mkIf isExisting {
-    device = mkDefault cfg.nixosPartition;
+  fileSystems."/" = mkIf isExisting (mkForce {
+    device = cfg.nixosPartition;
     fsType = "ext4";
-  };
+  });
 
-  fileSystems."/boot" = mkIf isExisting {
-    device = mkDefault (
-      if cfg.espPartition != null
-      then cfg.espPartition
-      else "/dev/disk/by-parttype-uuid/ESP"
-    );
+  fileSystems."/boot" = mkIf isExisting (mkForce {
+    device = cfg.espPartition;
     fsType = "vfat";
     options = [ "umask=0077" ];
-  };
+  });
 
   # ── Bootloader ────────────────────────────────────────────
   boot.loader.grub.enable = true;

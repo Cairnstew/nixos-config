@@ -4,14 +4,17 @@
       type = "app";
       program = pkgs.writeShellApplication {
         name = "deploy-nixos-test";
-        runtimeInputs = [ inputs.nixos-anywhere.packages.${system}.default ];
+        runtimeInputs = [
+          inputs.nixos-deploy-tool.packages.${system}.default
+          inputs.nixos-anywhere.packages.${system}.default
+        ];
         text = ''
           set -euo pipefail
 
           if [ $# -lt 1 ]; then
-            echo "Usage: deploy-nixos-test <hostname> [-- extra nix build flags]"
+            echo "Usage: deploy-nixos-test <hostname> [-- nix build flags]"
             echo ""
-            echo "Validate a host config via nixos-anywhere VM test (no SSH target needed)."
+            echo "Validate a host config via nixos-deploy-tool VM test."
             echo ""
             echo "Examples:"
             echo "  deploy-nixos-test desktop"
@@ -19,24 +22,12 @@
             exit 1
           fi
 
-          host="$1"
-          shift
-
-          host_dir="./configurations/nixos/$host"
-          if [ ! -d "$host_dir" ]; then
-            echo "Error: host directory not found at $host_dir"
-            echo "Make sure you are in the flake root and the host exists."
-            exit 1
-          fi
-
-          echo "Running VM test for $host — no target machine needed."
-          echo "This validates the NixOS config, disko layout, and installation."
-          echo ""
-
-          exec nixos-anywhere --vm-test --flake ".#$host" "$@"
+          # Warm flake eval cache so nixos-deploy's internal eval shows progress
+          nix flake show --json . > /dev/null || true
+          exec nixos-deploy deploy test "$@"
         '';
       };
-      meta.description = "VM-test a NixOS host config via nixos-anywhere — validates disko layout and install without a target machine";
+      meta.description = "VM-test a NixOS host config via nixos-deploy-tool — replaces the old nixos-anywhere --vm-test shell wrapper";
     };
   };
 }

@@ -9,7 +9,8 @@
 #
 # Outputs: perSystem.packages.<hostname> — activatable system packages
 #
-# Note: Secrets are disabled for these package builds (safe for CI/hydra).
+# Note: Secrets and tailscale are disabled for package builds so they
+#       evaluate cleanly in CI without requiring encrypted .age files.
 # =============================================================================
 
 { config, lib, ... }: {
@@ -18,14 +19,18 @@
       (hostName: nixosCfg:
         (nixosCfg.extendModules {
           modules = [
-            { agenixManager.enable = false; }
+            {
+              agenixManager.enable = lib.mkForce false;
+              services.tailscale.enable = lib.mkForce false;
+              services.tailscale-manager.enable = lib.mkForce false;
+            }
           ];
         }).config.system.build.default
       )
       (lib.filterAttrs
         (_: cfg:
           let
-            probed = builtins.tryEval (cfg.config.nixpkgs.hostPlatform.system); # ← changed
+            probed = builtins.tryEval (cfg.config.nixpkgs.hostPlatform.system);
           in
           probed.success && probed.value == system
         )

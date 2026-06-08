@@ -27,6 +27,8 @@ in
       volumeID = mkDefault "NIXOS_DEPLOY";
       ventoy = mkDefault true;
 
+      sshKeys = [ flake.config.me.sshKey ];
+
       tailscale = {
         enable = mkDefault true;
         authKeyFile = mkDefault "/var/lib/tailscale/authkey";

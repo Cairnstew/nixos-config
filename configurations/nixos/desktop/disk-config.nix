@@ -5,17 +5,15 @@
   #   sda3: Windows  (NTFS, 80G)    — C: drive
   #   sda4: NixOS    (ext4, rest)   — created in free space before first deploy
   #
-  # This file is NOT imported by the NixOS config (the dual-boot module
-  # handles disko.devices in fresh mode, and fileSystems in useExisting mode).
-  # It exists here for nixos-anywhere's deploy.nix to detect that this host
-  # uses nixos-anywhere, and for reference documentation of the layout.
+  # Imported by default.nix. Provides disko.devices.disk.main for
+  # nixos-anywhere + disko to discover the disk layout and mount
+  # existing partitions (useExisting mode with --disko-mode mount).
   #
   # Usage with nixos-anywhere:
-  #   Fresh install (full disk, no Windows): nix run .#deploy desktop root@<IP>
-  #   Reinstall (Windows on sda1-3, mount existing):
-  #     nix run .#deploy desktop root@<IP> -- --disko-mode mount
-  #   VM test:
-  #     nix run .#deploy-test desktop   # requires disko devices to be imported
+  #   First install (useExisting): nix run .#deploy -- desktop --addr nixos@nixos -- --disko-mode mount
+  #   Fresh install (full disk):   nix run .#deploy -- desktop --addr nixos@nixos
+  #   Reinstall (no tty):          nix run .#deploy-with-keys -- desktop --addr root@<IP>
+  #   VM test:                     nix run .#deploy-test desktop
   disko.devices.disk.main = {
     type = "disk";
     device = lib.mkDefault "/dev/sda";
