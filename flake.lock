@@ -52,11 +52,11 @@
         "uv2nix": "uv2nix"
       },
       "locked": {
-        "lastModified": 1780770979,
-        "narHash": "sha256-vXGPqQnT3qkOQYQut2jyPXp2dVgH9NwTl+NNXsIAPow=",
+        "lastModified": 1780952485,
+        "narHash": "sha256-Al8usJYvzeIVOi+akkXEvOFFgtM7Z63EeRvYUOpWN6U=",
         "owner": "Cairnstew",
         "repo": "agenix-manager",
-        "rev": "7c9b4ab064fb7a726bdcfbeb67ab11a10eb0b1c3",
+        "rev": "36b53c8af0fa77a05460738e693a96ee8e75dcaa",
         "type": "github"
       },
       "original": {
@@ -449,11 +449,11 @@
         "uv2nix": "uv2nix_2"
       },
       "locked": {
-        "lastModified": 1780938268,
-        "narHash": "sha256-sK43vplFioxgbwK02s+HAAH8zC2cenR7VJcs3cM9D6I=",
+        "lastModified": 1780954107,
+        "narHash": "sha256-ldRDk0QzMvlqzpmZ40A6NAyW5fsElfY58vTD3DPGzqU=",
         "owner": "Cairnstew",
         "repo": "nixos-deploy-tool",
-        "rev": "e5c8bffa878988c46dbc3ce2eedb424cf42be006",
+        "rev": "ea80a0e72116d1ab3e0e3a43038252a894ecb8df",
         "type": "github"
       },
       "original": {

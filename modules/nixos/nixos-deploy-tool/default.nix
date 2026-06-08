@@ -55,8 +55,17 @@ in
 
           nixosAnywhereBin = lib.mkOption {
             type = lib.types.str;
-            default = "${lib.getBin pkgs.nixos-anywhere}/bin/nixos-anywhere";
-            defaultText = lib.literalExpression ''"${pkgs.nixos-anywhere}/bin/nixos-anywhere"'';
+            default =
+              let
+                system = pkgs.stdenv.hostPlatform.system;
+                nixosAnywherePkg =
+                  if builtins.hasAttr system flake.inputs.nixos-anywhere.packages then
+                    flake.inputs.nixos-anywhere.packages.${system}.default
+                  else
+                    builtins.throw "nixos-anywhere flake input has no package for '${system}' — cannot auto-wire nixosAnywhereBin. Set my.services.nixos-deploy-tool.settings.nixosAnywhereBin manually.";
+              in
+              "${lib.getBin nixosAnywherePkg}/bin/nixos-anywhere";
+            defaultText = lib.literalExpression ''"${(flake.inputs.nixos-anywhere.packages.x86_64-linux.default)}/bin/nixos-anywhere"'';
             description = "Path to the nixos-anywhere binary";
           };
         };
@@ -103,6 +112,9 @@ in
     services.nixos-deploy-tool = {
       enable = true;
 
+      # The upstream service runs `nixos-deploy` with no args, which shows
+      # help text and exits 2. Override to a no-op — the only purpose of the
+      # service is config change detection via restartTriggers.
       settings = lib.recursiveUpdate {
         flakeRoot = cfg.settings.flakeRoot;
         logLevel = cfg.settings.logLevel;
@@ -119,5 +131,13 @@ in
 
       environment = cfg.environment;
     };
+
+    systemd.services.nixos-deploy-tool = {
+      serviceConfig.ExecStart = lib.mkForce "${pkgs.coreutils}/bin/true";
+    };
+
+    environment.systemPackages = [
+      flake.inputs.nixos-anywhere.packages.${pkgs.stdenv.hostPlatform.system}.default
+    ];
   };
 }

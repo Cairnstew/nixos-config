@@ -1,15 +1,9 @@
 # Deploy
 
-nixos-anywhere deploy app, VM test runner, and interactive wizard for remote NixOS installation.
+nixos-anywhere deploy via the system-installed `nixos-deploy` CLI.
 
-## Apps
-
-| App | Command | Description |
-|-----|---------|-------------|
-| `deploy` | `nix run .#deploy -- <host> [<addr>] [-- flags]` | Deploy NixOS via nixos-anywhere |
-| `deploy-with-keys` | `nix run .#deploy-with-keys -- <host> [<addr>]` | Deploy with pre-generated SSH host key + auto-secrets wiring |
-| `deploy-test` | `nix run .#deploy-test -- <host>` | VM-test a config (no target machine) |
-| `deploy-wizard` | `nix run .#deploy-wizard -- <host>` | Interactive wizard: inspect, partition, deploy |
+All deploy subcommands go through `nixos-deploy deploy <subcommand>`, with paths
+auto-wired from the NixOS module config (`my.services.nixos-deploy-tool.settings`).
 
 ## `deploy` — Quick Install
 
@@ -25,15 +19,14 @@ Wraps nixos-anywhere with auto-detection:
 
 ## `deploy-with-keys` — Deploy with Secrets Wiring
 
-Wraps `deploy` with SSH host key pre-generation and instructions for agenix rekeying.
 Use this for first-time deployments of hosts that need encrypted secrets on boot.
+The SSH key path is configured via the NixOS module (`my.services.nixos-deploy-tool.settings`).
 
 **Workflow:**
 
-1. Generates an ed25519 keypair in `mktemp -d` (never touches the Nix store or git)
-2. Prints the public key — add it to `agenixManager.keys.systems` in `modules/nixos/common.nix`
-3. After adding the key, run `agenix-manager rekey` to re-encrypt all secrets
-4. Re-run `just deploy <host>` with `--extra-files <tmpdir>`, copying the private key to `/etc/ssh/ssh_host_ed25519_key` on the target
+1. Ensure the target's public key is in `agenixManager.keys.systems` in `modules/nixos/common.nix`
+2. Run `agenix-manager rekey` to re-encrypt all secrets for the new key
+3. Deploy with `just deploy-with-keys <host>` (or `nixos-deploy deploy with-keys <host>`)
 
 **Result:** The target boots with the pre-placed host key. OpenSSH skips key generation,
 so agenix finds the matching host key and decrypts all secrets on first boot.
@@ -42,19 +35,19 @@ so agenix finds the matching host key and decrypts all secrets on first boot.
 just deploy-with-keys desktop 192.168.1.100
 ```
 
-All extra arguments after `--` are forwarded directly to nixos-anywhere:
+All extra arguments are forwarded directly to nixos-anywhere:
 
 ```
-nix run .#deploy -- desktop -- --disko-mode mount --phases kexec,install,reboot
+nixos-deploy deploy run desktop -- --disko-mode mount --phases kexec,install,reboot
 ```
 
 ## `deploy-test` — Validate Before Deploying
 
-Runs nixos-anywhere's `--vm-test` flag, which builds the host's
+Runs `nixos-anywhere --vm-test` via `nixos-deploy`, which builds the host's
 `system.build.installTest` and runs it inside a QEMU VM. No SSH target needed.
 
 ```
-nix run .#deploy-test -- desktop
+nixos-deploy deploy test desktop
 ```
 
 This validates:
@@ -73,17 +66,21 @@ Connects to a live ISO via Tailscale, then:
 3. **NixOS partition setup** — reuses existing, creates in free space, or accepts manual
 4. **Dynamic GPT partlabel mapping** — finds ESP/MSR/Windows/NixOS by type GUID or label, renames to match disko expectations (`disk-main-*`)
 5. **Password prompt** — optionally sets `seanc` password
-6. **Deploys** via `nix run .#deploy -- ... --disko-mode mount`
+6. **Deploys** via `nixos-deploy deploy run ... --disko-mode mount`
 
 ## just commands
 
 ```bash
-just deploy desktop              # Deploy via Tailscale
-just deploy server 10.0.0.5      # Deploy via raw IP
-just deploy-with-keys desktop    # Deploy + pre-generated SSH key + secrets wiring
-just deploy-test desktop          # VM test (no target)
-just deploy-wizard desktop        # Interactive wizard
-just register-host desktop <ip>   # Register host key (post-deploy, for existing hosts)
+just deploy run desktop          # nixos-deploy deploy run desktop
+just deploy with-keys desktop    # nixos-deploy deploy with-keys desktop
+just deploy test desktop         # nixos-deploy deploy test desktop
+just deploy wizard desktop       # nixos-deploy deploy wizard desktop
+
+# Shorthands with convenient addr defaults:
+just deploy-run desktop          # nixos-deploy deploy run desktop --addr nixos@nixos
+just deploy-with-keys desktop    # sudo nixos-deploy deploy with-keys desktop --addr nixos@nixos
+just deploy-test desktop         # nixos-deploy deploy test desktop
+just deploy-wizard desktop       # nixos-deploy deploy wizard desktop
 ```
 
 ## Files
@@ -91,9 +88,6 @@ just register-host desktop <ip>   # Register host key (post-deploy, for existing
 | File | Purpose |
 |------|---------|
 | `default.nix` | Import manifest (auto-imported by flake) |
-| `deploy.nix` | `apps.deploy` — nixos-anywhere wrapper |
-| `deploy-with-keys.nix` | `apps.deploy-with-keys` — deploy + pre-generated host key + secrets wiring |
-| `deploy-test.nix` | `apps.deploy-test` — VM test runner |
-| `deploy-wizard.nix` | `apps.deploy-wizard` — interactive installer |
+| `devshell.nix` | Deploy tool devShell (`nix develop .#deploy-tool`) |
 | `meta.nix` | Module metadata |
 | `tests.nix` | Assertions |

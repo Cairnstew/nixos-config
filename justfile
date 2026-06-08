@@ -28,8 +28,9 @@ activate host:
 
 # ── Fresh Install ────────────────────────────────────────────────────────────
 
-# Generic nixos-deploy dispatcher: just deploy <subcommand> <host> [flags...]
+# Dispatcher for nixos-deploy deploy <subcommand> ...
 # Subcommands: run, with-keys, test, wizard
+# For top-level nixos-deploy commands (prepare, iso, tailscale, secrets), use dedicated recipes.
 # e.g., just deploy run desktop
 #       just deploy run desktop -- --addr nixos@nixos
 #       just deploy with-keys desktop
@@ -62,6 +63,12 @@ deploy-wizard host:
 [group('deploy')]
 deploy-with-keys host addr="nixos@nixos" *args:
     sudo nixos-deploy deploy with-keys {{ host }} --addr {{ addr }} --extra-args "{{ args }}"
+
+# Generate host SSH keypair + bootstrap instructions for a new machine
+# See: nixos-deploy prepare --help
+[group('deploy')]
+prepare host:
+    nixos-deploy prepare {{ host }}
 
 # ── ISO & Ventoy ─────────────────────────────────────────────────────────────
 

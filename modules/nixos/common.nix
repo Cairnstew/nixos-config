@@ -15,6 +15,7 @@ let
     "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIETE96NnwPAZ0n5y6XcCzoErkrAhulUht/Hho0V829Qy root@laptop" # laptop
     "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAINJXLC3S2pEuIchrWMtmWiTaJOA+U02HVyRczRNbRjMX root@nixos" # server
     "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIKWiP0JxNaeWS30gzg4A2zLnSRdZutWzCP0mjZit7/De root@desktop" # desktop
+    "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIBmJgStGPQ/nDzX8Frput5XQk6rsjtyDjI9eaYWtwVtb nixos-deploy/desktop" # nixos-deploy/desktop
   ];
   usersKeys = [ flake.config.me.sshKey ];
 in
