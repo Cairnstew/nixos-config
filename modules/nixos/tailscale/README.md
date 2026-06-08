@@ -10,7 +10,7 @@ Tailscale mesh VPN with static SSH configuration derived from `config.nix`.
 | `my.services.tailscale.openFirewall` | `bool` | `true` | Open Tailscale UDP port |
 | `my.services.tailscale.exitNode` | `bool` | `false` | Advertise as exit node |
 | `my.services.tailscale.tags` | `[string]` | `[]` | ACL tags (e.g. `["tag:nixos"]` ) |
-| `my.services.tailscale.ssh.enable` | `bool` | `false` | Generate SSH config for tailnet |
+| `my.services.tailscale.ssh.enable` | `bool` | `false` | Enable Tailscale SSH server (--ssh) + client SSH config |
 | `my.services.tailscale.ssh.user` | `string` | — | User whose SSH config is managed |
 | `my.services.tailscale.ssh.publicKeyPath` | `path` | `null` | Path to tailscale SSH pub key |
 | `my.services.tailscale.ssh.extraHostConfig` | `lines` | `""` | Extra SSH config per host |

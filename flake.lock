@@ -1015,11 +1015,11 @@
         "uv2nix": "uv2nix_3"
       },
       "locked": {
-        "lastModified": 1780747798,
-        "narHash": "sha256-FYQBP6jpylq2logV4Mz68Eq75sCsacAi8F5E5WgU9gA=",
+        "lastModified": 1780956226,
+        "narHash": "sha256-dYX0Udtd72Kl5kE48ThMU43hxpBzfMNw5eiAk7FZmcg=",
         "owner": "Cairnstew",
         "repo": "tailscale-manager",
-        "rev": "4edd06326e6e355a3c76ab1dba9d72e4bb12d120",
+        "rev": "a4d076df2df63521ce9287add255cb57414db817",
         "type": "github"
       },
       "original": {

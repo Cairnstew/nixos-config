@@ -232,7 +232,7 @@ in
               action = "accept";
               src = [ "tag:nixos" ];
               dst = [ "tag:nixos" ];
-              users = [ "root" ];
+              users = [ "root" flake.config.me.username ];
             }
             # 3. Allow your NixOS administrators or NixOS nodes to securely Tailscale-SSH
             # into the temporary live environments for troubleshooting or automation.

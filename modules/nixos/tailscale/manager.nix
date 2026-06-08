@@ -17,11 +17,13 @@ in
         enable = cfg.policy.enable;
         tagOwners = cfg.policy.tagOwners;
         grants =
-          (map (port: {
-            src = [ "tag:nixos" ];
-            dst = [ "tag:nixos" ];
-            ip = [ port ];
-          }) cfg.policy.interNodePorts)
+          (map
+            (port: {
+              src = [ "tag:nixos" ];
+              dst = [ "tag:nixos" ];
+              ip = [ port ];
+            })
+            cfg.policy.interNodePorts)
           ++ cfg.policy.grants;
         ssh = cfg.policy.ssh;
         acls = cfg.policy.acls;

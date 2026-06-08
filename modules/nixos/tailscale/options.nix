@@ -357,7 +357,7 @@ in
     };
 
     ssh = {
-      enable = mkEnableOption "Static SSH config for tailnet machines";
+      enable = mkEnableOption "Tailscale SSH server (--ssh flag) + generate client SSH config for tailnet machines";
 
       user = mkOption {
         type = types.str;

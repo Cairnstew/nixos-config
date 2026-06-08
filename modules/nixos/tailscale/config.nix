@@ -15,7 +15,8 @@ in
         extraUpFlags =
           [ "--accept-dns=true" ]
           ++ lib.optional (cfg.tags != [ ]) "--advertise-tags=${lib.concatStringsSep "," cfg.tags}"
-          ++ lib.optional cfg.exitNode "--advertise-exit-node";
+          ++ lib.optional cfg.exitNode "--advertise-exit-node"
+          ++ lib.optional cfg.ssh.enable "--ssh";
       };
 
       networking.firewall.trustedInterfaces = [ "tailscale0" ];
@@ -62,51 +63,53 @@ in
         serviceConfig = {
           Type = "oneshot";
           RemainAfterExit = true;
-          ExecStart = let
-            sshKey = if cfg.ssh.identityFile != null then toString cfg.ssh.identityFile else "";
-          in pkgs.writeShellScript "tailscale-ssh-config" ''
-            set -euo pipefail
+          ExecStart =
+            let
+              sshKey = if cfg.ssh.identityFile != null then toString cfg.ssh.identityFile else "";
+            in
+            pkgs.writeShellScript "tailscale-ssh-config" ''
+              set -euo pipefail
 
-            SSH_DIR="/home/${cfg.ssh.user}/.ssh/config.d"
-            SSH_FILE="$SSH_DIR/tailscale"
-            SSH_KEY="${sshKey}"
-            EXTRA="${cfg.ssh.extraHostConfig}"
+              SSH_DIR="/home/${cfg.ssh.user}/.ssh/config.d"
+              SSH_FILE="$SSH_DIR/tailscale"
+              SSH_KEY="${sshKey}"
+              EXTRA="${cfg.ssh.extraHostConfig}"
 
-            mkdir -p "$SSH_DIR"
+              mkdir -p "$SSH_DIR"
 
-            cat > "$SSH_FILE" << 'EOF'
-            # BEGIN tailscale-managed — generated from live tailscale status
-            # Do not edit manually. Regenerate: systemctl start tailscale-ssh-config
+              cat > "$SSH_FILE" << 'EOF'
+              # BEGIN tailscale-managed — generated from live tailscale status
+              # Do not edit manually. Regenerate: systemctl start tailscale-ssh-config
 
-            EOF
+              EOF
 
-            ${pkgs.tailscale}/bin/tailscale status --json | ${pkgs.jq}/bin/jq \
-              --arg key "$SSH_KEY" \
-              --arg extra "$EXTRA" -r '
-              def clean: rtrimstr(".");
-              def short: split(".")[0];
-              def identityBlock:
-                if $key != "" then
-                  "  IdentityFile \($key)",
-                  "  IdentitiesOnly yes"
-                else empty end;
-              [.Self, .Peer[]] | .[] | select(.DNSName != null) |
-                # Short-name alias (e.g. "Host laptop")
-                "Host \(.DNSName | short)",
-                "  HostName \(.DNSName | clean)",
-                identityBlock,
-                (if $extra != "" then "  \($extra)" else "" end),
-                "",
-                # FQDN host block
-                "Host \(.DNSName | clean)",
-                "  HostName \(.DNSName | clean)",
-                identityBlock,
-                (if $extra != "" then "  \($extra)" else "" end),
-                ""
-            ' >> "$SSH_FILE"
+              ${pkgs.tailscale}/bin/tailscale status --json | ${pkgs.jq}/bin/jq \
+                --arg key "$SSH_KEY" \
+                --arg extra "$EXTRA" -r '
+                def clean: rtrimstr(".");
+                def short: split(".")[0];
+                def identityBlock:
+                  if $key != "" then
+                    "  IdentityFile \($key)",
+                    "  IdentitiesOnly yes"
+                  else empty end;
+                [.Self, .Peer[]] | .[] | select(.DNSName != null) |
+                  # Short-name alias (e.g. "Host laptop")
+                  "Host \(.DNSName | short)",
+                  "  HostName \(.DNSName | clean)",
+                  identityBlock,
+                  (if $extra != "" then "  \($extra)" else "" end),
+                  "",
+                  # FQDN host block
+                  "Host \(.DNSName | clean)",
+                  "  HostName \(.DNSName | clean)",
+                  identityBlock,
+                  (if $extra != "" then "  \($extra)" else "" end),
+                  ""
+              ' >> "$SSH_FILE"
 
-            chmod 644 "$SSH_FILE"
-          '';
+              chmod 644 "$SSH_FILE"
+            '';
         };
       };
     })
