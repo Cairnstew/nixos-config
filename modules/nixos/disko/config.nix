@@ -7,48 +7,69 @@ let
 in
 mkIf cfg.enable {
 
-  # ── fresh mode: disko creates everything ──────────────────
-  # Layout: ESP → MSR → Windows → NixOS → [reserved free space]
-  # Windows gets installed to partition 3 (after ESP + MSR).
-  # NixOS before Windows keeps it safe from recovery partition theft.
-  disko.devices.disk.main = mkIf isFresh {
-    type = "disk";
-    device = mkDefault cfg.disk;
-    content = {
-      type = "gpt";
-      partitions = {
-        ESP = {
-          size = "${toString cfg.espSizeGB}G";
-          type = "EF00";
-          content = {
-            type = "filesystem";
-            format = "vfat";
-            mountpoint = "/boot";
-            mountOptions = [ "umask=0077" ];
+  # ── disko.devices (mode-dependent) ────────────────────────
+  # Single definition — the disko option type rejects duplicate definitions
+  # even when gated behind mkIf. Use a Nix if-else to choose at eval time.
+  disko.devices.disk.main =
+    if isFresh then {
+      type = "disk";
+      device = mkDefault cfg.disk;
+      # Layout: ESP → MSR → Windows → NixOS → [reserved free space]
+      content = {
+        type = "gpt";
+        partitions = {
+          ESP = {
+            size = "${toString cfg.espSizeGB}G";
+            type = "EF00";
+            content = {
+              type = "filesystem";
+              format = "vfat";
+              mountpoint = "/boot";
+              mountOptions = [ "umask=0077" ];
+            };
           };
-        };
-        msr = {
-          size = "${toString cfg.msrSizeMB}M";
-          type = "E3C9E316-31B4-4298-89FA-94C9F823F8A5";
-        };
-        windows = {
-          size = "${toString cfg.windowsSizeGB}G";
-          type = "0700";
-          label = "Windows";
-        };
-        nixos = {
-          size =
-            if cfg.nixosSizeGB != null then "${toString cfg.nixosSizeGB}G"
-            else "100%";
-          content = {
-            type = "filesystem";
-            format = "ext4";
-            mountpoint = "/";
+          msr = {
+            size = "${toString cfg.msrSizeMB}M";
+            type = "E3C9E316-31B4-4298-89FA-94C9F823F8A5";
+          };
+          windows = {
+            size = "${toString cfg.windowsSizeGB}G";
+            type = "0700";
+            label = "Windows";
+          };
+          nixos = {
+            size =
+              if cfg.nixosSizeGB != null then "${toString cfg.nixosSizeGB}G"
+              else "100%";
+            content = {
+              type = "filesystem";
+              format = "ext4";
+              mountpoint = "/";
+            };
           };
         };
       };
-    };
-  };
+    } else if isExisting then {
+      type = "disk";
+      device = cfg.disk;
+      # Only the NixOS partition. ESP is mounted by nixos-install via
+      # fileSystems."/boot" — NOT in disko to avoid Windows bootloader risk.
+      # Deploy with --disko-mode mount so disko skips create/format:
+      #   nixos-anywhere --flake .#desktop <addr> --disko-mode mount
+      content = {
+        type = "gpt";
+        partitions = {
+          nixos = {
+            size = "100%";
+            content = {
+              type = "filesystem";
+              format = "ext4";
+              mountpoint = "/";
+            };
+          };
+        };
+      };
+    } else { };
 
   assertions = [
     {
@@ -60,12 +81,11 @@ mkIf cfg.enable {
       message = "my.disko.dualBoot.espPartition must be set when mode = \"useExisting\". "
         + "Example: espPartition = \"/dev/disk/by-partlabel/disk-main-ESP\";";
     }
+    {
+      assertion = !(cfg.enable && isExisting && cfg.nixosPartition == null);
+      message = "my.disko.dualBoot.nixosPartition must be set when mode = \"useExisting\".";
+    }
   ];
-
-  # ── useExisting mode: adopt existing partitions ───────────
-  # Disks already exist — just declare filesystems so nixos-install
-  # knows what to mount. Format NixOS root manually before install:
-  #   mkfs.ext4 /dev/nvme0n1p5
 
   fileSystems."/" = mkIf isExisting (mkForce {
     device = cfg.nixosPartition;

@@ -1,22 +1,18 @@
-{ lib, ... }: {
+{ config, lib, ... }: {
   # Expected layout when installing NixOS on a disk with existing Windows:
-  #   sda1: ESP      (vfat, ~100M) — Windows EFI boot
-  #   sda2: MSR      (16M)          — Microsoft Reserved
-  #   sda3: Windows  (NTFS, 80G)    — C: drive
-  #   sda4: NixOS    (ext4, rest)   — created in free space before first deploy
+  #   sdb1: ESP      (vfat, ~100M) — Windows EFI boot  (LABEL="EFI")
+  #   sdb2: MSR      (16M)          — Microsoft Reserved
+  #   sdb3: Windows  (NTFS, 80G)    — C: drive         (LABEL="Windows")
+  #   sdb4: NixOS    (ext4, rest)   — NixOS root       (LABEL="nixos")
   #
-  # Imported by default.nix. Provides disko.devices.disk.main for
-  # nixos-anywhere + disko to discover the disk layout and mount
-  # existing partitions (useExisting mode with --disko-mode mount).
-  #
-  # Usage with nixos-anywhere:
-  #   First install (useExisting): nix run .#deploy -- desktop --addr nixos@nixos -- --disko-mode mount
-  #   Fresh install (full disk):   nix run .#deploy -- desktop --addr nixos@nixos
-  #   Reinstall (no tty):          nix run .#deploy-with-keys -- desktop --addr root@<IP>
-  #   VM test:                     nix run .#deploy-test desktop
-  disko.devices.disk.main = {
+  # This file provides disko.devices.disk.main ONLY when dualBoot is NOT
+  # enabled. When my.disko.dualBoot.enable = true, the disko module at
+  # modules/nixos/disko/config.nix handles partitioning instead.
+  # The two-definition conflict caused the bug fixed by GOTCHAS entry
+  # "disk-config.nix unconditionally overrides disko module".
+  disko.devices.disk.main = lib.mkIf (!config.my.disko.dualBoot.enable) {
     type = "disk";
-    device = lib.mkDefault "/dev/sda";
+    device = lib.mkDefault "/dev/sdb";
     content = {
       type = "gpt";
       partitions = {

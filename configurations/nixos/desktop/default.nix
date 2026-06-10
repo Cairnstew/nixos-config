@@ -39,13 +39,13 @@
   };
 
   # ── Dual-Boot / Partition Layout
-  # Windows is on /dev/sda with free space left at the end for NixOS.
+  # Windows is on /dev/sdb with free space left at the end for NixOS.
   # Expected layout after creating the NixOS partition in free space:
-  #   sda1: ESP (vfat, ~100M) — Windows EFI boot
-  #   sda2: MSR (16M) — Microsoft Reserved
-  #   sda3: Windows (NTFS, C: drive)
-  #   sda4: NixOS (ext4, rest) — created before first deploy
-  #         (or sda5 if Windows created a recovery partition)
+  #   sdb1: ESP (vfat, ~100M) — Windows EFI boot
+  #   sdb2: MSR (16M) — Microsoft Reserved
+  #   sdb3: Windows (NTFS, C: drive)
+  #   sdb4: NixOS (ext4, rest) — created before first deploy
+  #         (or sdb5 if Windows created a recovery partition)
   #
   # First install (two options):
   #
@@ -54,10 +54,10 @@
   #   2. Check partition table:
   #        lsblk -o NAME,SIZE,FSTYPE,MOUNTPOINT
   #   3. Format the free space:
-  #        sudo mkfs.ext4 -L nixos /dev/sda4   # adjust if sda5 etc.
+  #        sudo mkfs.ext4 -L nixos /dev/sdb4   # adjust if sdb5 etc.
   #   4. Mount and install:
-  #        sudo mount /dev/sda4 /mnt
-  #        sudo mkdir -p /mnt/boot && sudo mount /dev/sda1 /mnt/boot
+  #        sudo mount /dev/sdb4 /mnt
+  #        sudo mkdir -p /mnt/boot && sudo mount /dev/sdb1 /mnt/boot
   #        sudo mkdir -p /mnt/etc
   #        git clone https://github.com/Cairnstew/nixos-config /mnt/etc/nixos
   #        sudo nixos-install --flake /mnt/etc/nixos#desktop
@@ -80,12 +80,19 @@
   #
   # Future reinstalls (via SSH, no physical access needed):
   #   nix run .#deploy -- desktop root@<IP>
+  #   just deploy-desktop <addr>
+  #
+  # Partition layout (lsblk -o NAME,SIZE,FSTYPE,LABEL):
+  #   sdb1: 512M vfat LABEL="EFI"     — Windows ESP (mounted at /boot)
+  #   sdb2: 16M                        — Microsoft Reserved
+  #   sdb3: 80G ntfs LABEL="Windows"  — Windows C: drive
+  #   sdb4: ext4 LABEL="nixos"        — NixOS root (created in free space)
   my.disko.dualBoot = {
     enable = true;
     mode = "useExisting";
-    disk = "/dev/sda";
-    espPartition = "/dev/disk/by-partlabel/disk-main-ESP";
-    nixosPartition = "/dev/disk/by-partlabel/disk-main-nixos";
+    disk = "/dev/sdb";
+    espPartition = "/dev/disk/by-label/EFI";
+    nixosPartition = "/dev/disk/by-label/nixos";
   };
 
   # ── SSH Access

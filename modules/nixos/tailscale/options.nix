@@ -316,18 +316,18 @@ let
   autoApproversSubmodule = types.submodule {
     options = {
       routes = mkOption {
-        type = types.attrsOf (types.listOf types.str);
-        default = { };
+        type = types.nullOr (types.attrsOf (types.listOf types.str));
+        default = null;
         description = "CIDR range to authorized approvers.";
       };
       exitNode = mkOption {
-        type = types.listOf types.str;
-        default = [ ];
+        type = types.nullOr (types.listOf types.str);
+        default = null;
         description = "Authorized approvers for exit node advertisements.";
       };
       appConnectors = mkOption {
-        type = types.listOf types.str;
-        default = [ ];
+        type = types.nullOr (types.listOf types.str);
+        default = null;
         description = "Authorized approvers for app connector advertisements.";
       };
     };

@@ -449,11 +449,11 @@
         "uv2nix": "uv2nix_2"
       },
       "locked": {
-        "lastModified": 1780954107,
-        "narHash": "sha256-ldRDk0QzMvlqzpmZ40A6NAyW5fsElfY58vTD3DPGzqU=",
+        "lastModified": 1781104211,
+        "narHash": "sha256-WTFAiVI3uij+BsnjKytMxhSmDW5Y6+FjY56ax5Cfnbs=",
         "owner": "Cairnstew",
         "repo": "nixos-deploy-tool",
-        "rev": "ea80a0e72116d1ab3e0e3a43038252a894ecb8df",
+        "rev": "ca367c75a2cacc9c6f86ba32213c018f9b1553d6",
         "type": "github"
       },
       "original": {
@@ -1015,11 +1015,11 @@
         "uv2nix": "uv2nix_3"
       },
       "locked": {
-        "lastModified": 1780956226,
-        "narHash": "sha256-dYX0Udtd72Kl5kE48ThMU43hxpBzfMNw5eiAk7FZmcg=",
+        "lastModified": 1781002998,
+        "narHash": "sha256-oLsK7kQHI5tdbBJ6O2lMHUQBTlcge/KvBW1RQDNV0AI=",
         "owner": "Cairnstew",
         "repo": "tailscale-manager",
-        "rev": "a4d076df2df63521ce9287add255cb57414db817",
+        "rev": "f2c8951e023f18cd581f7cfdc5c70c96a6adfa27",
         "type": "github"
       },
       "original": {

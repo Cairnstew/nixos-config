@@ -157,6 +157,9 @@ in
           nixos-configuration = builtins.readFile ./skills/nixos-configuration.md;
           module-development = builtins.readFile ./skills/module-development.md;
         };
+        commands = lib.mkDefault {
+          refactor-python = ./commands/refactor-python.md;
+        };
         mcp = lib.mkDefault {
           nixos = {
             enabled = true;

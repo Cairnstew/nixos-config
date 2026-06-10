@@ -9,6 +9,13 @@
 
 ## Format
 
+**disk-config.nix unconditionally overrides disko module in dualBoot mode**
+Symptom: Running `just deploy-with-keys desktop` rewrites the GPT, destroying Windows partitions or creating a second disko layout on another disk. Boot fails with `VFS: Can't find ext4 filesystem` on wrong device.  
+Cause: `configurations/nixos/desktop/disk-config.nix` defines `disko.devices.disk.main` unconditionally with a full GPT layout (ESP, MSR, Windows 80G, NixOS). The dualBoot module at `modules/nixos/disko/config.nix` also defines it conditionally via `mkIf isFresh`. When `mode = "useExisting"`, the module's `mkIf false` evaluates to `{}`, but `disk-config.nix` fills it back in with the full layout. nixos-anywhere sees the merged disko config and runs `disko --mode create,format,mount` — rewriting the GPT.  
+Fix: Gate `disk-config.nix`'s definitions behind `lib.mkIf (!config.my.disko.dualBoot.enable)`. The dualBoot module's `useExisting` mode only sets `fileSystems."/"` and `fileSystems."/boot"` — no `disko.devices`. Use `just deploy-desktop` (passes `--phases kexec,install,reboot` to skip the disko phase entirely). The NixOS partition (`sda4`) must be created manually once via `sgdisk` + `mkfs.ext4 -L nixos /dev/sda4`. The Windows ESP is referenced by filesystem label (`/dev/disk/by-label/EFI`) instead of disko's partlabel, which doesn't exist when disko is bypassed.
+
+---
+
 Each entry: **symptom → cause → fix**. One paragraph max. Newest at the top.
 
 ---
