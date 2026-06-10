@@ -90,7 +90,7 @@
   my.disko.dualBoot = {
     enable = true;
     mode = "useExisting";
-    disk = "/dev/sdb";
+    disk = "/dev/sda";
     espPartition = "/dev/disk/by-label/EFI";
     nixosPartition = "/dev/disk/by-label/nixos";
   };
