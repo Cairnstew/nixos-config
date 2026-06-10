@@ -14,20 +14,24 @@ in
           };
 
           diskoMode = mkOption {
-            type = types.nullOr (types.enum [
-              "mount"
-              "create,format,mount"
-              "format,mount"
-              "none"
-            ]);
-            default = null;
-            description = ''
-              Disko partitioning mode. Auto-detected when null:
-              - disk-config.nix sidecar exists → defaults to "format,mount"
-              - no disk-config.nix → defaults to null (no disko flags)
+              type = types.nullOr (types.enum [
+                "disko"
+                "mount"
+                "format"
+                "none"
+              ]);
+              default = null;
+              description = ''
+                Disko partitioning mode. Auto-detected when null:
+                - disk-config.nix sidecar exists
+                  - dualBoot mode is "useExisting" → defaults to "format"
+                  - otherwise → defaults to "disko"
+                - no disk-config.nix → defaults to null (no disko flags)
 
-              Use "mount" for reinstalls where partitions already exist and
-              should be preserved.
+                Use "mount" for reinstalls where partitions already exist and
+                should be preserved.
+                Use "format" to wipe and reformat existing partitions without
+                repartitioning.
 
               Runtime auto-detection (SSH pre-flight to check partition existence)
               is a potential future enhancement but out of scope here.

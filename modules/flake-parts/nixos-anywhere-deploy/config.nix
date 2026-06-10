@@ -16,6 +16,19 @@ let
   hostHasDiskConfig = hostName:
     builtins.pathExists "${root}/configurations/nixos/${hostName}/disk-config.nix";
 
+  getNixOSConfig = hostName:
+    config.flake.nixosConfigurations.${hostName} or null;
+
+  getNixOSCfg = hostName:
+    let c = getNixOSConfig hostName; in
+    if c != null then c.config else { };
+
+  isDualBootUseExisting = hostName:
+    let cfg = getNixOSCfg hostName;
+    in cfg ? my.disko.dualBoot
+    && cfg.my.disko.dualBoot.enable or false
+    && cfg.my.disko.dualBoot.mode or "" == "useExisting";
+
   getHostCfg = hostName:
     if builtins.hasAttr hostName hostOptions then hostOptions.${hostName} else { };
 
@@ -36,7 +49,9 @@ let
   mkDeployPkg = hostName: pkgs:
     let
       opts = getHostCfg hostName;
-      autoMode = if hostHasDiskConfig hostName then "format,mount" else null;
+      autoMode = if hostHasDiskConfig hostName then
+        if isDualBootUseExisting hostName then "format" else "disko"
+      else null;
       diskoMode = if opts ? diskoMode && opts.diskoMode != null then opts.diskoMode else autoMode;
       nixosAnywhereBin = "${inputs.nixos-anywhere.packages.${pkgs.system}.default}/bin/nixos-anywhere";
       identityStr = if opts ? agentIdentity && opts.agentIdentity != null then opts.agentIdentity else "";

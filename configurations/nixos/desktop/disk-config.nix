@@ -1,9 +1,16 @@
 { config, lib, ... }: {
-  # Expected layout when installing NixOS on a disk with existing Windows:
+  # Expected layout on /dev/sdb:
   #   sdb1: ESP      (vfat, ~100M) — Windows EFI boot  (LABEL="EFI")
   #   sdb2: MSR      (16M)          — Microsoft Reserved
   #   sdb3: Windows  (NTFS, 80G)    — C: drive         (LABEL="Windows")
   #   sdb4: NixOS    (ext4, rest)   — NixOS root       (LABEL="nixos")
+  #
+  # sdb1/2/3 are existing partitions that must never be created or formatted.
+  # They are declared with content = null so disko skips them during
+  # format/mount phases. Only sdb4 (NixOS root) has a real content block.
+  #
+  # Deploy with --disko-mode format so the partition table is not recreated:
+  #   nix run .#deploy-desktop -- nixos@nixos
   #
   # This file provides disko.devices.disk.main ONLY when dualBoot is NOT
   # enabled. When my.disko.dualBoot.enable = true, the disko module at
@@ -19,21 +26,20 @@
         ESP = {
           size = "512M";
           type = "EF00";
-          content = {
-            type = "filesystem";
-            format = "vfat";
-            mountpoint = "/boot";
-            mountOptions = [ "umask=0077" ];
-          };
+          # Existing ESP — must NOT be created or formatted.
+          # Mounted via fileSystems."/boot" when dualBoot is enabled.
+          content = null;
         };
         msr = {
           size = "16M";
           type = "E3C9E316-31B4-4298-89FA-94C9F823F8A5";
+          content = null;
         };
         windows = {
           size = "80G";
           type = "0700";
           label = "Windows";
+          content = null;
         };
         nixos = {
           size = "100%";
