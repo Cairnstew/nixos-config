@@ -38,61 +38,104 @@
     longitude = -4.2583;
   };
 
-  # ── Dual-Boot / Partition Layout
-  # Windows is on /dev/sdb with free space left at the end for NixOS.
-  # Expected layout after creating the NixOS partition in free space:
-  #   sdb1: ESP (vfat, ~100M) — Windows EFI boot
-  #   sdb2: MSR (16M) — Microsoft Reserved
-  #   sdb3: Windows (NTFS, C: drive)
-  #   sdb4: NixOS (ext4, rest) — created before first deploy
-  #         (or sdb5 if Windows created a recovery partition)
+  # ── Partition Layout (existing, DO NOT REPARTITION)
+  #   label "EFI":    vfat  512M  ESP — shared Windows/NixOS EFI
+  #   MSR:            —      16M   Microsoft Reserved
+  #   label "Windows": ntfs  ~80G  Windows C: drive
+  #   label "nixos":  ext4  rest  NixOS root
   #
-  # First install (two options):
+  # Uses /dev/disk/by-label/ paths (stable across reboots).
   #
-  # Option A — Stock NixOS minimal ISO (simpler, no build step):
-  #   1. Boot the NixOS minimal ISO on the desktop
-  #   2. Check partition table:
-  #        lsblk -o NAME,SIZE,FSTYPE,MOUNTPOINT
-  #   3. Format the free space:
-  #        sudo mkfs.ext4 -L nixos /dev/sdb4   # adjust if sdb5 etc.
-  #   4. Mount and install:
-  #        sudo mount /dev/sdb4 /mnt
-  #        sudo mkdir -p /mnt/boot && sudo mount /dev/sdb1 /mnt/boot
-  #        sudo mkdir -p /mnt/etc
-  #        git clone https://github.com/Cairnstew/nixos-config /mnt/etc/nixos
-  #        sudo nixos-install --flake /mnt/etc/nixos#desktop
-  #        sudo reboot
-  #
-  # Option B — Custom Ventoy ISO (auto-connects to Tailscale, SSH keys baked in):
-   #   1. Build the custom ISO:
-   #        just ventoy-iso   # produces packages.live-iso-deploy
-  #   2. Deploy to USB:
-  #        just ventoy-deploy
-  #   3. Or copy ISO + Windows ISO onto a Ventoy USB manually
-  #   3. Boot the USB on the desktop
-  #   4. It auto-connects to your tailnet — find it via MagicDNS
-  #   5. SSH in from your laptop:
-  #        ssh root@nixos-installer.tailXXXXX.ts.net
-  #   6. Partition and install (same commands as Option A, steps 2-5)
-  #
-  # After first boot (both options):
-  #   just register-host desktop <IP>
-  #
-  # Future reinstalls (via SSH, no physical access needed):
-  #   nix run .#deploy -- desktop root@<IP>
-  #   just deploy-desktop <addr>
-  #
-  # Partition layout (lsblk -o NAME,SIZE,FSTYPE,LABEL):
-  #   sdb1: 512M vfat LABEL="EFI"     — Windows ESP (mounted at /boot)
-  #   sdb2: 16M                        — Microsoft Reserved
-  #   sdb3: 80G ntfs LABEL="Windows"  — Windows C: drive
-  #   sdb4: ext4 LABEL="nixos"        — NixOS root (created in free space)
-  my.disko.dualBoot = {
-    enable = true;
-    mode = "useExisting";
-    disk = "/dev/sda";
-    espPartition = "/dev/disk/by-label/EFI";
-    nixosPartition = "/dev/disk/by-label/nixos";
+  # Filesystem mounts managed by disko.devices.nodev in disk-config.nix.
+  # Deploy with --disko-mode format (first deploy) or --disko-mode mount (redeploys).
+
+  # ── Filesystems (explicit, must match disk-config.nix nodev devices)
+  fileSystems."/" = {
+    device = "/dev/disk/by-label/nixos";
+    fsType = "ext4";
+  };
+
+  fileSystems."/boot" = {
+    device = "/dev/disk/by-label/EFI";
+    fsType = "vfat";
+    options = [ "umask=0077" ];
+  };
+
+  # ── Bootloader (GRUB EFI, dual-boot with Windows)
+  boot.loader.grub.enable = true;
+  boot.loader.grub.devices = [ "nodev" ];
+  boot.loader.grub.efiSupport = true;
+  boot.loader.efi.canTouchEfiVariables = true;
+
+  boot.loader.grub.extraEntries = ''
+    menuentry "Windows 11" {
+      insmod part_gpt
+      insmod fat
+      insmod chain
+      search --no-floppy --label --set=root ESP
+      chainloader /EFI/Microsoft/Boot/bootmgfw.efi
+    }
+  '';
+
+  # ── Windows post-install: restore GRUB EFI boot order
+  # Windows Setup always sets itself as the first EFI boot entry.
+  # This oneshot service runs once after first boot to repair the order
+  # so GRUB comes before Windows Boot Manager.
+  systemd.services.windows-post-install = {
+    description = "Restore GRUB EFI boot order after Windows install";
+    after = [ "boot-complete.target" ];
+    wants = [ "boot-complete.target" ];
+
+    path = [ pkgs.efibootmgr ];
+
+    serviceConfig = {
+      Type = "oneshot";
+      RemainAfterExit = true;
+      StateDirectory = "windows-post-install";
+    };
+
+    script = ''
+      set -euo pipefail
+
+      STAMP="/var/lib/windows-post-install/.done"
+      if [ -f "$STAMP" ]; then
+        exit 0
+      fi
+      mkdir -p "$(dirname "$STAMP")"
+
+      echo "[windows-post-install] Checking EFI boot order..."
+      BOOTMGR="$(efibootmgr -v 2>/dev/null || true)"
+      echo "$BOOTMGR"
+
+      CURRENT_ORDER=$(echo "$BOOTMGR" | grep "^BootOrder:" | sed 's/^BootOrder: //')
+
+      NIXOS_ID=$(echo "$BOOTMGR" | grep -i "NixOS\|GRUB" | grep "^Boot[0-9a-fA-F]\{4\}" | sed 's/^Boot\([0-9a-fA-F]\{4\}\).*/\1/' | head -1)
+      WIN_ID=$(echo "$BOOTMGR" | grep -i "Windows Boot Manager" | grep "^Boot[0-9a-fA-F]\{4\}" | sed 's/^Boot\([0-9a-fA-F]\{4\}\).*/\1/' | head -1)
+
+      # Remove stale "Windows 11 Setup" entries from installer ISO
+      STALE=$(echo "$BOOTMGR" | grep -i "Windows 11 Setup" | grep "^Boot[0-9a-fA-F]\{4\}" | sed 's/^Boot\([0-9a-fA-F]\{4\}\).*/\1/')
+      for entry in $STALE; do
+        echo "[windows-post-install] Removing stale entry Boot$entry..."
+        efibootmgr -b "$entry" -B 2>/dev/null || true
+      done
+
+      if [ -n "$NIXOS_ID" ] && [ -n "$WIN_ID" ]; then
+        NEW_ORDER="$NIXOS_ID"
+        for entry in $(echo "$CURRENT_ORDER" | tr ',' ' '); do
+          if [ "$entry" != "$NIXOS_ID" ]; then
+            NEW_ORDER="$NEW_ORDER,$entry"
+          fi
+        done
+        echo "[windows-post-install] Setting boot order: $NEW_ORDER"
+        efibootmgr -o "$NEW_ORDER" 2>/dev/null || true
+        echo "[windows-post-install] Boot order repaired."
+      else
+        echo "[windows-post-install] Could not find NixOS entry ($NIXOS_ID) or Windows entry ($WIN_ID) — skipping"
+      fi
+
+      touch "$STAMP"
+      echo "[windows-post-install] Complete."
+    '';
   };
 
   # ── SSH Access

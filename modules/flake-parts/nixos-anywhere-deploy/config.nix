@@ -49,15 +49,37 @@ let
   mkDeployPkg = hostName: pkgs:
     let
       opts = getHostCfg hostName;
-      autoMode = if hostHasDiskConfig hostName then "disko" else null;
+      # autoMode: "disko" when host has a disk-level disko config, null otherwise.
+      # For nodev-only configs, don't emit any --disko-mode since disko's build
+      # scripts require at least one disko.devices.disk entry.
+      autoMode = if hostHasDiskConfig hostName then
+        let
+          nixosCfg = getNixOSCfg hostName;
+          hasDualBoot = nixosCfg ? my.disko.dualBoot
+            && nixosCfg.my.disko.dualBoot.enable or false;
+          hasDiskDevices = if (nixosCfg ? disko.devices) then
+            let disks = nixosCfg.disko.devices.disk or { }; in
+            # Check for disks with real devices (not the /dev/null dummy placeholder
+            # used in nodev-only configs to satisfy disko's "no disks" guard).
+            disks != { }
+            && builtins.any (name: (builtins.getAttr name disks).device or "" != "/dev/null")
+              (builtins.attrNames disks)
+          else false;
+        in
+        if hasDualBoot then "disko"
+        else if hasDiskDevices then "disko"
+        else null
+      else null;
       diskoMode = if opts ? diskoMode && opts.diskoMode != null then opts.diskoMode else autoMode;
       nixosAnywhereBin = "${inputs.nixos-anywhere.packages.${pkgs.system}.default}/bin/nixos-anywhere";
       identityStr = if opts ? agentIdentity && opts.agentIdentity != null then opts.agentIdentity else "";
-      # Auto-detect generateHostKey: enabled when host uses dualBoot (which
-      # needs SSH host keys for agenix), OR when explicitly set in options.
+      # Auto-detect generateHostKey: enabled when host has a disk-config.nix
+      # (needs SSH host keys for agenix secrets at install time), OR uses
+      # dualBoot, OR when explicitly set in options.
       autoHostKey = let nixosCfg = getNixOSCfg hostName; in
-        nixosCfg ? my.disko.dualBoot
-        && nixosCfg.my.disko.dualBoot.enable or false;
+        hostHasDiskConfig hostName
+        || (nixosCfg ? my.disko.dualBoot
+          && nixosCfg.my.disko.dualBoot.enable or false);
       genHostKeyFlag = if opts ? generateHostKey then
         if opts.generateHostKey then "1" else "0"
       else if autoHostKey then "1" else "0";
