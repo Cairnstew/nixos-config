@@ -50,7 +50,7 @@ let
     let
       opts = getHostCfg hostName;
       autoMode = if hostHasDiskConfig hostName then
-        if isDualBootUseExisting hostName then "format" else "disko"
+        if isDualBootUseExisting hostName then "disko" else "disko"
       else null;
       diskoMode = if opts ? diskoMode && opts.diskoMode != null then opts.diskoMode else autoMode;
       nixosAnywhereBin = "${inputs.nixos-anywhere.packages.${pkgs.system}.default}/bin/nixos-anywhere";

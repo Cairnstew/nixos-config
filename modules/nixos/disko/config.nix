@@ -52,13 +52,29 @@ mkIf cfg.enable {
     } else if isExisting then {
       type = "disk";
       device = cfg.disk;
-      # Only the NixOS partition. ESP is mounted by nixos-install via
-      # fileSystems."/boot" — NOT in disko to avoid Windows bootloader risk.
-      # Deploy with --disko-mode mount so disko skips create/format:
-      #   nixos-anywhere --flake .#desktop <addr> --disko-mode mount
+      # All four partitions declared to match physical layout and get correct
+      # sgdisk indexes (1=ESP, 2=MSR, 3=Windows, 4=NixOS). The first three
+      # use content = null to skip format/mount. Only nixos gets formatted.
+      # Deploy with --disko-mode disko (auto-detected) so sgdisk creates sdb4
+      # if missing (format mode skips create, which would fail).
       content = {
         type = "gpt";
         partitions = {
+          ESP = {
+            size = "512M";
+            type = "EF00";
+            content = null;
+          };
+          msr = {
+            size = "16M";
+            type = "E3C9E316-31B4-4298-89FA-94C9F823F8A5";
+            content = null;
+          };
+          windows = {
+            size = "80G";
+            type = "0700";
+            content = null;
+          };
           nixos = {
             size = "100%";
             content = {
