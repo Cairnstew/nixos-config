@@ -23,19 +23,23 @@ in
               default = null;
               description = ''
                 Disko partitioning mode. Auto-detected when null:
-                - disk-config.nix sidecar exists
-                  - dualBoot mode is "useExisting" → defaults to "format"
-                  - otherwise → defaults to "disko"
+                - disk-config.nix sidecar exists → defaults to "disko"
                 - no disk-config.nix → defaults to null (no disko flags)
 
-                Use "mount" for reinstalls where partitions already exist and
-                should be preserved.
-                Use "format" to wipe and reformat existing partitions without
-                repartitioning.
+                Values:
+                - null    auto-detected (see above)
+                - "disko" full create+format+mount. Safe for both first deploy
+                          and redeploys because disko's blkid guards skip
+                          mkfs on existing filesystems.
+                - "format" format+mount only, no partitioning (use when the
+                          partition table already exists and you want to force
+                          a reformat of the NixOS filesystem).
+                - "mount"  mount only, no partitioning or formatting (use for
+                          quick redeploys where filesystems already exist).
+                - "none"   no --disko-mode flag passed to nixos-anywhere.
 
-              Runtime auto-detection (SSH pre-flight to check partition existence)
-              is a potential future enhancement but out of scope here.
-            '';
+                Override at runtime: nix run .#deploy-<host> -- <target> --disko-mode mount
+              '';
           };
 
           extraArgs = mkOption {

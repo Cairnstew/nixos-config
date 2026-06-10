@@ -49,13 +49,18 @@ let
   mkDeployPkg = hostName: pkgs:
     let
       opts = getHostCfg hostName;
-      autoMode = if hostHasDiskConfig hostName then
-        if isDualBootUseExisting hostName then "disko" else "disko"
-      else null;
+      autoMode = if hostHasDiskConfig hostName then "disko" else null;
       diskoMode = if opts ? diskoMode && opts.diskoMode != null then opts.diskoMode else autoMode;
       nixosAnywhereBin = "${inputs.nixos-anywhere.packages.${pkgs.system}.default}/bin/nixos-anywhere";
       identityStr = if opts ? agentIdentity && opts.agentIdentity != null then opts.agentIdentity else "";
-      genHostKeyFlag = if opts ? generateHostKey && opts.generateHostKey then "1" else "0";
+      # Auto-detect generateHostKey: enabled when host uses dualBoot (which
+      # needs SSH host keys for agenix), OR when explicitly set in options.
+      autoHostKey = let nixosCfg = getNixOSCfg hostName; in
+        nixosCfg ? my.disko.dualBoot
+        && nixosCfg.my.disko.dualBoot.enable or false;
+      genHostKeyFlag = if opts ? generateHostKey then
+        if opts.generateHostKey then "1" else "0"
+      else if autoHostKey then "1" else "0";
       extraArgsStr = lib.concatStringsSep " " (if opts ? extraArgs then opts.extraArgs else [ ]);
     in
     pkgs.writeShellApplication {
@@ -67,7 +72,7 @@ let
         shift
 
         identity="${if identityStr != "" then identityStr else "\$HOME/.ssh/id_ed25519"}"
-        extraFiles="$PWD/.deploy-keys/${hostName}/extra-files"
+        extraFiles="$(git rev-parse --show-toplevel 2>/dev/null || echo "$PWD")/.deploy-keys/${hostName}/extra-files"
 
         extraArgs=(--flake ".#${hostName}" "$target" -i "$identity")
 

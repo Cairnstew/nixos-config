@@ -32,7 +32,7 @@ in
                 fi
               done
 
-              keyDir="$PWD/.deploy-keys/${hostName}"
+              keyDir="$(git rev-parse --show-toplevel 2>/dev/null || echo "$PWD")/.deploy-keys/${hostName}"
 
               if [ -d "$keyDir" ] && [ "$force" -eq 0 ]; then
                 echo "Error: $keyDir already exists." >&2

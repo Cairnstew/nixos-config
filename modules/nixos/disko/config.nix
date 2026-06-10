@@ -63,7 +63,12 @@ mkIf cfg.enable {
           ESP = {
             size = "512M";
             type = "EF00";
-            content = null;
+            content = {
+              type = "filesystem";
+              format = "vfat";
+              mountpoint = "/boot";
+              mountOptions = [ "umask=0077" ];
+            };
           };
           msr = {
             size = "16M";
