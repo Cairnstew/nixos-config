@@ -23,6 +23,7 @@
     gpu.mesa.enable = true;
     location.enable = true;
     gaming.enable = true;
+    power.desktop.enable = true;
   };
 
   my.homeProfiles = {
@@ -141,6 +142,46 @@
   # ── SSH Access
   my.services.ssh.authorizedKeys = [ flake.config.me.sshKey ];
 
+  # ── Docker Data Storage (sdb — 500GB SATA SSD) ────────────────────────
+  # sdb → /mnt/docker, ext4, dedicated Docker data volume
+  fileSystems."/mnt/docker" = {
+    device = "/dev/disk/by-label/docker-data";
+    fsType = "ext4";
+  };
+
+  # nvme0n1 (CT2000T500SSD5 2TB) → /mnt/media
+  fileSystems."/mnt/media" = {
+    device = "/dev/disk/by-uuid/9AFA1F50FA1F2851";
+    fsType = "ntfs-3g";
+    options = [ "rw" "uid=1000" "gid=100" "umask=0022" "nofail" "x-systemd.automount" ];
+  };
+
+  # ── Docker ──────────────────────────────────────────────────────────────
+  # Move Docker data to the dedicated 500GB SATA SSD (sdb) for space
+  my.virtualisation.docker.dataRoot = "/mnt/docker";
+
+  # ── DP Link Retrain: force HBR2 on DP-1 after boot ──────────────────────
+  # The amdgpu link training sometimes falls back to HBR (2.7 Gbps/lane)
+  # during concurrent multi-monitor init. This triggers a hotplug retrain
+  # at the end of boot to establish HBR2 (5.4 Gbps/lane) for 1440p@120Hz.
+  systemd.services.dp-link-retrain = {
+    description = "Retrain DP-1 link at HBR2 for high-bandwidth modes";
+    after = [ "graphical.target" ];
+    wants = [ "graphical.target" ];
+    serviceConfig = {
+      Type = "oneshot";
+      RemainAfterExit = true;
+    };
+    script = ''
+      set -euo pipefail
+      sleep 5
+      HPDIR="/sys/kernel/debug/dri/0000:07:00.0/DP-1"
+      if [ -w "$HPDIR/trigger_hotplug" ]; then
+        echo 1 > "$HPDIR/trigger_hotplug" 2>/dev/null || true
+      fi
+    '';
+  };
+
   # ── UDisks2 (dynamic automount for USB/external drives) ─────────────────
   my.services.udisks2.enable = true;
 
@@ -234,7 +275,7 @@
 
   my.programs.spotify.enable = true;
 
-  environment.systemPackages = [ pkgs.gnome-monitor-config ];
+  environment.systemPackages = with pkgs; [ gnome-monitor-config ntfs3g ];
 
   # ── Home Manager Extra ───────────────────────────────────────────────────
   my.homeManager.extraConfig = {
@@ -263,9 +304,9 @@
         Type = "oneshot";
         ExecStart =
           "/run/current-system/sw/bin/gnome-monitor-config set"
-          + " -Lp -t normal -x 1200 -y 0 -M DP-1 -m '2560x1440@179.998'"
-          + " -L  -t left   -x 3760 -y 0 -M DP-2 -m '1920x1200@59.950'"
-          + " -L  -t right  -x 0    -y 0 -M DP-3 -m '1920x1200@59.950'";
+          + " -Lp -t normal -x 1200 -y 340 -M DP-1 -m '2560x1440@119.998'"
+          + " -L  -t left   -x 3760 -y 7   -M DP-2 -m '1920x1200@59.950'"
+          + " -L  -t right  -x 0    -y 0   -M DP-3 -m '1920x1200@59.950'";
       };
       Install = {
         WantedBy = [ "graphical-session.target" ];

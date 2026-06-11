@@ -119,8 +119,53 @@ in
     };
     screenBlankTimeout = lib.mkOption {
       type = lib.types.int;
-      default = 300;
+      default = 600;
       description = "Seconds before screen blanks (0 = never)";
+    };
+    sleepInactiveACTimeout = lib.mkOption {
+      type = lib.types.int;
+      default = 3600;
+      description = "Seconds before sleep on AC power (0 = never)";
+    };
+    sleepInactiveACType = lib.mkOption {
+      type = lib.types.str;
+      default = "nothing";
+      description = "Action on AC idle: 'suspend', 'hibernate', 'nothing'";
+    };
+    sleepInactiveBatteryTimeout = lib.mkOption {
+      type = lib.types.int;
+      default = 1800;
+      description = "Seconds before sleep on battery power (0 = never)";
+    };
+    sleepInactiveBatteryType = lib.mkOption {
+      type = lib.types.str;
+      default = "nothing";
+      description = "Action on battery idle: 'suspend', 'hibernate', 'nothing'";
+    };
+    powerButtonAction = lib.mkOption {
+      type = lib.types.str;
+      default = "nothing";
+      description = "Power button action: 'suspend', 'hibernate', 'interactive', 'nothing'";
+    };
+    idleBrightness = lib.mkOption {
+      type = lib.types.int;
+      default = 30;
+      description = "Screen brightness percentage when idle-dim activates";
+    };
+    ambientEnabled = lib.mkOption {
+      type = lib.types.bool;
+      default = true;
+      description = "Enable ambient light sensor for auto-brightness";
+    };
+    lockEnabled = lib.mkOption {
+      type = lib.types.bool;
+      default = true;
+      description = "Lock screen on idle/suspend";
+    };
+    lockDelay = lib.mkOption {
+      type = lib.types.int;
+      default = 0;
+      description = "Delay in seconds after screensaver before locking (0 = immediate)";
     };
   };
 
@@ -166,14 +211,22 @@ in
         picture-uri = cfg.screensaverImage;
         primary-color = scheme.accent or "#3465a4";
         secondary-color = scheme.background or "#000000";
+        lock-enabled = cfg.lockEnabled;
+        lock-delay = lib.hm.gvariant.mkUint32 cfg.lockDelay;
       };
       "org/gnome/desktop/session" = {
         idle-delay = lib.hm.gvariant.mkUint32 cfg.screenBlankTimeout;
       };
       "org/gnome/settings-daemon/plugins/power" = {
-        sleep-inactive-ac-timeout = 0;
-        sleep-inactive-battery-timeout = 0;
+        ambient-enabled = cfg.ambientEnabled;
+        idle-brightness = cfg.idleBrightness;
         idle-dim = true;
+        power-button-action = cfg.powerButtonAction;
+        power-saver-profile-on-low-battery = true;
+        sleep-inactive-ac-timeout = cfg.sleepInactiveACTimeout;
+        sleep-inactive-ac-type = cfg.sleepInactiveACType;
+        sleep-inactive-battery-timeout = cfg.sleepInactiveBatteryTimeout;
+        sleep-inactive-battery-type = cfg.sleepInactiveBatteryType;
       };
     };
 

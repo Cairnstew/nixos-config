@@ -31,7 +31,11 @@ in
     gpu.nvidia-headless.enable = lib.mkEnableOption "NVIDIA GPU drivers (headless/CUDA)";
 
     location.enable = lib.mkEnableOption "location services (timezone, geoclue)";
-    battery.enable = lib.mkEnableOption "battery/power management";
+    battery.enable = lib.mkEnableOption "battery/power management (auto-cpufreq, logind)";
+
+    # ── Power Profiles (GNOME power settings) ─────────────────────────────
+    power.desktop.enable = lib.mkEnableOption "desktop power profile (never sleep, no lock)";
+    power.laptop.enable = lib.mkEnableOption "laptop power profile (battery-aware, lock on idle)";
   };
 
   # Connect profiles to actual modules and assertions
@@ -63,12 +67,49 @@ in
       my.system.battery.enable = true;
     })
 
+    # ── Power: Desktop profile (always plugged in) ────────────────────────
+    (lib.mkIf (cfg.desktop.gnome.enable && cfg.power.desktop.enable) {
+      home-manager.users.${username}.my.desktop.gnome = {
+        screenBlankTimeout = lib.mkDefault 900;
+        sleepInactiveACTimeout = lib.mkDefault 7200;
+        sleepInactiveACType = lib.mkDefault "nothing";
+        sleepInactiveBatteryTimeout = lib.mkDefault 7200;
+        sleepInactiveBatteryType = lib.mkDefault "nothing";
+        powerButtonAction = lib.mkDefault "nothing";
+        lockEnabled = lib.mkDefault false;
+      };
+    })
+
+    # ── Power: Laptop profile (battery-aware) ──────────────────────────────
+    (lib.mkIf (cfg.desktop.gnome.enable && cfg.power.laptop.enable) {
+      home-manager.users.${username}.my.desktop.gnome = {
+        screenBlankTimeout = lib.mkDefault 300;
+        sleepInactiveACTimeout = lib.mkDefault 3600;
+        sleepInactiveACType = lib.mkDefault "nothing";
+        sleepInactiveBatteryTimeout = lib.mkDefault 1800;
+        sleepInactiveBatteryType = lib.mkDefault "nothing";
+        powerButtonAction = lib.mkDefault "nothing";
+        idleBrightness = lib.mkDefault 20;
+        lockEnabled = lib.mkDefault true;
+        lockDelay = lib.mkDefault 0;
+      };
+      my.profiles.battery.enable = lib.mkDefault true;
+    })
+
     # Assertions to prevent conflicting profiles
     {
       assertions = [
         {
           assertion = !(cfg.gpu.mesa.enable && cfg.gpu.nvidia.enable);
           message = "Cannot enable both Mesa and NVIDIA GPU profiles.";
+        }
+        {
+          assertion = !(cfg.power.desktop.enable && cfg.power.laptop.enable);
+          message = "Cannot enable both desktop and laptop power profiles.";
+        }
+        {
+          assertion = (cfg.power.desktop.enable || cfg.power.laptop.enable) -> cfg.desktop.gnome.enable;
+          message = "Power profiles require GNOME desktop profile (my.profiles.desktop.gnome.enable).";
         }
       ];
     }

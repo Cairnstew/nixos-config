@@ -77,6 +77,9 @@ in
     # ── VM Testing ──────────────────────────────────────────────────────────
     ./vm-test.nix
 
+    # ── Privacy ─────────────────────────────────────────────────────────────
+    ./tor-browser
+
     # ── Profiles System ────────────────────────────────────────────────────
     ./profiles
 
@@ -87,7 +90,6 @@ in
     inputs.agenix.nixosModules.default
     inputs.agenix-manager.nixosModules.default
     inputs.nixos-wsl.nixosModules.default
-    ./nixos-deploy-tool  # imports upstream nixos-deploy-tool module internally
   ];
 
   # ── Base System Configuration ────────────────────────────────────────────
@@ -132,11 +134,6 @@ in
     # minimal systems where secret management isn't needed.
     # Override when: Building minimal containers or systems without persistent storage
     secrets.enable = lib.mkDefault true;
-
-    # Deploy tool: Systemd service + CLI for nixos-anywhere, ISO builds, secrets
-    # Auto-wires paths to agenix-manager, nixos-anywhere, and age from system config.
-    # Override when: Minimal systems that don't need deployment tooling
-    services.nixos-deploy-tool.enable = lib.mkDefault true;
 
     # SSH always enabled: Essential for remote management and debugging.
     # Disable only on fully air-gapped systems or WSL where host manages SSH.

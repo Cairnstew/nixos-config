@@ -28,6 +28,8 @@ in
 
       # Two-pass substitution: first substitute partials (@wipeDiskBlock@),
       # then substitute everything else (catches @diskId@ inside partials).
+      # Note: We avoid builtins.toFile + builtins.readFile roundtrip (which
+      # breaks on Nix ≥ 2.25 path validation) by doing both passes in-memory.
       buildAnswer =
         { name
         , productKey
@@ -52,20 +54,17 @@ in
           };
 
           # Pass 2: substitute all variables (catches @diskId@ inside partials)
-          pass2 = replaceInXml (builtins.toFile "${name}-pass1.xml" pass1) {
-            "@productKey@" = productKey;
-            "@computerName@" = computerName;
-            "@username@" = username;
-            "@password@" = password;
-            "@autoLogonCount@" = autoLogonCount;
-            "@lang@" = lang;
-            "@timezone@" = timezone;
-            "@arch@" = arch;
-            "@archId@" = archId;
-            "@networkLocale@" = networkLocale;
-            "@protectYourPC@" = protectYourPC;
-            "@diskId@" = answerSettings.diskId;
-          };
+          # Use builtins.replaceStrings directly — no file roundtrip needed.
+          pass2 = builtins.replaceStrings
+            [ "@productKey@" "@computerName@" "@username@" "@password@"
+              "@autoLogonCount@" "@lang@" "@timezone@" "@arch@" "@archId@"
+              "@networkLocale@" "@protectYourPC@" "@diskId@"
+            ]
+            [ productKey computerName username password
+              autoLogonCount lang timezone arch archId
+              networkLocale protectYourPC answerSettings.diskId
+            ]
+            pass1;
         in
         pkgs.writeText "${name}.xml" pass2;
 

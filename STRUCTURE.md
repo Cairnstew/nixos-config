@@ -73,11 +73,9 @@ Flake-level modules for outputs, packages, and development tools.
 | File | Description |
 |------|-------------|
 | `act.nix` | Local GitHub Actions testing via `nektos/act` |
-| `deploy.nix` | nixos-anywhere deploy app (`apps.deploy`) — generic CLI wrapper for remote NixOS installation |
-
 | `config.nix` | Identity and preference options (me, preferences, defaults) |
 | `formatter.nix` | Treefmt/nixpkgs-fmt configuration for `nix fmt` |
-| `mcp-servers.nix` | MCP (Model Context Protocol) server definitions |
+| MCP servers | *(replaced by [`mcp-servers-nix`](https://github.com/natsukium/mcp-servers-nix) flake input — configured via `mcp-servers.programs`/`mcp-servers.settings.servers` in `modules/nixos/homeManager/config.nix`)* |
 | `nixos-flake.nix` | nixos-unified integration and primary inputs |
 | `packages.nix` | Package exports and autowiring |
 | `templates.nix` | Flake templates exposed via `nix flake init` |
@@ -96,7 +94,6 @@ Flake-level modules for outputs, packages, and development tools.
 | `terranix.nix` | Terraform/terranix integration |
 | `testing.nix` | Testing framework and `my.testing` options |
 | `README.md` | Documentation for flake-parts conventions |
-| `README-mcp.md` | MCP-specific documentation |
 
 ### modules/nixos/
 

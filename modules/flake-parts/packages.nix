@@ -20,7 +20,6 @@
         (nixosCfg.extendModules {
           modules = [
             {
-              agenixManager.enable = lib.mkForce false;
               services.tailscale.enable = lib.mkForce false;
               services.tailscale-manager.enable = lib.mkForce false;
             }

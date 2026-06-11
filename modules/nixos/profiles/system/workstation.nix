@@ -35,6 +35,7 @@ in
     # mkDefault true: Common workstation apps/services
     # Override when: Not using Spotify, Docker, or Tailscale
     my.programs.spotify.enable = lib.mkDefault true;
+    my.programs.tor-browser.enable = lib.mkDefault true;
     my.virtualisation.docker.enable = lib.mkDefault true;
     my.services.tailscale.enable = lib.mkDefault true;
   };

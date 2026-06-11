@@ -4,7 +4,7 @@ let
   inherit (inputs) self;
   inherit (flake.config.me) username;
   cfg = config.my.homeManager;
-  mcpServers = self.packages.${pkgs.system};
+  mcpServersPkgs = inputs.mcp-servers-nix.packages.${pkgs.system};
 
   betterEmailPkg =
     pkgs.writeShellApplication {
@@ -25,7 +25,9 @@ in
 
   config = lib.mkIf cfg.enable {
     home-manager.backupFileExtension = "backup";
-    home-manager.sharedModules = builtins.attrValues self.homeModules;
+    home-manager.sharedModules = builtins.attrValues self.homeModules ++ [
+      inputs.mcp-servers-nix.homeManagerModules.default
+    ];
 
     age.secrets = {
       mcp-better-email-password = { owner = lib.mkForce username; group = lib.mkForce "users"; };
@@ -57,6 +59,45 @@ in
       }
 
       {
+        # Enable home-manager's centralized MCP server registry
+        programs.mcp.enable = true;
+
+        # Declare MCP servers via mcp-servers-nix — consumed by opencode,
+        # claude-code, vscode, etc. via enableMcpIntegration.
+        mcp-servers = {
+          programs = {
+            nixos.enable = true;
+            fetch.enable = true;
+            filesystem = {
+              enable = true;
+              args = [ "/home/seanc/nixos-config" ];
+            };
+            time.enable = true;
+            sequential-thinking.enable = true;
+            memory.enable = true;
+            github = {
+              enable = true;
+              # Read token from agenix at runtime — never stored in /nix/store
+              passwordCommand = {
+                GITHUB_PERSONAL_ACCESS_TOKEN = [ "cat" "/run/agenix/github-token" ];
+              };
+            };
+          };
+
+          settings.servers = {
+            # better-email with agenix secret read by wrapper
+            better-email = {
+              command = "${betterEmailPkg}/bin/better-email";
+              env = {
+                EMAIL_PROVIDER = "gmail";
+                EMAIL_USER = flake.config.me.email;
+              };
+            };
+          };
+        };
+      }
+
+      {
         my.programs.opencode = {
           enable = lib.mkDefault true;
           enableLsp = lib.mkDefault true;
@@ -68,30 +109,30 @@ in
           model = lib.mkDefault null;
           enableMcpIntegration = lib.mkDefault true;
 
-          extraPackages = with pkgs; with mcpServers; [
+          # references are supported via my.programs.opencode.references but
+          # require opencode ≥ 1.16 — not yet available in nixpkgs.
+
+          plugins = lib.mkDefault [ "@hueyexe/opencode-ensemble@0.15.0" ];
+
+          # Deny all providers except the ones we actually use
+          policies = {
+            enable = lib.mkDefault true;
+            allowedProviders = lib.mkDefault [
+              "opencode-go"
+              "opencode-zen"
+              "clarifai"
+              "deepinfra"
+            ];
+          };
+
+          # MCP server packages on PATH for manual use
+          extraPackages = with pkgs; with mcpServersPkgs; [
             mcp-nixos
             mcp-server-fetch
-            mcp-server-sqlite
             betterEmailPkg
             terraform
             nixpkgs-fmt
           ];
-
-          # Host-specific: better-email MCP references agenix secret and flake identity
-          # Uses mkDefault so it merges with home module's MCP defaults (nixos, fetch, sqlite)
-          # at the same priority — host configs can still override with a direct assignment.
-          mcp = lib.mkDefault {
-            better-email = {
-              enabled = true;
-              type = "local";
-              command = [ "better-email" ];
-              environment = {
-                EMAIL_PROVIDER = "gmail";
-                EMAIL_USER = flake.config.me.email;
-              };
-              timeout = 30000;
-            };
-          };
         };
       }
 

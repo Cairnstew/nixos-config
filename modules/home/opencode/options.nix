@@ -28,6 +28,91 @@ let
     '';
   };
 
+  # Shared agent permission types
+  actionType = types.enum [ "allow" "ask" "deny" ];
+
+  globActionType = types.either actionType (types.attrsOf actionType);
+
+  agentPermissionSubmodule = types.submodule {
+    options = {
+      read = mkOption {
+        type = types.nullOr globActionType;
+        default = null;
+        description = "Permission for reading files.";
+      };
+      edit = mkOption {
+        type = types.nullOr globActionType;
+        default = null;
+        description = "Permission for file edits (write, edit, apply_patch).";
+      };
+      glob = mkOption {
+        type = types.nullOr globActionType;
+        default = null;
+        description = "Permission for glob searches.";
+      };
+      grep = mkOption {
+        type = types.nullOr globActionType;
+        default = null;
+        description = "Permission for grep searches.";
+      };
+      list = mkOption {
+        type = types.nullOr globActionType;
+        default = null;
+        description = "Permission for listing files.";
+      };
+      bash = mkOption {
+        type = types.nullOr globActionType;
+        default = null;
+        description = "Permission for bash commands. Accepts glob patterns for fine-grained control.";
+      };
+      task = mkOption {
+        type = types.nullOr globActionType;
+        default = null;
+        description = "Permission for invoking subagents via the Task tool. Glob patterns match agent names.";
+      };
+      external_directory = mkOption {
+        type = types.nullOr globActionType;
+        default = null;
+        description = "Permission for accessing files outside the project worktree.";
+      };
+      lsp = mkOption {
+        type = types.nullOr globActionType;
+        default = null;
+        description = "Permission for LSP operations.";
+      };
+      skill = mkOption {
+        type = types.nullOr globActionType;
+        default = null;
+        description = "Permission for loading skills.";
+      };
+      todowrite = mkOption {
+        type = types.nullOr actionType;
+        default = null;
+        description = "Permission for writing todo items.";
+      };
+      webfetch = mkOption {
+        type = types.nullOr actionType;
+        default = null;
+        description = "Permission for fetching web content.";
+      };
+      websearch = mkOption {
+        type = types.nullOr actionType;
+        default = null;
+        description = "Permission for web searches.";
+      };
+      question = mkOption {
+        type = types.nullOr actionType;
+        default = null;
+        description = "Permission for asking the user questions.";
+      };
+      doom_loop = mkOption {
+        type = types.nullOr actionType;
+        default = null;
+        description = "Permission for recovery prompts when an agent appears stuck.";
+      };
+    };
+  };
+
 in
 {
   options.my.programs.opencode = {
@@ -371,64 +456,177 @@ in
       type = types.attrsOf (types.submodule {
         options = {
           model = mkOption {
-            type = types.str;
+            type = types.nullOr types.str;
+            default = null;
             example = "anthropic/claude-sonnet-4-20250514";
-            description = "The model to use for this agent.";
+            description = ''
+              Model to use for this agent.
+              When null, primary agents use the globally configured model and
+              subagents inherit the calling agent's model.
+            '';
           };
           mode = mkOption {
-            type = types.enum [ "primary" "subagent" ];
+            type = types.nullOr (types.enum [ "primary" "subagent" "all" ]);
+            default = null;
             example = "primary";
-            description = "Agent mode: primary or subagent.";
+            description = ''
+              Agent mode: "primary", "subagent", or "all".
+              When null, defaults to "all".
+            '';
+          };
+          description = mkOption {
+            type = types.nullOr types.str;
+            default = null;
+            example = "Reviews code for best practices and potential issues";
+            description = ''
+              Brief description of what the agent does and when to use it.
+              Required by opencode for all agents.
+            '';
+          };
+          prompt = mkOption {
+            type = types.nullOr (types.either types.path types.lines);
+            default = null;
+            example = "{file:./prompts/build.txt}";
+            description = ''
+              Custom system prompt for the agent. Either a path to a prompt file
+              or inline Nix string content.
+            '';
           };
           temperature = mkOption {
             type = types.nullOr types.float;
             default = null;
             example = 0.1;
-            description = "Temperature for the agent (optional).";
+            description = "Temperature for the agent. Lower values produce more focused responses.";
+          };
+          top_p = mkOption {
+            type = types.nullOr types.float;
+            default = null;
+            example = 0.9;
+            description = "Alternative to temperature for controlling response diversity.";
           };
           steps = mkOption {
             type = types.nullOr types.ints.positive;
             default = null;
             example = 10;
-            description = "Number of steps for the agent (optional).";
+            description = "Maximum number of agentic iterations before forced summarization.";
+          };
+          disable = mkOption {
+            type = types.bool;
+            default = false;
+            description = "When true, the agent is disabled and unavailable.";
+          };
+          hidden = mkOption {
+            type = types.bool;
+            default = false;
+            description = "Hide from TUI @ autocomplete. Only applies to subagent mode agents.";
+          };
+          color = mkOption {
+            type = types.nullOr types.str;
+            default = null;
+            example = "#ff6b6b";
+            description = ''
+              Custom color for the agent in the UI. Use a hex color (#FF5733) or
+              a theme color name (primary, secondary, accent, success, warning, error, info).
+            '';
           };
           permission = mkOption {
-            type = types.nullOr (types.submodule {
-              options = {
-                edit = mkOption {
-                  type = types.nullOr (types.enum [ "allow" "deny" "ask" ]);
-                  default = null;
-                  description = "Permission for file edits.";
-                };
-                bash = mkOption {
-                  type = types.nullOr (types.enum [ "allow" "deny" "ask" ]);
-                  default = null;
-                  description = "Permission for bash commands.";
-                };
-              };
-            });
+            type = types.nullOr agentPermissionSubmodule;
             default = null;
-            description = "Permission settings for the agent.";
+            description = "Per-agent permission overrides.";
+          };
+          extraOptions = mkOption {
+            type = (pkgs.formats.json { }).type;
+            default = { };
+            example = {
+              reasoningEffort = "high";
+              textVerbosity = "low";
+            };
+            description = ''
+              Additional provider-specific model options passed through directly.
+              For example, reasoningEffort for OpenAI reasoning models.
+            '';
           };
         };
       });
       default = { };
-      example = {
-        plan = {
-          model = "opencode-go/qwen3.5-plus";
-          mode = "primary";
-          temperature = 0.1;
-          steps = 10;
-          permission = { edit = "deny"; bash = "deny"; };
-        };
-      };
-      description = "Agent configurations. Each key is an agent name.";
+      example = literalExpression ''
+        {
+          plan = {
+            model = "opencode-go/deepseek-v4-flash";
+            mode = "primary";
+            temperature = 0.1;
+            steps = 10;
+            permission = { edit = "deny"; bash = "deny"; };
+          };
+          code-reviewer = {
+            description = "Reviews code for best practices and potential issues";
+            mode = "subagent";
+            model = "opencode-go/deepseek-v4-flash";
+            prompt = "You are a code reviewer. Focus on security, performance, and maintainability.";
+            permission = { edit = "deny"; };
+          };
+        }
+      '';
+      description = ''
+        Agent configurations. Each key is an agent name.
+        See https://opencode.ai/docs/agents/ for available options.
+      '';
     };
 
     themes = mkOption {
       type = types.attrsOf (types.either (pkgs.formats.json { }).type types.path);
       default = { };
       description = "Custom colour themes.";
+    };
+
+    references = mkOption {
+      type = types.attrsOf (types.coercedTo types.str (path: { inherit path; }) (types.submodule {
+        options = {
+          path = mkOption {
+            type = types.nullOr types.str;
+            default = null;
+            description = "Path to a local reference directory.";
+          };
+          repository = mkOption {
+            type = types.nullOr types.str;
+            default = null;
+            description = "Git URL, host/path, or GitHub owner/repo shorthand.";
+          };
+          branch = mkOption {
+            type = types.nullOr types.str;
+            default = null;
+            description = "Git branch or ref (repository only).";
+          };
+          description = mkOption {
+            type = types.nullOr types.str;
+            default = null;
+            description = "Guidance describing when an agent should use this reference.";
+          };
+          hidden = mkOption {
+            type = types.bool;
+            default = false;
+            description = "Omit from TUI @ autocomplete.";
+          };
+        };
+      }));
+      default = { };
+      example = literalExpression ''
+        {
+          nixos-config = {
+            path = "/home/user/nixos-config";
+            description = "Use for NixOS configuration details";
+          };
+          sdk = {
+            repository = "anomalyco/opencode-sdk-js";
+            branch = "main";
+            description = "Use for JavaScript SDK implementation details";
+          };
+        }
+      '';
+      description = ''
+        Local directories and Git repositories to make available as project references.
+        See https://opencode.ai/docs/references/ for the full reference format.
+      '';
     };
 
     tui = mkOption {
@@ -446,6 +644,34 @@ in
       type = types.attrsOf (types.either types.lines (types.either types.path types.str));
       default = { };
       description = "Custom skills. See https://opencode.ai/docs/skills/.";
+    };
+
+    plugins = mkOption {
+      type = types.listOf types.str;
+      default = [ ];
+      example = [ "opencode-helicone-session" "opencode-wakatime" ];
+      description = ''
+        npm package names of plugins to load. Packages are installed
+        automatically by opencode at startup using Bun.
+        See https://opencode.ai/docs/plugins/.
+      '';
+    };
+
+    pluginFiles = mkOption {
+      type = types.attrsOf (types.either types.lines types.path);
+      default = { };
+      example = literalExpression ''
+        {
+          my-plugin = builtins.readFile ./my-plugin.js;
+          notification = ./notification.js;
+        }
+      '';
+      description = ''
+        Local plugin JavaScript/TypeScript files. Each key becomes a file in
+        <filename>$XDG_CONFIG_HOME/opencode/plugins/&lt;name&gt;.js</filename>
+        (or .ts) and is auto-discovered by opencode at startup.
+        See https://opencode.ai/docs/plugins/.
+      '';
     };
 
     tools = mkOption {
@@ -494,6 +720,50 @@ in
         When enabled, nixd is added to extraPackages for Nix LSP support.
         See https://opencode.ai/docs/lsp/ for more information.
       '';
+    };
+
+    # ── Policies ──────────────────────────────────────────────────────────────
+
+    policies = {
+      enable = mkEnableOption "opencode provider access policies (deny all, allow listed)";
+
+      allowedProviders = mkOption {
+        type = types.listOf types.str;
+        default = [ ];
+        example = [ "opencode-go" "opencode-zen" "clarifai" "deepinfra" ];
+        description = ''
+          Providers to allow when policies are enabled.
+          All other providers will be denied.
+
+          Resource names are the provider prefix from model IDs (e.g. "opencode-go"
+          for "opencode-go/deepseek-v4-flash").
+        '';
+      };
+
+      extraPolicies = mkOption {
+        type = types.listOf (types.submodule {
+          options = {
+            effect = mkOption {
+              type = types.enum [ "allow" "deny" ];
+              description = "Whether to allow or deny the action.";
+            };
+            action = mkOption {
+              type = types.str;
+              default = "provider.use";
+              description = "The action this policy controls.";
+            };
+            resource = mkOption {
+              type = types.str;
+              description = "The resource ID or wildcard pattern the statement applies to.";
+            };
+          };
+        });
+        default = [ ];
+        description = ''
+          Additional policy statements appended after the generated allow/deny rules.
+          Useful for future policy actions beyond provider.use.
+        '';
+      };
     };
   };
 }

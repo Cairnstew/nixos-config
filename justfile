@@ -28,67 +28,21 @@ activate host:
 
 # ── Fresh Install ────────────────────────────────────────────────────────────
 
-# Dispatcher for nixos-deploy deploy <subcommand> ...
-# Subcommands: run, with-keys, test, wizard
-# For top-level nixos-deploy commands (prepare, iso, tailscale, secrets), use dedicated recipes.
-# e.g., just deploy run desktop
-#       just deploy run desktop -- --addr nixos@nixos
-#       just deploy with-keys desktop
-# just deploy with-keys desktop -- --addr nixos@nixos
+# Deploy via nixos-anywhere using the per-host deploy wrapper.
+# Auto-detects disko mode (disk-config.nix sidecar) and host key pre-provisioning.
+# e.g., just deploy-run desktop nixos@nixos
+#       just deploy-run server 192.168.1.100
 [group('deploy')]
-deploy subcommand host *flags:
-    nixos-deploy deploy {{ subcommand }} {{ host }} {{ flags }}
-
-# Shorthand: just deploy-run <host> [addr] [-- extra-args]
-# e.g., just deploy-run desktop
-# just deploy-run server 192.168.1.100
-[group('deploy')]
-deploy-run host addr="nixos@nixos" *args:
-    nixos-deploy deploy run {{ host }} --addr {{ addr }} --extra-args "{{ args }}"
-
-# VM-test a host config via nixos-anywhere (no target machine, validates disko layout)
-[group('deploy')]
-deploy-test host:
-    nixos-deploy deploy test {{ host }}
-
-# Interactive deploy wizard: SSH into live ISO, pick/partition disk, install
-[group('deploy')]
-deploy-wizard host:
-    nixos-deploy deploy wizard {{ host }}
-
-# Deploy with stored host key injection + SSH identity key.
-# Defaults addr to nixos@nixos (Tailscale MagicDNS on live ISO).
-# e.g., just deploy-with-keys laptop
-# just deploy-with-keys laptop nixos@100.x.x.x
-#
-# NOTE: For desktop (useExisting dualBoot mode), use just deploy-desktop instead.
-# deploy-with-keys invokes nixos-anywhere with the default disko phase, which
-# requires disko.devices to be defined. Desktop's useExisting mode has no disko
-# devices (to avoid touching Windows partitions), so the disko phase would fail.
-[group('deploy')]
-deploy-with-keys host addr="nixos@nixos" *args:
-    sudo nixos-deploy deploy with-keys {{ host }} --addr {{ addr }} --extra-args "{{ args }}"
+deploy-run host target *args:
+    nix run .#deploy-{{ host }} -- {{ target }} {{ args }}
 
 # Deploy desktop with existing partition layout (useExisting dualBoot mode).
-# Expects sda4 to already exist (formatted ext4, LABEL="nixos") and the Windows
-# ESP at sda1 (LABEL="EFI"). Runs disko in mount-only mode (no create/format).
-# The existing NixOS partition is mounted by disko; the Windows ESP is mounted
-# via fileSystems."/boot" from the NixOS config.
+# Auto-detects --disko-mode none from the host config.
 # e.g., just deploy-desktop
 #       just deploy-desktop nixos@100.x.x.x
-#
-# One-time setup (from live ISO):
-#   sudo sgdisk -n 0:0:0 -t 0:8300 -c 0:nixos /dev/sda
-#   sudo mkfs.ext4 -L nixos /dev/sda4
 [group('deploy')]
-deploy-desktop addr="nixos@nixos":
-    sudo nixos-deploy deploy with-keys desktop --addr {{ addr }} --extra-args "--disko-mode mount"
-
-# Generate host SSH keypair + bootstrap instructions for a new machine
-# See: nixos-deploy prepare --help
-[group('deploy')]
-prepare host:
-    nixos-deploy prepare {{ host }}
+deploy-desktop target="nixos@nixos":
+    nix run .#deploy-desktop -- {{ target }}
 
 # ── ISO & Ventoy ─────────────────────────────────────────────────────────────
 

@@ -188,7 +188,7 @@ via `callPackage ./relative/path` from a flake-parts `perSystem` block.
 7. **Subdirectories** with a `default.nix` are auto-imported (like nixos-unified
    autowiring). Organize related modules into a directory with a `default.nix`
    that imports sidecar files. See `modules/flake-parts/ventoy/README.md` and
-   `modules/flake-parts/deploy/README.md` for examples.
+    `modules/flake-parts/nixos-anywhere-deploy/` for examples.
 8. Run `nix fmt` and ensure `nix eval .#flake` succeeds before committing.
 
 ## Conventions

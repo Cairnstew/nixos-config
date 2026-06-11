@@ -55,7 +55,7 @@ in
       cudatext.enable = lib.mkDefault true;
       vscode.enable = lib.mkDefault true;
       obsidian.enable = lib.mkDefault true;
-      helix-ide.enable = lib.mkDefault true;
+      "zed-editor".enable = lib.mkDefault true;
     })
 
     # Server profile (minimal GUI)

@@ -89,8 +89,9 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
-    nixos-deploy-tool = {
-      url = "github:Cairnstew/nixos-deploy-tool";
+    # MCP server framework — declarative server configs, multi-flavor output
+    mcp-servers-nix = {
+      url = "github:natsukium/mcp-servers-nix";
       inputs.nixpkgs.follows = "nixpkgs";
     };
 

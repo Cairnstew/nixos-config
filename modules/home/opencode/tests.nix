@@ -78,7 +78,22 @@ in
         assertion = cfg.snapshot != null -> opencodeCfg.settings.snapshot == cfg.snapshot;
         message = "my.programs.opencode: snapshot shorthand not passed through correctly.";
       }
-    ];
+      # Verify plugins are passed through to settings correctly
+      {
+        assertion = cfg.plugins != [ ] -> builtins.length (builtins.filter (p: builtins.isString p) cfg.plugins) == builtins.length cfg.plugins;
+        message = "my.programs.opencode.plugins: all entries must be strings (npm package names).";
+      }
+    ] ++ (lib.concatLists (lib.mapAttrsToList (alias: ref: [
+      {
+        assertion = builtins.match "^[a-zA-Z0-9_-]+$" alias != null;
+        message = "my.programs.opencode.references: '${alias}' contains invalid characters. "
+          + "Aliases cannot contain /, whitespace, backticks, or commas.";
+      }
+      {
+        assertion = ref.path != null || ref.repository != null;
+        message = "my.programs.opencode.references: '${alias}' must set at least one of path or repository.";
+      }
+    ]) cfg.references));
 
     # ── L1: Shell init — export secrets as env vars for SDK-based providers ─
     # OpenAI-compatible providers (Clarifai, etc.) use {file:...} syntax.

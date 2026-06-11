@@ -36,6 +36,7 @@
     gpu.mesa.enable = true;
     battery.enable = true;
     location.enable = true;
+    power.laptop.enable = true;
   };
 
   # ── Home Profiles ──────────────────────────────────────────────────────
