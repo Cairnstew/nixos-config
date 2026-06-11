@@ -35,6 +35,7 @@ in
 
     # ── Desktop ────────────────────────────────────────────────────────────
     ./gnome
+    ./mouse
 
     # ── Virtualization ─────────────────────────────────────────────────────
     ./docker
@@ -67,6 +68,7 @@ in
     # ── Entertainment ──────────────────────────────────────────────────────
     ./spotify.nix
     ./steam
+    ./proton
     ./sillytavern
 
     # ── Location, Secrets & Deploy ────────────────────────────────────────
@@ -114,7 +116,7 @@ in
   my.virtualisation.docker.users = [ flake.config.me.username ];
 
   agenixManager = {
-    enable      = true;
+    enable = true;
     secretsPath = ./secrets;
 
     keys.groups.systems = systemsKeys;

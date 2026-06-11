@@ -95,6 +95,9 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
+    # Kernel-level mouse acceleration (Wayland-compatible)
+    maccel.url = "github:Gnarus-G/maccel";
+
   };
 
   # Wired using https://nixos-unified.org/autowiring.html
