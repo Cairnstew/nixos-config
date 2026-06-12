@@ -294,6 +294,54 @@
       };
     };
 
+    my.gnomeExtensions.custom.extensions = {
+      host-info = {
+        enable = true;
+        name = "Host Info";
+        description = "Shows hostname in the top bar";
+        extensionJs = ''
+          const { St, Clutter } = imports.gi;
+          const Main = imports.ui.main;
+          const PanelMenu = imports.ui.panelMenu;
+
+          const hostname = "${config.networking.hostName}";
+
+          let indicator = null;
+
+          function init() {
+            return { enable, disable };
+          }
+
+          function enable() {
+            indicator = new PanelMenu.Button(0.0, "host-info", false);
+            let box = new St.BoxLayout({ style_class: "panel-box" });
+            let icon = new St.Icon({
+              icon_name: "computer-symbolic",
+              style_class: "system-status-icon"
+            });
+            box.add_child(icon);
+            let label = new St.Label({
+              text: hostname,
+              y_align: Clutter.ActorAlign.CENTER
+            });
+            box.add_child(label);
+            indicator.add_child(box);
+            Main.panel.addToStatusArea("host-info", indicator, 0, "right");
+          }
+
+          function disable() {
+            indicator?.destroy();
+            indicator = null;
+          }
+        '';
+      };
+    };
+
+    dconf.settings."org/gnome/shell" = {
+      disable-user-extensions = false;
+      enabled-extensions = [ "host-info@custom" ];
+    };
+
     systemd.user.services.gnome-monitors = {
       Unit = {
         Description = "Apply GNOME monitor layout";

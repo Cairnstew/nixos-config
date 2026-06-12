@@ -70,6 +70,7 @@ in
     ./steam
     ./proton
     ./sillytavern
+    ./suwayomi
 
     # ── Location, Secrets & Deploy ────────────────────────────────────────
     ./current-location.nix
@@ -126,6 +127,16 @@ in
     keys.groups.deployment = [ "age1hd4asmw7agdq8ygy8hu4w8mdxalevkmne9x3zwcawsjdze9spcnqpmhtse" ];
 
     identities = [ "/etc/ssh/ssh_host_ed25519_key" ];
+  };
+
+  # Copy the source manifest to /etc/agenix/ so the CLI reads the full
+  # repo-tracked manifest (not a stale subset from a previous CLI operation).
+  # Runs after agenixManagerSecretsNix so /etc/agenix/ already exists.
+  system.activationScripts.agenixManagerSecretsManifest = {
+    text = ''
+      install -m 644 ${./secrets/secrets-manifest.json} /etc/agenix/secrets-manifest.json
+    '';
+    deps = [ "agenixManagerSecretsNix" ];
   };
 
   # ── Sensible Defaults ────────────────────────────────────────────────────

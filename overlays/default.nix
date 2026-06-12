@@ -31,6 +31,9 @@ self: super: {
   # GitHub Actions workflow run cleanup tool
   github-actions-cleanup = self.callPackage "${packages}/github-actions-cleanup" { };
 
+  # Suwayomi manga reader server (latest release JAR)
+  suwayomi-server = self.callPackage "${packages}/suwayomi-server" { };
+
   # wimboot 2.8.0 fails with GCC -Werror=unterminated-string-initialization
   # Suppress the specific warning until upstream fixes it
   wimboot = super.wimboot.overrideAttrs (old: {

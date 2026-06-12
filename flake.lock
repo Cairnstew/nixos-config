@@ -52,11 +52,11 @@
         "uv2nix": "uv2nix"
       },
       "locked": {
-        "lastModified": 1780952485,
-        "narHash": "sha256-Al8usJYvzeIVOi+akkXEvOFFgtM7Z63EeRvYUOpWN6U=",
+        "lastModified": 1781229528,
+        "narHash": "sha256-IReFwATxCd+jvJhSpHstZbDK7R93iwfUqTy7UGgd/ik=",
         "owner": "Cairnstew",
         "repo": "agenix-manager",
-        "rev": "36b53c8af0fa77a05460738e693a96ee8e75dcaa",
+        "rev": "a496dd5b94e44cded242b4a8a98f2f55a1139fee",
         "type": "github"
       },
       "original": {
