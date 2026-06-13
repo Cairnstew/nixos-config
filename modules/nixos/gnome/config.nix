@@ -24,7 +24,7 @@ in
         noto-fonts-color-emoji
         nerd-fonts.jetbrains-mono
       ];
-      fontconfig.defaultFonts = {
+      fontconfig.defaultFonts = lib.mkIf (!(config.stylix.enable or false)) {
         sansSerif = [ "Inter" ];
         monospace = [ "JetBrains Mono" ];
         emoji = [ "Noto Color Emoji" ];

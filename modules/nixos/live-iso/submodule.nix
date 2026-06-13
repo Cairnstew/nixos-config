@@ -11,7 +11,7 @@ in
         description = "Base installer CD module preset.";
       };
 
-      system = mkOption {
+      hostPlatform = mkOption {
         type = types.str;
         default = "x86_64-linux";
         description = "System architecture for the ISO evaluation.";

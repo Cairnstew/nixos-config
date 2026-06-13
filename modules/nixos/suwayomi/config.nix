@@ -3,21 +3,25 @@ let
   cfg = config.my.services.suwayomi;
 in
 {
-  config = lib.mkIf cfg.enable {
-    users.users = lib.mkIf (cfg.user == "suwayomi") {
-      suwayomi = {
+  config = lib.mkMerge [
+    # Always create the suwayomi user/group so agenix chown of suwayomi-password
+    # succeeds even when the service is disabled on this host.
+    (lib.mkIf (cfg.user == "suwayomi") {
+      users.users.suwayomi = {
         isSystemUser = true;
         group = cfg.group;
         description = "Suwayomi-Server service user";
         home = cfg.dataDir;
         createHome = true;
       };
-    };
+    })
 
-    users.groups = lib.mkIf (cfg.group == "suwayomi") {
-      suwayomi = { };
-    };
+    (lib.mkIf (cfg.group == "suwayomi") {
+      users.groups.suwayomi = { };
+    })
 
-    networking.firewall.allowedTCPPorts = lib.mkIf cfg.openFirewall [ cfg.settings.server.port ];
-  };
+    (lib.mkIf cfg.enable {
+      networking.firewall.allowedTCPPorts = lib.mkIf cfg.openFirewall [ cfg.settings.server.port ];
+    })
+  ];
 }

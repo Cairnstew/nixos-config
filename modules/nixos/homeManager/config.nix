@@ -157,7 +157,7 @@ in
           plugins = lib.mkDefault [ "@hueyexe/opencode-ensemble@0.15.0" ];
 
           themes = opencodeTheme;
-          tui.theme = "catppuccin-mocha";
+          tui.theme = lib.mkDefault "catppuccin-mocha";
 
           # Deny all providers except the ones we actually use
           policies = {

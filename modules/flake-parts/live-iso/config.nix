@@ -36,7 +36,7 @@ let
       {
         default = {
           baseModule = "minimal";
-          system = "x86_64-linux";
+          hostPlatform = "x86_64-linux";
           extraModules = [ ];
           extraPackages = [ ];
           sshKeys = [ ];
@@ -181,8 +181,8 @@ let
         "${inputs.nixpkgs}/nixos/modules/installer/cd-dvd/channel.nix";
     in
     (inputs.nixpkgs.lib.nixosSystem {
-      system = isoConfig.system;
       modules = [
+        { nixpkgs.hostPlatform = isoConfig.hostPlatform; }
         basePath
         isoSettings
         tailscaleAutoconnect
@@ -196,6 +196,6 @@ in
       (name: isoConfig:
         lib.nameValuePair "live-iso-${name}" (mkIso name isoConfig)
       )
-      (lib.filterAttrs (_: isoConfig: isoConfig.system == system) allIsos);
+      (lib.filterAttrs (_: isoConfig: isoConfig.hostPlatform == system) allIsos);
   };
 }

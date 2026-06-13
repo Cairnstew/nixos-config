@@ -16,11 +16,11 @@ in
         font-family = prefs.terminalFont or null;
         window-width = cfg.windowWidth;
         window-height = cfg.windowHeight;
-        theme = cfg.theme;
         keybind = cfg.keybindings ++ cfg.additionalKeybindings;
-      } // cfg.extraSettings;
+      } // lib.optionalAttrs (cfg.theme != null) { theme = cfg.theme; }
+      // cfg.extraSettings;
       clearDefaultKeybinds = cfg.clearDefaultKeybinds;
-      themes = cfg.customThemes;
+      themes = lib.mkDefault cfg.customThemes;
     };
   };
 }

@@ -231,7 +231,7 @@ in
         context = cfg.context;
         commands = cfg.commands;
         themes = cfg.themes;
-        tui = cfg.tui;
+        tui = lib.mkDefault cfg.tui;
         skills = cfg.skills;
         tools = cfg.tools;
         extraPackages = cfg.extraPackages ++ lib.optionals cfg.enableLsp [ pkgs.nixd ];
