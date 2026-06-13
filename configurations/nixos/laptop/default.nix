@@ -37,6 +37,9 @@
     battery.enable = true;
     location.enable = true;
     power.laptop.enable = true;
+
+    # Theming
+    theming.stylix.enable = true;
   };
 
   # ── Home Profiles ──────────────────────────────────────────────────────

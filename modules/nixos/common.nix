@@ -84,6 +84,9 @@ in
     # ── Privacy ─────────────────────────────────────────────────────────────
     ./tor-browser
 
+    # ── Theming ─────────────────────────────────────────────────────────────
+    ./stylix
+
     # ── Profiles System ────────────────────────────────────────────────────
     ./profiles
 
@@ -94,6 +97,7 @@ in
     inputs.agenix.nixosModules.default
     inputs.agenix-manager.nixosModules.default
     inputs.nixos-wsl.nixosModules.default
+    inputs.stylix.nixosModules.stylix
   ];
 
   # ── Base System Configuration ────────────────────────────────────────────

@@ -25,6 +25,7 @@
     location.enable = true;
     gaming.enable = true;
     power.desktop.enable = true;
+    theming.stylix.enable = true;
   };
 
   my.programs.proton.ge.enable = true;

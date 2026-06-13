@@ -225,7 +225,7 @@ in
       mutableUserDebug = cfg.mutableUserDebug;
 
       themes = mergedThemes;
-      userSettings = mergedSettings;
+      userSettings = lib.mkDefault mergedSettings;
       userKeymaps = cfg.userKeymaps;
       userTasks = cfg.userTasks;
       userDebug = cfg.userDebug;

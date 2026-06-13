@@ -176,21 +176,9 @@ in
     ];
 
     dconf.settings = {
+      # ── Always-applied settings (non-theming) ──────────────────────────
       "org/gnome/shell" = {
         favorite-apps = cfg.favoriteApps;
-      };
-      "org/gnome/desktop/interface" = {
-        # Use dark mode preference from config
-        color-scheme = if (prefs.darkMode or true) then "prefer-dark" else "prefer-light";
-        enable-hot-corners = cfg.enableHotCorners;
-        can-change-accels = true;
-        cursor-theme = cfg.cursorTheme;
-        cursor-size = cfg.cursorSize;
-        font-name = cfg.fontName;
-        monospace-font-name = cfg.fontMonospace;
-        clock-show-date = cfg.clockShowDate;
-        clock-show-weekday = cfg.clockShowWeekday;
-        enable-animations = cfg.enableAnimations;
       };
       "org/gnome/desktop/sound" = {
         allow-volume-above-100-percent = cfg.enableOveramplification;
@@ -202,10 +190,6 @@ in
       };
       "org/gnome/mutter" = {
         dynamic-workspaces = cfg.dynamicWorkspaces;
-      };
-      "org/gnome/desktop/background" = {
-        picture-uri = cfg.backgroundImage;
-        picture-uri-dark = cfg.backgroundImageDark;
       };
       "org/gnome/desktop/screensaver" = {
         picture-uri = cfg.screensaverImage;
@@ -228,9 +212,29 @@ in
         sleep-inactive-battery-timeout = cfg.sleepInactiveBatteryTimeout;
         sleep-inactive-battery-type = cfg.sleepInactiveBatteryType;
       };
+
+      # ── Theming settings (disabled when Stylix is active) ──────────────
+    } // lib.optionalAttrs (!(config.stylix.enable or false)) {
+      "org/gnome/desktop/interface" = {
+        color-scheme = if (prefs.darkMode or true) then "prefer-dark" else "prefer-light";
+        enable-hot-corners = cfg.enableHotCorners;
+        can-change-accels = true;
+        cursor-theme = cfg.cursorTheme;
+        cursor-size = cfg.cursorSize;
+        font-name = cfg.fontName;
+        monospace-font-name = cfg.fontMonospace;
+        clock-show-date = cfg.clockShowDate;
+        clock-show-weekday = cfg.clockShowWeekday;
+        enable-animations = cfg.enableAnimations;
+      };
+      "org/gnome/desktop/background" = {
+        picture-uri = cfg.backgroundImage;
+        picture-uri-dark = cfg.backgroundImageDark;
+      };
     };
 
-    gtk = {
+    # GTK theming (disabled when Stylix is active)
+    gtk = lib.mkIf (!(config.stylix.enable or false)) {
       enable = true;
       gtk3.extraConfig.gtk-application-prefer-dark-theme = prefs.darkMode or true;
       iconTheme.name = cfg.iconTheme;

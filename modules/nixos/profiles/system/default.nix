@@ -38,6 +38,9 @@ in
     # ── Power Profiles (GNOME power settings) ─────────────────────────────
     power.desktop.enable = lib.mkEnableOption "desktop power profile (never sleep, no lock)";
     power.laptop.enable = lib.mkEnableOption "laptop power profile (battery-aware, lock on idle)";
+
+    # ── Theming ────────────────────────────────────────────────────────────
+    theming.stylix.enable = lib.mkEnableOption "Stylix theming framework";
   };
 
   # Connect profiles to actual modules and assertions
@@ -80,6 +83,11 @@ in
         powerButtonAction = lib.mkDefault "nothing";
         lockEnabled = lib.mkDefault false;
       };
+    })
+
+    # ── Theming: Stylix ─────────────────────────────────────────────────────
+    (lib.mkIf cfg.theming.stylix.enable {
+      my.theming.stylix.enable = true;
     })
 
     # ── Power: Laptop profile (battery-aware) ──────────────────────────────
