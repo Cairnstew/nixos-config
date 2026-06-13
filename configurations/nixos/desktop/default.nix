@@ -25,6 +25,7 @@
     location.enable = true;
     gaming.enable = true;
     power.desktop.enable = true;
+    theming.stylix.enable = true;
   };
 
   my.programs.proton.ge.enable = true;
@@ -304,8 +305,11 @@
     extraReadWritePaths = [ "/mnt/media/suwayomi" ];
   };
 
-  # Allow Suwayomi (4567) on the tailnet between tag:nixos devices
-  my.services.tailscale.manager.policy.interNodePorts = [ "tcp:22" "tcp:4567" ];
+  # Only the desktop manages tailscale ACL policy (auth keys, port grants)
+  my.services.tailscale.manager = {
+    enable = true;
+    policy.interNodePorts = [ "tcp:22" "tcp:4567" ];
+  };
 
   my.services.ollama = {
     enable = false;
