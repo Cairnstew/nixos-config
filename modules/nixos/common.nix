@@ -144,23 +144,26 @@ in
   # The Nix evaluation reads the manifest from the repo file at build time
   # (via cfg.manifestPath), so decryption still works correctly regardless.
   system.activationScripts.agenixManagerSecretsNix = {
-    text = lib.mkForce (let
-      cfg = config.agenixManager;
-      secretsNixFile = pkgs.writeText "secrets.nix" cfg.secretsNixContent;
-      cliConfigFile = pkgs.writeText "agenix-manager-cache.json" (builtins.toJSON cfg.cliConfig);
-      keysSnapshotFile = pkgs.writeText "keys-snapshot.json" (builtins.toJSON
-        (builtins.listToAttrs (map (s: lib.nameValuePair s.name s.keys) cfg.cliConfig.secrets))
-      );
-    in ''
-      echo "[agenixManager] Writing secrets.nix -> /etc/agenix/secrets.nix"
-      echo "[agenixManager] Writing CLI cache   -> /etc/agenix/agenix-manager-cache.json"
-      echo "[agenixManager] Writing keys snapshot -> /etc/agenix/keys-snapshot.json"
-      mkdir -p /etc/agenix
-      cp ${secretsNixFile} /etc/agenix/secrets.nix
-      cp ${cliConfigFile} /etc/agenix/agenix-manager-cache.json
-      cp ${keysSnapshotFile} /etc/agenix/keys-snapshot.json
-      chmod 644 /etc/agenix/agenix-manager-cache.json /etc/agenix/keys-snapshot.json
-    '');
+    text = lib.mkForce (
+      let
+        cfg = config.agenixManager;
+        secretsNixFile = pkgs.writeText "secrets.nix" cfg.secretsNixContent;
+        cliConfigFile = pkgs.writeText "agenix-manager-cache.json" (builtins.toJSON cfg.cliConfig);
+        keysSnapshotFile = pkgs.writeText "keys-snapshot.json" (builtins.toJSON
+          (builtins.listToAttrs (map (s: lib.nameValuePair s.name s.keys) cfg.cliConfig.secrets))
+        );
+      in
+      ''
+        echo "[agenixManager] Writing secrets.nix -> /etc/agenix/secrets.nix"
+        echo "[agenixManager] Writing CLI cache   -> /etc/agenix/agenix-manager-cache.json"
+        echo "[agenixManager] Writing keys snapshot -> /etc/agenix/keys-snapshot.json"
+        mkdir -p /etc/agenix
+        cp ${secretsNixFile} /etc/agenix/secrets.nix
+        cp ${cliConfigFile} /etc/agenix/agenix-manager-cache.json
+        cp ${keysSnapshotFile} /etc/agenix/keys-snapshot.json
+        chmod 644 /etc/agenix/agenix-manager-cache.json /etc/agenix/keys-snapshot.json
+      ''
+    );
     deps = lib.mkForce [ ];
   };
 
@@ -219,7 +222,7 @@ in
       };
 
       manager = {
-        enable = lib.mkDefault true;
+        enable = lib.mkDefault false;
         acl.enable = lib.mkDefault true;
 
         authKeys = lib.mkDefault {
@@ -249,7 +252,7 @@ in
             "tag:temp" = [ "tag:nixos" ];
           };
 
-          interNodePorts = lib.mkDefault [ "tcp:22" ];
+          interNodePorts = lib.mkDefault [ "tcp:22" "tcp:4567" "tcp:8000" ];
 
           grants = lib.mkDefault [
             {
@@ -330,6 +333,10 @@ in
   # mkDefault false: Ensures no bootloader is forced; host must opt-in
   # Override when: System needs grub (BIOS) or systemd-boot (UEFI)
   boot.loader.grub.enable = lib.mkDefault false;
+
+  # Limit systemd-boot entries to prevent /boot from filling up
+  # mkDefault so hosts can override (e.g., desktops needing more fallbacks)
+  boot.loader.systemd-boot.configurationLimit = lib.mkDefault 10;
 
   # ZFS: Don't force-import root pool by default (safer)
   # Hosts that need it can set boot.zfs.forceImportRoot = true

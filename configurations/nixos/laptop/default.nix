@@ -57,9 +57,6 @@
   # ── SSH Access
   my.services.ssh.authorizedKeys = [ flake.config.me.sshKey ];
 
-  # ── Tailscale: expose pixrate web app to tag:nixos nodes ──────────────────
-  my.services.tailscale.manager.policy.interNodePorts = [ "tcp:22" "tcp:8000" ];
-
   # ── Laptop-specific services ─────────────────────────────────────────────
   services.fwupd.enable = true;
 

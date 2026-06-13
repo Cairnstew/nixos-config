@@ -11,7 +11,7 @@ in
           ++ cfg.additionalExtensions
           ++ lib.optional cfg.continue.enable pkgs.vscode-extensions.continue.continue;
       };
-      userSettings = cfg.userSettings;
+      profiles.default.userSettings = cfg.userSettings;
     };
 
     home.file.".continue/config.yaml" = lib.mkIf cfg.continue.enable {

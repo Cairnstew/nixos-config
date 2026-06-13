@@ -19,7 +19,7 @@ in
   config = mkIf cfg.enable {
     my.live.isos.deploy = {
       baseModule = mkDefault "minimal";
-      system = mkDefault "x86_64-linux";
+      hostPlatform = mkDefault "x86_64-linux";
       enableSSH = mkDefault true;
       enableFlakes = mkDefault true;
       squashfsCompression = mkDefault "gzip -Xcompression-level 1";
