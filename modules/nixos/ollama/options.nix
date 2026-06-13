@@ -23,9 +23,9 @@
 
     host = lib.mkOption {
       type = lib.types.str;
-      default = "127.0.0.1";
-      example = "0.0.0.0";
-      description = "IP address Ollama listens on inside the container (sets OLLAMA_HOST).";
+      default = "0.0.0.0";
+      example = "127.0.0.1";
+      description = "IP address Ollama listens on inside the container (sets OLLAMA_HOST). Use 0.0.0.0 for Docker port mapping to work.";
     };
 
     backend = lib.mkOption {

@@ -30,6 +30,18 @@ in
       };
     };
 
+    shaderPreCaching = {
+      enable = mkOption {
+        type = types.bool;
+        default = false;
+        description = ''
+          Ensure Steam shader pre-caching is enabled in config.vdf.
+          Enables both "Shader Pre-Caching" and "Background Processing of
+          Vulkan Shaders" in Steam → Settings → Downloads.
+        '';
+      };
+    };
+
     extraCompatPaths = mkOption {
       type = types.nullOr types.str;
       default = null;
@@ -43,6 +55,50 @@ in
       type = types.listOf types.package;
       default = [ ];
       description = "Extra Steam-related packages to install system-wide.";
+    };
+
+    games = mkOption {
+      type = types.attrsOf (types.submodule {
+        options = {
+          appId = mkOption {
+            type = types.str;
+            description = "Steam App ID of the game. Find this from the Steam store URL or ProtonDB.";
+          };
+
+          name = mkOption {
+            type = types.str;
+            default = "";
+            description = "Human-readable name shown in GNOME/application menu. Defaults to the attribute name.";
+          };
+
+          env = mkOption {
+            type = types.attrsOf types.str;
+            default = { };
+            description = ''
+              Environment variables to set when launching the game.
+              These are exported before launching via steam://rungameid/.
+              Common variables: PROTON_USE_WINED3D, PROTON_NO_ESYNC, WINEDLLOVERRIDES.
+            '';
+            example = {
+              PROTON_USE_WINED3D = "1";
+              WINEDLLOVERRIDES = "d3dcompiler_47=n,b";
+            };
+          };
+        };
+      });
+      default = { };
+      example = {
+        "elden-ring" = {
+          appId = "1245620";
+          env.PROTON_USE_WINED3D = "1";
+        };
+      };
+      description = ''
+        Per-game Steam launch configurations.
+        Each entry creates a <filename>steam-game-&lt;name&gt;</filename> wrapper script
+        in the user's PATH that sets the specified environment variables and launches
+        the game via <literal>steam://rungameid/&lt;appId&gt;</literal>.
+      '';
     };
   };
 }

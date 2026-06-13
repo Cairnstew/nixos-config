@@ -19,11 +19,23 @@
   my.profiles = {
     workstation.enable = true;
     development.enable = true;
+    entertainment.enable = true;
     desktop.gnome.enable = true;
     gpu.mesa.enable = true;
     location.enable = true;
     gaming.enable = true;
     power.desktop.enable = true;
+  };
+
+  my.programs.proton.ge.enable = true;
+
+  my.programs.steam = {
+    shaderPreCaching.enable = true;
+    gamemode.enable = true;
+    games.overwatch-2 = {
+      appId = "2357570";
+      name = "Overwatch 2";
+    };
   };
 
   my.homeProfiles = {
@@ -142,9 +154,9 @@
   # ── SSH Access
   my.services.ssh.authorizedKeys = [ flake.config.me.sshKey ];
 
-  # ── Docker Data Storage (sdb — 500GB SATA SSD) ────────────────────────
-  # sdb → /mnt/docker, ext4, dedicated Docker data volume
-  fileSystems."/mnt/docker" = {
+  # ── Data Volume (sdb — 500GB SATA SSD) ────────────────────────────────
+  # sdb → /mnt/data, ext4, Docker + Ollama data
+  fileSystems."/mnt/data" = {
     device = "/dev/disk/by-label/docker-data";
     fsType = "ext4";
   };
@@ -158,7 +170,7 @@
 
   # ── Docker ──────────────────────────────────────────────────────────────
   # Move Docker data to the dedicated 500GB SATA SSD (sdb) for space
-  my.virtualisation.docker.dataRoot = "/mnt/docker";
+  my.virtualisation.docker.dataRoot = "/mnt/data/docker";
 
   # ── DP Link Retrain: force HBR2 on DP-1 after boot ──────────────────────
   # The amdgpu link training sometimes falls back to HBR (2.7 Gbps/lane)
@@ -273,7 +285,35 @@
     };
   };
 
-  my.programs.spotify.enable = true;
+  # ── LLM / AI ─────────────────────────────────────────────────────────────
+  my.services.sillytavern = {
+    enable = true;
+    ollama.enable = true;
+  };
+
+  # ── Manga Reader ─────────────────────────────────────────────────────────
+  # Suwayomi-Server backend + Moku frontend (both enabled via entertainment profile)
+  my.services.suwayomi = {
+    settings.server = {
+      ip = "0.0.0.0";
+      extensionRepos = [
+        "https://raw.githubusercontent.com/keiyoushi/extensions/repo/index.min.json"
+      ];
+    };
+    openFirewall = true;
+    extraReadWritePaths = [ "/mnt/media/suwayomi" ];
+  };
+
+  # Allow Suwayomi (4567) on the tailnet between tag:nixos devices
+  my.services.tailscale.manager.policy.interNodePorts = [ "tcp:22" "tcp:4567" ];
+
+  my.services.ollama = {
+    enable = false;
+    gpu.enable = true;
+    gpu.type = "amd";
+    dataDir = "/mnt/data/ollama";
+    models = flake.config.ollamaModels;
+  };
 
   environment.systemPackages = with pkgs; [ gnome-monitor-config ntfs3g ];
 

@@ -1,4 +1,4 @@
-{ lib, pkgs, config, ... }:
+{ lib, pkgs, config, flake, ... }:
 let
   format = pkgs.formats.hocon { };
 in
@@ -26,6 +26,13 @@ in
       description = "Group under which Suwayomi-Server runs";
     };
 
+    extraReadWritePaths = lib.mkOption {
+      type = lib.types.listOf lib.types.path;
+      default = [ ];
+      example = [ "/mnt/media/suwayomi" ];
+      description = "Additional directories the service is allowed to write to (e.g. external media mounts)";
+    };
+
     openFirewall = lib.mkOption {
       type = lib.types.bool;
       default = false;
@@ -49,18 +56,29 @@ in
               description = "Port Suwayomi listens on";
             };
 
-            basicAuthEnabled = lib.mkEnableOption "basic access authentication for Suwayomi-Server";
-
-            basicAuthUsername = lib.mkOption {
-              type = lib.types.nullOr lib.types.str;
-              default = null;
-              description = "Basic auth username";
+            authMode = lib.mkOption {
+              type = lib.types.enum [ "none" "basic_auth" "simple_login" "ui_login" ];
+              default = "none";
+              example = "basic_auth";
+              description = ''
+                Authentication mode for Suwayomi-Server.
+                - none: no authentication
+                - basic_auth: HTTP Basic Auth (requires header on every request)
+                - simple_login: login form + cookie session (auto-sent for images)
+                - ui_login: JWT-based auth with UI integration
+              '';
             };
 
-            basicAuthPasswordFile = lib.mkOption {
+            authUsername = lib.mkOption {
+              type = lib.types.nullOr lib.types.str;
+              default = flake.config.me.username;
+              description = "Auth username (defaults to the primary user)";
+            };
+
+            authPasswordFile = lib.mkOption {
               type = lib.types.nullOr lib.types.path;
               default = null;
-              description = "File containing the basic auth password (use config.age.secrets.\"<name>\".path)";
+              description = "File containing the auth password (use config.age.secrets.\"<name>\".path)";
             };
 
             downloadAsCbz = lib.mkOption {

@@ -8,6 +8,7 @@ in
 {
   imports = [
     ./development.nix
+    ./entertainment.nix
     ./gaming.nix
     ./workstation.nix
     ./server.nix
@@ -21,6 +22,7 @@ in
     server.enable = lib.mkEnableOption "server profile (headless)";
     minimal.enable = lib.mkEnableOption "minimal profile (bare essentials)";
     gaming.enable = lib.mkEnableOption "gaming profile (steam, games, etc.)";
+    entertainment.enable = lib.mkEnableOption "entertainment profile (gaming, music, media services)";
     development.enable = lib.mkEnableOption "development profile (dev tools, containers)";
 
     # ── Feature Profiles ─────────────────────────────────────────────────

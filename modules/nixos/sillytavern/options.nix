@@ -90,7 +90,7 @@
       };
       model = lib.mkOption {
         type = lib.types.str;
-        default = "";
+        default = "deepseek-coder-v2:16b";
         example = "llama3.2";
         description = "Default Ollama model to pre-select.";
       };

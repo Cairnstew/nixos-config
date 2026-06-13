@@ -17,9 +17,9 @@ in
       message = "my.services.suwayomi.group must not be empty.";
     }
     {
-      assertion = !cfg.enable || !cfg.settings.server.basicAuthEnabled
-                  || (cfg.settings.server.basicAuthUsername != null && cfg.settings.server.basicAuthPasswordFile != null);
-      message = "my.services.suwayomi.settings.server: basicAuthUsername and basicAuthPasswordFile must be set when basicAuthEnabled is true.";
+      assertion = !cfg.enable || cfg.settings.server.authMode == "none"
+                  || (cfg.settings.server.authUsername != null && cfg.settings.server.authPasswordFile != null);
+      message = "my.services.suwayomi.settings.server: authUsername and authPasswordFile must be set when authMode is not 'none'.";
     }
   ];
 }

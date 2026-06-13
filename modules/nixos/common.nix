@@ -71,6 +71,7 @@ in
     ./proton
     ./sillytavern
     ./suwayomi
+    ./moku.nix
 
     # ── Location, Secrets & Deploy ────────────────────────────────────────
     ./current-location.nix
@@ -129,14 +130,53 @@ in
     identities = [ "/etc/ssh/ssh_host_ed25519_key" ];
   };
 
-  # Copy the source manifest to /etc/agenix/ so the CLI reads the full
-  # repo-tracked manifest (not a stale subset from a previous CLI operation).
-  # Runs after agenixManagerSecretsNix so /etc/agenix/ already exists.
-  system.activationScripts.agenixManagerSecretsManifest = {
-    text = ''
-      install -m 644 ${./secrets/secrets-manifest.json} /etc/agenix/secrets-manifest.json
-    '';
+  # Override the upstream agenixManagerSecretsNix activation script to NOT
+  # overwrite secrets-manifest.json. The module writes 4 files to /etc/agenix/
+  # on every rebuild:
+  #   secrets.nix              ← OK to overwrite (eval-time derived)
+  #   agenix-manager-cache.json ← OK to overwrite (eval-time derived)
+  #   keys-snapshot.json       ← OK to overwrite (eval-time derived)
+  #   secrets-manifest.json    ← DO NOT OVERWRITE (preserves CLI changes)
+  #
+  # The manifest is the CLI's source of truth for runtime operations like
+  # `agenix-manager status`. Overwriting it on every rebuild destroys any
+  # secrets the user added via `agenix-manager new` but hasn't committed yet.
+  # The Nix evaluation reads the manifest from the repo file at build time
+  # (via cfg.manifestPath), so decryption still works correctly regardless.
+  system.activationScripts.agenixManagerSecretsNix = {
+    text = lib.mkForce (let
+      cfg = config.agenixManager;
+      secretsNixFile = pkgs.writeText "secrets.nix" cfg.secretsNixContent;
+      cliConfigFile = pkgs.writeText "agenix-manager-cache.json" (builtins.toJSON cfg.cliConfig);
+      keysSnapshotFile = pkgs.writeText "keys-snapshot.json" (builtins.toJSON
+        (builtins.listToAttrs (map (s: lib.nameValuePair s.name s.keys) cfg.cliConfig.secrets))
+      );
+    in ''
+      echo "[agenixManager] Writing secrets.nix -> /etc/agenix/secrets.nix"
+      echo "[agenixManager] Writing CLI cache   -> /etc/agenix/agenix-manager-cache.json"
+      echo "[agenixManager] Writing keys snapshot -> /etc/agenix/keys-snapshot.json"
+      mkdir -p /etc/agenix
+      cp ${secretsNixFile} /etc/agenix/secrets.nix
+      cp ${cliConfigFile} /etc/agenix/agenix-manager-cache.json
+      cp ${keysSnapshotFile} /etc/agenix/keys-snapshot.json
+      chmod 644 /etc/agenix/agenix-manager-cache.json /etc/agenix/keys-snapshot.json
+    '');
+    deps = lib.mkForce [ ];
+  };
+
+  # Preserve the CLI-modified manifest across rebuilds:
+  #   - First boot:  copy from repo (no runtime file exists yet)
+  #   - Subsequent:  keep whatever the CLI wrote (do NOT overwrite)
+  # To force a fresh copy from the repo, delete /etc/agenix/secrets-manifest.json
+  # and run `nix run .#activate`.
+  system.activationScripts.agenixManagerSecretsManifestBootstrap = {
     deps = [ "agenixManagerSecretsNix" ];
+    text = ''
+      if [ ! -f /etc/agenix/secrets-manifest.json ]; then
+        echo "[agenixManager] Bootstrapping secrets manifest -> /etc/agenix/secrets-manifest.json"
+        install -m 644 ${./secrets/secrets-manifest.json} /etc/agenix/secrets-manifest.json
+      fi
+    '';
   };
 
   # ── Sensible Defaults ────────────────────────────────────────────────────

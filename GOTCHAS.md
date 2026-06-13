@@ -7,6 +7,11 @@
 
 ## Format
 
+**`agenix-manager new` secrets disappear after `nix run .#activate`**
+Symptom: A secret created via `agenix-manager new --name foo --scope main` shows up in `agenix-manager status` immediately, but disappears after the next `nix run .#activate` (or `nixos-rebuild switch`). The `.age` file still exists but the entry is gone from the manifest.  
+Cause: The upstream agenix-manager module's activation script (`agenixManagerSecretsNix`) writes all 4 files to `/etc/agenix/` on every rebuild — including `secrets-manifest.json`. The CLI's `new` command saves the updated manifest to `/etc/agenix/secrets-manifest.json`, but the activation script overwrites it with the repo-tracked version (which doesn't have the new secret yet). Additionally, `common.nix` had a redundant `agenixManagerSecretsManifest` activation script that overwrote the same file again.  
+Fix: `modules/nixos/common.nix` now (1) overrides `agenixManagerSecretsNix` via `lib.mkForce` to skip writing `secrets-manifest.json` (only writes `secrets.nix`, `agenix-manager-cache.json`, `keys-snapshot.json`), (2) removes the redundant `agenixManagerSecretsManifest` script, and (3) replaces it with `agenixManagerSecretsManifestBootstrap` which only creates `/etc/agenix/secrets-manifest.json` on first boot. This preserves CLI-local manifest changes across rebuilds. To force re-sync from the repo: `sudo rm /etc/agenix/secrets-manifest.json && nix run .#activate`. The Nix evaluation always reads the repo file directly (`cfg.manifestPath`), so secret decryption is unaffected.
+
 ## Format
 
 **disk-config.nix unconditionally overrides disko module in dualBoot mode**

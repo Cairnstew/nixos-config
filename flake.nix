@@ -98,6 +98,12 @@
     # Kernel-level mouse acceleration (Wayland-compatible)
     maccel.url = "github:Gnarus-G/maccel";
 
+    # Moku — Tauri manga reader frontend for Suwayomi-Server
+    moku = {
+      url = "github:moku-project/Moku";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+
   };
 
   # Wired using https://nixos-unified.org/autowiring.html

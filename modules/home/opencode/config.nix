@@ -253,11 +253,13 @@ in
     {
       programs.opencode.settings.permission = lib.mkDefault {
         external_directory = {
+          "/nix/*" = "allow";
           "/nix/store/**" = "allow";
           "/nix/var/nix/**" = "allow";
           "/run/current-system/**" = "allow";
           "/run/agenix/**" = "allow";
           "/etc/nixos/**" = "allow";
+          "/tmp/*" = "allow";
           "~/.local/share/opencode/worktree/**" = "allow";
         };
       };

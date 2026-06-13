@@ -45,14 +45,21 @@ let
     ${cfg.presets.activationScript}
 
     SETTINGS="${stUserDir}/settings.json"
-    if [ ! -f "$SETTINGS" ]; then
-      ${if cfg.ollama.enable then ''
-        cp ${pkgs.writeText "ollama-settings.json" ollamaSettingsJson} "$SETTINGS"
+    ${if cfg.ollama.enable then ''
+      OLLAMA_JSON="${pkgs.writeText "ollama-settings.json" ollamaSettingsJson}"
+      if [ -f "''${SETTINGS}" ]; then
+        ${pkgs.jq}/bin/jq -s '.[0] * .[1]' "''${SETTINGS}" "''${OLLAMA_JSON}" > "''${SETTINGS}.tmp" \
+          && mv "''${SETTINGS}.tmp" "''${SETTINGS}"
+        echo "sillytavern: merged Ollama connection profile into settings.json"
+      else
+        cp "''${OLLAMA_JSON}" "''${SETTINGS}"
         echo "sillytavern: seeded settings.json with Ollama connection profile"
-      '' else ''
-        echo "{}" > "$SETTINGS"
-      ''}
-    fi
+      fi
+    '' else ''
+      if [ ! -f "''${SETTINGS}" ]; then
+        echo "{}" > "''${SETTINGS}"
+      fi
+    ''}
 
     chown -R ${cfg.user}:${cfg.group} "${homeDir}"
   '';
@@ -62,8 +69,8 @@ in
     systemd.services.sillytavern = {
       description = "SillyTavern LLM Frontend";
       wantedBy = [ "multi-user.target" ];
-      after = [ "network.target" ] ++ lib.optional cfg.ollama.enable "ollama.service";
-      wants = lib.optional cfg.ollama.enable "ollama.service";
+      after = [ "network.target" ] ++ lib.optional cfg.ollama.enable "docker-ollama.service";
+      wants = lib.optional cfg.ollama.enable "docker-ollama.service";
 
       environment = {
         HOME = homeDir;
