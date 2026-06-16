@@ -12,6 +12,36 @@
   networking.hostName = "desktop";
   nixos-unified.sshTarget = "seanc@desktop";
 
+  # ── VM Builder ──────────────────────────────────────────────────────────────
+  # Build VM packages for testing before deploying to real hardware.
+  # The extraConfig strips GPU/gaming/battery config that doesn't work in QEMU
+  # and switches to a lightweight Hyprland desktop.
+  my.vm = {
+    enable = true;
+    # hosts = [];  # empty = all hosts, or list specific ones
+    extraConfig = { lib, pkgs, ... }: {
+      my.profiles = {
+        workstation.enable = lib.mkForce false;
+        gaming.enable = lib.mkForce false;
+        gpu.mesa.enable = lib.mkForce false;
+        location.enable = lib.mkForce false;
+        desktop.choice = lib.mkForce "hyprland";
+      };
+      my.system.battery.enable = lib.mkForce false;
+      my.testing.startAtBoot = true;
+
+      services.greetd = {
+        enable = true;
+        settings = {
+          default_session = {
+            command = lib.mkForce "${pkgs.hyprland}/bin/Hyprland";
+            user = lib.mkForce "seanc";
+          };
+        };
+      };
+    };
+  };
+
   # Always run at performance governor (desktop, always plugged in)
   powerManagement.cpuFreqGovernor = "performance";
 

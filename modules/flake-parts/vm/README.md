@@ -5,47 +5,62 @@ backed by the nixpkgs `qemu-vm` module.
 
 ## Usage
 
-Enable in any host that should build VM packages:
+Per-host settings are configured in the host's NixOS config:
 
 ```nix
 my.vm = {
   enable = true;
-  hosts = [ "laptop" "desktop" ];  # empty = all hosts
   memory = 4096;
-  cores = 4;
+  extraConfig = { lib, ... }: {
+    my.profiles.workstation.enable = lib.mkForce false;
+  };
 };
 ```
 
+All hosts with `my.vm.enable = true` get VM packages built automatically.
+
 Build and run a graphical VM:
 ```bash
-nix build .#laptop-vm
-./result/bin/run-laptop-vm
+nix build .#desktop-vm
+./result/bin/run-desktop-vm
 ```
 
 Headless (serial console only):
 ```bash
-nix build .#laptop-vm-headless
-./result/bin/run-laptop-vm-headless
+nix build .#desktop-vm-headless
+./result/bin/run-desktop-vm-headless
 ```
 
-## Port Forwarding
-
-```nix
-my.vm.portForward = {
-  ssh = { host = 2222; guest = 22; };
-  http = { host = 8080; guest = 80; };
-};
-```
-
-This adds `hostfwd` rules so you can SSH into the VM at `localhost:2222`.
-
-## Options
+## Per-Host Options (set in host NixOS config)
 
 | Option | Default | Description |
 |--------|---------|-------------|
-| `my.vm.enable` | `false` | Enable VM builders |
-| `my.vm.hosts` | `[]` | Hostnames to build VMs for (empty = all) |
+| `my.vm.enable` | `false` | Enable VM build for this host |
 | `my.vm.memory` | `2048` | RAM in MB |
 | `my.vm.cores` | `2` | CPU cores |
 | `my.vm.diskSize` | `4096` | Disk size in MB |
-| `my.vm.portForward` | `{}` | Port forwarding rules |
+| `my.vm.extraConfig` | `{}` | NixOS module fragment merged into this host's VM build only |
+
+## Flake-Level Options (set in any NixOS config)
+
+| Option | Default | Description |
+|--------|---------|-------------|
+| `my.vm.hosts` | `[]` | Optional filter — only build VMs for these hosts (empty = all enabled hosts) |
+
+## Override example
+
+Strip GPU/battery/hardware config that doesn't work in QEMU and use a
+lightweight Hyprland desktop instead of the real host's heavy setup:
+
+```nix
+my.vm = {
+  enable = true;
+  extraConfig = { lib, ... }: {
+    my.profiles.workstation.enable = lib.mkForce false;
+    my.profiles.gaming.enable = lib.mkForce false;
+    my.profiles.gpu.mesa.enable = lib.mkForce false;
+    my.system.battery.enable = lib.mkForce false;
+    my.desktop.hyprland.enable = true;
+  };
+};
+```
