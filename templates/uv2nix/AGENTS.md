@@ -25,7 +25,7 @@ Scaffold for CLI/Nix/TUI tools with NixOS module, CI/CD, and Textual TUI.
 | `nix/default.nix` | Package derivation (mkApplication) |
 | `nix/module.nix` | NixOS module (activation script + systemd service) |
 | `nix/home-module.nix` | Home Manager module (user env) |
-| `nix/vm-tests.nix` | NixOS VM integration tests |
+
 | `pyproject.toml` | Python project metadata, dependencies |
 | `uv.lock` | Lock file — drives the Nix overlay |
 | `src/uv2nix_template/` | Application package source |

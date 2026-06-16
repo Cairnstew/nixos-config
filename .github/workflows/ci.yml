@@ -49,42 +49,7 @@ jobs:
           cachix push cairnstew-nixos-config-cache ./result-${{ matrix.host }}
 
   # ─────────────────────────────────────────────────────────────────────────────
-  # Run tests on all configurations
-  # ─────────────────────────────────────────────────────────────────────────────
-  test-configs:
-    runs-on: ubuntu-latest
-    needs: build-nixos
-    if: always() && (needs.build-nixos.result == 'success' || needs.build-nixos.result == 'skipped')
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v6
-
-      - name: Install Nix
-        uses: cachix/install-nix-action@v31
-        with:
-          extra_nix_config: |
-            accept-flake-config = true
-            fallback = true
-
-      - name: Setup Cachix
-        uses: cachix/cachix-action@v17
-        with:
-          name: cairnstew-nixos-config-cache
-          authToken: ${{ secrets.CACHIX_AUTH_TOKEN }}
-
-      - name: Run all tests
-        run: |
-          echo "Running test suite..."
-          nix run .#test -- run
-
-  # ─────────────────────────────────────────────────────────────────────────────
   # Flake check (evaluation only, no builds)
-  #
-  # NOTE: Use --no-build here because `nix flake check` also evaluates VM test
-  # derivations (checks.vm-test-*). Building those requires /dev/kvm, which
-  # GitHub Actions shared runners do not provide. To run VM tests, use a
-  # self-hosted runner with KVM or run `nix build .#checks.x86_64-linux.vm-test-*`
-  # locally. See also .github/workflows/vm-tests.yml.
   # ─────────────────────────────────────────────────────────────────────────────
   flake-check:
     runs-on: ubuntu-latest

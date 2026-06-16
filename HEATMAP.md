@@ -365,12 +365,6 @@ All `my.*` options declared across module files.
 |--------|------|---------|-------------|
 | `my.build.default` | package | — | Default package target |
 
-## my.testing.* (Testing Framework)
-
-| Option | Type | Default | Description |
-|--------|------|---------|-------------|
-| `my.testing.enable` | bool | `false` | Enable testing framework |
-
 ## my.programs.opencode.* (OpenCode AI Agent)
 
 | Option | Type | Default | Description |

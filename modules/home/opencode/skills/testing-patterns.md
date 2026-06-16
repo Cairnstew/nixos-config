@@ -2,9 +2,9 @@
 
 > Skill for writing and running tests in this NixOS configuration
 
-## Test Hierarchy (L0–L3)
+## Test Hierarchy (L0–L2)
 
-This repo uses a four-level test pyramid defined in `modules/AGENT.md`.
+This repo uses a three-level test pyramid defined in `modules/AGENT.md`.
 
 ### L0: Nix Assertions (Mandatory)
 
@@ -59,36 +59,6 @@ systemd.services.myservice-smoke = lib.mkIf cfg.enable {
 };
 ```
 
-### L3: NixOS VM Tests
-
-Full integration tests using `pkgs.testers.runNixOSTest`. Used for critical modules.
-
-```nix
-# modules/nixos/mymodule/tests.nix (L3 variant)
-{ pkgs, lib, ... }:
-let
-  vmTest = pkgs.testers.runNixOSTest {
-    name = "mymodule";
-    nodes.machine = { config, ... }: {
-      imports = [ ./default.nix ];
-      my.services.mymodule.enable = true;
-    };
-    testScript = ''
-      machine.start()
-      machine.wait_for_unit("myservice.service")
-      machine.succeed("curl -f http://localhost:8080/health")
-    '';
-  };
-in
-{
-  config = lib.mkIf cfg.enable {
-    # ... normal config ...
-  };
-  # Expose VM test as a passthru
-  passthru.tests = { inherit vmTest; };
-}
-```
-
 ## Running Tests
 
 ```bash
@@ -100,12 +70,6 @@ nixos-rebuild build --flake .#<hostname>
 
 # L2: On a running system, check service status
 systemctl status myservice.service
-
-# L3: Run full VM test for a host
-just test <hostname>
-
-# List available test hosts
-just test-list
 ```
 
 ## Module Test Conventions
@@ -116,13 +80,6 @@ Place tests in the module's `tests.nix` file. See existing examples:
 - `modules/nixos/docker/tests.nix`
 - `modules/nixos/battery/tests.nix`
 
-### Meta-framework (`modules/flake-parts/testing.nix`)
-Provides `my.testing` options:
-```nix
-my.testing.enable = true;         # Enable testing framework
-my.testing.vmTest.enable = true;  # Enable VM test for a host
-```
-
 ### Required Tests by Module Complexity
 
 | Complexity | Required Tests |
@@ -130,7 +87,6 @@ my.testing.vmTest.enable = true;  # Enable VM test for a host
 | Simple | L0 assertions only |
 | Medium | L0 + L1 (systemd probes) |
 | Complex | L0 + L1 + L2 (smoke) |
-| Critical | L0 + L1 + L2 + L3 (VM) |
 
 ## Gotchas
 
@@ -146,9 +102,7 @@ config = lib.mkIf cfg.enable {
 `meta.nix` is a pure attrset, not a module. Adding it to `imports = [ ./meta.nix ]`
 causes "option does not exist" errors. It is only for agents/tooling.
 
-### VM tests require KVM
-`runNixOSTest` requires `/dev/kvm`. CI runners without KVM should use
-`nix flake check --no-build`. Local: ensure user is in `kvm` group.
+
 
 ## Writing Good Assertions
 
@@ -174,8 +128,6 @@ GitHub Actions workflows in `.github/workflows/`:
 - `build-cache.yml` — Binary cache building
 - `format-check.yml` — nixpkgs-fmt formatting
 - `pr-checks.yml` — PR validation workflow
-- `vm-tests.yml` — VM tests (manual dispatch, KVM-capable runners only)
-
 Local CI simulation with `just act*` commands:
 ```bash
 just act            # Run all local-verify jobs

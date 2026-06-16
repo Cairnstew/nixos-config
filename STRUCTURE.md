@@ -92,7 +92,7 @@ Flake-level modules for outputs, packages, and development tools.
 | `live-iso/options.nix` | `live.isos` option declarations (baseModule, extraPackages, sshKeys, tailscale, etc.) |
 | `live-iso/config.nix` | ISO builder: calls nixpkgs.lib.nixosSystem + `config.system.build.isoImage` per entry |
 | `terranix.nix` | Terraform/terranix integration |
-| `testing.nix` | Testing framework and `my.testing` options |
+
 | `README.md` | Documentation for flake-parts conventions |
 
 ### modules/nixos/

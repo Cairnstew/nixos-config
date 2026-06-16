@@ -26,11 +26,20 @@ in
     development.enable = lib.mkEnableOption "development profile (dev tools, containers)";
 
     # ── Feature Profiles ─────────────────────────────────────────────────
+    desktop.choice = lib.mkOption {
+      type = lib.types.nullOr (lib.types.enum [ "hyprland" "gnome" ]);
+      default = null;
+      example = "hyprland";
+      description = "Which desktop environment to use. Set to null (default) to pick none, or use desktop.hyprland.enable / desktop.gnome.enable directly.";
+    };
+    desktop.hyprland.enable = lib.mkEnableOption "Hyprland Wayland compositor";
     desktop.gnome.enable = lib.mkEnableOption "GNOME desktop environment";
 
     gpu.mesa.enable = lib.mkEnableOption "Mesa GPU drivers (Intel/AMD)";
     gpu.nvidia.enable = lib.mkEnableOption "NVIDIA GPU drivers";
     gpu.nvidia-headless.enable = lib.mkEnableOption "NVIDIA GPU drivers (headless/CUDA)";
+
+    testing.enable = lib.mkEnableOption "testing profile (module smoke tests and health checks via my.testing)";
 
     location.enable = lib.mkEnableOption "location services (timezone, geoclue)";
     battery.enable = lib.mkEnableOption "battery/power management (auto-cpufreq, logind)";
@@ -45,6 +54,19 @@ in
 
   # Connect profiles to actual modules and assertions
   config = lib.mkMerge [
+    # Desktop choice (convenience toggle — sets hyprland or gnome)
+    (lib.mkIf (cfg.desktop.choice == "hyprland") {
+      my.desktop.hyprland.enable = true;
+    })
+    (lib.mkIf (cfg.desktop.choice == "gnome") {
+      my.desktop.gnome.enable = true;
+    })
+
+    # Hyprland profile
+    (lib.mkIf cfg.desktop.hyprland.enable {
+      my.desktop.hyprland.enable = true;
+    })
+
     # GNOME desktop profile
     (lib.mkIf cfg.desktop.gnome.enable {
       my.desktop.gnome.enable = true;
@@ -85,6 +107,11 @@ in
       };
     })
 
+    # Testing profile
+    (lib.mkIf cfg.testing.enable {
+      my.testing.enable = true;
+    })
+
     # ── Theming: Stylix ─────────────────────────────────────────────────────
     (lib.mkIf cfg.theming.stylix.enable {
       my.theming.stylix.enable = true;
@@ -119,7 +146,7 @@ in
         }
         {
           assertion = (cfg.power.desktop.enable || cfg.power.laptop.enable) -> cfg.desktop.gnome.enable;
-          message = "Power profiles require GNOME desktop profile (my.profiles.desktop.gnome.enable).";
+          message = "Power profiles require my.profiles.desktop.gnome.enable.";
         }
       ];
     }

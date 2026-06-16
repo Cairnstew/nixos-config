@@ -50,6 +50,7 @@ in
 
     environment.systemPackages = with pkgs; [
       gnome-tweaks
+      gnome-shell-extensions
       adwaita-icon-theme
       papirus-icon-theme
       kdePackages.breeze-gtk

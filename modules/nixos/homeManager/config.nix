@@ -66,6 +66,18 @@ in
   ];
 
   config = lib.mkIf cfg.enable {
+    # The home-manager-seanc.service is Type=oneshot and runs `systemctl --user
+    # show-environment` during activation. On the first rebuild after changes,
+    # the user's systemd manager is often in transition (sysinit-reactivation.target
+    # restarting, dbus-broker reloading), causing the command to fail. Auto-retry
+    # makes it succeed on the next attempt after the session settles.
+    systemd.services."home-manager-seanc" = {
+      serviceConfig = {
+        Restart = "on-failure";
+        RestartSec = "10s";
+      };
+    };
+
     home-manager.backupFileExtension = "backup";
     home-manager.sharedModules = builtins.attrValues self.homeModules ++ [
       inputs.mcp-servers-nix.homeManagerModules.default

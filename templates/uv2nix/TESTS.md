@@ -21,12 +21,9 @@ tests/
 │   ├── conftest.py       #   Nix-dependent fixtures
 │   └── test_cli_invocation.py
 │
-├── nix_eval/              # Requires nix in PATH
-│   ├── conftest.py
-│   └── test_module_eval.py
-│
-└── nixos/                 # NixOS VM test fixtures (.nix files only)
-    └── basic.nix
+└── nix_eval/              # Requires nix in PATH
+    ├── conftest.py
+    └── test_module_eval.py
 ```
 
 ## Running subsets
@@ -50,12 +47,20 @@ pytest tests/                 # everything
 
 - **Scoped conftest.py per tier.** Each tier has its own `conftest.py` so fixtures are scoped by tier.
 - **`nix` marker on eval tests.** These need `nix` in PATH and evaluate real derivations.
-- **NixOS VM tests are Nix-only.** They live in `tests/nixos/` as `.nix` fixtures read by
-  `nix/vm-tests.nix`. No pytest files.
+
 
 ## Testing by package layer
 
 | Package layer | Test tier | Approach |
+|---------------|-----------|----------|
+| `models/` | `unit/` | Instantiate Pydantic models, assert serialisation |
+| `services/` | `unit/` | Instantiate services with mock config, call methods |
+| `commands/` | `unit/` | Assert BaseCommand subclass contract, handle_result |
+| `cli/` | `unit/` + `integration/` | Typer CliRunner in unit, subprocess in integration |
+| `textual_ui/` | `unit/` | Inheritance chain verification, mixin contract tests |
+| `exceptions/` | `unit/` | Instantiate and assert isinstance checks |
+
+## Testing by package layer
 |---------------|-----------|----------|
 | `models/` | `unit/` | Instantiate Pydantic models, assert serialisation |
 | `services/` | `unit/` | Instantiate services with mock config, call methods |

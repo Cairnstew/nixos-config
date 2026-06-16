@@ -17,7 +17,7 @@ calls reusable workflows.
 | `test-integration` | Python changes | `uv run pytest tests/integration/` |
 | `nix` | Nix changes | `nix flake check` + `nix build` |
 | `audit` | Python changes | `uv run pip-audit` + `uv run bandit` |
-| `vm-test` | Nix changes | `nix build .#vmTests.basic` |
+
 
 ### `release.yml` (tag push `v*`)
 

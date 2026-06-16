@@ -1,5 +1,26 @@
 # GOTCHAS.md — Known Footguns and Fixes
 
+---
+
+**`home-manager-<user>.service` fails on first `nix run` after changes, succeeds on second**
+Symptom: `nix run` (or `nixos-rebuild switch`) fails with `Failed to restart home-manager-seanc.service` on the first run, but succeeds on the second run without any code changes.  
+Cause: The service is `Type=oneshot` and its `ExecStart` runs `systemctl --user show-environment` to import session variables. On the first rebuild after changes, `switch-to-configuration` restarts `sysinit-reactivation.target` and reloads `dbus-broker`, putting the user's systemd manager in transition. The `systemctl --user` command fails because the user bus isn't available. On the second run, the session is stable so it succeeds.  
+Fix: Added `Restart=on-failure` and `RestartSec=10s` to `home-manager-seanc.service` in `modules/nixos/homeManager/config.nix`. The service auto-retries after 10s, by which time the user session has settled.
+
+---
+
+**`qt.platformTheme.name` is not a valid option — use `qt.platformTheme` directly**
+Symptom: Setting `qt.platformTheme.name = lib.mkDefault "adwaita";` in `modules/nixos/stylix/config.nix` caused `nix flake check` to fail with `A definition for option 'qt.platformTheme' is not of type 'null or one of "gnome", "gtk2", "kde", "lxqt", "qt5ct"'`. The error was masked by earlier evaluation failures that would abort before reaching this definition, so it went unnoticed.  
+Cause: The NixOS `qt.platformTheme` is a simple string enum (`null | "gnome" | "gtk2" | "kde" | "lxqt" | "qt5ct"`) — not an attrset with a `name` sub-option. The `.name` suffix was cargo-culted from the upstream stylix internal theme API comment.  
+Fix: Use `qt.platformTheme = lib.mkDefault "adwaita";` (no `.name`).
+
+**`rofi-wayland` package has been merged into `rofi`**
+Symptom: `programs.rofi.package = pkgs.rofi-wayland;` or including `rofi-wayland` in `environment.systemPackages` caused `error: 'rofi-wayland' has been merged into 'rofi'`.  
+Cause: Upstream nixpkgs merged `rofi-wayland` into the main `rofi` package — the separate package no longer exists.  
+Fix: Use `pkgs.rofi` and `programs.rofi.package = pkgs.rofi;` instead.
+
+---
+
 > Living log of problems that have caused failures or wasted cycles.  
 > **Check this before debugging any evaluation or build failure.**
 
@@ -189,7 +210,7 @@ Fix: Do NOT import `home-manager.sharedModules` inside a NixOS module. Instead, 
 **Profile not applying despite being enabled**
 Symptom: `my.profiles.workstation.enable = true` but audio/bluetooth/desktop environment not configured.
 Cause: Profile system wasn't imported or the profile implementation has an error.
-Fix: Ensure `nixosModules.common` is imported (it brings in the profile system). Check that the profile exists in `modules/nixos/profiles/system/`. Enable `my.testing.enable = true` to validate the configuration evaluates correctly.
+Fix: Ensure `nixosModules.common` is imported (it brings in the profile system). Check that the profile exists in `modules/nixos/profiles/system/`.
 
 ---
 
@@ -247,8 +268,7 @@ Symptom: The `dsc-configuration.yaml` is placed in the ISO's OEM directory (`sou
 **`autounattend.xml` heredoc in services.nix is fragile**
 Symptom: Editing the inline XML in `services.nix` breaks string interpolation, and the XML duplicates the `packages/autounattend-xml` package. Cause: The installer service contained a 100+ line XML heredoc that was hard to maintain and had no build-time validation. Fix: The service now calls `pkgs.callPackage ../../../../packages/autounattend-xml` to build the XML at evaluation time. The generated XML is copied from the Nix store path during the install script.
 
-**VM tests (runNixOSTest) fail with QEMU/KVM error**
-Symptom: `nix flake check` or `nix build .#checks.x86_64-linux.vm-test-*` fails with "Could not access KVM kernel module" or similar. Cause: `pkgs.testers.runNixOSTest` requires `/dev/kvm` to boot the QEMU guest. Most cloud CI runners (GitHub Actions shared, GitLab.com shared) lack KVM access. Fix: Use a self-hosted runner with KVM enabled, or use `nix flake check --no-build` (evaluation only) in CI — the existing workflows in this repo already do this. The `ci.yml` workflow has explicit comments about this. A separate `vm-tests.yml` workflow exists for manual dispatch on KVM-capable runners. To run locally: ensure your user is in the `kvm` group (`sudo usermod -aG kvm $USER`) and verify with `ls -l /dev/kvm`.
+
 
 
 

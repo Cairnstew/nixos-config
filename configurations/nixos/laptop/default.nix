@@ -29,7 +29,7 @@
     workstation.enable = true;
     development.enable = true;
 
-    # Desktop
+    # Desktop — GNOME
     desktop.gnome.enable = true;
 
     # Hardware

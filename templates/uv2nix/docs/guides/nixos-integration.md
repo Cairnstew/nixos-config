@@ -46,11 +46,4 @@
 }
 ```
 
-## Running VM tests
 
-```bash
-nix build .#vmTests.basic
-```
-
-This spins up a NixOS VM, verifies the service starts, and checks that
-`/etc/uv2nix-template/config.json` exists.

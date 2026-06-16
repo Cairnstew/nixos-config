@@ -14,7 +14,7 @@
 │   │   ├── test-integration.yml #   Reusable — pytest integration (soft-fail)
 │   │   ├── nix.yml              #   Reusable — flake check + build
 │   │   ├── audit.yml            #   Reusable — pip-audit + bandit
-│   │   ├── vm-test.yml          #   Reusable — NixOS VM tests
+
 │   │   ├── release.yml          #   Tag v* — Nix build, PyPI OIDC, GH release
 │   │   └── update-flake-lock.yml #  Weekly — automated flake.lock bump
 │   └── renovate.json            #   Renovate config — batching Python & Nix dep PRs
@@ -30,8 +30,7 @@
 ├── nix/                      # Nix building blocks
 │   ├── default.nix           #   Package derivation (mkApplication)
 │   ├── module.nix            #   NixOS module — activation script + systemd service
-│   ├── home-module.nix       #   Home Manager module — user env package
-│   └── vm-tests.nix          #   NixOS VM integration tests
+│   └── home-module.nix       #   Home Manager module — user env package
 │
 ├── src/
 │   ├── uv2nix_template/          # Application package
@@ -91,8 +90,7 @@
 │   ├── nix_eval/                 #   Nix eval tests (require nix in PATH)
 │   │   ├── conftest.py
 │   │   └── test_module_eval.py
-│   └── nixos/                    #   NixOS VM test fixtures
-│       └── basic.nix
+
 │
 ├── docs/
 │   ├── reference/
@@ -234,4 +232,4 @@ flake.nix  ──workspace.mkPyprojectOverlay──►  Nix overlay
 | `nixosModules.default` | `nix/module.nix` | NixOS module with activation script |
 | `homeManagerModules.default` | `nix/home-module.nix` | User environment package |
 | `checks` | `flake.nix` (inline) | build, venv, format, app-help checks |
-| `vmTests` | `nix/vm-tests.nix` | NixOS VM integration tests |
+

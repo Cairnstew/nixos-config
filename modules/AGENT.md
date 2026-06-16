@@ -23,8 +23,7 @@
 9. [Import Topology](#9-import-topology)
 10. [Flat-File → Directory Migration](#10-flat-file--directory-migration)
 11. [Failure Modes (Hard Gates)](#11-failure-modes-hard-gates)
-12. [`my.testing` Flake-Parts Integration](#12-mytesting-flake-parts-integration)
-13. [Design Philosophy](#13-design-philosophy)
+12. [Design Philosophy](#12-design-philosophy)
 
 ---
 
@@ -135,7 +134,7 @@ pitfalls for each.
 | **Activation** | Use `system.activationScripts` for one-time setup that must happen before boot finishes. |
 | **Secrets** | Reference `config.age.secrets.<name>.path` (usually imported from `modules/nixos/secrets`). Never inline plaintext secrets. |
 | **Cross-module wiring** | Do NOT import `home-manager.sharedModules` inside a NixOS module. Instead, expose options that a host config wires into `home-manager.users.<name>.my.*`. |
-| **Tests** | L3 NixOS VM tests (`nixosTest`) are available and **required** when the module touches boot, filesystems, networking stacks, or hardware. |
+| **Tests** | L0 assertions, L1 systemd probes, and L2 smoke test units are available. |
 
 **Agent rule:** If a NixOS module needs HM integration, declare the HM
 options in a separate `modules/home/<name>.nix` (or `home.nix` side-car) so
@@ -156,7 +155,7 @@ the same feature works in standalone Home Manager configurations.
 | **Nix Daemon** | Configure the multi-user Nix daemon via `nix.*` (e.g., `nix.settings.extra-nix-path`). |
 | **Security** | Touch-ID sudo via `security.pam.enableSudoTouchId`; keychain via `security.pki.*`. |
 | **Packages** | `environment.systemPackages` works like NixOS, but be aware of macOS-specific `pkgs.darwin` packages. |
-| **Tests** | L3 NixOS VM tests are **not** usable on darwin. Rely on L0 assertions and L2 smoke tests. |
+| **Tests** | Rely on L0 assertions and L2 smoke tests. |
 
 **Agent rule:** The darwin configuration is currently dormant but wired.
 Keep modules aligned with NixOS equivalents where possible so shared
@@ -196,7 +195,7 @@ devShells, and exported modules.
 
 | Concern | Directive |
 |---------|-----------|
-| **Options** | **Exempt** from the `my.*` rule when configuring the flake *itself* (e.g. `me`, `tailnet`, `ollamaModels`). However, options that control per-host behavior (e.g. `my.testing`) **must** still live under `my.*` so that NixOS/darwin/home modules can consume them. |
+| **Options** | **Exempt** from the `my.*` rule when configuring the flake *itself* (e.g. `me`, `tailnet`, `ollamaModels`). However, options that control per-host behavior **must** still live under `my.*` so that NixOS/darwin/home modules can consume them. |
 | **`perSystem`** | Use `perSystem = { system, pkgs, ... }:` for packages, apps, checks, devShells, and formatter. These are evaluated once per supported platform. |
 | **`flake.*`** | Use `flake.nixosModules.*`, `flake.homeModules.*`, `flake.overlays.*` to export reusable modules. Do NOT instantiate NixOS system config directly here (e.g. do not set `services.foo.enable` at the flake level). |
 | **Autoload** | `flake.nix` imports **all** `.nix` files in this directory automatically, plus any subdirectory containing a `default.nix`. Any new file or subdirectory becomes a live flake module. |
@@ -204,7 +203,7 @@ devShells, and exported modules.
 | **`pkgs` wiring** | Use the existing `_module.args.pkgs` pattern in `perSystem` (see root `AGENTS.md` §3.4). Do not shadow `pkgs` with a custom import unless you are adding overlays. |
 | **Manual Wiring** | Packages/apps are often exposed explicitly in `perSystem.packages` / `perSystem.apps` (see `packages.nix` and `terranix.nix` for examples). Autowiring does not cover these. |
 | **Cross-flake inputs** | Use `inputs.<name>` sparingly; prefer forwarding via `follows` to keep closure sizes small. Declare primary inputs in `nixos-flake.nix` under `nixos-unified.primary-inputs`. |
-| **Tests** | Validate via `nix flake check` and by the `my.testing` runner. No L3 VM tests here. |
+| **Tests** | Validate via `nix flake check`. |
 
 **Agent rule:** A flake-parts module configures the flake, not a machine.
 Keep system-level implementation in `modules/nixos/` or `modules/home/` and
@@ -277,7 +276,7 @@ modules, but the file must exist.
 | L0 | Nix assertions | Always. At least one `assertions` entry that guards against mis-configuration. |
 | L1 | systemd / launchd probes | When the module declares a service. `ExecStartPost` health-check scripts. |
 | L2 | Smoke test unit | When the module runs a daemon or exposes a port. A `Type=oneshot` unit (or activation script) that can be triggered manually. |
-| L3 | NixOS VM test | When the module is critical or complex. A full `nixosTest` definition in `tests.nix`. |
+
 
 ### 5.2 `tests.nix` Template
 
@@ -310,8 +309,6 @@ in
     '';
   };
 
-  # ── L3: NixOS VM test (only for complex modules) ──────────────────────────
-  # my.tests.<name> = nixosTest { … };
 }
 ```
 
@@ -321,8 +318,6 @@ in
   satisfies the requirement.
 * **L1 is mandatory** when a systemd / launchd service is declared.
 * **L2 is strongly encouraged** for any network-facing or long-running service.
-* **L3 is optional** but required for modules that touch boot, filesystems, or
-  hardware.
 * Tests **must not** break evaluation when the module is disabled
   (`cfg.enable == false`).
 
@@ -513,21 +508,7 @@ files are grandfathered until migrated** — new modules and refactors must comp
 
 ---
 
-## 12. `my.testing` Flake-Parts Integration
-
-When working with the `my.testing` flake-parts module (`modules/flake-parts/testing.nix`):
-
-* The module is **opt-in** — enable it with `my.testing.enable = true` in a host config.
-* It generates `nix run .#test <command>` for listing, running, and dry-running hosts.
-* Per-host test packages (`test-<name>`) run closure-level checks without rebuilding.
-* Tests must not require building the full system closure — they only need evaluation.
-
-**Agent rule:** When adding a new service or system-level change, enable `my.testing`
-in the relevant host configuration to get automatic closure validation.
-
----
-
-## 13. Design Philosophy
+## 12. Design Philosophy
 
 This module system optimises for **Machine-Readable Intent** and **Human
 Discoverability**.  Every module should be understandable by:

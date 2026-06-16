@@ -117,13 +117,6 @@ Monitors flake health:
 
 Provides information about Cachix cache maintenance.
 
-### VM Tests (`vm-tests.yml`)
-**Triggers:** Manual dispatch only
-
-Runs the NixOS VM integration tests (QEMU-based):
-- Requires `/dev/kvm` — **not available on GitHub Actions shared runners**
-- Intended for self-hosted runners or local execution
-
 ### Local Verification (`local-verify.yml`)
 **Triggers:** Push to non-main branches, manual dispatch
 

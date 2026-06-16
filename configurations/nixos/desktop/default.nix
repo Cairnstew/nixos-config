@@ -20,13 +20,43 @@
     workstation.enable = true;
     development.enable = true;
     entertainment.enable = true;
-    desktop.gnome.enable = true;
     gpu.mesa.enable = true;
     location.enable = true;
     gaming.enable = true;
-    power.desktop.enable = true;
+    testing.enable = true;
     theming.stylix.enable = true;
   };
+
+  # ── Desktop Environment ────────────────────────────────────────────────────
+  # Toggle between "hyprland" and "gnome" to switch desktop environments.
+  # my.profiles.desktop.choice = "hyprland";
+  my.profiles.desktop.choice = "gnome";
+
+  # ── Monitor Layout ─────────────────────────────────────────────────────────
+  # DP-1: 2560×1440 @ 144Hz (primary, left)
+  # HDMI-A-1: 1920×1080 @ 60Hz (right of DP-1, portrait orientation)
+  my.monitors = [
+    {
+      name = "DP-1";
+      width = 2560;
+      height = 1440;
+      refreshRate = 144;
+      x = 0;
+      y = 0;
+      primary = true;
+      workspace = "1";
+    }
+    {
+      name = "HDMI-A-1";
+      width = 1920;
+      height = 1080;
+      refreshRate = 60;
+      x = 2560;
+      y = 0;
+      transform = 1;
+      workspace = "2";
+    }
+  ];
 
   my.programs.proton.ge.enable = true;
 
@@ -272,9 +302,6 @@
     };
   };
 
-  # ── VM Testing ─────────────────────────────────────────────────────────
-  my.testing.vmTest.enable = true;
-
   # ── Ventoy: multi-boot USB (Windows ISO) ───────────────────────────────
   my.programs.ventoy.enable = true;
 
@@ -319,7 +346,7 @@
     models = flake.config.ollamaModels;
   };
 
-  environment.systemPackages = with pkgs; [ gnome-monitor-config ntfs3g ];
+  environment.systemPackages = with pkgs; [ ntfs3g ];
 
   # ── Home Manager Extra ───────────────────────────────────────────────────
   my.homeManager.extraConfig = {
@@ -338,71 +365,7 @@
       };
     };
 
-    my.gnomeExtensions.custom.extensions = {
-      host-info = {
-        enable = true;
-        name = "Host Info";
-        description = "Shows hostname in the top bar";
-        extensionJs = ''
-          const { St, Clutter } = imports.gi;
-          const Main = imports.ui.main;
-          const PanelMenu = imports.ui.panelMenu;
-
-          const hostname = "${config.networking.hostName}";
-
-          let indicator = null;
-
-          function init() {
-            return { enable, disable };
-          }
-
-          function enable() {
-            indicator = new PanelMenu.Button(0.0, "host-info", false);
-            let box = new St.BoxLayout({ style_class: "panel-box" });
-            let icon = new St.Icon({
-              icon_name: "computer-symbolic",
-              style_class: "system-status-icon"
-            });
-            box.add_child(icon);
-            let label = new St.Label({
-              text: hostname,
-              y_align: Clutter.ActorAlign.CENTER
-            });
-            box.add_child(label);
-            indicator.add_child(box);
-            Main.panel.addToStatusArea("host-info", indicator, 0, "right");
-          }
-
-          function disable() {
-            indicator?.destroy();
-            indicator = null;
-          }
-        '';
-      };
-    };
-
-    dconf.settings."org/gnome/shell" = {
-      disable-user-extensions = false;
-      enabled-extensions = [ "host-info@custom" ];
-    };
-
-    systemd.user.services.gnome-monitors = {
-      Unit = {
-        Description = "Apply GNOME monitor layout";
-        PartOf = [ "graphical-session.target" ];
-        After = [ "graphical-session.target" ];
-      };
-      Service = {
-        Type = "oneshot";
-        ExecStart =
-          "/run/current-system/sw/bin/gnome-monitor-config set"
-          + " -Lp -t normal -x 1200 -y 340 -M DP-1 -m '2560x1440@119.998'"
-          + " -L  -t left   -x 3760 -y 7   -M DP-2 -m '1920x1200@59.950'"
-          + " -L  -t right  -x 0    -y 0   -M DP-3 -m '1920x1200@59.950'";
-      };
-      Install = {
-        WantedBy = [ "graphical-session.target" ];
-      };
-    };
+    # GNOME-specific extras removed: host-info extension (broken/unused),
+    # dconf shell settings, and gnome-monitor-config service (replaced by my.monitors)
   };
 }

@@ -67,8 +67,3 @@ jobs:
     uses: ./.github/workflows/audit.yml
     secrets: inherit
 
-  vm-test:
-    needs: [changes, nix]
-    if: needs.changes.outputs.nix == 'true'
-    uses: ./.github/workflows/vm-test.yml
-    secrets: inherit

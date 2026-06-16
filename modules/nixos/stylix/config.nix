@@ -64,6 +64,12 @@ in
         name = "Adwaita";
         size = 24;
       };
+
+      # Upstream stylix defaults to qt.platformTheme.name = "gnome",
+      # but that's deprecated — "adwaita" is the replacement.
+      targets.gnome.enable = config.my.desktop.gnome.enable or false;
     };
+
+    qt.platformTheme = lib.mkDefault "adwaita";
   };
 }

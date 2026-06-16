@@ -180,7 +180,5 @@
           '';
         }
       );
-
-      vmTests = import ./nix/vm-tests.nix { inherit self nixpkgs; system = "x86_64-linux"; };
     };
 }

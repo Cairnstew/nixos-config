@@ -180,7 +180,7 @@ via `callPackage ./relative/path` from a flake-parts `perSystem` block.
    - **`flake`** outputs (exported modules, overlays, top-level options)
 4. For flake-level options that configure the repo itself (identity, metadata),
    use top-level `options.*` (e.g., `options.me`).
-5. For options that control host behavior (like `my.testing`), declare them
+5. For options that control host behavior, declare them
    under `options.my.*` so NixOS / darwin / home modules can consume them.
 6. Keep system-level implementation out of this directory.  If you need to add
    a NixOS module, create it under `modules/nixos/` and only *export* it here
