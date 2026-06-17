@@ -56,7 +56,19 @@ in
   config = lib.mkMerge [
     # Desktop choice (convenience toggle — sets hyprland or gnome)
     (lib.mkIf (cfg.desktop.choice == "hyprland") {
-      my.desktop.hyprland.enable = true;
+      my.desktop.hyprland = {
+        enable = true;
+        idle = {
+          enable = true;
+          dpmsTimeout = 60;
+          suspendTimeout = 0;
+        };
+        colorpicker.enable = true;
+        nightLight.enable = true;
+        pyprland.enable = true;
+        pyprland.plugins = [ "scratchpads" "expose" "toggle_dpms" ];
+        wallpapers.backend = "swaybg";
+      };
     })
     (lib.mkIf (cfg.desktop.choice == "gnome") {
       my.desktop.gnome.enable = true;
@@ -64,9 +76,20 @@ in
 
     # Hyprland profile
     (lib.mkIf cfg.desktop.hyprland.enable {
-      my.desktop.hyprland.enable = true;
+      my.desktop.hyprland = {
+        enable = true;
+        idle = {
+          enable = true;
+          dpmsTimeout = 60;
+          suspendTimeout = 0;
+        };
+        colorpicker.enable = true;
+        nightLight.enable = true;
+        pyprland.enable = true;
+        pyprland.plugins = [ "scratchpads" "expose" "toggle_dpms" ];
+        wallpapers.backend = "swaybg";
+      };
     })
-
     # GNOME desktop profile
     (lib.mkIf cfg.desktop.gnome.enable {
       my.desktop.gnome.enable = true;

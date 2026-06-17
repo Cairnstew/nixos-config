@@ -2,6 +2,23 @@
 
 ---
 
+**`windowrule = opacity a b` without class target silently ignored in Hyprland 0.55**
+Symptom: Setting `windowrule = opacity 0.93 0.80` in hyprland.conf has no visible effect — windows stay fully opaque. `hyprctl clients -j` shows no `opacity` field on any window. `decoration:active_opacity` and `decoration:inactive_opacity` remain at their default of `1.0`. Cause: `windowrule = opacity` without a `class:` or `title:` target is silently ignored by Hyprland 0.55 — it doesn't apply to any windows. This was previously used as a "global" opacity hack but was never a supported syntax for setting global opacity. Fix: Use `decoration { active_opacity = 0.93; inactive_opacity = 0.80; }` instead of a windowrule. These decoration-level settings control global window opacity properly. For per-window overrides, use `windowrule = opacity a b, class:^(ClassName)$` with an explicit class target — those DO work. See `modules/nixos/hyprland/core/config.nix` and `modules/nixos/hyprland/core/options.nix`.
+
+---
+
+**Hyprland config parsing errors — how to read and debug**
+Symptom: After rebuilding (or even `hyprctl reload`), a red notification banner appears at the top of the screen with messages like `invalid field .*: missing a value`. The generated config lives at `/nix/store/<hash>-etc-xdg-hypr-hyprland.conf`. Cause: Hyprland's `windowrule` targets use specific syntax — bare `.*` isn't valid (use `class:^(.*)$`), and `fullscreen:1` isn't a valid target prefix at all (Hyprland has no `fullscreen:` target). Fix:  
+- Check errors live: `hyprctl configerrors` (lists all current parse errors)  
+- View the debug log tail: `hyprctl rollinglog` or `hyprctl rollinglog -f` (follow mode) — this is a DRM/libinput debug ring buffer, NOT config errors  
+- Config errors are stored separately and only accessible via `hyprctl configerrors`  
+- Reload to re-test after fixing: `hyprctl reload`  
+- Hyprland does NOT write a persistent log file by default; `rollinglog` is the in-memory ring buffer.  
+- To inspect the generated config directly: `cat /etc/xdg/hypr/hyprland.conf` (the `/nix/store` path changes each rebuild but `/etc/xdg/hypr/hyprland.conf` is a symlink to the current one).  
+- Valid windowrule target formats: `class:^(regex)$`, `title:^(regex)$`, `initialClass:^(regex)$`, `initialTitle:^(regex)$`, `tag:^(regex)$`. No `fullscreen:` target exists — use per-class overrides instead.
+
+---
+
 **`home-manager-<user>.service` fails on first `nix run` after changes, succeeds on second**
 Symptom: `nix run` (or `nixos-rebuild switch`) fails with `Failed to restart home-manager-seanc.service` on the first run, but succeeds on the second run without any code changes.  
 Cause: The service is `Type=oneshot` and its `ExecStart` runs `systemctl --user show-environment` to import session variables. On the first rebuild after changes, `switch-to-configuration` restarts `sysinit-reactivation.target` and reloads `dbus-broker`, putting the user's systemd manager in transition. The `systemctl --user` command fails because the user bus isn't available. On the second run, the session is stable so it succeeds.  

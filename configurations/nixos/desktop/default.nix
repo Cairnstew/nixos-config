@@ -18,6 +18,8 @@
   # and switches to a lightweight Hyprland desktop.
   my.vm = {
     enable = true;
+    memory = 4096;
+    cores = 4;
     # hosts = [];  # empty = all hosts, or list specific ones
     extraConfig = { lib, pkgs, ... }: {
       my.profiles = {
@@ -34,7 +36,7 @@
         enable = true;
         settings = {
           default_session = {
-            command = lib.mkForce "${pkgs.hyprland}/bin/Hyprland";
+            command = lib.mkForce "${pkgs.hyprland}/bin/start-hyprland";
             user = lib.mkForce "seanc";
           };
         };
@@ -59,34 +61,117 @@
 
   # ── Desktop Environment ────────────────────────────────────────────────────
   # Toggle between "hyprland" and "gnome" to switch desktop environments.
-  # my.profiles.desktop.choice = "hyprland";
-  my.profiles.desktop.choice = "gnome";
+  my.profiles.desktop.choice = "hyprland";
+  # my.profiles.desktop.choice = "gnome";
 
   # ── Monitor Layout ─────────────────────────────────────────────────────────
-  # DP-1: 2560×1440 @ 144Hz (primary, left)
-  # HDMI-A-1: 1920×1080 @ 60Hz (right of DP-1, portrait orientation)
+  # DP-1: 2560×1440 @ 120Hz (center, primary)
+  # DP-3: 1920×1200 @ 60Hz (left, portrait) — Dell U2412M
+  # DP-2: 1920×1200 @ 60Hz (right, portrait) — Dell U2412M
   my.monitors = [
+    {
+      name = "DP-3";
+      width = 1920;
+      height = 1200;
+      refreshRate = 60;
+      x = 0;
+      y = 0;
+      transform = 3;
+      workspace = "2";
+    }
     {
       name = "DP-1";
       width = 2560;
       height = 1440;
-      refreshRate = 144;
-      x = 0;
-      y = 0;
+      refreshRate = 120;
+      x = 1200;
+      y = 240;
       primary = true;
       workspace = "1";
     }
     {
-      name = "HDMI-A-1";
+      name = "DP-2";
       width = 1920;
-      height = 1080;
+      height = 1200;
       refreshRate = 60;
-      x = 2560;
+      x = 3760;
       y = 0;
       transform = 1;
-      workspace = "2";
+      workspace = "3";
     }
   ];
+
+  my.desktop.hyprland = {
+    core = {
+      workspaceStartup = [
+        {
+          workspace = "1";
+          command = "ghostty";
+          class = "com.mitchellh.ghostty";
+        }
+        {
+          workspace = "2";
+          command = "spotify";
+          class = "Spotify";
+          silent = true;
+        }
+        {
+          workspace = "2";
+          command = "firefox";
+          class = "firefox";
+          silent = true;
+        }
+        {
+          workspace = "3";
+          command = "ghostty";
+          class = "com.mitchellh.ghostty";
+          silent = true;
+        }
+        {
+          workspace = "3";
+          command = "thunar";
+          class = "thunar";
+          silent = true;
+        }
+      ];
+
+      windowOpacity = {
+        enable = true;
+        focused = 0.93;
+        unfocused = 0.80;
+      };
+    };
+
+    wallpapers = {
+      images = let
+        shinyColors = pkgs.fetchurl {
+          url = "https://raw.githubusercontent.com/AlexandrosLiaskos/Awesome_Wallpapers/main/images/shiny-colors.png";
+          sha256 = "07ihb3352vfp5kw5f0rls9bzwxr6mrgflqh52mygh8bjck2hj3y3";
+        };
+        shinyColorsFlipped = pkgs.runCommandLocal "shiny-colors-flipped.png" {
+          nativeBuildInputs = [ pkgs.imagemagick ];
+        } ''
+          convert ${shinyColors} -flop "$out"
+        '';
+      in [
+        {
+          output = "DP-3";
+          path = shinyColors;
+        }
+        {
+          output = "DP-1";
+          path = pkgs.fetchurl {
+            url = "https://raw.githubusercontent.com/AlexandrosLiaskos/Awesome_Wallpapers/main/images/lake.jpg";
+            sha256 = "0ab3hjvg752phd963bc5r76fmpkfxdx7p75bmgcqm0kikh0wy64h";
+          };
+        }
+        {
+          output = "DP-2";
+          path = shinyColorsFlipped;
+        }
+      ];
+    };
+  };
 
   my.programs.proton.ge.enable = true;
 

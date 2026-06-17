@@ -10,11 +10,6 @@
       description = "Primary user that will run the Hyprland session.";
     };
 
-    nvidia = lib.mkOption {
-      type = lib.types.bool;
-      default = false;
-      description = "Apply Nvidia-specific env vars and kernel module options.";
-    };
 
     extraPackages = lib.mkOption {
       type = lib.types.listOf lib.types.package;

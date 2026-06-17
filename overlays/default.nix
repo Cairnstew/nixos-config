@@ -31,6 +31,9 @@ self: super: {
   # GitHub Actions workflow run cleanup tool
   github-actions-cleanup = self.callPackage "${packages}/github-actions-cleanup" { };
 
+  # Hyprland compositor diagnostic and status tool
+  hyprland-status = self.callPackage "${packages}/hyprland-status" { };
+
   # Suwayomi manga reader server (latest release JAR)
   suwayomi-server = self.callPackage "${packages}/suwayomi-server" { };
 
