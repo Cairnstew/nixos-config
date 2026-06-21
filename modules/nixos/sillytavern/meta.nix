@@ -1,10 +1,10 @@
 {
   name = "sillytavern";
-  description = "SillyTavern LLM frontend with Ollama integration, declarative presets, and basic auth";
+  description = "SillyTavern LLM frontend with Ollama integration, declarative presets, basic auth, and VectFox RAG memory";
   category = "services";
-  tags = [ "sillytavern" "llm" "ai" "chat" "ollama" ];
+  tags = [ "sillytavern" "llm" "ai" "chat" "ollama" "vectfox" "rag" "qdrant" ];
   provides = [ "my.services.sillytavern" ];
-  expects = [ "my.services.ollama" ];
+  expects = [ "my.services.ollama" "services.qdrant" ];
   complexity = "medium";
   tested = true;
   maintainer = "seanc";

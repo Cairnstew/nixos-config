@@ -37,6 +37,13 @@ let
     lib.hasPrefix "opacity " r && !lib.hasInfix ", " r
   ) cfg.core.extraWindowRules;
 
+  # Bare fullscreen windowrule detection: "fullscreen, class:^(...)$" instead of
+  # "fullscreenstate 2, class:^(...)$". Hyprland 0.55+ requires a state value for fullscreen.
+  hasBareFullscreenRule = lib.any (r:
+    (lib.hasPrefix "fullscreen," r || lib.hasPrefix "fullscreen " r)
+    && !lib.hasPrefix "fullscreenstate" r
+  ) cfg.core.extraWindowRules;
+
   mkBluetoothBinCheck = name: bin: lib.optionalString btEnabled ''
     if [ -x "${bin}" ]; then
       pass "${name} binary found"
@@ -53,12 +60,16 @@ in
       message = "my.desktop.hyprland.user must be set when hyprland is enabled.";
     }
     {
-      assertion = !cfg.enable || !cfg.displayManager.enable || config.services.greetd.enable or false;
-      message = "greetd must be enabled when my.desktop.hyprland.displayManager is enabled.";
+      assertion = !cfg.enable || !cfg.displayManager.enable
+        || cfg.displayManager.greeter == "sddm"
+        || config.services.greetd.enable or false;
+      message = "greetd must be enabled when my.desktop.hyprland.displayManager is set to greetd.";
     }
     {
-      assertion = !cfg.enable || !cfg.displayManager.enable || config.services.greetd.settings.default_session.command or "" != "";
-      message = "greetd default_session.command must be set when displayManager is enabled.";
+      assertion = !cfg.enable || !cfg.displayManager.enable
+        || cfg.displayManager.greeter == "sddm"
+        || (config.services.greetd.settings.default_session.command or "") != "";
+      message = "greetd default_session.command must be set when displayManager is set to greetd.";
     }
     {
       assertion = !cfg.enable || !cfg.idle.enable || cfg.lockscreen.enable;
@@ -88,6 +99,16 @@ in
         Use decoration:active_opacity and decoration:inactive_opacity for global window
         transparency, or add a class:^(ClassName)$ target for per-window overrides via
         windowOpacity.overrides.
+      '';
+    }
+    {
+      assertion = !cfg.enable || !hasBareFullscreenRule;
+      message = ''
+        my.desktop.hyprland.core.extraWindowRules contains a bare 'fullscreen' rule.
+        'fullscreen' and 'fullscreenstate' are NOT valid windowrule types in
+        Hyprland 0.55+ — they are bind dispatchers, not window rules.
+        Remove the rule entirely; the application's own fullscreen mechanism
+        (e.g. gamescope -f) works natively with Hyprland.
       '';
     }
   ] ++ overrideAssertions;
@@ -123,7 +144,7 @@ in
       fi
 
       # Opacity: verify decoration settings (not bare windowrule)
-      if ${toString wpCfg.enable}; then
+      if [ "${toString wpCfg.enable}" = 1 ]; then
         if grep -q "active_opacity" "$HYPR_CONF" && grep -q "inactive_opacity" "$HYPR_CONF"; then
           pass "Opacity: decoration:active_opacity/inactive_opacity in config"
         else
@@ -168,7 +189,7 @@ in
       ${lib.optionalString cfg.awww.enable (mkBinaryCheck "awww-daemon" "${pkgs.awww}/bin/awww-daemon")}
 
       # Bar config validation
-      if ${toString cfg.bar.enable}; then
+      if [ "${toString cfg.bar.enable}" = 1 ]; then
         if [ -f "/etc/xdg/waybar/config" ]; then
           pass "waybar config file found"
           if python3 -c "import json; json.load(open('/etc/xdg/waybar/config'))" 2>/dev/null; then
@@ -292,7 +313,7 @@ print(\"OK\" if not missing else \"MISSING: \" + \",\".join(missing))
         fi
 
         # Opacity: runtime values via hyprctl
-        if ${toString wpCfg.enable}; then
+        if [ "${toString wpCfg.enable}" = 1 ]; then
           ACTIVE_OPACITY=$($HCTL getoption decoration:active_opacity 2>/dev/null | head -1 | awk '{print $2}' || echo "unknown")
           INACTIVE_OPACITY=$($HCTL getoption decoration:inactive_opacity 2>/dev/null | head -1 | awk '{print $2}' || echo "unknown")
           if [ "$ACTIVE_OPACITY" = "${toString wpCfg.focused}" ]; then
@@ -379,7 +400,7 @@ print(\"OK\" if not missing else \"MISSING: \" + \",\".join(missing))
       fi
 
       # Opacity: verify decoration settings (not bare windowrule)
-      if ${toString wpCfg.enable}; then
+      if [ "${toString wpCfg.enable}" = 1 ]; then
         if grep -q "active_opacity" "$HYPR_CONF" && grep -q "inactive_opacity" "$HYPR_CONF"; then
           pass "Opacity: decoration:active_opacity/inactive_opacity in config"
         else
@@ -394,11 +415,15 @@ print(\"OK\" if not missing else \"MISSING: \" + \",\".join(missing))
 
       # ── 2. Required services/config ──
       echo "--- [2/9] Required config ---"
-      GREETD_CMD="${config.services.greetd.settings.default_session.command or ""}"
-      if echo "$GREETD_CMD" | grep -qi "Hyprland"; then
-        pass "greetd launches Hyprland"
+      if [ "${toString (cfg.displayManager.greeter == "greetd")}" = 1 ]; then
+        GREETD_CMD="${config.services.greetd.settings.default_session.command or ""}"
+        if echo "$GREETD_CMD" | grep -qi "Hyprland"; then
+          pass "greetd launches Hyprland"
+        else
+          warn "greetd command may not reference Hyprland directly"
+        fi
       else
-        warn "greetd command may not reference Hyprland directly"
+        pass "using SDDM display manager"
       fi
 
       # ── 3. Core binaries ──
@@ -431,7 +456,7 @@ print(\"OK\" if not missing else \"MISSING: \" + \",\".join(missing))
       ${lib.optionalString cfg.awww.enable (mkBinaryCheck "awww-daemon" "${pkgs.awww}/bin/awww-daemon")}
 
       # Bar config validation
-      if ${toString cfg.bar.enable}; then
+      if [ "${toString cfg.bar.enable}" = 1 ]; then
         WAYBAR_CFG="/etc/xdg/waybar/config"
         if [ -f "$WAYBAR_CFG" ]; then
           pass "waybar config file found"
@@ -547,7 +572,7 @@ print(\"OK\" if ef.strip() else \"BAD\")
         ''}
 
         # Opacity: runtime values via hyprctl
-        if ${toString wpCfg.enable}; then
+        if [ "${toString wpCfg.enable}" = 1 ]; then
           ACTIVE_OPACITY=$($HCTL getoption decoration:active_opacity 2>/dev/null | head -1 | awk '{print $2}' || echo "unknown")
           INACTIVE_OPACITY=$($HCTL getoption decoration:inactive_opacity 2>/dev/null | head -1 | awk '{print $2}' || echo "unknown")
           if [ "$ACTIVE_OPACITY" = "${toString wpCfg.focused}" ]; then

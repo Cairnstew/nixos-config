@@ -91,7 +91,7 @@
 
     # Keyboard layout
     # Consumed by: X11/Wayland keyboard settings, console keymap
-    keyboardLayout = "gb";
+    keyboardLayout = "us";
 
     # Enable emacs-style keybindings in terminal/shell
     # Consumed by: readline configuration, shell settings
@@ -306,6 +306,18 @@
       aider_default = false;
       cline_default = false;
     };
+    "hf.co/Lewdiculous/InfinityRP-v1-7B-GGUF-IQ-Imatrix:Q4_K_M-imat" = {
+      name = "hf.co/Lewdiculous/InfinityRP-v1-7B-GGUF-IQ-Imatrix:Q4_K_M-imat";
+      tools = false;
+      numCtx = 8192;
+      temperature = 0.9;
+      topP = 0.95;
+      topK = 40;
+      repeatPenalty = 1.1;
+
+      aider_default = false;
+      cline_default = false;
+    };
     "gemma4:e4b" = {
       name = "gemma4:e4b";
       tools = true;
@@ -322,6 +334,18 @@
       aider_default = true;
       # Default model for Opencode AI assistant.
       opencode_default = true;
+    };
+    "hf.co/Lewdiculous/DS-R1-Qwen3-8B-ArliAI-RpR-v4-Small-GGUF-IQ-Imatrix:Q4_K_M-imat" = {
+      name = "hf.co/Lewdiculous/DS-R1-Qwen3-8B-ArliAI-RpR-v4-Small-GGUF-IQ-Imatrix:Q4_K_M-imat";
+      tools = false;
+      numCtx = 32768;
+      temperature = 1.0;
+      topP = 1.0;
+      topK = 40;
+      repeatPenalty = 1.0;
+
+      aider_default = false;
+      cline_default = false;
     };
   };
 

@@ -182,5 +182,40 @@
         `windowrule = <entry>` line.
       '';
     };
+
+    debug = {
+      enable = lib.mkEnableOption "debug logging section in hyprland.conf (debug.disable_logs, debug.gl_debugging)";
+
+      disableLogs = lib.mkOption {
+        type = lib.types.bool;
+        default = false;
+        description = ''
+          debug.disable_logs in hyprland.conf. Set to true to disable logging,
+          false to enable. Defaults to false (logs on) to match Hyprland's own
+          default. Only written to config when debug.enable is true.
+        '';
+      };
+
+      glDebugging = lib.mkOption {
+        type = lib.types.bool;
+        default = false;
+        description = ''
+          debug.gl_debugging in hyprland.conf. Enables OpenGL error messages.
+          Disabled by default due to performance impact. Only written to config
+          when debug.enable is true.
+        '';
+      };
+
+      trace = lib.mkOption {
+        type = lib.types.bool;
+        default = false;
+        description = ''
+          Set HYPRLAND_TRACE=1 and AQ_TRACE=1 environment variables for very
+          verbose tracing. Writes massive logs to
+          $XDG_RUNTIME_DIR/hypr/<instance>/hyprland.log. Disable after debugging
+          to avoid performance impact.
+        '';
+      };
+    };
   };
 }

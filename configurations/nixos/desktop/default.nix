@@ -30,7 +30,10 @@
         desktop.choice = lib.mkForce "hyprland";
       };
       my.system.battery.enable = lib.mkForce false;
-      my.testing.startAtBoot = true;
+      my.testing = {
+        enable = true;
+        startAtBoot = true;
+      };
 
       services.greetd = {
         enable = true;
@@ -140,6 +143,8 @@
         focused = 0.93;
         unfocused = 0.80;
       };
+
+      debug.enable = true;
     };
 
     wallpapers = {
@@ -171,6 +176,8 @@
         }
       ];
     };
+
+    displayManager.greeter = "sddm";
   };
 
   my.programs.proton.ge.enable = true;
@@ -181,6 +188,16 @@
     games.overwatch-2 = {
       appId = "2357570";
       name = "Overwatch 2";
+      gamescope = {
+        enable = true;
+        width = 2560;
+        height = 1440;
+        refreshRate = 120;
+        extraArgs = [
+          "--prefer-output" "DP-1"  # fullscreen on the main gaming monitor
+          "--immediate-flips"  # reduce latency / stutter
+        ];
+      };
     };
   };
 
@@ -431,7 +448,136 @@
   # ── LLM / AI ─────────────────────────────────────────────────────────────
   my.services.sillytavern = {
     enable = true;
-    ollama.enable = true;
+    ollama = {
+      enable = true;
+      models = flake.config.ollamaModels // {
+        "hf.co/Lewdiculous/DS-R1-Qwen3-8B-ArliAI-RpR-v4-Small-GGUF-IQ-Imatrix:Q4_K_M-imat" = {
+          preset = "Reasoning";
+          sysprompt = "Deep Reasoning";
+          context = "DeepSeek Chat";
+          reasoningTemplate = "Deep Think";
+        };
+      };
+    };
+    presets = {
+      textgen = {
+        "Reasoning" = {
+          temp = 1.0;
+          top_k = 40;
+          top_p = 1.0;
+          min_p = 0.02;
+          do_sample = true;
+          include_reasoning = true;
+        };
+      };
+      reasoning = {
+        "Deep Think" = {
+          prefix = "<think>";
+          suffix = "</think>";
+          separator = "\n\n";
+        };
+      };
+      sysprompt = {
+        "Deep Reasoning" = {
+          content = ''
+            You are a roleplaying AI with deep reasoning capabilities. Use <think> </think> tags for internal reasoning before responding. Stay in character and write creatively, responding from {{char}}'s perspective. Follow the character description and scenario closely.'';
+          post_history = "";
+        };
+      };
+      context = {
+        "DeepSeek Chat" = {
+          story_string = "{{#if system}}{{system}}\n{{/if}}{{#if wiBefore}}{{wiBefore}}\n{{/if}}{{#if description}}{{description}}\n{{/if}}{{#if personality}}{{char}}'s personality: {{personality}}\n{{/if}}{{#if scenario}}Scenario: {{scenario}}\n{{/if}}{{#if wiAfter}}{{wiAfter}}\n{{/if}}{{#if persona}}{{persona}}\n{{/if}}";
+          example_separator = "***";
+          chat_start = "***";
+          use_stop_strings = true;
+          names_as_stop_strings = true;
+        };
+      };
+      instruct = {
+        "ChatML" = {
+          input_sequence = "<|im_start|>user";
+          input_suffix = "<|im_end|>\n";
+          output_sequence = "<|im_start|>assistant";
+          output_suffix = "<|im_end|>\n";
+          system_sequence = "<|im_start|>system";
+          system_suffix = "<|im_end|>\n";
+          stop_sequence = "<|im_end|>";
+          wrap = true;
+          macro = true;
+          names_behavior = "none";
+          sequences_as_stop_strings = true;
+        };
+      };
+    };
+    activePresets = {
+      sysprompt = "Deep Reasoning";
+      context = "DeepSeek Chat";
+      reasoning = "Deep Think";
+      textgen = "Reasoning";
+      instruct = "ChatML";
+    };
+    extensions.vectfox.enable = true;
+    extensions.thirdParty = {
+      "Extension-Idle" = {
+        enable = true;
+        rev = "4225ff5d5078e4fc583d3e92d3cf78f487da715c";
+        hash = "sha256-gaAUQhYnAHWMKH67gNxlwYkOsQPRKOvjtsS7QisUBOU=";
+      };
+      "Extension-WebSearch" = {
+        enable = true;
+        rev = "9c3aa6686289bdcf26e7664a4dc18a777215108b";
+        hash = "sha256-7TcR/cJUDnv5CIsSgwmSpFGG/lFeuMicXBdqCtVFH8c=";
+      };
+      "Extension-VRM" = {
+        enable = true;
+        rev = "2b4c4d015a40d255a064e83ed70c408046d58049";
+        hash = "sha256-1WxCbkdt9k4JAF2+CNozDgZfdgoHF0vEzAjAyIHXUM0=";
+      };
+      "Extension-Weather" = {
+        enable = true;
+        rev = "c169a3cacaefd032d2857417564e0330b516a1b3";
+        hash = "sha256-kLJW803iMsnZ4iLEviS22w0qEdXb40EejKbzmajfZi4=";
+      };
+    };
+
+    extensionSettings = {
+      idle = {
+        enabled = false;
+        timer = "20";
+        useContinuation = false;
+        useRegenerate = false;
+        useImpersonation = false;
+        useSwipe = false;
+        repeats = 2;
+        sendAs = "user";
+        randomTime = false;
+        timeMin = 60;
+        includePrompt = false;
+      };
+      websearch = {
+        source = "google";
+        cacheLifetime = 604800;
+        budget = 2000;
+        position = 0;
+        depth = 2;
+        use_backticks = true;
+        use_trigger_phrases = true;
+        use_function_tool = false;
+        searxng_url = "";
+      };
+      vrm = {
+        enabled = true;
+        follow_camera = true;
+        tts_lips_sync = false;
+        blink = true;
+        auto_send_hitbox_message = true;
+        lock_models = false;
+      };
+      accuweather = {
+        provider = "accuweather";
+        preferredLocation = "";
+      };
+    };
   };
 
   # ── Manga Reader ─────────────────────────────────────────────────────────
@@ -454,17 +600,21 @@
   };
 
   my.services.ollama = {
-    enable = false;
+    enable = true;
     gpu.enable = true;
     gpu.type = "amd";
     dataDir = "/mnt/data/ollama";
-    models = flake.config.ollamaModels;
   };
 
   environment.systemPackages = with pkgs; [ ntfs3g ];
 
   # ── Home Manager Extra ───────────────────────────────────────────────────
   my.homeManager.extraConfig = {
+    my.programs.direnv.secretFiles.spotify = {
+      paths = {
+        SPOTIFY_CRED = config.age.secrets."spotify-cred".path;
+      };
+    };
     my.programs = {
       discord.enable = true;
       localsend.enable = true;

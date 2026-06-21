@@ -90,6 +90,7 @@ in
       opencode-token = { owner = lib.mkForce username; };
       groq-token = { owner = lib.mkForce username; };
       github-token = { owner = lib.mkForce username; group = lib.mkForce "users"; };
+      spotify-cred = { owner = lib.mkForce username; };
     };
 
     users.users.${username}.isNormalUser = lib.mkDefault true;
@@ -129,6 +130,7 @@ in
             time.enable = true;
             sequential-thinking.enable = true;
             memory.enable = true;
+            playwright.enable = true;
             github = {
               enable = true;
               # Read token from agenix at runtime — never stored in /nix/store
@@ -186,6 +188,7 @@ in
           extraPackages = with pkgs; with mcpServersPkgs; [
             mcp-nixos
             mcp-server-fetch
+            playwright-mcp
             betterEmailPkg
             terraform
             nixpkgs-fmt

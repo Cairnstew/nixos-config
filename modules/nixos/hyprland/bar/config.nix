@@ -1,27 +1,94 @@
 { config, lib, pkgs, ... }:
 let
+  inherit (lib) mkIf filterAttrs;
   cfg = config.my.desktop.hyprland;
   barCfg = cfg.bar;
 
-  defaultWaybarConfig = builtins.toJSON {
+  hasAmdGpu = config.my.hardware.gpu.mesa.enable;
+
+  amdgpuStats = pkgs.writeShellApplication {
+    name = "amdgpu-stats";
+    runtimeInputs = [ pkgs.coreutils pkgs.bc ];
+    text = ''
+      set -euo pipefail
+
+      for card in /sys/class/drm/card*; do
+        vendor="$(cat "$card/device/vendor" 2>/dev/null || true)"
+        [ "$vendor" != "0x1002" ] && continue
+
+        gpu_busy="$(cat "$card/device/gpu_busy_percent" 2>/dev/null || echo "0")"
+
+        vram_used="$(cat "$card/device/mem_info_vram_used" 2>/dev/null || echo "0")"
+        vram_total="$(cat "$card/device/mem_info_vram_total" 2>/dev/null || echo "1")"
+        vram_used_g="$(echo "scale=1; $vram_used / 1073741824" | bc)"
+        vram_total_g="$(echo "scale=0; $vram_total / 1073741824" | bc)"
+
+        temp=""
+        for hw in "$card/device/hwmon/hwmon"*/; do
+          if [ -f "''${hw}temp1_input" ]; then
+            t="$(cat "''${hw}temp1_input" 2>/dev/null || echo "0")"
+            temp="$((t / 1000))"
+            break
+          fi
+        done
+
+        text=" GPU: ''${gpu_busy}%"
+        tooltip="GPU: ''${gpu_busy}%"
+        tooltip="''${tooltip}\nVRAM: ''${vram_used_g}G / ''${vram_total_g}G"
+        [ -n "$temp" ] && tooltip="''${tooltip}\nTemp: ''${temp}°C"
+
+        printf '{"text": "%s", "tooltip": "%s"}\n' "$text" "$tooltip"
+        exit 0
+      done
+
+      printf '{"text": " GPU: N/A", "tooltip": "No AMD GPU found"}\n'
+    '';
+  };
+
+  customModNames = builtins.attrNames barCfg.customModules;
+
+  customLeft   = builtins.filter (n: barCfg.customModules.${n}.position == "left")   customModNames;
+  customCenter = builtins.filter (n: barCfg.customModules.${n}.position == "center") customModNames;
+  customRight  = builtins.filter (n: barCfg.customModules.${n}.position == "right")  customModNames;
+
+  modulesLeft   = [ "hyprland/workspaces" "hyprland/submap" ]
+    ++ map (n: "custom/${n}") customLeft   ++ barCfg.extraModulesLeft;
+  modulesCenter = [ "hyprland/window" ]
+    ++ map (n: "custom/${n}") customCenter ++ barCfg.extraModulesCenter;
+  modulesRight  = [
+    "pulseaudio" "network" "cpu" "memory" "disk"
+    "temperature" "battery" "clock" "tray"
+  ]
+    ++ lib.optionals hasAmdGpu [ "custom/gpu" ]
+    ++ map (n: "custom/${n}") customRight ++ barCfg.extraModulesRight;
+
+  amdgpuModuleConfig = lib.optionalAttrs hasAmdGpu {
+    "custom/gpu" = {
+      exec = "${amdgpuStats}/bin/amdgpu-stats";
+      interval = 5;
+      return-type = "json";
+      tooltip = true;
+    };
+  };
+
+  customModuleConfig = name:
+    filterAttrs (n: v: v != null)
+      (builtins.removeAttrs barCfg.customModules.${name} [ "position" ]);
+
+  customModulesConfig = builtins.listToAttrs (map (n: {
+    name = "custom/${n}";
+    value = customModuleConfig n;
+  }) customModNames);
+
+  waybarConfigJSON = builtins.toJSON (rec {
     layer = "top";
     position = barCfg.position;
     height = barCfg.height;
     spacing = 4;
 
-    modules-left = [ "hyprland/workspaces" "hyprland/submap" ];
-    modules-center = [ "hyprland/window" ];
-    modules-right = [
-      "pulseaudio"
-      "network"
-      "cpu"
-      "memory"
-      "disk"
-      "temperature"
-      "battery"
-      "clock"
-      "tray"
-    ];
+    "modules-left"   = modulesLeft;
+    "modules-center" = modulesCenter;
+    "modules-right"  = modulesRight;
 
     "hyprland/workspaces" = {
       disable-scroll = true;
@@ -88,16 +155,20 @@ let
     pulseaudio = {
       format = "{icon} {volume}%";
       format-muted = "  muted";
-      format-icons = {
-        default = [ "" "" "" ];
-      };
+      format-icons = { default = [ "" "" "" ]; };
       on-click = "pavucontrol";
       tooltip = true;
       tooltip-format = "Volume: {volume}%  ({desc})";
     };
 
     tray = { spacing = 8; };
-  };
+  } // amdgpuModuleConfig // customModulesConfig);
+
+  customModuleCSS = lib.concatStringsSep "\n" (map (name: ''
+    #custom-${name} {
+      padding: 0 10px;
+    }
+  '') customModNames);
 
   defaultWaybarStyle = ''
     * {
@@ -142,6 +213,7 @@ let
     #memory      { padding: 0 10px; color: #a6e3a1; }
     #disk        { padding: 0 10px; color: #f5c2e7; }
     #temperature { padding: 0 10px; color: #fab387; }
+    #custom-gpu  { padding: 0 10px; color: #94e2d5; }
     #clock       { padding: 0 10px; color: #cdd6f4; }
     #battery     { padding: 0 10px; color: #cdd6f4; }
     #tray        { padding: 0 10px; }
@@ -152,6 +224,8 @@ let
 
     #pulseaudio.muted { color: #6c7086; }
     #network.disconnected { color: #f38ba8; }
+
+    ${customModuleCSS}
 
     tooltip {
       background: rgba(26,27,38,0.95);
@@ -165,12 +239,17 @@ let
   '';
 in
 {
-  config = lib.mkIf (cfg.enable && barCfg.enable) {
-    environment.systemPackages = with pkgs; [ waybar ];
+  config = lib.mkMerge [
+    (mkIf (cfg.enable && barCfg.enable) {
+      environment.systemPackages = with pkgs; [ waybar ];
 
-    environment.etc = {
-      "xdg/waybar/config".text = defaultWaybarConfig;
-      "xdg/waybar/style.css".text = defaultWaybarStyle;
-    };
-  };
+      environment.etc = {
+        "xdg/waybar/config".text = waybarConfigJSON;
+        "xdg/waybar/style.css".text = defaultWaybarStyle;
+      };
+    })
+    (mkIf (cfg.enable && barCfg.enable && hasAmdGpu) {
+      environment.systemPackages = [ amdgpuStats ];
+    })
+  ];
 }

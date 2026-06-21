@@ -2,20 +2,27 @@
 
 ---
 
+**Overwatch 2 "Processing Vulkan Shaders" stuck on startup**
+Symptom: Overwatch 2 hangs at "Processing Vulkan Shaders" for a very long time (minutes to forever) every time it starts. Cause: The `ensure-steam-shader-cache` script in `modules/nixos/steam/config.nix` was unconditionally deleting `steamapps/shadercache/2357570` and `steamapps/compatdata/2357570` on every run, forcing Steam to re-compile all Vulkan shaders from scratch. Combined with Steam's default of using only a single CPU core for shader background processing (`ShaderBackgroundProcessingThreads` defaults to 1), compilation takes extremely long or appears stuck. Fix: Removed the destructive cache clearing from the script. Added `my.programs.steam.shaderPreCaching.backgroundThreads` option (default: `null` = auto-detect via `os.cpu_count()`). The script now writes `~/.steam/steam/steam_dev.cfg` with `unShaderBackgroundProcessingThreads <N>` and `@ShaderBackgroundProcessingThreads <N>` to use all available CPU threads. Run `ensure-steam-shader-cache` once after rebuilding, or set `backgroundThreads` explicitly (e.g. `8` for 4-core/8-thread CPU) in your host config.
+
+---
+
 **`windowrule = opacity a b` without class target silently ignored in Hyprland 0.55**
 Symptom: Setting `windowrule = opacity 0.93 0.80` in hyprland.conf has no visible effect — windows stay fully opaque. `hyprctl clients -j` shows no `opacity` field on any window. `decoration:active_opacity` and `decoration:inactive_opacity` remain at their default of `1.0`. Cause: `windowrule = opacity` without a `class:` or `title:` target is silently ignored by Hyprland 0.55 — it doesn't apply to any windows. This was previously used as a "global" opacity hack but was never a supported syntax for setting global opacity. Fix: Use `decoration { active_opacity = 0.93; inactive_opacity = 0.80; }` instead of a windowrule. These decoration-level settings control global window opacity properly. For per-window overrides, use `windowrule = opacity a b, class:^(ClassName)$` with an explicit class target — those DO work. See `modules/nixos/hyprland/core/config.nix` and `modules/nixos/hyprland/core/options.nix`.
 
 ---
 
 **Hyprland config parsing errors — how to read and debug**
-Symptom: After rebuilding (or even `hyprctl reload`), a red notification banner appears at the top of the screen with messages like `invalid field .*: missing a value`. The generated config lives at `/nix/store/<hash>-etc-xdg-hypr-hyprland.conf`. Cause: Hyprland's `windowrule` targets use specific syntax — bare `.*` isn't valid (use `class:^(.*)$`), and `fullscreen:1` isn't a valid target prefix at all (Hyprland has no `fullscreen:` target). Fix:  
+Symptom: After rebuilding (or even `hyprctl reload`), a red notification banner appears at the top of the screen with messages like `invalid field .*: missing a value`. The generated config lives at `/nix/store/<hash>-etc-xdg-hypr-hyprland.conf`. Cause: Hyprland's `windowrule` targets use specific syntax — bare `.*` isn't valid (use `class:^(.*)$`), and `fullscreen:1` isn't a valid target prefix at all (Hyprland has no `fullscreen:` target).  
+Fix:  
 - Check errors live: `hyprctl configerrors` (lists all current parse errors)  
 - View the debug log tail: `hyprctl rollinglog` or `hyprctl rollinglog -f` (follow mode) — this is a DRM/libinput debug ring buffer, NOT config errors  
 - Config errors are stored separately and only accessible via `hyprctl configerrors`  
 - Reload to re-test after fixing: `hyprctl reload`  
 - Hyprland does NOT write a persistent log file by default; `rollinglog` is the in-memory ring buffer.  
 - To inspect the generated config directly: `cat /etc/xdg/hypr/hyprland.conf` (the `/nix/store` path changes each rebuild but `/etc/xdg/hypr/hyprland.conf` is a symlink to the current one).  
-- Valid windowrule target formats: `class:^(regex)$`, `title:^(regex)$`, `initialClass:^(regex)$`, `initialTitle:^(regex)$`, `tag:^(regex)$`. No `fullscreen:` target exists — use per-class overrides instead.
+- Valid windowrule target formats: `class:^(regex)$`, `title:^(regex)$`, `initialClass:^(regex)$`, `initialTitle:^(regex)$`, `tag:^(regex)$`. No `fullscreen:` target exists — use per-class overrides instead.  
+- **`windowrule = fullscreen, class:^(...)$` triggers `invalid field fullscreen: missing a value`** in Hyprland 0.55+. `windowrule = fullscreenstate 2, class:^(...)$` also fails (`invalid field type fullscreenstate`). **Fix:** Don't use a windowrule for fullscreen. Use the application's own fullscreen facility (e.g. gamescope's `-f` flag) instead — Hyprland honors window fullscreen requests natively. These windowrule names are bind dispatchers, not windowrule types.
 
 ---
 

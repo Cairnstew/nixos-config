@@ -67,7 +67,14 @@ in
         nightLight.enable = true;
         pyprland.enable = true;
         pyprland.plugins = [ "scratchpads" "expose" "toggle_dpms" ];
-        wallpapers.backend = "swaybg";
+        wallpapers = {
+          backend = "awww";
+          settings.awww = {
+            transitionType = "simple";
+            transitionStep = 2;
+            transitionFps = 30;
+          };
+        };
       };
     })
     (lib.mkIf (cfg.desktop.choice == "gnome") {
@@ -87,7 +94,14 @@ in
         nightLight.enable = true;
         pyprland.enable = true;
         pyprland.plugins = [ "scratchpads" "expose" "toggle_dpms" ];
-        wallpapers.backend = "swaybg";
+        wallpapers = {
+          backend = "awww";
+          settings.awww = {
+            transitionType = "simple";
+            transitionStep = 2;
+            transitionFps = 30;
+          };
+        };
       };
     })
     # GNOME desktop profile
@@ -128,6 +142,11 @@ in
         powerButtonAction = lib.mkDefault "nothing";
         lockEnabled = lib.mkDefault false;
       };
+    })
+
+    # Location profile (timezone, geoclue)
+    (lib.mkIf cfg.location.enable {
+      my.system.location.enable = true;
     })
 
     # Testing profile

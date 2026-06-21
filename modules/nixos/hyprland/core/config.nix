@@ -7,6 +7,12 @@ let
     (lib.optionalString (img.output != null) "-o ${lib.escapeShellArg img.output} ")
     + "-i ${lib.escapeShellArg img.path}";
 
+  hasWallpaperContent = cfg.wallpapers.enable && (
+    cfg.wallpapers.backend == "hyprpaper"
+    || cfg.wallpapers.backend == "waypaper"
+    || cfg.wallpapers.images != [ ]
+  );
+
   monitorLines = builtins.map
     (m:
       let
@@ -71,6 +77,9 @@ let
       (lib.concatStringsSep "\n" workspaceLines)}
 
     # ── Autostart ──────────────────────────────────────────────────────────
+    ${lib.optionalString cfg.idle.enable ''
+    exec-once = systemctl --user start hypridle.service
+    ''}
     ${lib.optionalString cfg.notifications.enable ''
     exec-once = mako
     ''}
@@ -88,6 +97,9 @@ let
     ''}
     ${lib.optionalString config.my.system.bluetooth.enable ''
     exec-once = blueman-applet
+    ''}
+    ${lib.optionalString cfg.utilities.enable ''
+    exec-once = nm-applet
     ''}
     exec-once = /run/current-system/sw/libexec/polkit-gnome-authentication-agent-1
     ${lib.concatMapStringsSep "\n" (cmd: "exec-once = ${cmd}") cfg.core.extraExecOnce}
@@ -142,7 +154,7 @@ let
 
     # ── Input ──────────────────────────────────────────────────────────────
     input {
-        kb_layout    = gb
+        kb_layout    = us
         follow_mouse = 1
         sensitivity  = 0
         touchpad {
@@ -163,9 +175,17 @@ let
 
     # ── Misc ───────────────────────────────────────────────────────────────
     misc {
-        force_default_wallpaper = 0
+        ${lib.optionalString hasWallpaperContent "force_default_wallpaper = 0"}
         disable_hyprland_logo   = true
     }
+
+    ${lib.optionalString coreCfg.debug.enable ''
+    # ── Debug / Logging ─────────────────────────────────────────────────────
+    debug {
+        disable_logs   = ${if coreCfg.debug.disableLogs then "true" else "false"}
+        gl_debugging   = ${if coreCfg.debug.glDebugging then "true" else "false"}
+    }
+    ''}
 
     # ── Window rules ───────────────────────────────────────────────────────
     ${lib.concatStringsSep "\n" workspaceWindowRuleLines}
@@ -260,6 +280,9 @@ in
       QT_QPA_PLATFORM = "wayland";
       SDL_VIDEODRIVER = "wayland";
       _JAVA_AWT_WM_NONREPARENTING = "1";
+    } // lib.optionalAttrs coreCfg.debug.trace {
+      HYPRLAND_TRACE = "1";
+      AQ_TRACE = "1";
     };
 
     environment.systemPackages = with pkgs; [

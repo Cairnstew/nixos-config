@@ -1,0 +1,14 @@
+--- a/public/scripts/extensions/connection-manager/index.js
++++ b/public/scripts/extensions/connection-manager/index.js
+@@ -1155,6 +1155,11 @@
+             </div>
+         `,
+     }));
++
++    // Auto-apply the pre-selected connection profile on page load
++    if (extension_settings.connectionManager.selectedProfile) {
++        profiles.dispatchEvent(new Event('change'));
++    }
+ }
+ 
+ // Helper function to get the reverse proxy URL for the given profile and URL

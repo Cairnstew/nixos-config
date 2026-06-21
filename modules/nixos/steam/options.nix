@@ -40,6 +40,21 @@ in
           Vulkan Shaders" in Steam → Settings → Downloads.
         '';
       };
+
+      backgroundThreads = mkOption {
+        type = types.nullOr types.ints.unsigned;
+        default = null;
+        example = 8;
+        description = ''
+          Number of CPU threads to use for Vulkan shader background processing.
+          Writes <filename>steam_dev.cfg</filename> with
+          <literal>unShaderBackgroundProcessingThreads</literal> and
+          <literal>@ShaderBackgroundProcessingThreads</literal>.
+          Set to your CPU thread count (e.g. 8 for a 4-core/8-thread CPU).
+          When <literal>null</literal>, the script auto-detects via
+          <literal>os.cpu_count()</literal>.
+        '';
+      };
     };
 
     extraCompatPaths = mkOption {
@@ -82,6 +97,50 @@ in
             example = {
               PROTON_USE_WINED3D = "1";
               WINEDLLOVERRIDES = "d3dcompiler_47=n,b";
+            };
+          };
+
+          gamescope = {
+            enable = mkOption {
+              type = types.bool;
+              default = false;
+              description = "Wrap the game in Gamescope for proper fullscreen on Wayland compositors.";
+            };
+
+            width = mkOption {
+              type = types.ints.unsigned;
+              default = 0;
+              description = "Internal resolution width for Gamescope.";
+            };
+
+            height = mkOption {
+              type = types.ints.unsigned;
+              default = 0;
+              description = "Internal resolution height for Gamescope.";
+            };
+
+            refreshRate = mkOption {
+              type = types.nullOr types.ints.unsigned;
+              default = null;
+              description = "Refresh rate limit for Gamescope (e.g. 144).";
+            };
+
+            fullscreen = mkOption {
+              type = types.bool;
+              default = true;
+              description = "Start in fullscreen mode (-f).";
+            };
+
+            adaptiveSync = mkOption {
+              type = types.bool;
+              default = false;
+              description = "Enable adaptive sync / VRR (-a).";
+            };
+
+            extraArgs = mkOption {
+              type = types.listOf types.str;
+              default = [ ];
+              description = "Extra arguments to pass to Gamescope.";
             };
           };
         };

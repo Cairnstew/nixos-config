@@ -61,7 +61,7 @@ in
         config.programs.hyprlock.package
         pkgs.procps
       ];
-      unitConfig.ConditionEnvironment = "WAYLAND_DISPLAY";
+
       serviceConfig = {
         Type = "simple";
         ExecStart = "${pkgs.hypridle}/bin/hypridle";

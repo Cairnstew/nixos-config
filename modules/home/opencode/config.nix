@@ -217,6 +217,7 @@ in
           docker-management = builtins.readFile ./skills/docker-management.md;
         };
         commands = lib.mkDefault {
+          copy-last = ./commands/copylast.md;
           refactor-python = ./commands/refactor-python.md;
         };
       };

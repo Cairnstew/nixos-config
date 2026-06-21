@@ -14,7 +14,8 @@ in
     environment.systemPackages = with pkgs; [
       steam-run
       steamcmd
-    ] ++ cfg.extraPackages;
+    ] ++ cfg.extraPackages
+    ++ lib.optional (lib.any (g: g.gamescope.enable) (lib.attrValues cfg.games)) pkgs.gamescope;
 
     programs.gamemode.enable = lib.mkDefault cfg.gamemode.enable;
 
@@ -40,11 +41,27 @@ in
               let
                 displayName = if game.name != "" then game.name else name;
                 envExports = lib.mapAttrsToList (k: v: "export ${lib.escapeShellArg k}=${lib.escapeShellArg v}") game.env;
+
+                gamescopeArgs = lib.optionals game.gamescope.enable (
+                  (lib.optional (game.gamescope.width > 0) "-W ${toString game.gamescope.width}")
+                  ++ (lib.optional (game.gamescope.height > 0) "-H ${toString game.gamescope.height}")
+                  ++ (lib.optional (game.gamescope.refreshRate != null) "-r ${toString game.gamescope.refreshRate}")
+                  ++ (lib.optional game.gamescope.fullscreen "-f")
+                  ++ (lib.optional game.gamescope.adaptiveSync "-a")
+                  ++ game.gamescope.extraArgs
+                );
+
                 bin = pkgs.writeShellScriptBin "steam-game-${name}" (
-                  ''
-                    ${lib.concatStringsSep "\n" envExports}
-                    exec ${lib.getBin pkgs.steam}/bin/steam steam://rungameid/${game.appId}
-                  ''
+                  if game.gamescope.enable then
+                    ''
+                      ${lib.concatStringsSep "\n" envExports}
+                      exec ${pkgs.gamescope}/bin/gamescope ${lib.concatStringsSep " " gamescopeArgs} -- ${lib.getBin pkgs.steam}/bin/steam steam://rungameid/${game.appId}
+                    ''
+                  else
+                    ''
+                      ${lib.concatStringsSep "\n" envExports}
+                      exec ${lib.getBin pkgs.steam}/bin/steam steam://rungameid/${game.appId}
+                    ''
                 );
               in
               pkgs.runCommandLocal "steam-game-${name}" {} ''
@@ -67,7 +84,6 @@ in
                 }
                 ''
                   import os
-                  import shutil
                   from pathlib import Path
                   from srctools import Keyvalues, AtomicWriter
 
@@ -108,14 +124,6 @@ in
                           with AtomicWriter(path, encoding="utf-8") as f:
                               kv.serialise(f)
 
-
-                  # ── Clear Overwatch shader cache ──
-                  for p in [
-                      steam_dir / "steamapps" / "shadercache" / "2357570",
-                      steam_dir / "steamapps" / "compatdata" / "2357570",
-                  ]:
-                      if p.exists():
-                          shutil.rmtree(p)
 
                   # ── Set shader pre-caching in config.vdf ──
                   set_keyvalues(

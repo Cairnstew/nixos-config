@@ -17,6 +17,11 @@ in
     # intercepting evdev events before mutter sees them. GNOME's mousemeter
     # will show no acceleration (because maccel handles it in the kernel),
     # but the cursor movement will have the configured curve applied.
+    # ── Endcord TUI Discord (disabled) ──────────────────────────────────────
+    home-manager.users.${username}.my.programs.discord.tui = {
+      enable = lib.mkDefault false;
+    };
+
     my.hardware.mouse = {
       enable = true;
 

@@ -5,6 +5,7 @@ let
   cfg = config.my.profiles.workstation;
   # Get preferences from flake config for defaults
   prefs = flake.config.preferences or { };
+  inherit (flake.config.me) username;
 in
 {
   config = lib.mkIf cfg.enable {
@@ -21,7 +22,7 @@ in
 
     # Keyboard layout from preferences (defaults to GB)
     # Override when: Different regional layout needed
-    services.xserver.xkb.layout = lib.mkDefault (prefs.keyboardLayout or "gb");
+    services.xserver.xkb.layout = lib.mkDefault (prefs.keyboardLayout or "us");
 
     # ── Common workstation programs ────────────────────────────────────────
     # mkDefault for packages: Core GUI apps for daily use
@@ -33,10 +34,18 @@ in
 
     # ── Defaults ───────────────────────────────────────────────────────────
     # mkDefault true: Common workstation apps/services
-    # Override when: Not using Spotify, Docker, or Tailscale
+    # Override when: Not using Docker or Tailscale
     my.programs.spotify.enable = lib.mkDefault true;
     my.programs.tor-browser.enable = lib.mkDefault true;
     my.virtualisation.docker.enable = lib.mkDefault true;
     my.services.tailscale.enable = lib.mkDefault true;
+
+    # ── Home Manager program defaults ─────────────────────────────────────
+    home-manager.users.${username}.my.programs = {
+      spotify.enable = lib.mkDefault true;
+      discord.tui = {
+        enable = lib.mkDefault false;
+      };
+    };
   };
 }

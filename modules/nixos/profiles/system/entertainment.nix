@@ -16,6 +16,7 @@ in
 
     # ── Music ──────────────────────────────────────────────────────────
     my.programs.spotify.enable = lib.mkDefault true;
+    home-manager.users.${username}.my.programs.spotify.enable = lib.mkDefault true;
 
     # ── Manga Reader ─────────────────────────────────────────────────
     my.programs.moku.enable = lib.mkDefault true;

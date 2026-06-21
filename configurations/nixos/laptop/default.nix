@@ -77,13 +77,12 @@
   # ── Additional Programs ────────────────────────────────────────────────
   my.programs.ventoy.enable = true;
 
-  my.programs.spotify.enable = true;
-
   # ── Home Manager Extra ───────────────────────────────────────────────────
   my.homeManager.extraConfig.my.programs = {
     discord.enable = true;
     localsend.enable = true;
     firefox.enable = true;
+    spotify.enable = true;
     obsidian.enable = true;
     thunderbird.enable = true;
     vscode.enable = true;
@@ -92,6 +91,12 @@
     thunderbird = {
       email = flake.config.me.email;
       username = flake.config.me.username;
+    };
+  };
+
+  my.homeManager.extraConfig.my.programs.direnv.secretFiles.spotify = {
+    paths = {
+      SPOTIFY_CRED = config.age.secrets."spotify-cred".path;
     };
   };
 }

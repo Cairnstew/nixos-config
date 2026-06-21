@@ -1,4 +1,4 @@
-{ config, lib, pkgs, ... }:
+{ config, lib, ... }:
 
 let
   cfg = config.my.programs.spotify;
@@ -8,15 +8,11 @@ in
     enable = lib.mkOption {
       type = lib.types.bool;
       default = false;
-      description = "Enable Spotify and open firewall ports for local discovery and sync";
+      description = "Open firewall ports for Spotify local discovery and sync (package installed via home-manager)";
     };
   };
 
   config = lib.mkIf cfg.enable {
-    environment.systemPackages = with pkgs; [
-      spotify
-    ];
-
     # Local files sync
     networking.firewall.allowedTCPPorts = [
       57621

@@ -200,6 +200,9 @@ All `my.*` options declared across module files.
 | `my.programs.bash.enable` | bool | `false` | Bash shell |
 | `my.programs.localsend.enable` | bool | `false` | LocalSend file sharing |
 | `my.programs.discord.enable` | bool | `false` | Discord client |
+| `my.programs.discord.tui.enable` | bool | `false` | Use Endcord TUI client |
+| `my.programs.discord.tui.profile.<name>.enable` | bool | `false` | Enable this Endcord profile |
+| `my.programs.discord.tui.profile.<name>.tokenFile` | nullOr path | `null` | Token file for Endcord autoconnect |
 | `my.programs.aider.enable` | bool | `false` | Aider AI coding assistant |
 | `my.programs.cudatext.enable` | bool | `false` | CudaText editor |
 | `my.programs.freecad.enable` | bool | `false` | FreeCAD CAD software |
@@ -216,6 +219,13 @@ All `my.*` options declared across module files.
 | `my.programs.steam.gamemode.enable` | bool | `false` | Enable Feral Gamemode |
 | `my.programs.steam.extraCompatPaths` | str? | `null` | Extra Proton compatibility tool paths |
 | `my.programs.steam.extraPackages` | list | `[]` | Extra Steam-related packages |
+| `my.programs.steam.games.<name>.gamescope.enable` | bool | `false` | Wrap in Gamescope for proper fullscreen on Wayland |
+| `my.programs.steam.games.<name>.gamescope.width` | int | `0` | Internal resolution width |
+| `my.programs.steam.games.<name>.gamescope.height` | int | `0` | Internal resolution height |
+| `my.programs.steam.games.<name>.gamescope.refreshRate` | int? | `null` | Refresh rate limit |
+| `my.programs.steam.games.<name>.gamescope.fullscreen` | bool | `true` | Start in fullscreen mode |
+| `my.programs.steam.games.<name>.gamescope.adaptiveSync` | bool | `false` | Adaptive sync / VRR |
+| `my.programs.steam.games.<name>.gamescope.extraArgs` | list | `[]` | Extra gamescope arguments |
 | `my.programs.rstudio.enable` | bool | `false` | RStudio IDE |
 | `my.programs.yazi.enable` | bool | `false` | Yazi terminal file manager |
 | `my.programs.ssh-1password.enable` | bool | `false` | 1Password SSH agent |

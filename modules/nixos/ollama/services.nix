@@ -306,7 +306,41 @@ in
         '';
     };
 
-    environment.systemPackages = lib.mkIf cfg.tests.enable [
+    systemd.services."ollama-unload" = {
+      description = "Unload all Ollama models from VRAM/RAM";
+      after = [ "${cfg.backend}-ollama.service" ];
+      serviceConfig.Type = "oneshot";
+      script =
+        let
+          apiUrl = "http://127.0.0.1:${toString cfg.port}";
+        in
+        ''
+          echo "ollama-unload: unloading all models..."
+          TAGS=$(${pkgs.curl}/bin/curl -sf ${apiUrl}/api/tags \
+            | ${pkgs.jq}/bin/jq -r '.models[].name' 2>/dev/null || true)
+          if [ -z "$TAGS" ]; then
+            echo "ollama-unload: no models loaded."
+            exit 0
+          fi
+          echo "$TAGS" | while IFS= read -r model; do
+            [ -z "$model" ] && continue
+            echo "  unloading: $model"
+            ${pkgs.curl}/bin/curl -sf -X POST ${apiUrl}/api/generate \
+              -H 'Content-Type: application/json' \
+              -d "{\"model\": \"$model\", \"keep_alive\": 0, \"prompt\": \"\"}" \
+              --max-time 10 > /dev/null 2>&1 || true
+          done
+          echo "ollama-unload: done."
+        '';
+    };
+
+    environment.systemPackages = [
+      (pkgs.writeShellScriptBin "ollama-unload" ''
+        echo "Unloading all Ollama models..."
+        sudo ${pkgs.systemd}/bin/systemctl start ollama-unload
+        sudo ${pkgs.systemd}/bin/journalctl -u ollama-unload -n 20 --no-pager
+      '')
+    ] ++ lib.optionals cfg.tests.enable [
       (pkgs.writeShellScriptBin "ollama-test" ''
         echo "Running Ollama smoke test..."
         sudo ${pkgs.systemd}/bin/systemctl start ollama-smoke-test
