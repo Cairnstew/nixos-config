@@ -1,0 +1,19 @@
+{
+    "Name": "My Foundation Mod",
+    "Author": "Your Name",
+    "Description": "A Foundation game mod built from the Nix flake template.",
+    "Version": "1.0.0",
+
+    "Icon": "metadata/icon.png",
+
+    "Dependencies": [],
+
+    "MapList": [
+        {
+            "Id": "MY_CUSTOM_MAP_01",
+            "Name": "My Custom Map",
+            "Description": "A custom map for Foundation.",
+            "PreviewImage": "metadata/my_map_preview.png"
+        }
+    ]
+}

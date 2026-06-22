@@ -121,10 +121,10 @@ let
     };
 
     disk = {
-      format = " {used:.1f}G";
+      format = " {used_gb}";
       interval = 60;
       tooltip = true;
-      tooltip-format = "Disk: {used:.1f}G / {total:.1f}G ({percentage}%)";
+      tooltip-format = "Disk: {used_gb} / {total_gb} ({percentage}%)";
       path = "/";
     };
 

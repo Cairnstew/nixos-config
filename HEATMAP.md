@@ -277,6 +277,13 @@ All `my.*` options declared across module files.
 | `my.services.brasero.enable` | bool | `false` | Brasero CD/DVD burning |
 | `my.services.cachix-push.enable` | bool | `false` | Cachix binary cache pushing |
 | `my.services.sillytavern.enable` | bool | `false` | SillyTavern AI chat |
+| `my.services.chatterbox-tts.enable` | bool | `false` | Chatterbox TTS server |
+| `my.services.chatterbox-tts.port` | port | `8004` | API port |
+| `my.services.chatterbox-tts.host` | str | `"127.0.0.1"` | Listen address |
+| `my.services.chatterbox-tts.backend` | enum | `"cpu"` | Compute backend (cpu/cuda/rocm) |
+| `my.services.chatterbox-tts.model` | enum | `"chatterbox-turbo"` | Model type |
+| `my.services.chatterbox-tts.openFirewall` | bool | `false` | Open port in firewall |
+| `my.services.chatterbox-tts.stateDir` | str | `"/var/lib/chatterbox-tts"` | Persistent state directory |
 | `my.services.gitRepoSync.enable` | bool | `false` | Git repository sync service |
 | `my.services.gitRepoSync.user` | str | — | User for sync timers |
 | `my.services.gitRepoSync.repos` | attrs | `{}` | Repositories to sync |

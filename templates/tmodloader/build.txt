@@ -1,0 +1,8 @@
+author = YourName
+version = 1.0.0
+displayName = Your Mod
+homepage = 
+hideCode = false
+hideResources = false
+includeSource = true
+buildIgnore = *.csproj, *.user, obj\*, bin\*, .vs\*

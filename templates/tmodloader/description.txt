@@ -1,0 +1,9 @@
+Your mod description here.
+
+This mod was built with tModLoader v{tMLVersion}.
+
+Interpolation variables available:
+- ModVersion: {ModVersion}
+- ModHomepage: {ModHomepage}
+- tMLVersion: {tMLVersion}
+- tMLBuildPurpose: {tMLBuildPurpose}

@@ -16,6 +16,10 @@ in
     hardware.bluetooth = {
       enable = true;
       powerOnBoot = true;
+      settings.General = {
+        AutoEnable = true;
+        FastConnectable = true;
+      };
     };
 
     environment.systemPackages = with pkgs; [

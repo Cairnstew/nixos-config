@@ -606,6 +606,8 @@
     dataDir = "/mnt/data/ollama";
   };
 
+  my.services.chatterbox-tts.enable = true;
+
   environment.systemPackages = with pkgs; [ ntfs3g ];
 
   # ── Home Manager Extra ───────────────────────────────────────────────────

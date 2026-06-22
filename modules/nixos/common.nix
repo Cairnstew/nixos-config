@@ -73,6 +73,7 @@ in
     ./proton
     ./sillytavern
     ./suwayomi
+    ./chatterbox-tts
     ./moku.nix
 
     # ── Location, Secrets & Deploy ────────────────────────────────────────

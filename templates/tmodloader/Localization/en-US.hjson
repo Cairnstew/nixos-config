@@ -1,0 +1,12 @@
+{
+  Mods: {
+    YourMod: {
+      Items: {
+        ExampleItem: {
+          DisplayName: Example Item
+          Tooltip: A simple example item
+        }
+      }
+    }
+  }
+}
