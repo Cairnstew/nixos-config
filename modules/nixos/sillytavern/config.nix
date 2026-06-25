@@ -1,10 +1,6 @@
 { config, lib, pkgs, ... }:
 let
-  cfg = config.my.services.sillytavern;
-  vfcfg = cfg.extensions.vectfox;
-  pcfg = cfg.presets;
-  homeDir = "/var/lib/sillytavern";
-  stUserDir = "${homeDir}/.local/share/SillyTavern/data/default-user";
+  ucfg = config.services.sillytavern;
 
   vectfoxSrc = pkgs.fetchFromGitHub {
     owner = "KritBlade";
@@ -19,50 +15,6 @@ let
     rev = "9fdc29311ea3a5de60bf1f97536f900634254c2a";
     hash = "sha256-reQ/I65i+T8bxFvYaBUDl7ob/aqEh2cXQhC08x5/sp8=";
   };
-
-  tpexts = cfg.extensions.thirdParty;
-
-  extensionIndex = builtins.fromJSON (builtins.readFile (builtins.fetchurl {
-    url = "https://raw.githubusercontent.com/SillyTavern/SillyTavern-Content/main/index.json";
-    sha256 = "79f546c9044984e415247b1be61352980b82df9ac514754dabf799686ecd1db2";
-  }));
-
-  extensionIndexById = builtins.listToAttrs (builtins.concatMap (entry:
-    if entry.type or "" == "extension" then
-      let
-        withoutPrefix = builtins.replaceStrings [ "https://github.com/" ] [ "" ] entry.url;
-        parts = builtins.match "([^/]+)/([^/]+)" withoutPrefix;
-      in
-        if parts == null then [ ] else
-          [{ name = entry.id; value = { owner = builtins.elemAt parts 0; repo = builtins.elemAt parts 1; }; }]
-    else [ ]
-  ) extensionIndex);
-
-  mkThirdPartySrc = id: ecfg:
-    if ecfg.src != null then ecfg.src
-    else
-      let
-        info = extensionIndexById.${id} or (builtins.abort "sillytavern: extension '${id}' not in official index; set src explicitly");
-      in
-      pkgs.fetchFromGitHub {
-        inherit (info) owner repo;
-        rev = ecfg.rev;
-        hash = ecfg.hash;
-      };
-
-  thirdPartySrcs = lib.filterAttrs (id: _: cfg.extensions.thirdParty.${id}.enable) (
-    lib.mapAttrs' (id: ecfg:
-      lib.nameValuePair id (mkThirdPartySrc id ecfg)
-    ) cfg.extensions.thirdParty
-  );
-
-  thirdPartyInstallCmds = lib.concatStringsSep "\n" (
-    lib.mapAttrsToList (id: src: ''
-      echo "sillytavern: installing third-party extension ${id}..."
-      mkdir -p "${stUserDir}/extensions/${id}"
-      cp -r ${src}/* "${stUserDir}/extensions/${id}/"
-    '') thirdPartySrcs
-  );
 
   similharityPlugin = pkgs.buildNpmPackage {
     pname = "sillytavern-plugin-similharity";
@@ -83,24 +35,44 @@ let
   extDir = "public/scripts/extensions/third-party/VectFox";
   pluginDir = "plugins/similharity";
 
-  toJsonFile = prefix: name: value:
-    pkgs.writeText "sillytavern-${prefix}-${name}.json"
-      (builtins.toJSON (value // { name = name; }));
+  # Ollama model auto-pull via docker exec
+  modelPullCmds = if ucfg.enable then
+    lib.concatStringsSep "\n" (lib.mapAttrsToList (_: profile:
+      let model = profile.model or "";
+      in lib.optionalString (model != "") ''
+        echo "sillytavern: pulling model ${model} via ollama..."
+        ${pkgs.docker}/bin/docker exec ollama ollama pull ${lib.escapeShellArg model} \
+          || echo "sillytavern: WARN: failed to pull ${model}"
+      ''
+    ) ucfg.connectionProfiles)
+  else
+    "";
 
-  installCategory = destDir: attrset:
-    lib.concatStrings (lib.mapAttrsToList
-      (name: value:
-        let file = toJsonFile destDir name value;
-        in ''install -m 0644 ${file} "${stUserDir}/${destDir}/${name}.json"'' + "\n"
-      )
-      attrset);
+  ollamaPullScript = pkgs.writeShellScript "sillytavern-ollama-pull" ''
+    ${modelPullCmds}
+  '';
+
+  # VectFox is bundled into the package but hidden by the BindPaths mount
+  # that overlays the third-party dir. Copy it into the extensions dir
+  # so ST can see it.
+  copyVectfoxScript = pkgs.writeShellScript "sillytavern-copy-vectfox" ''
+    set -e
+    EXT_DIR="/var/lib/SillyTavern/extensions/VectFox"
+    PKG_VECTFOX="${ucfg.package}/lib/node_modules/sillytavern/${extDir}"
+    if [ -d "$PKG_VECTFOX" ] && [ ! -d "$EXT_DIR" ]; then
+      mkdir -p "$EXT_DIR"
+      cp -r "$PKG_VECTFOX"/* "$EXT_DIR/"
+      chown -R ${ucfg.user}:${ucfg.group} "$EXT_DIR" 2>/dev/null || true
+      echo "sillytavern: copied VectFox to extensions directory"
+    fi
+  '';
 in
 {
-  config = lib.mkIf cfg.enable {
-    my.services.sillytavern.package = lib.mkDefault (pkgs.sillytavern.overrideAttrs (old: {
+  config = lib.mkIf ucfg.enable {
+    # Package override: bundle VectFox, Similharity, and autoconnect patch
+    services.sillytavern.package = lib.mkDefault (pkgs.sillytavern.overrideAttrs (old: {
       patches = (old.patches or []) ++ [ ./connection-manager-autoconnect.patch ];
-      buildInputs = (old.buildInputs or []);
-      postInstall = (old.postInstall or "") + lib.optionalString vfcfg.enable ''
+      postInstall = (old.postInstall or "") + ''
         echo "sillytavern: bundling VectFox extension..."
         EXT="$out/lib/node_modules/sillytavern/${extDir}"
         mkdir -p "$EXT"
@@ -120,71 +92,79 @@ in
         cp ${similharityPlugin}/qdrant-backend.js "$PLUGIN/"
         cp ${similharityPlugin}/stop-words.js "$PLUGIN/"
         cp ${similharityPlugin}/package.json "$PLUGIN/"
-      '';
 
+        echo "sillytavern: bundling Resemble.ai TTS provider..."
+        TTS="$out/lib/node_modules/sillytavern/public/scripts/extensions/tts"
+        cp ${./resemble.js} "$TTS/resemble.js"
+        chmod 644 "$TTS/resemble.js"
+        # Patch index.js to import and register the Resemble provider
+        if grep -q "ResembleTtsProvider" "$TTS/index.js"; then
+          echo "sillytavern: Resemble provider already registered, skipping patch"
+        else
+          sed -i "s|^import { VolcengineTtsProvider }|import { ResembleTtsProvider } from './resemble.js';\nimport { VolcengineTtsProvider }|" "$TTS/index.js"
+          sed -i "s|^    Volcengine: VolcengineTtsProvider,\$|    Resemble: ResembleTtsProvider,\n    Volcengine: VolcengineTtsProvider,|" "$TTS/index.js"
+          echo "sillytavern: patched index.js for Resemble TTS provider"
+        fi
+
+        echo "sillytavern: adding Resemble.ai server endpoint..."
+        SPEECH="$out/lib/node_modules/sillytavern/src/endpoints/speech.js"
+        if grep -q "resemble" "$SPEECH"; then
+          echo "sillytavern: Resemble endpoint already exists, skipping patch"
+        else
+          cat >> "$SPEECH" << 'ENDPOINT'
+
+const resemble = express.Router();
+
+resemble.post('/generate-voice', async (req, res) => {
+    try {
+        const { cluster, voice_uuid, data, precision, apiToken } = req.body;
+        if (!cluster || !voice_uuid || !data) {
+            console.warn('Resemble TTS request missing required parameters');
+            return res.sendStatus(400);
+        }
+        const endpoint = `https://${cluster}.cluster.resemble.ai/stream`;
+        const response = await fetch(endpoint, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                ...(apiToken ? { 'Authorization': `Bearer ${apiToken}` } : {}),
+            },
+            body: JSON.stringify({
+                voice_uuid,
+                data,
+                precision: precision || 'PCM_16',
+            }),
+        });
+        if (!response.ok) {
+            const text = await response.text();
+            console.warn(`Resemble TTS failed: HTTP ${response.status} - ${text}`);
+            return res.sendStatus(500);
+        }
+        res.set('Content-Type', 'audio/wav');
+        await forwardFetchResponse(response, res);
+    } catch (error) {
+        console.error('Resemble TTS error', error);
+        return res.sendStatus(500);
+    }
+});
+
+router.use('/resemble', resemble);
+ENDPOINT
+          echo "sillytavern: patched speech.js for Resemble server endpoint"
+        fi
+      '';
     }));
 
-    services.qdrant = lib.mkIf (vfcfg.enable && vfcfg.backend == "qdrant") {
-      enable = true;
-    };
+    # Enable server plugins (needed for VectFox/Similharity)
+    services.sillytavern.enableServerPlugins = lib.mkDefault true;
+    services.sillytavern.enableServerPluginsAutoUpdate = lib.mkDefault false;
 
-    my.services.sillytavern.settings.enableServerPlugins = lib.mkIf vfcfg.enable (lib.mkDefault true);
-    my.services.sillytavern.settings.enableServerPluginsAutoUpdate = lib.mkIf vfcfg.enable (lib.mkDefault false);
+    # Ollama model auto-pull on startup
+    systemd.services.sillytavern.serviceConfig.ExecStartPre =
+      lib.mkAfter [ "+${ollamaPullScript}" "+${copyVectfoxScript}" ];
 
-    users.users = lib.mkIf (cfg.user == "sillytavern") {
-      sillytavern = {
-        isSystemUser = true;
-        group = cfg.group;
-        description = "SillyTavern service user";
-        home = homeDir;
-        createHome = true;
-      };
-    };
-
-    users.groups = lib.mkIf (cfg.group == "sillytavern") {
-      sillytavern = { };
-    };
-
-    my.services.ollama.models = lib.mkIf (cfg.ollama.models != { })
-      (lib.mkDefault cfg.ollama.models);
-
-    my.services.sillytavern.presets.activationScript =
-      pkgs.writeShellScript "sillytavern-presets" ''
-        set -euo pipefail
-
-        mkdir -p "${stUserDir}/instruct"
-        mkdir -p "${stUserDir}/context"
-        mkdir -p "${stUserDir}/sysprompt"
-        mkdir -p "${stUserDir}/TextGen Settings"
-        mkdir -p "${stUserDir}/reasoning"
-        mkdir -p "${stUserDir}/Kobold AI Settings"
-        mkdir -p "${stUserDir}/OpenAI Settings"
-        mkdir -p "${stUserDir}/themes"
-        mkdir -p "${stUserDir}/quick-replies"
-
-        ${installCategory "instruct"               pcfg.instruct}
-        ${installCategory "context"                pcfg.context}
-        ${installCategory "sysprompt"              pcfg.sysprompt}
-        ${installCategory "TextGen Settings"       pcfg.textgen}
-        ${installCategory "reasoning"              pcfg.reasoning}
-        ${installCategory "Kobold AI Settings"     pcfg.kobold}
-        ${installCategory "OpenAI Settings"        pcfg.openai}
-        ${installCategory "themes"                 pcfg.themes}
-        ${installCategory "quick-replies"          pcfg.quickReplies}
-
-        ${thirdPartyInstallCmds}
-
-        chown -R ${cfg.user}:${cfg.group} \
-          "${stUserDir}/instruct"               \
-          "${stUserDir}/context"                \
-          "${stUserDir}/sysprompt"              \
-          "${stUserDir}/TextGen Settings"       \
-          "${stUserDir}/reasoning"              \
-          "${stUserDir}/Kobold AI Settings"     \
-          "${stUserDir}/OpenAI Settings"        \
-          "${stUserDir}/themes"                 \
-          "${stUserDir}/quick-replies"          \
-          "${stUserDir}/extensions"
-      '';
+    # Disable extension auto-update — extensions are managed declaratively
+    # and the Nix store is read-only, so git pull fails.
+    services.sillytavern.extensions.autoUpdate = lib.mkDefault false;
   };
 }

@@ -11,6 +11,7 @@
     "my.programs.opencode.references"
     "my.programs.opencode.plugins"
     "my.programs.opencode.pluginFiles"
+    "my.programs.opencode.ensemble"
     "my.programs.opencode.tools.nix-hosts"
     "my.programs.opencode.tools.nix-eval"
     "my.programs.opencode.tools.nix-flake-check"

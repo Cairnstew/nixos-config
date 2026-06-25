@@ -223,6 +223,36 @@ in
       };
     }
 
+    # ── Ensemble skills & sub-agents ──────────────────────────────────────
+    {
+      my.programs.opencode.skills = lib.mkDefault {
+        opencode-ensemble = builtins.readFile ./skills/opencode-ensemble.md;
+        nixos-ensemble-decomposition = builtins.readFile ./skills/nixos-ensemble-decomposition.md;
+      };
+      my.programs.opencode.agents = lib.mkDefault {
+        scout = {
+          description = "Quickly explore the codebase by searching files, patterns, and keywords (read-only) — ensemble scout role";
+          mode = "subagent";
+          model = null;
+          temperature = 0.1;
+          permission = { edit = "deny"; bash = "deny"; };
+        };
+        qa = {
+          description = "Write tests, fixtures, and regression coverage — ensemble QA role";
+          mode = "subagent";
+          model = null;
+          permission = { edit = "allow"; bash = "allow"; };
+        };
+        reviewer = {
+          description = "Review diffs for correctness, missed tests, and risky behavior — ensemble reviewer role";
+          mode = "subagent";
+          model = null;
+          temperature = 0.1;
+          permission = { edit = "deny"; bash = "deny"; };
+        };
+      };
+    }
+
     # Base opencode config
     {
       programs.opencode = {
@@ -239,6 +269,13 @@ in
         settings = mergedSettings // lib.optionalAttrs cfg.enableLsp { lsp = true; };
       };
     }
+
+    # ── Ensemble plugin config → ~/.config/opencode/ensemble.json ─────────
+    (mkIf (cfg.ensemble != null) {
+      home.file.".config/opencode/ensemble.json" = {
+        text = builtins.toJSON cfg.ensemble;
+      };
+    })
 
     # ── Local plugin files ──────────────────────────────────────────────────
     (mkIf (cfg.pluginFiles != { }) {

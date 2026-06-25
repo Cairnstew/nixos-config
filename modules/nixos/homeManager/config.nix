@@ -162,13 +162,25 @@ in
           opencode-go.keyFile = config.age.secrets.opencode-token.path;
           groq.keyFile = config.age.secrets.groq-token.path;
 
-          model = lib.mkDefault null;
+          model = lib.mkDefault "opencode-go/deepseek-v4-flash";
           enableMcpIntegration = lib.mkDefault true;
 
           # references are supported via my.programs.opencode.references but
           # require opencode ≥ 1.16 — not yet available in nixpkgs.
 
           plugins = lib.mkDefault [ "@hueyexe/opencode-ensemble@0.15.0" ];
+
+          # Ensemble plugin config — agents use deepseek-v4-flash by default
+          ensemble = lib.mkDefault {
+            defaultModel = "opencode-go/deepseek-v4-flash";
+            modelsByAgent = {
+              build = "opencode-go/deepseek-v4-flash";
+              explore = "opencode-go/deepseek-v4-flash";
+              plan = "opencode-go/deepseek-v4-flash";
+            };
+            dashboardPort = 4747;
+            mergeOnCleanup = true;
+          };
 
           themes = opencodeTheme;
           tui.theme = lib.mkDefault "catppuccin-mocha";

@@ -722,6 +722,26 @@ in
       '';
     };
 
+    # ── Ensemble plugin config ────────────────────────────────────────────────
+
+    ensemble = mkOption {
+      type = types.nullOr (pkgs.formats.json { }).type;
+      default = null;
+      example = {
+        defaultModel = "opencode-go/deepseek-v4-flash";
+        dashboardPort = 4747;
+        mergeOnCleanup = true;
+      };
+      description = ''
+        Configuration for the @hueyexe/opencode-ensemble plugin.
+        Written to $XDG_CONFIG_HOME/opencode/ensemble.json.
+
+        Controls model selection, rate limiting, stall detection, timeout,
+        dashboard port, and auto-merge behavior for parallel agent teams.
+        See https://github.com/hueyexe/opencode-ensemble for full reference.
+      '';
+    };
+
     # ── Policies ──────────────────────────────────────────────────────────────
 
     policies = {
