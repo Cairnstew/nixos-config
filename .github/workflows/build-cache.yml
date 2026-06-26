@@ -71,7 +71,6 @@ jobs:
       matrix:
         package:
           - update
-          - test
           - localsend
           - github-actions-cleanup
           - nix-template-selector

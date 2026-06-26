@@ -9,8 +9,8 @@ let
 
   hasWallpaperContent = cfg.wallpapers.enable && (
     cfg.wallpapers.backend == "hyprpaper"
-    || cfg.wallpapers.backend == "waypaper"
-    || cfg.wallpapers.images != [ ]
+      || cfg.wallpapers.backend == "waypaper"
+      || cfg.wallpapers.images != [ ]
   );
 
   monitorLines = builtins.map
@@ -228,6 +228,12 @@ let
     # Brightness
     bindel = , XF86MonBrightnessUp,   exec, brightnessctl set 5%+
     bindel = , XF86MonBrightnessDown, exec, brightnessctl set 5%-
+
+    # Media
+    bindl  = , XF86AudioPlay,  exec, playerctl play-pause
+    bindl  = , XF86AudioNext,  exec, playerctl next
+    bindl  = , XF86AudioPrev,  exec, playerctl previous
+    bindl  = , XF86AudioStop,  exec, playerctl stop
 
     # Focus
     bind = $mod, left,  movefocus, l

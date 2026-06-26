@@ -64,13 +64,21 @@ ventoy-iso:
 
 # ── Testing ──────────────────────────────────────────────────────────────────
 
-# List all testable hosts
-test-list:
-    nix run .#test list
+# Run all nixtest suites (unit, snapshot, script tests)
+nixtest:
+    nix run .#nixtests-run
 
-# Run a VM test for a host (e.g., just test laptop)
-test host:
-    nix run .#test run {{ host }}
+# Update nixtest snapshots (after reviewing changes)
+nixtest-update:
+    nix run .#nixtests-run -- --update-snapshots
+
+# Build desktop smoke tests (runs systemd-based smoke tests + health checks)
+test:
+    nix build .#desktop-tests
+
+# Run a VM test for a host (e.g., just vm-test laptop)
+vm-test host:
+    nix build .#{{ host }}-vm
 
 # ── Maintenance ──────────────────────────────────────────────────────────────
 

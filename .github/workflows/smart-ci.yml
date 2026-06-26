@@ -292,7 +292,6 @@ jobs:
       matrix:
         package:
           - update
-          - test
           - localsend
           - github-actions-cleanup
           - nix-template-selector
@@ -417,10 +416,36 @@ jobs:
           fi
 
   # ─────────────────────────────────────────────────────────────────────────────
+  # Nixtest — run compile-time Nix unit/snapshot tests
+  # ─────────────────────────────────────────────────────────────────────────────
+  run-nixtest:
+    needs:
+      - changes
+    if: |
+      needs.changes.outputs.any-nix == 'true' ||
+      needs.changes.outputs.flake-core == 'true' ||
+      github.event_name == 'push' ||
+      github.event_name == 'schedule'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: cachix/install-nix-action@v31
+        with:
+          extra_nix_config: ${{ env.NIX_CONFIG }}
+      - uses: cachix/cachix-action@v17
+        with:
+          name: cairnstew-nixos-config-cache
+          authToken: ${{ secrets.CACHIX_AUTH_TOKEN }}
+      - name: Run nixtest suite
+        run: |
+          echo "Running nixtest suite..."
+          nix run .#nixtests-run
+
+  # ─────────────────────────────────────────────────────────────────────────────
   # Test suite — runs only when eval checks pass
   # Only runs on push to main or schedule (not on PR by default)
   # ─────────────────────────────────────────────────────────────────────────────
-  run-tests:
+  build-desktop-tests:
     needs:
       - changes
       - eval-laptop
@@ -443,10 +468,10 @@ jobs:
         with:
           name: cairnstew-nixos-config-cache
           authToken: ${{ secrets.CACHIX_AUTH_TOKEN }}
-      - name: Run test suite
+      - name: Build desktop-tests
         run: |
-          echo "Running test suite..."
-          nix run .#test -- run
+          echo "Building desktop-tests..."
+          nix build .#desktop-tests
 
   # ─────────────────────────────────────────────────────────────────────────────
   # Summary — shows which paths were detected and which jobs ran
@@ -466,6 +491,7 @@ jobs:
       - validate-templates
       - lint-scripts
       - validate-secrets
+      - run-nixtest
     if: always()
     runs-on: ubuntu-latest
     steps:
@@ -505,6 +531,7 @@ jobs:
           echo "  validate-templates: ${{ needs.validate-templates.result }}"
           echo "  lint-scripts:      ${{ needs.lint-scripts.result }}"
           echo "  validate-secrets:  ${{ needs.validate-secrets.result }}"
+          echo "  run-nixtest:       ${{ needs.run-nixtest.result }}"
 
           # Check for failures (flake-check excluded — pre-existing CI infra issue)
           if [[ "${{ needs.format-check.result }}" == "failure" ]] || \

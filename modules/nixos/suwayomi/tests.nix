@@ -18,7 +18,7 @@ in
     }
     {
       assertion = !cfg.enable || cfg.settings.server.authMode == "none"
-                  || (cfg.settings.server.authUsername != null && cfg.settings.server.authPasswordFile != null);
+        || (cfg.settings.server.authUsername != null && cfg.settings.server.authPasswordFile != null);
       message = "my.services.suwayomi.settings.server: authUsername and authPasswordFile must be set when authMode is not 'none'.";
     }
   ];

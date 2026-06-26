@@ -3,10 +3,11 @@ let
   inherit (lib) mkIf;
   cfg = config.my.programs.houdini;
 
-  licenseScript = if cfg.licenseServer != null then ''
-    # Configure license server
-    export sesi_license="${cfg.licenseServer}"
-  '' else "";
+  licenseScript =
+    if cfg.licenseServer != null then ''
+      # Configure license server
+      export sesi_license="${cfg.licenseServer}"
+    '' else "";
 in
 {
   config = mkIf cfg.enable {

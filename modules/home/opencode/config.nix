@@ -87,11 +87,13 @@ let
       action = "provider.use";
       resource = "*";
     })
-    (builtins.map (provider: {
-      effect = "allow";
-      action = "provider.use";
-      resource = provider;
-    }) cfg.policies.allowedProviders)
+    (builtins.map
+      (provider: {
+        effect = "allow";
+        action = "provider.use";
+        resource = provider;
+      })
+      cfg.policies.allowedProviders)
     # Append any extra user-defined policies
     cfg.policies.extraPolicies
   ];
@@ -219,6 +221,7 @@ in
         commands = lib.mkDefault {
           copy-last = ./commands/copylast.md;
           refactor-python = ./commands/refactor-python.md;
+          nix-refine = ./commands/nix-refine.md;
         };
       };
     }
@@ -279,12 +282,15 @@ in
 
     # ── Local plugin files ──────────────────────────────────────────────────
     (mkIf (cfg.pluginFiles != { }) {
-      home.file = builtins.listToAttrs (mapAttrsToList (name: src: {
-        name = ".config/opencode/plugins/${name}.js";
-        value = if builtins.isPath src
-          then { source = src; }
-          else { text = src; };
-      }) cfg.pluginFiles);
+      home.file = builtins.listToAttrs (mapAttrsToList
+        (name: src: {
+          name = ".config/opencode/plugins/${name}.js";
+          value =
+            if builtins.isPath src
+            then { source = src; }
+            else { text = src; };
+        })
+        cfg.pluginFiles);
     })
 
     # Default permissions for NixOS paths & Ensemble worktrees

@@ -44,6 +44,6 @@ in
     };
 
     # Also set system locale if specified in flake config
-    i18n.defaultLocale = flakeLocation.defaultLocale or "en_GB.UTF-8";
+    i18n.defaultLocale = lib.mkDefault (flakeLocation.defaultLocale or "en_GB.UTF-8");
   };
 }

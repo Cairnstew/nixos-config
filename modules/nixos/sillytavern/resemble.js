@@ -86,11 +86,16 @@ class ResembleTtsProvider {
         if (this.voices.length == 0) {
             this.voices = await this.fetchTtsVoiceObjects();
         }
+        // Match by name first
         const match = this.voices.filter(v => v.name == voiceName)[0];
-        if (!match) {
-            throw `Resemble voice ${voiceName} not found`;
+        if (match) return match;
+        // If voiceName is a UUID, return it directly
+        if (/^[a-f0-9]{8}/i.test(voiceName)) {
+            return { name: voiceName, voice_id: voiceName, lang: 'en-US' };
         }
-        return match;
+        // Fall back to the first configured voice
+        console.warn(`Resemble voice "${voiceName}" not found, using first available`);
+        return this.voices[0];
     }
 
     async generateTts(text, voiceId) {

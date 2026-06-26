@@ -25,8 +25,10 @@ in
         '';
       }
     ]
-    ++ lib.optionals (hasGames && cfg.enable) (lib.mapAttrsToList (name: game: {
-      assertion = game.appId != "";
-      message = "my.programs.steam.games.${name}.appId must not be empty.";
-    }) cfg.games);
+    ++ lib.optionals (hasGames && cfg.enable) (lib.mapAttrsToList
+      (name: game: {
+        assertion = game.appId != "";
+        message = "my.programs.steam.games.${name}.appId must not be empty.";
+      })
+      cfg.games);
 }

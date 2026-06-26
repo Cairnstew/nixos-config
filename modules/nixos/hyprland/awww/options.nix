@@ -17,7 +17,16 @@ in
     transition = {
       type = lib.mkOption {
         type = nullOr (types.enum [
-          "simple" "center" "outer" "left" "right" "top" "bottom" "wipe" "any" "random"
+          "simple"
+          "center"
+          "outer"
+          "left"
+          "right"
+          "top"
+          "bottom"
+          "wipe"
+          "any"
+          "random"
         ]);
         default = null;
         example = "center";
@@ -79,10 +88,10 @@ in
             type = nullOr types.str;
             default = null;
             example = "DP-1";
-          description = ''
-            Monitor output name to set the wallpaper on.
-            Set to null (default) to apply to all outputs.
-          '';
+            description = ''
+              Monitor output name to set the wallpaper on.
+              Set to null (default) to apply to all outputs.
+            '';
           };
         };
       });

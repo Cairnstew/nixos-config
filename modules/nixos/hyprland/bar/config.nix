@@ -47,20 +47,27 @@ let
 
   customModNames = builtins.attrNames barCfg.customModules;
 
-  customLeft   = builtins.filter (n: barCfg.customModules.${n}.position == "left")   customModNames;
+  customLeft = builtins.filter (n: barCfg.customModules.${n}.position == "left") customModNames;
   customCenter = builtins.filter (n: barCfg.customModules.${n}.position == "center") customModNames;
-  customRight  = builtins.filter (n: barCfg.customModules.${n}.position == "right")  customModNames;
+  customRight = builtins.filter (n: barCfg.customModules.${n}.position == "right") customModNames;
 
-  modulesLeft   = [ "hyprland/workspaces" "hyprland/submap" ]
-    ++ map (n: "custom/${n}") customLeft   ++ barCfg.extraModulesLeft;
+  modulesLeft = [ "hyprland/workspaces" "hyprland/submap" ]
+    ++ map (n: "custom/${n}") customLeft ++ barCfg.extraModulesLeft;
   modulesCenter = [ "hyprland/window" ]
     ++ map (n: "custom/${n}") customCenter ++ barCfg.extraModulesCenter;
-  modulesRight  = [
-    "pulseaudio" "network" "cpu" "memory" "disk"
-    "temperature" "battery" "clock" "tray"
+  modulesRight = [
+    "pulseaudio"
+    "network"
+    "cpu"
+    "memory"
+    "disk"
+    "temperature"
+    "battery"
+    "clock"
+    "tray"
   ]
-    ++ lib.optionals hasAmdGpu [ "custom/gpu" ]
-    ++ map (n: "custom/${n}") customRight ++ barCfg.extraModulesRight;
+  ++ lib.optionals hasAmdGpu [ "custom/gpu" ]
+  ++ map (n: "custom/${n}") customRight ++ barCfg.extraModulesRight;
 
   amdgpuModuleConfig = lib.optionalAttrs hasAmdGpu {
     "custom/gpu" = {
@@ -75,10 +82,12 @@ let
     filterAttrs (n: v: v != null)
       (builtins.removeAttrs barCfg.customModules.${name} [ "position" ]);
 
-  customModulesConfig = builtins.listToAttrs (map (n: {
-    name = "custom/${n}";
-    value = customModuleConfig n;
-  }) customModNames);
+  customModulesConfig = builtins.listToAttrs (map
+    (n: {
+      name = "custom/${n}";
+      value = customModuleConfig n;
+    })
+    customModNames);
 
   waybarConfigJSON = builtins.toJSON (rec {
     layer = "top";
@@ -86,9 +95,9 @@ let
     height = barCfg.height;
     spacing = 4;
 
-    "modules-left"   = modulesLeft;
+    "modules-left" = modulesLeft;
     "modules-center" = modulesCenter;
-    "modules-right"  = modulesRight;
+    "modules-right" = modulesRight;
 
     "hyprland/workspaces" = {
       disable-scroll = true;
@@ -164,11 +173,13 @@ let
     tray = { spacing = 8; };
   } // amdgpuModuleConfig // customModulesConfig);
 
-  customModuleCSS = lib.concatStringsSep "\n" (map (name: ''
-    #custom-${name} {
-      padding: 0 10px;
-    }
-  '') customModNames);
+  customModuleCSS = lib.concatStringsSep "\n" (map
+    (name: ''
+      #custom-${name} {
+        padding: 0 10px;
+      }
+    '')
+    customModNames);
 
   defaultWaybarStyle = ''
     * {

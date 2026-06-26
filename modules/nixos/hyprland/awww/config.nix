@@ -16,12 +16,14 @@ let
 
   awwwBin = "${awwwCfg.package}/bin/awww";
 
-  initialImageCmds = builtins.map (img:
-    let
-      outputFlag = lib.optionalString (img.output != null) "-o ${lib.escapeShellArg img.output}";
-    in
-    "${awwwBin} img ${outputFlag} ${lib.escapeShellArg img.path} --no-cache"
-  ) awwwCfg.images;
+  initialImageCmds = builtins.map
+    (img:
+      let
+        outputFlag = lib.optionalString (img.output != null) "-o ${lib.escapeShellArg img.output}";
+      in
+      "${awwwBin} img ${outputFlag} ${lib.escapeShellArg img.path} --no-cache"
+    )
+    awwwCfg.images;
 in
 {
   config = lib.mkIf (cfg.enable && awwwCfg.enable) {

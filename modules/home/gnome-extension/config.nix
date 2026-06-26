@@ -20,7 +20,7 @@ let
 
       baseFiles = [
         { name = "${dir}/metadata.json"; value = { text = builtins.toJSON (mkMetadata ext); }; }
-        { name = "${dir}/extension.js";  value = { text = ext.extensionJs; }; }
+        { name = "${dir}/extension.js"; value = { text = ext.extensionJs; }; }
       ];
 
       maybeStylesheet = lib.optional (ext.stylesheetCss != "") {
@@ -28,12 +28,15 @@ let
         value = { text = ext.stylesheetCss; };
       };
 
-      extraFileList = lib.mapAttrsToList (filename: value: {
-        name = "${dir}/${filename}";
-        value = if builtins.isPath value
-                then { source = value; }
-                else { text = value; };
-      }) ext.extraFiles;
+      extraFileList = lib.mapAttrsToList
+        (filename: value: {
+          name = "${dir}/${filename}";
+          value =
+            if builtins.isPath value
+            then { source = value; }
+            else { text = value; };
+        })
+        ext.extraFiles;
     in
     baseFiles ++ maybeStylesheet ++ extraFileList;
 

@@ -45,5 +45,9 @@ in
 
     # Python with uv2nix
     uv2nix = mkTemplate "uv2nix" "Python project with uv2nix, uv, and modern tooling";
+
+    # Modding templates
+    foundation-mod = mkTemplate "foundation-mod" "Foundation (Timberborn) mod with flake and Lua scaffolding";
+    tmodloader = mkTemplate "tmodloader" "tModLoader (Terraria) mod with C# project, flake, and library integrations";
   };
 }

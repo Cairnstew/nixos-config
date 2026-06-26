@@ -5,27 +5,29 @@ let
 
   lockCmd = if cfg.lockscreen.useHyprlock then "hyprlock" else "swaylock";
 
-  listenerBlocks = lib.concatStringsSep "\n" (builtins.map (l: ''
-    listener {
-        timeout = ${toString l.timeout}
-        on-timeout = ${l.on-timeout}
-        ${lib.optionalString (l ? on-resume) "on-resume = ${l.on-resume}"}
-    }
-  '') (lib.filter (l: l ? timeout && l.timeout > 0) [
-    (lib.optionalAttrs (idleCfg.lockTimeout > 0) {
-      timeout = idleCfg.lockTimeout;
-      on-timeout = "loginctl lock-session";
-    })
-    (lib.optionalAttrs (idleCfg.dpmsTimeout > 0) {
-      timeout = idleCfg.dpmsTimeout;
-      on-timeout = "hyprctl dispatch dpms off";
-      on-resume = "hyprctl dispatch dpms on";
-    })
-    (lib.optionalAttrs (idleCfg.suspendTimeout > 0) {
-      timeout = idleCfg.suspendTimeout;
-      on-timeout = "systemctl suspend";
-    })
-  ]));
+  listenerBlocks = lib.concatStringsSep "\n" (builtins.map
+    (l: ''
+      listener {
+          timeout = ${toString l.timeout}
+          on-timeout = ${l.on-timeout}
+          ${lib.optionalString (l ? on-resume) "on-resume = ${l.on-resume}"}
+      }
+    '')
+    (lib.filter (l: l ? timeout && l.timeout > 0) [
+      (lib.optionalAttrs (idleCfg.lockTimeout > 0) {
+        timeout = idleCfg.lockTimeout;
+        on-timeout = "loginctl lock-session";
+      })
+      (lib.optionalAttrs (idleCfg.dpmsTimeout > 0) {
+        timeout = idleCfg.dpmsTimeout;
+        on-timeout = "hyprctl dispatch dpms off";
+        on-resume = "hyprctl dispatch dpms on";
+      })
+      (lib.optionalAttrs (idleCfg.suspendTimeout > 0) {
+        timeout = idleCfg.suspendTimeout;
+        on-timeout = "systemctl suspend";
+      })
+    ]));
 
   hypridleConf = ''
     general {

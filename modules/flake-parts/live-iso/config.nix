@@ -120,9 +120,9 @@ let
         # Extra files placed at specific paths in the ISO
         isoImage.contents = isoConfig.extraContents
           ++ lib.optional (isoConfig.tailscale.authKeyEncryptedSource or null != null) {
-            source = isoConfig.tailscale.authKeyEncryptedSource;
-            target = "/var/lib/tailscale/tailscale-live-key.age";
-          };
+          source = isoConfig.tailscale.authKeyEncryptedSource;
+          target = "/var/lib/tailscale/tailscale-live-key.age";
+        };
       };
 
       tailscaleAutoconnect = { pkgs, ... }: lib.mkIf isoConfig.tailscale.enable (

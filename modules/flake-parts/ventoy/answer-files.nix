@@ -56,13 +56,33 @@ in
           # Pass 2: substitute all variables (catches @diskId@ inside partials)
           # Use builtins.replaceStrings directly — no file roundtrip needed.
           pass2 = builtins.replaceStrings
-            [ "@productKey@" "@computerName@" "@username@" "@password@"
-              "@autoLogonCount@" "@lang@" "@timezone@" "@arch@" "@archId@"
-              "@networkLocale@" "@protectYourPC@" "@diskId@"
+            [
+              "@productKey@"
+              "@computerName@"
+              "@username@"
+              "@password@"
+              "@autoLogonCount@"
+              "@lang@"
+              "@timezone@"
+              "@arch@"
+              "@archId@"
+              "@networkLocale@"
+              "@protectYourPC@"
+              "@diskId@"
             ]
-            [ productKey computerName username password
-              autoLogonCount lang timezone arch archId
-              networkLocale protectYourPC answerSettings.diskId
+            [
+              productKey
+              computerName
+              username
+              password
+              autoLogonCount
+              lang
+              timezone
+              arch
+              archId
+              networkLocale
+              protectYourPC
+              answerSettings.diskId
             ]
             pass1;
         in

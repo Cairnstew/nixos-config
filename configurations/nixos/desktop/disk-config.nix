@@ -14,10 +14,12 @@
 #   nix run .#deploy-desktop -- nixos@<ip>              # auto-detected --disko-mode disko
 #   nix run .#deploy-desktop -- nixos@<ip> --disko-mode format  # reformat sdb4 only
 #   nix run .#deploy-desktop -- nixos@<ip> --disko-mode mount   # mount only, skip format
-{ config, pkgs, lib, ... }: let
+{ config, pkgs, lib, ... }:
+let
   inherit (pkgs) writeScript;
   diskoCfg = config.disko.devices;
-in {
+in
+{
   # Override _scripts to generate build outputs from the nodev config directly,
   # bypassing disko's "no disks defined" guard (which requires at least one
   # disko.devices.disk entry). The nodev config already provides _create, _mount,

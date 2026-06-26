@@ -138,7 +138,16 @@ in
       awww = {
         transitionType = lib.mkOption {
           type = nullOr (types.enum [
-            "simple" "center" "outer" "left" "right" "top" "bottom" "wipe" "any" "random"
+            "simple"
+            "center"
+            "outer"
+            "left"
+            "right"
+            "top"
+            "bottom"
+            "wipe"
+            "any"
+            "random"
           ]);
           default = null;
           example = "center";

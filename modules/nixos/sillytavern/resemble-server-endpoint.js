@@ -1,7 +1,4 @@
-import fetch from 'node-fetch';
-import { forwardFetchResponse } from '../util.js';
-
-export const resemble = express.Router();
+const resemble = express.Router();
 
 resemble.post('/generate-voice', async (req, res) => {
     try {
@@ -21,8 +18,8 @@ resemble.post('/generate-voice', async (req, res) => {
                 ...(apiToken ? { 'Authorization': `Bearer ${apiToken}` } : {}),
             },
             body: JSON.stringify({
-                voice_uuid: voice_uuid,
-                data: data,
+                voice_uuid,
+                data,
                 precision: precision || 'PCM_16',
             }),
         });
@@ -40,3 +37,5 @@ resemble.post('/generate-voice', async (req, res) => {
         return res.sendStatus(500);
     }
 });
+
+router.use('/resemble', resemble);

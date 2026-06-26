@@ -22,7 +22,7 @@ in
     my.programs.moku.enable = lib.mkDefault true;
 
     # ── Self-Hosted Services ─────────────────────────────────────────
-    my.services.sillytavern.enable = lib.mkDefault true;
+    services.sillytavern.enable = lib.mkDefault true;
     my.services.suwayomi.enable = lib.mkDefault true;
   };
 }

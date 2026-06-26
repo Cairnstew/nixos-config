@@ -47,9 +47,10 @@ in
   config = lib.mkIf (cfg.enable && lockCfg.enable) {
     environment.systemPackages = [ lockPkg ];
 
-    environment.etc = lib.optionalAttrs (!lockCfg.useHyprlock) {
-      "xdg/swaylock/config".text = swaylockConf;
-    } // lib.optionalAttrs lockCfg.useHyprlock {
+    environment.etc = lib.optionalAttrs (!lockCfg.useHyprlock)
+      {
+        "xdg/swaylock/config".text = swaylockConf;
+      } // lib.optionalAttrs lockCfg.useHyprlock {
       "xdg/hypr/hyprlock.conf".text = hyprlockConf;
     };
 

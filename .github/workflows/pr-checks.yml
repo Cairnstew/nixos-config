@@ -17,7 +17,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        host: [laptop, server, wsl]
+        host: [laptop, server, wsl, desktop, minimal]
     steps:
       - name: Checkout
         uses: actions/checkout@v6
@@ -86,17 +86,17 @@ jobs:
             ### Testing
             Build a specific host locally:
             \`\`\`bash
-            nix build .#laptop  # or server, wsl
+            nix build .#laptop  # or server, wsl, desktop, minimal
             \`\`\`
 
-            Run tests:
+            Run nixtest suite (unit/snapshot/script tests):
             \`\`\`bash
-            nix run .#test -- run
+            nix run .#nixtests-run
             \`\`\`
 
-            Dry-run evaluation:
+            Build desktop smoke tests:
             \`\`\`bash
-            nix run .#test -- dry-run
+            nix build .#desktop-tests
             \`\`\`
 
             ---

@@ -16,19 +16,21 @@ in
       };
 
       file = lib.mkIf cfg.autostart {
-        ".config/autostart/discord.desktop".text = let
-          appName = if isTui then "Endcord" else "Discord";
-          execPath = "${resolvedPackage}/bin/${if isTui then "endcord" else "Discord"}";
-          comment = if isTui then "Start Endcord TUI on login" else "Start Discord on login";
-        in ''
-          [Desktop Entry]
-          Type=Application
-          Name=${appName}
-          Exec=${execPath}
-          X-GNOME-Autostart-enabled=true
-          NoDisplay=false
-          Comment=${comment}
-        '';
+        ".config/autostart/discord.desktop".text =
+          let
+            appName = if isTui then "Endcord" else "Discord";
+            execPath = "${resolvedPackage}/bin/${if isTui then "endcord" else "Discord"}";
+            comment = if isTui then "Start Endcord TUI on login" else "Start Discord on login";
+          in
+          ''
+            [Desktop Entry]
+            Type=Application
+            Name=${appName}
+            Exec=${execPath}
+            X-GNOME-Autostart-enabled=true
+            NoDisplay=false
+            Comment=${comment}
+          '';
       };
 
       activation.setupEndcordToken = lib.mkIf (isTui && enabledProfiles != { }) (lib.hm.dag.entryAfter [ "writeBoundary" ] ''

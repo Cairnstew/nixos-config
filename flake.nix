@@ -106,6 +106,24 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
+    # SillyTavern LLM frontend — upstream module with declarative presets
+    sillytavern = {
+      url = "github:Cairnstew/SillyTavern";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+
+    # Houdini — FHS-wrapped 3D animation package (manual download required)
+    houdini-nix = {
+      url = "github:permahorse/houdini-nix";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+
+    # Nixtest — Nix code test runner (unit, snapshot, script, VM)
+    nixtest = {
+      url = "gitlab:TECHNOFAB/nixtest";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+
   };
 
   # Wired using https://nixos-unified.org/autowiring.html

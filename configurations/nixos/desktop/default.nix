@@ -138,6 +138,8 @@
         }
       ];
 
+      extraExecOnce = [ "playerctld daemon" ];
+
       windowOpacity = {
         enable = true;
         focused = 0.93;
@@ -148,33 +150,36 @@
     };
 
     wallpapers = {
-      images = let
-        shinyColors = pkgs.fetchurl {
-          url = "https://raw.githubusercontent.com/AlexandrosLiaskos/Awesome_Wallpapers/main/images/shiny-colors.png";
-          sha256 = "07ihb3352vfp5kw5f0rls9bzwxr6mrgflqh52mygh8bjck2hj3y3";
-        };
-        shinyColorsFlipped = pkgs.runCommandLocal "shiny-colors-flipped.png" {
-          nativeBuildInputs = [ pkgs.imagemagick ];
-        } ''
-          convert ${shinyColors} -flop "$out"
-        '';
-      in [
-        {
-          output = "DP-3";
-          path = shinyColors;
-        }
-        {
-          output = "DP-1";
-          path = pkgs.fetchurl {
-            url = "https://raw.githubusercontent.com/AlexandrosLiaskos/Awesome_Wallpapers/main/images/lake.jpg";
-            sha256 = "0ab3hjvg752phd963bc5r76fmpkfxdx7p75bmgcqm0kikh0wy64h";
+      images =
+        let
+          shinyColors = pkgs.fetchurl {
+            url = "https://raw.githubusercontent.com/AlexandrosLiaskos/Awesome_Wallpapers/main/images/shiny-colors.png";
+            sha256 = "07ihb3352vfp5kw5f0rls9bzwxr6mrgflqh52mygh8bjck2hj3y3";
           };
-        }
-        {
-          output = "DP-2";
-          path = shinyColorsFlipped;
-        }
-      ];
+          shinyColorsFlipped = pkgs.runCommandLocal "shiny-colors-flipped.png"
+            {
+              nativeBuildInputs = [ pkgs.imagemagick ];
+            } ''
+            convert ${shinyColors} -flop "$out"
+          '';
+        in
+        [
+          {
+            output = "DP-3";
+            path = shinyColors;
+          }
+          {
+            output = "DP-1";
+            path = pkgs.fetchurl {
+              url = "https://raw.githubusercontent.com/AlexandrosLiaskos/Awesome_Wallpapers/main/images/lake.jpg";
+              sha256 = "0ab3hjvg752phd963bc5r76fmpkfxdx7p75bmgcqm0kikh0wy64h";
+            };
+          }
+          {
+            output = "DP-2";
+            path = shinyColorsFlipped;
+          }
+        ];
     };
 
     displayManager.greeter = "sddm";
@@ -194,8 +199,9 @@
         height = 1440;
         refreshRate = 120;
         extraArgs = [
-          "--prefer-output" "DP-1"  # fullscreen on the main gaming monitor
-          "--immediate-flips"  # reduce latency / stutter
+          "--prefer-output"
+          "DP-1" # fullscreen on the main gaming monitor
+          "--immediate-flips" # reduce latency / stutter
         ];
       };
     };
@@ -446,55 +452,98 @@
   };
 
   # ── LLM / AI ─────────────────────────────────────────────────────────────
-  my.services.sillytavern = {
+  services.sillytavern = {
     enable = true;
-    ollama = {
-      enable = true;
-      models = flake.config.ollamaModels // {
-        "hf.co/Lewdiculous/DS-R1-Qwen3-8B-ArliAI-RpR-v4-Small-GGUF-IQ-Imatrix:Q4_K_M-imat" = {
-          preset = "Reasoning";
-          sysprompt = "Deep Reasoning";
-          context = "DeepSeek Chat";
-          reasoningTemplate = "Deep Think";
-        };
+
+    # Data directory — use upstream default /var/lib/SillyTavern matching ST's XDG path
+
+    # Server
+    port = 8000;
+    whitelistMode = false;
+
+    # Extensions: disable auto-update (extensions are declarative from Nix store, no .git)
+    extensions.autoUpdate = false;
+
+    # Text completion presets
+    # Settings from model card: https://huggingface.co/ArliAI/DS-R1-Qwen3-8B-ArliAI-RpR-v4-Small
+    # RpR models don't work well with repetition penalty samplers (XTC, DRY, rep_pen).
+    textCompletionPresets = {
+      Reasoning = {
+        temp = 1.0;
+        top_k = 40;
+        top_p = 1.0;
+        min_p = 0.02;
+        do_sample = true;
+        include_reasoning = true;
+        genamt = 2048;
+        rep_pen = 1.0;
+        default = true;
       };
     };
-    presets = {
-      textgen = {
-        "Reasoning" = {
-          temp = 1.0;
-          top_k = 40;
-          top_p = 1.0;
-          min_p = 0.02;
-          do_sample = true;
-          include_reasoning = true;
-        };
+
+    # Connection profiles for Ollama models
+    connectionProfiles = {
+      "DeepSeek R1 Qwen3" = {
+        default = true;
+        mode = "tc";
+        api = "ollama";
+        preset = "Reasoning";
+        model = "hf.co/Lewdiculous/DS-R1-Qwen3-8B-ArliAI-RpR-v4-Small-GGUF-IQ-Imatrix:Q4_K_M-imat";
+        apiUrl = "http://127.0.0.1:11434";
+        sysprompt = "DS-R1-Qwen3-8B-ArliAI-RpR-v4-Small";
+        syspromptState = true;
+        context = "DS-R1-Qwen3-8B-ArliAI-RpR-v4-Small";
+        tokenizer = "best_match";
+        reasoningTemplate = "DS-R1-Qwen3-8B-ArliAI-RpR-v4-Small";
+        startReplyWith = "<think>";
       };
+      InfinityRP = {
+        mode = "tc";
+        api = "ollama";
+        preset = "Default";
+        model = "hf.co/Lewdiculous/InfinityRP-v1-7B-GGUF-IQ-Imatrix:Q4_K_M-imat";
+        apiUrl = "http://127.0.0.1:11434";
+        sysprompt = "Neutral - Chat";
+        syspromptState = true;
+        context = "Default";
+        tokenizer = "best_match";
+        reasoningTemplate = "Think XML";
+      };
+    };
+
+    # Advanced formatting presets — named after the ArliAI RpR v4 model
+    # https://huggingface.co/ArliAI/DS-R1-Qwen3-8B-ArliAI-RpR-v4-Small
+    # Note: separator must match what the model actually outputs between </think> and response.
+    # The model outputs a single newline, so separator is "\n" (not "\n\n").
+    advancedFormatting = {
       reasoning = {
-        "Deep Think" = {
+        "DS-R1-Qwen3-8B-ArliAI-RpR-v4-Small" = {
           prefix = "<think>";
           suffix = "</think>";
-          separator = "\n\n";
+          separator = "\n";
+          default = true;
         };
       };
       sysprompt = {
-        "Deep Reasoning" = {
+        "DS-R1-Qwen3-8B-ArliAI-RpR-v4-Small" = {
           content = ''
-            You are a roleplaying AI with deep reasoning capabilities. Use <think> </think> tags for internal reasoning before responding. Stay in character and write creatively, responding from {{char}}'s perspective. Follow the character description and scenario closely.'';
-          post_history = "";
+            You are a roleplaying AI with deep reasoning capabilities, based on the ArliAI RpR v4 model. Use <think> </think> tags for internal reasoning before responding. Stay in character and write creatively, responding from {{char}}'s perspective. Follow the character description and scenario closely.'';
+          default = true;
         };
       };
       context = {
-        "DeepSeek Chat" = {
+        "DS-R1-Qwen3-8B-ArliAI-RpR-v4-Small" = {
           story_string = "{{#if system}}{{system}}\n{{/if}}{{#if wiBefore}}{{wiBefore}}\n{{/if}}{{#if description}}{{description}}\n{{/if}}{{#if personality}}{{char}}'s personality: {{personality}}\n{{/if}}{{#if scenario}}Scenario: {{scenario}}\n{{/if}}{{#if wiAfter}}{{wiAfter}}\n{{/if}}{{#if persona}}{{persona}}\n{{/if}}";
           example_separator = "***";
           chat_start = "***";
           use_stop_strings = true;
           names_as_stop_strings = true;
+          always_force_name2 = false;
+          default = true;
         };
       };
       instruct = {
-        "ChatML" = {
+        "DS-R1-Qwen3-8B-ArliAI-RpR-v4-Small" = {
           input_sequence = "<|im_start|>user";
           input_suffix = "<|im_end|>\n";
           output_sequence = "<|im_start|>assistant";
@@ -506,76 +555,148 @@
           macro = true;
           names_behavior = "none";
           sequences_as_stop_strings = true;
+          default = true;
         };
       };
     };
-    activePresets = {
-      sysprompt = "Deep Reasoning";
-      context = "DeepSeek Chat";
-      reasoning = "Deep Think";
-      textgen = "Reasoning";
-      instruct = "ChatML";
-    };
-    extensions.vectfox.enable = true;
-    extensions.thirdParty = {
-      "Extension-Idle" = {
-        enable = true;
-        rev = "4225ff5d5078e4fc583d3e92d3cf78f487da715c";
-        hash = "sha256-gaAUQhYnAHWMKH67gNxlwYkOsQPRKOvjtsS7QisUBOU=";
-      };
-      "Extension-WebSearch" = {
-        enable = true;
-        rev = "9c3aa6686289bdcf26e7664a4dc18a777215108b";
-        hash = "sha256-7TcR/cJUDnv5CIsSgwmSpFGG/lFeuMicXBdqCtVFH8c=";
-      };
-      "Extension-VRM" = {
-        enable = true;
-        rev = "2b4c4d015a40d255a064e83ed70c408046d58049";
-        hash = "sha256-1WxCbkdt9k4JAF2+CNozDgZfdgoHF0vEzAjAyIHXUM0=";
-      };
-      "Extension-Weather" = {
-        enable = true;
-        rev = "c169a3cacaefd032d2857417564e0330b516a1b3";
-        hash = "sha256-kLJW803iMsnZ4iLEviS22w0qEdXb40EejKbzmajfZi4=";
+
+    # User settings — power_user overrides applied on every service start
+    userSettings = {
+      enable = true;
+      user_prompt_bias = "<think>";
+      show_user_prompt_bias = true;
+      # Force runtime settings that ST doesn't pick up from template files alone
+      extraSettings = {
+        always_force_name2 = false;
+        instruct = {
+          names_behavior = "none";
+        };
+        reasoning = {
+          name = "DS-R1-Qwen3-8B-ArliAI-RpR-v4-Small";
+          prefix = "<think>";
+          suffix = "</think>";
+          separator = "\n";
+          auto_parse = true;
+        };
+        model_templates_mappings = {
+          text = {
+            context = "DS-R1-Qwen3-8B-ArliAI-RpR-v4-Small";
+            instruct = "DS-R1-Qwen3-8B-ArliAI-RpR-v4-Small";
+          };
+        };
       };
     };
 
-    extensionSettings = {
+    # TTS settings — select Resemble provider with cluster and voices
+    extraExtensionSettings = {
+      tts = {
+        currentProvider = "Resemble";
+        Resemble = {
+          cluster = "p";
+          voices = [
+            { name = "Default"; voice_id = "8bc27ed9"; }
+            { name = "female"; voice_id = "8bc27ed9"; }
+            { name = "male"; voice_id = "8bc27ed9"; }
+          ];
+        };
+      };
+    };
+
+    # Declared extensions
+    declaredExtensions = {
+      # VectFox is bundled into the package — just set its settings
+      vectfox = {
+        enable = true;
+        settings = {
+          backend = "qdrant";
+          qdrantUrl = "http://127.0.0.1:6333";
+          qdrantGrpcUrl = "http://127.0.0.1:6334";
+          embeddingProvider = "sillytavern";
+        };
+      };
+
+      # Built-in extensions
       idle = {
-        enabled = false;
-        timer = "20";
-        useContinuation = false;
-        useRegenerate = false;
-        useImpersonation = false;
-        useSwipe = false;
-        repeats = 2;
-        sendAs = "user";
-        randomTime = false;
-        timeMin = 60;
-        includePrompt = false;
+        settings = {
+          enabled = false;
+          timer = "20";
+          useContinuation = false;
+          useRegenerate = false;
+          useImpersonation = false;
+          useSwipe = false;
+          repeats = 2;
+          sendAs = "user";
+          randomTime = false;
+          timeMin = 60;
+          includePrompt = false;
+        };
       };
       websearch = {
-        source = "google";
-        cacheLifetime = 604800;
-        budget = 2000;
-        position = 0;
-        depth = 2;
-        use_backticks = true;
-        use_trigger_phrases = true;
-        use_function_tool = false;
-        searxng_url = "";
+        settings = {
+          source = "google";
+          cacheLifetime = 604800;
+          budget = 2000;
+          position = 0;
+          depth = 2;
+          use_backticks = true;
+          use_trigger_phrases = true;
+          use_function_tool = false;
+          searxng_url = "";
+        };
       };
       vrm = {
-        enabled = true;
-        follow_camera = true;
-        tts_lips_sync = false;
-        blink = true;
-        auto_send_hitbox_message = true;
-        lock_models = false;
+        settings = {
+          enabled = true;
+          follow_camera = true;
+          tts_lips_sync = false;
+          blink = true;
+          auto_send_hitbox_message = true;
+          lock_models = false;
+        };
       };
       accuweather = {
-        provider = "accuweather";
-        preferredLocation = "";
+        settings = {
+          provider = "accuweather";
+          preferredLocation = "";
+        };
+      };
+
+      # Third-party extensions from GitHub
+      "Extension-Idle" = {
+        enable = true;
+        source = pkgs.fetchFromGitHub {
+          owner = "SillyTavern";
+          repo = "SillyTavern";
+          rev = "4225ff5d5078e4fc583d3e92d3cf78f487da715c";
+          hash = "sha256-gaAUQhYnAHWMKH67gNxlwYkOsQPRKOvjtsS7QisUBOU=";
+        };
+      };
+      "Extension-WebSearch" = {
+        enable = true;
+        source = pkgs.fetchFromGitHub {
+          owner = "SillyTavern";
+          repo = "SillyTavern";
+          rev = "9c3aa6686289bdcf26e7664a4dc18a777215108b";
+          hash = "sha256-7TcR/cJUDnv5CIsSgwmSpFGG/lFeuMicXBdqCtVFH8c=";
+        };
+      };
+      "Extension-VRM" = {
+        enable = true;
+        source = pkgs.fetchFromGitHub {
+          owner = "SillyTavern";
+          repo = "SillyTavern";
+          rev = "2b4c4d015a40d255a064e83ed70c408046d58049";
+          hash = "sha256-1WxCbkdt9k4JAF2+CNozDgZfdgoHF0vEzAjAyIHXUM0=";
+        };
+      };
+      "Extension-Weather" = {
+        enable = true;
+        source = pkgs.fetchFromGitHub {
+          owner = "SillyTavern";
+          repo = "SillyTavern";
+          rev = "c169a3cacaefd032d2857417564e0330b516a1b3";
+          hash = "sha256-kLJW803iMsnZ4iLEviS22w0qEdXb40EejKbzmajfZi4=";
+        };
       };
     };
   };
@@ -606,7 +727,7 @@
     dataDir = "/mnt/data/ollama";
   };
 
-  my.services.chatterbox-tts.enable = true;
+  my.services.chatterbox-tts.enable = false;
 
   environment.systemPackages = with pkgs; [ ntfs3g ];
 

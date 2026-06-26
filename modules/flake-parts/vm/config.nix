@@ -1,6 +1,6 @@
 { config, lib, inputs, ... }:
 let
-  flakeCfg = config.my.vm;  # flake-level options (hosts filter)
+  flakeCfg = config.my.vm; # flake-level options (hosts filter)
   inherit (lib) mkIf mkForce;
 in
 {
@@ -53,23 +53,28 @@ in
         in
         if probed.success then probed.value else null;
 
-      hostResults = lib.mapAttrsToList (hostName: nixosCfg:
-        let
-          hostCfg = nixosCfg.config.my.vm;
-          graphical = buildVm hostName nixosCfg hostCfg ({ lib, ... }: { });
-          headless = buildVm hostName nixosCfg hostCfg {
-            virtualisation.graphics = false;
-          };
-        in
-        lib.optionalAttrs (graphical != null) {
-          "${hostName}-vm" = graphical;
-          "${hostName}-vm-headless" = headless;
-        }
-      ) enabledHosts;
+      hostResults = lib.mapAttrsToList
+        (hostName: nixosCfg:
+          let
+            hostCfg = nixosCfg.config.my.vm;
+            graphical = buildVm hostName nixosCfg hostCfg ({ lib, ... }: { });
+            headless = buildVm hostName nixosCfg hostCfg {
+              virtualisation.graphics = false;
+            };
+          in
+          lib.optionalAttrs (graphical != null) {
+            "${hostName}-vm" = graphical;
+            "${hostName}-vm-headless" = headless;
+          }
+        )
+        enabledHosts;
     in
     {
-      packages = builtins.foldl' (acc: pkgSet:
-        if pkgSet == { } then acc else lib.recursiveUpdate acc pkgSet
-      ) { } hostResults;
+      packages = builtins.foldl'
+        (acc: pkgSet:
+          if pkgSet == { } then acc else lib.recursiveUpdate acc pkgSet
+        )
+        { }
+        hostResults;
     };
 }

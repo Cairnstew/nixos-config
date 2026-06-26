@@ -36,17 +36,21 @@ let
   pluginDir = "plugins/similharity";
 
   # Ollama model auto-pull via docker exec
-  modelPullCmds = if ucfg.enable then
-    lib.concatStringsSep "\n" (lib.mapAttrsToList (_: profile:
-      let model = profile.model or "";
-      in lib.optionalString (model != "") ''
-        echo "sillytavern: pulling model ${model} via ollama..."
-        ${pkgs.docker}/bin/docker exec ollama ollama pull ${lib.escapeShellArg model} \
-          || echo "sillytavern: WARN: failed to pull ${model}"
-      ''
-    ) ucfg.connectionProfiles)
-  else
-    "";
+  modelPullCmds =
+    if ucfg.enable then
+      lib.concatStringsSep "\n"
+        (lib.mapAttrsToList
+          (_: profile:
+            let model = profile.model or "";
+            in lib.optionalString (model != "") ''
+              echo "sillytavern: pulling model ${model} via ollama..."
+              ${pkgs.docker}/bin/docker exec ollama ollama pull ${lib.escapeShellArg model} \
+                || echo "sillytavern: WARN: failed to pull ${model}"
+            ''
+          )
+          ucfg.connectionProfiles)
+    else
+      "";
 
   ollamaPullScript = pkgs.writeShellScript "sillytavern-ollama-pull" ''
     ${modelPullCmds}
@@ -71,7 +75,7 @@ in
   config = lib.mkIf ucfg.enable {
     # Package override: bundle VectFox, Similharity, and autoconnect patch
     services.sillytavern.package = lib.mkDefault (pkgs.sillytavern.overrideAttrs (old: {
-      patches = (old.patches or []) ++ [ ./connection-manager-autoconnect.patch ];
+      patches = (old.patches or [ ]) ++ [ ./connection-manager-autoconnect.patch ];
       postInstall = (old.postInstall or "") + ''
         echo "sillytavern: bundling VectFox extension..."
         EXT="$out/lib/node_modules/sillytavern/${extDir}"
@@ -111,45 +115,7 @@ in
         if grep -q "resemble" "$SPEECH"; then
           echo "sillytavern: Resemble endpoint already exists, skipping patch"
         else
-          cat >> "$SPEECH" << 'ENDPOINT'
-
-const resemble = express.Router();
-
-resemble.post('/generate-voice', async (req, res) => {
-    try {
-        const { cluster, voice_uuid, data, precision, apiToken } = req.body;
-        if (!cluster || !voice_uuid || !data) {
-            console.warn('Resemble TTS request missing required parameters');
-            return res.sendStatus(400);
-        }
-        const endpoint = `https://${cluster}.cluster.resemble.ai/stream`;
-        const response = await fetch(endpoint, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                ...(apiToken ? { 'Authorization': `Bearer ${apiToken}` } : {}),
-            },
-            body: JSON.stringify({
-                voice_uuid,
-                data,
-                precision: precision || 'PCM_16',
-            }),
-        });
-        if (!response.ok) {
-            const text = await response.text();
-            console.warn(`Resemble TTS failed: HTTP ${response.status} - ${text}`);
-            return res.sendStatus(500);
-        }
-        res.set('Content-Type', 'audio/wav');
-        await forwardFetchResponse(response, res);
-    } catch (error) {
-        console.error('Resemble TTS error', error);
-        return res.sendStatus(500);
-    }
-});
-
-router.use('/resemble', resemble);
-ENDPOINT
+          cat ${./resemble-server-endpoint.js} >> "$SPEECH"
           echo "sillytavern: patched speech.js for Resemble server endpoint"
         fi
       '';

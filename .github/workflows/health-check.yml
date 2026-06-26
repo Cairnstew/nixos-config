@@ -22,6 +22,10 @@ jobs:
             type: nixos
           - name: wsl
             type: nixos
+          - name: desktop
+            type: nixos
+          - name: minimal
+            type: nixos
 
     steps:
       - name: Checkout

@@ -91,7 +91,7 @@ let
 
   probeScript = pkgs.writeShellScript "chatterbox-tts-probe" ''
     echo "[chatterbox-tts probe] waiting for API on ${cfg.host}:${toString cfg.port}..."
-    for i in $(${pkgs.coreutils}/bin/seq 1 30); do
+    for i in $(${pkgs.coreutils}/bin/seq 1 600); do
       if ${pkgs.curl}/bin/curl -sf http://${cfg.host}:${toString cfg.port}/api/ui/initial-data > /dev/null 2>&1; then
         echo "[chatterbox-tts probe] API reachable (attempt $i)"
         exit 0
@@ -121,7 +121,8 @@ in
         Type = "simple";
         User = cfg.user;
         Group = cfg.group;
-        TimeoutStartSec = "10min";
+        TimeoutStartSec = "30min";
+        TimeoutStopSec = "30min";
         WorkingDirectory = stateDir;
 
         StateDirectory = baseNameOf stateDir;
@@ -130,6 +131,7 @@ in
         ExecStartPre = "+${seedScript}";
         ExecStart = "${lib.getExe cfg.package} --host ${cfg.host} --port ${toString cfg.port}";
         ExecStartPost = "+${probeScript}";
+        TimeoutStartFailureMode = "abort";
 
         Restart = "on-failure";
         RestartSec = "5s";

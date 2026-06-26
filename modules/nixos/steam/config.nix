@@ -26,56 +26,60 @@ in
         };
 
       xdg.desktopEntries = lib.mkIf (cfg.games != { })
-        (builtins.listToAttrs (lib.mapAttrsToList (name: game: {
-          name = "steam_icon_${game.appId}";
-          value = {
-            name = if game.name != "" then game.name else name;
-            noDisplay = true;
-          };
-        }) cfg.games));
+        (builtins.listToAttrs (lib.mapAttrsToList
+          (name: game: {
+            name = "steam_icon_${game.appId}";
+            value = {
+              name = if game.name != "" then game.name else name;
+              noDisplay = true;
+            };
+          })
+          cfg.games));
 
       home.packages =
         lib.mkMerge [
           (lib.mkIf (cfg.games != { })
-            (lib.mapAttrsToList (name: game:
-              let
-                displayName = if game.name != "" then game.name else name;
-                envExports = lib.mapAttrsToList (k: v: "export ${lib.escapeShellArg k}=${lib.escapeShellArg v}") game.env;
+            (lib.mapAttrsToList
+              (name: game:
+                let
+                  displayName = if game.name != "" then game.name else name;
+                  envExports = lib.mapAttrsToList (k: v: "export ${lib.escapeShellArg k}=${lib.escapeShellArg v}") game.env;
 
-                gamescopeArgs = lib.optionals game.gamescope.enable (
-                  (lib.optional (game.gamescope.width > 0) "-W ${toString game.gamescope.width}")
-                  ++ (lib.optional (game.gamescope.height > 0) "-H ${toString game.gamescope.height}")
-                  ++ (lib.optional (game.gamescope.refreshRate != null) "-r ${toString game.gamescope.refreshRate}")
-                  ++ (lib.optional game.gamescope.fullscreen "-f")
-                  ++ (lib.optional game.gamescope.adaptiveSync "-a")
-                  ++ game.gamescope.extraArgs
-                );
+                  gamescopeArgs = lib.optionals game.gamescope.enable (
+                    (lib.optional (game.gamescope.width > 0) "-W ${toString game.gamescope.width}")
+                    ++ (lib.optional (game.gamescope.height > 0) "-H ${toString game.gamescope.height}")
+                    ++ (lib.optional (game.gamescope.refreshRate != null) "-r ${toString game.gamescope.refreshRate}")
+                    ++ (lib.optional game.gamescope.fullscreen "-f")
+                    ++ (lib.optional game.gamescope.adaptiveSync "-a")
+                    ++ game.gamescope.extraArgs
+                  );
 
-                bin = pkgs.writeShellScriptBin "steam-game-${name}" (
-                  if game.gamescope.enable then
-                    ''
-                      ${lib.concatStringsSep "\n" envExports}
-                      exec ${pkgs.gamescope}/bin/gamescope ${lib.concatStringsSep " " gamescopeArgs} -- ${lib.getBin pkgs.steam}/bin/steam steam://rungameid/${game.appId}
-                    ''
-                  else
-                    ''
-                      ${lib.concatStringsSep "\n" envExports}
-                      exec ${lib.getBin pkgs.steam}/bin/steam steam://rungameid/${game.appId}
-                    ''
-                );
-              in
-              pkgs.runCommandLocal "steam-game-${name}" {} ''
-                mkdir -p $out/bin $out/share/applications
-                cp ${bin}/bin/steam-game-${name} $out/bin/steam-game-${name}
-                echo "[Desktop Entry]" > $out/share/applications/steam-game-${name}.desktop
-                echo "Type=Application" >> $out/share/applications/steam-game-${name}.desktop
-                echo "Name=${displayName}" >> $out/share/applications/steam-game-${name}.desktop
-                echo "Exec=steam-game-${name}" >> $out/share/applications/steam-game-${name}.desktop
-                echo "Icon=steam" >> $out/share/applications/steam-game-${name}.desktop
-                echo "Categories=Game;" >> $out/share/applications/steam-game-${name}.desktop
-                echo "Comment=Launch ${displayName} via Steam" >> $out/share/applications/steam-game-${name}.desktop
-              ''
-            ) cfg.games))
+                  bin = pkgs.writeShellScriptBin "steam-game-${name}" (
+                    if game.gamescope.enable then
+                      ''
+                        ${lib.concatStringsSep "\n" envExports}
+                        exec ${pkgs.gamescope}/bin/gamescope ${lib.concatStringsSep " " gamescopeArgs} -- ${lib.getBin pkgs.steam}/bin/steam steam://rungameid/${game.appId}
+                      ''
+                    else
+                      ''
+                        ${lib.concatStringsSep "\n" envExports}
+                        exec ${lib.getBin pkgs.steam}/bin/steam steam://rungameid/${game.appId}
+                      ''
+                  );
+                in
+                pkgs.runCommandLocal "steam-game-${name}" { } ''
+                  mkdir -p $out/bin $out/share/applications
+                  cp ${bin}/bin/steam-game-${name} $out/bin/steam-game-${name}
+                  echo "[Desktop Entry]" > $out/share/applications/steam-game-${name}.desktop
+                  echo "Type=Application" >> $out/share/applications/steam-game-${name}.desktop
+                  echo "Name=${displayName}" >> $out/share/applications/steam-game-${name}.desktop
+                  echo "Exec=steam-game-${name}" >> $out/share/applications/steam-game-${name}.desktop
+                  echo "Icon=steam" >> $out/share/applications/steam-game-${name}.desktop
+                  echo "Categories=Game;" >> $out/share/applications/steam-game-${name}.desktop
+                  echo "Comment=Launch ${displayName} via Steam" >> $out/share/applications/steam-game-${name}.desktop
+                ''
+              )
+              cfg.games))
           (lib.mkIf cfg.shaderPreCaching.enable (
             let
               scriptPy = pkgs.writers.writePython3 "ensure-steam-shader-cache"
@@ -152,10 +156,12 @@ in
                               )
                 '';
             in
-            [ (pkgs.runCommandLocal "ensure-steam-shader-cache" { } ''
-              mkdir -p $out/bin
-              cp ${scriptPy} $out/bin/ensure-steam-shader-cache
-            '') ]
+            [
+              (pkgs.runCommandLocal "ensure-steam-shader-cache" { } ''
+                mkdir -p $out/bin
+                cp ${scriptPy} $out/bin/ensure-steam-shader-cache
+              '')
+            ]
           ))
         ];
     };

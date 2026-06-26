@@ -22,13 +22,15 @@ in
   config = lib.mkIf cfg.enable {
     systemd.tmpfiles.settings."10-suwayomi-server" =
       let
-        extraDirs = builtins.listToAttrs (map (p: {
-          name = p;
-          value.d = {
-            mode = "0700";
-            inherit (cfg) user group;
-          };
-        }) cfg.extraReadWritePaths);
+        extraDirs = builtins.listToAttrs (map
+          (p: {
+            name = p;
+            value.d = {
+              mode = "0700";
+              inherit (cfg) user group;
+            };
+          })
+          cfg.extraReadWritePaths);
       in
       {
         "${cfg.dataDir}/.local/share/Tachidesk".d = {

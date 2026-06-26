@@ -5,12 +5,14 @@ let
 
   allHostNames = builtins.attrNames (config.flake.nixosConfigurations or { });
 
-  enabledHosts = builtins.filter (name:
-    if builtins.hasAttr name hostOptions then
-      hostOptions.${name}.enable or true
-    else
-      true
-  ) allHostNames;
+  enabledHosts = builtins.filter
+    (name:
+      if builtins.hasAttr name hostOptions then
+        hostOptions.${name}.enable or true
+      else
+        true
+    )
+    allHostNames;
 
   root = toString ./../../..;
   hostHasDiskConfig = hostName:
@@ -26,25 +28,28 @@ let
   isDualBootUseExisting = hostName:
     let cfg = getNixOSCfg hostName;
     in cfg ? my.disko.dualBoot
-    && cfg.my.disko.dualBoot.enable or false
-    && cfg.my.disko.dualBoot.mode or "" == "useExisting";
+      && cfg.my.disko.dualBoot.enable or false
+      && cfg.my.disko.dualBoot.mode or "" == "useExisting";
 
   getHostCfg = hostName:
     if builtins.hasAttr hostName hostOptions then hostOptions.${hostName} else { };
 
-  generateHostKeyGuard = builtins.concatLists (map (hostName:
-    let
-      opts = getHostCfg hostName;
-      hasDisk = hostHasDiskConfig hostName;
-    in
-    if opts ? generateHostKey && opts.generateHostKey && !hasDisk then
-      let
-        msg = "${hostName}: generateHostKey is enabled but no disk-config.nix sidecar exists. Host key generation is pointless — this host does not use disko provisioning. Set my.nixosAnywhereDeploy.hosts.${hostName}.generateHostKey = false.";
-      in
-      [ (builtins.warn msg null) ]
-    else
-      [ ]
-  ) allHostNames) == [ ];
+  generateHostKeyGuard = builtins.concatLists
+    (map
+      (hostName:
+        let
+          opts = getHostCfg hostName;
+          hasDisk = hostHasDiskConfig hostName;
+        in
+        if opts ? generateHostKey && opts.generateHostKey && !hasDisk then
+          let
+            msg = "${hostName}: generateHostKey is enabled but no disk-config.nix sidecar exists. Host key generation is pointless — this host does not use disko provisioning. Set my.nixosAnywhereDeploy.hosts.${hostName}.generateHostKey = false.";
+          in
+          [ (builtins.warn msg null) ]
+        else
+          [ ]
+      )
+      allHostNames) == [ ];
 
   mkDeployPkg = hostName: pkgs:
     let
@@ -52,24 +57,26 @@ let
       # autoMode: "disko" when host has a disk-level disko config, null otherwise.
       # For nodev-only configs, don't emit any --disko-mode since disko's build
       # scripts require at least one disko.devices.disk entry.
-      autoMode = if hostHasDiskConfig hostName then
-        let
-          nixosCfg = getNixOSCfg hostName;
-          hasDualBoot = nixosCfg ? my.disko.dualBoot
-            && nixosCfg.my.disko.dualBoot.enable or false;
-          hasDiskDevices = if (nixosCfg ? disko.devices) then
-            let disks = nixosCfg.disko.devices.disk or { }; in
-            # Check for disks with real devices (not the /dev/null dummy placeholder
-            # used in nodev-only configs to satisfy disko's "no disks" guard).
-            disks != { }
-            && builtins.any (name: (builtins.getAttr name disks).device or "" != "/dev/null")
-              (builtins.attrNames disks)
-          else false;
-        in
-        if hasDualBoot then "disko"
-        else if hasDiskDevices then "disko"
-        else null
-      else null;
+      autoMode =
+        if hostHasDiskConfig hostName then
+          let
+            nixosCfg = getNixOSCfg hostName;
+            hasDualBoot = nixosCfg ? my.disko.dualBoot
+              && nixosCfg.my.disko.dualBoot.enable or false;
+            hasDiskDevices =
+              if (nixosCfg ? disko.devices) then
+                let disks = nixosCfg.disko.devices.disk or { }; in
+                # Check for disks with real devices (not the /dev/null dummy placeholder
+                  # used in nodev-only configs to satisfy disko's "no disks" guard).
+                disks != { }
+                && builtins.any (name: (builtins.getAttr name disks).device or "" != "/dev/null")
+                  (builtins.attrNames disks)
+              else false;
+          in
+          if hasDualBoot then "disko"
+          else if hasDiskDevices then "disko"
+          else null
+        else null;
       diskoMode = if opts ? diskoMode && opts.diskoMode != null then opts.diskoMode else autoMode;
       nixosAnywhereBin = "${inputs.nixos-anywhere.packages.${pkgs.system}.default}/bin/nixos-anywhere";
       identityStr = if opts ? agentIdentity && opts.agentIdentity != null then opts.agentIdentity else "";
@@ -79,10 +86,11 @@ let
       autoHostKey = let nixosCfg = getNixOSCfg hostName; in
         hostHasDiskConfig hostName
         || (nixosCfg ? my.disko.dualBoot
-          && nixosCfg.my.disko.dualBoot.enable or false);
-      genHostKeyFlag = if opts ? generateHostKey then
-        if opts.generateHostKey then "1" else "0"
-      else if autoHostKey then "1" else "0";
+        && nixosCfg.my.disko.dualBoot.enable or false);
+      genHostKeyFlag =
+        if opts ? generateHostKey then
+          if opts.generateHostKey then "1" else "0"
+        else if autoHostKey then "1" else "0";
       extraArgsStr = lib.concatStringsSep " " (if opts ? extraArgs then opts.extraArgs else [ ]);
     in
     pkgs.writeShellApplication {
@@ -135,18 +143,25 @@ in
     let
       isLinux = builtins.elem pkgs.system [ "x86_64-linux" "aarch64-linux" ];
 
-      deployPkgs = if isLinux then
-        builtins.listToAttrs (map (hostName:
-          lib.nameValuePair "deploy-${hostName}" (mkDeployPkg hostName pkgs)
-        ) enabledHosts)
-      else { };
+      deployPkgs =
+        if isLinux then
+          builtins.listToAttrs
+            (map
+              (hostName:
+                lib.nameValuePair "deploy-${hostName}" (mkDeployPkg hostName pkgs)
+              )
+              enabledHosts)
+        else { };
 
-      testPkgs = if isLinux then
-        lib.filterAttrs (_: v: v != null)
-          (builtins.listToAttrs (map (hostName:
-            lib.nameValuePair "build-${hostName}" (mkDeployTest hostName pkgs)
-          ) enabledHosts))
-      else { };
+      testPkgs =
+        if isLinux then
+          lib.filterAttrs (_: v: v != null)
+            (builtins.listToAttrs (map
+              (hostName:
+                lib.nameValuePair "build-${hostName}" (mkDeployTest hostName pkgs)
+              )
+              enabledHosts))
+        else { };
     in
     {
       packages = deployPkgs;

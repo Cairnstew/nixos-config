@@ -48,7 +48,7 @@ let
     inherit src;
 
     outputHashMode = "recursive";
-    outputHash = "sha256-rmos5vO8EGSQ50H8EQHY+SW9o2cmJk98XhfV+W0guU0=";
+    outputHash = "sha256-9Vn6PPs60zqdXC6rd9A2WEh9VBgnmi35rEmm25uulg0=";
 
     buildInputs = [ python libsndfile ffmpeg-headless zlib glibc ];
 
@@ -61,49 +61,74 @@ let
     CHATTERBOX_SRC = chatterboxSrc;
 
     buildPhase = ''
-      runHook preBuild
+            runHook preBuild
 
-      ${python}/bin/python -m venv /tmp/pip-venv
-      PIP=/tmp/pip-venv/bin/pip
+            ${python}/bin/python -m venv /tmp/pip-venv
+            PIP=/tmp/pip-venv/bin/pip
 
-      mkdir -p "$out/share/chatterbox-tts"
-      cp -r "$SERVER_SRC"/* "$out/share/chatterbox-tts/"
-      chmod -R u+w "$out/share/chatterbox-tts/"
+            mkdir -p "$out/share/chatterbox-tts"
+            cp -r "$SERVER_SRC"/* "$out/share/chatterbox-tts/"
+            chmod -R u+w "$out/share/chatterbox-tts/"
 
-      cp -r "$CHATTERBOX_SRC" /build/chatterbox
-      chmod -R u+w /build/chatterbox
+            cp -r "$CHATTERBOX_SRC" /build/chatterbox
+            chmod -R u+w /build/chatterbox
 
-      $PIP install --no-cache-dir --no-build-isolation \
-        --target "$out/${sitePkgs}" \
-        --index-url https://download.pytorch.org/whl/cpu \
-        torch==2.6.0+cpu torchaudio==2.6.0+cpu torchvision==0.21.0+cpu
+            $PIP install --no-cache-dir --no-build-isolation \
+              --target "$out/${sitePkgs}" \
+              --index-url https://download.pytorch.org/whl/cpu \
+              torch==2.6.0+cpu torchaudio==2.6.0+cpu torchvision==0.21.0+cpu
 
-      cat > /tmp/requirements-all.txt << 'LOCKEOF'
-${requirementsLock}
-LOCKEOF
-      grep -v '^torch\b\|^torchaudio\b\|^torchvision\b' /tmp/requirements-all.txt > /tmp/requirements-no-torch.txt
-      $PIP install --no-cache-dir --no-build-isolation \
-        --target "$out/${sitePkgs}" \
-        -r /tmp/requirements-no-torch.txt
+            cat > /tmp/requirements-all.txt << 'LOCKEOF'
+      ${requirementsLock}
+      LOCKEOF
+            grep -v '^torch\b\|^torchaudio\b\|^torchvision\b' /tmp/requirements-all.txt > /tmp/requirements-no-torch.txt
+            $PIP install --no-cache-dir --no-build-isolation \
+              --target "$out/${sitePkgs}" \
+              -r /tmp/requirements-no-torch.txt
 
-      $PIP install --no-cache-dir --no-build-isolation \
-        --no-deps \
-        --target "$out/${sitePkgs}" \
-        /build/chatterbox
+            # s3tokenizer was a dep of the old chatterbox-v2 package but is in the source tree
+            # of the new resemble-ai/chatterbox package — install explicitly since we use --no-deps
+            $PIP install --no-cache-dir --no-build-isolation \
+              --target "$out/${sitePkgs}" \
+              s3tokenizer
 
-      find "$out" -name '__pycache__' -type d -exec rm -rf {} + 2>/dev/null || true
-      find "$out" -name '*.pyc' -delete 2>/dev/null || true
-      find "$out" -path '*/RECORD' -delete 2>/dev/null || true
-      find "$out" -path '*/INSTALLER' -delete 2>/dev/null || true
-      find "$out" -path '*/direct_url.json' -delete 2>/dev/null || true
-      find "$out" -path '*/direct_url.url' -delete 2>/dev/null || true
-      find "$out" -name 'REQUESTED' -delete 2>/dev/null || true
+            $PIP install --no-cache-dir --no-build-isolation \
+              --no-deps \
+              --target "$out/${sitePkgs}" \
+              /build/chatterbox
 
-      rm -rf "$out/bin" 2>/dev/null || true
-      find "$out" -type f -exec chmod 644 {} +
-      find "$out" -type d -exec chmod 755 {} +
+            # torch 2.6.0 is stricter about mixed precision; all models saved with float64
+            sed -i 's/self\._mel_filters\.to(self\.device) @ magnitudes/self._mel_filters.to(device=self.device, dtype=magnitudes.dtype) @ magnitudes/' \
+              "$out/${sitePkgs}/chatterbox/models/s3tokenizer/s3tokenizer.py"
+            # Cast mels to model's expected dtype before passing to quantize
+            sed -i 's/speech_tokens, speech_token_lens = tokenizer\.quantize(mels, mel_lens\.to(self\.device))/speech_tokens, speech_token_lens = tokenizer.quantize(mels.to(dtype=next(tokenizer.parameters()).dtype), mel_lens.to(self.device))/' \
+              "$out/${sitePkgs}/chatterbox/models/s3tokenizer/s3tokenizer.py"
+            sed -i '/^def mask_to_bias/a\    if dtype == torch.float64: dtype = torch.float32' \
+              "$out/${sitePkgs}/s3tokenizer/utils.py"
+            # After loading all sub-models, cast everything to float32 (checkpoints saved in float64)
+            sed -i '/^        return cls(t3, s3gen, ve, tokenizer, device, conds=conds)$/i\        t3 = t3.float()\n        ve = ve.float()\n        s3gen = s3gen.float()' \
+              "$out/${sitePkgs}/chatterbox/tts_turbo.py"
+            # librosa returns float64 numpy arrays; cast to float32 before torch conversion
+            sed -i 's/^import torch$/import numpy as np\nimport torch/' \
+              "$out/${sitePkgs}/chatterbox/tts_turbo.py"
+            sed -i 's/ref_16k_wav = librosa\.resample(s3gen_ref_wav, orig_sr=S3GEN_SR, target_sr=S3_SR)/ref_16k_wav = librosa.resample(s3gen_ref_wav, orig_sr=S3GEN_SR, target_sr=S3_SR).astype(np.float32)/' \
+              "$out/${sitePkgs}/chatterbox/tts_turbo.py"
+            sed -i 's/^        s3gen_ref_wav = s3gen_ref_wav\[:self\.DEC_COND_LEN\]$/        s3gen_ref_wav = s3gen_ref_wav[:self.DEC_COND_LEN].astype(np.float32)/' \
+              "$out/${sitePkgs}/chatterbox/tts_turbo.py"
 
-      runHook postBuild
+            find "$out" -name '__pycache__' -type d -exec rm -rf {} + 2>/dev/null || true
+            find "$out" -name '*.pyc' -delete 2>/dev/null || true
+            find "$out" -path '*/RECORD' -delete 2>/dev/null || true
+            find "$out" -path '*/INSTALLER' -delete 2>/dev/null || true
+            find "$out" -path '*/direct_url.json' -delete 2>/dev/null || true
+            find "$out" -path '*/direct_url.url' -delete 2>/dev/null || true
+            find "$out" -name 'REQUESTED' -delete 2>/dev/null || true
+
+            rm -rf "$out/bin" 2>/dev/null || true
+            find "$out" -type f -exec chmod 644 {} +
+            find "$out" -type d -exec chmod 755 {} +
+
+            runHook postBuild
     '';
 
     installPhase = ''
