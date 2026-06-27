@@ -11,3 +11,4 @@ modules/flake-parts/ventoy/ts.key
 .deploy-keys/
 *.db
 *.sqlite
+/CMakeFiles/

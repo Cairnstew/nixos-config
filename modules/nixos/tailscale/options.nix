@@ -349,6 +349,12 @@ in
       description = "Advertise this machine as a Tailscale exit node.";
     };
 
+    acceptRoutes = mkOption {
+      type = types.bool;
+      default = false;
+      description = "Accept subnet routes advertised by other Tailscale nodes.";
+    };
+
     tags = mkOption {
       type = types.listOf types.str;
       default = [ ];

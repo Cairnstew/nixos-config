@@ -16,6 +16,7 @@ in
           [ "--accept-dns=true" ]
           ++ lib.optional (cfg.tags != [ ]) "--advertise-tags=${lib.concatStringsSep "," cfg.tags}"
           ++ lib.optional cfg.exitNode "--advertise-exit-node"
+          ++ lib.optional cfg.acceptRoutes "--accept-routes"
           ++ lib.optional cfg.ssh.enable "--ssh";
       };
 

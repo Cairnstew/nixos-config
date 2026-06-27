@@ -2,6 +2,11 @@
 
 ---
 
+**O3DE CDN fully dead — CMake overlay + nixpkgs-stable Python 3.10 workaround**
+Symptom: Building `packages.x86_64-linux.o3de` tries to download 34 SDK packages from `https://d3t6xeg4fgfoum.cloudfront.net/`. Outside sandbox returns `403 AccessDenied` (CloudFront). The S3 bucket policy behind it blocks all access. CDN is fully dead. Fix: `packages/o3de/NixpkgsPackages.cmake` pre-defines `3rdParty::*` targets from nixpkgs before O3DE's package system runs, skipping the CDN. Qt targets now point at nixpkgs Qt6 (real targets instead of stubs — all 10 private headers O3DE uses are standard). Python uses `pkgs-stable.python310` from the `nixpkgs-stable` flake input (nixos-25.11). Numpy pin in requirements.txt is patched from `==1.23.0` to `>=1.24.0`. The package evaluates and passes `nix flake check`, but a full build has not been tested yet — the CMake configure was previously blocked on Python pip requirements (numpy build failure on Python 3.13); switching to Python 3.10 is expected to resolve this.
+
+---
+
 **Overwatch 2 "Processing Vulkan Shaders" stuck on startup**
 Symptom: Overwatch 2 hangs at "Processing Vulkan Shaders" for a very long time (minutes to forever) every time it starts. Cause: The `ensure-steam-shader-cache` script in `modules/nixos/steam/config.nix` was unconditionally deleting `steamapps/shadercache/2357570` and `steamapps/compatdata/2357570` on every run, forcing Steam to re-compile all Vulkan shaders from scratch. Combined with Steam's default of using only a single CPU core for shader background processing (`ShaderBackgroundProcessingThreads` defaults to 1), compilation takes extremely long or appears stuck. Fix: Removed the destructive cache clearing from the script. Added `my.programs.steam.shaderPreCaching.backgroundThreads` option (default: `null` = auto-detect via `os.cpu_count()`). The script now writes `~/.steam/steam/steam_dev.cfg` with `unShaderBackgroundProcessingThreads <N>` and `@ShaderBackgroundProcessingThreads <N>` to use all available CPU threads. Run `ensure-steam-shader-cache` once after rebuilding, or set `backgroundThreads` explicitly (e.g. `8` for 4-core/8-thread CPU) in your host config.
 

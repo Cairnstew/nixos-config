@@ -40,6 +40,14 @@ self: super: {
   # Endcord — TUI Discord client (prebuilt Python bundle)
   endcord = self.callPackage "${packages}/endcord" { };
 
+  # O3DE — Open 3D Engine game editor (requires Python 3.10 from nixpkgs-stable)
+  o3de = self.callPackage "${packages}/o3de" {
+    pkgs-stable = import inputs.nixpkgs-stable {
+      inherit (self) system;
+      config.allowUnfree = true;
+    };
+  };
+
   # wimboot 2.8.0 fails with GCC -Werror=unterminated-string-initialization
   # Suppress the specific warning until upstream fixes it
   wimboot = super.wimboot.overrideAttrs (old: {

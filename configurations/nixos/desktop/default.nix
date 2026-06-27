@@ -715,9 +715,12 @@
   };
 
   # Only the desktop manages tailscale ACL policy (auth keys, port grants)
-  my.services.tailscale.manager = {
-    enable = true;
-    policy.interNodePorts = [ "tcp:22" "tcp:4567" ];
+  my.services.tailscale = {
+    acceptRoutes = true;
+    manager = {
+      enable = true;
+      policy.interNodePorts = [ "tcp:22" "tcp:4567" ];
+    };
   };
 
   my.services.ollama = {
