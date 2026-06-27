@@ -46,9 +46,11 @@ in
     # ── Networking ─────────────────────────────────────────────────────────
     ./ssh
     ./tailscale
+    ./tailscale-watchdog
     inputs.tailscale-manager.nixosModules.default
     ./natShare
     ./nebula
+    ./zerotier
 
     # ── Development ────────────────────────────────────────────────────────
     ./vscode-server.nix
@@ -75,6 +77,8 @@ in
     ./suwayomi
     ./chatterbox-tts
     ./moku.nix
+    ./boot-alerting
+    ./boot-health
 
     # ── Location, Secrets & Deploy ────────────────────────────────────────
     ./current-location.nix

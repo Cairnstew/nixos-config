@@ -1,15 +1,23 @@
 { config, lib, pkgs, ... }:
 let
   cfg = config.my.services.ssh;
+  inherit (lib) mkIf concatStringsSep;
 in
 {
-  config = lib.mkIf cfg.enable {
+  config = mkIf cfg.enable {
     services.openssh = {
       enable = true;
       settings = {
         PermitRootLogin = "prohibit-password";
         PasswordAuthentication = false;
       };
+      extraConfig = mkIf (cfg.lanSubnets != [ ]) ''
+        # Last-resort password auth from LAN subnets — for headless access
+        # when mesh VPNs (Tailscale, ZeroTier) are unreachable.
+        Match Address ${concatStringsSep "," cfg.lanSubnets}
+          PasswordAuthentication yes
+          KbdInteractiveAuthentication yes
+      '';
     };
 
     users.users.root.openssh.authorizedKeys.keys = cfg.authorizedKeys;
