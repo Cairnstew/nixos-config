@@ -59,6 +59,7 @@ in
     ./udisks2.nix
     ./ventoy
     ./gitreposync
+    ./email-alerts
     ./caches
     ./default-build.nix
 

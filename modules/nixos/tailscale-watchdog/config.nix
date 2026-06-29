@@ -4,12 +4,12 @@ let
 
   watchdogPkg = pkgs.writeShellApplication {
     name = "tailscale-watchdog";
-    runtimeInputs = [ pkgs.tailscale pkgs.msmtp pkgs.jq pkgs.iproute2 pkgs.coreutils pkgs.systemd ];
+    runtimeInputs = [ pkgs.tailscale pkgs.jq pkgs.iproute2 pkgs.coreutils pkgs.systemd ];
     text = ''
       FALLBACK_FILE="${cfg.stateDir}/zerotier-fallback-active"
       LAST_ALERT_FILE="${cfg.stateDir}/last-alert-epoch"
       LAST_STATE_FILE="${cfg.stateDir}/last-known-state"
-      SECRET="/run/agenix/mcp-better-email-password"
+      SEND_ALERT="send-alert"
 
       # ── Zerotier fallback management ──────────────────────────────────────
       manage_zerotier() {
@@ -42,25 +42,11 @@ let
       if [[ "$TS_STATE" == "Running" ]]; then
         manage_zerotier stop
         if [[ "$LAST_STATE" != "Running" && "$LAST_STATE" != "unknown" ]]; then
-          # Check secret exists before sending recovery email
-          if [[ ! -f "$SECRET" ]]; then
-            echo "tailscale-watchdog: SMTP secret not found at $SECRET, skipping recovery email" >&2
-            exit 0
-          fi
           BODY="Tailscale RECOVERED on $(hostname) at $(date -u).
-      Previous state: $LAST_STATE
-      Current state: Running"
-          APP_PASSWORD=$(cat "$SECRET")
-          echo "$BODY" | msmtp \
-            --host=smtp.gmail.com \
-            --port=587 \
-            --auth=on \
-            --tls=on \
-            --tls-starttls=on \
-            --from="${cfg.emailTo}" \
-            --user="${cfg.emailTo}" \
-            --password="$APP_PASSWORD" \
-            "${cfg.emailTo}"
+Previous state: $LAST_STATE
+Current state: Running"
+          $SEND_ALERT -s "Tailscale Recovered on $(hostname)" -b "$BODY" \
+            ${lib.optionalString (cfg.emailTo != null) "-t ${cfg.emailTo}"} || true
         fi
         exit 0
       fi
@@ -74,12 +60,6 @@ let
       ELAPSED=$(( NOW - LAST_ALERT ))
 
       if (( ELAPSED < ${toString cfg.alertCooldown} )); then
-        exit 0
-      fi
-
-      # Check secret exists before sending alert
-      if [[ ! -f "$SECRET" ]]; then
-        echo "tailscale-watchdog: SMTP secret not found at $SECRET, skipping alert" >&2
         exit 0
       fi
 
@@ -97,17 +77,8 @@ Time: $(date -u)
 LAN IPs for direct SSH:
 $SSH_LINES"
 
-      APP_PASSWORD=$(cat "$SECRET")
-      echo "$BODY" | msmtp \
-        --host=smtp.gmail.com \
-        --port=587 \
-        --auth=on \
-        --tls=on \
-        --tls-starttls=on \
-        --from="${cfg.emailTo}" \
-        --user="${cfg.emailTo}" \
-        --password="$APP_PASSWORD" \
-        "${cfg.emailTo}"
+      $SEND_ALERT -s "Tailscale Down on $(hostname)" -b "$BODY" \
+        ${lib.optionalString (cfg.emailTo != null) "-t ${cfg.emailTo}"} || true
 
       echo "$NOW" > "$LAST_ALERT_FILE"
     '';

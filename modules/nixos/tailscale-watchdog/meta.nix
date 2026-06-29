@@ -4,7 +4,7 @@
   category = "networking";
   tags = [ "networking" "tailscale" "watchdog" "monitoring" "alerting" ];
   provides = [ "my.services.tailscaleWatchdog" ];
-  expects = [ "my.secrets" "my.homeManager" ];
+  expects = [ "my.secrets" "my.homeManager" "my.services.emailAlerts" ];
   complexity = "simple";
   tested = false;
   maintainer = "seanc";

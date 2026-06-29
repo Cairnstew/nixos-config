@@ -72,6 +72,9 @@
     openFirewall = true;
   };
 
+  # Email alerts: provides send-alert command for system notifications
+  my.services.emailAlerts.enable = true;
+
   # Tailscale watchdog: monitors connectivity, starts zerotier on failure, alerts via email
   my.services.tailscaleWatchdog.enable = true;
 

@@ -320,6 +320,9 @@
     '';
   };
 
+  # ── Email alerts ─────────────────────────────────────────────────────────
+  my.services.emailAlerts.enable = true;
+
   # ── SSH Access
   my.services.ssh.authorizedKeys = [ flake.config.me.sshKey ];
 

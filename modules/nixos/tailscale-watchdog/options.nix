@@ -31,9 +31,12 @@ in
     };
 
     emailTo = mkOption {
-      type = types.str;
-      default = flake.config.me.email or "root@localhost";
-      description = "Email address to receive connectivity alerts.";
+      type = types.nullOr types.str;
+      default = null;
+      description = ''
+        Override recipient for watchdog alerts. If null, uses the default
+        from my.services.emailAlerts.to.
+      '';
     };
   };
 }
