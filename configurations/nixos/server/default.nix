@@ -56,7 +56,7 @@
 
   my.services.tailscale = {
     enable = true;
-    tags = [ "tag:nixos" "tag:server" ];
+    tags = [ "tag:nixos" "tag:temp" ];
     acceptRoutes = true;
     ssh = {
       enable = true;
