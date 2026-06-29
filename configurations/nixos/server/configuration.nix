@@ -109,6 +109,6 @@
     options = [ "nofail" ];
   };
 
-  nix.settings.build-dir = "/mnt/data/nix-build";
+  #nix.settings.build-dir = "/mnt/data/nix-build";
 
 }

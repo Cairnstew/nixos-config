@@ -80,10 +80,10 @@
   my.services.ssh.authorizedKeys = [ flake.config.me.sshKey ];
 
   # ── Swap Configuration ──────────────────────────────────────────────────
-  swapDevices = [{
-    device = "/mnt/data/storage/swapfile";
-    size = 32 * 1024;
-  }];
+  #swapDevices = [{
+  #  device = "/mnt/data/storage/swapfile";
+  #  size = 32 * 1024;
+  #}];
 
   # ── Unfree Software ─────────────────────────────────────────────────────
   nixpkgs.config = {
@@ -92,6 +92,6 @@
   };
 
   # ── Disko / Hardware Config Resolution ──────────────────────────────────
-  fileSystems."/".device = lib.mkForce "/dev/disk/by-partlabel/disk-main-root";
-  fileSystems."/boot".device = lib.mkForce "/dev/disk/by-partlabel/disk-main-boot";
+  #fileSystems."/".device = lib.mkForce "/dev/disk/by-partlabel/disk-main-root";
+  #fileSystems."/boot".device = lib.mkForce "/dev/disk/by-partlabel/disk-main-boot";
 }
