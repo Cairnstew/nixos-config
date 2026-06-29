@@ -91,7 +91,4 @@
     cuda.acceptLicense = true;
   };
 
-  # ── Disko / Hardware Config Resolution ──────────────────────────────────
-  #fileSystems."/".device = lib.mkForce "/dev/disk/by-partlabel/disk-main-root";
-  #fileSystems."/boot".device = lib.mkForce "/dev/disk/by-partlabel/disk-main-boot";
 }
