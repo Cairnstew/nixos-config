@@ -91,17 +91,4 @@
     cuda.acceptLicense = true;
   };
 
-  # ── Filesystem Resolution ────────────────────────────────────────────────
-  # hardware-configuration.nix has the actual UUIDs from the installed system.
-  # disk-config.nix (disko) defines the same mountpoints via partlabels.
-  # Force the UUIDs so the real mounts take priority over disko's layout.
-  fileSystems."/" = lib.mkForce {
-    device = "/dev/disk/by-uuid/4079b1c2-d485-43f1-9e82-e7fa1ad30a09";
-    fsType = "ext4";
-  };
-  fileSystems."/boot" = lib.mkForce {
-    device = "/dev/disk/by-uuid/AB94-2222";
-    fsType = "vfat";
-    options = [ "fmask=0022" "dmask=0022" ];
-  };
 }
