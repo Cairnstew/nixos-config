@@ -312,6 +312,12 @@ in
       };
     };
 
+    # ZeroTier defaults: Secondary mesh VPN for dual-mesh fallback
+    # Override when: Not using ZeroTier, or using a different network
+    services.zerotier = {
+      networks = lib.mkDefault [ "1c33c1ced07e2ece" ];
+    };
+
     # Git repo sync: Automatically syncs this flake to GitHub
     # Enabled by default: Ensures config changes are backed up
     # Override when: Ephemeral systems or manual git management preferred

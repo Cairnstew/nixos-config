@@ -67,8 +67,6 @@
 
   my.services.zerotier = {
     enable = true;
-    # ── FIXME: Replace with your ZeroTier network ID ──
-    networks = [ ];
     openFirewall = true;
   };
 
