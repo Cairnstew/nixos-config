@@ -10,6 +10,12 @@ in
         (cfg.tags != [ ]);
       message = "Tailscale exit nodes should have at least one tag in tags.";
     }
+    {
+      assertion = !cfg.enable || !cfg.ssh.enable ||
+        (cfg.ssh.user != "");
+      message = "Tailscale SSH config requires a user to be set when ssh.enable is true.";
+    }
+
   ];
 
   # ── L1: systemd service health checks ─────────────────────────────────────
@@ -88,16 +94,16 @@ in
           echo "WARNING: Tailscale state is $STATUS (expected: Running)"
         fi
 
-        # Check SSH config exists if enabled
-        if [ "${if cfg.ssh.enable then "true" else "false"}" = "true" ]; then
-          SSH_CONFIG="/home/${cfg.ssh.user}/.ssh/config.d/tailscale"
-          if [ -f "$SSH_CONFIG" ]; then
-            echo "PASS: SSH config file exists at $SSH_CONFIG"
-          else
-            echo "FAIL: SSH config file not found at $SSH_CONFIG"
-            exit 1
-          fi
+        ${lib.optionalString cfg.ssh.enable ''
+        # Check SSH config exists
+        SSH_CONFIG="/home/${cfg.ssh.user}/.ssh/config.d/tailscale"
+        if [ -f "$SSH_CONFIG" ]; then
+          echo "PASS: SSH config file exists at $SSH_CONFIG"
+        else
+          echo "FAIL: SSH config file not found at $SSH_CONFIG"
+          exit 1
         fi
+        ''}
 
         echo "=== Smoke Test Complete ==="
       '';

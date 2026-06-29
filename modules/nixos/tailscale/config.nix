@@ -56,6 +56,7 @@ in
       };
 
       # Runtime SSH config generator — fetches live device list from tailscale status
+      # Gracefully handles the case where tailscale isn't authenticated yet
       systemd.services.tailscale-ssh-config = {
         description = "Generate SSH config from live tailscale device list";
         after = [ "tailscaled.service" "network-online.target" ];
@@ -64,12 +65,14 @@ in
         serviceConfig = {
           Type = "oneshot";
           RemainAfterExit = true;
+          Restart = "on-failure";
+          RestartSec = "30";
           ExecStart =
             let
               sshKey = if cfg.ssh.identityFile != null then toString cfg.ssh.identityFile else "";
             in
             pkgs.writeShellScript "tailscale-ssh-config" ''
-              set -euo pipefail
+              set -uo pipefail
 
               SSH_DIR="/home/${cfg.ssh.user}/.ssh/config.d"
               SSH_FILE="$SSH_DIR/tailscale"
@@ -84,30 +87,33 @@ in
 
               EOF
 
-              ${pkgs.tailscale}/bin/tailscale status --json | ${pkgs.jq}/bin/jq \
-                --arg key "$SSH_KEY" \
-                --arg extra "$EXTRA" -r '
-                def clean: rtrimstr(".");
-                def short: split(".")[0];
-                def identityBlock:
-                  if $key != "" then
-                    "  IdentityFile \($key)",
-                    "  IdentitiesOnly yes"
-                  else empty end;
-                [.Self, .Peer[]] | .[] | select(.DNSName != null) |
-                  # Short-name alias (e.g. "Host laptop")
-                  "Host \(.DNSName | short)",
-                  "  HostName \(.DNSName | clean)",
-                  identityBlock,
-                  (if $extra != "" then "  \($extra)" else "" end),
-                  "",
-                  # FQDN host block
-                  "Host \(.DNSName | clean)",
-                  "  HostName \(.DNSName | clean)",
-                  identityBlock,
-                  (if $extra != "" then "  \($extra)" else "" end),
-                  ""
-              ' >> "$SSH_FILE"
+              # Capture tailscale status — may fail if not authenticated yet
+              TS_STATUS=$(${pkgs.tailscale}/bin/tailscale status --json 2>/dev/null || true)
+
+              if [ -n "$TS_STATUS" ]; then
+                echo "$TS_STATUS" | ${pkgs.jq}/bin/jq \
+                  --arg key "$SSH_KEY" \
+                  --arg extra "$EXTRA" -r '
+                  def clean: rtrimstr(".");
+                  def short: split(".")[0];
+                  def identityBlock:
+                    if $key != "" then
+                      "  IdentityFile \($key)",
+                      "  IdentitiesOnly yes"
+                    else empty end;
+                  [.Self, (.Peer // {})[]] | .[] | select(. != null and .DNSName != null) |
+                    "Host \(.DNSName | short)",
+                    "  HostName \(.DNSName | clean)",
+                    identityBlock,
+                    (if $extra != "" then "  \($extra)" else "" end),
+                    "",
+                    "Host \(.DNSName | clean)",
+                    "  HostName \(.DNSName | clean)",
+                    identityBlock,
+                    (if $extra != "" then "  \($extra)" else "" end),
+                    ""
+                ' >> "$SSH_FILE" 2>/dev/null || true
+              fi
 
               chmod 644 "$SSH_FILE"
             '';
