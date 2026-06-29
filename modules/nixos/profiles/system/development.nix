@@ -1,7 +1,8 @@
 # modules/nixos/profiles/system/development.nix
 # Development tools and services profile
-{ config, lib, pkgs, ... }:
+{ config, lib, pkgs, flake, ... }:
 let
+  inherit (flake.config.me) username;
   cfg = config.my.profiles.development;
 in
 {
@@ -31,5 +32,15 @@ in
     # mkDefault false: Cachix push is opt-in (avoid accidental pushes)
     # Override when: Build host that should push to binary cache
     my.caches.personal.push.enable = lib.mkDefault false;
+
+    # ── Git Repo Sync ──────────────────────────────────────────────────────
+    # SillyTavern: for developing the custom SillyTavern Nix package
+    # Override when: Using a fork, different path, or no local clone
+    my.services.gitRepoSync.repos.sillytavern = {
+      url = lib.mkDefault "https://github.com/Cairnstew/SillyTavern.git";
+      path = lib.mkDefault "/home/${username}/SillyTavern";
+      interval = lib.mkDefault "15m";
+      conflictStrategy = lib.mkDefault "ff-only";
+    };
   };
 }

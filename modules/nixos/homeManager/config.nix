@@ -191,8 +191,9 @@ in
           model = lib.mkDefault "opencode-go/deepseek-v4-flash";
           enableMcpIntegration = lib.mkDefault true;
 
-          # references are supported via my.programs.opencode.references but
-          # require opencode ≥ 1.16 — not yet available in nixpkgs.
+          # references.sillytavern: enable when opencode supports the
+          # references config key (open ≥ 1.16 / check release notes)
+          # path = "/home/${username}/SillyTavern";
 
           plugins = lib.mkDefault [ "@hueyexe/opencode-ensemble@0.15.0" ];
 

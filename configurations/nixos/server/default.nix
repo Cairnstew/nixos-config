@@ -13,6 +13,10 @@
   networking.hostName = "server";
   nixos-unified.sshTarget = "seanc@server";
 
+  # ── State Version ────────────────────────────────────────────────────────
+  # Must match the nixpkgs version this was first installed with
+  system.stateVersion = "24.05";
+
   # ── System Profiles ──────────────────────────────────────────────────────
   my.profiles = {
     server.enable = true;
@@ -34,6 +38,17 @@
     latitude = 30.2672;
     longitude = -97.7431;
   };
+
+  # ── Networking ──────────────────────────────────────────────────────────
+  networking.networkmanager.enable = true;
+
+  # ── Nix Build Directory ─────────────────────────────────────────────────
+  # Use the large SATA data disk (1.8T) for build temp files to preserve
+  # NVMe space for the Nix store and OS.
+  nix.settings.build-dir = "/mnt/data/nix-build";
+
+  # Ensure the build directory exists before nix tries to use it
+  systemd.tmpfiles.rules = [ "d /mnt/data/nix-build 0755 root root -" ];
 
   # ── Networking / VPN (Dual-Mesh for Headless Reliability) ──────────────
   # Both Tailscale and ZeroTier run simultaneously so you always have a
@@ -77,13 +92,14 @@
   };
 
   # ── SSH Access ──────────────────────────────────────────────────────────
-  my.services.ssh.authorizedKeys = [ flake.config.me.sshKey ];
+  my.services.ssh.authorizedKeys = [
+    flake.config.me.sshKey
+    "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIGEp55lp8743MYUsvmZ4XXnhvJ7c5GQDQzIg9GQzWPbg sean.cairnsst@gmail.com" # desktop
+  ];
 
-  # ── Swap Configuration ──────────────────────────────────────────────────
-  #swapDevices = [{
-  #  device = "/mnt/data/storage/swapfile";
-  #  size = 32 * 1024;
-  #}];
+  # Temporary console password for initial recovery.
+  # Remove this line after first SSH login.
+  users.users.seanc.initialPassword = "changeme123";
 
   # ── Unfree Software ─────────────────────────────────────────────────────
   nixpkgs.config = {

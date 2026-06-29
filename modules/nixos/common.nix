@@ -13,7 +13,7 @@ let
   # in keys.groups.main below.
   systemsKeys = [
     "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIETE96NnwPAZ0n5y6XcCzoErkrAhulUht/Hho0V829Qy root@laptop" # laptop
-    "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAINJXLC3S2pEuIchrWMtmWiTaJOA+U02HVyRczRNbRjMX root@nixos" # server
+    "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIIZ1mor/quSbisUKJivp3lMDvMcQR4wojD/l5Etg6KCV root@server" # server
     "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIKWiP0JxNaeWS30gzg4A2zLnSRdZutWzCP0mjZit7/De root@desktop" # desktop
     "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIKekVg/4uXAmOcRzxbaPn9zW5NTB6te+F0PUXO1FmrkQ seanc@laptop" # nixos-deploy/desktop
   ];
@@ -297,7 +297,7 @@ in
               action = "accept";
               src = [ "tag:nixos" ];
               dst = [ "tag:nixos" ];
-              users = [ "root" flake.config.me.username ];
+              users = [ "root" "autogroup:nonroot" flake.config.me.username ];
             }
             # 3. Allow your NixOS administrators or NixOS nodes to securely Tailscale-SSH
             # into the temporary live environments for troubleshooting or automation.
