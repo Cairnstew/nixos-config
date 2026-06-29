@@ -65,10 +65,15 @@
     };
   };
 
+  # ZeroTier is a tailscale fallback — the watchdog starts/stops it automatically.
+  # The service is configured but won't auto-start at boot.
   my.services.zerotier = {
     enable = true;
     openFirewall = true;
   };
+
+  # Tailscale watchdog: monitors connectivity, starts zerotier on failure, alerts via email
+  my.services.tailscaleWatchdog.enable = true;
 
   # ── SSH (LAN Password Fallback) ──────────────────────────────────────
   # Primary: SSH keys via Tailscale SSH + ZeroTier
@@ -77,8 +82,7 @@
   # private ranges so be specific about your actual LAN subnet.
   my.services.ssh.lanSubnets = [ "192.168.0.0/16" "172.16.0.0/12" ];
 
-  # Boot resilience: Tailscale watchdog, emergency alerting, boot health tracking
-  my.services.tailscaleWatchdog.enable = true;
+  # Boot resilience: Emergency alerting, boot health tracking
   my.services.bootAlerting.enable = true;
   my.services.bootHealth.enable = true;
 

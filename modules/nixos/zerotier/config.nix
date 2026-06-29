@@ -14,8 +14,10 @@ in
 
     networking.firewall.allowedUDPPorts = mkIf cfg.openFirewall [ 9993 ];
 
-    # Ensure zerotier starts reliably (parallel mesh with tailscale)
+    # Don't auto-start — zerotier is a fallback mesh when tailscale is down.
+    # The tailscale-watchdog manages starting/stopping zerotier as needed.
     systemd.services.zerotierone = {
+      wantedBy = mkForce [ ];
       after = [ "network-pre.target" ];
       wants = [ "network-pre.target" ];
       serviceConfig = {

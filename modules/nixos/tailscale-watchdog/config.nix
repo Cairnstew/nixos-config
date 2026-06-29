@@ -4,17 +4,30 @@ let
 
   watchdogPkg = pkgs.writeShellApplication {
     name = "tailscale-watchdog";
-    runtimeInputs = [ pkgs.tailscale pkgs.msmtp pkgs.jq pkgs.iproute2 pkgs.coreutils ];
+    runtimeInputs = [ pkgs.tailscale pkgs.msmtp pkgs.jq pkgs.iproute2 pkgs.coreutils pkgs.systemd ];
     text = ''
+      FALLBACK_FILE="${cfg.stateDir}/zerotier-fallback-active"
       LAST_ALERT_FILE="${cfg.stateDir}/last-alert-epoch"
       LAST_STATE_FILE="${cfg.stateDir}/last-known-state"
       SECRET="/run/agenix/mcp-better-email-password"
 
-      # Check secret exists
-      if [[ ! -f "$SECRET" ]]; then
-        echo "tailscale-watchdog: SMTP secret not found at $SECRET, skipping email" >&2
-        exit 0
-      fi
+      # ── Zerotier fallback management ──────────────────────────────────────
+      manage_zerotier() {
+        if ! systemctl cat zerotierone >/dev/null 2>&1; then
+          return  # zerotier not installed
+        fi
+        local ZT_STATE
+        ZT_STATE=$(systemctl is-active zerotierone 2>/dev/null || echo "inactive")
+        if [[ "$1" == "start" && "$ZT_STATE" == "inactive" ]]; then
+          systemctl start zerotierone
+          touch "$FALLBACK_FILE"
+          echo "Zerotier started as fallback (tailscale down)"
+        elif [[ "$1" == "stop" && -f "$FALLBACK_FILE" ]]; then
+          systemctl stop zerotierone
+          rm -f "$FALLBACK_FILE"
+          echo "Zerotier stopped (tailscale recovered)"
+        fi
+      }
 
       # Get Tailscale state
       TS_STATE=$(tailscale status --json 2>/dev/null \
@@ -25,9 +38,15 @@ let
       # Always update last-known-state
       echo "$TS_STATE" > "$LAST_STATE_FILE"
 
-      # If running — check for recovery (was down, now up)
+      # If running — handle recovery and stop zerotier fallback
       if [[ "$TS_STATE" == "Running" ]]; then
+        manage_zerotier stop
         if [[ "$LAST_STATE" != "Running" && "$LAST_STATE" != "unknown" ]]; then
+          # Check secret exists before sending recovery email
+          if [[ ! -f "$SECRET" ]]; then
+            echo "tailscale-watchdog: SMTP secret not found at $SECRET, skipping recovery email" >&2
+            exit 0
+          fi
           BODY="Tailscale RECOVERED on $(hostname) at $(date -u).
       Previous state: $LAST_STATE
       Current state: Running"
@@ -46,12 +65,21 @@ let
         exit 0
       fi
 
-      # Tailscale is NOT running — check cooldown
+      # Tailscale is NOT running — start zerotier fallback
+      manage_zerotier start
+
+      # Check cooldown before sending alert email
       NOW=$(date +%s)
       LAST_ALERT=$(cat "$LAST_ALERT_FILE" 2>/dev/null || echo "0")
       ELAPSED=$(( NOW - LAST_ALERT ))
 
       if (( ELAPSED < ${toString cfg.alertCooldown} )); then
+        exit 0
+      fi
+
+      # Check secret exists before sending alert
+      if [[ ! -f "$SECRET" ]]; then
+        echo "tailscale-watchdog: SMTP secret not found at $SECRET, skipping alert" >&2
         exit 0
       fi
 
