@@ -346,23 +346,6 @@ if(NOT AUTOGEN_RESULT EQUAL 0)
     ln -sf "${py}/${pySitePkgs}"/* "$VENV_SITE/" 2>/dev/null || true
     "$VENV_PATH/bin/python" -c "import jinja2; print('jinja2 ok')" 2>&1 || echo "WARNING: jinja2 not in venv, AutoGen will fail"
 
-    # Override LY_PYTHON_CMD to bypass python.sh (bad shebang, sandbox issues).
-    cmakeFlagsArray+=("-DLY_PYTHON_CMD:FILEPATH=${pythonEnv}/bin/python3")
-    # Patch AzAutoGen.py to add site-packages to sys.path before jinja2 import.
-    # CMake's execute_process may not inherit PYTHONPATH from the parent shell,
-    # so we embed the path directly into the script.
-    # Patch AzAutoGen.py to add site-packages to sys.path before jinja2 import.
-    python3 -c "
-import sys
-src = open('cmake/AzAutoGen.py').read()
-old = '    import jinja2'
-new = '    import sys; sys.path.insert(0, ' + chr(39) + '${pythonEnv}/${pySitePkgs}' + chr(39) + ')\n    import jinja2'
-assert old in src, 'pattern not found'
-src = src.replace(old, new, 1)
-open('cmake/AzAutoGen.py', 'w').write(src)
-print('Patched AzAutoGen.py: sys.path.insert(0, ' + chr(39) + '${pythonEnv}/${pySitePkgs}' + chr(39) + ')')
-" && echo "Verifying:" && grep -n 'jinja2\|sys.path.insert' cmake/AzAutoGen.py
-
     # Create the hash file (no trailing newline — cmake file(READ) includes it and breaks STREQUAL)
     printf "a7832f9170a3ac93fbe678e9b3d99a977daa03bb667d25885967e8b4977b86f8" > "$VENV_PATH/.hash"
 
@@ -385,6 +368,11 @@ print('Patched AzAutoGen.py: sys.path.insert(0, ' + chr(39) + '${pythonEnv}/${py
     chmod +w NixpkgsPackages.cmake
     # Fix Lua overlay to use Lua 5.4 instead of Lua 5.2
     ${py}/bin/python3 ${./patch-lua-overlay.py} NixpkgsPackages.cmake
+    # Force LY_PYTHON_CMD AFTER O3DE's LYPython.cmake (which overrides cmakeFlags).
+    cat >> NixpkgsPackages.cmake << 'PYCMDEOF'
+set(LY_PYTHON_CMD "${pythonEnv}/bin/python3" CACHE FILEPATH "O3DE Python command" FORCE)
+message(STATUS "NixpkgsPackages: LY_PYTHON_CMD forced to ${pythonEnv}/bin/python3")
+PYCMDEOF
     # Override CMAKE_PROJECT_INCLUDE to use our patched copy (not the nix store original)
     cmakeFlagsArray+=("-DCMAKE_PROJECT_INCLUDE=$PWD/NixpkgsPackages.cmake")
     # Add libcityhash.a to AzCore's link libraries (use real target name AzCore, not alias AZ::AzCore).
