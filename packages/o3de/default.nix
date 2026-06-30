@@ -353,7 +353,7 @@ if(NOT AUTOGEN_RESULT EQUAL 0)
     # so we embed the path directly into the script.
     substituteInPlace cmake/AzAutoGen.py \
       --replace-fail '    import jinja2' \
-      "import sys; sys.path.insert(0, '${pythonEnv}/${pySitePkgs}')
+      "    import sys; sys.path.insert(0, '${pythonEnv}/${pySitePkgs}')
     import jinja2"
 
     # Create the hash file (no trailing newline — cmake file(READ) includes it and breaks STREQUAL)
