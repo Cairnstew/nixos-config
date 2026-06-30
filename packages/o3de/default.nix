@@ -234,10 +234,18 @@ stdenv.mkDerivation (finalAttrs: {
     # Compile city.cc into a static library for AzCore linking
     g++ -std=c++20 -fPIC -fno-exceptions -I Code/Framework/AzCore -c ${cityhashSrc}/city.cc -o Code/Framework/AzCore/city.o
     ar rcs Code/Framework/AzCore/libcityhash.a Code/Framework/AzCore/city.o
-    # Show AutoGen errors in the cmake log instead of just FATAL_ERROR
-    # ''${...} escapes Nix interpolation. Bash '...' prevents shell expansion.
+    # Show AutoGen full error diagnostics in cmake log
     substituteInPlace cmake/LyAutoGen.cmake \
-      --replace-fail '"''${AUTOGEN_ERROR}"' '"''${AUTOGEN_ERROR}''${AUTOGEN_OUTPUTS}"'
+      --replace-fail 'if(NOT AUTOGEN_RESULT EQUAL 0)
+            message(FATAL_ERROR
+                "AutoGen expansion rules failed for target: ' \
+        'message(STATUS "AZ_AUTOGEN_START: ''${ly_add_autogen_NAME}
+AUTOGEN_RESULT=''${AUTOGEN_RESULT}
+AUTOGEN_ERROR=''${AUTOGEN_ERROR}
+AUTOGEN_OUTPUTS=''${AUTOGEN_OUTPUTS}")
+if(NOT AUTOGEN_RESULT EQUAL 0)
+            message(FATAL_ERROR
+                "AutoGen expansion rules failed for target: '
     # Suppress GCC 14+ -Wno-nonnull and -Wno-unused-variable via Python script
     # (substituteInPlace doesn't handle multi-line replacements well)
     ${py}/bin/python3 ${./patch-gcc-config.py}
