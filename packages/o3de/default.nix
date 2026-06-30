@@ -279,7 +279,7 @@ if(NOT AUTOGEN_RESULT EQUAL 0)
   ];
 
   preConfigure = ''
-    patchShebangs scripts/
+    patchShebangs scripts/ python/ cmake/
     # Suppress GCC 14+ -Werror compatibility issues via env var that cmake honors
     export CXXFLAGS="-Wno-nonnull -Wno-unused-variable"
 
@@ -305,6 +305,8 @@ if(NOT AUTOGEN_RESULT EQUAL 0)
     ENGINE_ID=$(cmake -P cmake/CalculateEnginePathId.cmake "$PWD/" 2>&1)
     echo "preConfigure: ENGINE_ID=$ENGINE_ID"
     VENV_PATH="$HOME/.o3de/Python/venv/$ENGINE_ID"
+    # Override LY_PYTHON_CMD to bypass python.sh (bad shebang, sandbox issues)
+    cmakeFlagsArray+=("-DLY_PYTHON_CMD:FILEPATH=$VENV_PATH/bin/python")
     mkdir -p "$VENV_PATH/lib"
     ln -sf ${py}/lib/${pyLibName} "$VENV_PATH/lib/${pyLibName}"
 
