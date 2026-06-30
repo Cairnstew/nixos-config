@@ -305,16 +305,6 @@ if(NOT AUTOGEN_RESULT EQUAL 0)
     ENGINE_ID=$(cmake -P cmake/CalculateEnginePathId.cmake "$PWD/" 2>&1)
     echo "preConfigure: ENGINE_ID=$ENGINE_ID"
     VENV_PATH="$HOME/.o3de/Python/venv/$ENGINE_ID"
-    # Override LY_PYTHON_CMD to bypass python.sh (bad shebang, sandbox issues).
-    # Use the venv python which has pip-installed jinja2 in its site-packages.
-    cmakeFlagsArray+=("-DLY_PYTHON_CMD:FILEPATH=$VENV_PATH/bin/python")
-    # Copy jinja2 from nix store into venv so it's available to any child
-    # process started by cmake's execute_process (which inherits PYTHONPATH
-    # but may not find jinja2 via the normal import mechanism otherwise).
-    for _src in "${pythonEnv}/${pySitePkgs}/jinja2" "${pythonEnv}/${pySitePkgs}/jinja2"*.dist-info; do
-      [ -e "$_src" ] && cp -r "$_src" "$VENV_SITE/" 2>/dev/null || true
-    done
-    "$VENV_PATH/bin/python" -c "import jinja2; print('venv jinja2 ok')" 2>&1
     mkdir -p "$VENV_PATH/lib"
     ln -sf ${py}/lib/${pyLibName} "$VENV_PATH/lib/${pyLibName}"
 
@@ -355,6 +345,9 @@ if(NOT AUTOGEN_RESULT EQUAL 0)
     mkdir -p "$VENV_SITE"
     ln -sf "${py}/${pySitePkgs}"/* "$VENV_SITE/" 2>/dev/null || true
     "$VENV_PATH/bin/python" -c "import jinja2; print('jinja2 ok')" 2>&1 || echo "WARNING: jinja2 not in venv, AutoGen will fail"
+
+    # Override LY_PYTHON_CMD to bypass python.sh (bad shebang, sandbox issues).
+    cmakeFlagsArray+=("-DLY_PYTHON_CMD:FILEPATH=$VENV_PATH/bin/python")
 
     # Create the hash file (no trailing newline — cmake file(READ) includes it and breaks STREQUAL)
     printf "a7832f9170a3ac93fbe678e9b3d99a977daa03bb667d25885967e8b4977b86f8" > "$VENV_PATH/.hash"
