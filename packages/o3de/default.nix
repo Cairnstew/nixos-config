@@ -378,6 +378,20 @@ if(NOT AUTOGEN_RESULT EQUAL 0)
     # Add libcityhash.a to AzCore's link libraries (use real target name AzCore, not alias AZ::AzCore).
     # escaped braces so CMake variables pass through literally.
     echo 'target_link_libraries(AzCore PRIVATE "''${CMAKE_SOURCE_DIR}/Code/Framework/AzCore/libcityhash.a")' >> Code/Framework/AzCore/CMakeLists.txt
+
+    # Diagnose PYTHONPATH and jinja2 availability during cmake configure
+    cat >> cmake/LyAutoGen.cmake << 'DIAGEOF'
+# AutoGen PYTHONPATH diagnostic
+execute_process(
+    COMMAND ${LY_PYTHON_CMD} -c "import sys; print('PYTHON EXEC:', sys.executable); print('SYS.PATH:', sys.path); import jinja2; print('JINJA2 OK')"
+    OUTPUT_VARIABLE PY_DIAG_OUT
+    ERROR_VARIABLE PY_DIAG_ERR
+)
+message(STATUS "PY_DIAG_OUT=${PY_DIAG_OUT}")
+message(STATUS "PY_DIAG_ERR=${PY_DIAG_ERR}")
+message(STATUS "ENV PYTHONPATH=$ENV{PYTHONPATH}")
+message(STATUS "LY_PYTHON_CMD=${LY_PYTHON_CMD}")
+DIAGEOF
   '';
 
   buildPhase = ''
