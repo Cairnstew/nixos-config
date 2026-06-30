@@ -8,7 +8,7 @@ in
     services.zerotierone = {
       enable = true;
       joinNetworks = cfg.networks;
-      localConf = if cfg.localConf != null then builtins.toJSON cfg.localConf else null;
+      localConf = if cfg.localConf != null then cfg.localConf else { };
       package = if cfg.package != null then cfg.package else pkgs.zerotierone;
     };
 

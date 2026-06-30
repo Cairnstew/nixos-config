@@ -22,10 +22,12 @@ let
           systemctl start zerotierone
           touch "$FALLBACK_FILE"
           echo "Zerotier started as fallback (tailscale down)"
-        elif [[ "$1" == "stop" && -f "$FALLBACK_FILE" ]]; then
-          systemctl stop zerotierone
+        elif [[ "$1" == "stop" ]]; then
           rm -f "$FALLBACK_FILE"
-          echo "Zerotier stopped (tailscale recovered)"
+          if [[ "$ZT_STATE" == "active" ]]; then
+            systemctl stop zerotierone
+            echo "Zerotier stopped (tailscale recovered)"
+          fi
         fi
       }
 

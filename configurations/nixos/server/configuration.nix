@@ -16,6 +16,10 @@
   boot.loader.grub.devices = [ "nodev" ];
   boot.loader.grub.efiSupport = true;
   boot.loader.grub.efiInstallAsRemovable = true;
+  boot.loader.grub.configurationLimit = 10;
+  boot.loader.grub.memtest86.enable = true;
+
+  boot.kernelParams = [ "panic=10" ];
 
   # ── Locale ─────────────────────────────────────────────────────────────
   i18n.defaultLocale = "en_US.UTF-8";

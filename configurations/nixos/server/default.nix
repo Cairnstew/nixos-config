@@ -87,7 +87,10 @@
 
   # Boot resilience: Emergency alerting, boot health tracking
   my.services.bootAlerting.enable = true;
-  my.services.bootHealth.enable = true;
+  my.services.bootHealth = {
+    enable = true;
+    autoRollback.enable = true;
+  };
 
   # ── NVIDIA Configuration ───────────────────────────────────────────────
   my.services.ollama = {

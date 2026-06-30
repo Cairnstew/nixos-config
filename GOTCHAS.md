@@ -2,6 +2,13 @@
 
 ---
 
+**`builtins.toJSON` in zerotier config.nix double-encodes local.conf → daemon fails to parse**
+Symptom: `nix run` succeeds but zerotierone fails with `ERROR: unable to parse local.conf (root element is not a JSON object)`. The service restarts in a loop. Cause: `modules/nixos/zerotier/config.nix` line 11 was calling `builtins.toJSON cfg.localConf` and passing the resulting string to upstream `services.zerotierone.localConf`. The upstream module uses `pkgs.formats.json.generate` which already serializes the value to JSON — `builtins.toJSON` double-encodes the content (JSON string wrapping JSON). When `localConf` was `null` (not set), it passed `null` instead of `{ }`, which also triggered the upstream's symlink creation for a file containing just `null`. Fix: Pass the attrset directly: `localConf = if cfg.localConf != null then cfg.localConf else { };` — let the upstream module handle serialization.
+
+---
+
+---
+
 **O3DE CDN fully dead — CMake overlay + nixpkgs-stable Python 3.10 workaround**
 Symptom: Building `packages.x86_64-linux.o3de` tries to download 34 SDK packages from `https://d3t6xeg4fgfoum.cloudfront.net/`. Outside sandbox returns `403 AccessDenied` (CloudFront). The S3 bucket policy behind it blocks all access. CDN is fully dead. Fix: `packages/o3de/NixpkgsPackages.cmake` pre-defines `3rdParty::*` targets from nixpkgs before O3DE's package system runs, skipping the CDN. Qt targets now point at nixpkgs Qt6 (real targets instead of stubs — all 10 private headers O3DE uses are standard). Python uses `pkgs-stable.python310` from the `nixpkgs-stable` flake input (nixos-25.11). Numpy pin in requirements.txt is patched from `==1.23.0` to `>=1.24.0`. The package evaluates and passes `nix flake check`, but a full build has not been tested yet — the CMake configure was previously blocked on Python pip requirements (numpy build failure on Python 3.13); switching to Python 3.10 is expected to resolve this.
 

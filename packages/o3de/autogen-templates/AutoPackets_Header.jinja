@@ -1,0 +1,31 @@
+#pragma once
+
+#include <AzNetworking/PacketLayer/IPacket.h>
+#include <AzNetworking/PacketLayer/IPacketHeader.h>
+#include <AzNetworking/Serialization/ISerializer.h>
+{% for dataFile in dataFiles %}
+{% set groupName = dataFile.getroot().attrib['Name'] %}
+{% set packetStart = dataFile.getroot().attrib['PacketStart'] | int %}
+
+namespace {{ groupName }}
+{
+    enum class PacketType : AzNetworking::PacketType
+    {
+        {% for packet in dataFile.getroot() %}
+        {{ packet.attrib['Name'] }} = {{ packetStart + loop.index0 }},
+        {% endfor %}
+        MAX = {{ packetStart + dataFile.getroot()|length }},
+        None = {{ packetStart }}
+    };
+
+    const char* GetPacketString(PacketType packetType);
+
+    template <typename TYPE>
+    class Packet : public AzNetworking::IPacket
+    {
+    public:
+        Packet() = default;
+        AzNetworking::PacketType GetPacketType() const override { return aznumeric_cast<AzNetworking::PacketType>(TYPE::GetPacketTypeId()); }
+        bool Serialize(AzNetworking::ISerializer& serializer) override { return TYPE::Serialize(serializer); }
+    };
+{% endfor %}
