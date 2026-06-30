@@ -310,8 +310,8 @@ if(NOT AUTOGEN_RESULT EQUAL 0)
     # inherit the correct PYTHONPATH. Create a wrapper that ensures it's set.
     mkdir -p $PWD/.nix-python
     cat > $PWD/.nix-python/o3de-python << WRAPPER
-#!/bin/sh
-export PYTHONPATH="${pythonEnv}/${pySitePkgs}:\''${PYTHONPATH-}"
+#!${pkgs.runtimeShell}
+export PYTHONPATH="${pythonEnv}/${pySitePkgs}:''${PYTHONPATH-}"
 exec ${pythonEnv}/bin/python3 "\$@"
 WRAPPER
     chmod +x $PWD/.nix-python/o3de-python
