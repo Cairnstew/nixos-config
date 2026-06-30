@@ -226,6 +226,11 @@ stdenv.mkDerivation (finalAttrs: {
     # Skip pip install of requirements.txt (packages provided by nixpkgs).
     substituteInPlace cmake/LYPython.cmake \
       --replace-fail 'message(FATAL_ERROR "The above failure will cause errors later - stopping now.' 'message(WARNING "The above failure will cause errors later - continuing anyway.'
+    # Override LY_PYTHON_CMD — O3DE sets it to python.sh which has #!/bin/bash
+    # shebang that fails in Nix sandbox.  Use pythonEnv (with jinja2) directly.
+    substituteInPlace cmake/LYPython.cmake \
+      --replace-fail 'set(LY_PYTHON_CMD "''${LY_ROOT_FOLDER}/python/python.sh" "-s")' \
+      'set(LY_PYTHON_CMD "${pythonEnv}/bin/python3")'
     # CityHash — needed by AzCore for TypeHash32/64 (CityHash32/CityHash64).
     # Google's cityhash is not packaged in nixpkgs, so we bundle the source.
     # Copy city.h to the AzCore include path so #include <city.h> resolves.
@@ -368,11 +373,6 @@ if(NOT AUTOGEN_RESULT EQUAL 0)
     chmod +w NixpkgsPackages.cmake
     # Fix Lua overlay to use Lua 5.4 instead of Lua 5.2
     ${py}/bin/python3 ${./patch-lua-overlay.py} NixpkgsPackages.cmake
-    # Force LY_PYTHON_CMD AFTER O3DE's LYPython.cmake (which overrides cmakeFlags).
-    cat >> NixpkgsPackages.cmake << 'PYCMDEOF'
-set(LY_PYTHON_CMD "${pythonEnv}/bin/python3" CACHE FILEPATH "O3DE Python command" FORCE)
-message(STATUS "NixpkgsPackages: LY_PYTHON_CMD forced to ${pythonEnv}/bin/python3")
-PYCMDEOF
     # Override CMAKE_PROJECT_INCLUDE to use our patched copy (not the nix store original)
     cmakeFlagsArray+=("-DCMAKE_PROJECT_INCLUDE=$PWD/NixpkgsPackages.cmake")
     # Add libcityhash.a to AzCore's link libraries (use real target name AzCore, not alias AZ::AzCore).
