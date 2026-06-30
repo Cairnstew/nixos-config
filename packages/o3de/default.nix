@@ -306,8 +306,16 @@ if(NOT AUTOGEN_RESULT EQUAL 0)
     echo "preConfigure: ENGINE_ID=$ENGINE_ID"
     VENV_PATH="$HOME/.o3de/Python/venv/$ENGINE_ID"
     # Override LY_PYTHON_CMD to bypass python.sh (bad shebang, sandbox issues).
-    # Use pythonEnv (python.withPackages) which has jinja2 in its site-packages.
-    cmakeFlagsArray+=("-DLY_PYTHON_CMD:FILEPATH=${pythonEnv}/bin/python3")
+    # pythonEnv has jinja2 in site-packages, but cmake execute_process may not
+    # inherit the correct PYTHONPATH. Create a wrapper that ensures it's set.
+    mkdir -p $PWD/.nix-python
+    cat > $PWD/.nix-python/o3de-python << WRAPPER
+#!/bin/sh
+export PYTHONPATH="${pythonEnv}/${pySitePkgs}:\''${PYTHONPATH-}"
+exec ${pythonEnv}/bin/python3 "\$@"
+WRAPPER
+    chmod +x $PWD/.nix-python/o3de-python
+    cmakeFlagsArray+=("-DLY_PYTHON_CMD:FILEPATH=$PWD/.nix-python/o3de-python")
     mkdir -p "$VENV_PATH/lib"
     ln -sf ${py}/lib/${pyLibName} "$VENV_PATH/lib/${pyLibName}"
 
