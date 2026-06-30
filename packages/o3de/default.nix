@@ -306,16 +306,10 @@ if(NOT AUTOGEN_RESULT EQUAL 0)
     echo "preConfigure: ENGINE_ID=$ENGINE_ID"
     VENV_PATH="$HOME/.o3de/Python/venv/$ENGINE_ID"
     # Override LY_PYTHON_CMD to bypass python.sh (bad shebang, sandbox issues).
-    # pythonEnv has jinja2 in site-packages, but cmake execute_process may not
-    # inherit the correct PYTHONPATH. Create a wrapper that ensures it's set.
-    mkdir -p $PWD/.nix-python
-    cat > $PWD/.nix-python/o3de-python << WRAPPER
-#!${pkgs.runtimeShell}
-export PYTHONPATH="${pythonEnv}/${pySitePkgs}:''${PYTHONPATH-}"
-exec ${pythonEnv}/bin/python3 "\$@"
-WRAPPER
-    chmod +x $PWD/.nix-python/o3de-python
-    cmakeFlagsArray+=("-DLY_PYTHON_CMD:FILEPATH=$PWD/.nix-python/o3de-python")
+    # Use pythonEnv directly — it has jinja2 in its native site-packages.
+    cmakeFlagsArray+=("-DLY_PYTHON_CMD:FILEPATH=${pythonEnv}/bin/python3")
+    # Set PYTHONPATH so CMake's execute_process inherits the site-packages
+    export PYTHONPATH="${pythonEnv}/${pySitePkgs}:''${PYTHONPATH-}"
     mkdir -p "$VENV_PATH/lib"
     ln -sf ${py}/lib/${pyLibName} "$VENV_PATH/lib/${pyLibName}"
 
@@ -382,7 +376,7 @@ WRAPPER
     # Override CMAKE_PROJECT_INCLUDE to use our patched copy (not the nix store original)
     cmakeFlagsArray+=("-DCMAKE_PROJECT_INCLUDE=$PWD/NixpkgsPackages.cmake")
     # Add libcityhash.a to AzCore's link libraries (use real target name AzCore, not alias AZ::AzCore).
-    # ''${...} escapes Nix interpolation so CMake variables pass through literally.
+    # escaped braces so CMake variables pass through literally.
     echo 'target_link_libraries(AzCore PRIVATE "''${CMAKE_SOURCE_DIR}/Code/Framework/AzCore/libcityhash.a")' >> Code/Framework/AzCore/CMakeLists.txt
   '';
 
