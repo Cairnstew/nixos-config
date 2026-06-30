@@ -351,10 +351,17 @@ if(NOT AUTOGEN_RESULT EQUAL 0)
     # Patch AzAutoGen.py to add site-packages to sys.path before jinja2 import.
     # CMake's execute_process may not inherit PYTHONPATH from the parent shell,
     # so we embed the path directly into the script.
-    substituteInPlace cmake/AzAutoGen.py \
-      --replace-fail '    import jinja2' \
-      "    import sys; sys.path.insert(0, '${pythonEnv}/${pySitePkgs}')
-    import jinja2"
+    # Patch AzAutoGen.py to add site-packages to sys.path before jinja2 import.
+    python3 -c "
+import sys
+src = open('cmake/AzAutoGen.py').read()
+old = '    import jinja2'
+new = '    import sys; sys.path.insert(0, ' + chr(39) + '${pythonEnv}/${pySitePkgs}' + chr(39) + ')\n    import jinja2'
+assert old in src, 'pattern not found'
+src = src.replace(old, new, 1)
+open('cmake/AzAutoGen.py', 'w').write(src)
+print('Patched AzAutoGen.py: sys.path.insert(0, ' + chr(39) + '${pythonEnv}/${pySitePkgs}' + chr(39) + ')')
+" && echo "Verifying:" && grep -n 'jinja2\|sys.path.insert' cmake/AzAutoGen.py
 
     # Create the hash file (no trailing newline — cmake file(READ) includes it and breaks STREQUAL)
     printf "a7832f9170a3ac93fbe678e9b3d99a977daa03bb667d25885967e8b4977b86f8" > "$VENV_PATH/.hash"
