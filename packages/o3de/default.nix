@@ -306,10 +306,15 @@ if(NOT AUTOGEN_RESULT EQUAL 0)
     echo "preConfigure: ENGINE_ID=$ENGINE_ID"
     VENV_PATH="$HOME/.o3de/Python/venv/$ENGINE_ID"
     # Override LY_PYTHON_CMD to bypass python.sh (bad shebang, sandbox issues).
-    # Use pythonEnv directly — it has jinja2 in its native site-packages.
-    cmakeFlagsArray+=("-DLY_PYTHON_CMD:FILEPATH=${pythonEnv}/bin/python3")
-    # Set PYTHONPATH so CMake's execute_process inherits the site-packages
-    export PYTHONPATH="${pythonEnv}/${pySitePkgs}:''${PYTHONPATH-}"
+    # Use the venv python which has pip-installed jinja2 in its site-packages.
+    cmakeFlagsArray+=("-DLY_PYTHON_CMD:FILEPATH=$VENV_PATH/bin/python")
+    # Copy jinja2 from nix store into venv so it's available to any child
+    # process started by cmake's execute_process (which inherits PYTHONPATH
+    # but may not find jinja2 via the normal import mechanism otherwise).
+    for _src in "${pythonEnv}/${pySitePkgs}/jinja2" "${pythonEnv}/${pySitePkgs}/jinja2"*.dist-info; do
+      [ -e "$_src" ] && cp -r "$_src" "$VENV_SITE/" 2>/dev/null || true
+    done
+    "$VENV_PATH/bin/python" -c "import jinja2; print('venv jinja2 ok')" 2>&1
     mkdir -p "$VENV_PATH/lib"
     ln -sf ${py}/lib/${pyLibName} "$VENV_PATH/lib/${pyLibName}"
 
@@ -379,19 +384,7 @@ if(NOT AUTOGEN_RESULT EQUAL 0)
     # escaped braces so CMake variables pass through literally.
     echo 'target_link_libraries(AzCore PRIVATE "''${CMAKE_SOURCE_DIR}/Code/Framework/AzCore/libcityhash.a")' >> Code/Framework/AzCore/CMakeLists.txt
 
-    # Diagnose PYTHONPATH and jinja2 availability during cmake configure
-    cat >> cmake/LyAutoGen.cmake << 'DIAGEOF'
-# AutoGen PYTHONPATH diagnostic
-execute_process(
-    COMMAND ${LY_PYTHON_CMD} -c "import sys; print('PYTHON EXEC:', sys.executable); print('SYS.PATH:', sys.path); import jinja2; print('JINJA2 OK')"
-    OUTPUT_VARIABLE PY_DIAG_OUT
-    ERROR_VARIABLE PY_DIAG_ERR
-)
-message(STATUS "PY_DIAG_OUT=${PY_DIAG_OUT}")
-message(STATUS "PY_DIAG_ERR=${PY_DIAG_ERR}")
-message(STATUS "ENV PYTHONPATH=$ENV{PYTHONPATH}")
-message(STATUS "LY_PYTHON_CMD=${LY_PYTHON_CMD}")
-DIAGEOF
+
   '';
 
   buildPhase = ''
