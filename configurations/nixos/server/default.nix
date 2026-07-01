@@ -55,7 +55,6 @@
   # fallback if one mesh goes down — critical for a completely headless box.
 
   my.services.tailscale = {
-    enable = true;
     tags = [ "tag:nixos" "tag:temp" ];
     acceptRoutes = true;
     ssh = {
@@ -69,7 +68,6 @@
   # The service is configured but won't auto-start at boot.
   my.services.zerotier = {
     enable = true;
-    openFirewall = true;
   };
 
   # Email alerts: provides send-alert command for system notifications

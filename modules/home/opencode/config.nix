@@ -221,7 +221,9 @@ in
         commands = lib.mkDefault {
           copy-last = ./commands/copylast.md;
           refactor-python = ./commands/refactor-python.md;
+          nix-map = ./commands/nix-map.md;
           nix-refine = ./commands/nix-refine.md;
+          nix-doc-audit = ./commands/nix-doc-audit.md;
         };
       };
     }

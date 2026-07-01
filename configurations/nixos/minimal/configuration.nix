@@ -2,7 +2,6 @@
   boot.loader.systemd-boot.enable = true;
   boot.loader.efi.canTouchEfiVariables = true;
 
-  networking.hostName = "minimal";
   networking.networkmanager.enable = true;
   i18n.defaultLocale = "en_US.UTF-8";
   services.xserver.xkb = { layout = "us"; variant = ""; };
