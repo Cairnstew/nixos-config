@@ -92,7 +92,8 @@ in
   config = lib.mkIf cfg.enable {
     systemd.services.suwayomi-sync-export = {
       description = "Suwayomi filtered backup export to git repo";
-      after = [ "network-online.target" ];
+      after = [ "suwayomi-server.service" "network-online.target" ];
+      requires = [ "suwayomi-server.service" ];
       wants = [ "network-online.target" ];
       serviceConfig = {
         Type = "oneshot";

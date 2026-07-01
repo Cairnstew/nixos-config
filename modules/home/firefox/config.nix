@@ -22,6 +22,8 @@ let
 in
 {
   config = lib.mkIf cfg.enable {
+    stylix.targets.firefox.profileNames = [ cfg.username ];
+
     programs.firefox = {
       enable = true;
       package = lib.mkDefault pkgs.firefox;
