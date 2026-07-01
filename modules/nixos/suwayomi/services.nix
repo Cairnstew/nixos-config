@@ -54,11 +54,18 @@ in
           TACHIDESK_SERVER_AUTH_PASSWORD="$(<${cfg.settings.server.authPasswordFile})"
           export TACHIDESK_SERVER_AUTH_PASSWORD
         ''}
+        ${lib.optionalString cfg.autoBindTailscaleIp ''
+          BIND_IP="$(${pkgs.tailscale}/bin/tailscale ip -4 2>/dev/null)" || BIND_IP="${cfg.settings.server.ip}"
+        ''}
+        EXTRA_OPTS="-Dsuwayomi.tachidesk.config.server.rootDir=${cfg.dataDir}"
+        ${lib.optionalString cfg.autoBindTailscaleIp ''
+          EXTRA_OPTS="$EXTRA_OPTS -Dsuwayomi.tachidesk.config.server.ip=$BIND_IP"
+        ''}
         CONF="${cfg.dataDir}/.local/share/Tachidesk/server.conf"
         if [ ! -f "$CONF" ]; then
           ${lib.getExe pkgs.envsubst} -i ${configFile} -o "$CONF"
         fi
-        exec ${lib.getExe cfg.package} -Dsuwayomi.tachidesk.config.server.rootDir=${cfg.dataDir}
+        exec ${lib.getExe cfg.package} $EXTRA_OPTS
       '';
 
       serviceConfig = {

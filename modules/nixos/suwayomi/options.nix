@@ -39,6 +39,16 @@ in
       description = "Open the firewall for the Suwayomi port";
     };
 
+    autoBindTailscaleIp = lib.mkOption {
+      type = lib.types.bool;
+      default = false;
+      description = ''
+        Resolve the bind IP from Tailscale at runtime via `tailscale ip -4`.
+        Falls back to settings.server.ip if Tailscale isn't available.
+        Hardens the service to only listen on the tailnet interface.
+      '';
+    };
+
     settings = lib.mkOption {
       type = lib.types.submodule {
         freeformType = format.type;

@@ -93,12 +93,14 @@
   # ── Manga Reader (sync library to config repo) ───────────────────────────
   my.services.suwayomi = {
     enable = true;
+    autoBindTailscaleIp = true;
     settings.server = {
       backupInterval = 0;
       extensionRepos = [
         "https://raw.githubusercontent.com/keiyoushi/extensions/repo/index.min.json"
       ];
     };
+    openFirewall = true;
     sync.export = {
       enable = true;
       autoPush = true;
