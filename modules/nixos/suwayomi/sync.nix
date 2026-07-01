@@ -42,7 +42,10 @@ let
 
       # 5. Git commit
       git -c safe.directory="$REPO" -C "$REPO" add "$DEST"
-      git -c safe.directory="$REPO" -C "$REPO" commit \
+      git -c safe.directory="$REPO" \
+        -c user.name="Suwayomi Sync" \
+        -c user.email="suwayomi-sync@nixos" \
+        -C "$REPO" commit \
         -m "suwayomi-sync: export $(date -Iseconds)" \
         --allow-empty-message 2>/dev/null || true
 
