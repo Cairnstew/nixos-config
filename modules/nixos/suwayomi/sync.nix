@@ -4,7 +4,7 @@ let
 
   exportPkg = pkgs.writeShellApplication {
     name = "suwayomi-sync-export";
-    runtimeInputs = with pkgs; [ curl jq git coreutils gnused ];
+    runtimeInputs = with pkgs; [ curl jq git coreutils gnused diffutils ];
     text = ''
       set -euo pipefail
 
@@ -13,6 +13,7 @@ let
       PORT="${toString config.my.services.suwayomi.settings.server.port}"
 
       # 1. Fire mutation to create filtered backup
+      # shellcheck disable=SC2016
       RESPONSE=$(curl -s -X POST "http://127.0.0.1:$PORT/api/graphql" \
         -H "Content-Type: application/json" \
         -d '{"query":"mutation($input: CreateBackupInput!) { createBackup(input: $input) { url } }","variables":{"input":{"flags":{"includeManga":true,"includeCategories":true,"includeChapters":false,"includeTracking":false,"includeHistory":false,"includeClientData":false,"includeServerSettings":false}}}}')
@@ -40,8 +41,8 @@ let
       chmod 644 "$REPO/$DEST"
 
       # 5. Git commit
-      git -C "$REPO" add "$DEST"
-      git -C "$REPO" commit \
+      git -c safe.directory="$REPO" -C "$REPO" add "$DEST"
+      git -c safe.directory="$REPO" -C "$REPO" commit \
         -m "suwayomi-sync: export $(date -Iseconds)" \
         --allow-empty-message 2>/dev/null || true
 
@@ -63,7 +64,7 @@ let
           esac
           HELPER
           chmod +x "$GIT_ASKPASS"
-          git -C "$REPO" push 2>&1 | \
+          git -c safe.directory="$REPO" -C "$REPO" push 2>&1 | \
             ${pkgs.systemd}/bin/systemd-cat -t suwayomi-sync-export -p info || \
             echo "suwayomi-sync: push failed (non-fatal)" >&2
           rm -f "$GIT_ASKPASS"
