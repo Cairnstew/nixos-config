@@ -59,19 +59,7 @@ in
               fi
             fi
 
-            # 4. Validate backup before restoring
-            VALIDATE=$(curl -s -X POST "$BASE/api/graphql" \
-              -F "operations={\"query\":\"mutation(\$file: Upload!) { validateBackup(input: { backup: \$file }) { valid } }\",\"variables\":{\"file\":null}}" \
-              -F "map={\"0\":[\"variables.file\"]}" \
-              -F "0=@$BACKUP_FILE;type=application/octet-stream" 2>&1)
-            VALID=$(echo "$VALIDATE" | ${pkgs.jq}/bin/jq -r '.data.validateBackup.valid // false')
-            if [ "$VALID" != "true" ]; then
-              echo "suwayomi-sync-import: backup validation failed — response: $VALIDATE" >&2
-              exit 1
-            fi
-            echo "suwayomi-sync-import: backup validation passed"
-
-            # 5. Restore backup via multipart upload
+            # 4. Restore backup via multipart upload (no validateBackup mutation available)
             echo "suwayomi-sync-import: restoring backup..."
             RESTORE=$(curl -s -X POST "$BASE/api/graphql" \
               -F "operations={\"query\":\"mutation(\$file: Upload!) { restoreBackup(input: { backup: \$file, flags: { includeManga: true, includeCategories: true, includeChapters: false, includeTracking: true, includeHistory: true, includeClientData: false, includeServerSettings: false } }) { status { state } } }\",\"variables\":{\"file\":null}}" \
@@ -80,7 +68,7 @@ in
             STATE=$(echo "$RESTORE" | ${pkgs.jq}/bin/jq -r '.data.restoreBackup.status.state // "unknown"')
             echo "suwayomi-sync-import: restore state: $STATE"
 
-            # 6. Track hash to avoid re-importing
+            # 5. Track hash to avoid re-importing
             echo "$NEW_HASH" > "$LAST_HASH_FILE"
           '';
         }}/bin/suwayomi-sync-import";
