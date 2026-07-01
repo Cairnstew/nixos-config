@@ -269,7 +269,7 @@ in
             # Local Ollama MCP via supergateway — streamableHttp at /mcp
             ollama = {
               type = "streamableHttp";
-              url  = "http://100.119.248.77:3100/mcp";
+              url  = "http://100.78.102.28:3100/mcp";
             };
             # Hosted Linear MCP
             linear = {

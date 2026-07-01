@@ -224,7 +224,7 @@
   tailnet = {
     # Server host (headless, primary infrastructure).
     # Consumed by: deployment scripts, SSH config, service proxy settings.
-    server = { ip = "100.119.248.77"; hostname = "server"; magicDnsName = "server.tail685690.ts.net"; };
+    server = { ip = "100.78.102.28"; hostname = "server"; magicDnsName = "server.tail685690.ts.net"; };
 
     # Laptop (mobile workstation).
     # Consumed by: sync targets, SSH host alias.
