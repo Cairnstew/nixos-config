@@ -62,6 +62,17 @@
     theming.stylix.enable = true;
   };
 
+  # ── Mouse ─────────────────────────────────────────────────────────────────
+  # Kernel-level acceleration via maccel (enabled by gaming profile).
+  # sensMultiplier 2.0 = 2× base sensitivity before acceleration.
+  # outputCap 3.0 = max 3× boost at high speeds.
+  my.hardware.mouse.parameters = {
+    sensMultiplier = 2.0;
+    acceleration = 0.3;
+    offset = 4.0;
+    outputCap = 3.0;
+  };
+
   # ── Desktop Environment ────────────────────────────────────────────────────
   # Toggle between "hyprland" and "gnome" to switch desktop environments.
   my.profiles.desktop.choice = "hyprland";
@@ -147,6 +158,7 @@
       };
 
       debug.enable = true;
+      accelProfile = "flat";
     };
 
     wallpapers = {
@@ -709,6 +721,7 @@
   my.services.suwayomi = {
     settings.server = {
       ip = "0.0.0.0";
+      backupInterval = 0;
       extensionRepos = [
         "https://raw.githubusercontent.com/keiyoushi/extensions/repo/index.min.json"
       ];
