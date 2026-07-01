@@ -52,7 +52,7 @@ let
       #   call 2: $1 = "Password for 'https://github.com': "  → stdout: "<token>"
       # The temp helper script stores only the path to the secret, never the value.
       ${lib.optionalString cfg.autoPush ''
-        if [ -f "${cfg.secretPath}" ]; then
+          if [ -f "${cfg.secretPath}" ]; then
           export GIT_ASKPASS
           GIT_ASKPASS=$(mktemp)
           # quoted heredoc ('HELPER') prevents bash from expanding $1 at write time
@@ -68,10 +68,10 @@ let
             ${pkgs.systemd}/bin/systemd-cat -t suwayomi-sync-export -p info || \
             echo "suwayomi-sync: push failed (non-fatal)" >&2
           rm -f "$GIT_ASKPASS"
-        else
-          echo "suwayomi-sync: secretPath not found at ${cfg.secretPath}, cannot push" >&2
-          exit 1
-        fi
+          else
+            echo "suwayomi-sync: secretPath not found at ${cfg.secretPath}, cannot push" >&2
+            exit 1
+          fi
       ''}
     '';
   };
