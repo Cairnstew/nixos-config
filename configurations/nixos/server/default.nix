@@ -92,6 +92,24 @@
     autoRollback.enable = true;
   };
 
+  # ── Manga Reader (sync library to config repo) ───────────────────────────
+  my.services.suwayomi = {
+    enable = true;
+    settings.server = {
+      backupInterval = 0;
+      extensionRepos = [
+        "https://raw.githubusercontent.com/keiyoushi/extensions/repo/index.min.json"
+      ];
+    };
+    sync.export = {
+      enable = true;
+      autoPush = true;
+      repoPath = "/home/seanc/nixos-config";
+      secretPath = "/run/agenix/github-token";
+      interval = "daily";
+    };
+  };
+
   # ── NVIDIA Configuration ───────────────────────────────────────────────
   my.services.ollama = {
     gpu.enable = true;
