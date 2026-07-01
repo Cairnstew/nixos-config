@@ -28,7 +28,7 @@ in
       '';
     }
     {
-      assertion = !cfg.enable || !(cfg.exportTemplates.enable && cfg.exportTemplates.autoDownload) || (pkgs ? godot-export-templates || cfg.exportTemplates.package != null);
+      assertion = !cfg.enable || !(cfg.exportTemplates.enable && cfg.exportTemplates.autoDownload) || (pkgs ? godot-export-templates-bin || cfg.exportTemplates.package != null);
       message = ''
         my.programs.godot.exportTemplates.autoDownload is enabled but no
         export templates package is available. Set `exportTemplates.package`

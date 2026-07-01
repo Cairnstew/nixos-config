@@ -5,8 +5,8 @@ let
   inherit (flake.config.me) username;
 
   templatesPkg =
-    if pkgs ? godot-export-templates then
-      pkgs.godot-export-templates
+    if pkgs ? godot-export-templates-bin then
+      pkgs.godot-export-templates-bin
     else
       null;
 

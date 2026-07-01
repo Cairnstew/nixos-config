@@ -15,8 +15,8 @@ let
   exportTemplatesPkg =
     if cfg.exportTemplates.package != null then
       cfg.exportTemplates.package
-    else if pkgs ? godot-export-templates then
-      pkgs.godot-export-templates
+    else if pkgs ? godot-export-templates-bin then
+      pkgs.godot-export-templates-bin
     else
       null;
 in

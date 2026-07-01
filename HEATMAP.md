@@ -214,6 +214,28 @@ All `my.*` options declared across module files.
 | `my.programs.firefox.enable` | bool | `false` | Firefox browser |
 | `my.programs.youtube-music.enable` | bool | `false` | YouTube Music client |
 | `my.programs.steam.enable` | bool | `false` | Steam gaming platform (32-bit, unfree, system-wide) |
+| `my.programs.godot.enable` | bool | `false` | Godot game engine and development tools |
+| `my.programs.godot.engine.enable` | bool | `true` | Install the Godot Engine editor |
+| `my.programs.godot.engine.package` | null/pkg | `null` | Custom Godot package to use |
+| `my.programs.godot.engine.headless.enable` | bool | `false` | Install Godot headless/server build |
+| `my.programs.godot.exportTemplates.enable` | bool | `false` | Install Godot export templates |
+| `my.programs.godot.exportTemplates.autoDownload` | bool | `false` | Auto-place templates in editor dir |
+| `my.programs.godot.gdscript.enable` | bool | `false` | GDScript tooling (linter, formatter) |
+| `my.programs.godot.mono.enable` | bool | `false` | Mono/C# support (requires dotnet-sdk) |
+| `my.programs.godot.mcp.enable` | bool | `false` | Godot MCP server for AI assistance |
+| `my.programs.godot.mcp.port` | port | `3101` | MCP server port |
+| `my.programs.godot.mcp.openFirewall` | bool | `false` | Open MCP port in firewall |
+| `my.programs.godot.pckTool.enable` | bool | `false` | godotpcktool for .pck files |
+| `my.programs.godot.companionApps.enable` | bool | `false` | Companion game dev applications |
+| `my.programs.godot.companionApps.aseprite` | bool | `false` | Aseprite pixel art editor |
+| `my.programs.godot.companionApps.blender` | bool | `false` | Blender 3D modelling |
+| `my.programs.godot.companionApps.inkscape` | bool | `false` | Inkscape vector graphics |
+| `my.programs.godot.companionApps.audacity` | bool | `false` | Audacity audio editor |
+| `my.programs.godot.companionApps.pixelorama` | bool | `false` | Pixelorama sprite editor |
+| `my.programs.godot.companionApps.tiled` | bool | `false` | Tiled tile map editor |
+| `my.programs.godot.companionApps.texturePacker` | bool | `false` | TexturePacker sprite sheets |
+| `my.programs.godot.editor.settingsFile` | null/path | `null` | Pre-populate editor settings file |
+| `my.programs.godot.projects` | attrs | `{}` | Declared Godot projects with desktop entries |
 | `my.programs.steam.remotePlay.openFirewall` | bool | `false` | Open firewall for Steam Remote Play Together |
 | `my.programs.steam.dedicatedServer.openFirewall` | bool | `false` | Open firewall for Steam dedicated servers |
 | `my.programs.steam.gamemode.enable` | bool | `false` | Enable Feral Gamemode |

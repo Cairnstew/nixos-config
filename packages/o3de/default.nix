@@ -27,6 +27,11 @@ let
   # pkgs-stable is provided by overlays/default.nix; auto-wired callPackage omits it.
   py = if pkgs-stable != null then pkgs-stable.python310 else python3;
 
+  # Derive python binary/lib names from the actual python version (not hardcoded).
+  pyVersion = lib.versions.majorMinor py.pythonVersion;
+  pyBin = "python${pyVersion}";
+  pyLib = "lib${pyBin}.so.1.0";
+
   # CMake overlay that pre-defines 3rdParty::* targets from nixpkgs packages,
   # causing O3DE to skip the CDN downloads.  Injected via CMAKE_PROJECT_INCLUDE.
   nixpkgsOverlay = ./NixpkgsPackages.cmake;
@@ -162,14 +167,30 @@ stdenv.mkDerivation (finalAttrs: {
     cp -r ${pkgs.rapidxml}/include/rapidxml Code/RapidXML/rapidxml
     chmod -R u+w Code/RapidXML
     # Insert forward declarations before print_node in rapidxml_print.hpp
+    # GCC 15 two-phase lookup requires all functions to be declared before use.
     sed -i '105i\
 template<class OutIt, class Ch> OutIt print_children(OutIt, const xml_node<Ch>*, int, int);\
 template<class OutIt, class Ch> OutIt print_comment_node(OutIt, const xml_node<Ch>*, int, int);\
 template<class OutIt, class Ch> OutIt print_doctype_node(OutIt, const xml_node<Ch>*, int, int);\
 template<class OutIt, class Ch> OutIt print_pi_node(OutIt, const xml_node<Ch>*, int, int);\
+template<class OutIt, class Ch> OutIt print_element_node(OutIt, const xml_node<Ch>*, int, int);\
+template<class OutIt, class Ch> OutIt print_data_node(OutIt, const xml_node<Ch>*, int, int);\
+template<class OutIt, class Ch> OutIt print_cdata_node(OutIt, const xml_node<Ch>*, int, int);\
+template<class OutIt, class Ch> OutIt print_declaration_node(OutIt, const xml_node<Ch>*, int, int);\
 ' Code/RapidXML/rapidxml/rapidxml_print.hpp
     # Verify our patched copy exists
     test -f Code/RapidXML/rapidxml/rapidxml_print.hpp || { echo "ERROR: patched copy missing"; exit 1; }
+    # Add isError() method to xml_document (missing in rapidxml 1.13, added in 1.14).
+    # The nixpkgs rapidxml has CRLF line endings; strip to LF, then patch.
+    tr -d '\r' < Code/RapidXML/rapidxml/rapidxml.hpp > Code/RapidXML/rapidxml/rapidxml.hpp.lf
+    # Find line number of "//! \cond internal" that follows "    };", insert before it
+    line=$(grep -n '//! .*cond internal' Code/RapidXML/rapidxml/rapidxml.hpp.lf | tail -1 | cut -d: -f1)
+    # Insert before the blank line that precedes "//! \cond internal"
+    line=$((line - 1))
+    sed -i "''${line}i\\    bool isError() const { return m_error != 0; }" Code/RapidXML/rapidxml/rapidxml.hpp.lf
+    mv Code/RapidXML/rapidxml/rapidxml.hpp.lf Code/RapidXML/rapidxml/rapidxml.hpp
+    # Verify isError was added
+    grep -q "isError" Code/RapidXML/rapidxml/rapidxml.hpp || { echo "ERROR: isError() not added"; exit 1; }
     # Add our patched rapidxml to include path BEFORE nixpkgs copy
     sed -i '1iinclude_directories(BEFORE "''${CMAKE_CURRENT_SOURCE_DIR}/RapidXML")' Code/CMakeLists.txt
     # Lua headers in nixpkgs are at <lua.h> not <Lua/lua.h> — fix all files
@@ -227,22 +248,24 @@ template<class OutIt, class Ch> OutIt print_pi_node(OutIt, const xml_node<Ch>*, 
 
   preConfigure = ''
     patchShebangs scripts/
-    # Suppress GCC 14+ -Werror compatibility issues via env var that cmake honors
-    export CXXFLAGS="-Wno-nonnull -Wno-unused-variable"
+    # Suppress GCC 14+ -Werror compatibility issues via env var that cmake honors.
+    # -fexceptions is needed because O3DE's rapidxml uses parse_error exceptions.
+    export CXXFLAGS="-fexceptions -Wno-nonnull -Wno-unused-variable"
+    export CFLAGS="-fexceptions"
 
     export HOME="$TMPDIR/o3de-home"
     export O3DE_SNAP=1
     mkdir -p "$HOME/.o3de"
 
     # Pre-populate O3DE Python package directory with python310 from nixpkgs-stable
-    O3DE_PY_PACKAGE="$HOME/.o3de/Python/packages/python-3.10.13-rev2-linux"
+    O3DE_PY_PACKAGE="$HOME/.o3de/Python/packages/python-${pyVersion}-rev2-linux"
     mkdir -p "$O3DE_PY_PACKAGE/python/bin" "$O3DE_PY_PACKAGE/python/lib"
-    ln -sf ${py}/bin/python3.10 "$O3DE_PY_PACKAGE/python/bin/python"
-    ln -sf ${py}/lib/libpython3.10.so.1.0 "$O3DE_PY_PACKAGE/python/lib/libpython3.10.so.1.0"
+    ln -sf ${py}/bin/${pyBin} "$O3DE_PY_PACKAGE/python/bin/python"
+    ln -sf ${py}/lib/${pyLib} "$O3DE_PY_PACKAGE/python/lib/${pyLib}"
 
     # Symlink venv lib to handle ly_post_python_venv_install step
     mkdir -p "$HOME/.o3de/Python/venv/ab252e61/lib"
-    ln -sf ${py}/lib/libpython3.10.so.1.0 "$HOME/.o3de/Python/venv/ab252e61/lib/libpython3.10.so.1.0"
+    ln -sf ${py}/lib/${pyLib} "$HOME/.o3de/Python/venv/ab252e61/lib/${pyLib}"
 
     cat > "$HOME/.o3de/o3de_manifest.json" << MANIFEST
     {
@@ -284,10 +307,10 @@ template<class OutIt, class Ch> OutIt print_pi_node(OutIt, const xml_node<Ch>*, 
 
     # Copy nixpkgs site-packages into the venv so Jinja2 is available
     # for AutoGen (no network in sandbox).  Ignore failures.
-    VENV_SITE="$VENV_PATH/lib/python3.10/site-packages"
+    VENV_SITE="$VENV_PATH/lib/${pyBin}/site-packages"
     rm -rf "$VENV_SITE"
     mkdir -p "$VENV_SITE"
-    ln -sf "$PY_PREFIX/lib/python3.10/site-packages"/* "$VENV_SITE/" 2>/dev/null || true
+    ln -sf "$PY_PREFIX/lib/${pyBin}/site-packages"/* "$VENV_SITE/" 2>/dev/null || true
     "$VENV_PATH/bin/python" -c "import jinja2; print('jinja2 ok')" 2>&1 || echo "WARNING: jinja2 not in venv, AutoGen will fail"
 
     # Create the hash file (no trailing newline — cmake file(READ) includes it and breaks STREQUAL)
@@ -385,8 +408,8 @@ template<class OutIt, class Ch> OutIt print_pi_node(OutIt, const xml_node<Ch>*, 
       (NixpkgsPackages.cmake) pre-defines 3rdParty::* targets from nixpkgs,
       which causes O3DE's package system to skip CDN downloads.  Tier 1/2
       packages (zlib, OpenSSL, libpng, etc.) are aliased directly.
-      Python 3.10 (from nixpkgs-stable) is used to match O3DE's pinned
-      numpy==1.23.0 compatibility requirements.
+      Python 3.10 (from nixpkgs-stable) is used by default; falls back to
+      the unstable channel's python3 when nixpkgs-stable is unavailable.
     '';
     homepage = "https://o3de.org";
     license = lib.licenses.asl20;

@@ -12,7 +12,7 @@
 
       sensMultiplier = lib.mkOption {
         type = lib.types.nullOr lib.types.float;
-        default = 1.0;
+        default = 2.0;
         description = "Sensitivity multiplier applied after acceleration calculation.";
       };
 
@@ -94,6 +94,44 @@
           // { description = "positive float"; });
         default = null;
         description = "Sets the middle sensitivity between min and max sensitivity.";
+      };
+    };
+
+    logging = {
+      enable = lib.mkOption {
+        type = lib.types.bool;
+        default = true;
+        description = ''
+          Periodically log maccel state to journald for diagnostics.
+          Helps detect when maccel parameters change unexpectedly or the module stops working.
+        '';
+      };
+
+      interval = lib.mkOption {
+        type = lib.types.str;
+        default = "5min";
+        example = "1min";
+        description = "How often to check and log maccel state. Systemd timer interval format.";
+      };
+
+      watch = lib.mkEnableOption "maccel-watch CLI helper for interactive real-time monitoring" // { default = true; };
+
+      logAll = lib.mkOption {
+        type = lib.types.bool;
+        default = false;
+        description = ''
+          Log all parameters on every check. When false, only logs when
+          current values differ from the configured expected values.
+        '';
+      };
+
+      sysfsWatch = lib.mkOption {
+        type = lib.types.bool;
+        default = true;
+        description = ''
+          Watch the maccel sysfs files for changes via systemd path units.
+          Logs immediately when a parameter is modified outside of the expected configuration.
+        '';
       };
     };
 

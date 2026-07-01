@@ -101,7 +101,7 @@ in
                       "  IdentityFile \($key)",
                       "  IdentitiesOnly yes"
                     else empty end;
-                  [.Self, (.Peer // {})[]] | .[] | select(. != null and .DNSName != null) |
+                  [.Self, (.Peer // {})[]] | .[] | select(. != null and .DNSName != null and .DNSName != "") |
                     "Host \(.DNSName | short)",
                     "  HostName \(.DNSName | clean)",
                     identityBlock,

@@ -2,6 +2,21 @@
 
 ---
 
+**`git -c safe.directory="*"` is maximally permissive — scope to the literal path instead**
+Symptom: A systemd oneshot service running as root that calls `git` on a user-owned repo fails with `fatal: detected dubious ownership in repository at '/tmp/foo'`. Fix: Use `git -c safe.directory="$REPO"` where `$REPO` is the literal path to the repo (already set as a script variable from the Nix config option). Avoid `git -c safe.directory="*"` — while functionally equivalent when all git invocations are scoped to a single Nix-declared path, the wildcard would suppress the ownership check for any path passed to git in the process, including paths that come from external input (e.g. a malicious backup filename). The literal-path form is both correct and self-documenting. See `modules/nixos/suwayomi/sync.nix:44-45`.
+
+---
+
+**`maccel-audit.service` fails with exit code 101 during `nixos-rebuild switch`**
+Symptom: `nix run` (nixos-rebuild switch) succeeds but reports `maccel-audit.service` failed with `status=101/n/a`. The audit only prints `=== maccel boot audit ===` with no logger output. Subsequent boots work fine. Cause: The `maccel-logger` script uses `set -euo pipefail` and calls the `maccel` CLI (Rust binary). During a switch, the kernel module might be in a transitional state; the Rust CLI can panic (exit 101) when the sysfs interface is briefly unavailable. The `set -e` propagates the panic exit code to the service. Additionally, `EXPECTED_MODE` was set to the config value ("linear") which never matched the CLI output ("Linear Acceleration"), causing persistent WARN noise in every run. Fix: (1) Removed `set -e` from the logger script — it's a diagnostic tool and should never fail the service. (2) Changed `exit 1` to `exit 0` on missing-module checks. (3) Added `|| true` guard in the audit service script. (4) Added `modeDisplayMap` so `EXPECTED_MODE` matches the actual CLI output. See `modules/nixos/mouse/config.nix`.
+
+---
+
+**`tailscale-ssh-config` produces `Host null` / `Host` entries when DNSName is empty**
+Symptom: `ssh server` fails with `no argument after keyword "hostname"`. The generated `/home/<user>/.ssh/config.d/tailscale` contains entries like `Host null` and `Host` with empty `HostName` lines. Cause: `tailscale status --json` can return Self/Peer entries with an empty `DNSName` string (e.g. when tailscale isn't fully authenticated). The jq filter only checked `.DNSName != null` but not `.DNSName != ""`, so empty-string DNSNames passed through and produced `HostName` with no argument. Fix: Added `.DNSName != ""` to the jq `select` filter. To recover: `sudo tee ~seanc/.ssh/config.d/tailscale > /dev/null <<< "$(head -3 ...)"` or regenerate via `sudo systemctl start tailscale-ssh-config` after deploying the fix. See `modules/nixos/tailscale/config.nix:104`.
+
+---
+
 **O3DE CDN fully dead — CMake overlay + nixpkgs-stable Python 3.10 workaround**
 Symptom: Building `packages.x86_64-linux.o3de` tries to download 34 SDK packages from `https://d3t6xeg4fgfoum.cloudfront.net/`. Outside sandbox returns `403 AccessDenied` (CloudFront). The S3 bucket policy behind it blocks all access. CDN is fully dead. Fix: `packages/o3de/NixpkgsPackages.cmake` pre-defines `3rdParty::*` targets from nixpkgs before O3DE's package system runs, skipping the CDN. Qt targets now point at nixpkgs Qt6 (real targets instead of stubs — all 10 private headers O3DE uses are standard). Python uses `pkgs-stable.python310` from the `nixpkgs-stable` flake input (nixos-25.11). Numpy pin in requirements.txt is patched from `==1.23.0` to `>=1.24.0`. The package evaluates and passes `nix flake check`, but a full build has not been tested yet — the CMake configure was previously blocked on Python pip requirements (numpy build failure on Python 3.13); switching to Python 3.10 is expected to resolve this.
 

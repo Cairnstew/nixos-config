@@ -24,8 +24,11 @@ in
       nixpkgs-unstable.flake = flake.inputs.nixpkgs-unstable;
     };
 
+    daemonCPUSchedPolicy = "batch";
+    daemonIOSchedPriority = 7;
+
     settings = {
-      max-jobs = "auto";
+      max-jobs = 4;
       cores = 0;
       min-free = lib.mkDefault (5 * 1024 * 1024 * 1024);
       max-free = lib.mkDefault (30 * 1024 * 1024 * 1024);

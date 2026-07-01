@@ -48,6 +48,15 @@ self: super: {
     };
   };
 
+  # Foundation save file manager (backup, restore, template deploy)
+  foundation-save-deployer = self.callPackage "${packages}/foundation-save-deployer" { };
+
+  # Foundation save export mod (Lua-based game state exporter)
+  foundation-save-export-mod = self.callPackage "${packages}/foundation-save-export-mod" { };
+
+  # Foundation save CLI (parse, generate, modify saves + runtime IPC)
+  foundation-save-cli = self.callPackage "${packages}/foundation-save-cli" { };
+
   # wimboot 2.8.0 fails with GCC -Werror=unterminated-string-initialization
   # Suppress the specific warning until upstream fixes it
   wimboot = super.wimboot.overrideAttrs (old: {
