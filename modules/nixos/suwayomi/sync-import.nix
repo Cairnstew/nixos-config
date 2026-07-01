@@ -56,6 +56,10 @@ in
               LAST_HASH=$(cat "$LAST_HASH_FILE" 2>/dev/null || echo "")
               if [ "$NEW_HASH" = "$LAST_HASH" ]; then
                 echo "suwayomi-sync-import: backup unchanged — skipping import"
+                # Still refresh extension list from repos
+                curl -s -X POST "$BASE/api/graphql" \
+                  -H "Content-Type: application/json" \
+                  -d '{"query":"mutation { fetchExtensions(input: {}) { clientMutationId } }"}' > /dev/null 2>&1 || true
                 exit 0
               fi
             fi
@@ -69,7 +73,13 @@ in
             STATE=$(echo "$RESTORE" | ${pkgs.jq}/bin/jq -r '.data.restoreBackup.status.state // "unknown"')
             echo "suwayomi-sync-import: restore state: $STATE"
 
-            # 5. Track hash to avoid re-importing
+            # 5. Refresh extension list from configured repos
+            echo "suwayomi-sync-import: fetching extensions..."
+            curl -s -X POST "$BASE/api/graphql" \
+              -H "Content-Type: application/json" \
+              -d '{"query":"mutation { fetchExtensions(input: {}) { clientMutationId } }"}' > /dev/null 2>&1 || true
+
+            # 6. Track hash to avoid re-importing
             echo "$NEW_HASH" > "$LAST_HASH_FILE"
           '';
         }}/bin/suwayomi-sync-import";
