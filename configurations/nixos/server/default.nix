@@ -108,6 +108,7 @@
       secretPath = "/run/agenix/github-token";
       interval = "daily";
     };
+    sync.import.enable = true;
   };
 
   # ── NVIDIA Configuration ───────────────────────────────────────────────

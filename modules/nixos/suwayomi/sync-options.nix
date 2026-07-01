@@ -51,4 +51,15 @@ in
       '';
     };
   };
+
+  options.my.services.suwayomi.sync.import = {
+    enable = mkEnableOption "Suwayomi library import from git repo";
+
+    interval = mkOption {
+      type = types.str;
+      default = "hourly";
+      example = "30m";
+      description = "systemd OnCalendar expression for import frequency";
+    };
+  };
 }

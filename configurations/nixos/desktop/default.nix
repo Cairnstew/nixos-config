@@ -719,8 +719,8 @@
   # ── Manga Reader ─────────────────────────────────────────────────────────
   # Suwayomi-Server backend + Moku frontend (both enabled via entertainment profile)
   my.services.suwayomi = {
+    autoBindTailscaleIp = true;
     settings.server = {
-      ip = "0.0.0.0";
       backupInterval = 0;
       extensionRepos = [
         "https://raw.githubusercontent.com/keiyoushi/extensions/repo/index.min.json"
@@ -728,6 +728,14 @@
     };
     openFirewall = true;
     extraReadWritePaths = [ "/mnt/media/suwayomi" ];
+    sync.export = {
+      enable = true;
+      autoPush = true;
+      repoPath = "/home/seanc/nixos-config";
+      secretPath = "/run/agenix/github-token";
+      interval = "hourly";
+    };
+    sync.import.enable = true;
   };
 
   # Only the desktop manages tailscale ACL policy (auth keys, port grants)

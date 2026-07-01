@@ -2,9 +2,11 @@
 let
   cfg = config.my.services.suwayomi.sync.export;
 
+  serverCfg = config.my.services.suwayomi;
+
   exportPkg = pkgs.writeShellApplication {
     name = "suwayomi-sync-export";
-    runtimeInputs = with pkgs; [ curl jq git coreutils gnused diffutils ];
+    runtimeInputs = with pkgs; [ curl jq git coreutils gnused diffutils tailscale ];
     text = ''
       set -euo pipefail
 
@@ -12,11 +14,18 @@ let
       DEST="${cfg.destFile}"
       PORT="${toString config.my.services.suwayomi.settings.server.port}"
 
+      # Resolve local Suwayomi bind address
+      BIND_IP="127.0.0.1"
+      ${lib.optionalString serverCfg.autoBindTailscaleIp ''
+        TS_IP=$(tailscale ip -4 2>/dev/null) && BIND_IP="$TS_IP"
+      ''}
+      BASE="http://$BIND_IP:$PORT"
+
       # 1. Fire mutation to create filtered backup
       # shellcheck disable=SC2016
-      RESPONSE=$(curl -s -X POST "http://127.0.0.1:$PORT/api/graphql" \
+      RESPONSE=$(curl -s -X POST "$BASE/api/graphql" \
         -H "Content-Type: application/json" \
-        -d '{"query":"mutation($input: CreateBackupInput!) { createBackup(input: $input) { url } }","variables":{"input":{"flags":{"includeManga":true,"includeCategories":true,"includeChapters":false,"includeTracking":false,"includeHistory":false,"includeClientData":false,"includeServerSettings":false}}}}')
+        -d '{"query":"mutation($input: CreateBackupInput!) { createBackup(input: $input) { url } }","variables":{"input":{"flags":{"includeManga":true,"includeCategories":true,"includeChapters":false,"includeTracking":true,"includeHistory":true,"includeClientData":false,"includeServerSettings":false}}}}')
 
       URL=$(echo "$RESPONSE" | ${pkgs.jq}/bin/jq -r '.data.createBackup.url')
       if [ -z "$URL" ] || [ "$URL" = "null" ]; then
@@ -26,7 +35,7 @@ let
 
       # 2. Download the backup file
       TMPFILE=$(mktemp)
-      curl -s -o "$TMPFILE" "http://127.0.0.1:$PORT$URL"
+      curl -s -o "$TMPFILE" "$BASE$URL"
 
       # 3. Compare with existing file
       if [ -f "$REPO/$DEST" ] && cmp -s "$TMPFILE" "$REPO/$DEST"; then
