@@ -9,8 +9,9 @@ in
   config = mkIf (cfg.enable && importCfg.enable) {
     systemd.services.suwayomi-sync-import = {
       description = "Suwayomi backup import from git repo";
-      after = [ "network-online.target" ];
+      after = [ "network-online.target" "suwayomi-server.service" ];
       wants = [ "network-online.target" ];
+      wantedBy = [ "suwayomi-server.service" ];
       serviceConfig = {
         Type = "oneshot";
         ExecStart = "${pkgs.writeShellApplication {
