@@ -3,9 +3,7 @@
   imports = [
     ./options.nix
     ./config.nix
-    ./services.nix
-    ./sync-options.nix
-    ./sync.nix
+    ./home.nix
     ./tests.nix
   ];
 }

@@ -22,16 +22,6 @@ in
       enable = lib.mkDefault false;
     };
 
-    my.hardware.mouse = {
-      enable = true;
-
-      parameters = {
-        mode = "linear";
-        sensMultiplier = 1.0;
-        acceleration = 0.3;
-        offset = 4.0;
-        outputCap = 3.0;
-      };
-    };
+    my.hardware.mouse.enable = lib.mkDefault true;
   };
 }

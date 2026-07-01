@@ -20,6 +20,11 @@ in
     # ── Build Tools ────────────────────────────────────────────────────────
     programs.direnv.enable = lib.mkDefault true;
 
+    # ── Game Development ────────────────────────────────────────────────────
+    # mkDefault true: Godot engine and basic tools included for game dev
+    # Override when: Not doing game development or want a specific version
+    my.programs.godot.enable = lib.mkDefault true;
+
     # ── Virtualisation ─────────────────────────────────────────────────────
     environment.systemPackages = with pkgs; [ qemu ];
 

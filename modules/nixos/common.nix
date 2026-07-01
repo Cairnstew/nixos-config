@@ -70,10 +70,11 @@ in
     ./disko
     ./dscnix
 
-    # ── Entertainment ──────────────────────────────────────────────────────
+    # ── Entertainment & Game Development ──────────────────────────────────
     ./spotify.nix
     ./steam
     ./proton
+    ./godot
     ./sillytavern
     ./suwayomi
     ./chatterbox-tts

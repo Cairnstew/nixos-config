@@ -2,11 +2,23 @@
 
 ---
 
+**`git -c safe.directory="*"` is maximally permissive — scope to the literal path instead**
+Symptom: A systemd oneshot service running as root that calls `git` on a user-owned repo fails with `fatal: detected dubious ownership in repository at '/tmp/foo'`. Fix: Use `git -c safe.directory="$REPO"` where `$REPO` is the literal path to the repo (already set as a script variable from the Nix config option). Avoid `git -c safe.directory="*"` — while functionally equivalent when all git invocations are scoped to a single Nix-declared path, the wildcard would suppress the ownership check for any path passed to git in the process, including paths that come from external input (e.g. a malicious backup filename). The literal-path form is both correct and self-documenting. See `modules/nixos/suwayomi/sync.nix:44-45`.
+
+---
+
 **`builtins.toJSON` in zerotier config.nix double-encodes local.conf → daemon fails to parse**
 Symptom: `nix run` succeeds but zerotierone fails with `ERROR: unable to parse local.conf (root element is not a JSON object)`. The service restarts in a loop. Cause: `modules/nixos/zerotier/config.nix` line 11 was calling `builtins.toJSON cfg.localConf` and passing the resulting string to upstream `services.zerotierone.localConf`. The upstream module uses `pkgs.formats.json.generate` which already serializes the value to JSON — `builtins.toJSON` double-encodes the content (JSON string wrapping JSON). When `localConf` was `null` (not set), it passed `null` instead of `{ }`, which also triggered the upstream's symlink creation for a file containing just `null`. Fix: Pass the attrset directly: `localConf = if cfg.localConf != null then cfg.localConf else { };` — let the upstream module handle serialization.
 
 ---
 
+**`maccel-audit.service` fails with exit code 101 during `nixos-rebuild switch`**
+Symptom: `nix run` (nixos-rebuild switch) succeeds but reports `maccel-audit.service` failed with `status=101/n/a`. The audit only prints `=== maccel boot audit ===` with no logger output. Subsequent boots work fine. Cause: The `maccel-logger` script uses `set -euo pipefail` and calls the `maccel` CLI (Rust binary). During a switch, the kernel module might be in a transitional state; the Rust CLI can panic (exit 101) when the sysfs interface is briefly unavailable. The `set -e` propagates the panic exit code to the service. Additionally, `EXPECTED_MODE` was set to the config value ("linear") which never matched the CLI output ("Linear Acceleration"), causing persistent WARN noise in every run. Fix: (1) Removed `set -e` from the logger script — it's a diagnostic tool and should never fail the service. (2) Changed `exit 1` to `exit 0` on missing-module checks. (3) Added `|| true` guard in the audit service script. (4) Added `modeDisplayMap` so `EXPECTED_MODE` matches the actual CLI output. See `modules/nixos/mouse/config.nix`.
+
+---
+
+**`tailscale-ssh-config` produces `Host null` / `Host` entries when DNSName is empty**
+Symptom: `ssh server` fails with `no argument after keyword "hostname"`. The generated `/home/<user>/.ssh/config.d/tailscale` contains entries like `Host null` and `Host` with empty `HostName` lines. Cause: `tailscale status --json` can return Self/Peer entries with an empty `DNSName` string (e.g. when tailscale isn't fully authenticated). The jq filter only checked `.DNSName != null` but not `.DNSName != ""`, so empty-string DNSNames passed through and produced `HostName` with no argument. Fix: Added `.DNSName != ""` to the jq `select` filter. To recover: `sudo tee ~seanc/.ssh/config.d/tailscale > /dev/null <<< "$(head -3 ...)"` or regenerate via `sudo systemctl start tailscale-ssh-config` after deploying the fix. See `modules/nixos/tailscale/config.nix:104`.
 ---
 
 **O3DE CDN fully dead — CMake overlay + nixpkgs-stable Python 3.10 workaround**

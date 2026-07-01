@@ -30,9 +30,11 @@ let
   # Use python310 from nixpkgs-stable when available, fall back to unstable python3.
   # pkgs-stable is provided by overlays/default.nix; auto-wired callPackage omits it.
   py = if pkgs-stable != null then pkgs-stable.python310 else python3;
-  pyVersion = lib.versions.majorMinor py.version;
+  pyVersion = lib.versions.majorMinor py.pythonVersion;
   pyLibName = "libpython${pyVersion}.so.1.0";
   pySitePkgs = "lib/python${pyVersion}/site-packages";
+  pyBin = "python${pyVersion}";
+  pyLib = "lib${pyBin}.so.1.0";
 
   # CMake overlay that pre-defines 3rdParty::* targets from nixpkgs packages,
   # causing O3DE to skip the CDN downloads.  Injected via CMAKE_PROJECT_INCLUDE.
@@ -458,8 +460,8 @@ if(NOT AUTOGEN_RESULT EQUAL 0)
       (NixpkgsPackages.cmake) pre-defines 3rdParty::* targets from nixpkgs,
       which causes O3DE's package system to skip CDN downloads.  Tier 1/2
       packages (zlib, OpenSSL, libpng, etc.) are aliased directly.
-      Python 3.10 (from nixpkgs-stable) is used to match O3DE's pinned
-      numpy==1.23.0 compatibility requirements.
+      Python 3.10 (from nixpkgs-stable) is used by default; falls back to
+      the unstable channel's python3 when nixpkgs-stable is unavailable.
     '';
     homepage = "https://o3de.org";
     license = lib.licenses.asl20;

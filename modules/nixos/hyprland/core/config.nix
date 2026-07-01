@@ -157,6 +157,7 @@ let
         kb_layout    = us
         follow_mouse = 1
         sensitivity  = 0
+        ${lib.optionalString (coreCfg.accelProfile != null) "accel_profile = ${coreCfg.accelProfile}"}
         touchpad {
             natural_scroll    = true
             tap-to-click      = true

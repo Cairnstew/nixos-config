@@ -217,5 +217,15 @@
         '';
       };
     };
+
+    accelProfile = lib.mkOption {
+      type = lib.types.nullOr (lib.types.enum [ "adaptive" "flat" ]);
+      default = null;
+      description = ''
+        Mouse acceleration profile in the Hyprland input section.
+        Set to "flat" when using maccel kernel module so libinput doesn't
+        apply its own acceleration on top.
+      '';
+    };
   };
 }

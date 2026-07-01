@@ -1,0 +1,8 @@
+{
+    "Name": "Foundation Save Export",
+    "Author": "seanc",
+    "Description": "Exports complete game state to JSON for save management, analysis, and backup purposes. Press F12 to trigger export.",
+    "Version": "1.0.0",
+    "Dependencies": [],
+    "MapList": []
+}
