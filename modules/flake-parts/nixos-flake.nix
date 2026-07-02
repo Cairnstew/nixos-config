@@ -32,7 +32,7 @@
         "home-manager"
         "nix-darwin"
         "nixos-unified"
-        "omnix"
+        # "omnix" removed — referenced but never declared as flake input (M5)
       ];
     };
   };

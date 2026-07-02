@@ -128,9 +128,9 @@
   # Remove this line after first SSH login.
   users.users.seanc.initialPassword = "changeme123";
 
-  # ── Unfree Software ─────────────────────────────────────────────────────
+  # ── Unfree Software (allowUnfree set globally in flake.nix) ────────────
   nixpkgs.config = {
-    allowUnfree = true;
+    # allowUnfree removed — globally set in flake.nix perSystem (M4d)
     cuda.acceptLicense = true;
   };
 

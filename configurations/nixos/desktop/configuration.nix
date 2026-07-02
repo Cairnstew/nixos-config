@@ -30,7 +30,7 @@
   users.users.seanc = {
     isNormalUser = true;
     description = "Sean Cairns";
-    extraGroups = [ "networkmanager" "wheel" "terraform" ];
+    # extraGroups removed — matches common.nix default [networkmanager terraform wheel] (M4b)
     initialPassword = "changeme";
   };
 }

@@ -59,14 +59,12 @@
   users.users.seanc = {
     isNormalUser = true;
     description = "Sean Cairns";
+    # M4b: explicitly excludes terraform (not needed on laptop)
     extraGroups = [ "networkmanager" "wheel" ];
     packages = with pkgs; [ ];
   };
 
-  nixpkgs.config = {
-    allowUnfree = true;
-  };
-
+  # nixpkgs.config.allowUnfree removed — globally set in flake.nix perSystem (M4d)
 
   # List packages installed in system profile. To search, run:
   # $ nix search wget

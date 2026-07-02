@@ -35,10 +35,7 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
-    auto-cpufreq = {
-      url = "github:AdnanHodzic/auto-cpufreq";
-      inputs.nixpkgs.follows = "nixpkgs"; # important to avoid version mismatch
-    };
+    # M5: auto-cpufreq removed — unused flake input (services.auto-cpufreq uses nixpkgs package, not flake input)
 
     terranix = {
       url = "github:terranix/terranix";
@@ -62,10 +59,7 @@
       flake = false;
     };
 
-    # Windows unattended answer file generator
-    GenerateAnswerFile = {
-      url = "github:Cairnstew/GenerateAnswerFile";
-    };
+    # M5: GenerateAnswerFile removed — unused flake input (only referenced in a description string)
 
     # DSC v3 YAML configuration generation (Nix → Windows DSC)
     dscnix = {
@@ -99,7 +93,10 @@
     };
 
     # Kernel-level mouse acceleration (Wayland-compatible)
-    maccel.url = "github:Gnarus-G/maccel";
+    maccel = {
+      url = "github:Gnarus-G/maccel";
+      inputs.nixpkgs.follows = "nixpkgs";  # M5: missing follows — could cause nixpkgs version mismatch with Rust build
+    };
 
     # Moku — Tauri manga reader frontend for Suwayomi-Server
     moku = {
@@ -113,11 +110,7 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
-    # Houdini — FHS-wrapped 3D animation package (manual download required)
-    houdini-nix = {
-      url = "github:permahorse/houdini-nix";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
+    # M5: houdini-nix removed — unused flake input (zero references in modules/ or configurations/)
 
     # Nixtest — Nix code test runner (unit, snapshot, script, VM)
     nixtest = {
