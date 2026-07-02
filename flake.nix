@@ -93,10 +93,7 @@
     };
 
     # Kernel-level mouse acceleration (Wayland-compatible)
-    maccel = {
-      url = "github:Gnarus-G/maccel";
-      inputs.nixpkgs.follows = "nixpkgs";  # M5: missing follows — could cause nixpkgs version mismatch with Rust build
-    };
+    maccel.url = "github:Gnarus-G/maccel";
 
     # Moku — Tauri manga reader frontend for Suwayomi-Server
     moku = {

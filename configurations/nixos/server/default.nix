@@ -58,8 +58,7 @@
   my.services.tailscale = {
     tags = [ "tag:nixos" "tag:temp" ];
     acceptRoutes = true;
-    # ssh.enable and ssh.user removed — match common.nix defaults (M1)
-    extraHostConfig = "ForwardAgent yes";
+    # ssh.enable, ssh.user, and ssh.extraHostConfig removed — match common.nix defaults (M1, M4d)
   };
 
   # ZeroTier is a tailscale fallback — the watchdog starts/stops it automatically.
