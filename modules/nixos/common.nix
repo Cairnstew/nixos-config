@@ -367,6 +367,9 @@ in
   environment.systemPackages = with pkgs; [
     nix-template-selector # Interactive flake template selector
     github-actions-cleanup # GitHub Actions cleanup tool
+  ]
+  ++ lib.optionals config.services.xserver.enable [
+    xclip # X11 clipboard utility
   ];
 
   # Additional packages are defined per-host or use environment.systemPackages directly

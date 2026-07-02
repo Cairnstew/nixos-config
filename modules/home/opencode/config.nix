@@ -27,6 +27,9 @@ let
   };
   providers = import ./providers.nix { inherit lib cfg; };
 
+  # Python environment with networkx for the nix-graph MCP server
+  nixGraphPython = pkgs.python3.withPackages (ps: [ ps.networkx ]);
+
   # Transform agent config to opencode.json format
   # Omit null/false values so only relevant fields appear in the JSON
   mkAgentConfig = agentCfg:
@@ -224,6 +227,17 @@ in
           nix-map = ./commands/nix-map.md;
           nix-refine = ./commands/nix-refine.md;
           nix-doc-audit = ./commands/nix-doc-audit.md;
+        };
+        mcp.nix-graph = {
+          enabled = true;
+          type = "local";
+          command = [
+            "${nixGraphPython}/bin/python3"
+            "${../../../tools/nix-graph/mcp_server.py}"
+            "--graph"
+            "${../../../tools/nix-graph/graph.json}"
+          ];
+          timeout = 120000;
         };
       };
     }
