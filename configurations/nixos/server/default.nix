@@ -34,6 +34,7 @@
 
   # ── Location ─────────────────────────────────────────────────────────────
   my.system.location = {
+    enable = true;  # M1: was missing — module wraps config in mkIf cfg.enable (default false)
     timeZone = "America/Chicago";
     latitude = 30.2672;
     longitude = -97.7431;
@@ -57,11 +58,8 @@
   my.services.tailscale = {
     tags = [ "tag:nixos" "tag:temp" ];
     acceptRoutes = true;
-    ssh = {
-      enable = true;
-      user = "seanc";
-      extraHostConfig = "ForwardAgent yes";
-    };
+    # ssh.enable and ssh.user removed — match common.nix defaults (M1)
+    extraHostConfig = "ForwardAgent yes";
   };
 
   # ZeroTier is a tailscale fallback — the watchdog starts/stops it automatically.
