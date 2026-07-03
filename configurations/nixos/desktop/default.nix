@@ -469,8 +469,6 @@
 
   # ── LLM / AI ─────────────────────────────────────────────────────────────
   services.sillytavern = {
-    enable = true;
-
     # Data directory — use upstream default /var/lib/SillyTavern matching ST's XDG path
 
     # Server
