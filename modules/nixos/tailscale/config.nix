@@ -39,6 +39,10 @@ in
       systemd.services.tailscale-manager = mkIf config.my.services.tailscale.manager.enable {
         after = [ "tailscaled.service" ];
         wants = [ "tailscaled.service" ];
+        # terraform must be initialized before apply can run
+        preStart = ''
+          ${config.services.tailscale-manager.package}/bin/tailscale-manager init
+        '';
       };
     }
 

@@ -21,6 +21,7 @@
   my.profiles = {
     server.enable = true;
     development.enable = true;
+    ai.enable = true;
     gpu.nvidia-headless.enable = true;
     location.enable = true;
   };
@@ -43,6 +44,25 @@
   # ── Networking ──────────────────────────────────────────────────────────
   networking.networkmanager.enable = true;
 
+  # ── Reverse Proxy ─────────────────────────────────────────────────────
+  # Unified proxy module: services auto-register with my.services.proxy.upstreams.
+  # tailscale serve forwards :443 → nginx:8081 so each service is at
+  # https://server.tail685690.ts.net/<service>/.
+  my.services.proxy = {
+    enable = true;
+    listenAddresses = [ "172.30.0.1" "127.0.0.1" ];
+    tailscaleServe.enable = true;
+  };
+
+  # ── Container Storage ──────────────────────────────────────────────────
+  # Store container images and volumes on the large SATA data drive (1.8T)
+  # to preserve NVMe space for the Nix store and OS.
+  my.virtualisation.docker.dataRoot = "/mnt/data/docker-data";
+
+  virtualisation.containers.storage.settings.storage = {
+    graphroot = "/mnt/data/containers/storage";
+  };
+
   # ── Nix Build Directory ─────────────────────────────────────────────────
   # Use the large SATA data disk (1.8T) for build temp files to preserve
   # NVMe space for the Nix store and OS.
@@ -58,7 +78,7 @@
   my.services.tailscale = {
     tags = [ "tag:nixos" "tag:temp" ];
     acceptRoutes = true;
-    # ssh.enable, ssh.user, and ssh.extraHostConfig removed — match common.nix defaults (M1, M4d)
+    manager.enable = true;
   };
 
   # ZeroTier is a tailscale fallback — the watchdog starts/stops it automatically.
@@ -90,7 +110,6 @@
   # ── Manga Reader (sync library to config repo) ───────────────────────────
   my.services.suwayomi = {
     enable = true;
-    autoBindTailscaleIp = true;
     settings.server = {
       backupInterval = 0;
       extensionRepos = [
@@ -110,9 +129,27 @@
 
   # ── NVIDIA Configuration ───────────────────────────────────────────────
   my.services.ollama = {
+    enable = true;
     gpu.enable = true;
     gpu.type = "nvidia";
     dataDir = "/mnt/data/ollama";
+    models = {
+      "hf.co/Lewdiculous/DS-R1-Qwen3-8B-ArliAI-RpR-v4-Small-GGUF-IQ-Imatrix:Q4_K_M-imat" = {
+        name = "ArliAI DS-R1-Qwen3-8B RpR v4";
+        numCtx = 8192;
+        temperature = 0.6;
+        topP = 0.95;
+        topK = 40;
+        repeatPenalty = 1.1;
+      };
+    };
+  };
+  
+  # Shared model across all AI frontends (matches SillyTavern default)
+  my.services.risuai.ollama.enable = true;
+  my.services.open-webui.ollama.enable = true;
+  my.services.open-webui.extraEnvironment = {
+    DEFAULT_MODELS = "hf.co/Lewdiculous/DS-R1-Qwen3-8B-ArliAI-RpR-v4-Small-GGUF-IQ-Imatrix:Q4_K_M-imat";
   };
 
   # ── SSH Access ──────────────────────────────────────────────────────────

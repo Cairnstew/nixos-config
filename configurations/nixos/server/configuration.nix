@@ -36,12 +36,6 @@
     variant = "";
   };
 
-  # ── Docker Data Root ───────────────────────────────────────────────────
-  # Store container images and volumes on the large data drive
-  virtualisation.docker.daemon.settings = {
-    "data-root" = "/mnt/data/docker-data";
-  };
-
   # ── Data Drive ─────────────────────────────────────────────────────────
   # 1.8T SATA SSD mounted for bulk storage (Ollama models, Docker data,
   # nix build temp, etc.)

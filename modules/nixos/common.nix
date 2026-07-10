@@ -43,6 +43,14 @@ in
     ./docker
     ./ollama
 
+    # ── Reverse Proxy ───────────────────────────────────────────────────────
+    ./proxy
+
+    # ── AI Frontends ────────────────────────────────────────────────────────
+    ./open-webui
+    ./letta
+    ./jan
+
     # ── Networking ─────────────────────────────────────────────────────────
     ./ssh
     ./tailscale
@@ -76,6 +84,7 @@ in
     ./proton
     ./godot
     ./sillytavern
+    ./risuai
     ./suwayomi
     ./chatterbox-tts
     ./moku.nix
@@ -199,6 +208,11 @@ in
   # ── Sensible Defaults ────────────────────────────────────────────────────
 
   my = {
+    # Reverse proxy dashboard: Shows all enabled web services at localhost:8081
+    # with a service dashboard. mkDefault so hosts can override port/addresses.
+    # Override when: Host needs port 8081 for something else.
+    services.proxy.enable = lib.mkDefault true;
+
     # Secrets enabled by default: Safe to have enabled as agenix gracefully
     # handles missing secret files. Disabling is mainly for containers or
     # minimal systems where secret management isn't needed.
@@ -266,7 +280,7 @@ in
             "tag:temp" = [ "tag:nixos" ];
           };
 
-          interNodePorts = lib.mkDefault [ "tcp:22" "tcp:4567" "tcp:8000" ];
+          interNodePorts = lib.mkDefault [ "tcp:22" "tcp:4567" "tcp:8000" "tcp:8080" ];
 
           grants = lib.mkDefault [
             {

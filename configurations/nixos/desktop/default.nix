@@ -753,6 +753,13 @@
     dataDir = "/mnt/data/ollama";
   };
 
+  # ── AI Desktop App ──────────────────────────────────────────────────────────
+  my.services.jan = {
+    enable = true;
+    apiServer.enable = true;
+    ollama.enable = true;
+  };
+
   my.services.chatterbox-tts.enable = false;
 
   environment.systemPackages = with pkgs; [ ntfs3g ];

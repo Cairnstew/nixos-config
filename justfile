@@ -57,6 +57,13 @@ ventoy-deploy *args:
 ventoy-bundle:
     sudo nix build .#ventoy-bundle
 
+# Build RisuAI Docker image with VITE_RISU_LEGAL_CONFIGURED=TRUE (run before first deploy)
+risuai-image:
+    docker build \
+        --build-arg VITE_RISU_LEGAL_CONFIGURED=TRUE \
+        -t risuai:legal-fixed \
+        https://github.com/kwaroran/Risuai.git
+
 # Build the Ventoy installer ISO (via live-iso system, auth key auto-generated at deploy time)
 # Requires --impure because agenix-decrypted secrets live outside the Nix store.
 ventoy-iso:

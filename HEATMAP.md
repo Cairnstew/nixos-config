@@ -298,6 +298,27 @@ All `my.*` options declared across module files.
 | `my.services.rustdesk.enable` | bool | `false` | RustDesk remote desktop |
 | `my.services.brasero.enable` | bool | `false` | Brasero CD/DVD burning |
 | `my.services.cachix-push.enable` | bool | `false` | Cachix binary cache pushing |
+| `my.services.risuai.enable` | bool | `false` | RisuAI roleplay frontend |
+| `my.services.risuai.legalConfigured` | bool | `true` | Skip ToS/Privacy Policy screen (safe for self-hosted) |
+| `my.services.risuai.port` | port | `6001` | Web UI port |
+| `my.services.risuai.backend` | enum | `"docker"` | OCI backend (docker/podman) |
+| `my.services.risuai.ollama.enable` | bool | `false` | Auto-configure Ollama endpoint |
+| `my.services.risuai.ollama.baseUrl` | str | `"http://ollama:11434"` | Ollama API URL |
+| `my.services.open-webui.enable` | bool | `false` | Open WebUI AI platform |
+| `my.services.open-webui.port` | port | `3000` | Web UI port |
+| `my.services.open-webui.backend` | enum | `"docker"` | OCI backend (docker/podman) |
+| `my.services.open-webui.ollama.enable` | bool | `false` | Connect to local Ollama |
+| `my.services.open-webui.webSearch.enable` | bool | `false` | Web search for RAG |
+| `my.services.open-webui.rag.embeddingModel` | str | `""` | RAG embedding model |
+| `my.services.letta.enable` | bool | `false` | Letta stateful agent memory platform |
+| `my.services.letta.port` | port | `8283` | API port |
+| `my.services.letta.backend` | enum | `"docker"` | OCI backend (docker/podman) |
+| `my.services.letta.ollama.enable` | bool | `false` | Use Ollama as LLM backend |
+| `my.services.letta.database.type` | enum | `"sqlite"` | Database (sqlite/postgres) |
+| `my.services.jan.enable` | bool | `false` | Jan desktop ChatGPT alternative |
+| `my.services.jan.apiServer.enable` | bool | `false` | OpenAI-compatible API server |
+| `my.services.jan.apiServer.port` | port | `1337` | API server port |
+| `my.services.jan.ollama.enable` | bool | `false` | Auto-configure Ollama model source |
 | `my.services.sillytavern.enable` | bool | `false` | SillyTavern AI chat |
 | `my.services.chatterbox-tts.enable` | bool | `false` | Chatterbox TTS server |
 | `my.services.chatterbox-tts.port` | port | `8004` | API port |

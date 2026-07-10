@@ -13,6 +13,7 @@ in
     ./workstation.nix
     ./server.nix
     ./minimal.nix
+    ./ai.nix
   ];
 
   # System profiles provide convenient bundles of related services/programs
@@ -24,6 +25,7 @@ in
     gaming.enable = lib.mkEnableOption "gaming profile (steam, games, etc.)";
     entertainment.enable = lib.mkEnableOption "entertainment profile (gaming, music, media services)";
     development.enable = lib.mkEnableOption "development profile (dev tools, containers)";
+    ai.enable = lib.mkEnableOption "AI frontend services (RisuAI, Open WebUI, Letta, Jan)";
 
     # ── Feature Profiles ─────────────────────────────────────────────────
     desktop.choice = lib.mkOption {

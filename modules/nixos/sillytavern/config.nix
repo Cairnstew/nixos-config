@@ -132,5 +132,12 @@ in
     # Disable extension auto-update — extensions are managed declaratively
     # and the Nix store is read-only, so git pull fails.
     services.sillytavern.extensions.autoUpdate = lib.mkDefault false;
+
+    # Register with reverse proxy
+    my.services.proxy.upstreams.sillytavern = {
+      port = ucfg.port;
+      path = "/sillytavern/";
+      websocket = true;
+    };
   };
 }
