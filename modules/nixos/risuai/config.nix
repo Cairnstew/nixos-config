@@ -21,11 +21,15 @@ in
 
     virtualisation.oci-containers.containers."risuai" = {
       image = cfg.image;
-      volumes = [ "${cfg.dataDir}:/app/data:rw" ] ++ cfg.extraVolumes;
+      volumes = [ "${cfg.dataDir}:/app/save:rw" ] ++ cfg.extraVolumes;
       ports = [ "${toString cfg.port}:6001/tcp" ];
       environment = lib.filterAttrs (_: v: v != "") ({
         RISUAI_HOST = cfg.host;
         RISUAI_PORT = "6001";
+        # Note: VITE_ env vars must be set at Vite build time, not container runtime.
+        # Use `just risuai-image` to build the image with this baked in.
+        # This runtime env var is a no-op but kept for documentation.
+        VITE_RISU_LEGAL_CONFIGURED = if cfg.legalConfigured then "TRUE" else "FALSE";
       } // lib.optionalAttrs cfg.ollama.enable {
         OLLAMA_BASE_URL = cfg.ollama.baseUrl;
       } // lib.optionalAttrs (cfg.openaiCompat.apiBaseUrl != null) {
@@ -36,6 +40,59 @@ in
       extraOptions = [
         "--network-alias=${cfg.network.alias}"
         "--network=${cfg.network.name}"
+      ];
+    };
+
+    # Register with reverse proxy
+    my.services.proxy.upstreams.risuai = {
+      port = cfg.port;
+      path = "/risuai/";
+      websocket = true;
+      extraLocations = let
+        proxyCommon = ''
+          proxy_pass http://127.0.0.1:${toString cfg.port};
+          proxy_http_version 1.1;
+          proxy_set_header Host $host;
+          proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+          proxy_set_header X-Forwarded-Proto $scheme;
+        '';
+      in [
+        # SPA assets (JS/CSS chunks referenced with absolute paths)
+        ''
+        location /assets/ {
+          ${proxyCommon}
+        }
+        ''
+        # API calls
+        ''
+        location /api/ {
+          ${proxyCommon}
+        }
+        ''
+        # Service worker
+        ''
+        location /sw/ {
+          ${proxyCommon}
+        }
+        ''
+        # Hub proxy (character/asset hub)
+        ''
+        location /hub-proxy/ {
+          ${proxyCommon}
+        }
+        ''
+        # Manifest and icons
+        ''
+        location /manifest.json {
+          ${proxyCommon}
+        }
+        location /logo_ {
+          ${proxyCommon}
+        }
+        location /none.webp {
+          ${proxyCommon}
+        }
+        ''
       ];
     };
   };

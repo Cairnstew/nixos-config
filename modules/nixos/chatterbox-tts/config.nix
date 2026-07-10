@@ -32,5 +32,12 @@ in
     ];
 
     networking.firewall.allowedTCPPorts = lib.mkIf cfg.openFirewall [ cfg.port ];
+
+    # Register with reverse proxy
+    my.services.proxy.upstreams.chatterbox-tts = {
+      port = cfg.port;
+      path = "/tts/";
+      websocket = true;
+    };
   };
 }

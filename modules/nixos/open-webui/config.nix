@@ -43,5 +43,16 @@ in
         "--network=${cfg.network.name}"
       ];
     };
+
+    # Register with reverse proxy
+    my.services.proxy.upstreams.open-webui = {
+      port = cfg.port;
+      path = "/chat/";
+      websocket = true;
+      extraConfig = ''
+        proxy_buffering off;
+        client_max_body_size 0;
+      '';
+    };
   };
 }

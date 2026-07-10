@@ -39,5 +39,16 @@ in
         "--network=${cfg.network.name}"
       ];
     };
+
+    # Register with reverse proxy
+    my.services.proxy.upstreams.letta = {
+      port = cfg.port;
+      path = "/letta/";
+      websocket = true;
+      extraConfig = ''
+        proxy_buffering off;
+        proxy_redirect / /letta/;
+      '';
+    };
   };
 }

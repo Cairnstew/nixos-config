@@ -26,14 +26,14 @@ in
         ExecStartPost = lib.mkOverride 90
           "${pkgs.writeShellScript "letta-container-probe" ''
             echo "[letta probe] waiting for API..."
-            for i in $(${pkgs.coreutils}/bin/seq 1 30); do
+            for i in $(${pkgs.coreutils}/bin/seq 1 60); do
               if ${pkgs.curl}/bin/curl -sf http://127.0.0.1:${toString cfg.port}/v1/health > /dev/null 2>&1; then
                 echo "[letta probe] API reachable (attempt $i)"
                 exit 0
               fi
               sleep 1
             done
-            echo "[letta probe] FAIL: API not reachable after 30s" >&2
+            echo "[letta probe] FAIL: API not reachable after 60s" >&2
             exit 1
           ''}";
       };

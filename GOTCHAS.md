@@ -137,6 +137,9 @@ Symptom: Building `netboot-serve` fails with `syntax error near unexpected token
 
 ---
 
+**`tailscale-manager` fails on first deploy because Terraform isn't initialized**
+Symptom: `tailscale-manager.service` fails with `✗ Terraform is not initialized. Run 'tailscale-manager init' first.` on first deployment. Root cause: The upstream NixOS module only writes policy/auth-key files in `ExecStartPre` but never runs `tailscale-manager init` to set up the Terraform workspace (`.terraform/`). The `apply` command refuses to proceed if the workspace doesn't exist. Fix: The local `modules/nixos/tailscale/config.nix` adds `preStart = "${config.services.tailscale-manager.package}/bin/tailscale-manager init"` which injects an `ExecStartPre` entry that runs init before apply. This is merged with the upstream's existing `ExecStartPre` entries via NixOS's `unitOption` merge (lists are concatenated). On an already-broken system, also run `sudo tailscale-manager init` manually in `/var/lib/tailscale-manager/` to initialize the existing state dir.
+
 **`tailscale-manager` structured policy serialization includes empty nested fields, breaking Tailscale API**
 Symptom: `tailscale-manager.service` fails with `json: unknown field "appConnectors" (400)` after migrating to `services.tailscale-manager.policy` structured options. Cause: The upstream v0.3.2 `policyToJSON` uses shallow `lib.filterAttrs` that only cleans top-level keys. Empty submodule defaults like `autoApprovers = { appConnectors = []; exitNode = []; routes = {}; }` pass through, and Tailscale's API rejects `appConnectors` when it's not yet supported or recognized. Fix: Use the raw `services.tailscale-manager.acl.policy` string instead of structured `policy.*` options. The raw string passes through without serialization and avoids the nested-defaults issue.
 

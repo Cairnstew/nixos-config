@@ -33,7 +33,7 @@ in
       port = lib.mkDefault 8283;
       ollama = {
         enable = lib.mkDefault true;
-        defaultModel = lib.mkDefault "llama3.2:3b";
+        defaultModel = lib.mkDefault "hf.co/Lewdiculous/DS-R1-Qwen3-8B-ArliAI-RpR-v4-Small-GGUF-IQ-Imatrix:Q4_K_M-imat";
       };
     };
 

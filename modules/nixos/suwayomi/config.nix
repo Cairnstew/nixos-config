@@ -22,6 +22,19 @@ in
 
     (lib.mkIf cfg.enable {
       networking.firewall.allowedTCPPorts = lib.mkIf cfg.openFirewall [ cfg.settings.server.port ];
+
+      # Serve WebUI under /suwayomi/ subpath. The server injects <base href>
+      # into index.html and prefixes API routes. WebUI client (PR #1011) uses
+      # relative Vite base paths so dynamic imports resolve against <base>.
+      # stripPrefix=false passes the full URI through nginx without stripping.
+      my.services.suwayomi.settings.server.webUISubpath = lib.mkDefault "/suwayomi";
+
+      my.services.proxy.upstreams.suwayomi = {
+        port = cfg.settings.server.port;
+        path = "/suwayomi/";
+        stripPrefix = false;  # webUISubpath needs full URI passthrough
+        websocket = true;     # GraphQL WebSocket upgrades at /suwayomi/api/graphql
+      };
     })
   ];
 }

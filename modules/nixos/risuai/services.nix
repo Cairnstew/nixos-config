@@ -26,14 +26,14 @@ in
         ExecStartPost = lib.mkOverride 90
           "${pkgs.writeShellScript "risuai-container-probe" ''
             echo "[risuai probe] waiting for web UI..."
-            for i in $(${pkgs.coreutils}/bin/seq 1 30); do
+            for i in $(${pkgs.coreutils}/bin/seq 1 60); do
               if ${pkgs.curl}/bin/curl -sf http://127.0.0.1:${toString cfg.port}/ > /dev/null 2>&1; then
                 echo "[risuai probe] UI reachable (attempt $i)"
                 exit 0
               fi
               sleep 1
             done
-            echo "[risuai probe] FAIL: UI not reachable after 30s" >&2
+            echo "[risuai probe] FAIL: UI not reachable after 60s" >&2
             exit 1
           ''}";
       };

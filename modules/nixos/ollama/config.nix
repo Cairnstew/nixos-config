@@ -68,5 +68,14 @@ in
 
     networking.firewall.allowedTCPPorts =
       lib.mkIf (cfg.mcp.enable && cfg.mcp.openFirewall) [ cfg.mcp.port ];
+
+    # Register with reverse proxy
+    my.services.proxy.upstreams.ollama = {
+      port = cfg.port;
+      path = "/ollama/";
+      extraConfig = ''
+        proxy_set_header Host $host;
+      '';
+    };
   };
 }

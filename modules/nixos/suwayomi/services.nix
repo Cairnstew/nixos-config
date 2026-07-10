@@ -42,8 +42,11 @@ in
     systemd.services.suwayomi-server = {
       description = "Suwayomi manga reader server";
       wantedBy = [ "multi-user.target" ];
-      wants = [ "network-online.target" ];
-      after = [ "network-online.target" ];
+      wants = [ "network-online.target" ]
+        ++ lib.optional cfg.autoBindTailscaleIp "tailscaled.service";
+      after = [ "network-online.target" ]
+        ++ lib.optional cfg.autoBindTailscaleIp "tailscaled.service";
+      requires = lib.optional cfg.autoBindTailscaleIp "tailscaled.service";
 
       environment = {
         HOME = cfg.dataDir;
@@ -54,17 +57,13 @@ in
           TACHIDESK_SERVER_AUTH_PASSWORD="$(<${cfg.settings.server.authPasswordFile})"
           export TACHIDESK_SERVER_AUTH_PASSWORD
         ''}
+        EXTRA_OPTS="-Dsuwayomi.tachidesk.config.server.rootDir=${cfg.dataDir}"
+        CONF="${cfg.dataDir}/.local/share/Tachidesk/server.conf"
+        ${lib.getExe pkgs.envsubst} -i ${configFile} -o "$CONF"
         ${lib.optionalString cfg.autoBindTailscaleIp ''
           BIND_IP="$(${pkgs.tailscale}/bin/tailscale ip -4 2>/dev/null)" || BIND_IP="${cfg.settings.server.ip}"
+          ${lib.getExe pkgs.gnused} -i 's/"ip" = ".*"/"ip" = "'"$BIND_IP"'" # autoBindTailscaleIp/' "$CONF"
         ''}
-        EXTRA_OPTS="-Dsuwayomi.tachidesk.config.server.rootDir=${cfg.dataDir}"
-        ${lib.optionalString cfg.autoBindTailscaleIp ''
-          EXTRA_OPTS="$EXTRA_OPTS -Dsuwayomi.tachidesk.config.server.ip=$BIND_IP"
-        ''}
-        CONF="${cfg.dataDir}/.local/share/Tachidesk/server.conf"
-        if [ ! -f "$CONF" ]; then
-          ${lib.getExe pkgs.envsubst} -i ${configFile} -o "$CONF"
-        fi
         exec ${lib.getExe cfg.package} $EXTRA_OPTS
       '';
 

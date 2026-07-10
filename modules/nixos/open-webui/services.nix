@@ -26,14 +26,14 @@ in
         ExecStartPost = lib.mkOverride 90
           "${pkgs.writeShellScript "open-webui-container-probe" ''
             echo "[open-webui probe] waiting for web UI..."
-            for i in $(${pkgs.coreutils}/bin/seq 1 30); do
+            for i in $(${pkgs.coreutils}/bin/seq 1 60); do
               if ${pkgs.curl}/bin/curl -sf http://127.0.0.1:${toString cfg.port}/ > /dev/null 2>&1; then
                 echo "[open-webui probe] UI reachable (attempt $i)"
                 exit 0
               fi
               sleep 1
             done
-            echo "[open-webui probe] FAIL: UI not reachable after 30s" >&2
+            echo "[open-webui probe] FAIL: UI not reachable after 60s" >&2
             exit 1
           ''}";
       };

@@ -5,8 +5,11 @@
 
     image = lib.mkOption {
       type = lib.types.str;
-      default = "ghcr.io/kwaroran/risuai:latest";
-      description = "OCI image for RisuAI.";
+      default = "risuai:legal-fixed";
+      description = ''
+        OCI image for RisuAI. Default is a locally-built image with
+        VITE_RISU_LEGAL_CONFIGURED=TRUE. Build with: `just risuai-image`
+      '';
     };
 
     port = lib.mkOption {
@@ -48,6 +51,15 @@
         default = "";
         description = "API key for the OpenAI-compatible endpoint.";
       };
+    };
+
+    legalConfigured = lib.mkOption {
+      type = lib.types.bool;
+      default = true;
+      description = ''
+        Set VITE_RISU_LEGAL_CONFIGURED to TRUE to skip the Terms of Service /
+        Privacy Policy acceptance screen. Safe for self-hosted private use.
+      '';
     };
 
     host = lib.mkOption {

@@ -5,7 +5,7 @@
 
     image = lib.mkOption {
       type = lib.types.str;
-      default = "ghcr.io/letta-ai/letta:latest";
+      default = "letta/letta:0.16.8";
       description = "OCI image for the Letta API server.";
     };
 
