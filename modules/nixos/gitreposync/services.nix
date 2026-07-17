@@ -196,6 +196,16 @@ let
         ${git} -C "${repo.path}" merge --ff-only "$MERGE_SOURCE" 2>/dev/null \
           || echo "[git-repo-sync] ${name}: SKIP — upstream merge not fast-forward (diverged or no new commits)."
       ''}
+
+      # ── Auto-push (push local commits upstream) ──────────────────────────
+      ${optionalString repo.autoPush ''
+        CURRENT=$(${git} -C "${repo.path}" symbolic-ref --short HEAD 2>/dev/null || true)
+        if [ -n "$CURRENT" ]; then
+          echo "[git-repo-sync] ${name}: pushing $CURRENT to ${repo.remote}..."
+          ${git} -C "${repo.path}" push "${repo.remote}" "$CURRENT" 2>&1 \
+            || echo "[git-repo-sync] ${name}: SKIP — push failed (no commits to push or permission denied)."
+        fi
+      ''}
     '';
 
   # ── systemd units ──────────────────────────────────────────────────────────

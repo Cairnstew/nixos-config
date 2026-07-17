@@ -87,6 +87,22 @@ let
         example = "main";
       };
 
+      autoPush = mkOption {
+        type = types.bool;
+        default = false;
+        description = ''
+          After syncing and merging, push any local commits on the current
+          branch to the remote.  Requires write access to the remote (SSH key
+          or agenix token).  Useful for pushing per-host branch commits or
+          suwayomi-sync exports back to GitHub.
+
+          When combined with `branch` and `mergeUpstream`, the flow becomes:
+            1. Fetch from remote
+            2. Merge upstream into the per-host branch
+            3. Push any local commits upstream
+        '';
+      };
+
       cloneBare = mkOption {
         type = types.bool;
         default = false;
