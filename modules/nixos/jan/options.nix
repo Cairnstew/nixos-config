@@ -36,7 +36,7 @@
     dataDir = lib.mkOption {
       type = lib.types.str;
       default = "/var/lib/jan";
-      description = "Host path for Jan data (models, threads, settings).";
+      description = "Deprecated: no longer used by the service. Jan data lives under ~/.local/share/Jan/data.";
     };
 
     extraSettings = lib.mkOption {

@@ -46,6 +46,47 @@ let
         description = "Branch to check out on initial clone. Defaults to the remote HEAD.";
       };
 
+      branch = mkOption {
+        type = types.nullOr types.str;
+        default = null;
+        description = ''
+          Desired branch to check out after every sync, creating it from the
+          remote if it does not exist locally.  When null the current branch is
+          left alone.
+
+          Typical usage — set to `config.networking.hostName` so each machine
+          automatically stays on its own named branch:
+
+          ```nix
+          my.services.gitRepoSync.repos.nix-config.branch =
+            config.networking.hostName;
+          ```
+        '';
+        example = "my-laptop";
+      };
+
+      mergeUpstream = mkOption {
+        type = types.nullOr types.str;
+        default = null;
+        description = ''
+          After syncing the current branch, also merge this upstream branch
+          (e.g. `"main"`) via `--ff-only`.  Changes from the upstream branch
+          are applied to the per-host branch without the per-host branch being
+          able to accidentally push to the upstream branch.
+
+          Use in combination with `branch` for rollout gating — push to `main`,
+          watch one host update, then roll out to others.
+
+          ```nix
+          my.services.gitRepoSync.repos.nix-config = {
+            branch        = config.networking.hostName;
+            mergeUpstream = "main";
+          };
+          ```
+        '';
+        example = "main";
+      };
+
       cloneBare = mkOption {
         type = types.bool;
         default = false;

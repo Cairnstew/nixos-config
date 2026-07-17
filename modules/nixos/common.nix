@@ -366,6 +366,14 @@ in
         # Conflict strategy: ff-only prevents accidental overwrites
         # Override when: Two-way sync or manual conflict resolution needed
         conflictStrategy = lib.mkDefault "ff-only";
+
+        # Per-host branch: each machine stays on its own branch for rollout gating
+        # Override when: Single-branch workflow preferred
+        branch = lib.mkDefault config.networking.hostName;
+
+        # Merge master into the per-host branch after each sync
+        # Override when: Not using per-host branches or manual merge preferred
+        mergeUpstream = lib.mkDefault "master";
       };
     };
   };

@@ -102,6 +102,31 @@ let
         '')
         repo.branches;
 
+  # ── Branch enforcement (checkout / create-from-remote) ─────────────────────
+  mkBranchCheckout = name: repo:
+    let
+      remote = repo.remote;
+      branch = repo.branch;
+    in
+    if branch == null then ""
+    else ''
+      CURRENT=$(${git} -C "${repo.path}" symbolic-ref --short HEAD 2>/dev/null || true)
+      if [ "$CURRENT" != "${branch}" ]; then
+        if ${git} -C "${repo.path}" checkout "${branch}" 2>/dev/null; then
+          echo "[git-repo-sync] ${name}: switched to '${branch}'."
+        else
+          # Branch doesn't exist locally — create from remote tracking branch
+          if ${git} -C "${repo.path}" show-ref --verify "refs/remotes/${remote}/${branch}" >/dev/null 2>&1; then
+            echo "[git-repo-sync] ${name}: creating local branch '${branch}' from ${remote}/${branch}."
+            ${git} -C "${repo.path}" checkout -b "${branch}" "${remote}/${branch}"
+          else
+            echo "[git-repo-sync] ${name}: creating orphan branch '${branch}' from HEAD."
+            ${git} -C "${repo.path}" checkout -b "${branch}"
+          fi
+        fi
+      fi
+    '';
+
   # ── Shell script for one repo ──────────────────────────────────────────────
   mkSyncScript = name: repo:
     let
@@ -160,6 +185,17 @@ let
 
         echo "[git-repo-sync] ${name}: sync complete."
       fi
+
+      # ── Branch enforcement (after clone or sync) ─────────────────────────
+      ${mkBranchCheckout name repo}
+
+      # ── Upstream merge (merge main into per-host branch) ────────────────
+      ${optionalString (repo.mergeUpstream != null) ''
+        MERGE_SOURCE="${repo.remote}/${repo.mergeUpstream}"
+        echo "[git-repo-sync] ${name}: merging $MERGE_SOURCE into current branch..."
+        ${git} -C "${repo.path}" merge --ff-only "$MERGE_SOURCE" 2>/dev/null \
+          || echo "[git-repo-sync] ${name}: SKIP — upstream merge not fast-forward (diverged or no new commits)."
+      ''}
     '';
 
   # ── systemd units ──────────────────────────────────────────────────────────
