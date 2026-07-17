@@ -89,7 +89,7 @@ in
     };
 
     mono = {
-      enable = mkEnableOption "Godot Mono/C# support. Requires .NET SDK to be installed separately.";
+      enable = mkEnableOption "Godot Mono/C# support. When enabled, uses godot-mono (C# build) instead of regular Godot, and installs the .NET SDK.";
     };
 
     mcp = {

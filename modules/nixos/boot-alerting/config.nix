@@ -1,5 +1,6 @@
 { config, lib, pkgs, flake, ... }:
 let
+  inherit (flake.config.me) username;
   cfg = config.my.services.bootAlerting;
 
   emergencyScript = pkgs.writeShellScript "emergency-email" ''
@@ -28,7 +29,7 @@ let
     # Build SSH lines
     SSH_LINES=""
     while IFS= read -r ip; do
-      [[ -n "$ip" ]] && SSH_LINES="$SSH_LINES  ssh seanc@$ip
+      [[ -n "$ip" ]] &&       SSH_LINES="$SSH_LINES  ssh ${username}@$ip
 "
     done <<< "$LAN_IPS"
 
@@ -87,7 +88,7 @@ Check journal:
 
       SSH_LINES=""
       while IFS= read -r ip; do
-        [[ -n "$ip" ]] && SSH_LINES="$SSH_LINES  ssh seanc@$ip
+        [[ -n "$ip" ]] &&       SSH_LINES="$SSH_LINES  ssh ${username}@$ip
 "
       done <<< "$LAN_IPS"
 

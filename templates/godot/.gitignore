@@ -1,0 +1,35 @@
+# Godot project files
+.godot/
+*.import
+*.translation
+import/
+exports/
+.import/
+
+# Editor data
+*.godot.uid
+
+# Mono / C#
+.mono/
+data_*/
+mono_crash.*.json
+
+# Export templates
+*.pck
+*.zip
+*.apk
+*.aab
+*.exe
+*.app
+*.dmg
+
+# OS generated
+.DS_Store
+Thumbs.db
+
+# Nix
+/result
+/.direnv
+*.swp
+*.swo
+*~

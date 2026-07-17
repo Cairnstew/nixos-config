@@ -5,6 +5,10 @@
 { config, pkgs, ... }:
 
 {
+  imports = [
+    ./hardware-configuration.nix
+  ];
+
   # ── Bootloader: GRUB with EFI ──────────────────────────────────────────
   # UEFI-only system. Installed as removable so EFI vars aren't touched
   # (important for headless recovery — no monitor needed for boot mgmt).

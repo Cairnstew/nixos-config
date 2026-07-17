@@ -1,0 +1,482 @@
+- generic [ref=e2]:
+  - navigation "Mobile Menu" [ref=e3]:
+    - generic [ref=e5]:
+      - generic [ref=e6]:
+        - link "Sign in" [ref=e7] [cursor=pointer]:
+          - /url: https://store.steampowered.com/login/?redir=app%2F4704690%2FMECCHA_CHAMELEON%2F&redir_ssl=1&snr=1_5_9__global-header
+        - link "Store" [ref=e8] [cursor=pointer]:
+          - /url: https://store.steampowered.com/?snr=1_5_9__global-responsive-menu
+        - link "Community" [ref=e9] [cursor=pointer]:
+          - /url: https://steamcommunity.com/
+        - link "About" [ref=e10] [cursor=pointer]:
+          - /url: https://store.steampowered.com/about/?snr=1_5_9__global-responsive-menu
+        - link "Support" [ref=e11] [cursor=pointer]:
+          - /url: https://help.steampowered.com/en/
+        - generic [ref=e12]:
+          - generic [ref=e13] [cursor=pointer]: Change language
+          - link "Get the Steam Mobile App" [ref=e14] [cursor=pointer]:
+            - /url: https://store.steampowered.com/mobile
+          - link "View desktop website" [ref=e15] [cursor=pointer]
+      - generic [ref=e17]:
+        - img [ref=e19]
+        - text: © Valve Corporation. All rights reserved. All trademarks are property of their respective owners in the US and other countries.
+        - generic [ref=e20]:
+          - link "Privacy Policy" [ref=e21] [cursor=pointer]:
+            - /url: https://store.steampowered.com/privacy_agreement/?snr=1_5_9__global-responsive-menu
+          - text: "|"
+          - link "Legal" [ref=e22] [cursor=pointer]:
+            - /url: http://www.valvesoftware.com/legal.htm
+          - text: "|"
+          - link "Accessibility" [ref=e23] [cursor=pointer]:
+            - /url: https://help.steampowered.com/faqs/view/10BB-D27A-6378-4436
+          - text: "|"
+          - link "Steam Subscriber Agreement" [ref=e24] [cursor=pointer]:
+            - /url: https://store.steampowered.com/subscriber_agreement/?snr=1_5_9__global-responsive-menu
+          - text: "|"
+          - link "Refunds" [ref=e25] [cursor=pointer]:
+            - /url: https://store.steampowered.com/steam_refunds/?snr=1_5_9__global-responsive-menu
+          - text: "|"
+          - link "Cookies" [ref=e26] [cursor=pointer]:
+            - /url: https://store.steampowered.com/account/cookiepreferences/?snr=1_5_9__global-responsive-menu
+  - generic [ref=e31]:
+    - img [ref=e33] [cursor=pointer]
+    - link "STEAM" [ref=e35] [cursor=pointer]:
+      - /url: https://store.steampowered.com/?snr=1_5_9__global-responsive-menu
+      - img "STEAM" [ref=e36]
+  - generic [ref=e37]:
+    - navigation "Store menu" [ref=e40]:
+      - generic [ref=e41]:
+        - generic [ref=e42]:
+          - generic [ref=e43]:
+            - button "Browse" [ref=e44] [cursor=pointer]:
+              - generic [ref=e45]: Browse
+            - button "Recommendations" [ref=e48] [cursor=pointer]:
+              - generic [ref=e49]: Recommendations
+          - button "More" [ref=e52] [cursor=pointer]:
+            - generic [ref=e53]: More
+        - generic [ref=e56]:
+          - search [ref=e57]:
+            - combobox "Search the store" [ref=e59]
+            - button "Search" [ref=e60] [cursor=pointer]:
+              - img "Search" [ref=e61]
+          - link "Advanced Search" [ref=e64] [cursor=pointer]:
+            - /url: https://store.steampowered.com/search/?term=&snr=1_7_15__advancedsearch
+    - main [ref=e66]:
+      - generic [ref=e69]:
+        - generic [ref=e70]:
+          - generic [ref=e72]:
+            - generic [ref=e74]:
+              - link "All Games" [ref=e75] [cursor=pointer]:
+                - /url: https://store.steampowered.com/search/?term=&snr=1_5_9__205
+              - text: ">"
+              - link "Casual Games" [ref=e76] [cursor=pointer]:
+                - /url: https://store.steampowered.com/genre/Casual/?snr=1_5_9__205
+              - text: ">"
+              - link "MECCHA CHAMELEON" [ref=e77] [cursor=pointer]:
+                - /url: https://store.steampowered.com/app/4704690/?snr=1_5_9__205
+            - generic [ref=e79]:
+              - link "Community Hub" [ref=e81] [cursor=pointer]:
+                - /url: https://steamcommunity.com/app/4704690
+                - generic [ref=e82]: Community Hub
+              - heading "MECCHA CHAMELEON" [level=1] [ref=e83]
+          - generic [ref=e86]:
+            - generic [ref=e88]:
+              - generic [ref=e91]: Paint yourself to blend in! "Meccha Chameleon" is a new-sensation hide-and-seek game where you paint your white body to mimic the stage. Spot, pose, and "artistic skill" are keys to survival. Deceive Seekers with techniques that put chameleons to shame! Supports public matches and streaming.
+              - generic [ref=e92]:
+                - generic [ref=e93]:
+                  - 'link "English Reviews: Very Positive - 90% of the 24,914 user reviews for this game are positive." [ref=e95] [cursor=pointer]':
+                    - /url: "#app_reviews_hash"
+                    - generic [ref=e96]: "English Reviews:"
+                    - generic [ref=e97]: Very Positive - 90% of the 24,914 user reviews for this game are positive.
+                  - generic [ref=e98]:
+                    - generic [ref=e99]: "Release Date:"
+                    - generic [ref=e100]: 9 Jun, 2026
+                  - generic [ref=e101]:
+                    - generic [ref=e102]: "Developer:"
+                    - link "lemorion_1224" [ref=e104] [cursor=pointer]:
+                      - /url: https://store.steampowered.com/developer/lemorion1224?snr=1_5_9__2000
+                  - generic [ref=e105]:
+                    - generic [ref=e106]: "Publisher:"
+                    - link "lemorion_1224" [ref=e108] [cursor=pointer]:
+                      - /url: https://store.steampowered.com/publisher/lemorion1224?snr=1_5_9__2000
+                - generic [ref=e110]:
+                  - generic [ref=e111]: "Popular user-defined tags for this product:"
+                  - generic [ref=e112]:
+                    - link "Multiplayer" [ref=e113] [cursor=pointer]:
+                      - /url: https://store.steampowered.com/tags/en/Multiplayer/?snr=1_5_9__409
+                    - link "Casual" [ref=e114] [cursor=pointer]:
+                      - /url: https://store.steampowered.com/tags/en/Casual/?snr=1_5_9__409
+                    - link "Party Game" [ref=e115] [cursor=pointer]:
+                      - /url: https://store.steampowered.com/tags/en/Party%20Game/?snr=1_5_9__409
+                    - link "Hidden Object" [ref=e116] [cursor=pointer]:
+                      - /url: https://store.steampowered.com/tags/en/Hidden%20Object/?snr=1_5_9__409
+                    - link "Funny" [ref=e117] [cursor=pointer]:
+                      - /url: https://store.steampowered.com/tags/en/Funny/?snr=1_5_9__409
+                    - link "Hand-drawn" [ref=e118] [cursor=pointer]:
+                      - /url: https://store.steampowered.com/tags/en/Hand-drawn/?snr=1_5_9__409
+                    - link "Online Co-Op" [ref=e119] [cursor=pointer]:
+                      - /url: https://store.steampowered.com/tags/en/Online%20Co-Op/?snr=1_5_9__409
+                    - link "Comedy" [ref=e120] [cursor=pointer]:
+                      - /url: https://store.steampowered.com/tags/en/Comedy/?snr=1_5_9__409
+                    - link "Stealth" [ref=e121] [cursor=pointer]:
+                      - /url: https://store.steampowered.com/tags/en/Stealth/?snr=1_5_9__409
+                    - link "Cute" [ref=e122] [cursor=pointer]:
+                      - /url: https://store.steampowered.com/tags/en/Cute/?snr=1_5_9__409
+                    - button "+" [ref=e123] [cursor=pointer]
+            - generic [ref=e346]:
+              - generic [ref=e349]:
+                - generic [ref=e361]:
+                  - generic [ref=e362]:
+                    - img [ref=e365] [cursor=pointer]
+                    - img [ref=e370] [cursor=pointer]
+                    - generic [ref=e376]:
+                      - generic [ref=e377]: 0:01
+                      - generic [ref=e378]: /
+                      - generic [ref=e379]: 0:24
+                  - generic [ref=e380]:
+                    - img [ref=e383] [cursor=pointer]
+                    - img [ref=e387] [cursor=pointer]
+                - generic:
+                  - 'img "Screenshot #0"'
+                  - generic:
+                    - generic:
+                      - generic:
+                        - img
+                - generic:
+                  - img
+                - generic:
+                  - img
+              - generic [ref=e389]:
+                - generic [ref=e390]:
+                  - generic [ref=e391] [cursor=pointer]:
+                    - img [ref=e392]
+                    - img [ref=e394]
+                  - img [ref=e397] [cursor=pointer]
+                  - img [ref=e399] [cursor=pointer]
+                  - img [ref=e401] [cursor=pointer]
+                  - img [ref=e403] [cursor=pointer]
+                  - img [ref=e405] [cursor=pointer]
+                  - img [ref=e407] [cursor=pointer]
+                  - img [ref=e409] [cursor=pointer]
+                  - img [ref=e411] [cursor=pointer]
+                  - img [ref=e413] [cursor=pointer]
+                  - img [ref=e415] [cursor=pointer]
+                - generic [ref=e416]:
+                  - img [ref=e418] [cursor=pointer]
+                  - img [ref=e423] [cursor=pointer]
+        - generic [ref=e136]:
+          - paragraph [ref=e137]:
+            - link "Sign in" [ref=e138] [cursor=pointer]:
+              - /url: https://store.steampowered.com/login/?redir=app%2F4704690&snr=1_5_9_
+            - text: to add this item to your wishlist, follow it, or mark it as ignored
+          - link [ref=e140] [cursor=pointer]:
+            - /url: javascript:void(0)
+            - img [ref=e142]
+        - generic [ref=e143]:
+          - generic [ref=e144]:
+            - generic [ref=e145]:
+              - generic [ref=e146]:
+                - generic [ref=e147]:
+                  - link "Online PvP" [ref=e148] [cursor=pointer]:
+                    - /url: https://store.steampowered.com/search/?category2=36&snr=1_5_9__423
+                    - generic [ref=e150]: Online PvP
+                  - link "Steam Workshop" [ref=e151] [cursor=pointer]:
+                    - /url: https://store.steampowered.com/search/?category2=30&snr=1_5_9__423
+                    - generic [ref=e153]: Steam Workshop
+                  - link "Steam Cloud" [ref=e154] [cursor=pointer]:
+                    - /url: https://store.steampowered.com/search/?category2=23&snr=1_5_9__423
+                    - generic [ref=e156]: Steam Cloud
+                  - link "Family Sharing" [ref=e157] [cursor=pointer]:
+                    - /url: https://store.steampowered.com/search/?category2=62&snr=1_5_9__423
+                    - generic [ref=e159]: Family Sharing
+                  - group [ref=e426]:
+                    - generic "Accessibility Features (6) ?" [ref=e427]:
+                      - img [ref=e429]
+                      - generic [ref=e433]:
+                        - generic [ref=e434]: Accessibility Features (6)
+                        - link "?" [ref=e435] [cursor=pointer]:
+                          - /url: https://help.steampowered.com/faqs/view/02F5-ACB2-6038-0F36
+                - button "Requires agreement to a 3rd-party EULA MECCHA CHAMELEON EULA" [ref=e160]:
+                  - generic [ref=e161]: Requires agreement to a 3rd-party EULA
+                  - link "MECCHA CHAMELEON EULA" [ref=e163] [cursor=pointer]:
+                    - /url: https://store.steampowered.com//eula/4704690_eula_0
+              - generic [ref=e166]:
+                - generic [ref=e167]:
+                  - text: "Title: MECCHA CHAMELEON"
+                  - text: "Genre:"
+                  - link "Casual" [ref=e169] [cursor=pointer]:
+                    - /url: https://store.steampowered.com/genre/Casual/?snr=1_5_9__408
+                  - generic [ref=e170]:
+                    - text: "Developer:"
+                    - link "lemorion_1224" [ref=e171] [cursor=pointer]:
+                      - /url: https://store.steampowered.com/developer/lemorion1224?snr=1_5_9__408
+                  - generic [ref=e172]:
+                    - text: "Publisher:"
+                    - link "lemorion_1224" [ref=e173] [cursor=pointer]:
+                      - /url: https://store.steampowered.com/publisher/lemorion1224?snr=1_5_9__408
+                  - text: "Release Date: 9 Jun, 2026"
+                - generic [ref=e174]:
+                  - link "Discord External" [ref=e175] [cursor=pointer]:
+                    - /url: https://steamcommunity.com/linkfilter/?u=https%3A%2F%2Fdiscord.gg%2FeNFUDBSwag
+                    - generic [ref=e177]: Discord
+                    - img "External" [ref=e178]
+                  - link "View update history" [ref=e179] [cursor=pointer]:
+                    - /url: https://store.steampowered.com/newshub/?appids=4704690&snr=1_5_9__408
+                  - link "Read related news" [ref=e180] [cursor=pointer]:
+                    - /url: https://store.steampowered.com/newshub/app/4704690?snr=1_5_9__408
+                  - link "View discussions" [ref=e181] [cursor=pointer]:
+                    - /url: https://steamcommunity.com/app/4704690/discussions/
+                  - link "Visit the Workshop" [ref=e182] [cursor=pointer]:
+                    - /url: https://steamcommunity.com/app/4704690/workshop/
+                  - link "Find Community Groups" [ref=e183] [cursor=pointer]:
+                    - /url: https://steamcommunity.com/actions/Search?T=ClanAccount&K=MECCHA%20CHAMELEON
+              - generic [ref=e184]:
+                - link "Embed" [ref=e185] [cursor=pointer]:
+                  - /url: "#"
+                  - generic [ref=e186]: Embed
+                - link "Report this Product" [ref=e187] [cursor=pointer]:
+                  - /url: javascript:void(0)
+                  - generic "Report this Product" [ref=e188]
+            - generic [ref=e190]:
+              - generic [ref=e191]:
+                - generic [ref=e192]: Languages
+                - generic [ref=e193]:
+                  - table [ref=e194]:
+                    - rowgroup [ref=e195]:
+                      - row "Interface Full Audio Subtitles" [ref=e196]:
+                        - columnheader [ref=e197]
+                        - columnheader "Interface" [ref=e198]
+                        - columnheader "Full Audio" [ref=e199]
+                        - columnheader "Subtitles" [ref=e200]
+                      - row "English ✔ ✔" [ref=e201]:
+                        - cell "English" [ref=e202]
+                        - cell "✔" [ref=e203]
+                        - cell [ref=e204]
+                        - cell "✔" [ref=e205]
+                      - row "Japanese ✔ ✔" [ref=e206]:
+                        - cell "Japanese" [ref=e207]
+                        - cell "✔" [ref=e208]
+                        - cell [ref=e209]
+                        - cell "✔" [ref=e210]
+                      - row "Spanish - Spain ✔ ✔" [ref=e211]:
+                        - cell "Spanish - Spain" [ref=e212]
+                        - cell "✔" [ref=e213]
+                        - cell [ref=e214]
+                        - cell "✔" [ref=e215]
+                      - row "Simplified Chinese ✔ ✔" [ref=e216]:
+                        - cell "Simplified Chinese" [ref=e217]
+                        - cell "✔" [ref=e218]
+                        - cell [ref=e219]
+                        - cell "✔" [ref=e220]
+                      - row "Korean ✔ ✔" [ref=e221]:
+                        - cell "Korean" [ref=e222]
+                        - cell "✔" [ref=e223]
+                        - cell [ref=e224]
+                        - cell "✔" [ref=e225]
+                  - generic [ref=e226] [cursor=pointer]: See all 12 supported languages
+              - generic [ref=e228]:
+                - generic [ref=e229]: Content
+                - generic [ref=e230]:
+                  - generic [ref=e231]: Includes Interactive Elements
+                  - paragraph [ref=e232]: In-game chat, Online interactivity
+            - group "Steam Deck Compatibility" [ref=e438]:
+              - generic [ref=e439]: Steam Deck Compatibility
+              - generic [ref=e440]:
+                - generic [ref=e441]: Playable
+                - button "Learn more" [ref=e444] [cursor=pointer]
+          - generic [ref=e233]:
+            - region "Buy MECCHA CHAMELEON" [ref=e236]:
+              - heading "Buy MECCHA CHAMELEON" [level=2] [ref=e239]
+              - generic [ref=e241]:
+                - generic [ref=e242]: £5.29
+                - button "Add to Cart" [ref=e244] [cursor=pointer]:
+                  - generic [ref=e245]: Add to Cart
+            - generic [ref=e447]:
+              - generic [ref=e448]:
+                - heading "Recent Events & Announcements View All" [level=2] [ref=e449]:
+                  - text: Recent Events & Announcements
+                  - button "View All" [ref=e450] [cursor=pointer]
+                - generic [ref=e451]:
+                  - button "Regular Update \"Meccha Chameleon\" is now supported on GeForce NOW. As a result, the game can now be played even on low-spec PCs and Macs. supported on GeForce NOW Sat, June 27, 2026" [ref=e453] [cursor=pointer]:
+                    - generic:
+                      - generic: Regular Update
+                      - generic: "\"Meccha Chameleon\" is now supported on GeForce NOW. As a result, the game can now be played even on low-spec PCs and Macs."
+                    - generic [ref=e455]:
+                      - img [ref=e457]
+                      - generic [ref=e458]:
+                        - generic [ref=e459]: supported on GeForce NOW
+                        - generic [ref=e461]: Sat, June 27, 2026
+                  - button "News We hit 10 million sales! Thank you so much for your support! We hit 10 million sales! Fri, June 26, 2026" [ref=e463] [cursor=pointer]:
+                    - generic:
+                      - generic: News
+                      - generic: We hit 10 million sales! Thank you so much for your support!
+                    - generic [ref=e465]:
+                      - img [ref=e467]
+                      - generic [ref=e468]:
+                        - generic [ref=e469]: We hit 10 million sales!
+                        - generic [ref=e471]: Fri, June 26, 2026
+              - 'button "See all updates (Latest: Today)" [ref=e477] [cursor=pointer]'
+            - generic [ref=e249]:
+              - heading "About This Game" [level=2] [ref=e250]
+              - paragraph [ref=e251]: Paint your own body! Blend in like a chameleon in this hide-and-seek game!
+              - heading "yeah! Mechcha \"Hide and Seek\"" [level=2] [ref=e252]:
+                - strong [ref=e253]: yeah! Mechcha "Hide and Seek"
+              - paragraph [ref=e254]: The rules are simple. Split into the Seeker team and the Hider team to play hide-and-seek. The Seekers win if they find everyone within the time limit.
+              - heading "yeah! Mechcha \"Paint\"" [level=2] [ref=e255]:
+                - strong [ref=e256]: yeah! Mechcha "Paint"
+              - paragraph [ref=e257]: The way you hide is a bit special. Paint your pure white body to blend into the stage. Just like a chameleon. The hiding spot, the pose, and above all, your artistic skills are the key! Deceive the Seekers' eyes with a mimicry that would even surprise a chameleon.
+              - heading "yeah! Mechcha \"Matching\"" [level=2] [ref=e258]:
+                - strong [ref=e259]: yeah! Mechcha "Matching"
+              - paragraph [ref=e260]: Of course you can play with friends, but you can also play with people you don't know. (If you create a server that is not set to private, anyone can join freely.) Game streamers can easily host viewer participation games. The maximum number of players depends on the host's network environment. (2–10 players recommended. This may increase or decrease based on future playtests.)
+              - heading "[About Videos and Streaming]" [level=2] [ref=e261]:
+                - strong [ref=e262]: "[About Videos and Streaming]"
+              - paragraph [ref=e263]: "Gameplay videos and streaming are welcome. Please check the following two points:"
+              - list [ref=e264]:
+                - listitem [ref=e265]:
+                  - paragraph [ref=e266]: Include the name of this game in the title. (Required)
+                - listitem [ref=e267]:
+                  - paragraph [ref=e268]: Include the Steam store page URL in the description. (Optional)
+            - generic [ref=e270]:
+              - heading "System Requirements" [level=2] [ref=e271]
+              - list [ref=e275]:
+                - strong [ref=e276]: "Minimum:"
+                - list [ref=e277]:
+                  - listitem [ref=e278]:
+                    - strong [ref=e279]: "OS:"
+                    - text: Windows 10 64-bit.
+                  - listitem [ref=e280]:
+                    - strong [ref=e281]: "Processor:"
+                    - text: Intel Core i5
+                  - listitem [ref=e282]:
+                    - strong [ref=e283]: "Graphics:"
+                    - text: DirectX 11 or 12 compatible graphics card
+        - generic [ref=e285]:
+          - generic [ref=e481]:
+            - generic [ref=e482]: More like this
+            - link "See All" [ref=e483] [cursor=pointer]:
+              - /url: https://store.steampowered.com/recommended/morelike/app/4704690/?snr=1_5_9__300
+              - generic [ref=e484]: See All
+          - generic [ref=e288]:
+            - link "View all" [ref=e289] [cursor=pointer]:
+              - /url: https://store.steampowered.com/curators/curatorsreviewing/?appid=4704690&snr=1_5_9__top-curators
+            - heading "What Curators Say" [level=2] [ref=e290]
+            - generic [ref=e291]:
+              - text: 91 Curators have reviewed this product. Click
+              - link "here" [ref=e292] [cursor=pointer]:
+                - /url: https://store.steampowered.com/curators/curatorsreviewing/?appid=4704690&snr=1_5_9__top-curators
+              - text: to see them.
+        - generic [ref=e295]:
+          - heading "Customer reviews for MECCHA CHAMELEON See language breakdown About user reviews Your preferences" [level=2] [ref=e296]:
+            - text: Customer reviews for MECCHA CHAMELEON
+            - generic [ref=e298]:
+              - link "See language breakdown" [ref=e299] [cursor=pointer]:
+                - /url: javascript:ViewLanguageReviewScores( 4704690 )
+              - link "About user reviews" [ref=e300] [cursor=pointer]:
+                - /url: https://help.steampowered.com/faqs/view/2DA6-9CB3-F84A-643E
+              - link "Your preferences" [ref=e301] [cursor=pointer]:
+                - /url: https://store.steampowered.com/account/preferences/#review_score_preferences
+          - generic [ref=e302]:
+            - generic [ref=e304]:
+              - generic [ref=e305]: "English Reviews:"
+              - generic [ref=e306]: Very Positive
+              - generic [ref=e307]: (24,914 reviews)
+            - generic [ref=e309]:
+              - text: "Total reviews in all languages:"
+              - generic [ref=e310]: 44,241
+              - generic [ref=e311]: Very Positive
+          - list "Filter options" [ref=e313]:
+            - listitem [ref=e314]:
+              - button "Review Type" [ref=e315] [cursor=pointer]
+            - listitem [ref=e316]:
+              - button "Purchase Type" [ref=e317] [cursor=pointer]
+            - listitem [ref=e318]:
+              - button "Language" [ref=e319] [cursor=pointer]
+            - listitem [ref=e320]:
+              - button "Date Range" [ref=e321] [cursor=pointer]
+            - listitem [ref=e322]:
+              - button "Playtime" [ref=e323] [cursor=pointer]
+            - listitem [ref=e324]:
+              - button "Display" [ref=e325] [cursor=pointer]
+            - button "Show graph" [ref=e327] [cursor=pointer]: Show graph
+          - group [ref=e330]:
+            - generic [ref=e331]: Filters
+            - button [ref=e332] [cursor=pointer]
+            - button [ref=e333] [cursor=pointer]
+            - button [ref=e334] [cursor=pointer]
+            - button [ref=e335] [cursor=pointer]
+            - button "Excluding Off-topic Review Activity" [ref=e336] [cursor=pointer]
+            - button "Playtime:" [ref=e337] [cursor=pointer]: "Playtime:"
+            - button "Played Mostly on Steam Deck" [ref=e338] [cursor=pointer]
+            - button "Operating System:" [ref=e339] [cursor=pointer]: "Operating System:"
+            - button "CPU:" [ref=e340] [cursor=pointer]: "CPU:"
+            - button "GPU:" [ref=e341] [cursor=pointer]: "GPU:"
+            - button "Device Type:" [ref=e342] [cursor=pointer]: "Device Type:"
+    - contentinfo [ref=e493]:
+      - generic [ref=e494]:
+        - generic [ref=e495]:
+          - link [ref=e496] [cursor=pointer]:
+            - /url: https://store.steampowered.com/?snr=1_44_44_
+            - img [ref=e497]
+          - link [ref=e507] [cursor=pointer]:
+            - /url: https://valvesoftware.com
+            - img [ref=e508]
+        - paragraph [ref=e513]:
+          - text: © 2026 Valve Corporation. All rights reserved. All trademarks are property of their respective owners in the US and other countries.
+          - text: VAT included in all prices where applicable.
+        - generic [ref=e514]:
+          - link [ref=e515] [cursor=pointer]:
+            - /url: https://www.youtube.com/@Steam
+            - img [ref=e516]
+          - link [ref=e518] [cursor=pointer]:
+            - /url: https://bsky.app/profile/steampowered.com
+            - img [ref=e519]
+          - link [ref=e521] [cursor=pointer]:
+            - /url: https://facebook.com/steam
+            - img [ref=e522]
+          - link [ref=e524] [cursor=pointer]:
+            - /url: https://twitter.com/steam
+            - img [ref=e525]
+      - generic [ref=e527]:
+        - heading "STEAM" [level=3] [ref=e528]
+        - link "About Steam" [ref=e529] [cursor=pointer]:
+          - /url: https://store.steampowered.com/about/?snr=1_44_44_
+        - link "Steam SSA" [ref=e530] [cursor=pointer]:
+          - /url: https://store.steampowered.com/subscriber_agreement/?snr=1_44_44_
+        - link "Steamworks" [ref=e531] [cursor=pointer]:
+          - /url: https://partner.steamgames.com/
+        - link "Steam Distribution" [ref=e532] [cursor=pointer]:
+          - /url: https://partner.steamgames.com/steamdirect
+        - link "Gift Cards" [ref=e533] [cursor=pointer]:
+          - /url: https://store.steampowered.com/digitalgiftcards/?snr=1_44_44_
+      - generic [ref=e534]:
+        - heading "VALVE" [level=3] [ref=e535]
+        - link "About Valve" [ref=e536] [cursor=pointer]:
+          - /url: https://valvesoftware.com/about
+        - link "Jobs" [ref=e537] [cursor=pointer]:
+          - /url: https://valvesoftware.com/
+        - link "Hardware" [ref=e538] [cursor=pointer]:
+          - /url: https://store.steampowered.com/hardware/?snr=1_44_44_
+        - link "Recycling" [ref=e539] [cursor=pointer]:
+          - /url: https://store.steampowered.com/hardware_recycling/?snr=1_44_44_
+      - generic [ref=e540]:
+        - heading "LEGAL" [level=3] [ref=e541]
+        - link "Privacy" [ref=e542] [cursor=pointer]:
+          - /url: https://store.steampowered.com/privacy_agreement/?snr=1_44_44_
+        - link "Accessibility" [ref=e543] [cursor=pointer]:
+          - /url: https://help.steampowered.com/faqs/view/10BB-D27A-6378-4436
+        - link "Notices & Policies" [ref=e544] [cursor=pointer]:
+          - /url: https://store.steampowered.com/legal/?snr=1_44_44_
+        - link "Cookies" [ref=e545] [cursor=pointer]:
+          - /url: https://store.steampowered.com/account/cookiepreferences/?snr=1_44_44_
+        - link "Refunds" [ref=e546] [cursor=pointer]:
+          - /url: https://store.steampowered.com/steam_refunds/?snr=1_44_44_
+      - generic [ref=e547]:
+        - heading "MORE" [level=3] [ref=e548]
+        - link "Get Steam" [ref=e549] [cursor=pointer]:
+          - /url: https://store.steampowered.com/about/?snr=1_44_44_
+        - link "Get Mobile Apps" [ref=e550] [cursor=pointer]:
+          - /url: https://store.steampowered.com/mobile/?snr=1_44_44_
+        - link "Get Support" [ref=e551] [cursor=pointer]:
+          - /url: https://help.steampowered.com/
+        - link "My Account" [ref=e552] [cursor=pointer]:
+          - /url: https://store.steampowered.com/account/?snr=1_44_44_

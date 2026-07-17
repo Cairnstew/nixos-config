@@ -10,6 +10,10 @@ in
       settings = {
         PermitRootLogin = "prohibit-password";
         PasswordAuthentication = false;
+        ClientAliveInterval = 60;
+        ClientAliveCountMax = 3;
+        TCPKeepAlive = true;
+        UseDns = false;
       };
       extraConfig = mkIf (cfg.lanSubnets != [ ]) ''
         # Last-resort password auth from LAN subnets — for headless access

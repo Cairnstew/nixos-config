@@ -23,7 +23,10 @@ in
     # ── Game Development ────────────────────────────────────────────────────
     # mkDefault true: Godot engine and basic tools included for game dev
     # Override when: Not doing game development or want a specific version
-    my.programs.godot.enable = lib.mkDefault true;
+    my.programs.godot = {
+      enable = lib.mkDefault true;
+      mono.enable = lib.mkDefault true;  # C# support via godot-mono
+    };
 
     # ── Virtualisation ─────────────────────────────────────────────────────
     environment.systemPackages = with pkgs; [ qemu ];

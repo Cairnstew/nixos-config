@@ -330,6 +330,17 @@ All `my.*` options declared across module files.
 | `my.services.gitRepoSync.enable` | bool | `false` | Git repository sync service |
 | `my.services.gitRepoSync.user` | str | — | User for sync timers |
 | `my.services.gitRepoSync.repos` | attrs | `{}` | Repositories to sync |
+| `my.services.xmltv.enable` | bool | `false` | XMLTV EPG grabber service for UK Freeview TV listings |
+| `my.services.xmltv.package` | package | `null` | XMLTV package to use |
+| `my.services.xmltv.grabber` | str | `"tv_grab_uk_freeview"` | XMLTV grabber script |
+| `my.services.xmltv.outputPath` | path | `"/var/lib/xmltv/epg.xml"` | XMLTV file output path |
+| `my.services.xmltv.timerInterval` | str | `"daily"` | EPG refresh interval |
+| `my.services.xmltv.days` | int | `7` | Days of EPG data to grab |
+| `my.services.xmltv.serveViaHttp` | bool | `false` | Serve XMLTV via HTTP |
+| `my.services.xmltv.httpPort` | port | `8889` | HTTP server port |
+| `my.services.xmltv.configure.region` | nullOr str | `null` | Freeview region ID |
+| `my.services.xmltv.configure.channelFormat` | enum | `"number"` | Channel ID format |
+| `my.services.xmltv.configure.channels` | list of str | `[]` | Freeview channels to include |
 | `my.services.hedgedoc.enable` | bool | `false` | HedgeDoc collaborative markdown |
 | `my.services.netboot.enable` | bool | `false` | PXE netboot server (DHCP+TFTP+HTTP) |
 | `my.services.netboot.serveMode` | enum | `"cli"` | `"cli"` = interactive CLI tool, `"daemon"` = persistent services |

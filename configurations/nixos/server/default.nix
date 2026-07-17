@@ -35,7 +35,7 @@
 
   # ── Location ─────────────────────────────────────────────────────────────
   my.system.location = {
-    enable = true;  # M1: was missing — module wraps config in mkIf cfg.enable (default false)
+    # enable = true — redundant: profile already sets via mkIf cfg.location.enable (M3)
     timeZone = "America/Chicago";
     latitude = 30.2672;
     longitude = -97.7431;

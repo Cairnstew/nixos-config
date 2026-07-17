@@ -58,6 +58,7 @@
     gpu.mesa.enable = true;
     location.enable = true;
     gaming.enable = true;
+    media.enable = true;
     testing.enable = true;
     theming.stylix.enable = true;
   };
@@ -227,7 +228,7 @@
 
   # ── Location ────────────────────────────────────────────────────────────
   my.system.location = {
-    enable = true;  # M1: was missing — module wraps config in mkIf cfg.enable (default false)
+    # enable = true — redundant: profile already sets via mkIf cfg.location.enable (M3)
     timeZone = "GB";
     latitude = 55.8617;
     longitude = -4.2583;
@@ -714,6 +715,54 @@
       };
     };
   };
+
+  # ── TV & EPG ──────────────────────────────────────────────────────────
+  my.services.xmltv = {
+    enable = true;
+    configure = {
+      region = "64257";
+      channelFormat = "number";
+      channels = [
+        # SD Channels (1-99)
+        "1" "2" "3" "4" "5" "6" "8" "9" "10" "11" "12" "13" "14" "15" "16"
+        "17" "18" "19" "20" "21" "22" "23" "25" "26" "27" "28" "29" "30"
+        "31" "32" "33" "34" "35" "36" "37" "38" "39" "40" "41" "42" "43"
+        "44" "45" "46" "47" "48" "49" "50" "51" "52" "56" "57" "58" "59"
+        "60" "61" "62" "63" "64" "65" "66" "67" "68" "69" "70" "71" "72"
+        "73" "74" "76" "78" "81" "82" "83" "84" "89" "90" "91" "92" "94"
+        "95" "96" "97" "98" "99"
+        # HD Channels (101+)
+        "101" "102" "103" "104" "105" "106" "107"
+        "201" "202" "203" "204" "205" "206" "207" "208" "209" "210"
+        "231" "232" "233" "236"
+        "250" "251" "252" "253" "254" "255" "256" "257" "259" "260" "261"
+        "263" "264" "265" "266" "268" "269" "270" "271" "272" "273" "274"
+        "275" "276" "278" "279" "283" "284" "287" "288" "289" "290" "291"
+        "601"
+        "700" "701" "702" "703" "704" "705" "706" "707" "708" "709" "710"
+        "711" "712" "713" "714" "716" "718" "723" "724" "725" "728" "730"
+        "731" "732"
+      ];
+    };
+    days = 7;
+    extraArgs = [ "--fast" ];
+    serveViaHttp = true;
+    httpPort = 8889;
+  };
+
+  # ── Media Stack (*arr) ─────────────────────────────────────────────────
+  my.services.jellyfin.mediaDirs = [ "/mnt/media" ];
+  my.services.prowlarr.indexers = [
+    {
+      name = "SpeedCD";
+      implementation = "SpeedCD";
+      settings = [
+        { name = "baseUrl"; value = "https://speed.cd/"; }
+        { name = "username"; value = "ppextendo"; }
+        { name = "password"; credentialFile = config.age.secrets."speed-cd-password".path; }
+      ];
+    }
+  ];
 
   # ── Manga Reader ─────────────────────────────────────────────────────────
   # Suwayomi-Server backend + Moku frontend (both enabled via entertainment profile)

@@ -10,6 +10,7 @@ in
     ./development.nix
     ./entertainment.nix
     ./gaming.nix
+    ./media.nix
     ./workstation.nix
     ./server.nix
     ./minimal.nix
@@ -23,6 +24,7 @@ in
     server.enable = lib.mkEnableOption "server profile (headless)";
     minimal.enable = lib.mkEnableOption "minimal profile (bare essentials)";
     gaming.enable = lib.mkEnableOption "gaming profile (steam, games, etc.)";
+    media.enable = lib.mkEnableOption "media stack profile (Prowlarr, Sonarr, Radarr, Jellyfin)";
     entertainment.enable = lib.mkEnableOption "entertainment profile (gaming, music, media services)";
     development.enable = lib.mkEnableOption "development profile (dev tools, containers)";
     ai.enable = lib.mkEnableOption "AI frontend services (RisuAI, Open WebUI, Letta, Jan)";

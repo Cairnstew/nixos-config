@@ -69,6 +69,12 @@ risuai-image:
 ventoy-iso:
     sudo nix build .#live-iso-deploy --impure
 
+# ── Steam Link ───────────────────────────────────────────────────────────────
+
+# Deploy Steam Link USB (auto-detects agenix tailscale-authkey if no -k flag)
+steamlink-deploy *args:
+    sudo nix run .#steamlink-deploy -- {{ args }}
+
 # ── Testing ──────────────────────────────────────────────────────────────────
 
 # Run all nixtest suites (unit, snapshot, script tests)
