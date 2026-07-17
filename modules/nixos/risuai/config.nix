@@ -47,50 +47,47 @@ in
     my.services.proxy.upstreams.risuai = {
       port = cfg.port;
       path = "/risuai/";
-      websocket = true;
-      extraLocations = let
-        proxyCommon = ''
-          proxy_pass http://127.0.0.1:${toString cfg.port};
-          proxy_http_version 1.1;
-          proxy_set_header Host $host;
-          proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-          proxy_set_header X-Forwarded-Proto $scheme;
-        '';
-      in [
+      # WebSocket auto-detected by Caddy — no special config needed.
+      # Root-relative SPA paths proxy to RisuAI.
+      extraLocations = [
         # SPA assets (JS/CSS chunks referenced with absolute paths)
         ''
-        location /assets/ {
-          ${proxyCommon}
+        handle /assets/* {
+          reverse_proxy 127.0.0.1:${toString cfg.port}
         }
         ''
-        # API calls
+        # API calls — catches /api/* (RisuAI's general API routes)
         ''
-        location /api/ {
-          ${proxyCommon}
+        handle /api/* {
+          reverse_proxy 127.0.0.1:${toString cfg.port}
         }
         ''
         # Service worker
         ''
-        location /sw/ {
-          ${proxyCommon}
+        handle /sw/* {
+          reverse_proxy 127.0.0.1:${toString cfg.port}
         }
         ''
         # Hub proxy (character/asset hub)
         ''
-        location /hub-proxy/ {
-          ${proxyCommon}
+        handle /hub-proxy/* {
+          reverse_proxy 127.0.0.1:${toString cfg.port}
         }
         ''
         # Manifest and icons
         ''
-        location /manifest.json {
-          ${proxyCommon}
+        handle /manifest.json {
+          reverse_proxy 127.0.0.1:${toString cfg.port}
         }
-        location /logo_ {
-          ${proxyCommon}
+        ''
+        ''
+        handle /logo_* {
+          reverse_proxy 127.0.0.1:${toString cfg.port}
         }
-        location /none.webp {
-          ${proxyCommon}
+        ''
+        ''
+        handle /none.webp {
+          reverse_proxy 127.0.0.1:${toString cfg.port}
         }
         ''
       ];

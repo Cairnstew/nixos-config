@@ -44,15 +44,90 @@ in
       ];
     };
 
+    # Connect to ollama-net so the container can resolve ollama:11434
+    systemd.services."${cfg.backend}-open-webui-ollama-net" = lib.mkIf cfg.ollama.enable {
+      description = "Connect open-webui container to ollama-net";
+      after = [ "${cfg.backend}-open-webui.service" ];
+      wants = [ "${cfg.backend}-open-webui.service" ];
+      wantedBy = [ "multi-user.target" ];
+      serviceConfig = {
+        Type = "oneshot";
+        RemainAfterExit = true;
+        ExecStart = "${pkgs.writeShellScript "open-webui-join-ollama-net" ''
+          ${if cfg.backend == "docker" then "${pkgs.docker}/bin/docker" else "${pkgs.podman}/bin/podman"} network connect ollama-net open-webui 2>/dev/null || true
+        ''}";
+      };
+    };
+
     # Register with reverse proxy
     my.services.proxy.upstreams.open-webui = {
       port = cfg.port;
+      displayName = "Open WebUI";
       path = "/chat/";
-      websocket = true;
-      extraConfig = ''
-        proxy_buffering off;
-        client_max_body_size 0;
-      '';
+      # Caddy's handle_path strips /chat prefix automatically.
+      # WebSocket is auto-detected — no special config needed.
+      # SvelteKit root-relative routes are handled via extraLocations below.
+      extraLocations = [
+        # REST API v1 — specific path so it doesn't conflict with RisuAI's /api/
+        ''
+        handle /api/v1/* {
+          reverse_proxy 127.0.0.1:${toString cfg.port}
+        }
+        ''
+        # SvelteKit internal assets and static files
+        ''
+        handle /_app/* {
+          reverse_proxy 127.0.0.1:${toString cfg.port}
+        }
+        ''
+        ''
+        handle /static/* {
+          reverse_proxy 127.0.0.1:${toString cfg.port}
+        }
+        ''
+        # WebSocket and streaming
+        ''
+        handle /ws/* {
+          reverse_proxy 127.0.0.1:${toString cfg.port}
+        }
+        ''
+        # SvelteKit page routes (SPA navigation targets)
+        ''
+        handle /auth/* {
+          reverse_proxy 127.0.0.1:${toString cfg.port}
+        }
+        ''
+        ''
+        handle /c/* {
+          reverse_proxy 127.0.0.1:${toString cfg.port}
+        }
+        ''
+        ''
+        handle /workspace/* {
+          reverse_proxy 127.0.0.1:${toString cfg.port}
+        }
+        ''
+        ''
+        handle /admin/* {
+          reverse_proxy 127.0.0.1:${toString cfg.port}
+        }
+        ''
+        ''
+        handle /models* {
+          reverse_proxy 127.0.0.1:${toString cfg.port}
+        }
+        ''
+        ''
+        handle /knowledge* {
+          reverse_proxy 127.0.0.1:${toString cfg.port}
+        }
+        ''
+        ''
+        handle /tools* {
+          reverse_proxy 127.0.0.1:${toString cfg.port}
+        }
+        ''
+      ];
     };
   };
 }

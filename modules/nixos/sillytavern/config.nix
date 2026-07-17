@@ -136,8 +136,67 @@ in
     # Register with reverse proxy
     my.services.proxy.upstreams.sillytavern = {
       port = ucfg.port;
+      displayName = "SillyTavern";
       path = "/sillytavern/";
-      websocket = true;
+      # Caddy's handle_path strips /sillytavern prefix automatically,
+      # so no htmlBase / subs_filter needed. WebSocket is auto-detected.
+      # Root-relative SPA paths are proxied via extraLocations below.
+      extraLocations = [
+        # SPA frontend assets
+        ''
+        handle /assets/* {
+          reverse_proxy 127.0.0.1:${toString ucfg.port}
+        }
+        ''
+        # Stylesheets
+        ''
+        handle /css/* {
+          reverse_proxy 127.0.0.1:${toString ucfg.port}
+        }
+        ''
+        # JavaScript scripts
+        ''
+        handle /scripts/* {
+          reverse_proxy 127.0.0.1:${toString ucfg.port}
+        }
+        ''
+        # REST API
+        ''
+        handle /api/* {
+          reverse_proxy 127.0.0.1:${toString ucfg.port}
+        }
+        ''
+        # User content (avatars, uploads)
+        ''
+        handle /user/* {
+          reverse_proxy 127.0.0.1:${toString ucfg.port}
+        }
+        ''
+        # Character card data
+        ''
+        handle /characters/* {
+          reverse_proxy 127.0.0.1:${toString ucfg.port}
+        }
+        ''
+        # Chat history
+        ''
+        handle /chats/* {
+          reverse_proxy 127.0.0.1:${toString ucfg.port}
+        }
+        ''
+        # Background images
+        ''
+        handle /backgrounds/* {
+          reverse_proxy 127.0.0.1:${toString ucfg.port}
+        }
+        ''
+        # Notification sounds
+        ''
+        handle /sounds/* {
+          reverse_proxy 127.0.0.1:${toString ucfg.port}
+        }
+        ''
+      ];
     };
   };
 }

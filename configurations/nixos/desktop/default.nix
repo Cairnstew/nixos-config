@@ -30,6 +30,7 @@
         desktop.choice = lib.mkForce "hyprland";
       };
       my.system.battery.enable = lib.mkForce false;
+      my.services.proxy.listenAddresses = lib.mkForce [ "127.0.0.1" ];
       my.testing = {
         enable = true;
         startAtBoot = true;
@@ -223,6 +224,16 @@
     common.enable = true;
     desktop.enable = true;
     development.enable = true;
+  };
+
+  # ── Reverse Proxy ────────────────────────────────────────────────────────
+  # Unified proxy module: services auto-register with my.services.proxy.upstreams.
+  # Caddy serves the service dashboard at / and proxies subpaths to each backend.
+  # tailscale serve forwards :443 → Caddy:8081 so each service is at
+  # https://desktop.tail685690.ts.net/<service>/.
+  my.services.proxy = {
+    listenAddresses = [ "100.121.125.58" "127.0.0.1" ];
+    tailscaleServe.enable = true;
   };
 
   # ── Location ────────────────────────────────────────────────────────────

@@ -37,7 +37,7 @@ in
     my.services.proxy.upstreams.chatterbox-tts = {
       port = cfg.port;
       path = "/tts/";
-      websocket = true;
+      # WebSocket auto-detected by Caddy.
     };
   };
 }

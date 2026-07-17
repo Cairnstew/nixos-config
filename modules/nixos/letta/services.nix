@@ -38,5 +38,20 @@ in
           ''}";
       };
     };
+
+    # Join ollama-net so letta can resolve ollama:11434 for model inference
+    systemd.services."${cfg.backend}-letta-ollama-net" = lib.mkIf cfg.ollama.enable {
+      description = "Connect letta container to ollama-net";
+      after = [ "${cfg.backend}-letta.service" ];
+      wants = [ "${cfg.backend}-letta.service" ];
+      wantedBy = [ "multi-user.target" ];
+      serviceConfig = {
+        Type = "oneshot";
+        RemainAfterExit = true;
+        ExecStart = "${pkgs.writeShellScript "letta-join-ollama-net" ''
+          ${backendBin} network connect ollama-net letta 2>/dev/null || true
+        ''}";
+      };
+    };
   };
 }

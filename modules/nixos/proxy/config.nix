@@ -4,28 +4,15 @@ let
 
   enabledUpstreams = lib.filterAttrs (_: u: u.enable) cfg.upstreams;
 
-  # Build a single nginx location block for an upstream
-  locationBlock = name: upstream:
+  # Build a Caddy handle (or handle_path) block for an upstream
+  handleBlock = name: upstream:
     let
-      proxyPassUrl =
-        if upstream.stripPrefix
-        then "http://${upstream.host}:${toString upstream.port}/"
-        else "http://${upstream.host}:${toString upstream.port}";
+      directive = if upstream.stripPrefix then "handle_path" else "handle";
+      path = "${upstream.path}*";
     in
     ''
-      location ${upstream.path} {
-        proxy_pass ${proxyPassUrl};
-        proxy_http_version 1.1;
-        ${lib.optionalString upstream.websocket ''
-        proxy_set_header Upgrade $http_upgrade;
-        proxy_set_header Connection "upgrade";
-        ''}
-        ${lib.optionalString (upstream.htmlBase != null) ''
-        subs_filter '<head(?:\\s[^>]*)?>' '<head><base href="${upstream.htmlBase}">' ir;
-        ''}
-        proxy_set_header Host $host;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto $scheme;
+      ${directive} ${path} {
+        reverse_proxy ${upstream.host}:${toString upstream.port}
         ${upstream.extraConfig}
       }
     '';
@@ -76,14 +63,14 @@ let
         <h1>${cfg.dashboard.title}</h1>
         <p class="subtitle">${cfg.dashboard.description}</p>
         <div class="grid">
-          ${lib.concatStringsSep "\n" (lib.mapAttrsToList (name: u: ''
+          ${lib.concatStringsSep "\n" (lib.mapAttrsToList (name: u: let displayName = if u.displayName != null then u.displayName else name; in ''
           <a href="${u.path}" class="card">
-            <h2>${name}</h2>
+            <h2>${displayName}</h2>
             <div class="path">${u.path}</div>
           </a>
           '') enabledUpstreams)}
         </div>
-        <p class="footer">server.tail685690.ts.net</p>
+        <p class="footer"><script>document.write(window.location.host)</script></p>
       </div>
     </body>
     </html>
@@ -94,44 +81,55 @@ let
     cp ${dashboardHtml} $out/index.html
   '';
 
-  # Tailscale serve URL
+  # Use :port as the site address (catch-all for any Host header — required
+  # because Tailscale serve preserves the original Host when forwarding).
+  # The bind directive restricts which interfaces Caddy actually listens on.
+  # http:// prefix disables automatic TLS — Tailscale handles HTTPS at the edge.
+
+  # Build bind directive from listenAddresses
+  bindList = lib.concatStringsSep " " cfg.listenAddresses;
+
+  # Generate Caddyfile
+  caddyfile = pkgs.writeText "Caddyfile" ''
+    http://:${toString cfg.port} {
+      bind ${bindList}
+      ${lib.optionalString cfg.dashboard.enable ''
+      handle /index.html {
+        root * ${dashboardDir}
+        file_server
+      }
+      handle / {
+        root * ${dashboardDir}
+        file_server
+      }
+      ''}
+
+      ${lib.concatStringsSep "\n" (lib.mapAttrsToList handleBlock enabledUpstreams)}
+
+      ${lib.concatStringsSep "\n" (lib.concatMap (u: u.extraLocations) (builtins.attrValues enabledUpstreams))}
+
+      handle {
+        respond "Not Found" 404
+      }
+
+      ${cfg.extraConfig}
+    }
+  '';
+
+  # Tailscale serve URL (uses the first listen address)
   tailscaleUrl = "http://${builtins.elemAt cfg.listenAddresses 0}:${toString cfg.port}";
 in
 {
   config = lib.mkIf cfg.enable {
-    services.nginx = {
+    services.caddy = {
       enable = true;
-      additionalModules = [ pkgs.nginxModules.subsFilter ];
-
-      virtualHosts."_" = {
-        listen = map (addr: { inherit addr; port = cfg.port; }) cfg.listenAddresses;
-
-        extraConfig = ''
-          ${cfg.extraNginxConfig}
-
-          ${lib.optionalString cfg.dashboard.enable ''
-          location = / {
-            root ${dashboardDir};
-            try_files /index.html =404;
-          }
-          ''}
-
-          ${lib.concatStringsSep "\n" (lib.mapAttrsToList locationBlock enabledUpstreams)}
-
-          ${lib.concatStringsSep "\n" (lib.concatMap (u: u.extraLocations) (builtins.attrValues enabledUpstreams))}
-
-          # Everything else: 404
-          location / {
-            return 404;
-          }
-        '';
-      };
+      configFile = caddyfile;
     };
 
     systemd.services.tailscale-serve = lib.mkIf cfg.tailscaleServe.enable {
-      description = "Tailscale Serve — route :${toString cfg.tailscaleServe.httpsPort} to nginx reverse proxy";
-      after = [ "tailscaled.service" "nginx.service" ];
-      wants = [ "nginx.service" ];
+      description = "Tailscale Serve — route :${toString cfg.tailscaleServe.httpsPort} to Caddy reverse proxy";
+      after = [ "tailscaled.service" "caddy.service" ];
+      wants = [ "caddy.service" ];
       wantedBy = [ "multi-user.target" ];
       serviceConfig = {
         Type = "oneshot";

@@ -73,9 +73,7 @@ in
     my.services.proxy.upstreams.ollama = {
       port = cfg.port;
       path = "/ollama/";
-      extraConfig = ''
-        proxy_set_header Host $host;
-      '';
+      # Caddy passes Host header by default — no special config needed.
     };
   };
 }

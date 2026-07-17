@@ -33,7 +33,7 @@ in
         port = cfg.settings.server.port;
         path = "/suwayomi/";
         stripPrefix = false;  # webUISubpath needs full URI passthrough
-        websocket = true;     # GraphQL WebSocket upgrades at /suwayomi/api/graphql
+        # WebSocket auto-detected by Caddy — GraphQL at /suwayomi/api/graphql works.
       };
     })
   ];

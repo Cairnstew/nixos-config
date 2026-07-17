@@ -17,6 +17,12 @@ in
     # Override when: On-premise only with no remote access needed
     my.services.tailscale.enable = lib.mkDefault true;
 
+    # ── IRQ Balance ─────────────────────────────────────────────────────────
+    # Distribute hardware interrupts across all CPU cores. Prevents NIC
+    # interrupt storms on a single core, which causes SSH input lag on
+    # single-queue network adapters (e.g. r8169).
+    services.irqbalance.enable = lib.mkDefault true;
+
     # ── No GUI ─────────────────────────────────────────────────────────────
     # mkDefault false: Servers don't need audio/bluetooth
     # Override when: Media server or special use case

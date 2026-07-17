@@ -2,6 +2,11 @@
 
 ---
 
+**`nix flake check` reliably OOMs on ventoy-deploy — use a scoped check for fast iteration**
+Symptom: Running `nix flake check --show-trace` exits with code 137 (SIGKILL from OOM) while evaluating `ventoy-deploy`. The output shows all prior checks (host configs, modules, packages) passing successfully, making it ambiguous whether the overall check passed or failed. Cause: `ventoy-deploy`'s derivation pulls in a heavy Windows ISO source tree via `github:Cairnstew/uup-dump-build-and-get-windows-iso`, which OOMs the nix evaluator during the Git cache fetch. Fix: For host config iteration (the common case), use the scoped check: `nix derivation show .#checks.x86_64-linux.build-<hostname>` (e.g. `build-desktop`). This validates the NixOS system derivation directly without touching ventoy or any other unrelated output. The full `nix flake check` is only needed when explicitly validating ventoy or the full flake surface. For VM-scope validation, `nix build .#packages.x86_64-linux.desktop-vm --dry-run` is a fine substitute that also avoids the OOM trigger.
+
+---
+
 **`git -c safe.directory="*"` is maximally permissive — scope to the literal path instead**
 Symptom: A systemd oneshot service running as root that calls `git` on a user-owned repo fails with `fatal: detected dubious ownership in repository at '/tmp/foo'`. Fix: Use `git -c safe.directory="$REPO"` where `$REPO` is the literal path to the repo (already set as a script variable from the Nix config option). Avoid `git -c safe.directory="*"` — while functionally equivalent when all git invocations are scoped to a single Nix-declared path, the wildcard would suppress the ownership check for any path passed to git in the process, including paths that come from external input (e.g. a malicious backup filename). The literal-path form is both correct and self-documenting. See `modules/nixos/suwayomi/sync.nix:44-45`.
 
@@ -331,4 +336,9 @@ Symptom: Changes to Windows unattended answer XML aren't reflected after rebuild
 ---
 
 
-Last updated: 2026-05-29
+---
+
+**Nginx location collision between proxy services — `^~` prefix with longest-match wins for sequence-distinguishable paths**
+Symptom: RisuAI SPA fails to load at `/risuai/`. Browser receives Open WebUI's HTML instead of RisuAI's JS/CSS/API responses. Cause: Two proxy upstreams (RisuaAI, Open WebUI) register `extraLocations` targeting the same root-absolute paths (`/assets/`, `/api/`). Open WebUI uses a regex `~ ^/(_app|static|api|ws|assets|auth|error|s/|watch)($|/)` which, per nginx precedence, beats plain prefix locations regardless of config order. Fix: Use `^~` modifier on prefix locations to make them immune to regex matches. For `/assets/`: only RisuAI uses it — add `^~` to RisuAI's `/assets/` location. For `/api/`: RisuAI uses bare `/api/*` (`/api/read`, `/api/write`, etc.) while Open WebUI uses `/api/v1/*` — these are sequence-distinguishable at the second segment. Add `^~ /api/v1/` to OWUI's extraLocations and `^~ /api/` to RisuAI's extraLocations; nginx's longest-prefix-win for `^~` routes `/api/v1/*` → OWUI and `/api/*` → RisuAI correctly. Only a true same-length collision (both services wanting identical path) would require sub_filter or path rewriting. See `modules/nixos/risuai/config.nix:62-82` and `modules/nixos/open-webui/config.nix:76-90`.
+
+Last updated: 2026-07-11

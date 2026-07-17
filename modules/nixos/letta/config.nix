@@ -44,11 +44,17 @@ in
     my.services.proxy.upstreams.letta = {
       port = cfg.port;
       path = "/letta/";
-      websocket = true;
-      extraConfig = ''
-        proxy_buffering off;
-        proxy_redirect / /letta/;
-      '';
+      # Caddy's handle_path strips /letta prefix automatically.
+      # WebSocket is auto-detected — no special config needed.
+      extraLocations = [
+        # Letta references /openapi.json in its response body.
+        # Proxy it so the link works from the SPA at /letta/.
+        ''
+        handle /openapi.json {
+          reverse_proxy 127.0.0.1:${toString cfg.port}
+        }
+        ''
+      ];
     };
   };
 }

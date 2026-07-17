@@ -21,10 +21,14 @@
   my.profiles = {
     server.enable = true;
     development.enable = true;
-    ai.enable = true;
+    ai.enable = false;
     gpu.nvidia-headless.enable = true;
     location.enable = true;
   };
+
+  # ── VS Code Server ──────────────────────────────────────────────────────
+  # Enables Remote-SSH on NixOS (patches dynamically linked Node binaries)
+  my.programs.vscode.server.enable = true;
 
   # ── Home Profiles ────────────────────────────────────────────────────────
   my.homeProfiles = {
@@ -32,6 +36,9 @@
     server.enable = true;
     development.enable = true;
   };
+
+  # ── Home Manager Extra ───────────────────────────────────────────────────
+  my.homeManager.extraConfig.my.programs.goals.enable = true;
 
   # ── Location ─────────────────────────────────────────────────────────────
   my.system.location = {
@@ -48,9 +55,10 @@
   # Unified proxy module: services auto-register with my.services.proxy.upstreams.
   # tailscale serve forwards :443 → nginx:8081 so each service is at
   # https://server.tail685690.ts.net/<service>/.
+  # Dashboard at / shows all registered services.
   my.services.proxy = {
     enable = true;
-    listenAddresses = [ "172.30.0.1" "127.0.0.1" ];
+    listenAddresses = [ "127.0.0.1" ];
     tailscaleServe.enable = true;
   };
 
@@ -128,29 +136,7 @@
   };
 
   # ── NVIDIA Configuration ───────────────────────────────────────────────
-  my.services.ollama = {
-    enable = true;
-    gpu.enable = true;
-    gpu.type = "nvidia";
-    dataDir = "/mnt/data/ollama";
-    models = {
-      "hf.co/Lewdiculous/DS-R1-Qwen3-8B-ArliAI-RpR-v4-Small-GGUF-IQ-Imatrix:Q4_K_M-imat" = {
-        name = "ArliAI DS-R1-Qwen3-8B RpR v4";
-        numCtx = 8192;
-        temperature = 0.6;
-        topP = 0.95;
-        topK = 40;
-        repeatPenalty = 1.1;
-      };
-    };
-  };
-  
-  # Shared model across all AI frontends (matches SillyTavern default)
-  my.services.risuai.ollama.enable = true;
-  my.services.open-webui.ollama.enable = true;
-  my.services.open-webui.extraEnvironment = {
-    DEFAULT_MODELS = "hf.co/Lewdiculous/DS-R1-Qwen3-8B-ArliAI-RpR-v4-Small-GGUF-IQ-Imatrix:Q4_K_M-imat";
-  };
+  my.services.ollama.enable = false;
 
   # ── SSH Access ──────────────────────────────────────────────────────────
   my.services.ssh.authorizedKeys = [
