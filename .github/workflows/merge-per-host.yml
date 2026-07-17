@@ -24,9 +24,9 @@ jobs:
           extra_nix_config: |
             accept-flake-config = true
 
-      - name: Evaluate config
+      - name: Validate config
         run: |
-          nix eval ".#nixosConfigurations.${{ github.ref_name }}" --json > /dev/null
+          nix build ".#nixosConfigurations.${{ github.ref_name }}.config.system.build.toplevel" --dry-run 2>&1 | tail -1
 
       - name: Create or update PR to master
         id: create-pr
