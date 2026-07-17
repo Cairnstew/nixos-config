@@ -1,6 +1,9 @@
-{ config, lib, pkgs, ... }:
+{ config, lib, pkgs, flake, ... }:
 let
   cfg = config.my.services.jan;
+  username = flake.config.me.username;
+  userHome = "/home/${username}";
+  janDataDir = "${userHome}/.local/share/Jan/data";
 
   janSettings = lib.recursiveUpdate {
     api_server = lib.optionalAttrs cfg.apiServer.enable {
@@ -22,29 +25,28 @@ in
   config = lib.mkIf cfg.enable {
     environment.systemPackages = [ cfg.package ];
 
-    systemd.tmpfiles.rules = [
-      "d ${cfg.dataDir} 0755 root root -"
-      "d ${cfg.dataDir}/models 0755 root root -"
-      "d ${cfg.dataDir}/threads 0755 root root -"
-    ];
+    # Deploy settings.json and user service via home-manager
+    home-manager.users.${username} = lib.mkIf cfg.apiServer.enable {
+      home.file."${janDataDir}/settings.json" = {
+        source = janSettingsJson;
+        force = true;
+      };
 
-    systemd.services.jan = lib.mkIf cfg.apiServer.enable {
-      description = "Jan API server (OpenAI-compatible)";
-      after = [ "network-online.target" ];
-      wants = [ "network-online.target" ];
-      wantedBy = [ "multi-user.target" ];
-
-      serviceConfig = {
-        Type = "simple";
-        ExecStart = "${lib.getExe cfg.package} serve --host ${cfg.apiServer.host} --port ${toString cfg.apiServer.port}";
-        Restart = "on-failure";
-        RestartSec = "5s";
-        DynamicUser = true;
-        StateDirectory = "jan";
-        WorkingDirectory = cfg.dataDir;
-        NoNewPrivileges = true;
-        ProtectSystem = "strict";
-        ProtectHome = true;
+      systemd.user.services.jan = {
+        Unit = {
+          Description = "Jan API server (OpenAI-compatible)";
+          After = [ "graphical-session.target" "network-online.target" ];
+          PartOf = [ "graphical-session.target" ];
+        };
+        Service = {
+          Type = "simple";
+          ExecStart = "${lib.getExe cfg.package} serve --host ${cfg.apiServer.host} --port ${toString cfg.apiServer.port}";
+          Restart = "on-failure";
+          RestartSec = "5s";
+        };
+        Install = {
+          WantedBy = [ "graphical-session.target" ];
+        };
       };
     };
   };

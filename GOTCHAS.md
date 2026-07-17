@@ -2,6 +2,12 @@
 
 ---
 
+**`jan.service` fails with `status=134/ABORT` — Jan AppImage bwrap sandbox conflicts with systemd hardening**
+
+Symptom: `jan.service` fails with `code=exited, status=134` on every start after `nixos-rebuild switch`. The main `Jan serve` process exits with SIGABRT. Cause: `pkgs.jan` is an AppImage wrapped via `appimageTools.wrapType2` — the `Jan` binary is a bwrap (bubblewrap) wrapper that creates a mount namespace sandbox. The systemd service used `DynamicUser = true` (state dir at `/var/lib/private/jan`, symlinked to `/var/lib/jan`) + `NoNewPrivileges = true` + `ProtectSystem = "strict"` + `ProtectHome = true`. bwrap's `--chdir "$(pwd)"` inside the new namespace couldn't traverse `/var/lib/private/` (mode 0700, root-owned), and even if it could, `Jan serve` requires a GTK display (it's a Tauri desktop app, not headless). Fix: Converted to a home-manager user service (`systemd.user.services.jan`) that runs in the user's graphical session. The service is `PartOf = [ "graphical-session.target" ]` and has no systemd sandboxing (bwrap already sandboxes itself). The `settings.json` is deployed via `home.file` to `~/.local/share/Jan/data/settings.json`. See `modules/nixos/jan/config.nix`.
+
+---
+
 
 **`nix flake check` reliably OOMs on ventoy-deploy — use a scoped check for fast iteration**
 Symptom: Running `nix flake check --show-trace` exits with code 137 (SIGKILL from OOM) while evaluating `ventoy-deploy`. The output shows all prior checks (host configs, modules, packages) passing successfully, making it ambiguous whether the overall check passed or failed. Cause: `ventoy-deploy`'s derivation pulls in a heavy Windows ISO source tree via `github:Cairnstew/uup-dump-build-and-get-windows-iso`, which OOMs the nix evaluator during the Git cache fetch. Fix: For host config iteration (the common case), use the scoped check: `nix derivation show .#checks.x86_64-linux.build-<hostname>` (e.g. `build-desktop`). This validates the NixOS system derivation directly without touching ventoy or any other unrelated output. The full `nix flake check` is only needed when explicitly validating ventoy or the full flake surface. For VM-scope validation, `nix build .#packages.x86_64-linux.desktop-vm --dry-run` is a fine substitute that also avoids the OOM trigger.
