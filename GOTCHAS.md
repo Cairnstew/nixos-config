@@ -2,8 +2,17 @@
 
 ---
 
+
 **`nix flake check` reliably OOMs on ventoy-deploy — use a scoped check for fast iteration**
 Symptom: Running `nix flake check --show-trace` exits with code 137 (SIGKILL from OOM) while evaluating `ventoy-deploy`. The output shows all prior checks (host configs, modules, packages) passing successfully, making it ambiguous whether the overall check passed or failed. Cause: `ventoy-deploy`'s derivation pulls in a heavy Windows ISO source tree via `github:Cairnstew/uup-dump-build-and-get-windows-iso`, which OOMs the nix evaluator during the Git cache fetch. Fix: For host config iteration (the common case), use the scoped check: `nix derivation show .#checks.x86_64-linux.build-<hostname>` (e.g. `build-desktop`). This validates the NixOS system derivation directly without touching ventoy or any other unrelated output. The full `nix flake check` is only needed when explicitly validating ventoy or the full flake surface. For VM-scope validation, `nix build .#packages.x86_64-linux.desktop-vm --dry-run` is a fine substitute that also avoids the OOM trigger.
+**`pkgs.jan` exports `bin/Jan` (capital J) but service used `bin/jan` — `ExecStart=203/EXEC`**
+
+Symptom: `jan.service` fails with `status=203/EXEC` on every start. The systemd unit enters auto-restart loop. Cause: The upstream nixpkgs `pkgs.jan` package (an AppImage wrapped via `appimageTools.wrapType2`) creates `/bin/Jan` (capital J, matching `meta.mainProgram`), but `modules/nixos/jan/config.nix` had `ExecStart = "${cfg.package}/bin/jan serve ..."` (lowercase j). systemd returns `203/EXEC` (exec format error / file not found) because no file exists at that path. Fix: Use `lib.getExe cfg.package` which resolves the correct binary name from `meta.mainProgram`. See `modules/nixos/jan/config.nix:39`.
+
+---
+
+**`suwayomi-sync-import` timer fires independently of server — curl exit code 7**
+Symptom: `suwayomi-sync-import.service` fails periodically with `status=7/NOTRUNNING`. The journal shows "restoring backup..." followed immediately by the exit, with no GraphQL response. Cause: The `suwayomi-sync-import.timer` is `wantedBy = [ "timers.target" ]` and fires on its `OnCalendar` schedule independently. The service declares `after = [ "suwayomi-server.service" ]` and `wantedBy = [ "suwayomi-server.service" ]`, but these only apply when systemd co-starts both — the timer bypasses this dependency. When the server is restarting or Tailscale IP hasn't resolved yet, the restore curl fails with `CURLE_COULDNT_CONNECT` (exit code 7) and `set -euo pipefail` propagates it. Fix: Added a retry loop (up to 10 attempts, 3s apart) around the restore curl, guarded with `|| true`, so transient connection failures are retried. See `modules/nixos/suwayomi/sync-import.nix:67-83`.
 
 ---
 

@@ -57,6 +57,9 @@ self: super: {
   # Foundation save CLI (parse, generate, modify saves + runtime IPC)
   foundation-save-cli = self.callPackage "${packages}/foundation-save-cli" { };
 
+  # XMLTV — TV listings grabber (tv_grab_uk_freeview) for EPG data
+  xmltv = self.callPackage "${packages}/xmltv" { };
+
   # wimboot 2.8.0 fails with GCC -Werror=unterminated-string-initialization
   # Suppress the specific warning until upstream fixes it
   wimboot = super.wimboot.overrideAttrs (old: {

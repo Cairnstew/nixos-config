@@ -11,18 +11,45 @@ Use the opencode-ensemble skill to parallelise independent refactoring tasks whe
 
 ---
 
+## AVAILABLE NIX-GRAPH TOOLS (MCP)
+
+Before refactoring, use nix-graph to understand what depends on your target:
+
+| Tool | Refactoring use case |
+|------|---------------------|
+| `nix-graph_get_dependents(module_path)` | Find all files that import a module before moving/renaming it |
+| `nix-graph_get_option_definers(option_path)` | Find all sites that declare/define an option before consolidating |
+| `nix-graph_find_mkforce_sites` | Identify all `mkForce` sites that may resist a refactor |
+| `nix-graph_find_namespace_violations` | Find options to fix during a namespace cleanup pass |
+| `nix-graph_find_path(source, target)` | Trace the import chain between two modules |
+| `nix-graph_graph_stats` | Verify structural invariants after a refactor pass |
+| `nix-graph_node_info(node_id)` | Check node attributes before/after changes |
+
+---
+
 ## Hard rules (never violate)
 - `tested = false` in any `meta.nix` is never changed.
 - `secrets/` and `/run/agenix/` paths are never touched.
 - `lib.mkForce` is never added without a comment and explicit human approval.
 - If a dry-run errors, revert immediately before continuing.
 - Do not fabricate command output. If a command cannot run, say so.
+- **Every change to any `.nix` file must include an explanatory comment.** Added lines must have an inline `#` comment or a preceding comment block explaining *why* the change is made. Moved lines must retain their existing comments. Renamed options must have a compatibility comment. The only exception is pure whitespace/formatting changes (indentation fixes, blank line removal).
 
 ---
 
 ## R0. Branch model proposal (planning — no file changes)
 
-From the map, propose the target branch tree:
+Use nix-graph to understand the current import graph and dependency structure:
+
+```
+nix-graph_graph_stats
+nix-graph_find_namespace_violations   # targets for cleanup
+nix-graph_find_mkforce_sites          # potential obstacles
+nix-graph_get_dependents("modules/nixos/common.nix")  # everything that relies on common
+nix-graph_get_dependents("modules/nixos/profiles")     # profile consumers
+```
+
+From the map and nix-graph findings, propose the target branch tree:
 
 ```
 flake.nix
@@ -56,6 +83,23 @@ sequentially.
 
 For each task (or parallel batch), follow this loop:
 
+### Step 0 — Impact analysis (use nix-graph)
+
+Before making changes, understand the blast radius:
+
+```
+# Who depends on the module being changed?
+nix-graph_get_dependents("modules/nixos/tailscale")
+
+# Where is the option being moved/redefined?
+nix-graph_get_option_definers("my.services.tailscale.enable")
+
+# Is there a mkForce that would fight the change?
+nix-graph_find_mkforce_sites
+```
+
+Quote the nix-graph output so the human can assess risk.
+
 ### Step 1 — Show current state
 Read and paste the relevant file sections verbatim with path and line numbers.
 
@@ -64,9 +108,9 @@ Read and paste the relevant file sections verbatim with path and line numbers.
 --- a/path/to/file
 +++ b/path/to/file
 @@ ... @@
- unchanged
--removed
-+added
+  unchanged
+ -removed
+ +added
 ```
 For new files, show the full content.
 
@@ -78,14 +122,25 @@ Print: **"Ready to apply task R<n>. Reply 'apply' to proceed."**
 Do not continue until the human replies with `apply`.
 
 ### Step 5 — Apply and dry-run verify
-Apply the diff, then run:
+Apply the diff, then verify:
+
 ```bash
+# NixOS dry builds for all hosts
 for host in !`ls configurations/nixos/`; do
   echo "=== $host ==="
   nixos-rebuild dry-activate --flake ".#$host" --fast 2>&1 | tail -8
 done
 ```
-Paste the raw output. If any host errors, revert the change and report.
+
+If the change involves module renames or import restructuring, also verify with nix-graph:
+
+```
+nix-graph_graph_stats                 # confirm node counts didn't regress
+nix-graph_node_info("module:nixos/…") # confirm new module is in the graph
+nix-graph_get_dependents("modules/nixos/…")  # confirm dependents resolved correctly
+```
+
+Paste the raw output. If any host errors or nix-graph invariants are broken, revert the change and report.
 
 ---
 
@@ -98,3 +153,14 @@ After all approved tasks, produce:
 | R1   | ...          | -42     | LOW  | ✓      |
 
 Then list up to 5 follow-on improvements that were out of scope (too risky, hardware-dependent, or dependent on earlier tasks completing first).
+
+### Commit
+
+After the summary, commit all changes:
+
+```bash
+git add -A
+git commit -m "refactor: $(git diff --cached --stat | tail -1 | sed 's/.*|//' | xargs echo) — see summary above"
+```
+
+If the commit fails (e.g. nothing to commit), note it and proceed. Otherwise paste the commit hash and short stat.

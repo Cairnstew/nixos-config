@@ -86,6 +86,16 @@ in
     ./sillytavern
     ./risuai
     ./suwayomi
+
+    # ── TV & EPG ─────────────────────────────────────────────────────────
+    ./xmltv
+
+    # ── Media Stack (*arr) ────────────────────────────────────────────────
+    ./prowlarr
+    ./sonarr
+    ./radarr
+    ./jellyfin
+
     ./chatterbox-tts
     ./moku.nix
     ./boot-alerting

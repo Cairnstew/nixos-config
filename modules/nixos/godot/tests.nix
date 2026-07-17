@@ -7,10 +7,17 @@ in
   # ── L0: Nix Assertions ────────────────────────────────────────────────────
   assertions = [
     {
-      assertion = !cfg.enable || (cfg.engine.enable -> cfg.engine.package != null || pkgs ? godot);
+      assertion = !cfg.enable || (cfg.engine.enable -> cfg.engine.package != null || pkgs ? godot || pkgs ? godot-mono);
       message = ''
         my.programs.godot is enabled but no Godot package is available.
-        Either set `engine.package` explicitly or ensure `pkgs.godot` exists.
+        Either set `engine.package` explicitly or ensure `pkgs.godot`/`pkgs.godot-mono` exists.
+      '';
+    }
+    {
+      assertion = !cfg.enable || !cfg.mono.enable || cfg.engine.enable;
+      message = ''
+        my.programs.godot.mono requires `engine.enable` to be true so that
+        godot-mono is available for C# scripting.
       '';
     }
     {
@@ -28,7 +35,7 @@ in
       '';
     }
     {
-      assertion = !cfg.enable || !(cfg.exportTemplates.enable && cfg.exportTemplates.autoDownload) || (pkgs ? godot-export-templates-bin || cfg.exportTemplates.package != null);
+      assertion = !cfg.enable || !(cfg.exportTemplates.enable && cfg.exportTemplates.autoDownload) || cfg.exportTemplates.package != null || pkgs ? godot-export-templates-bin || pkgs ? godotPackages.export-templates-mono-bin;
       message = ''
         my.programs.godot.exportTemplates.autoDownload is enabled but no
         export templates package is available. Set `exportTemplates.package`
@@ -68,17 +75,20 @@ in
   systemd.services.godot-smoke-test = lib.mkIf cfg.enable {
     description = "Smoke test for Godot game engine installation";
     serviceConfig.Type = "oneshot";
-    script = ''
+    script = let
+      godotPkg = if cfg.engine.package != null then cfg.engine.package else if cfg.mono.enable then pkgs.godot-mono else pkgs.godot;
+      godotCmd = if cfg.mono.enable then "godot-mono" else "godot";
+    in ''
       echo "=== Godot Smoke Test ==="
 
       ${lib.optionalString cfg.engine.enable ''
-        if ! command -v godot >/dev/null 2>&1; then
-          echo "FAIL: godot binary not found in PATH"
+        if ! command -v ${godotCmd} >/dev/null 2>&1; then
+          echo "FAIL: ${godotCmd} binary not found in PATH"
           exit 1
         fi
-        echo "PASS: godot binary found"
+        echo "PASS: ${godotCmd} binary found"
 
-        VERSION=$(${lib.getBin (if cfg.engine.package != null then cfg.engine.package else pkgs.godot)}/bin/godot --version 2>/dev/null)
+        VERSION=$(${lib.getBin godotPkg}/bin/${godotCmd} --version 2>/dev/null)
         if [ -n "$VERSION" ]; then
           echo "PASS: Godot version: $VERSION"
         else

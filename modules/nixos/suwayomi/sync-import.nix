@@ -66,11 +66,22 @@ in
 
             # 4. Restore backup via multipart upload (no validateBackup mutation available)
             echo "suwayomi-sync-import: restoring backup..."
-            RESTORE=$(curl -s -X POST "$BASE/api/graphql" \
-              -F "operations={\"query\":\"mutation(\$file: Upload!) { restoreBackup(input: { backup: \$file, flags: { includeManga: true, includeCategories: true, includeChapters: false, includeTracking: true, includeHistory: true, includeClientData: false, includeServerSettings: false } }) { status { state } } }\",\"variables\":{\"file\":null}}" \
-              -F "map={\"0\":[\"variables.file\"]}" \
-              -F "0=@$BACKUP_FILE;type=application/octet-stream" 2>&1)
-            STATE=$(echo "$RESTORE" | ${pkgs.jq}/bin/jq -r '.data.restoreBackup.status.state // "unknown"')
+            RESTORE=""
+            for i in $(${pkgs.coreutils}/bin/seq 1 10); do
+              RESTORE=$(curl -s -X POST "$BASE/api/graphql" \
+                -F "operations={\"query\":\"mutation(\$file: Upload!) { restoreBackup(input: { backup: \$file, flags: { includeManga: true, includeCategories: true, includeChapters: false, includeTracking: true, includeHistory: true, includeClientData: false, includeServerSettings: false } }) { status { state } } }\",\"variables\":{\"file\":null}}" \
+                -F "map={\"0\":[\"variables.file\"]}" \
+                -F "0=@$BACKUP_FILE;type=application/octet-stream" 2>&1) || true
+              if [ -n "$RESTORE" ]; then
+                STATE=$(echo "$RESTORE" | ${pkgs.jq}/bin/jq -r '.data.restoreBackup.status.state // "unknown"' 2>/dev/null || echo "")
+                if [ "$STATE" != "unknown" ] && [ -n "$STATE" ]; then
+                  break
+                fi
+              fi
+              echo "suwayomi-sync-import: server not ready, retry $i/10..."
+              sleep 3
+            done
+            STATE=$(echo "$RESTORE" | ${pkgs.jq}/bin/jq -r '.data.restoreBackup.status.state // "unknown"' 2>/dev/null || echo "no-connection")
             echo "suwayomi-sync-import: restore state: $STATE"
 
             # 5. Refresh extension list from configured repos

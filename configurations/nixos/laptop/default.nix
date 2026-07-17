@@ -51,7 +51,7 @@
 
   # ── Location ────────────────────────────────────────────────────────────
   my.system.location = {
-    enable = true;
+    # enable = true — redundant: profile already sets via mkIf cfg.location.enable (M3)
     timeZone = "Europe/London";
     latitude = 55.8617;
     longitude = 4.2583;

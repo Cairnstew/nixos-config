@@ -11,22 +11,20 @@
     nixpkgs-stable.url = "github:NixOS/nixpkgs/nixos-25.11";
 
 
-    nix-darwin.url = "github:LnL7/nix-darwin";
-    nix-darwin.inputs.nixpkgs.follows = "nixpkgs";
     home-manager.url = "github:nix-community/home-manager";
     home-manager.inputs.nixpkgs.follows = "nixpkgs";
     stylix.url = "github:nix-community/stylix";
     stylix.inputs.nixpkgs.follows = "nixpkgs";
-    nixos-hardware.url = "github:NixOS/nixos-hardware";
     nixos-unified.url = "github:srid/nixos-unified";
     disko.url = "github:nix-community/disko";
     disko.inputs.nixpkgs.follows = "nixpkgs";
     agenix.url = "github:ryantm/agenix";
+    agenix.inputs.nixpkgs.follows = "nixpkgs";  # reduce nixpkgs duplication (M5)
     agenix-manager.url = "github:Cairnstew/agenix-manager";
     agenix-manager.inputs.nixpkgs.follows = "nixpkgs";
     agenix-manager.inputs.agenix.follows = "agenix";
     nuenv.url = "github:hallettj/nuenv/writeShellApplication";
-    nixpkgs-unstable.url = "github:NixOS/nixpkgs/nixos-unstable";
+    nuenv.inputs.nixpkgs.follows = "nixpkgs";  # reduce nixpkgs duplication (M5)
     nixos-wsl.url = "github:nix-community/NixOS-WSL/main";
     nixos-wsl.inputs.nixpkgs.follows = "nixpkgs";
 
@@ -113,6 +111,12 @@
     nixtest = {
       url = "gitlab:TECHNOFAB/nixtest";
       inputs.nixpkgs.follows = "nixpkgs";
+    };
+
+    # Steam Link Arch Linux boot medium creator
+    steamlink-archlinux = {
+      url = "github:Cairnstew/steamlink-archlinux";
+      flake = true;
     };
 
   };

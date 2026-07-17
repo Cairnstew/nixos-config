@@ -36,7 +36,7 @@ in
 
       serviceConfig = {
         Type = "simple";
-        ExecStart = "${cfg.package}/bin/jan serve --host ${cfg.apiServer.host} --port ${toString cfg.apiServer.port}";
+        ExecStart = "${lib.getExe cfg.package} serve --host ${cfg.apiServer.host} --port ${toString cfg.apiServer.port}";
         Restart = "on-failure";
         RestartSec = "5s";
         DynamicUser = true;

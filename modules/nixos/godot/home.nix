@@ -5,12 +5,19 @@ let
   inherit (flake.config.me) username;
 
   templatesPkg =
-    if pkgs ? godot-export-templates-bin then
+    if cfg.mono.enable && pkgs ? godotPackages.export-templates-mono-bin then
+      pkgs.godotPackages.export-templates-mono-bin
+    else if pkgs ? godot-export-templates-bin then
       pkgs.godot-export-templates-bin
     else
       null;
 
-  godotPkg = if cfg.engine.package != null then cfg.engine.package else pkgs.godot;
+  godotPkg =
+    if cfg.engine.package != null then cfg.engine.package
+    else if cfg.mono.enable then pkgs.godot-mono
+    else pkgs.godot;
+
+  godotBin = "${lib.getBin godotPkg}/bin/${if cfg.mono.enable then "godot-mono" else "godot"}";
 in
 {
   config = mkIf (cfg.enable && cfg.editor.enable) {
@@ -41,7 +48,7 @@ in
             name = name;
             icon = if project.desktopEntries.icon != null then project.desktopEntries.icon else "godot";
             categories = project.desktopEntries.categories;
-            exec = "${lib.getBin godotPkg}/bin/godot --path ${project.path}";
+            exec = "${godotBin} --path ${project.path}";
           };
         }) cfg.projects
       );
@@ -49,7 +56,7 @@ in
       # ── Shell aliases for quick project access ─────────────────────────
       home.shellAliases = lib.mkMerge [
         (lib.mapAttrs' (name: project: lib.nameValuePair "godot-${name}" ''
-          ${lib.getBin godotPkg}/bin/godot --path ${project.path}
+          ${godotBin} --path ${project.path}
         '') cfg.projects)
       ];
     };

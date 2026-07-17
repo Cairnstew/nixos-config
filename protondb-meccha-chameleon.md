@@ -1,0 +1,1702 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e2]:
+    - generic [ref=e3]:
+      - banner [ref=e4]:
+        - generic [ref=e5]:
+          - img [ref=e6]
+          - generic [ref=e8]:
+            - img "ProtonDB Logo" [ref=e9]
+            - link "proton db" [ref=e10] [cursor=pointer]:
+              - /url: /
+              - generic [ref=e11]: proton
+              - generic [ref=e12]: db
+          - textbox "Search games..." [ref=e16]
+          - generic [ref=e18]:
+            - img [ref=e19] [cursor=pointer]
+            - link [ref=e22] [cursor=pointer]:
+              - /url: /profile
+              - img [ref=e23]
+      - main [ref=e25]:
+        - generic [ref=e27]:
+          - generic [ref=e28]: MECCHA CHAMELEON
+          - generic [ref=e31]:
+            - generic [ref=e35]: Platinum
+            - img [ref=e37]
+          - generic [ref=e2563]:
+            - generic [ref=e2564]: Deck Verified Status
+            - img [ref=e2565]
+            - generic [ref=e2566]: Playable
+            - generic [ref=e2567] [cursor=pointer]: Show Details
+          - generic [ref=e42]:
+            - generic [ref=e43]: Chromebook Ready Status
+            - img [ref=e44]
+            - generic [ref=e45]: Unknown
+          - generic [ref=e47]:
+            - link "Steam" [ref=e48] [cursor=pointer]:
+              - /url: https://store.steampowered.com/app/4704690
+            - link "SteamDB" [ref=e49] [cursor=pointer]:
+              - /url: https://steamdb.info/app/4704690
+            - link "Steamcharts" [ref=e50] [cursor=pointer]:
+              - /url: https://steamcharts.com/app/4704690
+            - link "Steambase" [ref=e51] [cursor=pointer]:
+              - /url: https://steambase.io/app/4704690
+            - link "PCGamingWiki" [ref=e52] [cursor=pointer]:
+              - /url: https://www.pcgamingwiki.com/api/appid.php?appid=4704690
+            - link "Github Issue Search" [ref=e53] [cursor=pointer]:
+              - /url: https://github.com/ValveSoftware/Proton/issues?utf8=%E2%9C%93&q=is%3Aopen+is%3Aissue+in%3Atitle+4704690+
+          - generic [ref=e54]:
+            - generic [ref=e56]: "Natively Supports:"
+            - generic [ref=e60] [cursor=pointer]: Show Minimum Requirements
+          - paragraph [ref=e63]:
+            - paragraph [ref=e64]:
+              - text: Welcome to our Linux gaming community! I hope it helps you make purchasing decisions during the summer sales. This website is an independent solo passion project and has always been without ads, relying instead on donations. If you can contribute financially, please consider
+              - link "becoming a Patreon supporter" [ref=e65] [cursor=pointer]:
+                - /url: https://www.patreon.com/protondb
+              - text: . Thanks!
+          - tablist [ref=e69]:
+            - tab "All" [selected] [ref=e70] [cursor=pointer]
+            - tab "PC" [ref=e71] [cursor=pointer]
+            - tab "Steam Deck" [ref=e72] [cursor=pointer]
+            - tab "ChromeOS" [ref=e73] [cursor=pointer]
+          - generic [ref=e75]:
+            - generic [ref=e76]:
+              - generic [ref=e77]:
+                - generic [ref=e79]: Reports 1 - 40 of 91
+                - generic [ref=e80] [cursor=pointer]: Next
+              - generic [ref=e82]:
+                - generic [ref=e83]: "Filter:"
+                - img [ref=e85] [cursor=pointer]
+            - generic [ref=e91]:
+              - generic [ref=e94]:
+                - generic [ref=e96]:
+                  - img [ref=e98]
+                  - heading [level=3]
+                  - link "16 hours ago" [ref=e103] [cursor=pointer]:
+                    - /url: /app/4704690#qpe08l1rMI
+                - paragraph [ref=e108]: Performance at max settings seems to take a hit, but not below 60 FPS. May have to be due to poor optimization and not anything Linux-related.
+              - generic [ref=e109]:
+                - generic [ref=e111]:
+                  - generic [ref=e113]: Proton 10.0-3
+                  - generic [ref=e116]:
+                    - generic [ref=e117]:
+                      - generic [ref=e118]: "Distro:"
+                      - generic [ref=e119]: Nobara Linux 43 (KDE Plasma Desktop Edition)
+                    - generic [ref=e120]:
+                      - generic [ref=e121]: "Kernel:"
+                      - generic [ref=e122]: 6.19.8-200.nobara.fc43.x86_64
+                    - generic [ref=e123]:
+                      - generic [ref=e124]: "RAM:"
+                      - generic [ref=e125]: 31 GB
+                    - generic [ref=e126]:
+                      - generic [ref=e127]: "GPU Driver:"
+                      - generic [ref=e128]: 4.6 Mesa 26.0.2
+                    - generic [ref=e129]:
+                      - generic [ref=e130]: "GPU:"
+                      - generic [ref=e131]: AMD Radeon RX 9070 XT (radeonsi, gfx1201, ACO, DRM 3.64, 6.19.8-200.nobara.fc43.x86_64)
+                    - generic [ref=e132]:
+                      - generic [ref=e133]: "CPU:"
+                      - generic [ref=e134]: AMD Ryzen 7 9800X3D 8-Core
+                - generic [ref=e136]:
+                  - img [ref=e137]
+                  - generic [ref=e138]: derpey kong
+                  - link "(7 reports)" [ref=e139] [cursor=pointer]:
+                    - /url: /users/2143808635
+                  - generic [ref=e141]: 1 hour overall
+            - generic [ref=e146]:
+              - generic [ref=e149]:
+                - generic [ref=e151]:
+                  - img [ref=e153]
+                  - generic [ref=e155]:
+                    - img [ref=e157]
+                    - img [ref=e159]
+                  - heading [level=3]
+                  - link "19 hours ago" [ref=e164] [cursor=pointer]:
+                    - /url: /app/4704690#tgToYKq_SR
+                - generic [ref=e166]:
+                  - generic [ref=e167]:
+                    - generic [ref=e168]: "Tinker Steps:"
+                    - text: "Custom Proton: Proton CachyOS"
+                  - generic [ref=e170]:
+                    - generic [ref=e171]:
+                      - generic [ref=e172]: "Performance:"
+                      - generic [ref=e173]: Significant Performance Problems
+                    - paragraph [ref=e175]: When I'm hosting, the game starts stuttering heavily after a few seconds in the lobby, and is not an internet issue.
+              - generic [ref=e177]:
+                - generic [ref=e179]:
+                  - generic [ref=e181]: "Custom Proton: Proton CachyOS"
+                  - generic [ref=e184]:
+                    - generic [ref=e185]:
+                      - generic [ref=e186]: "Distro:"
+                      - generic [ref=e187]: CachyOS
+                    - generic [ref=e188]:
+                      - generic [ref=e189]: "Kernel:"
+                      - generic [ref=e190]: 7.1.2-3-cachyos
+                    - generic [ref=e191]:
+                      - generic [ref=e192]: "RAM:"
+                      - generic [ref=e193]: 16 GB
+                    - generic [ref=e194]:
+                      - generic [ref=e195]: "GPU Driver:"
+                      - generic [ref=e196]: 4.6 Mesa 26.2.0-devel (git-4cbf95e1b5)
+                    - generic [ref=e197]:
+                      - generic [ref=e198]: "GPU:"
+                      - generic [ref=e199]: AMD Radeon RX 9060 XT (radeonsi, gfx1200, ACO, DRM 3.64, 7.1.2-3-cachyos)
+                    - generic [ref=e200]:
+                      - generic [ref=e201]: "CPU:"
+                      - generic [ref=e202]: AMD Ryzen 5 5500
+                - generic [ref=e204]:
+                  - img [ref=e205]
+                  - generic [ref=e206]: Tutty
+                  - link "(1 report)" [ref=e207] [cursor=pointer]:
+                    - /url: /users/896500243
+                  - generic [ref=e209]: 4 hours overall
+            - generic [ref=e214]:
+              - generic [ref=e217]:
+                - generic [ref=e219]:
+                  - img [ref=e221]
+                  - heading [level=3]
+                  - generic [ref=e224]:
+                    - img [ref=e225] [cursor=pointer]
+                    - link "1 day ago" [ref=e228] [cursor=pointer]:
+                      - /url: /app/4704690#O3z0IuUz9g
+                - generic [ref=e231]:
+                  - generic [ref=e232]:
+                    - generic [ref=e233]: "Instability:"
+                    - generic [ref=e234]: Not Listed
+                  - paragraph [ref=e236]: Very laggy when in fullscreen; occasionally fails to start up
+              - generic [ref=e238]:
+                - generic [ref=e242]: Proton 10.0-3
+                - generic [ref=e245]:
+                  - generic [ref=e246]: werewolfhrt
+                  - link "(1 report)" [ref=e247] [cursor=pointer]:
+                    - /url: /users/960716468
+            - generic [ref=e252]:
+              - generic [ref=e255]:
+                - generic [ref=e257]:
+                  - img [ref=e259]
+                  - heading "Pretty much flawless" [level=3] [ref=e262]
+                  - link "1 day ago" [ref=e265] [cursor=pointer]:
+                    - /url: /app/4704690#yP_7zKCQqF
+                - paragraph [ref=e270]: There's an issue with invites/joining, but that's not a linux issue.
+              - generic [ref=e271]:
+                - generic [ref=e273]:
+                  - generic [ref=e275]: Proton 10.0-3
+                  - generic [ref=e278]:
+                    - generic [ref=e279]:
+                      - generic [ref=e280]: "Distro:"
+                      - generic [ref=e281]: CachyOS
+                    - generic [ref=e282]:
+                      - generic [ref=e283]: "Kernel:"
+                      - generic [ref=e284]: 7.0.12-1-cachyos
+                    - generic [ref=e285]:
+                      - generic [ref=e286]: "RAM:"
+                      - generic [ref=e287]: 64 GB
+                    - generic [ref=e288]:
+                      - generic [ref=e289]: "GPU Driver:"
+                      - generic [ref=e290]: 4.6 Mesa 26.1.2-arch3.1
+                    - generic [ref=e291]:
+                      - generic [ref=e292]: "GPU:"
+                      - generic [ref=e293]: AMD Radeon RX 6800 (radeonsi, navi21, ACO, DRM 3.64, 7.0.12-1-cachyos)
+                    - generic [ref=e294]:
+                      - generic [ref=e295]: "CPU:"
+                      - generic [ref=e296]: AMD Ryzen 7 5800X 8-Core
+                - generic [ref=e298]:
+                  - img [ref=e299]
+                  - generic [ref=e300]: ppepp
+                  - link "(23 reports)" [ref=e301] [cursor=pointer]:
+                    - /url: /users/1098529025
+                  - generic [ref=e303]: 4 hours overall
+            - generic [ref=e308]:
+              - generic [ref=e311]:
+                - generic [ref=e313]:
+                  - img [ref=e315]
+                  - generic [ref=e317]:
+                    - img [ref=e319]
+                    - img [ref=e321]
+                  - heading "Works out of the Box, no tinkering needed." [level=3] [ref=e324]
+                  - link "1 day ago" [ref=e327] [cursor=pointer]:
+                    - /url: /app/4704690#hUJfboqltx
+                - generic [ref=e329]:
+                  - generic [ref=e330]:
+                    - generic [ref=e331]: "Tinker Steps:"
+                    - text: "Custom Proton: cachyos slr"
+                  - paragraph [ref=e335]: Using gamemode can cause problems, like the ingame painting overlay not working correctly
+              - generic [ref=e336]:
+                - generic [ref=e338]:
+                  - generic [ref=e340]: "Custom Proton: cachyos slr"
+                  - generic [ref=e343]:
+                    - generic [ref=e344]:
+                      - generic [ref=e345]: "Distro:"
+                      - generic [ref=e346]: CachyOS
+                    - generic [ref=e347]:
+                      - generic [ref=e348]: "Kernel:"
+                      - generic [ref=e349]: 7.1.1-2-cachyos
+                    - generic [ref=e350]:
+                      - generic [ref=e351]: "RAM:"
+                      - generic [ref=e352]: 32 GB
+                    - generic [ref=e353]:
+                      - generic [ref=e354]: "GPU Driver:"
+                      - generic [ref=e355]: NVIDIA 610.43.02
+                    - generic [ref=e356]:
+                      - generic [ref=e357]: "GPU:"
+                      - generic [ref=e358]: NVIDIA GeForce RTX 3070
+                    - generic [ref=e359]:
+                      - generic [ref=e360]: "CPU:"
+                      - generic [ref=e361]: AMD Ryzen 7 5800X 8-Core
+                - generic [ref=e363]:
+                  - img [ref=e364]
+                  - generic [ref=e365]: Rick
+                  - link "(4 reports)" [ref=e366] [cursor=pointer]:
+                    - /url: /users/115359928
+                  - generic [ref=e368]: 2 hours overall
+            - generic [ref=e373]:
+              - generic [ref=e376]:
+                - generic [ref=e378]:
+                  - img [ref=e380]
+                  - heading "Lack of optimization. Low fps." [level=3] [ref=e383]
+                  - link "2 days ago" [ref=e386] [cursor=pointer]:
+                    - /url: /app/4704690#2dWgqoFxjW
+                - generic [ref=e388]:
+                  - generic [ref=e389]:
+                    - generic [ref=e390]:
+                      - generic [ref=e391]: "Graphics:"
+                      - generic [ref=e392]: Missing Textures
+                    - paragraph [ref=e394]: Some textures take long time loading, some doesn't fully load
+                  - generic [ref=e395]:
+                    - generic [ref=e396]:
+                      - generic [ref=e397]: "Performance:"
+                      - generic [ref=e398]: Significant Performance Problems
+                    - paragraph [ref=e400]: Very low fps in game and even in menu. 20 fps at lowest graphics with 1024 x 768
+                  - generic [ref=e401]:
+                    - generic [ref=e402]:
+                      - generic [ref=e403]: "Instability:"
+                      - generic [ref=e404]: Occasionally
+                    - paragraph [ref=e406]: Game crashed few times when changing resolution
+                  - paragraph [ref=e409]: I'll try to find how to increase fps, but out of the box its unplayable for now
+              - generic [ref=e410]:
+                - generic [ref=e412]:
+                  - generic [ref=e414]: Proton 10.0-3
+                  - generic [ref=e417]:
+                    - generic [ref=e418]:
+                      - generic [ref=e419]: "Distro:"
+                      - generic [ref=e420]: CachyOS
+                    - generic [ref=e421]:
+                      - generic [ref=e422]: "Kernel:"
+                      - generic [ref=e423]: 7.0.12-1-cachyos
+                    - generic [ref=e424]:
+                      - generic [ref=e425]: "RAM:"
+                      - generic [ref=e426]: 14 GB
+                    - generic [ref=e427]:
+                      - generic [ref=e428]: "GPU Driver:"
+                      - generic [ref=e429]: 4.6 Mesa 26.1.2-arch2.1
+                    - generic [ref=e430]:
+                      - generic [ref=e431]: "GPU:"
+                      - generic [ref=e432]: AMD Radeon (radeonsi, renoir, ACO, DRM 3.64, 7.0.12-1-cachyos)
+                    - generic [ref=e433]:
+                      - generic [ref=e434]: "CPU:"
+                      - generic [ref=e435]: AMD Ryzen 7 7730U with Radeon Graphics
+                - generic [ref=e437]:
+                  - img [ref=e438]
+                  - generic [ref=e439]: hEXA
+                  - link "(1 report)" [ref=e440] [cursor=pointer]:
+                    - /url: /users/2145503809
+                  - generic [ref=e442]: < 1 hour overall
+            - generic [ref=e447]:
+              - generic [ref=e450]:
+                - generic [ref=e452]:
+                  - img [ref=e454]
+                  - heading [level=3]
+                  - link "2 days ago" [ref=e459] [cursor=pointer]:
+                    - /url: /app/4704690#B8JlgfyQTl
+                - paragraph [ref=e464]: When prompted to download workshop maps, clicking on the prompt will not auto download the map.
+              - generic [ref=e465]:
+                - generic [ref=e467]:
+                  - generic [ref=e469]: Proton 10.0-3
+                  - generic [ref=e472]:
+                    - generic [ref=e473]:
+                      - generic [ref=e474]: "Distro:"
+                      - generic [ref=e475]: Nobara Linux 43 (KDE Plasma Desktop Edition)
+                    - generic [ref=e476]:
+                      - generic [ref=e477]: "Kernel:"
+                      - generic [ref=e478]: 7.0.11-200.nobara.fc43.x86_64
+                    - generic [ref=e479]:
+                      - generic [ref=e480]: "RAM:"
+                      - generic [ref=e481]: 31 GB
+                    - generic [ref=e482]:
+                      - generic [ref=e483]: "GPU Driver:"
+                      - generic [ref=e484]: NVIDIA 595.71.05
+                    - generic [ref=e485]:
+                      - generic [ref=e486]: "GPU:"
+                      - generic [ref=e487]: NVIDIA GeForce RTX 5070
+                    - generic [ref=e488]:
+                      - generic [ref=e489]: "CPU:"
+                      - generic [ref=e490]: AMD Ryzen 7 7800X3D 8-Core
+                - generic [ref=e492]:
+                  - img [ref=e493]
+                  - generic [ref=e494]: sickle
+                  - link "(1 report)" [ref=e495] [cursor=pointer]:
+                    - /url: /users/1360013195
+                  - generic [ref=e497]: 3 hours overall
+            - generic [ref=e502]:
+              - generic [ref=e507]:
+                - img [ref=e509]
+                - heading "Works OOTB. Stable 40-60 FPS accross 6 hours of gameplay." [level=3] [ref=e512]
+                - generic [ref=e513]:
+                  - img [ref=e514] [cursor=pointer]
+                  - link "3 days ago" [ref=e517] [cursor=pointer]:
+                    - /url: /app/4704690#0XsfXMExU9
+              - generic [ref=e521]:
+                - generic [ref=e525]: Proton 10.0-3
+                - generic [ref=e528]:
+                  - generic [ref=e529]: tirthasheshpatel
+                  - link "(1 report)" [ref=e530] [cursor=pointer]:
+                    - /url: /users/1935705122
+            - generic [ref=e535]:
+              - generic [ref=e538]:
+                - generic [ref=e540]:
+                  - img [ref=e542]
+                  - heading "Playable" [level=3] [ref=e545]
+                  - link "3 days ago" [ref=e548] [cursor=pointer]:
+                    - /url: /app/4704690#Qg6a5imruq
+                - generic [ref=e550]:
+                  - generic [ref=e551]:
+                    - generic [ref=e552]: "Tinker Steps:"
+                    - text: Switch to experimental, Set launch options
+                  - code [ref=e557]: setxkbmap us && %command%; setxkbmap pl
+                  - generic [ref=e559]:
+                    - generic [ref=e560]: "Installs:"
+                    - generic [ref=e561]: "Yes"
+                  - generic [ref=e562]:
+                    - generic [ref=e563]: "Opens:"
+                    - generic [ref=e564]: "Yes"
+                  - generic [ref=e565]:
+                    - generic [ref=e566]: "Starts Play:"
+                    - generic [ref=e567]: "No"
+                  - paragraph [ref=e570]: need to use startup parameters for fix keyboard problem
+              - generic [ref=e572]:
+                - generic [ref=e574]:
+                  - generic [ref=e576]: Proton Experimental
+                  - generic [ref=e579]:
+                    - generic [ref=e580]:
+                      - generic [ref=e581]: "Distro:"
+                      - generic [ref=e582]: Ubuntu 25.04
+                    - generic [ref=e583]:
+                      - generic [ref=e584]: "Kernel:"
+                      - generic [ref=e585]: 6.14.0-29-generic
+                    - generic [ref=e586]:
+                      - generic [ref=e587]: "RAM:"
+                      - generic [ref=e588]: 31 GB
+                    - generic [ref=e589]:
+                      - generic [ref=e590]: "GPU Driver:"
+                      - generic [ref=e591]: NVIDIA 575.64.03
+                    - generic [ref=e592]:
+                      - generic [ref=e593]: "GPU:"
+                      - generic [ref=e594]: NVIDIA GeForce RTX 3070
+                    - generic [ref=e595]:
+                      - generic [ref=e596]: "CPU:"
+                      - generic [ref=e597]: AMD Ryzen 5 7600 6-Core
+                - generic [ref=e599]:
+                  - img [ref=e600]
+                  - generic [ref=e601]: Venny Poh
+                  - link "(1 report)" [ref=e602] [cursor=pointer]:
+                    - /url: /users/1198182652
+            - generic [ref=e608]:
+              - generic [ref=e611]:
+                - generic [ref=e613]:
+                  - img [ref=e615]
+                  - generic [ref=e617]:
+                    - img [ref=e619]
+                    - img [ref=e621]
+                  - heading "No issue appart from keyboard layout" [level=3] [ref=e624]
+                  - link "3 days ago" [ref=e627] [cursor=pointer]:
+                    - /url: /app/4704690#ESnRgwLzeU
+                - generic [ref=e629]:
+                  - generic [ref=e630]:
+                    - generic [ref=e631]: "Tinker Steps:"
+                    - text: "Custom Proton: GE-Proton10-32, Set launch options"
+                  - code [ref=e636]: HOST_LC_ALL=en_US.UTF-8 setxkbmap us && %command% && setxkbmap fr
+                  - paragraph [ref=e640]: If keyboard is not qwerty, use my command
+              - generic [ref=e641]:
+                - generic [ref=e643]:
+                  - generic [ref=e645]: "Custom Proton: GE-Proton10-32"
+                  - generic [ref=e648]:
+                    - generic [ref=e649]:
+                      - generic [ref=e650]: "Distro:"
+                      - generic [ref=e651]: Debian GNU/Linux forky/sid
+                    - generic [ref=e652]:
+                      - generic [ref=e653]: "Kernel:"
+                      - generic [ref=e654]: 6.18.12+deb14-amd64
+                    - generic [ref=e655]:
+                      - generic [ref=e656]: "RAM:"
+                      - generic [ref=e657]: 31 GB
+                    - generic [ref=e658]:
+                      - generic [ref=e659]: "GPU Driver:"
+                      - generic [ref=e660]: 4.6 Mesa 26.0.0-1
+                    - generic [ref=e661]:
+                      - generic [ref=e662]: "GPU:"
+                      - generic [ref=e663]: AMD Radeon RX 9070 XT (radeonsi, gfx1201, ACO, DRM 3.64, 6.18.12+deb14-amd64)
+                    - generic [ref=e664]:
+                      - generic [ref=e665]: "CPU:"
+                      - generic [ref=e666]: AMD Ryzen 7 7800X3D 8-Core
+                - generic [ref=e668]:
+                  - img [ref=e669]
+                  - generic [ref=e670]: 7-Tycoon
+                  - link "(4 reports)" [ref=e671] [cursor=pointer]:
+                    - /url: /users/1749186066
+                  - generic [ref=e673]: 1 hour overall
+            - generic [ref=e678]:
+              - generic [ref=e681]:
+                - generic [ref=e683]:
+                  - img [ref=e685]
+                  - heading [level=3]
+                  - link "3 days ago" [ref=e690] [cursor=pointer]:
+                    - /url: /app/4704690#3MFfBLfAZ9
+                - generic [ref=e692]:
+                  - generic [ref=e693]:
+                    - generic [ref=e694]:
+                      - generic [ref=e695]: "Input:"
+                      - generic [ref=e696]: Other
+                    - paragraph [ref=e698]: "At time of writing: Pressing right-click while in Paint mode moves my mouse to the top left corner of the screen and I can't change the size of my paintbrush."
+                  - generic [ref=e699]: ► Multiplayer
+                  - generic [ref=e700]:
+                    - generic [ref=e701]: "Overall (online):"
+                    - text: Excellent
+                    - generic [ref=e702]:
+                      - paragraph [ref=e703]: Steam invites didn't seem to work, but selecting Join Private Server and typing in the name and password of my friend's game worked fine.
+                      - paragraph [ref=e704]: Pressing Download for the custom maps didn't appear to do anything at first, but what it does is open the Steam Workshop page for the map in the Steam client; If you Alt+Tab to Steam and subscribe to the mod/map using the Workshop page and Alt+Tab back to the game there's no problem.
+                  - paragraph [ref=e707]: I have seen reports of other Linux and Mac users experiencing the paintbrush sizing issue, hope it gets fixed.
+              - generic [ref=e708]:
+                - generic [ref=e710]:
+                  - generic [ref=e712]: Proton 10.0-3
+                  - generic [ref=e715]:
+                    - generic [ref=e716]:
+                      - generic [ref=e717]: "Distro:"
+                      - generic [ref=e718]: Ubuntu 25.04
+                    - generic [ref=e719]:
+                      - generic [ref=e720]: "Kernel:"
+                      - generic [ref=e721]: 6.14.0-36-generic
+                    - generic [ref=e722]:
+                      - generic [ref=e723]: "RAM:"
+                      - generic [ref=e724]: 64 GB
+                    - generic [ref=e725]:
+                      - generic [ref=e726]: "GPU Driver:"
+                      - generic [ref=e727]: 4.6 Mesa 25.0.7-0ubuntu0.25.04.2
+                    - generic [ref=e728]:
+                      - generic [ref=e729]: "GPU:"
+                      - generic [ref=e730]: AMD Radeon RX 7900 GRE (radeonsi, navi31, LLVM 20.1.2, DRM 3.61, 6.14.0-36-generic)
+                    - generic [ref=e731]:
+                      - generic [ref=e732]: "CPU:"
+                      - generic [ref=e733]: AMD Ryzen 5 5600X 6-Core
+                - generic [ref=e735]:
+                  - img [ref=e736]
+                  - generic [ref=e737]: Doreiku
+                  - link "(2 reports)" [ref=e738] [cursor=pointer]:
+                    - /url: /users/967709330
+                  - generic [ref=e740]: 12 hours overall
+            - generic [ref=e745]:
+              - generic [ref=e748]:
+                - generic [ref=e750]:
+                  - img [ref=e752]
+                  - generic [ref=e754]:
+                    - img [ref=e756]
+                    - img [ref=e758]
+                  - heading [level=3]
+                  - link "4 days ago" [ref=e763] [cursor=pointer]:
+                    - /url: /app/4704690#WlebN5x0DP
+                - generic [ref=e765]:
+                  - generic [ref=e766]:
+                    - generic [ref=e767]: "Tinker Steps:"
+                    - text: "Custom Proton: 10.0-4"
+                  - generic [ref=e769]:
+                    - generic [ref=e770]:
+                      - generic [ref=e771]: "Significant Bugs:"
+                      - generic [ref=e772]: "Yes"
+                    - paragraph [ref=e774]: couldn't join friends and they couldnt join me. it got fixed sometimes randomly
+                  - paragraph [ref=e777]: no bc if i didnt force proton 10 i couldnt join my friends
+              - generic [ref=e778]:
+                - generic [ref=e780]:
+                  - generic [ref=e782]: "Custom Proton: 10.0-4"
+                  - generic [ref=e785]:
+                    - generic [ref=e786]:
+                      - generic [ref=e787]: "Distro:"
+                      - generic [ref=e788]: CachyOS
+                    - generic [ref=e789]:
+                      - generic [ref=e790]: "Kernel:"
+                      - generic [ref=e791]: 7.0.10-1-cachyos
+                    - generic [ref=e792]:
+                      - generic [ref=e793]: "RAM:"
+                      - generic [ref=e794]: 31 GB
+                    - generic [ref=e795]:
+                      - generic [ref=e796]: "GPU Driver:"
+                      - generic [ref=e797]: NVIDIA 595.71.05
+                    - generic [ref=e798]:
+                      - generic [ref=e799]: "GPU:"
+                      - generic [ref=e800]: NVIDIA GeForce RTX 4080 SUPER
+                    - generic [ref=e801]:
+                      - generic [ref=e802]: "CPU:"
+                      - generic [ref=e803]: AMD Ryzen 9 7950X3D 16-Core
+                - generic [ref=e805]:
+                  - img [ref=e806]
+                  - generic [ref=e807]: BlinMaster
+                  - link "(5 reports)" [ref=e808] [cursor=pointer]:
+                    - /url: /users/1980304579
+                  - generic [ref=e810]: < 1 hour overall
+            - generic [ref=e815]:
+              - generic [ref=e818]:
+                - generic [ref=e820]:
+                  - img [ref=e822]
+                  - heading "Works OOTB" [level=3] [ref=e825]
+                  - link "5 days ago" [ref=e828] [cursor=pointer]:
+                    - /url: /app/4704690#BlqaiEsenc
+                - paragraph [ref=e833]: Worked out of the box. Some users reported issues with disconnects or inability to join games, I also experienced the occassional inability to join a game but those issues happen regardless of OS. My friends on Windows experienced those issues as well, the game is just a little buggy.
+              - generic [ref=e834]:
+                - generic [ref=e836]:
+                  - generic [ref=e838]: Proton 10.0-3
+                  - generic [ref=e841]:
+                    - generic [ref=e842]:
+                      - generic [ref=e843]: "Distro:"
+                      - generic [ref=e844]: Fedora Linux 44 (KDE Plasma Desktop Edition)
+                    - generic [ref=e845]:
+                      - generic [ref=e846]: "Kernel:"
+                      - generic [ref=e847]: 7.0.13-200.fc44.x86_64
+                    - generic [ref=e848]:
+                      - generic [ref=e849]: "RAM:"
+                      - generic [ref=e850]: 16 GB
+                    - generic [ref=e851]:
+                      - generic [ref=e852]: "GPU Driver:"
+                      - generic [ref=e853]: NVIDIA 595.80
+                    - generic [ref=e854]:
+                      - generic [ref=e855]: "GPU:"
+                      - generic [ref=e856]: NVIDIA GeForce RTX 3060 Ti
+                    - generic [ref=e857]:
+                      - generic [ref=e858]: "CPU:"
+                      - generic [ref=e859]: 12th Gen Intel Core i5-12400F
+                - generic [ref=e861]:
+                  - img [ref=e862]
+                  - generic [ref=e863]: jigsB
+                  - link "(1 report)" [ref=e864] [cursor=pointer]:
+                    - /url: /users/2101352608
+                  - generic [ref=e866]: 1 hour overall
+            - generic [ref=e871]:
+              - generic [ref=e874]:
+                - generic [ref=e876]:
+                  - generic [ref=e877]:
+                    - img [ref=e879]
+                    - img [ref=e881]
+                  - heading [level=3]
+                  - link "5 days ago" [ref=e886] [cursor=pointer]:
+                    - /url: /app/4704690#07W4SbvNil
+                - generic [ref=e888]:
+                  - generic [ref=e889]:
+                    - generic [ref=e890]: "Tinker Steps:"
+                    - text: Switch to experimental
+                  - generic [ref=e892]:
+                    - generic [ref=e893]:
+                      - generic [ref=e894]: "Significant Bugs:"
+                      - generic [ref=e895]: "Yes"
+                    - paragraph [ref=e897]: Couldn't join lobbies via Steam invites
+                  - paragraph [ref=e900]: Game launches, loads, and runs as it should, but for whatever reason I couldn't join via Steam invites and had to manually put in the server name and password, but other than that it worked perfectly
+              - generic [ref=e901]:
+                - generic [ref=e903]:
+                  - generic [ref=e905]: Proton Experimental
+                  - generic [ref=e908]:
+                    - generic [ref=e909]:
+                      - generic [ref=e910]: "Distro:"
+                      - generic [ref=e911]: Nobara Linux 43 (KDE Plasma Desktop Edition)
+                    - generic [ref=e912]:
+                      - generic [ref=e913]: "Kernel:"
+                      - generic [ref=e914]: 7.0.11-200.nobara.fc43.x86_64
+                    - generic [ref=e915]:
+                      - generic [ref=e916]: "RAM:"
+                      - generic [ref=e917]: 32 GB
+                    - generic [ref=e918]:
+                      - generic [ref=e919]: "GPU Driver:"
+                      - generic [ref=e920]: 4.6 Mesa 26.1.0
+                    - generic [ref=e921]:
+                      - generic [ref=e922]: "GPU:"
+                      - generic [ref=e923]: AMD Radeon RX 6700 XT (radeonsi, navi22, ACO, DRM 3.64, 7.0.11-200.nobara.fc43.x86_64)
+                    - generic [ref=e924]:
+                      - generic [ref=e925]: "CPU:"
+                      - generic [ref=e926]: Intel Core i7-10700F @ 2.90GHz
+                - generic [ref=e928]:
+                  - img [ref=e929]
+                  - generic [ref=e930]: zrh1501
+                  - link "(1 report)" [ref=e931] [cursor=pointer]:
+                    - /url: /users/788729480
+                  - generic [ref=e933]: < 1 hour overall
+            - generic [ref=e938]:
+              - generic [ref=e941]:
+                - generic [ref=e943]:
+                  - img [ref=e945]
+                  - heading "Despite one major problem, everything else runs fine" [level=3] [ref=e948]
+                  - link "5 days ago" [ref=e951] [cursor=pointer]:
+                    - /url: /app/4704690#IuszE0BjFS
+                - generic [ref=e953]:
+                  - generic [ref=e954]: ► Multiplayer
+                  - generic [ref=e955]:
+                    - generic [ref=e956]: "Overall (online):"
+                    - text: Good
+                    - paragraph [ref=e958]: Steam friend invite not working but able to join their lobby manually
+              - generic [ref=e960]:
+                - generic [ref=e962]:
+                  - generic [ref=e964]: Proton 10.0-3
+                  - generic [ref=e967]:
+                    - generic [ref=e968]:
+                      - generic [ref=e969]: "Distro:"
+                      - generic [ref=e970]: Arch Linux
+                    - generic [ref=e971]:
+                      - generic [ref=e972]: "Kernel:"
+                      - generic [ref=e973]: 6.3.3-273-tkg-pds
+                    - generic [ref=e974]:
+                      - generic [ref=e975]: "RAM:"
+                      - generic [ref=e976]: 16 GB
+                    - generic [ref=e977]:
+                      - generic [ref=e978]: "GPU Driver:"
+                      - generic [ref=e979]: 4.6 Mesa 23.0.3
+                    - generic [ref=e980]:
+                      - generic [ref=e981]: "GPU:"
+                      - generic [ref=e982]: AMD Radeon RX 580 (polaris10, LLVM 15.0.7, DRM 3.52, 6.3.3-273-tkg-pds)
+                    - generic [ref=e983]:
+                      - generic [ref=e984]: "CPU:"
+                      - generic [ref=e985]: AMD Ryzen 5 3400G with Radeon Vega Graphics
+                - generic [ref=e987]:
+                  - img [ref=e988]
+                  - generic [ref=e989]: Superbearhero
+                  - link "(61 reports)" [ref=e990] [cursor=pointer]:
+                    - /url: /users/800623349
+            - generic [ref=e996]:
+              - generic [ref=e999]:
+                - generic [ref=e1001]:
+                  - img [ref=e1003]
+                  - heading "Everything fine" [level=3] [ref=e1006]
+                  - generic [ref=e1007]:
+                    - img [ref=e1008] [cursor=pointer]
+                    - link "5 days ago" [ref=e1011] [cursor=pointer]:
+                      - /url: /app/4704690#sonCA6xa1f
+                - generic [ref=e1013]:
+                  - generic [ref=e1014]: ► Multiplayer
+                  - generic [ref=e1015]:
+                    - generic [ref=e1016]: "Overall (online):"
+                    - text: Excellent
+              - generic [ref=e1018]:
+                - generic [ref=e1022]: Proton 10.0-3
+                - generic [ref=e1025]:
+                  - generic [ref=e1026]: Hashimini
+                  - link "(32 reports)" [ref=e1027] [cursor=pointer]:
+                    - /url: /users/1657479978
+            - generic [ref=e1032]:
+              - generic [ref=e1037]:
+                - img [ref=e1039]
+                - heading "Just downloaded it and ran it without setting any options - worked great. Hosted a full lobby for a few hours without issue." [level=3] [ref=e1042]
+                - generic [ref=e1043]:
+                  - img [ref=e1044] [cursor=pointer]
+                  - link "6 days ago" [ref=e1047] [cursor=pointer]:
+                    - /url: /app/4704690#RhKEm2ze8S
+              - generic [ref=e1051]:
+                - generic [ref=e1055]: Proton 10.0-3
+                - generic [ref=e1058]:
+                  - generic [ref=e1059]: Pooks
+                  - link "(3 reports)" [ref=e1060] [cursor=pointer]:
+                    - /url: /users/286341050
+            - generic [ref=e1065]:
+              - generic [ref=e1068]:
+                - generic [ref=e1070]:
+                  - generic [ref=e1071]:
+                    - img [ref=e1073]
+                    - img [ref=e1075]
+                  - heading "Non-QWERTY Keyboards users will have to play with a QWERTY layout and will not be able to input numbers" [level=3] [ref=e1078]
+                  - link "6 days ago" [ref=e1081] [cursor=pointer]:
+                    - /url: /app/4704690#0l4Glhesmj
+                - generic [ref=e1083]:
+                  - generic [ref=e1084]:
+                    - generic [ref=e1085]: "Tinker Steps:"
+                    - text: "Custom Proton: proton-cachyos-slr-x86_64_v3"
+                  - generic [ref=e1087]:
+                    - generic [ref=e1088]:
+                      - generic [ref=e1089]: "Graphics:"
+                      - generic [ref=e1090]: Other
+                    - list [ref=e1092]:
+                      - listitem [ref=e1093]: "DX11: Luminosity too low, some parts of some maps are unplayable"
+                  - generic [ref=e1094]:
+                    - generic [ref=e1095]:
+                      - generic [ref=e1096]: "Input:"
+                      - generic [ref=e1097]: Lag, Other
+                    - list [ref=e1099]:
+                      - listitem [ref=e1100]: "DX11: Input Lag"
+                      - listitem [ref=e1101]: "Keyboard Layout: Locked to QWERTY, changing KDE Plasma's didn't work (and currently there is no way to rebind your keybinds in-game). Numbers are unavailable for AZERTY Keyboards"
+                  - generic [ref=e1102]:
+                    - generic [ref=e1103]:
+                      - generic [ref=e1104]: "Performance:"
+                      - generic [ref=e1105]: Slight Performance Problems
+                    - list [ref=e1107]:
+                      - listitem [ref=e1108]: "DX11 : More Performant"
+                      - listitem [ref=e1109]: "DX12 : Less Performant + Input Lag"
+              - generic [ref=e1111]:
+                - generic [ref=e1113]:
+                  - generic [ref=e1115]: "Custom Proton: proton-cachyos-slr-x86_64_v3"
+                  - generic [ref=e1118]:
+                    - generic [ref=e1119]:
+                      - generic [ref=e1120]: "Distro:"
+                      - generic [ref=e1121]: NixOS 25.11 (Xantusia)
+                    - generic [ref=e1122]:
+                      - generic [ref=e1123]: "Kernel:"
+                      - generic [ref=e1124]: 6.19.6-cachyos-lto
+                    - generic [ref=e1125]:
+                      - generic [ref=e1126]: "RAM:"
+                      - generic [ref=e1127]: 14 GB
+                    - generic [ref=e1128]:
+                      - generic [ref=e1129]: "GPU Driver:"
+                      - generic [ref=e1130]: 4.6 Mesa 25.2.6
+                    - generic [ref=e1131]:
+                      - generic [ref=e1132]: "GPU:"
+                      - generic [ref=e1133]: AMD Radeon (radeonsi, renoir, ACO, DRM 3.64, 6.19.6-cachyos-lto)
+                    - generic [ref=e1134]:
+                      - generic [ref=e1135]: "CPU:"
+                      - generic [ref=e1136]: AMD Ryzen 7 5800H with Radeon Graphics
+                - generic [ref=e1138]:
+                  - img [ref=e1139]
+                  - generic [ref=e1140]: Malix
+                  - link "(5 reports)" [ref=e1141] [cursor=pointer]:
+                    - /url: /users/1384142965
+                  - generic [ref=e1143]: Owned
+            - generic [ref=e1148]:
+              - generic [ref=e1151]:
+                - generic [ref=e1153]:
+                  - img [ref=e1155]
+                  - generic [ref=e1157]:
+                    - img [ref=e1159]
+                    - img [ref=e1161]
+                  - heading "The game works out of the box as someone using cahcyos with its proton version (Proton-CachyOS)" [level=3] [ref=e1164]
+                  - link "6 days ago" [ref=e1167] [cursor=pointer]:
+                    - /url: /app/4704690#rlz1Km9iX_
+                - generic [ref=e1169]:
+                  - generic [ref=e1170]:
+                    - generic [ref=e1171]: "Tinker Steps:"
+                    - text: "Custom Proton: Proton-CachyOS"
+                  - paragraph [ref=e1175]: if the game doesnt launch for you, try using "Proton 11.0 (beta)", which has also worked perfectly for me and is available to most users. If you happen to use arch linux or an arch-based distro (e.g. CachyOS, Manjaro, EndeavourOS, Artix), then you can optionally install the "proton-cachyos-slr" package, which is obtainable through the AUR. This provides "Proton-CachyOS" and "proton-cachyos-slr" as options to use as a compatibility layer, which have also worked very well for me.
+              - generic [ref=e1176]:
+                - generic [ref=e1178]:
+                  - generic [ref=e1180]: "Custom Proton: Proton-CachyOS"
+                  - generic [ref=e1183]:
+                    - generic [ref=e1184]:
+                      - generic [ref=e1185]: "Distro:"
+                      - generic [ref=e1186]: CachyOS
+                    - generic [ref=e1187]:
+                      - generic [ref=e1188]: "Kernel:"
+                      - generic [ref=e1189]: 7.0.9-1-cachyos
+                    - generic [ref=e1190]:
+                      - generic [ref=e1191]: "RAM:"
+                      - generic [ref=e1192]: 32 GB
+                    - generic [ref=e1193]:
+                      - generic [ref=e1194]: "GPU Driver:"
+                      - generic [ref=e1195]: 4.6 Mesa 26.1.1-arch2.1
+                    - generic [ref=e1196]:
+                      - generic [ref=e1197]: "GPU:"
+                      - generic [ref=e1198]: AMD Radeon RX 6600 (radeonsi, navi23, ACO, DRM 3.64, 7.0.9-1-cachyos)
+                    - generic [ref=e1199]:
+                      - generic [ref=e1200]: "CPU:"
+                      - generic [ref=e1201]: AMD Ryzen 5 5600X 6-Core
+                - generic [ref=e1203]:
+                  - img [ref=e1204]
+                  - generic [ref=e1205]: Salem
+                  - link "(3 reports)" [ref=e1206] [cursor=pointer]:
+                    - /url: /users/600248422
+                  - generic [ref=e1208]: 1 hour overall
+            - generic [ref=e1213]:
+              - generic [ref=e1216]:
+                - generic [ref=e1218]:
+                  - img [ref=e1220]
+                  - generic [ref=e1222]:
+                    - img [ref=e1224]
+                    - img [ref=e1226]
+                  - heading "Works out of the box except for the double layout keyboard" [level=3] [ref=e1229]
+                  - link "6 days ago" [ref=e1232] [cursor=pointer]:
+                    - /url: /app/4704690#HAYJeZ580r
+                - generic [ref=e1234]:
+                  - generic [ref=e1235]:
+                    - generic [ref=e1236]: "Tinker Steps:"
+                    - text: Set launch options
+                  - code [ref=e1241]: HOST_LC_ALL=en_US.UTF-8 %command%
+                  - generic [ref=e1243]:
+                    - generic [ref=e1244]:
+                      - generic [ref=e1245]: "Input:"
+                      - generic [ref=e1246]: Other
+                    - paragraph [ref=e1248]: "Keyboard would not work because I have 2 layouts: russian and english. Fixed it by switching english to top layout in KDE and entering launch options."
+                  - generic [ref=e1249]:
+                    - generic [ref=e1250]:
+                      - generic [ref=e1251]: "Performance:"
+                      - generic [ref=e1252]: Slight Performance Problems
+                    - paragraph [ref=e1254]: Global illumination on Sub-Zero drops fps
+                  - paragraph [ref=e1257]: typical gamer would enjoy playing if they do not have 2 layouts like i do
+              - generic [ref=e1258]:
+                - generic [ref=e1260]:
+                  - generic [ref=e1262]: Proton 10.0-3
+                  - generic [ref=e1265]:
+                    - generic [ref=e1266]:
+                      - generic [ref=e1267]: "Distro:"
+                      - generic [ref=e1268]: CachyOS (64-разрядная)
+                    - generic [ref=e1269]:
+                      - generic [ref=e1270]: "Kernel:"
+                      - generic [ref=e1271]: 7.0.2-2-cachyos
+                    - generic [ref=e1272]:
+                      - generic [ref=e1273]: "RAM:"
+                      - generic [ref=e1274]: 31 GB
+                    - generic [ref=e1275]:
+                      - generic [ref=e1276]: "GPU Driver:"
+                      - generic [ref=e1277]: 4.6 Mesa 26.0.5-arch2.2
+                    - generic [ref=e1278]:
+                      - generic [ref=e1279]: "GPU:"
+                      - generic [ref=e1280]: AMD Radeon RX 9070 (radeonsi, gfx1201, ACO, DRM 3.64, 7.0.2-2-cachyos)
+                    - generic [ref=e1281]:
+                      - generic [ref=e1282]: "CPU:"
+                      - generic [ref=e1283]: AMD Ryzen 7 9700X 8-Core
+                - generic [ref=e1285]:
+                  - img [ref=e1286]
+                  - generic [ref=e1287]: easyman121
+                  - link "(3 reports)" [ref=e1288] [cursor=pointer]:
+                    - /url: /users/42867030
+                  - generic [ref=e1290]: < 1 hour overall
+            - generic [ref=e1295]:
+              - generic [ref=e1298]:
+                - generic [ref=e1300]:
+                  - img [ref=e1302]
+                  - generic [ref=e1304]:
+                    - img [ref=e1306]
+                    - img [ref=e1308]
+                  - heading [level=3]
+                  - link "6 days ago" [ref=e1313] [cursor=pointer]:
+                    - /url: /app/4704690#0pPQbdqE5s
+                - generic [ref=e1315]:
+                  - generic [ref=e1316]:
+                    - generic [ref=e1317]: "Tinker Steps:"
+                    - text: "Switch to older version: 9.0-4"
+                  - paragraph [ref=e1321]: Had no problems with launching and playing at all, had to turn some graphics setting down only because my PC isnt the best
+              - generic [ref=e1322]:
+                - generic [ref=e1324]:
+                  - generic [ref=e1326]: Proton 9.0-4
+                  - generic [ref=e1329]:
+                    - generic [ref=e1330]:
+                      - generic [ref=e1331]: "Distro:"
+                      - generic [ref=e1332]: Fedora Linux 42 (KDE Plasma Desktop Edition)
+                    - generic [ref=e1333]:
+                      - generic [ref=e1334]: "Kernel:"
+                      - generic [ref=e1335]: 6.17.4-200.fc42.x86_64
+                    - generic [ref=e1336]:
+                      - generic [ref=e1337]: "RAM:"
+                      - generic [ref=e1338]: 24 GB
+                    - generic [ref=e1339]:
+                      - generic [ref=e1340]: "GPU Driver:"
+                      - generic [ref=e1341]: NVIDIA 580.95.05
+                    - generic [ref=e1342]:
+                      - generic [ref=e1343]: "GPU:"
+                      - generic [ref=e1344]: NVIDIA GeForce GTX 1660 Ti
+                    - generic [ref=e1345]:
+                      - generic [ref=e1346]: "CPU:"
+                      - generic [ref=e1347]: Intel Core i5-6600K @ 3.50GHz
+                - generic [ref=e1349]:
+                  - img [ref=e1350]
+                  - generic [ref=e1351]: Headword_
+                  - link "(2 reports)" [ref=e1352] [cursor=pointer]:
+                    - /url: /users/386523362
+                  - generic [ref=e1354]: 21 hours overall
+            - generic [ref=e1359]:
+              - generic [ref=e1362]:
+                - generic [ref=e1364]:
+                  - img [ref=e1366]
+                  - generic [ref=e1368]:
+                    - img [ref=e1370]
+                    - img [ref=e1372]
+                  - heading [level=3]
+                  - link "6 days ago" [ref=e1377] [cursor=pointer]:
+                    - /url: /app/4704690#VR0o9K-kJo
+                - generic [ref=e1379]:
+                  - generic [ref=e1380]:
+                    - generic [ref=e1381]: "Tinker Steps:"
+                    - text: "Switch to older version: 10.0-3, Set launch options"
+                  - code [ref=e1386]: "-dx11"
+                  - generic [ref=e1388]:
+                    - generic [ref=e1389]:
+                      - generic [ref=e1390]: "Performance:"
+                      - generic [ref=e1391]: Slight Performance Problems
+                    - paragraph [ref=e1393]: Needed to have the game windowed to have decent performance
+                  - paragraph [ref=e1396]: Couldn't join a private lobby before adding the -dx11 command, but that might be unrelated. The host of the server was on Windows. Didn't reattempt after adding the command, they could join my lobby just fine.
+              - generic [ref=e1397]:
+                - generic [ref=e1399]:
+                  - generic [ref=e1401]: Proton 10.0-3
+                  - generic [ref=e1404]:
+                    - generic [ref=e1405]:
+                      - generic [ref=e1406]: "Distro:"
+                      - generic [ref=e1407]: Linux Mint 21.3
+                    - generic [ref=e1408]:
+                      - generic [ref=e1409]: "Kernel:"
+                      - generic [ref=e1410]: 6.8.0-124-generic
+                    - generic [ref=e1411]:
+                      - generic [ref=e1412]: "RAM:"
+                      - generic [ref=e1413]: 15 GB
+                    - generic [ref=e1414]:
+                      - generic [ref=e1415]: "GPU Driver:"
+                      - generic [ref=e1416]: 4.6 Mesa 23.2.1-1ubuntu3.1~22.04.4
+                    - generic [ref=e1417]:
+                      - generic [ref=e1418]: "GPU:"
+                      - generic [ref=e1419]: AMD RENOIR (renoir, LLVM 15.0.7, DRM 3.57, 6.8.0-124-generic)
+                    - generic [ref=e1420]:
+                      - generic [ref=e1421]: "CPU:"
+                      - generic [ref=e1422]: AMD Ryzen 7 7730U with Radeon Graphics
+                - generic [ref=e1424]:
+                  - img [ref=e1425]
+                  - generic [ref=e1426]: Meim
+                  - link "(17 reports)" [ref=e1427] [cursor=pointer]:
+                    - /url: /users/348007362
+                  - generic [ref=e1429]: 1 hour overall
+            - generic [ref=e1434]:
+              - generic [ref=e1437]:
+                - generic [ref=e1439]:
+                  - generic [ref=e1440]:
+                    - img [ref=e1442]
+                    - img [ref=e1444]
+                  - heading "I tried a few game on public servers in Europe (from France) and it worked like a charm. Did not launch with Proton GE." [level=3] [ref=e1447]
+                  - link "6 days ago" [ref=e1450] [cursor=pointer]:
+                    - /url: /app/4704690#Ly6dll79oa
+                - generic [ref=e1453]:
+                  - generic [ref=e1454]: "Tinker Steps:"
+                  - text: "Custom Proton: Proton-CachyOS Latest"
+              - generic [ref=e1457]:
+                - generic [ref=e1459]:
+                  - generic [ref=e1461]: "Custom Proton: Proton-CachyOS Latest"
+                  - generic [ref=e1464]:
+                    - generic [ref=e1465]:
+                      - generic [ref=e1466]: "Distro:"
+                      - generic [ref=e1467]: Fedora Linux 44 (KDE Plasma Desktop Edition)
+                    - generic [ref=e1468]:
+                      - generic [ref=e1469]: "Kernel:"
+                      - generic [ref=e1470]: 7.0.12-cachyos1.fc44.x86_64
+                    - generic [ref=e1471]:
+                      - generic [ref=e1472]: "RAM:"
+                      - generic [ref=e1473]: 32 GB
+                    - generic [ref=e1474]:
+                      - generic [ref=e1475]: "GPU Driver:"
+                      - generic [ref=e1476]: NVIDIA 595.80
+                    - generic [ref=e1477]:
+                      - generic [ref=e1478]: "GPU:"
+                      - generic [ref=e1479]: NVIDIA GeForce RTX 3060
+                    - generic [ref=e1480]:
+                      - generic [ref=e1481]: "CPU:"
+                      - generic [ref=e1482]: Intel Core i7-8700K @ 3.70GHz
+                - generic [ref=e1484]:
+                  - img [ref=e1485]
+                  - generic [ref=e1486]: Delta778
+                  - link "(1 report)" [ref=e1487] [cursor=pointer]:
+                    - /url: /users/2064736364
+                  - generic [ref=e1489]: < 1 hour overall
+            - generic [ref=e1494]:
+              - generic [ref=e1497]:
+                - generic [ref=e1499]:
+                  - img [ref=e1501]
+                  - generic [ref=e1503]:
+                    - img [ref=e1505]
+                    - img [ref=e1507]
+                  - heading [level=3]
+                  - link "1 week ago" [ref=e1512] [cursor=pointer]:
+                    - /url: /app/4704690#pp9kvTRnZF
+                - generic [ref=e1514]:
+                  - generic [ref=e1515]:
+                    - generic [ref=e1516]: "Tinker Steps:"
+                    - text: "Custom Proton: GE-Proton11-1, Set launch options"
+                  - code [ref=e1521]: gamemoderun %command%
+                  - generic [ref=e1523]:
+                    - generic [ref=e1524]:
+                      - generic [ref=e1525]: "Graphics:"
+                      - generic [ref=e1526]: Other
+                    - paragraph [ref=e1528]: Graphical issues with lighting when using -dx11 as a launch command. Do NOT use -dx11, it gives better fps, but it will make some maps completely dark, making it near impossible to find players.
+                  - generic [ref=e1529]:
+                    - generic [ref=e1531]: "Significant Bugs:"
+                    - paragraph [ref=e1533]: The "classic" color picker does not work, but holding spacebar for the 3D color picker works. You can just use the 3D color picker, but it doesn't work well on some custom maps. A report below me (by clumsy) has a fix for the color picker if you need it.
+              - generic [ref=e1535]:
+                - generic [ref=e1537]:
+                  - generic [ref=e1539]: "Custom Proton: GE-Proton11-1"
+                  - generic [ref=e1542]:
+                    - generic [ref=e1543]:
+                      - generic [ref=e1544]: "Distro:"
+                      - generic [ref=e1545]: EndeavourOS Linux
+                    - generic [ref=e1546]:
+                      - generic [ref=e1547]: "Kernel:"
+                      - generic [ref=e1548]: 7.0.10-arch1-1
+                    - generic [ref=e1549]:
+                      - generic [ref=e1550]: "RAM:"
+                      - generic [ref=e1551]: 16 GB
+                    - generic [ref=e1552]:
+                      - generic [ref=e1553]: "GPU Driver:"
+                      - generic [ref=e1554]: NVIDIA 610.43.02
+                    - generic [ref=e1555]:
+                      - generic [ref=e1556]: "GPU:"
+                      - generic [ref=e1557]: NVIDIA GeForce RTX 2060
+                    - generic [ref=e1558]:
+                      - generic [ref=e1559]: "CPU:"
+                      - generic [ref=e1560]: Intel Core i5-10300H @ 2.50GHz
+                - generic [ref=e1562]:
+                  - img [ref=e1563]
+                  - generic [ref=e1564]: Lexbalker
+                  - link "(5 reports)" [ref=e1565] [cursor=pointer]:
+                    - /url: /users/118856761
+                  - generic [ref=e1567]: 2 hours overall
+            - generic [ref=e1572]:
+              - generic [ref=e1575]:
+                - generic [ref=e1577]:
+                  - img [ref=e1579]
+                  - heading "Blackscreen/Whitescreen only, audio plays, unable to interact or play with the game." [level=3] [ref=e1582]
+                  - link "1 week ago" [ref=e1585] [cursor=pointer]:
+                    - /url: /app/4704690#vxVHHVWL5o
+                - generic [ref=e1587]:
+                  - generic [ref=e1588]:
+                    - generic [ref=e1589]: "Installs:"
+                    - generic [ref=e1590]: "Yes"
+                  - generic [ref=e1591]:
+                    - generic [ref=e1592]: "Opens:"
+                    - generic [ref=e1593]: "No"
+                  - paragraph [ref=e1596]: Tried switching to every proton version available through steam, no improvement, system update from nvidia 595 to 610 went from blackscreen to whitescreen, switching renderer to dx11 just caused immediate crashes.
+              - generic [ref=e1598]:
+                - generic [ref=e1600]:
+                  - generic [ref=e1602]: Proton 10.0-3
+                  - generic [ref=e1605]:
+                    - generic [ref=e1606]:
+                      - generic [ref=e1607]: "Distro:"
+                      - generic [ref=e1608]: CachyOS
+                    - generic [ref=e1609]:
+                      - generic [ref=e1610]: "Kernel:"
+                      - generic [ref=e1611]: 7.1.1-2-cachyos
+                    - generic [ref=e1612]:
+                      - generic [ref=e1613]: "RAM:"
+                      - generic [ref=e1614]: 62 GB
+                    - generic [ref=e1615]:
+                      - generic [ref=e1616]: "GPU Driver:"
+                      - generic [ref=e1617]: NVIDIA 610.43.02
+                    - generic [ref=e1618]:
+                      - generic [ref=e1619]: "GPU:"
+                      - generic [ref=e1620]: NVIDIA GeForce RTX 5070 Ti
+                    - generic [ref=e1621]:
+                      - generic [ref=e1622]: "CPU:"
+                      - generic [ref=e1623]: AMD Ryzen 9 9950X 16-Core
+                - generic [ref=e1625]:
+                  - img [ref=e1626]
+                  - generic [ref=e1627]: amenyxia
+                  - link "(1 report)" [ref=e1628] [cursor=pointer]:
+                    - /url: /users/377725306
+                  - generic [ref=e1630]: Owned
+            - generic [ref=e1635]:
+              - generic [ref=e1638]:
+                - generic [ref=e1640]:
+                  - generic [ref=e1641]:
+                    - img [ref=e1643]
+                    - img [ref=e1645]
+                  - heading "When a match starts, it kicks you back to the main menu" [level=3] [ref=e1648]
+                  - link "1 week ago" [ref=e1651] [cursor=pointer]:
+                    - /url: /app/4704690#AYabBxLQiX
+                - generic [ref=e1653]:
+                  - generic [ref=e1654]:
+                    - generic [ref=e1655]: "Tinker Steps:"
+                    - text: "Custom Proton: GE-Proton11-1"
+                  - generic [ref=e1657]:
+                    - generic [ref=e1658]:
+                      - generic [ref=e1659]: "Instability:"
+                      - generic [ref=e1660]: Frequently
+                    - paragraph [ref=e1662]: Kicks you to main menu when a round starts
+              - generic [ref=e1664]:
+                - generic [ref=e1666]:
+                  - generic [ref=e1668]: "Custom Proton: GE-Proton11-1"
+                  - generic [ref=e1671]:
+                    - generic [ref=e1672]:
+                      - generic [ref=e1673]: "Distro:"
+                      - generic [ref=e1674]: CachyOS
+                    - generic [ref=e1675]:
+                      - generic [ref=e1676]: "Kernel:"
+                      - generic [ref=e1677]: 7.1.1-2-cachyos
+                    - generic [ref=e1678]:
+                      - generic [ref=e1679]: "RAM:"
+                      - generic [ref=e1680]: 32 GB
+                    - generic [ref=e1681]:
+                      - generic [ref=e1682]: "GPU Driver:"
+                      - generic [ref=e1683]: 4.6 Mesa 26.1.2-arch3.1
+                    - generic [ref=e1684]:
+                      - generic [ref=e1685]: "GPU:"
+                      - generic [ref=e1686]: AMD Radeon RX 6750 XT (radeonsi, navi22, ACO, DRM 3.64, 7.1.1-2-cachyos)
+                    - generic [ref=e1687]:
+                      - generic [ref=e1688]: "CPU:"
+                      - generic [ref=e1689]: AMD Ryzen 5 5600X 6-Core
+                - generic [ref=e1691]:
+                  - img [ref=e1692]
+                  - generic [ref=e1693]: cat67315
+                  - link "(1 report)" [ref=e1694] [cursor=pointer]:
+                    - /url: /users/1163185629
+                  - generic [ref=e1696]: < 1 hour overall
+            - generic [ref=e1701]:
+              - generic [ref=e1704]:
+                - generic [ref=e1706]:
+                  - generic [ref=e1707]:
+                    - img [ref=e1709]
+                    - img [ref=e1711]
+                  - heading "Too laggy, playable if you need to and have enough patience, but not reccommended." [level=3] [ref=e1714]
+                  - link "1 week ago" [ref=e1717] [cursor=pointer]:
+                    - /url: /app/4704690#2bgY1DtgkL
+                - generic [ref=e1719]:
+                  - generic [ref=e1720]:
+                    - generic [ref=e1721]: "Tinker Steps:"
+                    - text: "Custom Proton: Proton 10.0-4"
+                  - generic [ref=e1723]:
+                    - generic [ref=e1724]:
+                      - generic [ref=e1725]: "Graphics:"
+                      - generic [ref=e1726]: Heavy Artifacts
+                    - paragraph [ref=e1728]: some areas of the image on screen seem to lag behind. Sort of motion blur but with motion blur completely turned off and all other graphics settings all the way down.
+                  - generic [ref=e1729]:
+                    - generic [ref=e1730]:
+                      - generic [ref=e1731]: "Performance:"
+                      - generic [ref=e1732]: Slight Performance Problems
+                    - paragraph [ref=e1734]: Low framerate and ping. Might also be due to public wifi (library) + VPN.
+              - generic [ref=e1736]:
+                - generic [ref=e1738]:
+                  - generic [ref=e1740]: "Custom Proton: Proton 10.0-4"
+                  - generic [ref=e1743]:
+                    - generic [ref=e1744]:
+                      - generic [ref=e1745]: "Distro:"
+                      - generic [ref=e1746]: Bazzite
+                    - generic [ref=e1747]:
+                      - generic [ref=e1748]: "Kernel:"
+                      - generic [ref=e1749]: 7.0.9-ogc3.2.fc44.x86_64
+                    - generic [ref=e1750]:
+                      - generic [ref=e1751]: "RAM:"
+                      - generic [ref=e1752]: 14 GB
+                    - generic [ref=e1753]:
+                      - generic [ref=e1754]: "GPU Driver:"
+                      - generic [ref=e1755]: 4.6 Mesa 26.1.0
+                    - generic [ref=e1756]:
+                      - generic [ref=e1757]: "GPU:"
+                      - generic [ref=e1758]: AMD Radeon Vega 10 (radeonsi, raven, ACO, DRM 3.64, 7.0.9-ogc3.2.fc44.x86_64)
+                    - generic [ref=e1759]:
+                      - generic [ref=e1760]: "CPU:"
+                      - generic [ref=e1761]: AMD Ryzen 7 3700U with Radeon Vega Mobile Gfx
+                - generic [ref=e1763]:
+                  - img [ref=e1764]
+                  - generic [ref=e1765]: RienTheFirst
+                  - link "(1 report)" [ref=e1766] [cursor=pointer]:
+                    - /url: /users/159371956
+                  - generic [ref=e1768]: 17 hours overall
+            - generic [ref=e1773]:
+              - generic [ref=e1778]:
+                - img [ref=e1780]
+                - heading "Working fine without any problems. Hosted a multiplayer game with 8 players without issues." [level=3] [ref=e1783]
+                - generic [ref=e1784]:
+                  - img [ref=e1785] [cursor=pointer]
+                  - link "1 week ago" [ref=e1788] [cursor=pointer]:
+                    - /url: /app/4704690#UhnEbua7Vc
+              - generic [ref=e1792]:
+                - generic [ref=e1796]: Proton 10.0-3
+                - generic [ref=e1799]:
+                  - generic [ref=e1800]: Pahkina
+                  - link "(2 reports)" [ref=e1801] [cursor=pointer]:
+                    - /url: /users/10047153
+            - generic [ref=e1806]:
+              - generic [ref=e1809]:
+                - generic [ref=e1811]:
+                  - img [ref=e1813]
+                  - generic [ref=e1815]:
+                    - img [ref=e1817]
+                    - img [ref=e1819]
+                  - heading [level=3]
+                  - generic [ref=e1822]:
+                    - img [ref=e1823] [cursor=pointer]
+                    - link "1 week ago" [ref=e1826] [cursor=pointer]:
+                      - /url: /app/4704690#CvQyLg_Cf7
+                - generic [ref=e1828]:
+                  - generic [ref=e1829]:
+                    - generic [ref=e1830]: "Tinker Steps:"
+                    - text: Set launch options
+                  - code [ref=e1835]: mangohud %command% -dx11 -width 1400 -height 900
+                  - generic [ref=e1838]:
+                    - generic [ref=e1839]: "Windowing:"
+                    - generic [ref=e1840]: Size
+                  - generic [ref=e1841]:
+                    - generic [ref=e1842]:
+                      - generic [ref=e1843]: "Performance:"
+                      - generic [ref=e1844]: Significant Performance Problems
+                    - paragraph [ref=e1846]: i solved this problem by writing "-dx11" in launch options
+              - generic [ref=e1848]:
+                - generic [ref=e1852]: Proton 10.0-3
+                - generic [ref=e1855]:
+                  - generic [ref=e1856]: Lele
+                  - link "(3 reports)" [ref=e1857] [cursor=pointer]:
+                    - /url: /users/843852699
+            - generic [ref=e1862]:
+              - generic [ref=e1867]:
+                - img [ref=e1869]
+                - heading "Plug and play" [level=3] [ref=e1872]
+                - generic [ref=e1873]:
+                  - img [ref=e1874] [cursor=pointer]
+                  - link "1 week ago" [ref=e1877] [cursor=pointer]:
+                    - /url: /app/4704690#KneP7yh6rW
+              - generic [ref=e1881]:
+                - generic [ref=e1885]: Proton 10.0-3
+                - generic [ref=e1888]:
+                  - generic [ref=e1889]: BurnedGlade
+                  - link "(52 reports)" [ref=e1890] [cursor=pointer]:
+                    - /url: /users/1676286041
+            - generic [ref=e1895]:
+              - generic [ref=e1898]:
+                - generic [ref=e1900]:
+                  - img [ref=e1902]
+                  - generic [ref=e1904]:
+                    - img [ref=e1906]
+                    - img [ref=e1908]
+                  - heading [level=3]
+                  - generic [ref=e1911]:
+                    - img [ref=e1912] [cursor=pointer]
+                    - link "1 week ago" [ref=e1915] [cursor=pointer]:
+                      - /url: /app/4704690#xFmynvF7ei
+                - generic [ref=e1917]:
+                  - generic [ref=e1918]:
+                    - generic [ref=e1919]: "Tinker Steps:"
+                    - text: Set launch options
+                  - code [ref=e1924]: mangohud %command% -dx11 -width 1400 -height 900
+                  - generic [ref=e1928]: "Windowing:"
+                  - generic [ref=e1929]:
+                    - generic [ref=e1930]:
+                      - generic [ref=e1931]: "Performance:"
+                      - generic [ref=e1932]: Significant Performance Problems
+                    - paragraph [ref=e1934]: i solved this problem by writing "-dx11" in Launch options
+              - generic [ref=e1936]:
+                - generic [ref=e1940]: Proton 10.0-3
+                - generic [ref=e1943]:
+                  - generic [ref=e1944]: Lele
+                  - link "(3 reports)" [ref=e1945] [cursor=pointer]:
+                    - /url: /users/843852699
+            - generic [ref=e1950]:
+              - generic [ref=e1953]:
+                - generic [ref=e1955]:
+                  - img [ref=e1957]
+                  - generic [ref=e1959]:
+                    - img [ref=e1961]
+                    - img [ref=e1963]
+                  - heading [level=3]
+                  - link "1 week ago" [ref=e1968] [cursor=pointer]:
+                    - /url: /app/4704690#CnMh7L2HSM
+                - generic [ref=e1970]:
+                  - generic [ref=e1971]:
+                    - generic [ref=e1972]: "Tinker Steps:"
+                    - text: "Custom Proton: proton 11, Set launch options"
+                  - code [ref=e1977]: mangohud %command% -dx11 -width 1400 -height 900
+                  - generic [ref=e1980]:
+                    - generic [ref=e1981]: "Windowing:"
+                    - generic [ref=e1982]: Size
+                  - generic [ref=e1983]:
+                    - generic [ref=e1984]:
+                      - generic [ref=e1985]: "Performance:"
+                      - generic [ref=e1986]: Slight Performance Problems
+                    - paragraph [ref=e1988]: i solved this problem by writing "-dx11" in Launch options
+                  - generic [ref=e1989]: ► Multiplayer
+                  - generic [ref=e1990]:
+                    - generic [ref=e1991]: "Overall (online):"
+                    - text: Good
+                  - generic [ref=e1992]:
+                    - generic [ref=e1993]: "Overall (local):"
+                    - text: Good
+              - generic [ref=e1995]:
+                - generic [ref=e1997]:
+                  - generic [ref=e1999]: "Custom Proton: proton 11"
+                  - generic [ref=e2002]:
+                    - generic [ref=e2003]:
+                      - generic [ref=e2004]: "Distro:"
+                      - generic [ref=e2005]: CachyOS
+                    - generic [ref=e2006]:
+                      - generic [ref=e2007]: "Kernel:"
+                      - generic [ref=e2008]: 7.1.1-2-cachyos
+                    - generic [ref=e2009]:
+                      - generic [ref=e2010]: "RAM:"
+                      - generic [ref=e2011]: 16 GB
+                    - generic [ref=e2012]:
+                      - generic [ref=e2013]: "GPU Driver:"
+                      - generic [ref=e2014]: NVIDIA 580.159.04
+                    - generic [ref=e2015]:
+                      - generic [ref=e2016]: "GPU:"
+                      - generic [ref=e2017]: NVIDIA GeForce GTX 980 Ti
+                    - generic [ref=e2018]:
+                      - generic [ref=e2019]: "CPU:"
+                      - generic [ref=e2020]: AMD Ryzen 5 3400G with Radeon Vega Graphics
+                - generic [ref=e2022]:
+                  - img [ref=e2023]
+                  - generic [ref=e2024]: Lele
+                  - link "(3 reports)" [ref=e2025] [cursor=pointer]:
+                    - /url: /users/843852699
+            - generic [ref=e2031]:
+              - generic [ref=e2034]:
+                - generic [ref=e2036]:
+                  - img [ref=e2038]
+                  - heading [level=3]
+                  - link "1 week ago" [ref=e2043] [cursor=pointer]:
+                    - /url: /app/4704690#i8nI7Xbtzi
+                - paragraph [ref=e2048]: Game itself seems to be a bit unpolished and buggy here and there, but nothing linux/proton specific. Can play without issues.
+              - generic [ref=e2049]:
+                - generic [ref=e2051]:
+                  - generic [ref=e2053]: Proton 10.0-3
+                  - generic [ref=e2056]:
+                    - generic [ref=e2057]:
+                      - generic [ref=e2058]: "Distro:"
+                      - generic [ref=e2059]: Ubuntu 25.10
+                    - generic [ref=e2060]:
+                      - generic [ref=e2061]: "Kernel:"
+                      - generic [ref=e2062]: 6.17.0-14-generic
+                    - generic [ref=e2063]:
+                      - generic [ref=e2064]: "RAM:"
+                      - generic [ref=e2065]: 31 GB
+                    - generic [ref=e2066]:
+                      - generic [ref=e2067]: "GPU Driver:"
+                      - generic [ref=e2068]: 4.6 Mesa 25.2.8-0ubuntu0.25.10.1
+                    - generic [ref=e2069]:
+                      - generic [ref=e2070]: "GPU:"
+                      - generic [ref=e2071]: AMD Radeon RX 9070 XT (radeonsi, gfx1201, LLVM 20.1.8, DRM 3.64, 6.17.0-14-generic)
+                    - generic [ref=e2072]:
+                      - generic [ref=e2073]: "CPU:"
+                      - generic [ref=e2074]: AMD Ryzen 7 7800X3D 8-Core
+                - generic [ref=e2076]:
+                  - img [ref=e2077]
+                  - generic [ref=e2078]: aLee
+                  - link "(10 reports)" [ref=e2079] [cursor=pointer]:
+                    - /url: /users/986316171
+                  - generic [ref=e2081]: 5 hours overall
+            - generic [ref=e2086]:
+              - generic [ref=e2089]:
+                - generic [ref=e2091]:
+                  - img [ref=e2093]
+                  - img "Steam Deck Logo" [ref=e2095]
+                  - heading "Cannot connect" [level=3] [ref=e2097]
+                  - link "1 week ago" [ref=e2100] [cursor=pointer]:
+                    - /url: /app/4704690#JtYbXNgC0s
+                - generic [ref=e2102]:
+                  - generic [ref=e2103]:
+                    - generic [ref=e2104]: "Installs:"
+                    - generic [ref=e2105]: "Yes"
+                  - generic [ref=e2106]:
+                    - generic [ref=e2107]: "Opens:"
+                    - generic [ref=e2108]: "Yes"
+                  - generic [ref=e2109]:
+                    - generic [ref=e2110]: "Starts Play:"
+                    - generic [ref=e2111]: "No"
+                  - paragraph [ref=e2114]: When trying to connect to a server, it either does not appear at all in the search results, or it returns to the game home screen.
+              - generic [ref=e2116]:
+                - generic [ref=e2118]:
+                  - generic [ref=e2120]: Proton 10.0-3
+                  - generic [ref=e2123]:
+                    - generic [ref=e2124]:
+                      - generic [ref=e2125]: "Distro:"
+                      - generic [ref=e2126]: SteamOS Holo
+                    - generic [ref=e2127]:
+                      - generic [ref=e2128]: "Kernel:"
+                      - generic [ref=e2129]: 5.13.0-valve10.1-1-neptune-02144-g7fffaf925dfb
+                    - generic [ref=e2130]:
+                      - generic [ref=e2131]: "RAM:"
+                      - generic [ref=e2132]: 15 GB
+                    - generic [ref=e2133]:
+                      - generic [ref=e2134]: "GPU Driver:"
+                      - generic [ref=e2135]: 4.6 Mesa 22.0.0-devel (git-676ccacebc)
+                    - generic [ref=e2136]:
+                      - generic [ref=e2137]: "GPU:"
+                      - generic [ref=e2138]: AMD Custom GPU 0405 (vangogh, LLVM 13.0.0, DRM 3.45, 5.13.0-valve10.1-1-neptune-02144-g7fffaf925dfb)
+                    - generic [ref=e2139]:
+                      - generic [ref=e2140]: "CPU:"
+                      - generic [ref=e2141]: AMD Custom APU 0405
+                - generic [ref=e2143]:
+                  - img [ref=e2144]
+                  - generic [ref=e2145]: Deuchnord
+                  - link "(23 reports)" [ref=e2146] [cursor=pointer]:
+                    - /url: /users/2102333822
+                  - generic [ref=e2148]: 3 hours overall
+            - generic [ref=e2153]:
+              - generic [ref=e2156]:
+                - generic [ref=e2158]:
+                  - img [ref=e2160]
+                  - heading [level=3]
+                  - link "1 week ago" [ref=e2165] [cursor=pointer]:
+                    - /url: /app/4704690#mY5dDbI5Is
+                - generic [ref=e2167]:
+                  - generic [ref=e2168]:
+                    - generic [ref=e2169]:
+                      - generic [ref=e2170]: "Audio:"
+                      - generic [ref=e2171]: Other
+                    - paragraph [ref=e2173]: Oyun oynarken ara sıra yüksek sesli cızırtılar geliyor.
+                  - generic [ref=e2174]:
+                    - generic [ref=e2175]:
+                      - generic [ref=e2176]: "Performance:"
+                      - generic [ref=e2177]: Slight Performance Problems
+                    - paragraph [ref=e2179]: Büyük ihtimal benim bilgisayar yavaş.
+              - generic [ref=e2181]:
+                - generic [ref=e2183]:
+                  - generic [ref=e2185]: Proton 10.0-3
+                  - generic [ref=e2188]:
+                    - generic [ref=e2189]:
+                      - generic [ref=e2190]: "Distro:"
+                      - generic [ref=e2191]: Debian GNU/Linux 13 (trixie)
+                    - generic [ref=e2192]:
+                      - generic [ref=e2193]: "Kernel:"
+                      - generic [ref=e2194]: 6.12.94+deb13-amd64
+                    - generic [ref=e2195]:
+                      - generic [ref=e2196]: "RAM:"
+                      - generic [ref=e2197]: 7 GB
+                    - generic [ref=e2198]:
+                      - generic [ref=e2199]: "GPU Driver:"
+                      - generic [ref=e2200]: 4.6 Mesa 25.0.7-2
+                    - generic [ref=e2201]:
+                      - generic [ref=e2202]: "GPU:"
+                      - generic [ref=e2203]: AMD Radeon Vega 8 (radeonsi, raven, ACO, DRM 3.61, 6.12.94+deb13-amd64)
+                    - generic [ref=e2204]:
+                      - generic [ref=e2205]: "CPU:"
+                      - generic [ref=e2206]: AMD Ryzen 5 3500U with Radeon Vega Mobile Gfx
+                - generic [ref=e2208]:
+                  - img [ref=e2209]
+                  - generic [ref=e2210]: MAGLag5461
+                  - link "(1 report)" [ref=e2211] [cursor=pointer]:
+                    - /url: /users/329179686
+                  - generic [ref=e2213]: 5 hours overall
+            - generic [ref=e2218]:
+              - generic [ref=e2221]:
+                - generic [ref=e2223]:
+                  - img [ref=e2225]
+                  - heading [level=3]
+                  - link "2 weeks ago" [ref=e2230] [cursor=pointer]:
+                    - /url: /app/4704690#Ki86UIXyo1
+                - generic [ref=e2234]:
+                  - paragraph [ref=e2235]: Worked on my Framework laptop (with Bazzite installed).
+                  - paragraph [ref=e2236]: Microphone had to be turned down to 25%.
+              - generic [ref=e2237]:
+                - generic [ref=e2239]:
+                  - generic [ref=e2241]: Proton 10.0-3
+                  - generic [ref=e2244]:
+                    - generic [ref=e2245]:
+                      - generic [ref=e2246]: "Distro:"
+                      - generic [ref=e2247]: Bazzite
+                    - generic [ref=e2248]:
+                      - generic [ref=e2249]: "Kernel:"
+                      - generic [ref=e2250]: 7.0.9-ogc3.2.fc44.x86_64
+                    - generic [ref=e2251]:
+                      - generic [ref=e2252]: "RAM:"
+                      - generic [ref=e2253]: 32 GB
+                    - generic [ref=e2254]:
+                      - generic [ref=e2255]: "GPU Driver:"
+                      - generic [ref=e2256]: 4.6 Mesa 26.1.0
+                    - generic [ref=e2257]:
+                      - generic [ref=e2258]: "GPU:"
+                      - generic [ref=e2259]: Intel Mesa Intel Iris Xe (TGL GT2)
+                    - generic [ref=e2260]:
+                      - generic [ref=e2261]: "CPU:"
+                      - generic [ref=e2262]: 11th Gen Intel Core i7-1165G7 @ 2.80GHz
+                - generic [ref=e2264]:
+                  - img [ref=e2265]
+                  - generic [ref=e2266]: aizatto
+                  - link "(2 reports)" [ref=e2267] [cursor=pointer]:
+                    - /url: /users/613471261
+                  - generic [ref=e2269]: Owned
+            - generic [ref=e2274]:
+              - generic [ref=e2277]:
+                - generic [ref=e2279]:
+                  - img [ref=e2281]
+                  - heading [level=3]
+                  - link "2 weeks ago" [ref=e2286] [cursor=pointer]:
+                    - /url: /app/4704690#RftAZZKqD6
+                - paragraph [ref=e2291]: Worked on my Framework laptop, but had to change all settings to low to get 30fps
+              - generic [ref=e2292]:
+                - generic [ref=e2294]:
+                  - generic [ref=e2296]: Proton 10.0-3
+                  - generic [ref=e2299]:
+                    - generic [ref=e2300]:
+                      - generic [ref=e2301]: "Distro:"
+                      - generic [ref=e2302]: Bazzite
+                    - generic [ref=e2303]:
+                      - generic [ref=e2304]: "Kernel:"
+                      - generic [ref=e2305]: 7.0.9-ogc3.2.fc44.x86_64
+                    - generic [ref=e2306]:
+                      - generic [ref=e2307]: "RAM:"
+                      - generic [ref=e2308]: 32 GB
+                    - generic [ref=e2309]:
+                      - generic [ref=e2310]: "GPU Driver:"
+                      - generic [ref=e2311]: 4.6 Mesa 26.1.0
+                    - generic [ref=e2312]:
+                      - generic [ref=e2313]: "GPU:"
+                      - generic [ref=e2314]: Intel Mesa Intel Iris Xe (TGL GT2)
+                    - generic [ref=e2315]:
+                      - generic [ref=e2316]: "CPU:"
+                      - generic [ref=e2317]: 11th Gen Intel Core i7-1165G7 @ 2.80GHz
+                - generic [ref=e2319]:
+                  - img [ref=e2320]
+                  - generic [ref=e2321]: aizatto
+                  - link "(2 reports)" [ref=e2322] [cursor=pointer]:
+                    - /url: /users/613471261
+                  - generic [ref=e2324]: Owned
+            - generic [ref=e2329]:
+              - generic [ref=e2332]:
+                - generic [ref=e2334]:
+                  - img [ref=e2336]
+                  - heading "Despite the visual glitches when moving my camera and the broken voice chat it's very much still playable and fun." [level=3] [ref=e2339]
+                  - link "2 weeks ago" [ref=e2342] [cursor=pointer]:
+                    - /url: /app/4704690#C_VI_wUqXy
+                - generic [ref=e2344]:
+                  - generic [ref=e2345]:
+                    - generic [ref=e2346]:
+                      - generic [ref=e2347]: "Audio:"
+                      - generic [ref=e2348]: Other
+                    - paragraph [ref=e2350]: Voice chat audio is completely broken.
+                  - generic [ref=e2351]:
+                    - generic [ref=e2352]:
+                      - generic [ref=e2353]: "Graphics:"
+                      - generic [ref=e2354]: Heavy Artifacts
+                    - paragraph [ref=e2356]: When moving the camera the game starts to look distorted with random pixels surrounding my character.
+              - generic [ref=e2358]:
+                - generic [ref=e2360]:
+                  - generic [ref=e2362]: Proton 10.0-3
+                  - generic [ref=e2365]:
+                    - generic [ref=e2366]:
+                      - generic [ref=e2367]: "Distro:"
+                      - generic [ref=e2368]: Fedora Linux 44 (KDE Plasma Desktop Edition)
+                    - generic [ref=e2369]:
+                      - generic [ref=e2370]: "Kernel:"
+                      - generic [ref=e2371]: 7.0.12-201.fc44.x86_64
+                    - generic [ref=e2372]:
+                      - generic [ref=e2373]: "RAM:"
+                      - generic [ref=e2374]: 15 GB
+                    - generic [ref=e2375]:
+                      - generic [ref=e2376]: "GPU Driver:"
+                      - generic [ref=e2377]: NVIDIA 595.80
+                    - generic [ref=e2378]:
+                      - generic [ref=e2379]: "GPU:"
+                      - generic [ref=e2380]: NVIDIA GeForce RTX 4070 Laptop GPU
+                    - generic [ref=e2381]:
+                      - generic [ref=e2382]: "CPU:"
+                      - generic [ref=e2383]: AMD Ryzen 7 8845HS w/ Radeon 780M Graphics
+                - generic [ref=e2385]:
+                  - img [ref=e2386]
+                  - generic [ref=e2387]: Phantho
+                  - link "(1 report)" [ref=e2388] [cursor=pointer]:
+                    - /url: /users/37139940
+                  - generic [ref=e2390]: 4 hours overall
+            - generic [ref=e2395]:
+              - generic [ref=e2398]:
+                - generic [ref=e2400]:
+                  - generic [ref=e2401]:
+                    - img [ref=e2403]
+                    - img [ref=e2405]
+                  - heading "Overall works very well, minus some major issues in mod management and friend invitations." [level=3] [ref=e2408]
+                  - link "2 weeks ago" [ref=e2411] [cursor=pointer]:
+                    - /url: /app/4704690#lG9FLXBuYk
+                - generic [ref=e2413]:
+                  - generic [ref=e2414]:
+                    - generic [ref=e2415]: "Tinker Steps:"
+                    - text: "Custom Proton: proton-cachyos-slr 1:11.0"
+                  - generic [ref=e2417]:
+                    - generic [ref=e2418]:
+                      - generic [ref=e2419]: "Significant Bugs:"
+                      - generic [ref=e2420]: "Yes"
+                    - list [ref=e2422]:
+                      - listitem [ref=e2423]: Ingame button to install required mods does not work.
+                      - listitem [ref=e2424]: Being invited and inviting fail and boot the recipient back to main menu.
+              - generic [ref=e2426]:
+                - generic [ref=e2428]:
+                  - generic [ref=e2430]: "Custom Proton: proton-cachyos-slr 1:11.0"
+                  - generic [ref=e2433]:
+                    - generic [ref=e2434]:
+                      - generic [ref=e2435]: "Distro:"
+                      - generic [ref=e2436]: CachyOS
+                    - generic [ref=e2437]:
+                      - generic [ref=e2438]: "Kernel:"
+                      - generic [ref=e2439]: 7.1.1-2-cachyos
+                    - generic [ref=e2440]:
+                      - generic [ref=e2441]: "RAM:"
+                      - generic [ref=e2442]: 32 GB
+                    - generic [ref=e2443]:
+                      - generic [ref=e2444]: "GPU Driver:"
+                      - generic [ref=e2445]: 4.6 Mesa 26.1.2-arch3.1
+                    - generic [ref=e2446]:
+                      - generic [ref=e2447]: "GPU:"
+                      - generic [ref=e2448]: AMD Radeon RX 7900 XTX (radeonsi, navi31, ACO, DRM 3.64, 7.1.1-2-cachyos)
+                    - generic [ref=e2449]:
+                      - generic [ref=e2450]: "CPU:"
+                      - generic [ref=e2451]: AMD Ryzen 7 9800X3D 8-Core
+                - generic [ref=e2453]:
+                  - img [ref=e2454]
+                  - generic [ref=e2455]: Pudding
+                  - link "(1 report)" [ref=e2456] [cursor=pointer]:
+                    - /url: /users/139039753
+                  - generic [ref=e2458]: < 1 hour overall
+            - generic [ref=e2463]:
+              - generic [ref=e2466]:
+                - generic [ref=e2468]:
+                  - img [ref=e2470]
+                  - heading "The game sometimes works, but I cannot join my friends ever. it always throws me back onto the menu. Most servers don't load." [level=3] [ref=e2473]
+                  - link "2 weeks ago" [ref=e2476] [cursor=pointer]:
+                    - /url: /app/4704690#uBd0f8Mn-J
+                - generic [ref=e2478]:
+                  - generic [ref=e2479]:
+                    - generic [ref=e2480]: "Installs:"
+                    - generic [ref=e2481]: "Yes"
+                  - generic [ref=e2482]:
+                    - generic [ref=e2483]: "Opens:"
+                    - generic [ref=e2484]: "Yes"
+                  - generic [ref=e2485]:
+                    - generic [ref=e2486]: "Starts Play:"
+                    - generic [ref=e2487]: "No"
+                  - paragraph [ref=e2490]: This game's network is completly broken and needs to be fixed. If I cant play with friends after trying for 30 minutes and trying other proton verstions then I cannot recommend this game in the current state of the online play.
+              - generic [ref=e2492]:
+                - generic [ref=e2494]:
+                  - generic [ref=e2496]: Proton 10.0-3
+                  - generic [ref=e2499]:
+                    - generic [ref=e2500]:
+                      - generic [ref=e2501]: "Distro:"
+                      - generic [ref=e2502]: Arch Linux
+                    - generic [ref=e2503]:
+                      - generic [ref=e2504]: "Kernel:"
+                      - generic [ref=e2505]: 7.0.11-1-cachyos-bore
+                    - generic [ref=e2506]:
+                      - generic [ref=e2507]: "RAM:"
+                      - generic [ref=e2508]: 32 GB
+                    - generic [ref=e2509]:
+                      - generic [ref=e2510]: "GPU Driver:"
+                      - generic [ref=e2511]: NVIDIA 610.43.02
+                    - generic [ref=e2512]:
+                      - generic [ref=e2513]: "GPU:"
+                      - generic [ref=e2514]: NVIDIA GeForce RTX 3060 Ti
+                    - generic [ref=e2515]:
+                      - generic [ref=e2516]: "CPU:"
+                      - generic [ref=e2517]: AMD Ryzen 7 5800X 8-Core
+                - generic [ref=e2519]:
+                  - img [ref=e2520]
+                  - generic [ref=e2521]: Oarin
+                  - link "(1 report)" [ref=e2522] [cursor=pointer]:
+                    - /url: /users/775515431
+                  - generic [ref=e2524]: < 1 hour overall
+            - generic [ref=e2527]:
+              - generic [ref=e2529]: Reports 1 - 40 of 91
+              - generic [ref=e2530] [cursor=pointer]: Next
+            - button "Add Your Report!" [ref=e2532] [cursor=pointer]
+    - generic [ref=e2535]:
+      - generic [ref=e2536]:
+        - paragraph [ref=e2539]:
+          - text: ProtonDB is a passion project from
+          - link "@bdefore" [ref=e2540] [cursor=pointer]:
+            - /url: https://github.com/bdefore
+          - text: and a dedicated community of reporters.
+        - paragraph [ref=e2544]:
+          - text: This site uses data from Steam as well as data provided by
+          - link "SteamDB" [ref=e2545] [cursor=pointer]:
+            - /url: https://steamdb.info
+          - text: via
+          - link "Algolia" [ref=e2546] [cursor=pointer]:
+            - /url: https://www.algolia.com/?utm_source=steamdb_search&utm_medium=link&utm_term=logo&utm_campaign=steamdb
+          - text: .
+        - generic [ref=e2547]: This site has no affiliation with Valve Software. All game images and logos are property of their respective owners.
+      - generic [ref=e2550]:
+        - generic [ref=e2552]:
+          - text: Have some feedback? Come chat with us!
+          - link "DISCORD" [ref=e2554] [cursor=pointer]:
+            - /url: https://discord.gg/uuwK9EV
+            - img "DISCORD" [ref=e2555]
+          - link "IRC" [ref=e2557] [cursor=pointer]:
+            - /url: https://web.libera.chat/#protondb
+            - img "IRC" [ref=e2558]
+        - link "Patreon Button" [ref=e2560] [cursor=pointer]:
+          - /url: https://www.patreon.com/protondb
+          - img "Patreon Button" [ref=e2561]
+    - text: ","
+  - generic: Search for a game...

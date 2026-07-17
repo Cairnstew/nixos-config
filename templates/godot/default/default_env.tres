@@ -1,0 +1,11 @@
+[gd_resource type="Environment" load_steps=2 format=3]
+
+[sub_resource type="Sky" id="Sky_subres"]
+tent_bottom_color = Color(0, 0, 0, 1)
+tent_top_color = Color(0.462745, 0.72549, 1, 1)
+
+[resource]
+background_mode = 2
+background_sky = SubResource("Sky_subres")
+background_color = Color(0, 0, 0, 1)
+ambient_light_color = Color(1, 1, 1, 1)

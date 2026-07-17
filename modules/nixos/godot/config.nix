@@ -2,7 +2,10 @@
 let
   cfg = config.my.programs.godot;
 
-  godotPkg = if cfg.engine.package != null then cfg.engine.package else pkgs.godot;
+  godotPkg =
+    if cfg.engine.package != null then cfg.engine.package
+    else if cfg.mono.enable then pkgs.godot-mono
+    else pkgs.godot;
 
   headlessPkg =
     if cfg.engine.headless.package != null then
@@ -15,6 +18,8 @@ let
   exportTemplatesPkg =
     if cfg.exportTemplates.package != null then
       cfg.exportTemplates.package
+    else if cfg.mono.enable && pkgs ? godotPackages.export-templates-mono-bin then
+      pkgs.godotPackages.export-templates-mono-bin
     else if pkgs ? godot-export-templates-bin then
       pkgs.godot-export-templates-bin
     else

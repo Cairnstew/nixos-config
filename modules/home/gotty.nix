@@ -5,10 +5,10 @@
 with lib;
 
 let
-  cfg = config.services.gotty;
+  cfg = config.my.services.gotty;
 in
 {
-  options.services.gotty = {
+  options.my.services.gotty = {  # moved under my.* namespace per AGENT.md (M2)
     enable = mkEnableOption "GoTTY web terminal service";
 
     port = mkOption {

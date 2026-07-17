@@ -13,7 +13,5 @@ in
       jack.enable = false;
     };
     security.rtkit.enable = true;
-
-    environment.systemPackages = with pkgs; [ wireplumber pavucontrol ];
   };
 }

@@ -9,7 +9,36 @@ Your job is to read the **actual current state of the code** and update every do
 
 ---
 
+## AVAILABLE NIX-GRAPH TOOLS (MCP)
+
+The `nix-graph` MCP server provides ground-truth structural data from the v1 scope.
+Use it to cross-reference documentation claims:
+
+| Tool | Audit use case |
+|------|---------------|
+| `nix-graph_graph_stats` | Ground truth for module/host/option counts claimed in docs |
+| `nix-graph_search_nodes(query)` | Discover modules, hosts, options the graph knows about |
+| `nix-graph_node_info(node_id)` | Get metadata for a specific module to verify doc claims |
+| `nix-graph_get_dependents(module_path)` | Verify import relationships claimed in docs |
+| `nix-graph_get_option_definers(option_path)` | Check option declaration sites match what docs say |
+| `nix-graph_find_namespace_violations` | Cross-reference with GOTCHAS.md entries |
+
+---
+
 ## LIVE CONTEXT
+
+Start with the nix-graph structural overview:
+
+```
+nix-graph_graph_stats
+nix-graph_search_nodes("module:nixos/")
+nix-graph_search_nodes("module:home/")
+nix-graph_search_nodes("host:")
+nix-graph_find_namespace_violations
+nix-graph_find_mkforce_sites
+```
+
+Then supplement with shell exploration for data outside the v1 scope:
 
 Repo structure snapshot:
 !`find . -not -path './.git/*' -not -path './secrets/*' -not -name '*.lock' -not -path './templates/*' -not -path './packages/localsend/pubspec*' | sort`
@@ -69,6 +98,18 @@ Flag discrepancies in the same STALE / MISSING format.
 
 ## A3. Module README.md audit
 
+Use nix-graph to discover modules and their declared options:
+
+```
+# Find all modules in the graph to cross-reference with filesystem
+nix-graph_search_nodes("module:nixos/")
+nix-graph_search_nodes("module:home/")
+
+# For each module with a README, check option declarations match docs:
+nix-graph_node_info("module:nixos/tailscale")
+nix-graph_get_option_definers("my.services.tailscale.enable")
+```
+
 For every directory under `modules/nixos/` and `modules/home/` that contains a `README.md`, check:
 - Does the README describe the options that actually exist in `options.nix`?
 - Does it list the correct `my.<namespace>.*` option paths?
@@ -85,15 +126,34 @@ MODULE: modules/nixos/<name>/
   - <option or behaviour an agent would need to know>
 ```
 
-For modules that have **no README.md** but have non-trivial options (more than just `enable`), list them as:
+For modules that have **no README.md** but have non-trivial options (more than just `enable`), use
+nix-graph to cross-reference their declared options:
+```
+nix-graph_search_nodes("module:nixos/<name>")
+nix-graph_node_info("module:nixos/<name>")  # if available in graph
+```
+List them as:
 ```
 NO README: modules/nixos/<name>/  (options: my.foo.bar, my.foo.baz)
 ```
 
 ## A4. GOTCHAS.md audit
 
+Use nix-graph to validate structural gotchas:
+
+```
+# Check if mkForce sites are properly documented in GOTCHAS.md
+nix-graph_find_mkforce_sites
+
+# Check if namespace violations are properly documented
+nix-graph_find_namespace_violations
+
+# Check namespace violation counts against GOTCHAS.md claims
+nix-graph_graph_stats
+```
+
 Read `GOTCHAS.md`. For each entry:
-- Is the gotcha still present in the code? (grep for the relevant pattern)
+- Is the gotcha still present in the code? (grep for the relevant pattern; use nix-graph for structural ones)
 - If it was fixed and the fix is now the standard approach, mark it as RESOLVED.
 - If it is still a live trap, verify the workaround is still accurate.
 
@@ -106,6 +166,9 @@ grep -rn 'mkForce\|# FIXME\|# HACK\|# TODO\|# WORKAROUND\|# NOTE:' \
 ```
 
 Paste the output. For each hit, decide if it warrants a GOTCHAS.md entry.
+
+Cross-reference with nix-graph: if `find_mkforce_sites` returns sites not mentioned in GOTCHAS.md,
+flag them as MISSING. Similarly for `find_namespace_violations`.
 
 Also check for the known structural traps from previous analysis:
 - `lib.mkIf` scoping (attribute-level vs attrset wrapping)
