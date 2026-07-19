@@ -8,7 +8,8 @@ let
   cfg = config.my.services.gotty;
 in
 {
-  options.my.services.gotty = {  # moved under my.* namespace per AGENT.md (M2)
+  options.my.services.gotty = {
+    # moved under my.* namespace per AGENT.md (M2)
     enable = mkEnableOption "GoTTY web terminal service";
 
     port = mkOption {

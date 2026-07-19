@@ -32,7 +32,7 @@ in
       my.services.proxy.upstreams.suwayomi = {
         port = cfg.settings.server.port;
         path = "/suwayomi/";
-        stripPrefix = false;  # webUISubpath needs full URI passthrough
+        stripPrefix = false; # webUISubpath needs full URI passthrough
         # WebSocket auto-detected by Caddy — GraphQL at /suwayomi/api/graphql works.
       };
     })

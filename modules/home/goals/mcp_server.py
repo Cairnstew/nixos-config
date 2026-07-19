@@ -27,6 +27,24 @@ def init_db(db_path: str, schema_path: str = SCHEMA_PATH) -> sqlite3.Connection:
     conn.execute("PRAGMA foreign_keys=ON")
     with open(schema_path) as f:
         conn.executescript(f.read())
+    # Migration: add "order" column to milestones if missing (pre-Tier 4 DBs)
+    try:
+        conn.execute("ALTER TABLE milestones ADD COLUMN \"order\" INTEGER NOT NULL DEFAULT 0")
+    except sqlite3.OperationalError as e:
+        if "duplicate column" not in str(e):
+            raise  # re-raise unexpected schema errors
+    # Migration: add profile_facts table if missing (pre-Tier 5 DBs)
+    # No exception handling needed — CREATE TABLE IF NOT EXISTS is idempotent.
+    conn.execute("""CREATE TABLE IF NOT EXISTS profile_facts (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        category TEXT NOT NULL CHECK (category IN ('background', 'current_commitment', 'skill', 'value', 'relationship', 'constraint', 'history')),
+        fact_text TEXT NOT NULL,
+        status TEXT NOT NULL DEFAULT 'active',
+        superseded_by INTEGER REFERENCES profile_facts(id),
+        source_check_in_id INTEGER REFERENCES check_ins(id),
+        created_at TEXT NOT NULL DEFAULT (datetime('now')),
+        updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+    )""")
     conn.commit()
     return conn
 
@@ -139,6 +157,8 @@ class TraitEngine:
 
 conn: sqlite3.Connection | None = None
 engine: TraitEngine | None = None
+AT_RISK_THRESHOLD: float = 0.15
+BEHIND_THRESHOLD: float = 0.30
 
 
 def list_goals(domain: str | None = None, status: str | None = None) -> list[dict]:
@@ -274,6 +294,7 @@ def log_check_in(
                 trait_id=update["trait_id"],
                 evidence_value=update["evidence_value"],
                 check_in_id=check_in_id,
+                note=update.get("note"),
                 observed_date=today,
             )
             trait_results.append(result)
@@ -325,6 +346,160 @@ def propose_trait(name: str, description: str = "", category: str = "behavior") 
     return dict(conn.execute("SELECT * FROM traits WHERE id = ?", (trait_id,)).fetchone())
 
 
+def create_milestone(
+    goal_id: int,
+    title: str,
+    target_date: str | None = None,
+    order: int = 0,
+) -> dict:
+    cur = conn.execute("SELECT id FROM goals WHERE id = ?", (goal_id,))
+    if not cur.fetchone():
+        raise ValueError(f"Goal {goal_id} not found")
+    now = datetime.datetime.utcnow().isoformat()
+    cur = conn.execute(
+        "INSERT INTO milestones (goal_id, title, status, target_date, \"order\", created_at) VALUES (?, ?, 'pending', ?, ?, ?)",
+        (goal_id, title, target_date, order, now),
+    )
+    milestone_id = cur.lastrowid
+    conn.commit()
+    return dict(conn.execute("SELECT * FROM milestones WHERE id = ?", (milestone_id,)).fetchone())
+
+
+def list_milestones(goal_id: int) -> list[dict]:
+    rows = conn.execute(
+        """SELECT m.*, COUNT(a.id) as action_count
+           FROM milestones m
+           LEFT JOIN actions a ON a.milestone_id = m.id
+           WHERE m.goal_id = ?
+           GROUP BY m.id
+           ORDER BY m."order" ASC, m.created_at ASC""",
+        (goal_id,),
+    ).fetchall()
+    return [dict(r) for r in rows]
+
+
+def update_milestone(id: int, status: str | None = None, target_date: str | None = None) -> dict:
+    updates = {}
+    if status is not None:
+        updates["status"] = status
+    if target_date is not None:
+        updates["target_date"] = target_date
+    if not updates:
+        raise ValueError("No valid fields to update")
+    set_clause = ", ".join(f"{k} = ?" for k in updates)
+    values = list(updates.values()) + [id]
+    conn.execute(f"UPDATE milestones SET {set_clause} WHERE id = ?", values)
+    conn.commit()
+    row = conn.execute("SELECT * FROM milestones WHERE id = ?", (id,)).fetchone()
+    if not row:
+        raise ValueError(f"Milestone {id} not found")
+    return dict(row)
+
+
+def get_milestone(id: int) -> dict:
+    row = conn.execute(
+        """SELECT m.*, COUNT(a.id) as action_count
+           FROM milestones m
+           LEFT JOIN actions a ON a.milestone_id = m.id
+           WHERE m.id = ?
+           GROUP BY m.id""",
+        (id,),
+    ).fetchone()
+    if not row:
+        raise ValueError(f"Milestone {id} not found")
+    result = dict(row)
+    actions = conn.execute(
+        "SELECT * FROM actions WHERE milestone_id = ? ORDER BY created_at DESC", (id,)
+    ).fetchall()
+    result["actions"] = [dict(a) for a in actions]
+    return result
+
+
+def get_timeline_health(
+    goal_id: int,
+    at_risk_threshold: float = 0.15,
+    behind_threshold: float = 0.30,
+) -> dict:
+    row = conn.execute("SELECT * FROM goals WHERE id = ?", (goal_id,)).fetchone()
+    if not row:
+        raise ValueError(f"Goal {goal_id} not found")
+
+    goal = dict(row)
+
+    if not goal.get("target_date"):
+        return {
+            "goal_id": goal_id,
+            "title": goal["title"],
+            "status": "undefined",
+            "reason": "Goal has no target_date",
+        }
+
+    now = datetime.datetime.utcnow().isoformat()
+    now_dt = datetime.datetime.fromisoformat(now)
+    created_dt = datetime.datetime.fromisoformat(goal["created_at"])
+    target_dt = datetime.datetime.fromisoformat(goal["target_date"])
+
+    total_milestones = conn.execute(
+        "SELECT COUNT(*) as c FROM milestones WHERE goal_id = ?", (goal_id,)
+    ).fetchone()["c"]
+
+    if total_milestones == 0:
+        return {
+            "goal_id": goal_id,
+            "title": goal["title"],
+            "status": "undefined",
+            "reason": "Goal has no milestones",
+        }
+
+    total_span = (target_dt - created_dt).total_seconds()
+    if total_span <= 0:
+        return {
+            "goal_id": goal_id,
+            "title": goal["title"],
+            "status": "undefined",
+            "reason": "Goal has zero or negative timespan (target_date <= created_at)",
+        }
+
+    if now_dt > target_dt:
+        overdue_days = (now_dt - target_dt).days
+        return {
+            "goal_id": goal_id,
+            "title": goal["title"],
+            "status": "overdue",
+            "reason": f"Past target date by {overdue_days} days",
+            "overdue_days": overdue_days,
+        }
+
+    elapsed_span = (now_dt - created_dt).total_seconds()
+    elapsed_fraction = elapsed_span / total_span
+
+    completed = conn.execute(
+        "SELECT COUNT(*) as c FROM milestones WHERE goal_id = ? AND status = 'done'", (goal_id,)
+    ).fetchone()["c"]
+    progress_fraction = completed / total_milestones
+
+    gap = elapsed_fraction - progress_fraction
+
+    if gap < at_risk_threshold:
+        status = "on_track"
+    elif gap < behind_threshold:
+        status = "at_risk"
+    else:
+        status = "behind"
+
+    return {
+        "goal_id": goal_id,
+        "title": goal["title"],
+        "status": status,
+        "elapsed_fraction": round(elapsed_fraction, 4),
+        "progress_fraction": round(progress_fraction, 4),
+        "gap": round(gap, 4),
+        "total_milestones": total_milestones,
+        "completed_milestones": completed,
+        "target_date": goal["target_date"],
+    }
+
+
 def get_today_context() -> dict:
     active_goals = conn.execute(
         """SELECT g.*, d.name as domain_name
@@ -343,13 +518,119 @@ def get_today_context() -> dict:
            ORDER BY ci.created_at DESC LIMIT 1"""
     ).fetchone()
 
+    roadmap_health = []
+    for g in active_goals:
+        if g["target_date"]:
+            total_m = conn.execute(
+                "SELECT COUNT(*) as c FROM milestones WHERE goal_id = ?", (g["id"],)
+            ).fetchone()["c"]
+            if total_m > 0:
+                try:
+                    health = get_timeline_health(g["id"], at_risk_threshold=AT_RISK_THRESHOLD, behind_threshold=BEHIND_THRESHOLD)
+                    roadmap_health.append(health)
+                except (ValueError, ZeroDivisionError):
+                    pass
+
+    active_facts = conn.execute(
+        "SELECT id, category, fact_text FROM profile_facts WHERE status = 'active' AND category IN ('current_commitment', 'constraint')"
+    ).fetchall()
+
     return {
         "active_goals": [dict(g) for g in active_goals],
         "stale_goals": stale_goals,
         "active_traits": active_traits,
         "proposed_traits": proposed_traits_list,
         "last_check_in": dict(last_check_in) if last_check_in else None,
+        "roadmap_health": roadmap_health,
+        "active_commitments_and_constraints": [dict(f) for f in active_facts],
     }
+
+
+FACT_CATEGORIES = frozenset({"background", "current_commitment", "skill", "value", "relationship", "constraint", "history"})
+
+
+def record_fact(category: str, fact_text: str, source_check_in_id: int | None = None) -> dict:
+    if category not in FACT_CATEGORIES:
+        raise ValueError(f"Invalid category '{category}'. Must be one of: {', '.join(sorted(FACT_CATEGORIES))}")
+    now = datetime.datetime.utcnow().isoformat()
+    cur = conn.execute(
+        "INSERT INTO profile_facts (category, fact_text, status, source_check_in_id, created_at, updated_at) VALUES (?, ?, 'active', ?, ?, ?)",
+        (category, fact_text, source_check_in_id, now, now),
+    )
+    fact_id = cur.lastrowid
+    conn.commit()
+    return dict(conn.execute("SELECT * FROM profile_facts WHERE id = ?", (fact_id,)).fetchone())
+
+
+def supersede_fact(old_id: int, new_category: str, new_fact_text: str, source_check_in_id: int | None = None) -> dict:
+    old_row = conn.execute("SELECT * FROM profile_facts WHERE id = ?", (old_id,)).fetchone()
+    if not old_row:
+        raise ValueError(f"Fact {old_id} not found")
+    if new_category not in FACT_CATEGORIES:
+        raise ValueError(f"Invalid category '{new_category}'. Must be one of: {', '.join(sorted(FACT_CATEGORIES))}")
+    now = datetime.datetime.utcnow().isoformat()
+    cur = conn.execute(
+        "INSERT INTO profile_facts (category, fact_text, status, source_check_in_id, created_at, updated_at) VALUES (?, ?, 'active', ?, ?, ?)",
+        (new_category, new_fact_text, source_check_in_id, now, now),
+    )
+    new_id = cur.lastrowid
+    conn.execute(
+        "UPDATE profile_facts SET status = 'superseded', superseded_by = ?, updated_at = ? WHERE id = ?",
+        (new_id, now, old_id),
+    )
+    conn.commit()
+    new_row = dict(conn.execute("SELECT * FROM profile_facts WHERE id = ?", (new_id,)).fetchone())
+    new_row["superseded_fact_id"] = old_id
+    return new_row
+
+
+def list_facts(category: str | None = None, status: str = "active") -> list[dict]:
+    query = "SELECT * FROM profile_facts"
+    params: list = []
+    where: list[str] = []
+    if category is not None:
+        where.append("category = ?")
+        params.append(category)
+    where.append("status = ?")
+    params.append(status)
+    query += " WHERE " + " AND ".join(where)
+    query += " ORDER BY created_at DESC"
+    return [dict(r) for r in conn.execute(query, params).fetchall()]
+
+
+def get_fact(id: int) -> dict:
+    row = conn.execute("SELECT * FROM profile_facts WHERE id = ?", (id,)).fetchone()
+    if not row:
+        raise ValueError(f"Fact {id} not found")
+    result = dict(row)
+    chain: list[dict] = []
+    next_id = row["superseded_by"]
+    while next_id:
+        r = conn.execute("SELECT id, category, fact_text, status, superseded_by FROM profile_facts WHERE id = ?", (next_id,)).fetchone()
+        if not r:
+            break
+        chain.append(dict(r))
+        next_id = r["superseded_by"]
+    result["superseded_by_chain"] = chain
+    predecessor = conn.execute(
+        "SELECT id, category, fact_text, status FROM profile_facts WHERE superseded_by = ?", (id,)
+    ).fetchone()
+    result["predecessor"] = dict(predecessor) if predecessor else None
+    return result
+
+
+def search_facts(query: str) -> list[dict]:
+    return [dict(r) for r in conn.execute(
+        "SELECT * FROM profile_facts WHERE fact_text LIKE ? ORDER BY created_at DESC",
+        (f"%{query}%",),
+    ).fetchall()]
+
+
+def get_full_biography() -> list[dict]:
+    rows = conn.execute(
+        "SELECT * FROM profile_facts WHERE status = 'active' ORDER BY category, created_at ASC"
+    ).fetchall()
+    return [dict(r) for r in rows]
 
 
 TOOLS: list[dict] = [
@@ -445,6 +726,7 @@ TOOLS: list[dict] = [
                         "properties": {
                             "trait_id": {"type": "integer"},
                             "evidence_value": {"type": "number", "description": "1.0=reinforces, 0.0=contradicts, 0.5=neutral"},
+                            "note": {"type": "string", "description": "One-line rationale for this evidence value"},
                         },
                         "required": ["trait_id", "evidence_value"],
                     },
@@ -495,6 +777,136 @@ TOOLS: list[dict] = [
             "properties": {},
         },
     },
+    {
+        "name": "create_milestone",
+        "description": "Create a new milestone for a goal.",
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "goal_id": {"type": "integer", "description": "Goal ID"},
+                "title": {"type": "string", "description": "Milestone title"},
+                "target_date": {"type": "string", "description": "Target date (ISO format)"},
+                "order": {"type": "integer", "description": "Order within goal (0=first)", "default": 0},
+            },
+            "required": ["goal_id", "title"],
+        },
+    },
+    {
+        "name": "list_milestones",
+        "description": "List milestones for a goal, ordered by sequence.",
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "goal_id": {"type": "integer", "description": "Goal ID"},
+            },
+            "required": ["goal_id"],
+        },
+    },
+    {
+        "name": "update_milestone",
+        "description": "Update a milestone's status or target date.",
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "id": {"type": "integer", "description": "Milestone ID"},
+                "status": {"type": "string", "description": "New status (pending, done)"},
+                "target_date": {"type": "string", "description": "New target date (ISO format)"},
+            },
+            "required": ["id"],
+        },
+    },
+    {
+        "name": "get_milestone",
+        "description": "Get a milestone with its linked actions.",
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "id": {"type": "integer", "description": "Milestone ID"},
+            },
+            "required": ["id"],
+        },
+    },
+    {
+        "name": "get_timeline_health",
+        "description": "Compute a goal's timeline health: on_track, at_risk, behind, overdue, or undefined. Uses elapsed vs progress gap.",
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "goal_id": {"type": "integer", "description": "Goal ID"},
+                "at_risk_threshold": {"type": "number", "description": "Gap threshold for at_risk (default 0.15)", "default": 0.15},
+                "behind_threshold": {"type": "number", "description": "Gap threshold for behind (default 0.30)", "default": 0.30},
+            },
+            "required": ["goal_id"],
+        },
+    },
+    {
+        "name": "record_fact",
+        "description": "Record a new active profile fact. Only call when the user explicitly states a fact about themselves — never infer from passing mention.",
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "category": {"type": "string", "enum": ["background", "current_commitment", "skill", "value", "relationship", "constraint", "history"], "description": "Fixed category enum"},
+                "fact_text": {"type": "string", "description": "The verbatim fact as stated by the user"},
+                "source_check_in_id": {"type": "integer", "description": "Optional check-in ID if this fact was derived from a check-in"},
+            },
+            "required": ["category", "fact_text"],
+        },
+    },
+    {
+        "name": "supersede_fact",
+        "description": "Atomically mark a fact as superseded and create its replacement.",
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "old_id": {"type": "integer", "description": "ID of the fact to supersede"},
+                "new_category": {"type": "string", "enum": ["background", "current_commitment", "skill", "value", "relationship", "constraint", "history"], "description": "Category for the new fact"},
+                "new_fact_text": {"type": "string", "description": "Replacement fact text"},
+                "source_check_in_id": {"type": "integer", "description": "Optional check-in ID"},
+            },
+            "required": ["old_id", "new_category", "new_fact_text"],
+        },
+    },
+    {
+        "name": "list_facts",
+        "description": "List profile facts, optionally filtered by category and/or status. Defaults to active if status not specified.",
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "category": {"type": "string", "description": "Filter by category"},
+                "status": {"type": "string", "description": "Filter by status (active, superseded) — defaults to active"},
+            },
+        },
+    },
+    {
+        "name": "get_fact",
+        "description": "Get a fact with its full supersession chain (what it replaced, what replaced it).",
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "id": {"type": "integer", "description": "Fact ID"},
+            },
+            "required": ["id"],
+        },
+    },
+    {
+        "name": "search_facts",
+        "description": "Simple substring search over fact_text.",
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "query": {"type": "string", "description": "Search string (substring match)"},
+            },
+            "required": ["query"],
+        },
+    },
+    {
+        "name": "get_full_biography",
+        "description": "Return all active profile facts, ordered by category. Call this when a complete picture of the user is needed.",
+        "inputSchema": {
+            "type": "object",
+            "properties": {},
+        },
+    },
 ]
 
 TOOL_DISPATCH = {
@@ -509,6 +921,17 @@ TOOL_DISPATCH = {
     "get_trait": get_trait,
     "propose_trait": propose_trait,
     "get_today_context": get_today_context,
+    "create_milestone": create_milestone,
+    "list_milestones": list_milestones,
+    "update_milestone": update_milestone,
+    "get_milestone": get_milestone,
+    "get_timeline_health": get_timeline_health,
+    "record_fact": record_fact,
+    "supersede_fact": supersede_fact,
+    "list_facts": list_facts,
+    "get_fact": get_fact,
+    "search_facts": search_facts,
+    "get_full_biography": get_full_biography,
 }
 
 
@@ -571,7 +994,7 @@ def handle_request(msg: dict) -> dict | None:
 
 
 def main() -> None:
-    global conn, engine
+    global conn, engine, AT_RISK_THRESHOLD, BEHIND_THRESHOLD
 
     parser = argparse.ArgumentParser(description="Goals MCP server")
     parser.add_argument("--db", required=True, help="Path to SQLite database file")
@@ -581,7 +1004,12 @@ def main() -> None:
     parser.add_argument("--min-count", type=int, default=5, help="Min observations for trait promotion")
     parser.add_argument("--promotion-confidence", type=float, default=0.65, help="Confidence threshold for promotion")
     parser.add_argument("--retire-confidence", type=float, default=0.35, help="Confidence threshold for retirement")
+    parser.add_argument("--at-risk-threshold", type=float, default=0.15, help="Gap threshold for at-risk timeline status")
+    parser.add_argument("--behind-threshold", type=float, default=0.30, help="Gap threshold for behind timeline status")
     args = parser.parse_args()
+
+    AT_RISK_THRESHOLD = args.at_risk_threshold
+    BEHIND_THRESHOLD = args.behind_threshold
 
     engine = TraitEngine(
         decay_factor=args.decay_factor,

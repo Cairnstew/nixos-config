@@ -5,6 +5,6 @@
   tags = [ "goals" "traits" "mcp" "opencode" ];
   provides = [ "my.programs.goals" ];
   expects = [ "my.programs.opencode" ];
-  complexity = "medium";
+  complexity = "high";
   tested = false;
 }

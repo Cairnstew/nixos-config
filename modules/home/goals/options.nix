@@ -43,5 +43,17 @@ in
       default = 0.35;
       description = "Confidence threshold below which an active trait is retired.";
     };
+
+    timelineAtRiskThreshold = mkOption {
+      type = types.float;
+      default = 0.15;
+      description = "Gap (elapsed_fraction - progress_fraction) above which a goal is marked at_risk.";
+    };
+
+    timelineBehindThreshold = mkOption {
+      type = types.float;
+      default = 0.30;
+      description = "Gap (elapsed_fraction - progress_fraction) above which a goal is marked behind.";
+    };
   };
 }

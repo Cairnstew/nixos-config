@@ -43,21 +43,25 @@ in
 
       # ── Desktop Entries for Projects ─────────────────────────────────────
       xdg.desktopEntries = lib.mkMerge (
-        lib.mapAttrsToList (name: project: mkIf project.desktopEntries.enable {
-          "godot-${name}" = {
-            name = name;
-            icon = if project.desktopEntries.icon != null then project.desktopEntries.icon else "godot";
-            categories = project.desktopEntries.categories;
-            exec = "${godotBin} --path ${project.path}";
-          };
-        }) cfg.projects
+        lib.mapAttrsToList
+          (name: project: mkIf project.desktopEntries.enable {
+            "godot-${name}" = {
+              name = name;
+              icon = if project.desktopEntries.icon != null then project.desktopEntries.icon else "godot";
+              categories = project.desktopEntries.categories;
+              exec = "${godotBin} --path ${project.path}";
+            };
+          })
+          cfg.projects
       );
 
       # ── Shell aliases for quick project access ─────────────────────────
       home.shellAliases = lib.mkMerge [
-        (lib.mapAttrs' (name: project: lib.nameValuePair "godot-${name}" ''
-          ${godotBin} --path ${project.path}
-        '') cfg.projects)
+        (lib.mapAttrs'
+          (name: project: lib.nameValuePair "godot-${name}" ''
+            ${godotBin} --path ${project.path}
+          '')
+          cfg.projects)
       ];
     };
   };

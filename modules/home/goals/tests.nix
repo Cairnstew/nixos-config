@@ -26,6 +26,14 @@ in
         assertion = cfg.retireConfidenceThreshold >= 0.0 && cfg.retireConfidenceThreshold <= 1.0;
         message = "my.programs.goals.retireConfidenceThreshold must be between 0.0 and 1.0";
       }
+      {
+        assertion = cfg.timelineAtRiskThreshold >= 0.0 && cfg.timelineAtRiskThreshold <= 1.0;
+        message = "my.programs.goals.timelineAtRiskThreshold must be between 0.0 and 1.0";
+      }
+      {
+        assertion = cfg.timelineBehindThreshold > cfg.timelineAtRiskThreshold;
+        message = "my.programs.goals.timelineBehindThreshold must be greater than timelineAtRiskThreshold";
+      }
     ];
   };
 }

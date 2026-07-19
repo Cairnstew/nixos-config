@@ -50,9 +50,9 @@ in
         # Letta references /openapi.json in its response body.
         # Proxy it so the link works from the SPA at /letta/.
         ''
-        handle /openapi.json {
-          reverse_proxy 127.0.0.1:${toString cfg.port}
-        }
+          handle /openapi.json {
+            reverse_proxy 127.0.0.1:${toString cfg.port}
+          }
         ''
       ];
     };

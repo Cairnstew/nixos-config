@@ -39,69 +39,69 @@ stdenv.mkDerivation rec {
   '';
 
   installPhase = ''
-    runHook preInstall
+        runHook preInstall
 
-    mkdir -p $out/bin $out/lib/XMLTV $out/lib/HTTP/Cache
+        mkdir -p $out/bin $out/lib/XMLTV $out/lib/HTTP/Cache
 
-    # Install XMLTV.pm (generated) - Perl looks for XMLTV.pm directly in @INC
-    cp lib/XMLTV.pm $out/lib/XMLTV.pm
+        # Install XMLTV.pm (generated) - Perl looks for XMLTV.pm directly in @INC
+        cp lib/XMLTV.pm $out/lib/XMLTV.pm
 
-    # Install all XMLTV library modules (these live in XMLTV/ namespace at install)
-    for f in lib/*.pm lib/*.pm.in; do
-      base=$(basename "$f" .in)
-      name=$(basename "$base" .pm)
-      [ "$name" = "XMLTV" ] && continue
-      [ "$name" = "Supplement" ] && continue
-      [ "$f" = "lib/*.pm.in" ] && continue
-      cp "$f" "$out/lib/XMLTV/$name.pm" 2>/dev/null || true
-    done
+        # Install all XMLTV library modules (these live in XMLTV/ namespace at install)
+        for f in lib/*.pm lib/*.pm.in; do
+          base=$(basename "$f" .in)
+          name=$(basename "$base" .pm)
+          [ "$name" = "XMLTV" ] && continue
+          [ "$name" = "Supplement" ] && continue
+          [ "$f" = "lib/*.pm.in" ] && continue
+          cp "$f" "$out/lib/XMLTV/$name.pm" 2>/dev/null || true
+        done
 
-    # Install sub-directories
-    for dir in lib/*/; do
-      [ -d "$dir" ] || continue
-      target="$out/lib/XMLTV/$(basename "$dir")"
-      mkdir -p "$target"
-      cp "$dir"*.pm "$dir"*.pl "$target"/ 2>/dev/null || true
-    done
+        # Install sub-directories
+        for dir in lib/*/; do
+          [ -d "$dir" ] || continue
+          target="$out/lib/XMLTV/$(basename "$dir")"
+          mkdir -p "$target"
+          cp "$dir"*.pm "$dir"*.pl "$target"/ 2>/dev/null || true
+        done
 
-    # Install grab library modules
-    cp grab/Memoize.pm $out/lib/XMLTV/
-    cp grab/Grab_XML.pm $out/lib/XMLTV/
-    cp grab/DST.pm $out/lib/XMLTV/
-    cp grab/Config_file.pm $out/lib/XMLTV/
-    cp grab/Get_nice.pm $out/lib/XMLTV/
-    cp grab/Mode.pm $out/lib/XMLTV/
+        # Install grab library modules
+        cp grab/Memoize.pm $out/lib/XMLTV/
+        cp grab/Grab_XML.pm $out/lib/XMLTV/
+        cp grab/DST.pm $out/lib/XMLTV/
+        cp grab/Config_file.pm $out/lib/XMLTV/
+        cp grab/Get_nice.pm $out/lib/XMLTV/
+        cp grab/Mode.pm $out/lib/XMLTV/
 
-    # Provide stub for HTTP::Cache::Transparent (not in nixpkgs)
-    cat > $out/lib/HTTP/Cache/Transparent.pm << 'STUB'
-package HTTP::Cache::Transparent;
-use strict;
-use warnings;
-our $VERSION = '1.4';
-sub init {
-    my ($class, %args) = @_;
-    # Stub - no-op implementation
-}
-1;
-STUB
+        # Provide stub for HTTP::Cache::Transparent (not in nixpkgs)
+        cat > $out/lib/HTTP/Cache/Transparent.pm << 'STUB'
+    package HTTP::Cache::Transparent;
+    use strict;
+    use warnings;
+    our $VERSION = '1.4';
+    sub init {
+        my ($class, %args) = @_;
+        # Stub - no-op implementation
+    }
+    1;
+    STUB
 
-    # Install tv_grab_uk_freeview
-    cp grab/uk_freeview/tv_grab_uk_freeview $out/bin/
+        # Install tv_grab_uk_freeview
+        cp grab/uk_freeview/tv_grab_uk_freeview $out/bin/
 
-    # Install core filter/tool scripts
-    for f in filter/tv_* tools/tv_*; do
-      [ -f "$f" ] || continue
-      case "$f" in *.PL|*.in) continue;; esac
-      cp "$f" "$out/bin/"
-    done
+        # Install core filter/tool scripts
+        for f in filter/tv_* tools/tv_*; do
+          [ -f "$f" ] || continue
+          case "$f" in *.PL|*.in) continue;; esac
+          cp "$f" "$out/bin/"
+        done
 
-    chmod +x $out/bin/*
+        chmod +x $out/bin/*
 
-    for f in $out/bin/*; do
-      wrapProgram "$f" --prefix PERL5LIB : "$out/lib"
-    done
+        for f in $out/bin/*; do
+          wrapProgram "$f" --prefix PERL5LIB : "$out/lib"
+        done
 
-    runHook postInstall
+        runHook postInstall
   '';
 
   meta = {

@@ -5,19 +5,21 @@ let
   userHome = "/home/${username}";
   janDataDir = "${userHome}/.local/share/Jan/data";
 
-  janSettings = lib.recursiveUpdate {
-    api_server = lib.optionalAttrs cfg.apiServer.enable {
-      enabled = true;
-      port = cfg.apiServer.port;
-      host = cfg.apiServer.host;
-    };
-    engines = lib.optionalAttrs cfg.ollama.enable {
-      ollama = {
+  janSettings = lib.recursiveUpdate
+    {
+      api_server = lib.optionalAttrs cfg.apiServer.enable {
         enabled = true;
-        base_url = cfg.ollama.baseUrl;
+        port = cfg.apiServer.port;
+        host = cfg.apiServer.host;
       };
-    };
-  } cfg.extraSettings;
+      engines = lib.optionalAttrs cfg.ollama.enable {
+        ollama = {
+          enabled = true;
+          base_url = cfg.ollama.baseUrl;
+        };
+      };
+    }
+    cfg.extraSettings;
 
   janSettingsJson = pkgs.writeText "jan-settings.json" (builtins.toJSON janSettings);
 in

@@ -52,43 +52,43 @@ in
       extraLocations = [
         # SPA assets (JS/CSS chunks referenced with absolute paths)
         ''
-        handle /assets/* {
-          reverse_proxy 127.0.0.1:${toString cfg.port}
-        }
+          handle /assets/* {
+            reverse_proxy 127.0.0.1:${toString cfg.port}
+          }
         ''
         # API calls — catches /api/* (RisuAI's general API routes)
         ''
-        handle /api/* {
-          reverse_proxy 127.0.0.1:${toString cfg.port}
-        }
+          handle /api/* {
+            reverse_proxy 127.0.0.1:${toString cfg.port}
+          }
         ''
         # Service worker
         ''
-        handle /sw/* {
-          reverse_proxy 127.0.0.1:${toString cfg.port}
-        }
+          handle /sw/* {
+            reverse_proxy 127.0.0.1:${toString cfg.port}
+          }
         ''
         # Hub proxy (character/asset hub)
         ''
-        handle /hub-proxy/* {
-          reverse_proxy 127.0.0.1:${toString cfg.port}
-        }
+          handle /hub-proxy/* {
+            reverse_proxy 127.0.0.1:${toString cfg.port}
+          }
         ''
         # Manifest and icons
         ''
-        handle /manifest.json {
-          reverse_proxy 127.0.0.1:${toString cfg.port}
-        }
+          handle /manifest.json {
+            reverse_proxy 127.0.0.1:${toString cfg.port}
+          }
         ''
         ''
-        handle /logo_* {
-          reverse_proxy 127.0.0.1:${toString cfg.port}
-        }
+          handle /logo_* {
+            reverse_proxy 127.0.0.1:${toString cfg.port}
+          }
         ''
         ''
-        handle /none.webp {
-          reverse_proxy 127.0.0.1:${toString cfg.port}
-        }
+          handle /none.webp {
+            reverse_proxy 127.0.0.1:${toString cfg.port}
+          }
         ''
       ];
     };

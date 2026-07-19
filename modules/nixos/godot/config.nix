@@ -33,14 +33,14 @@ in
       ++ (lib.optional (cfg.engine.headless.enable && headlessPkg != null) headlessPkg)
       ++ (lib.optional cfg.pckTool pkgs.godotpcktool)
 
-    # ── GDScript Tooling ─────────────────────────────────────────────────────
+      # ── GDScript Tooling ─────────────────────────────────────────────────────
       ++ (lib.optional (cfg.gdscript.enable && cfg.gdscript.gdtoolkit) pkgs.gdtoolkit_4)
       ++ (lib.optional (cfg.gdscript.enable && cfg.gdscript.formatter) pkgs.gdscript-formatter)
 
-    # ── MCP Server ───────────────────────────────────────────────────────────
+      # ── MCP Server ───────────────────────────────────────────────────────────
       ++ (lib.optional cfg.mcp.enable pkgs.godot-mcp)
 
-    # ── Companion Applications ───────────────────────────────────────────────
+      # ── Companion Applications ───────────────────────────────────────────────
       ++ (lib.optional (cfg.companionApps.enable && cfg.companionApps.pixelorama) pkgs.pixelorama)
       ++ (lib.optional (cfg.companionApps.enable && cfg.companionApps.aseprite) pkgs.aseprite)
       ++ (lib.optional (cfg.companionApps.enable && cfg.companionApps.blender) pkgs.blender)

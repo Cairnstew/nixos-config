@@ -6,15 +6,17 @@ let
 
   configFile = "/var/lib/xmltv/tv_grab_uk_freeview.conf";
 
-  configContent = if cfg.configure.region != null && cfg.configure.channels != [ ] then
-    lib.concatStringsSep "\n" (
-      [ "format=${cfg.configure.channelFormat}" ]
-      ++ [ "region=${cfg.configure.region}" ]
-      ++ [ "iconc=?w=160" ]
-      ++ [ "iconp=?w=800" ]
-      ++ map (ch: "channel=${ch}") cfg.configure.channels
-    )
-  else "";
+  configContent =
+    if cfg.configure.region != null && cfg.configure.channels != [ ] then
+      lib.concatStringsSep "\n"
+        (
+          [ "format=${cfg.configure.channelFormat}" ]
+          ++ [ "region=${cfg.configure.region}" ]
+          ++ [ "iconc=?w=160" ]
+          ++ [ "iconp=?w=800" ]
+          ++ map (ch: "channel=${ch}") cfg.configure.channels
+        )
+    else "";
 in
 {
   config = mkIf cfg.enable {
@@ -35,11 +37,11 @@ in
           };
 
           script = ''
-            mkdir -p "$(dirname '${configFile}')"
-            cat > '${configFile}' << 'CONF'
-${configContent}
-CONF
-            chmod 600 '${configFile}'
+                        mkdir -p "$(dirname '${configFile}')"
+                        cat > '${configFile}' << 'CONF'
+            ${configContent}
+            CONF
+                        chmod 600 '${configFile}'
           '';
         };
 

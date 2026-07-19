@@ -4,11 +4,13 @@ let
 
   mkIndexerScript = idx:
     let
-      fieldDefs = builtins.toJSON (map (f: {
-        name = f.name;
-        value = if f ? value && f.value != null then builtins.toString f.value else null;
-        secretFile = if f ? credentialFile && f.credentialFile != null then builtins.toString f.credentialFile else null;
-      }) idx.settings);
+      fieldDefs = builtins.toJSON (map
+        (f: {
+          name = f.name;
+          value = if f ? value && f.value != null then builtins.toString f.value else null;
+          secretFile = if f ? credentialFile && f.credentialFile != null then builtins.toString f.credentialFile else null;
+        })
+        idx.settings);
     in
     ''
       ID=$(echo "$EXISTING" | jq -r '.[] | select(.name == "${idx.name}") | .id // empty' | head -1)
