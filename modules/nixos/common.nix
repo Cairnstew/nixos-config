@@ -152,7 +152,7 @@ in
 
   agenixManager = {
     enable = true;
-    secretsPath = ./modules/nixos/secrets;
+    secretsPath = ./secrets;
 
     keys.groups.systems = systemsKeys;
     keys.groups.users = usersKeys;
