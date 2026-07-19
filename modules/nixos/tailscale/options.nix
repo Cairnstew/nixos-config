@@ -355,6 +355,13 @@ in
       description = "Accept subnet routes advertised by other Tailscale nodes.";
     };
 
+    mtu = mkOption {
+      type = types.nullOr types.int;
+      default = null;
+      example = 1200;
+      description = "WireGuard tunnel MTU. Set lower than default 1280 when the physical path MTU is constrained (e.g. some cellular or VPN links).";
+    };
+
     tags = mkOption {
       type = types.listOf types.str;
       default = [ ];

@@ -84,6 +84,7 @@
   # fallback if one mesh goes down — critical for a completely headless box.
 
   my.services.tailscale = {
+    mtu = 1200;
     tags = [ "tag:nixos" "tag:temp" ];
     acceptRoutes = true;
     manager.enable = true;
