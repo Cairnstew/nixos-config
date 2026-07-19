@@ -125,6 +125,10 @@ let
           fi
         fi
       fi
+
+      # Set upstream tracking so manual `git pull` works out of the box
+      # after branch enforcement (idempotent — already-set tracking is a no-op).
+      ${git} -C "${repo.path}" branch --set-upstream-to="${remote}/${branch}" "${branch}" 2>/dev/null || true
     '';
 
   # ── Shell script for one repo ──────────────────────────────────────────────
