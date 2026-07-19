@@ -35,6 +35,24 @@ in
         };
       };
 
+      # Set a non-default tunnel MTU after tailscaled starts, if configured.
+      # Tailscale doesn't expose --mtu in `tailscale up` on all versions,
+      # so we set it directly on the WireGuard interface instead.
+      systemd.services.tailscale-mtu = mkIf (cfg.mtu != null) {
+        description = "Set Tailscale tunnel MTU";
+        after = [ "tailscaled.service" ];
+        wants = [ "tailscaled.service" ];
+        wantedBy = [ "tailscaled.service" ];
+        serviceConfig = {
+          Type = "oneshot";
+          RemainAfterExit = true;
+          ExecCondition = "${pkgs.coreutils}/bin/test -d /sys/class/net/tailscale0";
+        };
+        script = ''
+          ${pkgs.iproute2}/bin/ip link set dev tailscale0 mtu ${toString cfg.mtu}
+        '';
+      };
+
       # tailscale-manager needs tailscaled active before it can reach the API
       systemd.services.tailscale-manager = mkIf config.my.services.tailscale.manager.enable {
         after = [ "tailscaled.service" ];
