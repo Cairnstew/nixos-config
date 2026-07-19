@@ -374,6 +374,10 @@ in
         # Merge master into the per-host branch after each sync
         # Override when: Not using per-host branches or manual merge preferred
         mergeUpstream = lib.mkDefault "master";
+
+        # Push local commits on the per-host branch after each sync
+        # Override when: Manual push workflow preferred
+        autoPush = lib.mkDefault true;
       };
     };
   };
