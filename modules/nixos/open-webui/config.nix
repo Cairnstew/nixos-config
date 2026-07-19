@@ -70,62 +70,62 @@ in
       extraLocations = [
         # REST API v1 — specific path so it doesn't conflict with RisuAI's /api/
         ''
-        handle /api/v1/* {
-          reverse_proxy 127.0.0.1:${toString cfg.port}
-        }
+          handle /api/v1/* {
+            reverse_proxy 127.0.0.1:${toString cfg.port}
+          }
         ''
         # SvelteKit internal assets and static files
         ''
-        handle /_app/* {
-          reverse_proxy 127.0.0.1:${toString cfg.port}
-        }
+          handle /_app/* {
+            reverse_proxy 127.0.0.1:${toString cfg.port}
+          }
         ''
         ''
-        handle /static/* {
-          reverse_proxy 127.0.0.1:${toString cfg.port}
-        }
+          handle /static/* {
+            reverse_proxy 127.0.0.1:${toString cfg.port}
+          }
         ''
         # WebSocket and streaming
         ''
-        handle /ws/* {
-          reverse_proxy 127.0.0.1:${toString cfg.port}
-        }
+          handle /ws/* {
+            reverse_proxy 127.0.0.1:${toString cfg.port}
+          }
         ''
         # SvelteKit page routes (SPA navigation targets)
         ''
-        handle /auth/* {
-          reverse_proxy 127.0.0.1:${toString cfg.port}
-        }
+          handle /auth/* {
+            reverse_proxy 127.0.0.1:${toString cfg.port}
+          }
         ''
         ''
-        handle /c/* {
-          reverse_proxy 127.0.0.1:${toString cfg.port}
-        }
+          handle /c/* {
+            reverse_proxy 127.0.0.1:${toString cfg.port}
+          }
         ''
         ''
-        handle /workspace/* {
-          reverse_proxy 127.0.0.1:${toString cfg.port}
-        }
+          handle /workspace/* {
+            reverse_proxy 127.0.0.1:${toString cfg.port}
+          }
         ''
         ''
-        handle /admin/* {
-          reverse_proxy 127.0.0.1:${toString cfg.port}
-        }
+          handle /admin/* {
+            reverse_proxy 127.0.0.1:${toString cfg.port}
+          }
         ''
         ''
-        handle /models* {
-          reverse_proxy 127.0.0.1:${toString cfg.port}
-        }
+          handle /models* {
+            reverse_proxy 127.0.0.1:${toString cfg.port}
+          }
         ''
         ''
-        handle /knowledge* {
-          reverse_proxy 127.0.0.1:${toString cfg.port}
-        }
+          handle /knowledge* {
+            reverse_proxy 127.0.0.1:${toString cfg.port}
+          }
         ''
         ''
-        handle /tools* {
-          reverse_proxy 127.0.0.1:${toString cfg.port}
-        }
+          handle /tools* {
+            reverse_proxy 127.0.0.1:${toString cfg.port}
+          }
         ''
       ];
     };

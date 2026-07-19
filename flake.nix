@@ -19,12 +19,12 @@
     disko.url = "github:nix-community/disko";
     disko.inputs.nixpkgs.follows = "nixpkgs";
     agenix.url = "github:ryantm/agenix";
-    agenix.inputs.nixpkgs.follows = "nixpkgs";  # reduce nixpkgs duplication (M5)
+    agenix.inputs.nixpkgs.follows = "nixpkgs"; # reduce nixpkgs duplication (M5)
     agenix-manager.url = "github:Cairnstew/agenix-manager";
     agenix-manager.inputs.nixpkgs.follows = "nixpkgs";
     agenix-manager.inputs.agenix.follows = "agenix";
     nuenv.url = "github:hallettj/nuenv/writeShellApplication";
-    nuenv.inputs.nixpkgs.follows = "nixpkgs";  # reduce nixpkgs duplication (M5)
+    nuenv.inputs.nixpkgs.follows = "nixpkgs"; # reduce nixpkgs duplication (M5)
     nixos-wsl.url = "github:nix-community/NixOS-WSL/main";
     nixos-wsl.inputs.nixpkgs.follows = "nixpkgs";
 

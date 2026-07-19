@@ -144,57 +144,57 @@ in
       extraLocations = [
         # SPA frontend assets
         ''
-        handle /assets/* {
-          reverse_proxy 127.0.0.1:${toString ucfg.port}
-        }
+          handle /assets/* {
+            reverse_proxy 127.0.0.1:${toString ucfg.port}
+          }
         ''
         # Stylesheets
         ''
-        handle /css/* {
-          reverse_proxy 127.0.0.1:${toString ucfg.port}
-        }
+          handle /css/* {
+            reverse_proxy 127.0.0.1:${toString ucfg.port}
+          }
         ''
         # JavaScript scripts
         ''
-        handle /scripts/* {
-          reverse_proxy 127.0.0.1:${toString ucfg.port}
-        }
+          handle /scripts/* {
+            reverse_proxy 127.0.0.1:${toString ucfg.port}
+          }
         ''
         # REST API
         ''
-        handle /api/* {
-          reverse_proxy 127.0.0.1:${toString ucfg.port}
-        }
+          handle /api/* {
+            reverse_proxy 127.0.0.1:${toString ucfg.port}
+          }
         ''
         # User content (avatars, uploads)
         ''
-        handle /user/* {
-          reverse_proxy 127.0.0.1:${toString ucfg.port}
-        }
+          handle /user/* {
+            reverse_proxy 127.0.0.1:${toString ucfg.port}
+          }
         ''
         # Character card data
         ''
-        handle /characters/* {
-          reverse_proxy 127.0.0.1:${toString ucfg.port}
-        }
+          handle /characters/* {
+            reverse_proxy 127.0.0.1:${toString ucfg.port}
+          }
         ''
         # Chat history
         ''
-        handle /chats/* {
-          reverse_proxy 127.0.0.1:${toString ucfg.port}
-        }
+          handle /chats/* {
+            reverse_proxy 127.0.0.1:${toString ucfg.port}
+          }
         ''
         # Background images
         ''
-        handle /backgrounds/* {
-          reverse_proxy 127.0.0.1:${toString ucfg.port}
-        }
+          handle /backgrounds/* {
+            reverse_proxy 127.0.0.1:${toString ucfg.port}
+          }
         ''
         # Notification sounds
         ''
-        handle /sounds/* {
-          reverse_proxy 127.0.0.1:${toString ucfg.port}
-        }
+          handle /sounds/* {
+            reverse_proxy 127.0.0.1:${toString ucfg.port}
+          }
         ''
       ];
     };

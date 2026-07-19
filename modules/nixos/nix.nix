@@ -21,7 +21,7 @@ in
     nixPath = [ "nixpkgs=${flake.inputs.nixpkgs}" ]; # Enables use of `nix-shell -p ...` etc
     registry = {
       nixpkgs.flake = flake.inputs.nixpkgs; # Make `nix shell` etc use pinned nixpkgs
-      nixpkgs-unstable.flake = flake.inputs.nixpkgs;  # nixpkgs-unstable removed as input — same branch as nixpkgs (M5)
+      nixpkgs-unstable.flake = flake.inputs.nixpkgs; # nixpkgs-unstable removed as input — same branch as nixpkgs (M5)
     };
 
     daemonCPUSchedPolicy = "batch";

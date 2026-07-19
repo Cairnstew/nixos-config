@@ -151,7 +151,7 @@ in
             fetch.enable = true;
             filesystem = {
               enable = true;
-              args = [ "/home/${username}/nixos-config" ];  # use flake config username instead of hard-coded seanc (M2)
+              args = [ "/home/${username}/nixos-config" ]; # use flake config username instead of hard-coded seanc (M2)
             };
             time.enable = true;
             sequential-thinking.enable = true;

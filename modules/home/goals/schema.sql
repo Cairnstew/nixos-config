@@ -22,6 +22,7 @@ CREATE TABLE IF NOT EXISTS milestones (
     title TEXT NOT NULL,
     status TEXT NOT NULL DEFAULT 'pending',
     target_date TEXT,
+    "order" INTEGER NOT NULL DEFAULT 0,
     created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
 
@@ -73,3 +74,18 @@ CREATE INDEX IF NOT EXISTS idx_check_ins_goal ON check_ins(goal_id);
 CREATE INDEX IF NOT EXISTS idx_trait_evidence_trait ON trait_evidence(trait_id);
 CREATE INDEX IF NOT EXISTS idx_trait_evidence_date ON trait_evidence(observed_date);
 CREATE INDEX IF NOT EXISTS idx_traits_status ON traits(status);
+
+CREATE TABLE IF NOT EXISTS profile_facts (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    category TEXT NOT NULL CHECK (category IN ('background', 'current_commitment', 'skill', 'value', 'relationship', 'constraint', 'history')),
+    fact_text TEXT NOT NULL,
+    status TEXT NOT NULL DEFAULT 'active',
+    superseded_by INTEGER REFERENCES profile_facts(id),
+    source_check_in_id INTEGER REFERENCES check_ins(id),
+    created_at TEXT NOT NULL DEFAULT (datetime('now')),
+    updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
+CREATE INDEX IF NOT EXISTS idx_profile_facts_category ON profile_facts(category);
+CREATE INDEX IF NOT EXISTS idx_profile_facts_status ON profile_facts(status);
+CREATE INDEX IF NOT EXISTS idx_profile_facts_superseded_by ON profile_facts(superseded_by);

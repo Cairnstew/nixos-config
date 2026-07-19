@@ -142,7 +142,7 @@ in
     # Default groups: terraform (for IaC), wheel (for sudo)
     # NOTE: docker group is managed by my.virtualisation.docker.users below,
     #       not here, so host extraGroups overrides can't drop it.
-    extraGroups = lib.mkDefault [ "networkmanager" "terraform" "wheel" ];  # M4b: added networkmanager so hosts with matching config can drop their override
+    extraGroups = lib.mkDefault [ "networkmanager" "terraform" "wheel" ]; # M4b: added networkmanager so hosts with matching config can drop their override
   };
 
   # Ensure the primary user is always in the docker group when docker is enabled.

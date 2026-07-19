@@ -48,9 +48,11 @@ let
   # Build a string of expected param values for embedding in the watch script.
   # Format: "sens-mult=1.0 yx-ratio=null input-dpi=null ..."
   mkExpectedStr = lib.concatStringsSep " " (
-    lib.mapAttrsToList (nixName: cliName:
-      "${cliName}=${builtins.toString (builtins.getAttr nixName expectedParams)}"
-    ) paramNameMap
+    lib.mapAttrsToList
+      (nixName: cliName:
+        "${cliName}=${builtins.toString (builtins.getAttr nixName expectedParams)}"
+      )
+      paramNameMap
   );
 
   # ── maccel-watch: interactive monitoring helper ────────────────────────
@@ -212,82 +214,82 @@ let
 
   # Maps config mode names to what `maccel get mode | head -1` actually prints.
   modeDisplayMap = {
-    linear      = "Linear Acceleration";
-    natural     = "Natural (w/ Gain)";
+    linear = "Linear Acceleration";
+    natural = "Natural (w/ Gain)";
     synchronous = "Synchronous";
-    no-accel    = "No Acceleration";
+    no-accel = "No Acceleration";
   };
 
   # ── maccel-logger: periodic health check script ───────────────────────
   # NOTE: deliberately no set -e — this is a diagnostic tool and should never
   # fail the service. The module may not be available during switch/reload.
   maccelLogger = pkgs.writeShellScript "maccel-logger" ''
-    set -uo pipefail
+        set -uo pipefail
 
-    MACCEL="${maccelBin}"
-    EXPECTED_MODE="${modeDisplayMap.${expectedParams.mode}}"
-    EXPECTED="${mkExpectedStr}"
+        MACCEL="${maccelBin}"
+        EXPECTED_MODE="${modeDisplayMap.${expectedParams.mode}}"
+        EXPECTED="${mkExpectedStr}"
 
-    LOG_ALL=${if cfg.logging.logAll then "true" else "false"}
-    TIMESTAMP=$(date --iso-8601=seconds)
+        LOG_ALL=${if cfg.logging.logAll then "true" else "false"}
+        TIMESTAMP=$(date --iso-8601=seconds)
 
-    # Parse expected values
-    declare -A EXP
-    for pair in $EXPECTED; do
-      key="''${pair%%=*}"
-      val="''${pair#*=}"
-      EXP["$key"]="$val"
-    done
+        # Parse expected values
+        declare -A EXP
+        for pair in $EXPECTED; do
+          key="''${pair%%=*}"
+          val="''${pair#*=}"
+          EXP["$key"]="$val"
+        done
 
-    get_mode() {
-      $MACCEL get mode 2>/dev/null | head -1 | tr -d '\n'
-    }
+        get_mode() {
+          $MACCEL get mode 2>/dev/null | head -1 | tr -d '\n'
+        }
 
-    get_param() {
-      $MACCEL get param "$1" 2>/dev/null || echo "ERR"
-    }
+        get_param() {
+          $MACCEL get param "$1" 2>/dev/null || echo "ERR"
+        }
 
-    mode=$(get_mode)
-    if [ -z "$mode" ]; then
-      echo "MACVEL logger[$TIMESTAMP] WARN: cannot read maccel mode — module not loaded?"
-      exit 0
-    fi
-
-    # Check mode
-    if [ "$mode" != "$EXPECTED_MODE" ]; then
-      echo "MACVEL logger[$TIMESTAMP] WARN  mode=expected:$EXPECTED_MODE,actual:$mode"
-    else
-      echo "MACVEL logger[$TIMESTAMP] INFO  mode=$mode"
-    fi
-
-    # Check sysfs exists
-    if [ ! -d /sys/module/maccel/parameters ]; then
-      echo "MACVEL logger[$TIMESTAMP] WARN /sys/module/maccel/parameters not found — module not loaded?"
-      exit 0
-fi
-
-    # Dump all sysfs params
-    have_diff=false
-    for f in /sys/module/maccel/parameters/*; do
-      name=$(basename "$f")
-      value=$(cat "$f" 2>/dev/null || echo "N/A")
-      expected="''${EXP[$name]:-}"
-
-      if [ -n "$expected" ] && [ "$expected" != "null" ]; then
-        if [ "$value" != "$expected" ]; then
-          echo "MACVEL logger[$TIMESTAMP] WARN  param=$name expected=$expected actual=$value"
-          have_diff=true
-        elif [ "$LOG_ALL" = "true" ]; then
-          echo "MACVEL logger[$TIMESTAMP] INFO  param=$name value=$value"
+        mode=$(get_mode)
+        if [ -z "$mode" ]; then
+          echo "MACVEL logger[$TIMESTAMP] WARN: cannot read maccel mode — module not loaded?"
+          exit 0
         fi
-      elif [ "$LOG_ALL" = "true" ]; then
-        echo "MACVEL logger[$TIMESTAMP] INFO  param=$name value=$value (unconfigured)"
-      fi
-    done
 
-    if [ "$have_diff" = "false" ]; then
-      echo "MACVEL logger[$TIMESTAMP] INFO  all params match expected configuration"
+        # Check mode
+        if [ "$mode" != "$EXPECTED_MODE" ]; then
+          echo "MACVEL logger[$TIMESTAMP] WARN  mode=expected:$EXPECTED_MODE,actual:$mode"
+        else
+          echo "MACVEL logger[$TIMESTAMP] INFO  mode=$mode"
+        fi
+
+        # Check sysfs exists
+        if [ ! -d /sys/module/maccel/parameters ]; then
+          echo "MACVEL logger[$TIMESTAMP] WARN /sys/module/maccel/parameters not found — module not loaded?"
+          exit 0
     fi
+
+        # Dump all sysfs params
+        have_diff=false
+        for f in /sys/module/maccel/parameters/*; do
+          name=$(basename "$f")
+          value=$(cat "$f" 2>/dev/null || echo "N/A")
+          expected="''${EXP[$name]:-}"
+
+          if [ -n "$expected" ] && [ "$expected" != "null" ]; then
+            if [ "$value" != "$expected" ]; then
+              echo "MACVEL logger[$TIMESTAMP] WARN  param=$name expected=$expected actual=$value"
+              have_diff=true
+            elif [ "$LOG_ALL" = "true" ]; then
+              echo "MACVEL logger[$TIMESTAMP] INFO  param=$name value=$value"
+            fi
+          elif [ "$LOG_ALL" = "true" ]; then
+            echo "MACVEL logger[$TIMESTAMP] INFO  param=$name value=$value (unconfigured)"
+          fi
+        done
+
+        if [ "$have_diff" = "false" ]; then
+          echo "MACVEL logger[$TIMESTAMP] INFO  all params match expected configuration"
+        fi
   '';
 in
 {

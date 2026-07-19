@@ -75,54 +75,56 @@ in
   systemd.services.godot-smoke-test = lib.mkIf cfg.enable {
     description = "Smoke test for Godot game engine installation";
     serviceConfig.Type = "oneshot";
-    script = let
-      godotPkg = if cfg.engine.package != null then cfg.engine.package else if cfg.mono.enable then pkgs.godot-mono else pkgs.godot;
-      godotCmd = if cfg.mono.enable then "godot-mono" else "godot";
-    in ''
-      echo "=== Godot Smoke Test ==="
+    script =
+      let
+        godotPkg = if cfg.engine.package != null then cfg.engine.package else if cfg.mono.enable then pkgs.godot-mono else pkgs.godot;
+        godotCmd = if cfg.mono.enable then "godot-mono" else "godot";
+      in
+      ''
+        echo "=== Godot Smoke Test ==="
 
-      ${lib.optionalString cfg.engine.enable ''
-        if ! command -v ${godotCmd} >/dev/null 2>&1; then
-          echo "FAIL: ${godotCmd} binary not found in PATH"
-          exit 1
-        fi
-        echo "PASS: ${godotCmd} binary found"
+        ${lib.optionalString cfg.engine.enable ''
+          if ! command -v ${godotCmd} >/dev/null 2>&1; then
+            echo "FAIL: ${godotCmd} binary not found in PATH"
+            exit 1
+          fi
+          echo "PASS: ${godotCmd} binary found"
 
-        VERSION=$(${lib.getBin godotPkg}/bin/${godotCmd} --version 2>/dev/null)
-        if [ -n "$VERSION" ]; then
-          echo "PASS: Godot version: $VERSION"
-        else
-          echo "FAIL: godot --version returned empty"
-          exit 1
-        fi
+          VERSION=$(${lib.getBin godotPkg}/bin/${godotCmd} --version 2>/dev/null)
+          if [ -n "$VERSION" ]; then
+            echo "PASS: Godot version: $VERSION"
+          else
+            echo "FAIL: godot --version returned empty"
+            exit 1
+          fi
 
-        # Quick headless project validation (create and validate a project file)
-        TEST_DIR=$(mktemp -d)
-        cat > "$TEST_DIR/project.godot" << 'EOF'
-        ; Engine configuration.
-        [application]
-        config/name="SmokeTest"
-        config/features=PackedStringArray("4.0")
-        EOF
-        echo "PASS: Basic project.godot created"
-        rm -rf "$TEST_DIR"
-      ''}
+          # Quick headless project validation (create and validate a project file)
+          TEST_DIR=$(mktemp -d)
+          cat > "$TEST_DIR/project.godot" << 'EOF'
+          ; Engine configuration.
+          [application]
+          config/name="SmokeTest"
+          config/features=PackedStringArray("4.0")
+          EOF
+          echo "PASS: Basic project.godot created"
+          rm -rf "$TEST_DIR"
+        ''}
 
-      ${lib.optionalString cfg.gdscript.enable ''
-        if command -v gdtoolkit_4-parse >/dev/null 2>&1; then
-          echo "PASS: gdtoolkit_4-parse found"
-        else
-          echo "INFO: gdtoolkit_4-parse not in PATH (check your PATH)"
-        fi
+        ${lib.optionalString cfg.gdscript.enable ''
+          if command -v gdtoolkit_4-parse >/dev/null 2>&1; then
+            echo "PASS: gdtoolkit_4-parse found"
+          else
+            echo "INFO: gdtoolkit_4-parse not in PATH (check your PATH)"
+          fi
 
-        if command -v gdscript-formatter >/dev/null 2>&1; then
-          echo "PASS: gdscript-formatter found"
-        else
-          echo "INFO: gdscript-formatter not in PATH"
-        fi
-      ''}
+          if command -v gdscript-formatter >/dev/null 2>&1; then
+            echo "PASS: gdscript-formatter found"
+          else
+            echo "INFO: gdscript-formatter not in PATH"
+          fi
+        ''}
 
-      echo "=== Godot Smoke Test Complete ==="
-    '';
+        echo "=== Godot Smoke Test Complete ==="
+      '';
   };
 }

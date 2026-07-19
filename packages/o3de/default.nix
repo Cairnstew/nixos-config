@@ -161,101 +161,101 @@ stdenv.mkDerivation (finalAttrs: {
   ];
 
   patchPhase = ''
-    # RapidXML ships as .hpp in nixpkgs but O3DE includes <rapidxml/rapidxml.h> — fix includes
-    for rf in Code/Framework/AzCore/AzCore/XML/rapidxml*.h; do
-      sed -i 's|<rapidxml/\(rapidxml[^>]*\)\.h>|<rapidxml/\1.hpp>|g' "$rf"
-    done
-    # GCC 15 two-phase lookup: functions in rapidxml_print.hpp used before declared.
-    # Copy nixpkgs rapidxml headers, add forward decls, shadow nixpkgs with our copy.
-    mkdir -p Code/RapidXML
-    cp -r ${pkgs.rapidxml}/include/rapidxml Code/RapidXML/rapidxml
-    chmod -R u+w Code/RapidXML
-    # Patch nixpkgs rapidxml for O3DE compatibility:
-    # 1. RAPIDXML_NO_EXCEPTIONS support (store errors in document, not throw)
-    # 2. isError() / getError() / clearError() on xml_document
-    # 3. parse_no_data_nodes flag
-    # 4. bool-returning parse() overload
-    # 5. GCC 15+ forward declarations for rapidxml_print.hpp
-    ${py}/bin/python3 ${./patch-rapidxml-o3de.py} Code/RapidXML/rapidxml
+        # RapidXML ships as .hpp in nixpkgs but O3DE includes <rapidxml/rapidxml.h> — fix includes
+        for rf in Code/Framework/AzCore/AzCore/XML/rapidxml*.h; do
+          sed -i 's|<rapidxml/\(rapidxml[^>]*\)\.h>|<rapidxml/\1.hpp>|g' "$rf"
+        done
+        # GCC 15 two-phase lookup: functions in rapidxml_print.hpp used before declared.
+        # Copy nixpkgs rapidxml headers, add forward decls, shadow nixpkgs with our copy.
+        mkdir -p Code/RapidXML
+        cp -r ${pkgs.rapidxml}/include/rapidxml Code/RapidXML/rapidxml
+        chmod -R u+w Code/RapidXML
+        # Patch nixpkgs rapidxml for O3DE compatibility:
+        # 1. RAPIDXML_NO_EXCEPTIONS support (store errors in document, not throw)
+        # 2. isError() / getError() / clearError() on xml_document
+        # 3. parse_no_data_nodes flag
+        # 4. bool-returning parse() overload
+        # 5. GCC 15+ forward declarations for rapidxml_print.hpp
+        ${py}/bin/python3 ${./patch-rapidxml-o3de.py} Code/RapidXML/rapidxml
 
-    # Patch all AzCore rapixml wrappers to define RAPIDXML_NO_EXCEPTIONS
-    # when exceptions are disabled in the O3DE build system.
-    for _rapidxml_wrapper in Code/Framework/AzCore/AzCore/XML/rapidxml.h Code/Framework/AzCore/AzCore/XML/rapidxml_print.h; do
-      substituteInPlace "$_rapidxml_wrapper" \
-        --replace-fail '#define RAPIDXML_SKIP_AZCORE_ERROR' \
-          '#define RAPIDXML_NO_EXCEPTIONS
+        # Patch all AzCore rapixml wrappers to define RAPIDXML_NO_EXCEPTIONS
+        # when exceptions are disabled in the O3DE build system.
+        for _rapidxml_wrapper in Code/Framework/AzCore/AzCore/XML/rapidxml.h Code/Framework/AzCore/AzCore/XML/rapidxml_print.h; do
+          substituteInPlace "$_rapidxml_wrapper" \
+            --replace-fail '#define RAPIDXML_SKIP_AZCORE_ERROR' \
+              '#define RAPIDXML_NO_EXCEPTIONS
 
-#define RAPIDXML_SKIP_AZCORE_ERROR'
-    done
+    #define RAPIDXML_SKIP_AZCORE_ERROR'
+        done
 
-    # Patch O3DE callers that use parse() -> bool return (not supported by
-    # standard rapidxml). Our patch provides try_parse() for this.
-    substituteInPlace Gems/AudioSystem/Code/Include/Engine/AudioFileUtils.h \
-      --replace-fail '.parse<AZ::rapidxml::parse_no_data_nodes>(' '.try_parse<AZ::rapidxml::parse_no_data_nodes>('
-    substituteInPlace Gems/LmbrCentral/Code/Source/Builders/CopyDependencyBuilder/XmlFormattedAssetBuilderWorker.cpp \
-      --replace-fail '.parse<AZ::rapidxml::parse_no_data_nodes>(' '.try_parse<AZ::rapidxml::parse_no_data_nodes>('
-    substituteInPlace Code/Tools/AssetProcessor/AssetBuilderSDK/AssetBuilderSDK/AssetBuilderSDK.cpp \
-      --replace-fail '->parse<AZ::rapidxml::parse_no_data_nodes>(' '->try_parse<AZ::rapidxml::parse_no_data_nodes>('
-    # Verify our patched copies have O3DE extensions
-    test -f Code/RapidXML/rapidxml/rapidxml_print.hpp || { echo "ERROR: patched copy missing"; exit 1; }
-    grep -q 'isError' Code/RapidXML/rapidxml/rapidxml.hpp || { echo "ERROR: isError not in patched rapidxml.hpp"; exit 1; }
-    grep -q 'Forward declarations' Code/RapidXML/rapidxml/rapidxml_print.hpp || { echo "ERROR: forward decls not in patched rapidxml_print.hpp"; exit 1; }
-    # Add our patched rapidxml to include path BEFORE nixpkgs copy
-    sed -i '1iinclude_directories(BEFORE "''${CMAKE_CURRENT_SOURCE_DIR}/RapidXML")' Code/CMakeLists.txt
-    # Lua headers in nixpkgs are at <lua.h> not <Lua/lua.h> — fix all files
-    for f in \
-      Code/Framework/AzCore/AzCore/Script/lua/lua.h \
-      Code/Framework/AzCore/AzCore/Script/ScriptContext.cpp \
-      Code/Framework/AzCore/AzCore/Script/ScriptContextDebug.cpp \
-      Code/Framework/AzCore/AzCore/Script/ScriptPropertyTable.cpp \
-      Code/Framework/AzFramework/AzFramework/Script/ScriptComponent.cpp \
-      Code/Framework/AzToolsFramework/AzToolsFramework/ToolsComponents/ScriptEditorComponent.cpp \
-      Code/Framework/AzToolsFramework/Tests/Script/ScriptComponentTests.cpp; do
-      test -f "$f" && sed -i 's|<Lua/\(l[^>]*\)>|<\1>|g' "$f" || true
-    done
-    # Lua internal headers (lobject.h etc.) not in nixpkgs public API
-    mkdir -p Code/LuaInternals
-    tar xzf ${pkgs.lua5_4.src} -C Code/LuaInternals --strip-components=2 --wildcards 'lua-5.4.7/src/l*.h'
-    # Prepend include dir before add_subdirectory calls in Code/CMakeLists.txt
-    sed -i '1iinclude_directories("''${CMAKE_CURRENT_SOURCE_DIR}/LuaInternals")' Code/CMakeLists.txt
-    ${py}/bin/python3 ${./fix-requirements.py} python/requirements.txt
-    # Don't fail configure when LY_PACKAGE_SERVER_URLS is empty (no CDN access)
-    substituteInPlace cmake/3rdPartyPackages.cmake \
-      --replace-fail 'message(SEND_ERROR "ly_package:' 'message(STATUS "ly_package:'
-    # Always use our pre-existing venv — never recreate it.
-    substituteInPlace cmake/LYPython.cmake \
-      --replace-fail 'set(CREATE_NEW_VENV TRUE)' 'set(CREATE_NEW_VENV FALSE)'
-    # Skip pip install of requirements.txt (packages provided by nixpkgs).
-    substituteInPlace cmake/LYPython.cmake \
-      --replace-fail 'message(FATAL_ERROR "The above failure will cause errors later - stopping now.' 'message(WARNING "The above failure will cause errors later - continuing anyway.'
-    # Override LY_PYTHON_CMD — O3DE sets it to python.sh which has #!/bin/bash
-    # shebang that fails in Nix sandbox.  Use pythonEnv (with jinja2) directly.
-    substituteInPlace cmake/LYPython.cmake \
-      --replace-fail 'set(LY_PYTHON_CMD "''${LY_ROOT_FOLDER}/python/python.sh" "-s")' \
-      'set(LY_PYTHON_CMD "${pythonEnv}/bin/python3")'
-    # CityHash — needed by AzCore for TypeHash32/64 (CityHash32/CityHash64).
-    # Google's cityhash is not packaged in nixpkgs, so we bundle the source.
-    # Copy city.h to the AzCore include path so #include <city.h> resolves.
-    cp ${cityhashSrc}/city.h Code/Framework/AzCore/
-    cp ${cityhashSrc}/config.h Code/Framework/AzCore/
-    # Compile city.cc into a static library for AzCore linking
-    g++ -std=c++20 -fPIC -fno-exceptions -I Code/Framework/AzCore -c ${cityhashSrc}/city.cc -o Code/Framework/AzCore/city.o
-    ar rcs Code/Framework/AzCore/libcityhash.a Code/Framework/AzCore/city.o
-    # Show AutoGen full error diagnostics in cmake log
-    substituteInPlace cmake/LyAutoGen.cmake \
-      --replace-fail 'if(NOT AUTOGEN_RESULT EQUAL 0)
-            message(FATAL_ERROR
-                "AutoGen expansion rules failed for target: ' \
-        'message(STATUS "AZ_AUTOGEN_START: ''${ly_add_autogen_NAME}
-AUTOGEN_RESULT=''${AUTOGEN_RESULT}
-AUTOGEN_ERROR=''${AUTOGEN_ERROR}
-AUTOGEN_OUTPUTS=''${AUTOGEN_OUTPUTS}")
-if(NOT AUTOGEN_RESULT EQUAL 0)
-            message(FATAL_ERROR
-                "AutoGen expansion rules failed for target: '
-    # Suppress GCC 14+ -Wno-nonnull and -Wno-unused-variable via Python script
-    # (substituteInPlace doesn't handle multi-line replacements well)
-    ${py}/bin/python3 ${./patch-gcc-config.py}
+        # Patch O3DE callers that use parse() -> bool return (not supported by
+        # standard rapidxml). Our patch provides try_parse() for this.
+        substituteInPlace Gems/AudioSystem/Code/Include/Engine/AudioFileUtils.h \
+          --replace-fail '.parse<AZ::rapidxml::parse_no_data_nodes>(' '.try_parse<AZ::rapidxml::parse_no_data_nodes>('
+        substituteInPlace Gems/LmbrCentral/Code/Source/Builders/CopyDependencyBuilder/XmlFormattedAssetBuilderWorker.cpp \
+          --replace-fail '.parse<AZ::rapidxml::parse_no_data_nodes>(' '.try_parse<AZ::rapidxml::parse_no_data_nodes>('
+        substituteInPlace Code/Tools/AssetProcessor/AssetBuilderSDK/AssetBuilderSDK/AssetBuilderSDK.cpp \
+          --replace-fail '->parse<AZ::rapidxml::parse_no_data_nodes>(' '->try_parse<AZ::rapidxml::parse_no_data_nodes>('
+        # Verify our patched copies have O3DE extensions
+        test -f Code/RapidXML/rapidxml/rapidxml_print.hpp || { echo "ERROR: patched copy missing"; exit 1; }
+        grep -q 'isError' Code/RapidXML/rapidxml/rapidxml.hpp || { echo "ERROR: isError not in patched rapidxml.hpp"; exit 1; }
+        grep -q 'Forward declarations' Code/RapidXML/rapidxml/rapidxml_print.hpp || { echo "ERROR: forward decls not in patched rapidxml_print.hpp"; exit 1; }
+        # Add our patched rapidxml to include path BEFORE nixpkgs copy
+        sed -i '1iinclude_directories(BEFORE "''${CMAKE_CURRENT_SOURCE_DIR}/RapidXML")' Code/CMakeLists.txt
+        # Lua headers in nixpkgs are at <lua.h> not <Lua/lua.h> — fix all files
+        for f in \
+          Code/Framework/AzCore/AzCore/Script/lua/lua.h \
+          Code/Framework/AzCore/AzCore/Script/ScriptContext.cpp \
+          Code/Framework/AzCore/AzCore/Script/ScriptContextDebug.cpp \
+          Code/Framework/AzCore/AzCore/Script/ScriptPropertyTable.cpp \
+          Code/Framework/AzFramework/AzFramework/Script/ScriptComponent.cpp \
+          Code/Framework/AzToolsFramework/AzToolsFramework/ToolsComponents/ScriptEditorComponent.cpp \
+          Code/Framework/AzToolsFramework/Tests/Script/ScriptComponentTests.cpp; do
+          test -f "$f" && sed -i 's|<Lua/\(l[^>]*\)>|<\1>|g' "$f" || true
+        done
+        # Lua internal headers (lobject.h etc.) not in nixpkgs public API
+        mkdir -p Code/LuaInternals
+        tar xzf ${pkgs.lua5_4.src} -C Code/LuaInternals --strip-components=2 --wildcards 'lua-5.4.7/src/l*.h'
+        # Prepend include dir before add_subdirectory calls in Code/CMakeLists.txt
+        sed -i '1iinclude_directories("''${CMAKE_CURRENT_SOURCE_DIR}/LuaInternals")' Code/CMakeLists.txt
+        ${py}/bin/python3 ${./fix-requirements.py} python/requirements.txt
+        # Don't fail configure when LY_PACKAGE_SERVER_URLS is empty (no CDN access)
+        substituteInPlace cmake/3rdPartyPackages.cmake \
+          --replace-fail 'message(SEND_ERROR "ly_package:' 'message(STATUS "ly_package:'
+        # Always use our pre-existing venv — never recreate it.
+        substituteInPlace cmake/LYPython.cmake \
+          --replace-fail 'set(CREATE_NEW_VENV TRUE)' 'set(CREATE_NEW_VENV FALSE)'
+        # Skip pip install of requirements.txt (packages provided by nixpkgs).
+        substituteInPlace cmake/LYPython.cmake \
+          --replace-fail 'message(FATAL_ERROR "The above failure will cause errors later - stopping now.' 'message(WARNING "The above failure will cause errors later - continuing anyway.'
+        # Override LY_PYTHON_CMD — O3DE sets it to python.sh which has #!/bin/bash
+        # shebang that fails in Nix sandbox.  Use pythonEnv (with jinja2) directly.
+        substituteInPlace cmake/LYPython.cmake \
+          --replace-fail 'set(LY_PYTHON_CMD "''${LY_ROOT_FOLDER}/python/python.sh" "-s")' \
+          'set(LY_PYTHON_CMD "${pythonEnv}/bin/python3")'
+        # CityHash — needed by AzCore for TypeHash32/64 (CityHash32/CityHash64).
+        # Google's cityhash is not packaged in nixpkgs, so we bundle the source.
+        # Copy city.h to the AzCore include path so #include <city.h> resolves.
+        cp ${cityhashSrc}/city.h Code/Framework/AzCore/
+        cp ${cityhashSrc}/config.h Code/Framework/AzCore/
+        # Compile city.cc into a static library for AzCore linking
+        g++ -std=c++20 -fPIC -fno-exceptions -I Code/Framework/AzCore -c ${cityhashSrc}/city.cc -o Code/Framework/AzCore/city.o
+        ar rcs Code/Framework/AzCore/libcityhash.a Code/Framework/AzCore/city.o
+        # Show AutoGen full error diagnostics in cmake log
+        substituteInPlace cmake/LyAutoGen.cmake \
+          --replace-fail 'if(NOT AUTOGEN_RESULT EQUAL 0)
+                message(FATAL_ERROR
+                    "AutoGen expansion rules failed for target: ' \
+            'message(STATUS "AZ_AUTOGEN_START: ''${ly_add_autogen_NAME}
+    AUTOGEN_RESULT=''${AUTOGEN_RESULT}
+    AUTOGEN_ERROR=''${AUTOGEN_ERROR}
+    AUTOGEN_OUTPUTS=''${AUTOGEN_OUTPUTS}")
+    if(NOT AUTOGEN_RESULT EQUAL 0)
+                message(FATAL_ERROR
+                    "AutoGen expansion rules failed for target: '
+        # Suppress GCC 14+ -Wno-nonnull and -Wno-unused-variable via Python script
+        # (substituteInPlace doesn't handle multi-line replacements well)
+        ${py}/bin/python3 ${./patch-gcc-config.py}
   '';
 
   cmakeFlags = [

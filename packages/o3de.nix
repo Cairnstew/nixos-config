@@ -8,4 +8,5 @@ let
     config.allowUnfree = true;
   };
   pkg = callPackage ./o3de/default.nix { inherit pkgs-stable; };
-in pkg
+in
+pkg
