@@ -177,22 +177,22 @@ let
       }
       ''}
 
+      ${lib.concatStringsSep "\n" (lib.mapAttrsToList handleBlock enabledUpstreams)}
+
+      ${lib.concatStringsSep "\n" (lib.concatMap (u: u.extraLocations) (builtins.attrValues enabledUpstreams))}
+
       ${lib.optionalString cfg.dashboard.enable ''
       handle /index.html {
         root * ${dashboardDir}
         file_server
       }
-      handle / {
+      handle {
         root * ${dashboardDir}
         file_server
       }
       ''}
 
-      ${lib.concatStringsSep "\n" (lib.mapAttrsToList handleBlock enabledUpstreams)}
-
-      ${lib.concatStringsSep "\n" (lib.concatMap (u: u.extraLocations) (builtins.attrValues enabledUpstreams))}
-
-      handle {
+      handle  {
         respond "Not Found" 404
       }
 
