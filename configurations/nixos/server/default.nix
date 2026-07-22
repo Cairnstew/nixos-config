@@ -119,6 +119,7 @@
   # ── Manga Reader (sync library to config repo) ───────────────────────────
   my.services.suwayomi = {
     enable = true;
+    autoBindTailscaleIp = true;
     settings.server = {
       backupInterval = 0;
       extensionRepos = [
