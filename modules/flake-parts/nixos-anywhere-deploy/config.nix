@@ -132,11 +132,11 @@ let
   mkDeployTest = hostName: pkgs:
     let
       nixosConfig = config.flake.nixosConfigurations.${hostName} or null;
+      result = builtins.tryEval (
+        if nixosConfig != null then nixosConfig.config.system.build.toplevel else null
+      );
     in
-    if nixosConfig != null then
-      nixosConfig.config.system.build.toplevel
-    else
-      null;
+    if result.success then result.value else null;
 in
 {
   perSystem = { pkgs, ... }:
