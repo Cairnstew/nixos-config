@@ -111,6 +111,16 @@ in
       };
     };
 
+    systemMetrics = {
+      enable = lib.mkEnableOption "system metrics collection and dashboard display";
+
+      refreshInterval = lib.mkOption {
+        type = lib.types.int;
+        default = 30;
+        description = "Collection interval in seconds.";
+      };
+    };
+
     tailscaleServe = {
       enable = lib.mkEnableOption "auto-configure tailscale serve to proxy :443 → Caddy";
 

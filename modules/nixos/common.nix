@@ -222,6 +222,7 @@ in
     # with a service dashboard. mkDefault so hosts can override port/addresses.
     # Override when: Host needs port 8081 for something else.
     services.proxy.enable = lib.mkDefault true;
+    services.proxy.systemMetrics.enable = lib.mkDefault true;
 
     # Secrets enabled by default: Safe to have enabled as agenix gracefully
     # handles missing secret files. Disabling is mainly for containers or

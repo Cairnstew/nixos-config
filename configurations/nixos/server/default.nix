@@ -136,8 +136,31 @@
     sync.import.enable = true;
   };
 
-  # ── NVIDIA Configuration ───────────────────────────────────────────────
-  my.services.ollama.enable = false;
+  # ── Ollama (LLM Serving) ───────────────────────────────────────────────
+  my.services.ollama = {
+    enable = true;
+    dataDir = "/mnt/data/ollama";
+    gpu.enable = true;
+  };
+
+  # ── RisuAI (LLM Roleplay Frontend) ────────────────────────────────────
+  my.services.risuai = {
+    enable = true;
+    dataDir = "/mnt/data/risuai";
+    ollama.enable = true;
+  };
+
+  # Connect risuai container to ollama-net so it can resolve ollama:11434
+  systemd.services."docker-risuai-ollama-net" = {
+    description = "Connect risuai container to ollama-net";
+    after = [ "docker-risuai.service" ];
+    requires = [ "docker-risuai.service" ];
+    wantedBy = [ "multi-user.target" ];
+    serviceConfig.Type = "oneshot";
+    script = ''
+      ${pkgs.docker}/bin/docker network connect ollama-net risuai 2>/dev/null || true
+    '';
+  };
 
   # ── SSH Access ──────────────────────────────────────────────────────────
   my.services.ssh.authorizedKeys = [
