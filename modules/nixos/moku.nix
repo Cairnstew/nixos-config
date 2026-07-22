@@ -24,6 +24,10 @@ let
         --replace-fail 'http://127.0.0.1:4567' '${cfg.serverUrl}'
       substituteInPlace src/lib/server-adapters/suwayomi/index.ts \
         --replace-fail 'http://127.0.0.1:4567' '${cfg.serverUrl}'
+      ${lib.optionalString (cfg.serverUrl != "http://localhost:4567") ''
+        substituteInPlace src/lib/types/settings.ts \
+          --replace-fail 'autoStartServer: true' 'autoStartServer: false'
+      ''}
     '';
   });
 in
