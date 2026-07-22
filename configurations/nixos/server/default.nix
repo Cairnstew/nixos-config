@@ -142,6 +142,16 @@
     enable = true;
     dataDir = "/mnt/data/ollama";
     gpu.enable = true;
+    models = {
+      "hf.co/Lewdiculous/DS-R1-Qwen3-8B-ArliAI-RpR-v4-Small-GGUF-IQ-Imatrix:Q4_K_M-imat" = {
+        name = "ArliAI DS-R1-Qwen3-8B RpR v4";
+        numCtx = 8192;
+        temperature = 0.6;
+        topP = 0.95;
+        topK = 40;
+        repeatPenalty = 1.1;
+      };
+    };
   };
 
   # ── RisuAI (LLM Roleplay Frontend) ────────────────────────────────────
