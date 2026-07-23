@@ -925,9 +925,8 @@
   # ── Manga Reader ─────────────────────────────────────────────────────────
   # Suwayomi-Server backend + Moku frontend (both enabled via entertainment profile)
   # Moku connects to the server's Suwayomi instance over Tailscale
-  my.programs.moku.serverUrl = "https://server.tail685690.ts.net/suwayomi/";
+  my.programs.moku.serverUrl = "http://100.78.102.28:4567";
   my.services.suwayomi = {
-    autoBindTailscaleIp = true;
     settings.server = {
       backupInterval = 0;
       extensionRepos = [

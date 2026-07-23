@@ -47,9 +47,32 @@ in
     };
   };
 
-  config = lib.mkIf cfg.enable {
-    environment.systemPackages = [
-      mokuPackage
-    ];
-  };
+  config = lib.mkMerge [
+    (lib.mkIf cfg.enable {
+      environment.systemPackages = [
+        mokuPackage
+      ];
+    })
+    {
+      assertions =
+        let
+          url = cfg.serverUrl;
+          hasScheme = builtins.match "(https?|tauri)://.*" url != null;
+        in
+        [
+          {
+            assertion = !cfg.enable || url != "";
+            message = "my.programs.moku.serverUrl must not be empty.";
+          }
+          {
+            assertion = !cfg.enable || hasScheme;
+            message = "my.programs.moku.serverUrl must start with http://, https://, or tauri:// (got: ${url})";
+          }
+          {
+            assertion = !cfg.enable || builtins.match ".*/$" url == null;
+            message = "my.programs.moku.serverUrl must not have a trailing slash — the moku source has trailing slash handling that may cause double-slash issues in URL construction (got: ${url})";
+          }
+        ];
+    }
+  ];
 }
