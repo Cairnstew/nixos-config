@@ -137,6 +137,9 @@
     sync.import.enable = true;
   };
 
+  # Caddy upstream must point to the Tailscale IP when autoBindTailscaleIp is on
+  my.services.proxy.upstreams.suwayomi.host = "100.78.102.28";
+
   # ── Ollama (LLM Serving) ───────────────────────────────────────────────
   my.services.ollama = {
     enable = true;

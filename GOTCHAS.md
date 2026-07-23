@@ -356,4 +356,36 @@ Symptom: Changes to Windows unattended answer XML aren't reflected after rebuild
 **Nginx location collision between proxy services — `^~` prefix with longest-match wins for sequence-distinguishable paths**
 Symptom: RisuAI SPA fails to load at `/risuai/`. Browser receives Open WebUI's HTML instead of RisuAI's JS/CSS/API responses. Cause: Two proxy upstreams (RisuaAI, Open WebUI) register `extraLocations` targeting the same root-absolute paths (`/assets/`, `/api/`). Open WebUI uses a regex `~ ^/(_app|static|api|ws|assets|auth|error|s/|watch)($|/)` which, per nginx precedence, beats plain prefix locations regardless of config order. Fix: Use `^~` modifier on prefix locations to make them immune to regex matches. For `/assets/`: only RisuAI uses it — add `^~` to RisuAI's `/assets/` location. For `/api/`: RisuAI uses bare `/api/*` (`/api/read`, `/api/write`, etc.) while Open WebUI uses `/api/v1/*` — these are sequence-distinguishable at the second segment. Add `^~ /api/v1/` to OWUI's extraLocations and `^~ /api/` to RisuAI's extraLocations; nginx's longest-prefix-win for `^~` routes `/api/v1/*` → OWUI and `/api/*` → RisuAI correctly. Only a true same-length collision (both services wanting identical path) would require sub_filter or path rewriting. See `modules/nixos/risuai/config.nix:62-82` and `modules/nixos/open-webui/config.nix:76-90`.
 
-Last updated: 2026-07-11
+---
+
+**Moku "could not reach server" despite browser/curl working — Tauri webview fetch vs curl**
+Symptom: Moku (Tauri app) shows "Could not reach server..." even though `curl` and the browser both reach `https://server.tail685690.ts.net/suwayomi/` fine. Cause: The Tauri webview uses WebKitGTK which has its own TLS certificate store, CORS enforcement, and fetch semantics that can differ from curl/browser. Specifically: (1) WebKitGTK may not trust the Tailscale CA if it's absent from the NSS/system trust store — Tailscale adds its CA to the system store via `tailscaled`, but WebKitGTK's GnuTLS backend may use a different trust chain. (2) Even though suwayomi returns `Access-Control-Allow-Origin: tauri://localhost` for CORS, WebKitGTK may reject non-standard `tauri://` scheme origins in CORS preflight checks. (3) The `substituteInPlace` URL is baked at build time — verify with `nix log $(nix-store -q --outputs /run/current-system | grep moku)` to check the build log. **Debug steps:**
+1. `curl -X POST "https://server.tail685690.ts.net/suwayomi/api/graphql" -H "Content-Type: application/json" -d '{"query":"{ aboutServer { name } }"}'` — confirms the path-based API works
+2. `curl -X OPTIONS "https://server.tail685690.ts.net/suwayomi/api/graphql" -H "Origin: tauri://localhost" -H "Access-Control-Request-Method: POST" -D-` — check CORS preflight
+3. `strings /nix/store/$(readlink -f $(which moku) | grep -o 'nix/store/[^/]*')/bin/..moku-wrapped-wrapped | grep -c "server.tail\|4567\|suwayomi"` — verify baked URL exists in binary
+4. `cat ~/.local/share/io.github.MokuProject.Moku/credentials.json` — check persisted server URL credential
+5. `cat ~/.local/share/io.github.MokuProject.Moku/settings.json` — check persisted autoStartServer setting
+6. `rm -f ~/.local/share/io.github.MokuProject.Moku/{credentials,settings}.json` — clear stale state
+7. If still failing, switch to plain HTTP over Tailscale IP (bypasses TLS and Caddy path-routing): set `my.programs.moku.serverUrl = "http://<tailscale-ip>:4567"` and ensure `autoBindTailscaleIp = true` on the server.
+
+See `modules/nixos/moku.nix` for the `substituteInPlace` build-time URL injection.
+See `configurations/nixos/desktop/default.nix` for the host-level `serverUrl` config.
+
+---
+
+**Dashboard/proxy upstream host mismatch — Caddy `reverse_proxy` points at wrong IP**
+Symptom: Dashboard at `https://server.tail685690.ts.net/` loads but a service tile (e.g. Suwayomi) returns 502 or connection refused. The service's own URL (`https://server.tail685690.ts.net/suwayomi/`) also times out. Cause: The service binds to a non-loopback IP (e.g. Tailscale IP via `autoBindTailscaleIp`) but Caddy's upstream `host` defaults to `127.0.0.1`. The module registers the upstream with only `port` and `path`, leaving `host` at the default `"127.0.0.1"`. When the service binds elsewhere (Tailscale IP, separate interface, etc.), Caddy can't connect. **Debug steps:**
+1. `ss -tlnp | grep <port>` — check what address the service actually binds to
+2. `cat /etc/caddy/caddy_config | grep reverse_proxy` — check what host:port Caddy is proxying to
+3. If the bind IP != the proxy target, override: `my.services.proxy.upstreams.<name>.host = "<correct-ip>";`
+4. Verify after rebuild: `nix eval .#nixosConfigurations.server.config.my.services.proxy.upstreams.<name>.host`
+5. Check if the override was deployed: `ssh server tail685690.ts.net "cat /etc/caddy/caddy_config | grep <name>"`
+
+The proxy module now emits an eval-time warning when suwayomi has `autoBindTailscaleIp` enabled but the upstream host is still `127.0.0.1`. See `modules/nixos/proxy/tests.nix`.
+
+---
+
+**Nix eval shows correct config but deployed Caddyfile is stale — git push + redeploy required**
+Symptom: `nix eval .#nixosConfigurations.server.config.my.services.proxy.upstreams` shows the correct host override, but `/etc/caddy/caddy_config` on the server still has the old value. Cause: Local changes were evaluated by `nix eval` (which reads the local filesystem) but never committed/pushed to the git remote. The server's `nix run .#activate` pulls from the remote, not from your local working tree. Fix: `git add -A && git commit -m "..." && git push` then `ssh server.tail685690.ts.net "cd ~/nixos-config && git pull && nix run .#activate"`.
+
+Last updated: 2026-07-23
