@@ -1,4 +1,4 @@
-{ config, lib, ... }:
+{ config, lib, flake, ... }:
 
 let
   cfg = config.my.programs.zed-editor;
@@ -29,6 +29,14 @@ in
       {
         assertion = cfg.fontFamily != "";
         message = "my.programs.zed-editor.fontFamily must not be empty.";
+      }
+      {
+        assertion = cfg.sshConnections == [ ] || builtins.all (c: c.host != "") cfg.sshConnections;
+        message = "my.programs.zed-editor.sshConnections: each entry must have a non-empty host.";
+      }
+      {
+        assertion = !cfg.tailnetConnections.enable || (builtins.length (builtins.attrNames (flake.config.tailnet or { })) > 0);
+        message = "my.programs.zed-editor.tailnetConnections.enable requires flake.config.tailnet to be defined.";
       }
     ];
   };

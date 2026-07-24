@@ -145,6 +145,50 @@ let
   # Merge user customThemes on top of generated theme (user overrides win)
   mergedThemes = lib.recursiveUpdate generatedTheme cfg.customThemes;
 
+  # ── SSH Connections (tailnet auto-discovery + explicit) ──────────────
+  tailnetHosts = lib.filterAttrs
+    (name: _: !(builtins.elem name cfg.tailnetConnections.exclude))
+    (flake.config.tailnet or { });
+
+  autoConnections = if cfg.tailnetConnections.enable then
+    lib.mapAttrsToList
+      (name: host: {
+        host = host.hostname;
+        username = flake.config.me.username;
+        projects = lib.optionals (cfg.tailnetConnections.defaultProjects != [ ])
+          [{ paths = cfg.tailnetConnections.defaultProjects; }];
+        nickname = name;
+        upload_binary_over_ssh = true;
+      })
+      tailnetHosts
+  else
+    [ ];
+
+  allConnections = autoConnections ++ cfg.sshConnections;
+
+  # Convert Nix camelCase connection entries to snake_case JSON keys
+  mkConnection = conn:
+    let
+      portForwards = map (pf:
+        { local_port = pf.localPort; remote_port = pf.remotePort; }
+        // lib.optionalAttrs (pf.localHost != null) { local_host = pf.localHost; }
+      ) conn.portForwards;
+    in
+    {
+      host = conn.host;
+    }
+    // lib.optionalAttrs (conn.username != null) { username = conn.username; }
+    // lib.optionalAttrs (conn.port != null) { port = conn.port; }
+    // lib.optionalAttrs (conn.nickname != null) { nickname = conn.nickname; }
+    // lib.optionalAttrs (conn.args != [ ]) { args = conn.args; }
+    // lib.optionalAttrs conn.uploadBinaryOverSsh { upload_binary_over_ssh = true; }
+    // lib.optionalAttrs (conn.projects != [ ]) {
+      projects = map (p: { paths = p.paths; }) conn.projects;
+    }
+    // lib.optionalAttrs (portForwards != [ ]) { port_forwards = portForwards; };
+
+  formattedConnections = map mkConnection allConnections;
+
   # Build userSettings from typed options, then merge extraSettings on top
   computedSettings = {
     theme = if builtins.isString cfg.theme then cfg.theme else cfg.theme.dark;
@@ -197,6 +241,8 @@ let
       };
     };
 
+  } // lib.optionalAttrs (formattedConnections != [ ]) {
+    ssh_connections = formattedConnections;
   } // lib.optionalAttrs (lib.attrByPath [ "my" "programs" "opencode" "enable" ] false config) {
     agent_servers = {
       OpenCode = {

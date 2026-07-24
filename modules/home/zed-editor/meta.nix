@@ -4,7 +4,7 @@
   category = "programs";
   tags = [ "zed" "editor" "ide" "code" "lsp" "gui" ];
   provides = [ "my.programs.zed-editor" ];
-  expects = [ "flake.config.me.colorScheme" "flake.config.preferences" ];
+  expects = [ "flake.config.me.colorScheme" "flake.config.preferences" "flake.config.tailnet" ];
   complexity = "simple";
   tested = true;
   homepage = "https://zed.dev";
