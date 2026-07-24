@@ -333,6 +333,132 @@ in
 
     # ── Pass-through ──────────────────────────────────────────────────────────
 
+    # ── Remote Development ─────────────────────────────────────────────────
+
+    sshConnections = lib.mkOption {
+      type = types.listOf (types.submodule {
+        options = {
+          host = lib.mkOption {
+            type = types.str;
+            description = "Hostname or SSH alias for the remote machine.";
+          };
+          projects = lib.mkOption {
+            type = types.listOf (types.submodule {
+              options = {
+                paths = lib.mkOption {
+                  type = types.listOf types.str;
+                  default = [ ];
+                  description = "Paths to open on the remote machine.";
+                };
+              };
+            });
+            default = [ ];
+            description = "Project directories to open on the remote.";
+          };
+          username = lib.mkOption {
+            type = types.nullOr types.str;
+            default = null;
+            description = "SSH username for the remote connection.";
+          };
+          port = lib.mkOption {
+            type = types.nullOr types.port;
+            default = null;
+            description = "SSH port for the remote connection.";
+          };
+          args = lib.mkOption {
+            type = types.listOf types.str;
+            default = [ ];
+            description = "Extra SSH arguments (e.g. identity file, custom config).";
+          };
+          nickname = lib.mkOption {
+            type = types.nullOr types.str;
+            default = null;
+            description = "Display name in Zed's remote projects dialog.";
+          };
+          uploadBinaryOverSsh = lib.mkOption {
+            type = types.bool;
+            default = false;
+            description = ''
+              Upload the Zed server binary over SSH instead of downloading it from zed.dev.
+              Required when the remote machine lacks internet access.
+            '';
+          };
+          portForwards = lib.mkOption {
+            type = types.listOf (types.submodule {
+              options = {
+                localPort = lib.mkOption {
+                  type = types.port;
+                  description = "Local port to forward.";
+                };
+                remotePort = lib.mkOption {
+                  type = types.port;
+                  description = "Remote port to forward.";
+                };
+                localHost = lib.mkOption {
+                  type = types.nullOr types.str;
+                  default = null;
+                  description = "Local address to bind (default: 127.0.0.1).";
+                };
+              };
+            });
+            default = [ ];
+            description = "Port forwarding rules for this connection.";
+          };
+        };
+      });
+      default = [ ];
+      description = ''
+        Zed remote SSH connection entries. Maps to ssh_connections in settings.json.
+        These entries appear in Zed's remote projects dialog for one-click connections.
+
+        See https://zed.dev/docs/remote-development for the full format.
+      '';
+      example = lib.literalExpression ''
+        [
+          {
+            host = "server";
+            username = "seanc";
+            projects = [{ paths = [ "~/projects" "~/code" ]; }];
+            nickname = "Server";
+            uploadBinaryOverSsh = true;
+            portForwards = [
+              { localPort = 3000; remotePort = 3000; }
+            ];
+          }
+        ]
+      '';
+    };
+
+    tailnetConnections = {
+      enable = lib.mkEnableOption "auto-generate SSH connections from tailnet host definitions in config.nix" // {
+        description = ''
+          When enabled, automatically generates Zed ssh_connection entries for all
+          hosts defined in flake.config.tailnet. Each host appears in Zed's remote
+          projects dialog with its tailnet hostname and your default SSH username.
+        '';
+      };
+
+      exclude = lib.mkOption {
+        type = types.listOf types.str;
+        default = [ ];
+        description = ''
+          Tailnet hostnames to exclude from auto-generated connections.
+          Useful when some hosts shouldn't appear as remote development targets.
+        '';
+        example = [ "wsl" "minimal" ];
+      };
+
+      defaultProjects = lib.mkOption {
+        type = types.listOf types.str;
+        default = [ "~" ];
+        description = ''
+          Default project paths to open on remote hosts.
+          These are added to every auto-generated connection entry.
+        '';
+        example = [ "~/projects" "~/code" ];
+      };
+    };
+
     extraSettings = lib.mkOption {
       type = types.attrs;
       default = { };

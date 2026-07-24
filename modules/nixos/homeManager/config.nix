@@ -18,6 +18,16 @@ let
       meta.description = "MCP server: better-email (IMAP/SMTP for AI agents)";
     };
 
+  googleCalendarMcpPkg =
+    pkgs.writeShellApplication {
+      name = "google-calendar-mcp";
+      runtimeInputs = [ pkgs.nodejs ];
+      text = ''
+        exec npx -y @cocal/google-calendar-mcp "$@"
+      '';
+      meta.description = "MCP server: Google Calendar integration";
+    };
+
   # Opencode theme derived from config.nix me.colorScheme
   # Maps semantic UI roles to Base16 color definitions
   opencodeTheme =
@@ -117,6 +127,7 @@ in
       groq-token = { owner = lib.mkForce username; };
       github-token = { owner = lib.mkForce username; group = lib.mkForce "users"; };
       spotify-cred = { owner = lib.mkForce username; };
+      google-calendar-oauth = { owner = lib.mkForce username; group = lib.mkForce "users"; };
     };
 
     users.users.${username}.isNormalUser = lib.mkDefault true;
@@ -175,6 +186,13 @@ in
                 EMAIL_USER = flake.config.me.email;
               };
             };
+            # google-calendar-mcp — OAuth credentials from agenix
+            google-calendar = {
+              command = "${googleCalendarMcpPkg}/bin/google-calendar-mcp";
+              env = {
+                GOOGLE_OAUTH_CREDENTIALS = config.age.secrets.google-calendar-oauth.path;
+              };
+            };
           };
         };
       }
@@ -229,6 +247,7 @@ in
             mcp-server-fetch
             playwright-mcp
             betterEmailPkg
+            googleCalendarMcpPkg
             terraform
             nixpkgs-fmt
           ];
