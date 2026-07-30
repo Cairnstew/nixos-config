@@ -240,7 +240,38 @@ All `my.*` options declared across module files.
 | `my.programs.steam.dedicatedServer.openFirewall` | bool | `false` | Open firewall for Steam dedicated servers |
 | `my.programs.steam.gamemode.enable` | bool | `false` | Enable Feral Gamemode |
 | `my.programs.steam.extraCompatPaths` | str? | `null` | Extra Proton compatibility tool paths |
+| `my.programs.hearthstone.enable` | bool | `false` | Native Hearthstone launcher |
+| `my.programs.hearthstone.package` | null/pkg | `null` | Custom hearthstone-linux-gui package |
+| `my.programs.hearthstone.dataDir` | null/path | `null` | Game data directory (e.g. /mnt/media/hearthstone) |
+| `my.programs.lutris.enable` | bool | `false` | Lutris game manager |
+| `my.programs.lutris.gamemode.enable` | bool | `true` | Feral Gamemode for Lutris |
+| `my.programs.lutris.mangohud.enable` | bool | `false` | MangoHud overlay for Lutris |
+| `my.programs.lutris.gamescope.enable` | bool | `false` | Gamescope micro-compositor |
+| `my.programs.lutris.gamescope.openFirewall` | bool | `false` | Open ports for Gamescope streaming |
+| `my.programs.lutris.battlenet.enable` | bool | `false` | Battle.net via Lutris + Wine WoW64 |
+| `my.programs.lutris.battlenet.wine.package` | package | `wineWow64Packages.stable` | Wine package for Battle.net |
+| `my.programs.lutris.battlenet.winetricks.enable` | bool | `true` | Install winetricks |
+| `my.programs.lutris.battlenet.protonup.enable` | bool | `false` | Install protonup-ng for Wine-GE |
+| `my.programs.lutris.battlenet.settings.esync` | bool | `true` | Eventfd synchronization |
+| `my.programs.lutris.battlenet.settings.fsync` | bool | `true` | Futex synchronization |
+| `my.programs.lutris.battlenet.settings.dxvk` | bool | `true` | DXVK for DirectX 9-11 |
+| `my.programs.lutris.battlenet.settings.vkd3d` | bool | `true` | VKD3D for DirectX 12 |
+| `my.programs.lutris.battlenet.settings.overrides` | attrs | `{"dwrite":"n"}` | WINEDLLOVERRIDES |
+| `my.programs.lutris.battlenet.settings.env` | attrs | *(see options)* | Launch environment variables |
+| `my.programs.lutris.battlenet.gamescope.enable` | bool | `false` | Wrap in Gamescope for Wayland fix |
+| `my.programs.lutris.battlenet.gamescope.fullscreen` | bool | `true` | Gamescope fullscreen mode |
+| `my.programs.lutris.battlenet.gamescope.width` | int | `0` | Gamescope internal width |
+| `my.programs.lutris.battlenet.gamescope.height` | int | `0` | Gamescope internal height |
+| `my.programs.lutris.battlenet.gamescope.windowWidth` | int | `1280` | Gamescope output width |
+| `my.programs.lutris.battlenet.gamescope.windowHeight` | int | `720` | Gamescope output height |
+| `my.programs.lutris.battlenet.gamescope.refreshRate` | int? | `null` | Refresh rate limit |
+| `my.programs.lutris.battlenet.gamescope.extraArgs` | list | `[]` | Extra Gamescope arguments |
+| `my.programs.lutris.extraPackages` | list | `[]` | Extra Lutris-related packages |
 | `my.programs.steam.extraPackages` | list | `[]` | Extra Steam-related packages |
+| `my.programs.steam.hyprland.enable` | bool | `false` | Enable Hyprland window rules for Steam games |
+| `my.programs.steam.hyprland.forceMonitor` | str? | `null` | Fallback monitor for all Steam games (e.g. DP-1) |
+| `my.programs.steam.games.<name>.monitor` | str? | `null` | Per-game Hyprland monitor override |
+| `my.programs.steam.games.<name>.windowClass` | str? | `null` | Hyprland window class (defaults to steam_app_&lt;appId&gt;) |
 | `my.programs.steam.games.<name>.gamescope.enable` | bool | `false` | Wrap in Gamescope for proper fullscreen on Wayland |
 | `my.programs.steam.games.<name>.gamescope.width` | int | `0` | Internal resolution width |
 | `my.programs.steam.games.<name>.gamescope.height` | int | `0` | Internal resolution height |

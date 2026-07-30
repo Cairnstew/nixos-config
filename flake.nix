@@ -125,6 +125,12 @@
       flake = true;
     };
 
+    # Native Hearthstone launcher — no Wine, no Battle.net
+    hearthstone-linux-gui = {
+      url = "github:DawnMagnet/hearthstone-linux-gui";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+
   };
 
   # Wired using https://nixos-unified.org/autowiring.html

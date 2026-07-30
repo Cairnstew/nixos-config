@@ -10,6 +10,7 @@ in
     # ── Gaming dependencies ────────────────────────────────────────────────
     my.system.audio.enable = lib.mkDefault true;
     my.programs.steam.enable = lib.mkDefault true;
+    my.programs.hearthstone.enable = lib.mkDefault true;
     my.programs.proton.enable = lib.mkDefault true;
 
     # ── Mouse Acceleration via maccel kernel module ────────────────────────

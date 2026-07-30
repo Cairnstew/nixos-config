@@ -130,11 +130,11 @@ let
     };
 
     disk = {
-      format = " {used_gb}";
+      format = " {used}";
       interval = 60;
       tooltip = true;
-      tooltip-format = "Disk: {used_gb} / {total_gb} ({percentage}%)";
-      path = "/";
+      tooltip-format = "Disk: {used} / {total} ({percentage_used}%)";
+      paths = [ "/" ];
     };
 
     temperature = {
@@ -261,6 +261,22 @@ in
     })
     (mkIf (cfg.enable && barCfg.enable && hasAmdGpu) {
       environment.systemPackages = [ amdgpuStats ];
+    })
+
+    (mkIf (cfg.enable && barCfg.enable) {
+      systemd.user.services.waybar = {
+        description = "Waybar status bar";
+        documentation = [ "https://github.com/Alexays/Waybar" ];
+        partOf = [ "hyprland-session.target" ];
+        after = [ "hyprland-session.target" ];
+        wantedBy = [ "hyprland-session.target" ];
+        serviceConfig = {
+          Type = "simple";
+          ExecStart = "${pkgs.waybar}/bin/waybar";
+          Restart = "on-failure";
+          RestartSec = "2";
+        };
+      };
     })
   ];
 }
