@@ -7,9 +7,9 @@ in
   config = mkIf cfg.enable {
     assertions = [
       {
-        assertion = cfg.htpasswdFile != null;
+        assertion = config.age.secrets ? "squid-htpasswd";
         message = ''
-          my.services.squidProxy: htpasswdFile must be set (e.g. config.age.secrets."squid-htpasswd".path).
+          my.services.squidProxy: agenix secret "squid-htpasswd" is required.
           Create the secret with: agenix-manager new
         '';
       }
