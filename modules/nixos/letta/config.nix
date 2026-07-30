@@ -4,6 +4,7 @@ let
   dbUrl =
     if cfg.database.url != null then cfg.database.url
     else "sqlite:///${cfg.dataDir}/letta.db";
+  trustProxyEnv = (import ../proxy/lib.nix).trustProxyEnv;
 in
 {
   config = lib.mkIf cfg.enable {
@@ -25,7 +26,7 @@ in
       image = cfg.image;
       volumes = [ "${cfg.dataDir}:/app/data:rw" ] ++ cfg.extraVolumes;
       ports = [ "${toString cfg.port}:8283/tcp" ];
-      environment = lib.filterAttrs (_: v: v != "") ({
+      environment = lib.filterAttrs (_: v: v != "") (trustProxyEnv "uvicorn" // {
         LETTA_DATABASE_URL = dbUrl;
         LETTA_DATA_DIR = "/app/data";
       } // lib.optionalAttrs cfg.ollama.enable {
@@ -44,6 +45,7 @@ in
     my.services.proxy.upstreams.letta = {
       port = cfg.port;
       path = "/letta/";
+      trustProxy = "uvicorn";
       # Caddy's handle_path strips /letta prefix automatically.
       # WebSocket is auto-detected — no special config needed.
       extraLocations = [

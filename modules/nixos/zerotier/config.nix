@@ -14,10 +14,10 @@ in
 
     networking.firewall.allowedUDPPorts = mkIf cfg.openFirewall [ 9993 ];
 
-    # Don't auto-start — zerotier is a fallback mesh when tailscale is down.
-    # The tailscale-watchdog manages starting/stopping zerotier as needed.
+    # Always-on recovery mesh — fully independent of Tailscale.
+    # Starts at boot on multi-user.target. UDP 9993 exposed by default (openFirewall).
     systemd.services.zerotierone = {
-      wantedBy = mkForce [ ];
+      wantedBy = [ "multi-user.target" ];
       after = [ "network-pre.target" ];
       wants = [ "network-pre.target" ];
       serviceConfig = {

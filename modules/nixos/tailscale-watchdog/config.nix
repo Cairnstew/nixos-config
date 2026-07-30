@@ -7,30 +7,9 @@ let
     name = "tailscale-watchdog";
     runtimeInputs = [ pkgs.tailscale pkgs.jq pkgs.iproute2 pkgs.coreutils pkgs.systemd ];
     text = ''
-            FALLBACK_FILE="${cfg.stateDir}/zerotier-fallback-active"
             LAST_ALERT_FILE="${cfg.stateDir}/last-alert-epoch"
             LAST_STATE_FILE="${cfg.stateDir}/last-known-state"
             SEND_ALERT="send-alert"
-
-            # ── Zerotier fallback management ──────────────────────────────────────
-            manage_zerotier() {
-              if ! systemctl cat zerotierone >/dev/null 2>&1; then
-                return  # zerotier not installed
-              fi
-              local ZT_STATE
-              ZT_STATE=$(systemctl is-active zerotierone 2>/dev/null || echo "inactive")
-              if [[ "$1" == "start" && "$ZT_STATE" == "inactive" ]]; then
-                systemctl start zerotierone
-                touch "$FALLBACK_FILE"
-                echo "Zerotier started as fallback (tailscale down)"
-              elif [[ "$1" == "stop" ]]; then
-                rm -f "$FALLBACK_FILE"
-                if [[ "$ZT_STATE" == "active" ]]; then
-                  systemctl stop zerotierone
-                  echo "Zerotier stopped (tailscale recovered)"
-                fi
-              fi
-            }
 
             # Get Tailscale state
             TS_STATE=$(tailscale status --json 2>/dev/null \
@@ -41,9 +20,8 @@ let
             # Always update last-known-state
             echo "$TS_STATE" > "$LAST_STATE_FILE"
 
-            # If running — handle recovery and stop zerotier fallback
+            # If Tailscale is running — send recovery alert if it was previously down
             if [[ "$TS_STATE" == "Running" ]]; then
-              manage_zerotier stop
               if [[ "$LAST_STATE" != "Running" && "$LAST_STATE" != "unknown" ]]; then
                 BODY="Tailscale RECOVERED on $(hostname) at $(date -u).
       Previous state: $LAST_STATE
@@ -54,8 +32,7 @@ let
               exit 0
             fi
 
-            # Tailscale is NOT running — start zerotier fallback
-            manage_zerotier start
+            # Tailscale is NOT running — alert only (zerotier is always-on, no fallback to manage)
 
             # Check cooldown before sending alert email
             NOW=$(date +%s)

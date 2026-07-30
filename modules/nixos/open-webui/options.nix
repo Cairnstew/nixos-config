@@ -74,12 +74,6 @@
       };
     };
 
-    trustedProxies = lib.mkOption {
-      type = lib.types.listOf lib.types.str;
-      default = [ ];
-      description = "Trusted proxy IPs/CIDRs (for reverse proxy setups).";
-    };
-
     extraVolumes = lib.mkOption {
       type = lib.types.listOf lib.types.str;
       default = [ ];

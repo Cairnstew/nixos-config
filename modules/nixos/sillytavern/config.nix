@@ -137,6 +137,7 @@ in
     my.services.proxy.upstreams.sillytavern = {
       port = ucfg.port;
       displayName = "SillyTavern";
+      trustProxy = "express";
       path = "/sillytavern/";
       # Caddy's handle_path strips /sillytavern prefix automatically,
       # so no htmlBase / subs_filter needed. WebSocket is auto-detected.

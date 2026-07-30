@@ -66,6 +66,24 @@ let
           Order matters: more specific paths first.
         '';
       };
+
+      trustProxy = lib.mkOption {
+        type = lib.types.nullOr (lib.types.enum [ "express" "uvicorn" ]);
+        default = null;
+        description = ''
+          Backend proxy-trust mechanism for this service. When set, the service
+          module should inject the corresponding env var/flag so the backend
+          trusts the `X-Forwarded-For` header set by Caddy's reverse proxy.
+
+          Supported mechanisms:
+          - `"express"`: Express.js apps — set TRUST_PROXY=1
+            (e.g. RisuAI, SillyTavern)
+          - `"uvicorn"`: uvicorn/FastAPI apps that default to only trusting
+            127.0.0.1 — set FORWARDED_ALLOW_IPS=* (e.g. Letta).
+            Not needed for Open WebUI — its Docker start.sh already passes
+            `--forwarded-allow-ips "*"` by default.
+        '';
+      };
     };
   };
 in
