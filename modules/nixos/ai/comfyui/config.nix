@@ -7,20 +7,22 @@ let
   # Fetch custom node git repos at build time using builtins.fetchGit.
   # Pinned by ref (branch/tag/commit). No hash needed — evaluation-time fetch
   # is cached in the Nix store.
-  customNodeSrcs = lib.mapAttrs (name: node:
-    builtins.fetchGit ({
-      url = node.url;
-      submodules = node.fetchSubmodules;
-      allRefs = true;
-    } // lib.optionalAttrs (node.ref != null) { ref = node.ref; })
-  ) enabledNodes;
+  customNodeSrcs = lib.mapAttrs
+    (name: node:
+      builtins.fetchGit ({
+        url = node.url;
+        submodules = node.fetchSubmodules;
+        allRefs = true;
+      } // lib.optionalAttrs (node.ref != null) { ref = node.ref; })
+    )
+    enabledNodes;
 
   # Build CLI arguments from structured options
   cliArgs = lib.concatStringsSep " " (lib.flatten [
     (lib.optional (cfg.listenHost != null) "--listen ${lib.escapeShellArg cfg.listenHost}")
     "--port ${toString cfg.port}"
     (lib.optional cfg.enableManager "--enable-manager")
-    (lib.optional (cfg.extraModelPaths != [])
+    (lib.optional (cfg.extraModelPaths != [ ])
       "--extra-model-paths-config ${extraModelPathsYaml}")
     (lib.optional (cfg.gpu.cudaDevice != null) "--cuda-device ${cfg.gpu.cudaDevice}")
     (lib.optional cfg.gpu.forceFp16 "--force-fp16")
@@ -34,34 +36,41 @@ let
 
   # Generate extra_model_paths.yaml
   extraModelPathsYaml = pkgs.writeText "extra_model_paths.yaml"
-    (lib.concatStringsSep "\n" (map (m:
-      let
-        sectionName = m.name;
-        baseLine = lib.optionalString (m.basePath != null) "    base_path: ${m.basePath}\n";
-        defaultLine = lib.optionalString m.isDefault "    is_default: true\n";
-        pathLines = lib.concatStringsSep "" (lib.mapAttrsToList (folderType: paths:
-          let
-            pathList = if builtins.isList paths then paths else [ paths ];
-            pathStr = if builtins.length pathList == 1 then
-              "    ${folderType}: ${builtins.head pathList}\n"
-            else
-              "    ${folderType}:\n" +
-              lib.concatStringsSep "" (map (p: "      - ${p}\n") pathList);
-          in
-          pathStr
-        ) m.paths);
-      in
-      "${sectionName}:\n${baseLine}${defaultLine}${pathLines}"
-    ) cfg.extraModelPaths));
+    (lib.concatStringsSep "\n" (map
+      (m:
+        let
+          sectionName = m.name;
+          baseLine = lib.optionalString (m.basePath != null) "    base_path: ${m.basePath}\n";
+          defaultLine = lib.optionalString m.isDefault "    is_default: true\n";
+          pathLines = lib.concatStringsSep "" (lib.mapAttrsToList
+            (folderType: paths:
+              let
+                pathList = if builtins.isList paths then paths else [ paths ];
+                pathStr =
+                  if builtins.length pathList == 1 then
+                    "    ${folderType}: ${builtins.head pathList}\n"
+                  else
+                    "    ${folderType}:\n" +
+                    lib.concatStringsSep "" (map (p: "      - ${p}\n") pathList);
+              in
+              pathStr
+            )
+            m.paths);
+        in
+        "${sectionName}:\n${baseLine}${defaultLine}${pathLines}"
+      )
+      cfg.extraModelPaths));
 
   # Symlink commands for custom nodes
-  customNodeLinks = lib.concatStringsSep "\n" (lib.mapAttrsToList (name: src: ''
-    target="${cfg.dataDir}/custom_nodes/${lib.escapeShellArg name}"
-    if [ ! -e "$target" ]; then
-      ln -sfn ${lib.escapeShellArg (builtins.toString src)} "$target"
-      echo "custom_nodes: linked ${name}"
-    fi
-  '') customNodeSrcs);
+  customNodeLinks = lib.concatStringsSep "\n" (lib.mapAttrsToList
+    (name: src: ''
+      target="${cfg.dataDir}/custom_nodes/${lib.escapeShellArg name}"
+      if [ ! -e "$target" ]; then
+        ln -sfn ${lib.escapeShellArg (builtins.toString src)} "$target"
+        echo "custom_nodes: linked ${name}"
+      fi
+    '')
+    customNodeSrcs);
 in
 {
   config = lib.mkIf cfg.enable {

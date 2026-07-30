@@ -29,7 +29,7 @@ in
     {
       assertion = !cfg.enable || !cfg.autoBindTailscaleIp
         || lib.hasInfix "autoBindTailscaleIp"
-          (config.systemd.services.suwayomi-server.script or "");
+        (config.systemd.services.suwayomi-server.script or "");
       message = ''
         autoBindTailscaleIp sed invocation in services.nix is missing the
         '# autoBindTailscaleIp' comment tag. The sed command may have been
@@ -42,7 +42,7 @@ in
     {
       assertion = !cfg.enable || !cfg.autoBindTailscaleIp
         || lib.hasInfix "for i in $(seq 1 30)"
-          (config.systemd.services.suwayomi-server.script or "");
+        (config.systemd.services.suwayomi-server.script or "");
       message = ''
         autoBindTailscaleIp retry loop is missing. The tailscale ip call must
         be wrapped in a for-loop with a timeout to handle the boot-time race
