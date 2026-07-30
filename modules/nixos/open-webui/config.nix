@@ -34,8 +34,6 @@ in
         WEBUI_SEARCH_PROVIDER = cfg.webSearch.provider;
         SEARXNG_BASE_URL = lib.optionalString (cfg.webSearch.provider == "searxng" && cfg.webSearch.searxngBaseUrl != null) cfg.webSearch.searxngBaseUrl;
         WEBUI_SEARCH_API_KEY = cfg.webSearch.apiKey;
-      } // lib.optionalAttrs (cfg.trustedProxies != [ ]) {
-        TRUSTED_PROXIES = builtins.concatStringsSep "," cfg.trustedProxies;
       } // cfg.extraEnvironment);
       log-driver = cfg.logDriver;
       extraOptions = [
@@ -63,6 +61,10 @@ in
     my.services.proxy.upstreams.open-webui = {
       port = cfg.port;
       displayName = "Open WebUI";
+      # Open WebUI's start.sh always passes --forwarded-allow-ips "*" to uvicorn,
+      # so it trusts all proxy headers out of the box. trustProxy is set for
+      # documentation only — no extra env var is needed.
+      trustProxy = "uvicorn";
       path = "/chat/";
       # Caddy's handle_path strips /chat prefix automatically.
       # WebSocket is auto-detected — no special config needed.

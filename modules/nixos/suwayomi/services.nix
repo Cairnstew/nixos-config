@@ -61,7 +61,18 @@ in
         CONF="${cfg.dataDir}/.local/share/Tachidesk/server.conf"
         ${lib.getExe pkgs.envsubst} -i ${configFile} -o "$CONF"
         ${lib.optionalString cfg.autoBindTailscaleIp ''
-          BIND_IP="$(${pkgs.tailscale}/bin/tailscale ip -4 2>/dev/null)" || BIND_IP="${cfg.settings.server.ip}"
+          BIND_IP=""
+          for i in $(seq 1 30); do
+            BIND_IP="$(${pkgs.tailscale}/bin/tailscale ip -4 2>/dev/null || true)"
+            if [ -n "$BIND_IP" ]; then
+              break
+            fi
+            sleep 1
+          done
+          if [ -z "$BIND_IP" ]; then
+            echo "autoBindTailscaleIp: tailscale ip -4 did not return an address after 30s, falling back to ${cfg.settings.server.ip}" >&2
+            BIND_IP="${cfg.settings.server.ip}"
+          fi
           ${lib.getExe pkgs.gnused} -i 's/"ip" = ".*"/"ip" = "'"$BIND_IP"'" # autoBindTailscaleIp/' "$CONF"
         ''}
         exec ${lib.getExe cfg.package} $EXTRA_OPTS

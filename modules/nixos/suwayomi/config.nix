@@ -26,7 +26,7 @@ in
       # Serve WebUI under /suwayomi/ subpath. The server injects <base href>
       # into index.html and prefixes API routes. WebUI client (PR #1011) uses
       # relative Vite base paths so dynamic imports resolve against <base>.
-      # stripPrefix=false passes the full URI through nginx without stripping.
+      # stripPrefix=false passes the full URI through Caddy without stripping.
       my.services.suwayomi.settings.server.webUISubpath = lib.mkDefault "/suwayomi";
 
       my.services.proxy.upstreams.suwayomi = {

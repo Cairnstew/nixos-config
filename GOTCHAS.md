@@ -2,6 +2,39 @@
 
 ---
 
+**NCCL (cuda-nccl) builds from source for hours — dep chain: nvshmem → openmpi → ucc → nccl**
+
+Symptom: Running `nix run` on a host with `my.profiles.ai.enable` + `my.profiles.gpu.nvidia-headless` triggers NCCL to compile from source, taking hours. The build list shows `cuda12.9-nccl-2.28.7-1`, `ucc`, `openmpi` all being compiled. None of the configured substituters have these pre-built. Cause: The dependency chain is `python3-nvidia-nvshmem-cu13` (a pip wheel) → `pkgs.openmpi` (added as extra dependency by the stable-diffusion-webui-nix requirements overlay) → `ucc` (Unified Communication Collection) → `cuda12.9-nccl` (raw NCCL library, compiled from C++ source). This chain exists even though the Python-level `nvidia-nccl-cu13` wheel is already built and provides `libnccl.so.2`. Fix: Added an overlay in `modules/nixos/graphics/config.nix` that removes `ucc` from `openmpi`'s buildInputs via `overrideAttrs` + `builtins.filter`. OpenMPI auto-detects UCC at configure time — without it in build inputs, it simply disables UCC support. The Python `nvidia-nccl-cu13` wheel still provides NCCL to PyTorch/Bitsandbytes at the Python level. Also fixed the `cache.nixos-cuda.org` public key in `modules/flake-parts/caches.nix` which was mismatched (configured `cache.nixos-cuda.org-1:dykfIg...` vs actual `cache.nixos-cuda.org:74DUi4Ye...`).
+
+---
+
+**Zerotier now always-on (multi-user.target), independent of Tailscale**
+
+Zerotier starts unconditionally at boot via `wantedBy = [ "multi-user.target" ]`, fully independent of Tailscale. No `After=`/`Requires=`/`Wants=` between the two services in either direction. The `tailscale-watchdog` no longer starts or stops zerotier — it only alerts on tailscale health. `openFirewall` defaults to `true` (UDP 9993 exposed). This is an intentional recovery-path tradeoff: second always-on VPN surface in exchange for reliable fallback access. The `mkForce` overrides on `wantedBy` and `Restart` were removed from `modules/nixos/zerotier/config.nix`.
+
+---
+
+**Generations built from an uncommitted (dirty) working tree are hard to diagnose retroactively**
+
+Symptom: After a bad generation breaks Tailscale + login, `nix store diff-closures` returns empty (identical closures), and `git log` shows no commits in the range. The generation was built from uncommitted changes, so there's no commit to point at. The only clue is that the `-source` derivation's store path changed between generations. Fix: Commit before `nixos-rebuild switch`/`boot`, not just before `dry-activate` or `flake check`. A dirty tree makes post-hoc diagnosis depend entirely on `nix derivation show` and manual source-tree comparison — `git diff` at build time is the only record, and it's gone after the tree changes again.
+
+---
+
+**Express/FastAPI backends reject Caddy `X-Forwarded-For` — add `trustProxy` on the upstream registration**
+
+Symptom: A service behind Caddy (via `my.services.proxy.upstreams.<name>`) logs `ValidationError: ERR_ERL_UNEXPECTED_X_FORWARDED_FOR` (Express) or silently logs incorrect client IPs (FastAPI/uvicorn). The upstream module fixes the issue ad hoc in one service while sibling services remain broken.
+
+Cause: Caddy's `reverse_proxy` always sets `X-Forwarded-For`, `X-Forwarded-Proto`, and `X-Forwarded-Host`. Express's `app.set('trust proxy', ...)` defaults to `false`, and uvicorn's `--forwarded-allow-ips` defaults to `127.0.0.1`. Neither trusts headers from Caddy (which is not on localhost from the container's perspective, or proxies from a non-loopback IP). Each framework has a different mechanism: Express checks a `TRUST_PROXY` env var (RisuAI's server.cjs), uvicorn reads `FORWARDED_ALLOW_IPS` (Open WebUI's start.sh passes it; Letta doesn't).
+
+Fix: Set `trustProxy` on the upstream registration in the service's config.nix:
+- `"express"` — tells readers the service needs `TRUST_PROXY=1` in its container/systemd env
+- `"uvicorn"` — tells readers the service needs `FORWARDED_ALLOW_IPS=*` in its env
+The corresponding env var must also be set in the service's `environment` attrs. The `trustProxy` field is the documented registry; the env var is what actually makes it work. Both must agree.
+
+See `modules/nixos/proxy/options.nix` (upstream `trustProxy` option), `modules/nixos/risuai/config.nix` (Express example), `modules/nixos/letta/config.nix` (uvicorn example).
+
+---
+
 **`jan.service` fails with `status=134/ABORT` — Jan AppImage bwrap sandbox conflicts with systemd hardening**
 
 Symptom: `jan.service` fails with `code=exited, status=134` on every start after `nixos-rebuild switch`. The main `Jan serve` process exits with SIGABRT. Cause: `pkgs.jan` is an AppImage wrapped via `appimageTools.wrapType2` — the `Jan` binary is a bwrap (bubblewrap) wrapper that creates a mount namespace sandbox. The systemd service used `DynamicUser = true` (state dir at `/var/lib/private/jan`, symlinked to `/var/lib/jan`) + `NoNewPrivileges = true` + `ProtectSystem = "strict"` + `ProtectHome = true`. bwrap's `--chdir "$(pwd)"` inside the new namespace couldn't traverse `/var/lib/private/` (mode 0700, root-owned), and even if it could, `Jan serve` requires a GTK display (it's a Tauri desktop app, not headless). Fix: Converted to a home-manager user service (`systemd.user.services.jan`) that runs in the user's graphical session. The service is `PartOf = [ "graphical-session.target" ]` and has no systemd sandboxing (bwrap already sandboxes itself). The `settings.json` is deployed via `home.file` to `~/.local/share/Jan/data/settings.json`. See `modules/nixos/jan/config.nix`.
@@ -359,7 +392,8 @@ Symptom: Changes to Windows unattended answer XML aren't reflected after rebuild
 ---
 
 **Nginx location collision between proxy services — `^~` prefix with longest-match wins for sequence-distinguishable paths**
-Symptom: RisuAI SPA fails to load at `/risuai/`. Browser receives Open WebUI's HTML instead of RisuAI's JS/CSS/API responses. Cause: Two proxy upstreams (RisuaAI, Open WebUI) register `extraLocations` targeting the same root-absolute paths (`/assets/`, `/api/`). Open WebUI uses a regex `~ ^/(_app|static|api|ws|assets|auth|error|s/|watch)($|/)` which, per nginx precedence, beats plain prefix locations regardless of config order. Fix: Use `^~` modifier on prefix locations to make them immune to regex matches. For `/assets/`: only RisuAI uses it — add `^~` to RisuAI's `/assets/` location. For `/api/`: RisuAI uses bare `/api/*` (`/api/read`, `/api/write`, etc.) while Open WebUI uses `/api/v1/*` — these are sequence-distinguishable at the second segment. Add `^~ /api/v1/` to OWUI's extraLocations and `^~ /api/` to RisuAI's extraLocations; nginx's longest-prefix-win for `^~` routes `/api/v1/*` → OWUI and `/api/*` → RisuAI correctly. Only a true same-length collision (both services wanting identical path) would require sub_filter or path rewriting. See `modules/nixos/risuai/config.nix:62-82` and `modules/nixos/open-webui/config.nix:76-90`.
+Symptom: RisuAI SPA fails to load at `/risuai/`. Browser receives Open WebUI's HTML instead of RisuAI's JS/CSS/API responses. Cause: Two proxy upstreams (RisuaAI, Open WebUI) register `extraLocations` targeting the same root-absolute paths (`/assets/`, `/api/`). Open WebUI uses a regex `~ ^/(_app|static|api|ws|assets|auth|error|s/|watch)($|/)` which, per nginx precedence, beats plain prefix locations regardless of config order. Fix: Use `^~` modifier on prefix locations to make them immune to regex matches. For `/assets/`: only RisuAI uses it — add `^~` to RisuAI's `/assets/` location. For `/api/`: RisuAI uses bare `/api/*` (`/api/read`, `/api/write`, etc.) while Open WebUI uses `/api/v1/*` — these are sequence-distinguishable at the second segment. Add `^~ /api/v1/` to OWUI's extraLocations and `^~ /api/` to RisuAI's extraLocations; nginx's longest-prefix-win for `^~` routes `/api/v1/*` → OWUI and `/api/*` → RisuAI correctly. Only a true same-length collision (both services wanting identical path) would require sub_filter or path rewriting.
+**Historical note:** This was fixed in the nginx-based proxy setup. The current proxy module uses **Caddy** (`modules/nixos/proxy/`), which uses first-match `handle`/`handle_path` semantics rather than nginx's regex-vs-prefix precedence. The `extraLocations` pattern was carried forward; Caddy avoids this class of bug naturally. The `^~` modifier is nginx-specific and not needed in the current architecture.
 
 ---
 

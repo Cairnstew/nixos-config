@@ -150,29 +150,32 @@ let
     (name: _: !(builtins.elem name cfg.tailnetConnections.exclude))
     (flake.config.tailnet or { });
 
-  autoConnections = if cfg.tailnetConnections.enable then
-    lib.mapAttrsToList
-      (name: host: {
-        host = host.hostname;
-        username = flake.config.me.username;
-        projects = lib.optionals (cfg.tailnetConnections.defaultProjects != [ ])
-          [{ paths = cfg.tailnetConnections.defaultProjects; }];
-        nickname = name;
-        upload_binary_over_ssh = true;
-      })
-      tailnetHosts
-  else
-    [ ];
+  autoConnections =
+    if cfg.tailnetConnections.enable then
+      lib.mapAttrsToList
+        (name: host: {
+          host = host.hostname;
+          username = flake.config.me.username;
+          projects = lib.optionals (cfg.tailnetConnections.defaultProjects != [ ])
+            [{ paths = cfg.tailnetConnections.defaultProjects; }];
+          nickname = name;
+          upload_binary_over_ssh = true;
+        })
+        tailnetHosts
+    else
+      [ ];
 
   allConnections = autoConnections ++ cfg.sshConnections;
 
   # Convert Nix camelCase connection entries to snake_case JSON keys
   mkConnection = conn:
     let
-      portForwards = map (pf:
-        { local_port = pf.localPort; remote_port = pf.remotePort; }
-        // lib.optionalAttrs (pf.localHost != null) { local_host = pf.localHost; }
-      ) conn.portForwards;
+      portForwards = map
+        (pf:
+          { local_port = pf.localPort; remote_port = pf.remotePort; }
+          // lib.optionalAttrs (pf.localHost != null) { local_host = pf.localHost; }
+        )
+        conn.portForwards;
     in
     {
       host = conn.host;

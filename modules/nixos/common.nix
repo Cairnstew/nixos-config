@@ -50,6 +50,10 @@ in
     ./open-webui
     ./letta
     ./jan
+    ./ai/comfyui
+
+    # ── AI Image Generation ──────────────────────────────────────────────────
+    inputs.stable-diffusion-webui-nix.nixosModules.default
 
     # ── Networking ─────────────────────────────────────────────────────────
     ./ssh
@@ -59,6 +63,7 @@ in
     ./natShare
     ./nebula
     ./zerotier
+    ./squid-proxy
 
     # ── Development ────────────────────────────────────────────────────────
     ./vscode-server.nix
@@ -87,6 +92,7 @@ in
     ./sillytavern
     ./risuai
     ./suwayomi
+    ./neko
 
     # ── TV & EPG ─────────────────────────────────────────────────────────
     ./xmltv
@@ -292,17 +298,17 @@ in
             "tag:temp" = [ "tag:nixos" ];
           };
 
-          interNodePorts = lib.mkDefault [ "tcp:22" "tcp:4567" "tcp:8000" "tcp:8080" ];
+          interNodePorts = lib.mkDefault [ "tcp:22" "tcp:4567" "tcp:8000" "tcp:8080" "tcp:8188" ];
 
           grants = lib.mkDefault [
             {
               src = [ "autogroup:member" ];
-              dst = [ "tag:nixos" ];
+              dst = [ "tag:nixos" "tag:temp" ];
               ip = [ "tcp:22" ];
             }
             {
               src = [ "tag:nixos" ];
-              dst = [ "tag:temp" ];
+              dst = [ "tag:nixos" "tag:temp" ];
               ip = [ "*:*" ];
             }
           ];
@@ -311,20 +317,20 @@ in
             {
               action = "accept";
               src = [ "autogroup:admin" ];
-              dst = [ "tag:nixos" ];
+              dst = [ "tag:nixos" "tag:temp" ];
               users = [ "autogroup:nonroot" "root" ];
             }
             {
               action = "check";
               src = [ "autogroup:member" ];
-              dst = [ "tag:nixos" ];
+              dst = [ "tag:nixos" "tag:temp" ];
               users = [ "autogroup:nonroot" ];
               checkPeriod = "12h";
             }
             {
               action = "accept";
               src = [ "tag:nixos" ];
-              dst = [ "tag:nixos" ];
+              dst = [ "tag:nixos" "tag:temp" ];
               users = [ "root" "autogroup:nonroot" flake.config.me.username ];
             }
             # 3. Allow your NixOS administrators or NixOS nodes to securely Tailscale-SSH
@@ -332,7 +338,7 @@ in
             {
               action = "accept";
               src = [ "tag:nixos" ];
-              dst = [ "tag:temp" ];
+              dst = [ "tag:nixos" "tag:temp" ];
               users = [ "root" "autogroup:nonroot" "nixos" ];
             }
           ];

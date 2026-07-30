@@ -107,6 +107,12 @@
 
     # M5: houdini-nix removed — unused flake input (zero references in modules/ or configurations/)
 
+    # AI Image Generation — ComfyUI (+ SD WebUI Forge) packages & NixOS modules
+    stable-diffusion-webui-nix = {
+      url = "github:Janrupf/stable-diffusion-webui-nix/main";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+
     # Nixtest — Nix code test runner (unit, snapshot, script, VM)
     nixtest = {
       url = "gitlab:TECHNOFAB/nixtest";

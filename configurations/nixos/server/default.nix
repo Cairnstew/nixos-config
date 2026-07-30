@@ -21,7 +21,7 @@
   my.profiles = {
     server.enable = true;
     development.enable = true;
-    ai.enable = false;
+    ai.enable = true;
     gpu.nvidia-headless.enable = true;
     location.enable = true;
   };
@@ -53,7 +53,7 @@
 
   # ── Reverse Proxy ─────────────────────────────────────────────────────
   # Unified proxy module: services auto-register with my.services.proxy.upstreams.
-  # tailscale serve forwards :443 → nginx:8081 so each service is at
+  # tailscale serve forwards :443 → caddy:8081 so each service is at
   # https://server.tail685690.ts.net/<service>/.
   # Dashboard at / shows all registered services.
   my.services.proxy = {
@@ -116,6 +116,12 @@
     autoRollback.enable = true;
   };
 
+  # ── ComfyUI (AI Image Generation) ───────────────────────────────────────
+  my.services.comfyui = {
+    enable = true;
+    dataDir = "/mnt/data/comfyui";
+  };
+
   # ── Manga Reader (sync library to config repo) ───────────────────────────
   my.services.suwayomi = {
     enable = true;
@@ -163,6 +169,12 @@
     dataDir = "/mnt/data/risuai";
     ollama.enable = true;
   };
+
+  # ── Neko (Remote Browser) — disabled 2026-07-30 ─────────────────────────
+  my.services.neko.enable = false;
+
+  # ── Squid Forward Proxy (Browser Egress) ────────────────────────────────
+  my.services.squidProxy.enable = true;
 
   # Connect risuai container to ollama-net so it can resolve ollama:11434
   systemd.services."docker-risuai-ollama-net" = {

@@ -2,6 +2,7 @@
 let
   cfg = config.my.services.risuai;
   ollamaCfg = config.my.services.ollama;
+  trustProxyEnv = (import ../proxy/lib.nix).trustProxyEnv;
 in
 {
   config = lib.mkIf cfg.enable {
@@ -25,6 +26,7 @@ in
       ports = [ "${toString cfg.port}:6001/tcp" ];
       environment = lib.filterAttrs (_: v: v != "") ({
         RISUAI_HOST = cfg.host;
+      } // trustProxyEnv "express" // {
         RISUAI_PORT = "6001";
         # Note: VITE_ env vars must be set at Vite build time, not container runtime.
         # Use `just risuai-image` to build the image with this baked in.
@@ -47,6 +49,7 @@ in
     my.services.proxy.upstreams.risuai = {
       port = cfg.port;
       path = "/risuai/";
+      trustProxy = "express";
       # WebSocket auto-detected by Caddy — no special config needed.
       # Root-relative SPA paths proxy to RisuAI.
       extraLocations = [
@@ -63,6 +66,11 @@ in
           }
         ''
         # Service worker
+        ''
+          handle /sw.js {
+            reverse_proxy 127.0.0.1:${toString cfg.port}
+          }
+        ''
         ''
           handle /sw/* {
             reverse_proxy 127.0.0.1:${toString cfg.port}
