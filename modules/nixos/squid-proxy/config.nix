@@ -13,14 +13,17 @@ in
       proxyPort = cfg.proxyPort;
 
       extraConfig = ''
-        acl tailnet src ${cfg.tailnetCidr}
         ${lib.optionalString hasAuth ''
-          acl authenticated proxy_auth REQUIRED
-
           auth_param basic program ${pkgs.squid}/libexec/basic_ncsa_auth ${cfg.htpasswdFile}
           auth_param basic realm Squid proxy — authentication required
           auth_param basic credentialsttl 8 hours
 
+          acl authenticated proxy_auth REQUIRED
+        ''}
+
+        acl tailnet src ${cfg.tailnetCidr}
+
+        ${lib.optionalString hasAuth ''
           http_access allow tailnet authenticated
         ''}
         ${lib.optionalString (!hasAuth) ''
