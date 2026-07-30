@@ -63,6 +63,15 @@ in
             cuda_compat = prev.emptyDirectory;
           });
         })
+        # Break the dep chain: nvshmem → openmpi → ucc → nccl
+        # OpenMPI doesn't need UCC (Unified Communication Collection) for basic
+        # GPU communication, and UCC requires building raw NCCL from source (~hours).
+        # The Python nvidia-nccl-cu13 wheel provides NCCL at the Python level.
+        (final: prev: {
+          openmpi = prev.openmpi.overrideAttrs (oa: {
+            buildInputs = builtins.filter (x: x != prev.ucc) (oa.buildInputs or [ ]);
+          });
+        })
       ];
     })
 

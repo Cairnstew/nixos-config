@@ -70,6 +70,7 @@ in
     (lib.mkIf cfg.gpu.nvidia-headless.enable {
       my.hardware.gpu.nvidia.enable = true;
       my.hardware.gpu.nvidia.headless = true;
+      my.hardware.gpu.nvidia.cuda = true;
     })
 
     # Mesa GPU profile

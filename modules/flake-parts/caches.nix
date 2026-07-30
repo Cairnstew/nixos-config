@@ -50,7 +50,7 @@ in
       nixos-cuda = {
         enable = true;
         substituter = "https://cache.nixos-cuda.org/";
-        publicKey = "cache.nixos-cuda.org-1:dykfIgNYfi2cKCfb4xMBbOjlzFnEiCsHxlXLjfXDwOY=";
+        publicKey = "cache.nixos-cuda.org:74DUi4Ye579gUqzH4ziL9IyiJBlDpMRn9MBN8oNan9M=";
         priority = 10;
       };
       nix-community = {

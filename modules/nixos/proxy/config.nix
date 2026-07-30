@@ -321,6 +321,9 @@ in
       serviceConfig = {
         Type = "oneshot";
         RemainAfterExit = true;
+        Restart = "on-failure";
+        RestartSec = "5s";
+        ExecStartPre = "${pkgs.bash}/bin/bash -c 'while ! ${pkgs.tailscale}/bin/tailscale status 2>/dev/null | grep -q .; do sleep 1; done'";
         ExecStart = "${pkgs.tailscale}/bin/tailscale serve --bg --https ${toString cfg.tailscaleServe.httpsPort} ${tailscaleUrl}";
         ExecStop = "${pkgs.tailscale}/bin/tailscale serve --https ${toString cfg.tailscaleServe.httpsPort} off";
       };

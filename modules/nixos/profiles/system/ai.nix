@@ -42,6 +42,15 @@ in
     # Override: Enable explicitly on desktop with `my.services.jan.apiServer.enable`
     my.services.jan.enable = lib.mkDefault false;
 
+    # ── ComfyUI: AI image generation with node-based workflow editor ─────────
+    # mkDefault true: Enabled by default on AI profile hosts (server with GPU)
+    # Override when: Not doing image generation or prefer different GPU config
+    my.services.comfyui = {
+      enable = lib.mkDefault true;
+      listenHost = lib.mkDefault "0.0.0.0";
+      port = lib.mkDefault 8188;
+    };
+
     # ── Assertions ──────────────────────────────────────────────────────────
     assertions = [
       {
