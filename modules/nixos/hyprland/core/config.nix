@@ -93,7 +93,7 @@ let
     exec-once = swaybg ${lib.concatStringsSep " " (builtins.map mkSwaybgFlag cfg.wallpapers.images)} -m fill
     ''}
     ${lib.optionalString cfg.bar.enable ''
-    exec-once = waybar
+    exec-once = systemctl --user start waybar
     ''}
     ${lib.optionalString config.my.system.bluetooth.enable ''
     exec-once = blueman-applet

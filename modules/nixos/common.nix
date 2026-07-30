@@ -82,6 +82,7 @@ in
     ./spotify.nix
     ./steam
     ./proton
+    ./hearthstone
     ./godot
     ./sillytavern
     ./risuai

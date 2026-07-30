@@ -72,6 +72,24 @@ in
       description = "Extra Steam-related packages to install system-wide.";
     };
 
+    hyprland = {
+      enable = mkEnableOption "Hyprland window rule integration for Steam games, forcing them onto a specific monitor";
+
+      forceMonitor = mkOption {
+        type = types.nullOr types.str;
+        default = null;
+        example = "DP-1";
+        description = ''
+          Fallback monitor to force all Steam game windows onto (e.g. "DP-1").
+          Generates a windowrule matching <literal>steam_app_.*</literal> for any
+          Steam game process not explicitly configured via
+          <literal>my.programs.steam.games.&lt;name&gt;.monitor</literal>.
+          Per-game <literal>monitor</literal> settings override this value.
+          Only applies when <literal>hyprland.enable</literal> is true.
+        '';
+      };
+    };
+
     games = mkOption {
       type = types.attrsOf (types.submodule {
         options = {
@@ -98,6 +116,31 @@ in
               PROTON_USE_WINED3D = "1";
               WINEDLLOVERRIDES = "d3dcompiler_47=n,b";
             };
+          };
+
+          monitor = mkOption {
+            type = types.nullOr types.str;
+            default = null;
+            example = "DP-1";
+            description = ''
+              Hyprland monitor to force this game window onto (e.g. "DP-1").
+              Overrides <literal>my.programs.steam.hyprland.forceMonitor</literal>
+              when set. Only applies when
+              <literal>my.programs.steam.hyprland.enable</literal> is true.
+            '';
+          };
+
+          windowClass = mkOption {
+            type = types.nullOr types.str;
+            default = null;
+            example = "steam_app_2357570";
+            description = ''
+              Hyprland window class name for this game. Defaults to
+              <literal>steam_app_&lt;appId&gt;</literal> which works for most
+              native Steam games. Some games (especially non-Steam games added
+              to Steam, or games using custom launchers) use a different class.
+              Use <literal>hyprctl clients</literal> to discover the correct class.
+            '';
           };
 
           gamescope = {

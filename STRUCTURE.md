@@ -203,6 +203,20 @@ System and home profile definitions.
 | `sillytavern/` | SillyTavern AI character chat |
 | `sillytavern/default.nix` | SillyTavern service |
 | `sillytavern/presets.nix` | Preset configurations |
+| `lutris/` | Lutris game manager and wine runner orchestration [→ nixosModules.lutris] |
+| `lutris/default.nix` | Module entry point |
+| `lutris/options.nix` | Option declarations (gamemode, mangohud, gamescope, battlenet with Wayland fix) |
+| `lutris/config.nix` | Implementation |
+| `lutris/meta.nix` | Metadata |
+| `lutris/tests.nix` | L0 assertions |
+| `lutris/README.md` | Documentation |
+| `hearthstone/` | Native Hearthstone launcher (hearthstone-linux-gui, no Wine) [→ nixosModules.hearthstone] |
+| `hearthstone/default.nix` | Module entry point |
+| `hearthstone/options.nix` | Option declarations |
+| `hearthstone/config.nix` | Implementation with FHS env and Wayland fix |
+| `hearthstone/meta.nix` | Metadata |
+| `hearthstone/tests.nix` | L0 assertions |
+| `hearthstone/README.md` | Documentation |
 | `spotify.nix` | Spotify client [→ nixosModules.spotify] |
 | `ssh.nix` | SSH server configuration [→ nixosModules.ssh] |
 | `udisks2.nix` | UDisks2 storage management [→ nixosModules.udisks2] |
