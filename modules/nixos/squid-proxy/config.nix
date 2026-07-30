@@ -24,6 +24,10 @@ in
 
         http_access allow tailnet authenticated
 
+        # Use external DNS instead of systemd-resolved stub (Squid's async DNS
+        # resolver has intermittent issues with 127.0.0.53)
+        dns_nameservers 1.1.1.1 8.8.8.8
+
         ${cfg.extraConfig}
       '';
     };
