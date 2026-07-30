@@ -174,10 +174,7 @@
   my.services.neko.enable = false;
 
   # ── Squid Forward Proxy (Browser Egress) ────────────────────────────────
-  my.services.squidProxy = {
-    enable = true;
-    htpasswdFile = config.age.secrets."squid-htpasswd".path;
-  };
+  my.services.squidProxy.enable = true;
 
   # Connect risuai container to ollama-net so it can resolve ollama:11434
   systemd.services."docker-risuai-ollama-net" = {

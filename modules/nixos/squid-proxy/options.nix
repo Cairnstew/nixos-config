@@ -1,4 +1,4 @@
-{ lib, ... }:
+{ lib, flake, ... }:
 let
   inherit (lib) types mkOption mkEnableOption;
 in
@@ -12,13 +12,10 @@ in
       description = "TCP port on which Squid will listen.";
     };
 
-    htpasswdFile = mkOption {
-      type = types.nullOr types.path;
-      default = null;
-      description = ''
-        Path to an htpasswd file for proxy authentication.
-        Use config.age.secrets."squid-htpasswd".path.
-      '';
+    authUsername = mkOption {
+      type = types.str;
+      default = flake.config.me.username;
+      description = "Username for proxy basic auth (defaults to primary user).";
     };
 
     tailnetCidr = mkOption {
