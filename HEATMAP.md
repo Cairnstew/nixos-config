@@ -290,7 +290,10 @@ All `my.*` options declared across module files.
 | `my.services.tailscale.enable` | bool | `false` | Tailscale mesh VPN |
 | `my.services.tailscale.openFirewall` | bool | `true` | Open Tailscale UDP port |
 | `my.services.tailscale.exitNode` | bool | `false` | Advertise as exit node |
+| `my.services.tailscale.acceptRoutes` | bool | `false` | Accept advertised subnet routes |
 | `my.services.tailscale.tags` | list | `[]` | Tailscale ACL tags |
+| `my.services.tailscale.mtu` | int or null | `null` | Tunnel MTU (re-asserted on tailscaled restarts + timer) |
+| `my.services.tailscale.mtuReassertInterval` | str | `"5min"` | How often to re-assert tunnel MTU when `mtu` is set |
 | `my.services.tailscale.ssh.enable` | bool | `false` | Static SSH config for tailnet |
 | `my.services.tailscale.ssh.user` | str | — | Local user for SSH config |
 | `my.services.tailscale.ssh.publicKeyPath` | path | `null` | Path to Tailscale SSH public key |
@@ -301,6 +304,10 @@ All `my.*` options declared across module files.
 | `my.services.tailscale.manager.authKeys.<name>.exportPath.group` | str | `"root"` | Group of the key file |
 | `my.services.tailscale.manager.authKeys.<name>.exportPath.mode` | str | `"0600"` | File permissions (octal string) |
 | `my.services.tailscale.manager.authKeys.<name>.path` | path | `null` | Resolved export path (readOnly) |
+| `my.services.tailscaleWatchdog.enable` | bool | `false` | Periodic Tailscale data-plane watchdog |
+| `my.services.tailscaleWatchdog.interval` | str | `"10min"` | Watchdog check interval |
+| `my.services.tailscaleWatchdog.autoRepair` | bool | `true` | Restart tailscaled on data-plane failure |
+| `my.services.tailscaleWatchdog.alertCooldown` | int | `3600` | Min seconds between duplicate alerts |
 | `my.services.ollama.enable` | bool | `false` | Ollama OCI container service |
 | `my.services.ollama.image` | str | `"ollama/ollama:latest"` | Docker image |
 | `my.services.ollama.dataDir` | str | `"/var/lib/ollama"` | Host data directory |

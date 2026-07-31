@@ -1,8 +1,7 @@
-{ config, lib, pkgs, flake, ... }:
+{ config, lib, pkgs, ... }:
 let
   inherit (lib) mkIf mkMerge;
   cfg = config.my.services.tailscale;
-  me = flake.config.me;
 in
 {
   config = mkIf cfg.enable (mkMerge [
@@ -35,22 +34,50 @@ in
         };
       };
 
-      # Set a non-default tunnel MTU after tailscaled starts, if configured.
-      # Tailscale doesn't expose --mtu in `tailscale up` on all versions,
-      # so we set it directly on the WireGuard interface instead.
+      # ── Tunnel MTU enforcement ──────────────────────────────────────────────
+      # tailscaled owns tailscale0 and re-asserts its default MTU (1280) on
+      # netmap updates (serve changes, tailscale-manager applies, reauth, …),
+      # silently reverting a boot-time `ip link set mtu`. On MTU-constrained
+      # paths that reverts to blackholing large TCP packets while small
+      # userspace probes (`tailscale ping`) still work — the box looks "up"
+      # but every real connection times out. So we re-apply the MTU:
+      #   • whenever tailscaled (re)starts (partOf + wantedBy), and
+      #   • periodically via a timer, in case tailscaled re-asserts 1280
+      #     without a service restart.
       systemd.services.tailscale-mtu = mkIf (cfg.mtu != null) {
         description = "Set Tailscale tunnel MTU";
         after = [ "tailscaled.service" ];
         wants = [ "tailscaled.service" ];
         wantedBy = [ "tailscaled.service" ];
+        partOf = [ "tailscaled.service" ];
         serviceConfig = {
           Type = "oneshot";
-          RemainAfterExit = true;
-          ExecCondition = "${pkgs.coreutils}/bin/test -d /sys/class/net/tailscale0";
+          Restart = "on-failure";
+          RestartSec = "10";
         };
         script = ''
-          ${pkgs.iproute2}/bin/ip link set dev tailscale0 mtu ${toString cfg.mtu}
+          for i in $(seq 1 30); do
+            if [ -f /sys/class/net/tailscale0/mtu ]; then
+              ${pkgs.iproute2}/bin/ip link set dev tailscale0 mtu ${toString cfg.mtu}
+              if [ "$(cat /sys/class/net/tailscale0/mtu)" = "${toString cfg.mtu}" ]; then
+                exit 0
+              fi
+            fi
+            sleep 1
+          done
+          echo "tailscale0 did not reach MTU ${toString cfg.mtu}" >&2
+          exit 1
         '';
+      };
+
+      systemd.timers.tailscale-mtu = mkIf (cfg.mtu != null) {
+        description = "Re-assert Tailscale tunnel MTU (tailscaled can silently reset it)";
+        wantedBy = [ "timers.target" ];
+        timerConfig = {
+          OnBootSec = cfg.mtuReassertInterval;
+          OnUnitActiveSec = cfg.mtuReassertInterval;
+          Persistent = true;
+        };
       };
 
       # tailscale-manager needs tailscaled active before it can reach the API
