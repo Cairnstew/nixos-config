@@ -26,14 +26,16 @@ in
       let
         catchAll = lib.optional (cfg.hyprland.forceMonitor != null)
           "monitor,class:^(steam_app_.*)$,${cfg.hyprland.forceMonitor}";
-        perGame = lib.flatten (lib.mapAttrsToList (name: game:
-          lib.optional (game.monitor != null) (
-            let
-              windowClass = if game.windowClass != null then game.windowClass else "steam_app_${game.appId}";
-            in
-            "monitor,class:^(${windowClass})$,${game.monitor}"
+        perGame = lib.flatten (lib.mapAttrsToList
+          (name: game:
+            lib.optional (game.monitor != null) (
+              let
+                windowClass = if game.windowClass != null then game.windowClass else "steam_app_${game.appId}";
+              in
+              "monitor,class:^(${windowClass})$,${game.monitor}"
+            )
           )
-        ) cfg.games);
+          cfg.games);
       in
       catchAll ++ perGame
     );
