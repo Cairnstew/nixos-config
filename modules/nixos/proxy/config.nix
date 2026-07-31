@@ -2,6 +2,10 @@
 let
   cfg = config.my.services.proxy;
 
+  # Expected tailscale0 MTU (null when the tailscale module isn't configured)
+  tailscaleMtu = config.my.services.tailscale.mtu or null;
+  tailscaleExpectedMtuJson = if tailscaleMtu != null then toString tailscaleMtu else "null";
+
   enabledUpstreams = lib.filterAttrs (_: u: u.enable) cfg.upstreams;
 
   # Build a Caddy handle (or handle_path) block for an upstream
@@ -106,6 +110,8 @@ let
           <span id="metrics-load">--</span>
           <span id="metrics-network">--</span>
           <span id="metrics-latency">--</span>
+          <span id="metrics-tailscale">--</span>
+          <span id="metrics-ssh">--</span>
         </div>
         <script>
         function fmtBytes(b) {
@@ -140,6 +146,23 @@ let
             document.getElementById('metrics-procs').textContent = d.procs + ' procs';
             document.getElementById('metrics-load').textContent = 'Load: ' + d.load['1min'].toFixed(2);
             document.getElementById('metrics-network').textContent = 'RX: ' + fmtBytes(d.network.rxBytes) + ' | TX: ' + fmtBytes(d.network.txBytes);
+
+            var ts = d.tailscale || {};
+            var tsUp = !!ts.up;
+            var tsMtu = ts.mtu != null ? ts.mtu : 'n/a';
+            var tsExpected = ts.expectedMtu != null ? ts.expectedMtu : null;
+            var tsOk = tsExpected == null || ts.mtu === tsExpected;
+            var tsEl = document.getElementById('metrics-tailscale');
+            var tsInfo = 'TS MTU: ' + tsMtu + ' (' + (tsUp ? 'up' : 'down');
+            if (tsExpected != null) { tsInfo += (tsOk ? ' ok' : ' !=' + tsExpected); }
+            tsInfo += ')';
+            tsEl.textContent = tsInfo;
+            tsEl.style.color = tsUp && tsOk ? '#4ade80' : '#ef4444';
+
+            var sshUp = d.ssh && d.ssh.listening;
+            var sshEl = document.getElementById('metrics-ssh');
+            sshEl.textContent = 'SSH: ' + (sshUp ? 'up' : 'down');
+            sshEl.style.color = sshUp ? '#4ade80' : '#ef4444';
           }).catch(function() {});
         }
         fetchMetrics();
@@ -242,6 +265,20 @@ let
       [ -r "$f" ] && tx_bytes=$((tx_bytes + $(cat "$f")))
     done
 
+    # Tailscale tunnel — live MTU vs expected (drift = wedged data plane)
+    ts_mtu=null
+    ts_up=false
+    if [ -r /sys/class/net/tailscale0/mtu ]; then
+      ts_mtu=$(cat /sys/class/net/tailscale0/mtu)
+      ts_up=true
+    fi
+
+    # SSH daemon
+    ssh_up=false
+    if pgrep -x sshd >/dev/null 2>&1; then
+      ssh_up=true
+    fi
+
     ${lib.getExe pkgs.jq} -n \
       --argjson ts "$(date +%s)" \
       --arg hostname "$hostname" \
@@ -262,6 +299,9 @@ let
       --argjson procs "$procs" \
       --argjson rxBytes "$rx_bytes" \
       --argjson txBytes "$tx_bytes" \
+      --argjson tailscaleMtu "$ts_mtu" \
+      --argjson tailscaleUp "$ts_up" \
+      --argjson sshUp "$ssh_up" \
       '{
         timestamp: $ts,
         hostname: $hostname,
@@ -272,7 +312,9 @@ let
         disk: { total: $diskTotal, used: $diskUsed },
         load: { "1min": $load1, "5min": $load5, "15min": $load15 },
         procs: $procs,
-        network: { rxBytes: $rxBytes, txBytes: $txBytes }
+        network: { rxBytes: $rxBytes, txBytes: $txBytes },
+        tailscale: { mtu: $tailscaleMtu, up: $tailscaleUp, expectedMtu: ${tailscaleExpectedMtuJson} },
+        ssh: { listening: $sshUp }
       }' > /run/metrics/metrics.json
   '';
 in
