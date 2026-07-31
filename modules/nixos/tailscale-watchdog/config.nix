@@ -25,7 +25,7 @@ let
         local subject="$1" body="$2"
         $SEND_ALERT -s "$subject" -b "$body" \
           ${lib.optionalString (cfg.emailTo != null) "-t ${cfg.emailTo}"} || true
-        echo "$(date +%s)" > "$LAST_ALERT_FILE"
+        date +%s > "$LAST_ALERT_FILE"
       }
 
       inCooldown() {
