@@ -2,12 +2,10 @@
 let
   inherit (lib) mkIf;
   cfg = config.my.programs.squidProxyClient;
+  pwdFile =
+    if cfg.proxyPasswordFile != null then cfg.proxyPasswordFile
+    else "/run/agenix/squid-htpasswd";
   proxyUrl = "http://${cfg.proxyUsername}:@@PASSWORD@@@${cfg.serverAddress}:${toString cfg.proxyPort}";
-  proxyUrlWithPass =
-    if cfg.proxyPasswordFile != null then
-      "http://${cfg.proxyUsername}:$(<${cfg.proxyPasswordFile})@${cfg.serverAddress}:${toString cfg.proxyPort}"
-    else
-      "http://${cfg.proxyUsername}:@@PASSWORD@@@${cfg.serverAddress}:${toString cfg.proxyPort}";
 in
 {
   config = mkIf cfg.enable {
@@ -17,17 +15,16 @@ in
     home.shellAliases = {
       proxy-browser = ''
         qutebrowser --basedir /tmp/proxy-session \
-          ':set content.proxy ${proxyUrlWithPass}'
+          ':set content.proxy http://${cfg.proxyUsername}:'"$(<${pwdFile})"'@${cfg.serverAddress}:${toString cfg.proxyPort}'
       '';
     };
 
     xdg.configFile."qutebrowser-proxy/config.py".text = ''
-      import subprocess
       import os
 
       c.content.proxy = "${proxyUrl}"
 
-      pwd_file = "${cfg.proxyPasswordFile or "/run/agenix/squid-htpasswd"}"
+      pwd_file = "${pwdFile}"
       if os.path.exists(pwd_file):
           with open(pwd_file) as f:
               password = f.read().strip()
