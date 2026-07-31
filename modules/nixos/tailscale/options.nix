@@ -362,6 +362,18 @@ in
       description = "WireGuard tunnel MTU. Set lower than default 1280 when the physical path MTU is constrained (e.g. some cellular or VPN links).";
     };
 
+    mtuReassertInterval = mkOption {
+      type = types.str;
+      default = "5min";
+      example = "10min";
+      description = ''
+        How often to re-assert the tunnel MTU. tailscaled owns tailscale0 and
+        silently reverts the interface MTU to its default (1280) on netmap
+        updates (serve changes, tailscale-manager applies, reauth). Only used
+        when `mtu` is set.
+      '';
+    };
+
     tags = mkOption {
       type = types.listOf types.str;
       default = [ ];

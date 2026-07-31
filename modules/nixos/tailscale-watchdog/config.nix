@@ -2,65 +2,106 @@
 let
   inherit (flake.config.me) username;
   cfg = config.my.services.tailscaleWatchdog;
+  tailscaleMtu = config.my.services.tailscale.mtu;
 
   watchdogPkg = pkgs.writeShellApplication {
     name = "tailscale-watchdog";
-    runtimeInputs = [ pkgs.tailscale pkgs.jq pkgs.iproute2 pkgs.coreutils pkgs.systemd ];
+    runtimeInputs = [
+      pkgs.tailscale
+      pkgs.jq
+      pkgs.iproute2
+      pkgs.iputils
+      pkgs.coreutils
+      pkgs.systemd
+    ];
     text = ''
-            LAST_ALERT_FILE="${cfg.stateDir}/last-alert-epoch"
-            LAST_STATE_FILE="${cfg.stateDir}/last-known-state"
-            SEND_ALERT="send-alert"
+      LAST_ALERT_FILE="${cfg.stateDir}/last-alert-epoch"
+      LAST_STATE_FILE="${cfg.stateDir}/last-known-state"
+      SEND_ALERT="send-alert"
+      EXPECTED_MTU="${lib.optionalString (tailscaleMtu != null) (toString tailscaleMtu)}"
+      HOSTNAME=$(hostname)
 
-            # Get Tailscale state
-            TS_STATE=$(tailscale status --json 2>/dev/null \
-          | jq -r '.BackendState // "unknown"' 2>/dev/null \
-          || echo "unreachable")
-            LAST_STATE=$(cat "$LAST_STATE_FILE" 2>/dev/null || echo "unknown")
+      sendAlert() {
+        local subject="$1" body="$2"
+        $SEND_ALERT -s "$subject" -b "$body" \
+          ${lib.optionalString (cfg.emailTo != null) "-t ${cfg.emailTo}"} || true
+        echo "$(date +%s)" > "$LAST_ALERT_FILE"
+      }
 
-            # Always update last-known-state
-            echo "$TS_STATE" > "$LAST_STATE_FILE"
+      inCooldown() {
+        local now last elapsed
+        now=$(date +%s)
+        last=$(cat "$LAST_ALERT_FILE" 2>/dev/null || echo "0")
+        elapsed=$((now - last))
+        [[ $elapsed -lt ${toString cfg.alertCooldown} ]]
+      }
 
-            # If Tailscale is running — send recovery alert if it was previously down
-            if [[ "$TS_STATE" == "Running" ]]; then
-              if [[ "$LAST_STATE" != "Running" && "$LAST_STATE" != "unknown" ]]; then
-                BODY="Tailscale RECOVERED on $(hostname) at $(date -u).
-      Previous state: $LAST_STATE
-      Current state: Running"
-                $SEND_ALERT -s "Tailscale Recovered on $(hostname)" -b "$BODY" \
-                  ${lib.optionalString (cfg.emailTo != null) "-t ${cfg.emailTo}"} || true
-              fi
-              exit 0
-            fi
+      # BackendState is a userspace signal only — a wedged kernel data plane
+      # still reports "Running". Always store it for recovery detection.
+      TS_STATE=$(tailscale status --json 2>/dev/null \
+        | jq -r '.BackendState // "unknown"' 2>/dev/null \
+        || echo "unreachable")
+      LAST_STATE=$(cat "$LAST_STATE_FILE" 2>/dev/null || echo "unknown")
+      echo "$TS_STATE" > "$LAST_STATE_FILE"
 
-            # Tailscale is NOT running — alert only (zerotier is always-on, no fallback to manage)
+      # ── Tailscale not running — alert only (zerotier is always-on) ────────
+      if [[ "$TS_STATE" != "Running" ]]; then
+        if inCooldown; then exit 0; fi
 
-            # Check cooldown before sending alert email
-            NOW=$(date +%s)
-            LAST_ALERT=$(cat "$LAST_ALERT_FILE" 2>/dev/null || echo "0")
-            ELAPSED=$(( NOW - LAST_ALERT ))
-
-            if (( ELAPSED < ${toString cfg.alertCooldown} )); then
-              exit 0
-            fi
-
-            # Send alert
-            LAN_IPS=$(ip -4 addr show | awk '/inet / && !/127\./ {print $2}' | cut -d/ -f1)
-            HOSTNAME=$(hostname)
-            SSH_LINES=""
-            while IFS= read -r ip; do
-              [[ -n "$ip" ]] && SSH_LINES="$SSH_LINES  ssh ${username}@$ip
+        LAN_IPS=$(ip -4 addr show | awk '/inet / && !/127\./ {print $2}' | cut -d/ -f1)
+        SSH_LINES=""
+        while IFS= read -r ip; do
+          [[ -n "$ip" ]] && SSH_LINES="$SSH_LINES  ssh ${username}@$ip
       "
-            done <<< "$LAN_IPS"
-            BODY="Tailscale is DOWN on $HOSTNAME.
+        done <<< "$LAN_IPS"
+        BODY="Tailscale is DOWN on $HOSTNAME.
       State: $TS_STATE
       Time: $(date -u)
       LAN IPs for direct SSH:
       $SSH_LINES"
 
-            $SEND_ALERT -s "Tailscale Down on $(hostname)" -b "$BODY" \
-              ${lib.optionalString (cfg.emailTo != null) "-t ${cfg.emailTo}"} || true
+        sendAlert "Tailscale Down on $HOSTNAME" "$BODY"
+        exit 0
+      fi
 
-            echo "$NOW" > "$LAST_ALERT_FILE"
+      # ── Running but data plane unhealthy — auto-repair + alert ─────────────
+      FAIL_REASON=""
+      if ! ip link show dev tailscale0 >/dev/null 2>&1; then
+        FAIL_REASON="tailscale0 interface is missing"
+      elif ! ip link show dev tailscale0 | grep -q "state UP"; then
+        FAIL_REASON="tailscale0 interface is not UP"
+      elif [[ -n "$EXPECTED_MTU" ]] && [[ "$(cat /sys/class/net/tailscale0/mtu 2>/dev/null)" != "$EXPECTED_MTU" ]]; then
+        FAIL_REASON="tailscale0 MTU drifted to $(cat /sys/class/net/tailscale0/mtu 2>/dev/null) (expected $EXPECTED_MTU)"
+      else
+        SELF_IP=$(tailscale ip -4 2>/dev/null | head -1 || true)
+        if [[ -n "$SELF_IP" ]] && ! ping -c 1 -W 2 "$SELF_IP" >/dev/null 2>&1; then
+          FAIL_REASON="kernel data path dead (self-ping $SELF_IP failed)"
+        fi
+      fi
+
+      if [[ -n "$FAIL_REASON" ]]; then
+        if inCooldown; then exit 0; fi
+        ${lib.optionalString cfg.autoRepair ''
+          systemctl restart tailscaled || true
+        ''}
+        BODY="Tailscale data plane DEGRADED on $HOSTNAME.
+      BackendState: Running (tailscaled healthy)
+      Issue: $FAIL_REASON
+      Time: $(date -u)
+      ${lib.optionalString cfg.autoRepair "Action: tailscaled restarted to recover"}"
+
+        sendAlert "Tailscale Data Plane Degraded on $HOSTNAME" "$BODY"
+        exit 0
+      fi
+
+      # ── Healthy — send recovery alert if it was previously down ────────────
+      if [[ "$LAST_STATE" != "Running" && "$LAST_STATE" != "unknown" ]]; then
+        BODY="Tailscale RECOVERED on $HOSTNAME at $(date -u).
+      Previous state: $LAST_STATE
+      Current state: Running"
+        sendAlert "Tailscale Recovered on $HOSTNAME" "$BODY"
+      fi
+      exit 0
     '';
   };
 in

@@ -38,5 +38,16 @@ in
         from my.services.emailAlerts.to.
       '';
     };
+
+    autoRepair = mkOption {
+      type = types.bool;
+      default = true;
+      description = ''
+        Restart tailscaled automatically when the kernel data plane is unhealthy
+        (tailscale0 missing/down, MTU drifted from my.services.tailscale.mtu, or
+        self-path ping fails). BackendState == "Running" only proves tailscaled's
+        userspace is up — it does not prove the tunnel forwards packets.
+      '';
+    };
   };
 }
