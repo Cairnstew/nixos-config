@@ -102,11 +102,11 @@ in
     environment.systemPackages = with pkgs; [
       lutris
     ] ++ lib.optionals cfg.mangohud.enable [ mangohud ]
-      ++ lib.optionals cfg.gamescope.enable [ gamescope ]
-      ++ lib.optionals bnet.enable [ bnet.wine.package ]
-      ++ lib.optionals (bnet.enable && bnet.winetricks.enable) [ winetricks ]
-      ++ lib.optionals (bnet.enable && bnet.protonup.enable) [ protonup-ng ]
-      ++ cfg.extraPackages;
+    ++ lib.optionals cfg.gamescope.enable [ gamescope ]
+    ++ lib.optionals bnet.enable [ bnet.wine.package ]
+    ++ lib.optionals (bnet.enable && bnet.winetricks.enable) [ winetricks ]
+    ++ lib.optionals (bnet.enable && bnet.protonup.enable) [ protonup-ng ]
+    ++ cfg.extraPackages;
 
     programs.gamemode.enable = lib.mkDefault cfg.gamemode.enable;
 
