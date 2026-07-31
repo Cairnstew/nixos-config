@@ -980,6 +980,10 @@
       };
     };
     my.programs = {
+      squidProxyClient = {
+        enable = true;
+        proxyPasswordFile = config.age.secrets."squid-htpasswd".path;
+      };
       discord.enable = true;
       localsend.enable = true;
       firefox.enable = true;
