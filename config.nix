@@ -211,7 +211,23 @@
 
     # Default keepalive interval in seconds (0 to disable)
     # Consumed by: SSH match block settings
-    serverAliveInterval = 60;
+    serverAliveInterval = 15;
+
+    # Missed keepalives before disconnect (15s × 6 ≈ 90s of dead mesh tolerated)
+    # Consumed by: SSH match block settings
+    serverAliveCountMax = 6;
+
+    # Fail fast on connect, then retry (rides out tailscaled restarts)
+    # Consumed by: SSH match block settings
+    connectTimeout = 5;
+    connectionAttempts = 4;
+
+    # Connection multiplexing: one TCP connection shared by all windows; a
+    # mesh blip costs one reconnect, and reconnects are auth-free.
+    # Consumed by: SSH match block settings
+    controlMaster = "auto";
+    controlPath = "~/.ssh/controlmasters/%C";
+    controlPersist = "10m";
   };
 
   # ============================================================================

@@ -102,6 +102,44 @@
   # Tailscale watchdog: monitors connectivity, starts zerotier on failure, alerts via email
   my.services.tailscaleWatchdog.enable = true;
 
+  # ── SSH Resilience Stack ─────────────────────────────────────────────────
+  # MSS clamping: root-cause fix for the MTU blackhole (tailscaled resets
+  # tailscale0 to 1280 on restart; this clamps TCP MSS on the tunnel so large
+  # packets survive instead of being silently dropped while ping still works).
+  # MSS auto-derived: tailscale mtu 1200 → 1140.
+  my.services.mssClamp.enable = true;
+
+  # mosh + tmux: sessions survive mesh/VPN restarts (mosh rides UDP and
+  # reconnects when the mesh comes back). openFirewall lets it work over the
+  # ZeroTier/LAN fallback too, not just the (trusted) tailnet.
+  my.services.mosh = {
+    enable = true;
+    openFirewall = true;
+  };
+
+  # Tor onion-service SSH: zero-inbound-port last resort. Works when both
+  # meshes AND all inbound connectivity fail. Address: cat /var/lib/tor/onion/ssh/hostname
+  my.services.torSsh.enable = true;
+
+  # ttyd web console: browser-based emergency shell. Bound to the ZeroTier IP
+  # so it's reachable even when Tailscale is down (basic auth protects it).
+  my.services.ttyd = {
+    enable = true;
+    address = "192.168.191.54"; # ZeroTier IP (zt2lr37ya6) — Tailscale-independent path
+    username = "seanc";
+    passwordFile = config.age.secrets."ttyd-password".path;
+    openFirewall = true; # listener binds only to the ZT IP, so this is ZT-scoped
+  };
+  my.services.proxy.upstreams.ttyd.host = "192.168.191.54"; # Caddy → ttyd on ZT IP
+
+  # autossh phone-home reverse tunnel: reach this box via plain internet SSH
+  # even when every mesh is down. Requires a bastion host you own — uncomment
+  # and set `bastion` once you have one:
+  # my.services.autosshReverse = {
+  #   enable = true;
+  #   bastion = "seanc@bastion.example.com";
+  # };
+
   # ── SSH (LAN Password Fallback) ──────────────────────────────────────
   # Primary: SSH keys via Tailscale SSH + ZeroTier
   # Fallback: Password auth from LAN subnets (for physical access)

@@ -91,7 +91,7 @@ Flake-level modules for outputs, packages, and development tools.
 | `live-iso/default.nix` | Import manifest |
 | `live-iso/options.nix` | `live.isos` option declarations (baseModule, extraPackages, sshKeys, tailscale, etc.) |
 | `live-iso/config.nix` | ISO builder: calls nixpkgs.lib.nixosSystem + `config.system.build.isoImage` per entry |
-| `terranix.nix` | Terraform/terranix integration |
+| `cloud.nix` | Cloud IaC: terranix flakeModule integration, `my.cloud.*` options, OpenTofu wrappers, `tf*` aliases |
 
 | `README.md` | Documentation for flake-parts conventions |
 
@@ -199,7 +199,6 @@ System and home profile definitions.
 | `nebula/config.nix` | Options and implementation |
 | `nebula/tests.nix` | L0 assertions + L2 smoke test |
 | `nebula/meta.nix` | Metadata |
-| `terraform/` | Terranix GCP GPU VM deployment [→ nixosModules.terraform] |
 | `sillytavern/` | SillyTavern AI character chat |
 | `sillytavern/default.nix` | SillyTavern service |
 | `sillytavern/presets.nix` | Preset configurations |
@@ -325,6 +324,16 @@ Nixpkgs overlays for package modifications.
 | File | Description |
 |------|-------------|
 | `default.nix` | All overlays combined [→ overlays.default] |
+
+## cloud/
+
+Cloud infrastructure-as-code (terranix modules → OpenTofu), declared alongside hosts.
+
+| File | Description |
+|------|-------------|
+| `README.md` | Two-stage provisioning/deploy docs, usage, secret notes |
+| `gcp/default.nix` | GCP: VPC, Cloud NAT, firewalls, GCS bucket, GPU NixOS spot MIG [→ packages.gcp] |
+| `aws/default.nix` | AWS: VPC, key pair, security group, NixOS EC2 instance [→ packages.aws] |
 
 ## secrets/
 

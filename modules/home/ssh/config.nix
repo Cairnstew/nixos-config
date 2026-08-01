@@ -16,6 +16,18 @@ in
         ++ lib.optional (cfg.identityAgent != null) "IdentityAgent ${cfg.identityAgent}"
         ++ lib.optional ((flakeSsh.serverAliveInterval or 0) != 0)
           "ServerAliveInterval ${toString (flakeSsh.serverAliveInterval or 60)}"
+        ++ lib.optional ((flakeSsh.serverAliveCountMax or 0) != 0)
+          "ServerAliveCountMax ${toString (flakeSsh.serverAliveCountMax or 6)}"
+        ++ lib.optional ((flakeSsh.connectTimeout or 0) != 0)
+          "ConnectTimeout ${toString (flakeSsh.connectTimeout or 5)}"
+        ++ lib.optional ((flakeSsh.connectionAttempts or 0) != 0)
+          "ConnectionAttempts ${toString (flakeSsh.connectionAttempts or 4)}"
+        ++ lib.optional (flakeSsh.controlMaster or "" != "")
+          "ControlMaster ${flakeSsh.controlMaster}"
+        ++ lib.optional (flakeSsh.controlPath or "" != "")
+          "ControlPath ${flakeSsh.controlPath}"
+        ++ lib.optional (flakeSsh.controlPersist or "" != "")
+          "ControlPersist ${flakeSsh.controlPersist}"
         ++ lib.optional (cfg.extraConfig != "") cfg.extraConfig
       );
 
@@ -56,6 +68,21 @@ in
         fi
       ''
     );
+
+    # ControlPath directory for connection multiplexing (ssh won't create it).
+    # %C in the path is the socket *filename*; the parent dir is what must exist.
+    home.activation.createControlMasterDir =
+      let
+        dir = builtins.toString (flakeSsh.controlPath or "");
+        dirPath = if dir == "" then null else lib.dirOf (lib.removePrefix "~/" dir);
+      in
+      lib.mkIf (dirPath != null) (
+        config.lib.dag.entryAfter [ "writeBoundary" ] ''
+          if [ -n "${dirPath}" ]; then
+            mkdir -p "$HOME/${dirPath}"
+          fi
+        ''
+      );
 
     services.ssh-agent = lib.mkIf cfg.enableAgent { enable = true; };
   };
