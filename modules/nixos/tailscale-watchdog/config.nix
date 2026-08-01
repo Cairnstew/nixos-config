@@ -19,7 +19,7 @@ let
       LAST_STATE_FILE="${cfg.stateDir}/last-known-state"
       SEND_ALERT="send-alert"
       EXPECTED_MTU="${lib.optionalString (tailscaleMtu != null) (toString tailscaleMtu)}"
-      HOSTNAME=$(hostname)
+      HOSTNAME=$(uname -n)
 
       sendAlert() {
         local subject="$1" body="$2"
