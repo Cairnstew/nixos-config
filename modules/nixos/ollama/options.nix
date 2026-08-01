@@ -91,6 +91,24 @@
       flashAttention = lib.mkOption { type = lib.types.bool; default = false; };
     };
 
+    pull = {
+      retries = lib.mkOption {
+        type = lib.types.int;
+        default = 5;
+        description = "Number of times to retry a model pull before failing.";
+      };
+      retryDelaySec = lib.mkOption {
+        type = lib.types.int;
+        default = 10;
+        description = "Initial delay between pull retries (grows linearly: N * retryDelaySec).";
+      };
+      restartOnFailure = lib.mkOption {
+        type = lib.types.bool;
+        default = true;
+        description = "systemd Restart=on-failure for ollama-pull-models: auto-retries a failed pull (with 30s RestartSec) until it succeeds. Disable to fail fast.";
+      };
+    };
+
     mcp = {
       enable = lib.mkEnableOption "Ollama MCP server for Cline (supergateway + ollama-mcp-server)";
       port = lib.mkOption { type = lib.types.port; default = 3100; };
