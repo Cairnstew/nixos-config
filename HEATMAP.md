@@ -323,6 +323,30 @@ All `my.*` options declared across module files.
 | `my.services.tailscaleWatchdog.interval` | str | `"10min"` | Watchdog check interval |
 | `my.services.tailscaleWatchdog.autoRepair` | bool | `true` | Restart tailscaled on data-plane failure |
 | `my.services.tailscaleWatchdog.alertCooldown` | int | `3600` | Min seconds between duplicate alerts |
+| `my.services.mssClamp.enable` | bool | `false` | TCP MSS clamp on mesh tunnel interfaces (MTU blackhole fix) |
+| `my.services.mssClamp.mss` | int or null | `null` | MSS value (auto: tailscale MTU − 60, fallback 1140) |
+| `my.services.mssClamp.interfaces` | list | `["tailscale0"]` | Tunnel interfaces to clamp |
+| `my.services.mssClamp.reassertInterval` | str | `"10min"` | Timer re-assert interval |
+| `my.services.mosh.enable` | bool | `false` | mosh session-persistence over flaky links |
+| `my.services.mosh.package` | pkg | `pkgs.mosh` | mosh package |
+| `my.services.mosh.openFirewall` | bool | `false` | Open UDP 60000-61000 (needed for ZeroTier/LAN paths) |
+| `my.services.mosh.installTmux` | bool | `true` | Install tmux alongside mosh |
+| `my.services.torSsh.enable` | bool | `false` | Tor onion-service SSH (zero-inbound-port last resort) |
+| `my.services.torSsh.onionPort` | port | `22022` | Onion service port |
+| `my.services.torSsh.localPort` | port | `22` | Local SSH port |
+| `my.services.torSsh.secretKey` | path or null | `null` | Persistent v3 onion key (else Tor generates + persists) |
+| `my.services.torSsh.authorizedClients` | list | `[]` | v3 client-auth public keys |
+| `my.services.autosshReverse.enable` | bool | `false` | autossh phone-home reverse tunnel |
+| `my.services.autosshReverse.bastion` | str | `""` | Bastion `user@host` (required when enabled) |
+| `my.services.autosshReverse.remotePort` | port | `22022` | Remote port on the bastion |
+| `my.services.autosshReverse.identityFile` | str | `"/root/.ssh/id_ed25519"` | SSH identity for the bastion |
+| `my.services.ttyd.enable` | bool | `false` | ttyd web terminal (browser emergency console) |
+| `my.services.ttyd.port` | port | `7681` | Listen port |
+| `my.services.ttyd.address` | str or null | `"127.0.0.1"` | Bind IP/interface (use a ZeroTier IP for Tailscale independence) |
+| `my.services.ttyd.username` | str or null | `null` | Basic-auth username |
+| `my.services.ttyd.passwordFile` | path or null | `null` | Basic-auth password file (agenix path) |
+| `my.services.ttyd.openFirewall` | bool | `false` | Open the port in the firewall |
+| `my.services.ttyd.proxyUpstream` | bool | `true` | Register as reverse-proxy upstream |
 | `my.services.ollama.enable` | bool | `false` | Ollama OCI container service |
 | `my.services.ollama.image` | str | `"ollama/ollama:latest"` | Docker image |
 | `my.services.ollama.dataDir` | str | `"/var/lib/ollama"` | Host data directory |
@@ -335,6 +359,9 @@ All `my.*` options declared across module files.
 | `my.services.ollama.mcp.enable` | bool | `false` | MCP server for Cline |
 | `my.services.ollama.mcp.port` | port | `3100` | MCP server port |
 | `my.services.ollama.mcp.openFirewall` | bool | `false` | Open MCP port in firewall |
+| `my.services.ollama.pull.retries` | int | `5` | Pull retry attempts per model |
+| `my.services.ollama.pull.retryDelaySec` | int | `10` | Initial retry backoff (grows linearly) |
+| `my.services.ollama.pull.restartOnFailure` | bool | `true` | Restart=on-failure on pull service |
 | `my.services.ssh.enable` | bool | `false` | SSH server |
 | `my.services.ssh.keyType` | str | `"ed25519"` | SSH key type |
 | `my.services.ssh.keyPath` | str | — | Path to SSH key |

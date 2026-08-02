@@ -25,7 +25,7 @@ echo "$URLS" | xargs -P4 -n1 curl -L -O
 
 # --- Detect output type ---
 FILE_BASE="nixos-${HOST}"
-CHECKSUM_FILE=$(ls "${FILE_BASE}".*.sha256 2>/dev/null | head -1 || true)
+CHECKSUM_FILE=$(find . -maxdepth 1 -name "${FILE_BASE}.*.sha256" -print 2>/dev/null | head -1 || true)
 
 if [[ -z "$CHECKSUM_FILE" ]]; then
     echo "Error: no checksum file (${FILE_BASE}.*.sha256) found" >&2
@@ -38,7 +38,7 @@ FILE_NAME="${FILE_EXT}"
 # --- Join ---
 echo "==> Locating segments for: ${FILE_NAME}"
 # shellcheck disable=SC2206
-mapfile -t PARTS < <(ls "${FILE_NAME}.part"* 2>/dev/null | sort -V)
+mapfile -t PARTS < <(find . -maxdepth 1 -name "${FILE_NAME}.part*" -type f -print 2>/dev/null | sort -V)
 
 if [[ ${#PARTS[@]} -eq 0 ]]; then
     echo "Error: no files matching '${FILE_NAME}.part*' found in $(pwd)" >&2

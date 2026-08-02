@@ -83,6 +83,9 @@ in
       serviceConfig = {
         Type = "oneshot";
         RemainAfterExit = true;
+        Restart = lib.mkIf cfg.pull.restartOnFailure "on-failure";
+        RestartSec = "30s";
+        StartLimitIntervalSec = lib.mkIf cfg.pull.restartOnFailure 0;
         ExecStartPost =
           "${pkgs.writeShellScript "ollama-model-probe" ''
             echo "[model probe] checking pulled models..."
@@ -124,12 +127,29 @@ in
             mcfg.topP != null || mcfg.repeatPenalty != null || mcfg.numPredict != null ||
             mcfg.seed != null || mcfg.think != null || mcfg.systemPrompt != null || mcfg.template != null;
 
+          pullCmd = tag: ''
+            attempt=1
+            while true; do
+              if ${backendBin} exec ollama ollama pull ${lib.escapeShellArg tag}; then
+                break
+              fi
+              if [ "$attempt" -ge ${toString cfg.pull.retries} ]; then
+                echo "[pull] FAILED after $attempt attempts: ${tag}" >&2
+                exit 1
+              fi
+              delay=$((attempt * ${toString cfg.pull.retryDelaySec}))
+              echo "[pull] attempt $attempt failed, retrying in ${"\${delay}"}s..."
+              sleep "$delay"
+              attempt=$((attempt + 1))
+            done
+          '';
+
           modelCmds = lib.concatStringsSep "\n" (lib.mapAttrsToList
             (tag: mcfg:
               let safeName = builtins.replaceStrings [ ":" "/" ] [ "-" "-" ] tag;
               in
               ''echo "--- Pulling model: ${tag} ---"
-              ${backendBin} exec ollama ollama pull ${lib.escapeShellArg tag}
+              ${pullCmd tag}
             '' + lib.optionalString (hasModelfile mcfg) ''
                 echo "Applying Modelfile for ${tag} -> '${safeName}'..."
                 MODELFILE=$(mktemp)
