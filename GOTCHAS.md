@@ -2,6 +2,18 @@
 
 ---
 
+**steamcmd dedicated servers: run through `steam-run`, never harden with NoNewPrivileges**
+
+Symptom: `game-server-<name>.service` fails to exec or the server binary crashes with missing 32-bit/glibc libs; or bwrap errors appear when the unit has strict systemd sandboxing. Cause: nixpkgs `pkgs.steamcmd` wraps the installer in `steam-run`'s FHS environment automatically, but the **game server binary itself** must also be executed via `steam-run` (that's why `my.services.game-servers` sets `ExecStart = steam-run ./<startCommand>`). steam-run is bwrap-based, so `NoNewPrivileges`, `PrivateMounts`, `ProtectSystem=strict` with no `ReadWritePaths`, and aggressive `SystemCallFilter`/`RestrictAddressFamilies` sets break it (same family as the jan AppImage gotcha). Fix: invoke every server through `steam-run`, keep hardening to `PrivateTmp` + `ProtectSystem=strict` + `ReadWritePaths=<stateDir>` + `ProtectHome=true`, and never set `NoNewPrivileges`. See `modules/nixos/game-servers/services.nix`. Related gotchas: `pkgs.steamcmd` fetches its installer from **web.archive.org** (Valve's CDN `steamcdn-a.akamaihd.net` is dead) so hash churn breaks rebuilds; steamcmd **refuses to run as root** (always use a dedicated service user); Unity-based servers (Valheim/Palworld/7DTD) need `steamworks-sdk-redist` in the FHS target pkgs.
+
+---
+
+**LinuxGSM is not packaged in nixpkgs (and never will be) — use steamcmd**
+
+Symptom: Trying to add LinuxGSM to this flake fails — there is no `linuxgsm` package, and nixpkgs maintainers deliberately closed the packaging request (NixOS/nixpkgs#137459). Cause: LinuxGSM is an imperative, self-updating installer that shells out to apt/yum/dnf for dependencies and assumes a mutable `~/serverfiles/` layout — an anti-pattern on NixOS. Fix: Use `pkgs.steamcmd` + systemd instead (the `my.services.game-servers` module does exactly this). If a specific game's LinuxGSM script is truly required, the supported route is a declarative Ubuntu/Debian container, not a NixOS module.
+
+---
+
 **`nix flake check --no-build` fails with `path '...-secrets' is not valid` in a fresh CI store**
 
 Symptom: Smart CI `flake-check` job fails with `error: path '/nix/store/<hash>-secrets' is not valid` while agenix-manager's `builtins.pathExists` reads the secrets manifest. The host `eval-*` jobs pass. Cause: `agenixManager.secretsPath = ./secrets` creates a *filtered* store copy named `<hash>-secrets` that is only realized lazily when its string context is forced. Under `--no-build` in a fresh store (no prior builds), that path doesn't exist yet, so `pathExists` on `${secretsPath}/secrets-manifest.json` aborts evaluation. Paths inside the flake's own source tree (`flake.inputs.self`, i.e. `<hash>-source`) are always realized during evaluation, so they never hit this. Fix: set `agenixManager.secretsPath = flake.inputs.self + /modules/nixos/secrets` instead of `./secrets` in `modules/nixos/common.nix`. This is the same `flake.inputs.self` pattern `nebula` already uses for its key files. Locally this issue is masked because the `-secrets` path already exists from prior builds. Bonus: the CLI's `_resolve_store_path` maps the `-source` tree path back to `$PWD/modules/nixos/secrets` correctly, so mutating operations (`new`, `remove`, `import`) now work when run from the flake checkout — the old `-secrets` path was too short for the resolver to handle.
@@ -505,6 +517,24 @@ Symptom: Same signature as the MTU wedge — `tailscale ping server` pongs (user
 
 ---
 
+**New untracked files aren't visible to pure flake eval (`nix build` / `nix eval .#...`)**
+
+Symptom: You add `packages/keepa-mcp/default.nix`, but `nix build .#packages.x86_64-linux.keepa-mcp` fails with `does not provide attribute 'packages.x86_64-linux.keepa-mcp'` — even though `nix eval --impure --expr 'builtins.getFlake ...'` lists it. Cause: Pure flake evaluation only sees **git-tracked** files; the autowiring (nixos-unified) globs `packages/` at eval time, but an untracked file isn't in the git tree snapshot. Fix: `git add packages/keepa-mcp/default.nix` before building/eval'ing it (no commit needed — staging is enough). Same applies to any new file that's supposed to be auto-wired as a flake output.
+
+---
+
+**cunicopia-dev/ebay-mcp (PyPI `ebay-mcp` 0.1.0) crashes on startup — `AttributeError: 'Server' object has no attribute 'list_tools'`**
+
+Symptom: Running `uvx ebay-mcp` exits immediately with `AttributeError: 'Server' object has no attribute 'list_tools'` at import. Cause: The package pins `mcp>=1.0.0`, but its code uses the pre-1.0 FastMCP-style API (`@app.list_tools()` decorator on a raw `mcp.server.Server`), which was removed in mcp 1.0. You can't pin `mcp<1.0` because the dependency constraint forbids it. Fix: Don't use this package. Use `secondhand-mcp` (npm) or the official `@ebay/npm-public-api-mcp` for eBay; both work and are actively maintained.
+
+---
+
+**home-manager `systemd.user.*` units now use INI-section format — old flat keys (`after`, `wantedBy`, `serviceConfig`) fail the type check**
+
+Symptom: `nixos-rebuild switch` dies with `A definition for option 'home-manager.users.seanc.systemd.user.services.easyeffects.after' is not of type 'attribute set of (...)'. Definition values: [ "pipewire.service" "pipewire-pulse.service" ]`. Cause: The pinned home-manager reworked `systemd.user.services/timers/...` to the systemd INI format (sections `Unit` / `Service` / `Install`). `after`/`before`/`wants`/`partOf` now live under `Unit`, `wantedBy` under `Install.WantedBy`, and `serviceConfig.*` fields become bare keys in the `Service` section; the old options were removed, so a list assigned to `after` is reinterpreted as a bogus section and rejected. Fix: migrate definitions, e.g. `{ serviceConfig.Type = "simple"; after = [ "x.service" ]; wantedBy = [ "default.target" ]; }` becomes `{ Unit = { After = [ "x.service" ]; }; Install = { WantedBy = [ "default.target" ]; }; Service = { Type = "simple"; }; }`. Notes: there is no `script`/`path`/`environment` convenience anymore — put shell in `Service.ExecStart` (wrap with `pkgs.writeShellScript` if needed) and set `Service.Environment = [ "PATH=..." ]`; `ExecStart` and `Environment` are the only typed `Service` fields (rest are freeform). See `modules/nixos/audio/config.nix` (fixed 2026-08-02); files still on the old format: `modules/nixos/hyprland/{idle,pyprland,bar,wallpapers,awww}/config.nix`, `modules/nixos/gitreposync/{services,tests}.nix`.
+
+---
+
 **Cloud secrets (.age files) can't be decrypted after hosts were rekeyed**
 Symptom: `nix run .#gcp -- plan` fails with provider auth errors, or `age -d -i <hostkey> modules/nixos/secrets/aws-cloud.age` reports `no identity matched any of the recipients`. Cause: the encrypted `.age` blobs were encrypted to host keys that have since been rotated (`/etc/ssh/ssh_host_ed25519_key` no longer matches any recipient in `/etc/agenix/secrets.nix`). The files are structurally valid but useless. Fix: regenerate via agenix-manager (`nix develop .#secrets && agenix-manager edit aws-cloud`) so they re-encrypt to the current keys. Guard all credential consumption in `modules/flake-parts/cloud.nix` with `[ -r /run/agenix/<name> ]` checks so evaluation never breaks on machines/CI without the secret.
 
@@ -525,4 +555,4 @@ Symptom: interpolating an instance IP / resource attribute (known only after `ap
 
 ---
 
-Last updated: 2026-08-01
+Last updated: 2026-08-02

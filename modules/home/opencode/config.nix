@@ -221,12 +221,13 @@ in
           windows-integration = builtins.readFile ./skills/windows-integration.md;
           docker-management = builtins.readFile ./skills/docker-management.md;
         };
-        commands = lib.mkDefault {
+        commands = {
           copy-last = ./commands/copylast.md;
           refactor-python = ./commands/refactor-python.md;
           nix-map = ./commands/nix-map.md;
           nix-refine = ./commands/nix-refine.md;
           nix-doc-audit = ./commands/nix-doc-audit.md;
+          shopping-research = ./commands/shopping-research.md;
         };
         mcp.nix-graph = {
           enabled = true;

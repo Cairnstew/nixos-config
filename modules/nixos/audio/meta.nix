@@ -1,10 +1,10 @@
 {
   name = "audio";
-  description = "PipeWire audio stack with ALSA, PulseAudio compat, Bluetooth codecs, and WirePlumber";
+  description = "PipeWire audio stack with ALSA, PulseAudio compat, Bluetooth codecs, WirePlumber, a declared default mic, and a Pulsemeeter + EasyEffects virtual mixer";
   category = "system";
-  tags = [ "audio" "pipewire" "sound" "bluetooth" "wireplumber" ];
-  provides = [ "my.system.audio" ];
-  complexity = "simple";
+  tags = [ "audio" "pipewire" "sound" "bluetooth" "wireplumber" "virtual-mixer" "pulsemeeter" "easyeffects" ];
+  provides = [ "my.system.audio" "my.system.audio.virtualMixer" "my.system.audio.mic" ];
+  complexity = "medium";
   tested = true;
   maintainer = "seanc";
 }

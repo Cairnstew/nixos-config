@@ -100,6 +100,7 @@ in
     ./risuai
     ./suwayomi
     ./neko
+    ./game-servers
 
     # ── TV & EPG ─────────────────────────────────────────────────────────
     ./xmltv

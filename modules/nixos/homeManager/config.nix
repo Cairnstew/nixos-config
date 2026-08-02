@@ -28,6 +28,59 @@ let
       meta.description = "MCP server: Google Calendar integration";
     };
 
+  # eBay search + listing details (official Browse API). Keys come from agenix.
+  # Covers Facebook Marketplace too; Depop/Poshmark need Chrome, so they're off.
+  # If either key file is missing or empty at runtime, exit non-zero so opencode
+  # marks the server failed instead of exposing broken tools.
+  secondhandMcpPkg =
+    pkgs.writeShellApplication {
+      name = "secondhand-mcp";
+      runtimeInputs = [ pkgs.nodejs ];
+      text = ''
+        if [[ ! -s ${config.age.secrets.ebay-client-id.path} || ! -s ${config.age.secrets.ebay-client-secret.path} ]]; then
+          echo "secondhand-mcp disabled: ebay-client-id or ebay-client-secret is missing/empty" >&2
+          exit 1
+        fi
+        export EBAY_CLIENT_ID="$(cat ${config.age.secrets.ebay-client-id.path})"
+        export EBAY_CLIENT_SECRET="$(cat ${config.age.secrets.ebay-client-secret.path})"
+        export MARKETPLACES="ebay,facebook"
+        exec npx -y secondhand-mcp "$@"
+      '';
+      meta.description = "MCP server: eBay/Facebook Marketplace search (official Browse API)";
+    };
+
+  # Amazon offers/buybox/info/reviews via ShoppingScraper API (paid key).
+  shoppingscraperMcpPkg =
+    pkgs.writeShellApplication {
+      name = "shoppingscraper-mcp";
+      runtimeInputs = [ pkgs.nodejs ];
+      text = ''
+        if [[ ! -s ${config.age.secrets.ssc-api-key.path} ]]; then
+          echo "shoppingscraper-mcp disabled: ssc-api-key is missing/empty" >&2
+          exit 1
+        fi
+        export SSC_API_KEY="$(cat ${config.age.secrets.ssc-api-key.path})"
+        exec npx -y @shoppingscraper/cli mcp serve "$@"
+      '';
+      meta.description = "MCP server: Amazon offers, buybox, info, reviews (ShoppingScraper API)";
+    };
+
+  # Amazon price history via Keepa API (paid key).
+  keepaMcpPkg =
+    pkgs.writeShellApplication {
+      name = "keepa-mcp";
+      runtimeInputs = [ pkgs.nodejs ];
+      text = ''
+        if [[ ! -s ${config.age.secrets.keepa-api-key.path} ]]; then
+          echo "keepa-mcp disabled: keepa-api-key is missing/empty" >&2
+          exit 1
+        fi
+        export KEEPA_API_KEY="$(cat ${config.age.secrets.keepa-api-key.path})"
+        exec ${self.packages.${pkgs.system}.keepa-mcp}/bin/keepa-mcp "$@"
+      '';
+      meta.description = "MCP server: Keepa Amazon price history, deals, sellers";
+    };
+
   # Opencode theme derived from config.nix me.colorScheme
   # Maps semantic UI roles to Base16 color definitions
   opencodeTheme =
@@ -208,6 +261,39 @@ in
 
           model = lib.mkDefault "opencode-go/deepseek-v4-flash";
           enableMcpIntegration = lib.mkDefault true;
+
+          # Shopping MCP servers. Each is enabled only when its agenix secret
+          # exists (declared in secrets-manifest.json). Servers:
+          #   - ebay  → secondhand-mcp (official Browse API, free dev keys)
+          #   - amazon → ShoppingScraper API (paid SSC_API_KEY)
+          #   - keepa → Amazon price history (paid KEEPA_API_KEY)
+          # Create the secrets with: agenix-manager new
+          mcp = lib.mkMerge [
+            (lib.mkIf (config.age.secrets ? "ebay-client-id") {
+              ebay = {
+                enabled = true;
+                type = "local";
+                command = [ "${secondhandMcpPkg}/bin/secondhand-mcp" ];
+                timeout = 120000;
+              };
+            })
+            (lib.mkIf (config.age.secrets ? "ssc-api-key") {
+              amazon = {
+                enabled = true;
+                type = "local";
+                command = [ "${shoppingscraperMcpPkg}/bin/shoppingscraper-mcp" ];
+                timeout = 120000;
+              };
+            })
+            (lib.mkIf (config.age.secrets ? "keepa-api-key") {
+              keepa = {
+                enabled = true;
+                type = "local";
+                command = [ "${keepaMcpPkg}/bin/keepa-mcp" ];
+                timeout = 120000;
+              };
+            })
+          ];
 
           # references.sillytavern: enable when opencode supports the
           # references config key (open ≥ 1.16 / check release notes)
