@@ -47,6 +47,26 @@ my.services.gitRepoSync = {
 - `fetchPrune`: Remove stale remote-tracking refs
 - `agenix.enable`: Use agenix for GitHub token injection
 
+### Branch-Per-Host Rollout
+
+The `nixos-config` repo uses a **branch-per-host** model:
+
+```
+host commit → gitreposync autoPush → origin/<host>
+    → merge-per-host.yml (validate + auto-PR) → master
+    → gitreposync mergeUpstream (ff-only) → other host branches
+```
+
+- Each host stays on `origin/<hostname>` (`branch = config.networking.hostName`,
+  `autoPush = true`, `mergeUpstream = "master"` in `modules/nixos/common.nix`).
+- CI (`merge-per-host.yml`) validates the pushed host and auto-merges a PR to
+  `master`. Full docs: `modules/nixos/gitreposync/README.md` and
+  `.github/workflows/README.md`.
+- **When adding a host**, add its branch to `merge-per-host.yml`
+  `on.push.branches`, or it will push but never be merged into `master`.
+- **Caveat:** `mergeUpstream` is hard-coded `--ff-only` — a host with unmerged
+  local commits (or a dirty tree) skips the master merge until its own PR lands.
+
 ## Common Git Tasks in This Repo
 
 ### Adding a New Host Configuration

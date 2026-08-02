@@ -37,6 +37,29 @@ Path-aware CI that **only runs checks relevant to changed files**:
 
 On PRs, only lightweight `nix eval` runs. On push to main, full builds + Cachix caching + test suite execute.
 
+### Merge Per-Host Branch (`merge-per-host.yml`)
+**Triggers:** Push to per-host branches (`desktop`, `laptop`, `server`, `wsl`, `minimal`)
+
+Automates the **branch-per-host rollout loop**:
+
+1. Validates the pushed host: `nix build ".#nixosConfigurations.<host>.config.system.build.toplevel" --dry-run`
+2. Creates/updates a PR `<host> → master` titled `auto-merge: <host> → master`
+3. Enables GitHub auto-merge: `gh pr merge --auto --merge`
+
+`smart-ci.yml` runs its path-aware checks on the resulting PR, so auto-merge
+only lands once they pass. The full loop:
+
+```
+host commit → gitreposync autoPush → origin/<host>
+    → merge-per-host.yml (validate + auto-PR) → master
+    → gitreposync mergeUpstream (ff-only) → other host branches
+```
+
+**Maintenance:** when adding a new host, add its branch to `on.push.branches`
+above — otherwise its changes are pushed but never merged into `master`. See
+`modules/nixos/gitreposync/README.md` for the ff-only caveats (a host with
+unmerged local commits skips the master merge until its own PR lands).
+
 ### Format Check (`format-check.yml`)
 **Triggers:** Push to main, PR to main (only when `**/*.nix` changes)
 
