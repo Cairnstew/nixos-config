@@ -12,9 +12,11 @@ let
   });
 
   # Cap heavy services so they can't starve SSH of CPU time.
-  cpuQuotaDefs = lib.mapAttrs' (unit: quota:
-    lib.nameValuePair unit { serviceConfig.CPUQuota = quota; }
-  ) cfg.cpuQuota;
+  cpuQuotaDefs = lib.mapAttrs'
+    (unit: quota:
+      lib.nameValuePair unit { serviceConfig.CPUQuota = quota; }
+    )
+    cfg.cpuQuota;
 in
 {
   config = mkIf cfg.enable {
