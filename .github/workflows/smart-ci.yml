@@ -131,6 +131,15 @@ jobs:
       - uses: cachix/install-nix-action@v31
         with:
           extra_nix_config: ${{ env.NIX_CONFIG }}
+      - name: Realize flake input sources
+        run: |
+          echo "Copying flake and all input sources into the store..."
+          # `nix flake check --no-build` cannot realize derivation-input source
+          # paths (e.g. a flake input used as cargoLock.lockFile/src) in a fresh
+          # CI store, failing with "path '...-source' is not valid". Pre-realize
+          # every input source so the check below evaluates cleanly.
+          nix flake archive --json > /dev/null
+
       - name: Flake check (no-build)
         run: |
           echo "Running nix flake check..."

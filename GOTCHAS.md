@@ -6,6 +6,8 @@
 
 Symptom: Smart CI `flake-check` job fails with `error: path '/nix/store/<hash>-secrets' is not valid` while agenix-manager's `builtins.pathExists` reads the secrets manifest. The host `eval-*` jobs pass. Cause: `agenixManager.secretsPath = ./secrets` creates a *filtered* store copy named `<hash>-secrets` that is only realized lazily when its string context is forced. Under `--no-build` in a fresh store (no prior builds), that path doesn't exist yet, so `pathExists` on `${secretsPath}/secrets-manifest.json` aborts evaluation. Paths inside the flake's own source tree (`flake.inputs.self`, i.e. `<hash>-source`) are always realized during evaluation, so they never hit this. Fix: set `agenixManager.secretsPath = flake.inputs.self + /modules/nixos/secrets` instead of `./secrets` in `modules/nixos/common.nix`. This is the same `flake.inputs.self` pattern `nebula` already uses for its key files. Locally this issue is masked because the `-secrets` path already exists from prior builds. Bonus: the CLI's `_resolve_store_path` maps the `-source` tree path back to `$PWD/modules/nixos/secrets` correctly, so mutating operations (`new`, `remove`, `import`) now work when run from the flake checkout — the old `-secrets` path was too short for the resolver to handle.
 
+Note: the same class of failure hits *any* flake-input source used at eval time (e.g. `maccel` as `cargoLock.lockFile`/`src` in `modules/nixos/mouse/config.nix`), surfacing as `path '...-source' is not valid`. The `flake-check` job in `smart-ci.yml` therefore runs `nix flake archive --json > /dev/null` before `nix flake check --no-build` to pre-realize all input sources into the store.
+
 ---
 
 **`update-flake` workflow fails with git exit 128 in the `Create Pull Request` step**
