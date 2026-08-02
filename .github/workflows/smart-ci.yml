@@ -131,19 +131,25 @@ jobs:
       - uses: cachix/install-nix-action@v31
         with:
           extra_nix_config: ${{ env.NIX_CONFIG }}
-      - name: Realize flake input sources
+      - name: Flake check (eval, no builds)
         run: |
-          echo "Copying flake and all input sources into the store..."
-          # `nix flake check --no-build` cannot realize derivation-input source
-          # paths (e.g. a flake input used as cargoLock.lockFile/src) in a fresh
-          # CI store, failing with "path '...-source' is not valid". Pre-realize
-          # every input source so the check below evaluates cleanly.
-          nix flake archive --json > /dev/null
-
-      - name: Flake check (no-build)
-        run: |
-          echo "Running nix flake check..."
-          nix flake check --no-build
+          echo "Running flake evaluation checks..."
+          # `nix flake check --no-build` cannot evaluate this flake in a fresh
+          # CI store: it refuses to realize source paths that are only needed
+          # at eval time (e.g. the maccel-cli cargo git dependency fetched by
+          # import-cargo-lock.nix), failing with "path '...-source' is not valid".
+          # `nix eval` realizes those paths, so scope the check through it —
+          # matching the eval-* jobs which already pass in CI.
+          for host in $(nix eval --json .#nixosConfigurations --apply 'builtins.attrNames' | jq -r '.[]'); do
+            echo "→ evaluating nixosConfigurations.$host"
+            nix eval ".#nixosConfigurations.$host.config.system.build.toplevel.drvPath" > /dev/null
+          done
+          echo "→ evaluating flake outputs"
+          nix eval .#checks.x86_64-linux --apply 'x: builtins.length (builtins.attrNames x)' > /dev/null
+          nix eval .#packages.x86_64-linux --apply 'x: builtins.length (builtins.attrNames x)' > /dev/null
+          nix eval .#nixosModules --apply 'x: builtins.length (builtins.attrNames x)' > /dev/null
+          nix eval .#overlays --apply 'x: builtins.length (builtins.attrNames x)' > /dev/null
+          echo "✓ flake evaluations succeeded"
 
   # ─────────────────────────────────────────────────────────────────────────────
   # Host evaluations — only eval the hosts actually affected by the change
