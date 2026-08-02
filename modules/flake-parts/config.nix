@@ -273,6 +273,36 @@ let
         default = 60;
         description = "SSH keepalive interval in seconds (0 to disable). Prevents connection timeouts.";
       };
+      serverAliveCountMax = lib.mkOption {
+        type = lib.types.int;
+        default = 6;
+        description = "Number of missed keepalives before SSH disconnects. With interval 15, 6 ≈ 90s — long enough to ride out a tailscaled restart.";
+      };
+      connectTimeout = lib.mkOption {
+        type = lib.types.int;
+        default = 5;
+        description = "Initial TCP connect timeout in seconds (fail fast instead of hanging on the OS timeout).";
+      };
+      connectionAttempts = lib.mkOption {
+        type = lib.types.int;
+        default = 4;
+        description = "How many times to try connecting after a failed/mid-handshake connection (fast reconnect after mesh blips).";
+      };
+      controlMaster = lib.mkOption {
+        type = lib.types.str;
+        default = "auto";
+        description = "Connection multiplexing mode. 'auto' reuses an existing master connection when one exists.";
+      };
+      controlPath = lib.mkOption {
+        type = lib.types.str;
+        default = "~/.ssh/controlmasters/%C";
+        description = "Socket path for connection multiplexing.";
+      };
+      controlPersist = lib.mkOption {
+        type = lib.types.str;
+        default = "10m";
+        description = "How long a master connection stays alive after the last session closes.";
+      };
     };
   };
 

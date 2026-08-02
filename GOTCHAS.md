@@ -2,6 +2,48 @@
 
 ---
 
+**`ollama-pull-models.service` fails with `connect: no route to host` and fails the whole `nix run`**
+
+Symptom: Running `nix run` (nixos-rebuild switch) returns non-zero exit status 4 because `ollama-pull-models.service` failed during model pull. Journal shows `Error: pull model manifest: Get "https://hf.co/...": dial tcp <IP>:443: connect: no route to host`. Cause: the pull service was a `Type=oneshot` with no retry — any transient network blip (e.g. IPv4 egress dead while IPv6 works, gateway ARP `INCOMPLETE`) failed the pull once, and `switch-to-configuration` reported the failed unit, failing the whole rebuild. Fix: `modules/nixos/ollama/services.nix` now wraps each `ollama pull` in a retry loop (`cfg.pull.retries`, default 5) with linear backoff (`cfg.pull.retryDelaySec`, default 10) and defaults `cfg.pull.restartOnFailure = true` which sets `Restart=on-failure`, `RestartSec=30s`, `StartLimitIntervalSec=0` on the service so a failed pull auto-retries indefinitely. See `modules/nixos/ollama/options.nix`.
+
+---
+
+**Tailscale at tunnel MTU 1200 disables IPv6 on tailscale0 (Linux requires ≥1280)**
+
+Symptom: `tailscale status` health check reports `2 add route failures; first was: no such device` / `adding address fd7a:115c:a1e0::…/128 from tunnel interface: invalid argument`. Cause: Linux cannot assign an IPv6 address to an interface with MTU < 1280 (RFC 8200 minimum). With `my.services.tailscale.mtu = 1200`, tailscaled fails to add the Tailscale ULA IPv6 address — the tailnet IPv6 (fd7a:115c:a1e0::/48) is unusable from that host. This is expected and harmless for IPv4-only operation; IPv6-over-tailscale is simply unavailable. If IPv6 on the tailnet is required, raise the tunnel MTU to 1280+ and rely on MSS clamping (see `mss-clamp`) instead of lowering the interface MTU. See `modules/nixos/mss-clamp/`.
+
+---
+
+**New systemd timers show `NEXT: n/a` after a `nixos-rebuild switch` until `daemon-reload`**
+
+Symptom: After deploying a new `systemd.timers.*` unit (e.g. `mss-clamp.timer`), `systemctl list-timers` shows the timer active but with `NEXT: -` and `Trigger: n/a` — it fires once at activation (OnBootSec catch-up) then never reschedules, even though `OnUnitActiveSec` is set and identical-pattern timers (e.g. `tailscale-mtu.timer`) schedule fine. Cause: the timer unit is loaded during the switch's systemd transition and the monotonic `OnUnitActiveSec` elapse isn't computed until the daemon re-reads the unit. Fix: `systemctl daemon-reload && systemctl restart <timer>.timer` once after the switch (self-corrects on the next reboot). See `modules/nixos/mss-clamp/config.nix`.
+
+---
+
+**`nixpkgs-fmt` mangles `.json` files — never run `nix fmt` on them**
+
+Symptom: `nix fmt --check` reports a `.json` file "would have been reformatted". Running nixpkgs-fmt on `modules/nixos/secrets/secrets-manifest.json` produces garbage (it parses JSON as Nix and strips all structure). Cause: `nixpkgs-fmt` is a Nix formatter, not a JSON formatter, but `nix fmt` passes every file to it. Fix: never run `nix fmt` on `.json` files; validate them with `jq empty <file>` instead. This is pre-existing repo behavior, not a regression from any single change.
+
+---
+
+**`systemd.services.<name>.script` rejects a `pkgs.writeShellScript` derivation — use `toString`**
+
+Symptom: `error: A definition for option 'systemd.services.<name>.script' is not of type 'strings concatenated with "\n"'` with the definition value shown as `<derivation mss-clamp>`. Cause: the `script` option's type is `str`, which does not auto-coerce a *derivation* to a store path (only plain `path`/`coercedTo` types do). Fix: assign `script = toString clampScript;` where `clampScript = pkgs.writeShellScript ...` — string interpolation of the derivation yields the store path. See `modules/nixos/mss-clamp/config.nix`.
+
+---
+
+**`services.ttyd.user` is a plain `str` (default `"root"`), not nullable**
+
+Symptom: `error: A definition for option 'services.ttyd.user' is not of type 'string'` when passing `null` through a wrapper option. Cause: unlike many service modules, upstream ttyd's `user` is `types.str` with default `"root"` (needed because the `login` entrypoint must run as root) — there is no "unset" value. Fix: declare `user` as `nullOr str` in the wrapper and only set it when non-null via `lib.optionalAttrs (cfg.user != null) { user = cfg.user; }`. See `modules/nixos/ttyd/config.nix`. (Also note: `services.ttyd.writeable` must be explicitly set to `true`/`false` — the upstream module fails evaluation otherwise.)
+
+---
+
+**Tor onion-service key persists in `/var/lib/tor/onion/<name>/` — stable across rebuilds without agenix**
+
+Symptom/context: Fear that a Tor onion SSH address changes on every rebuild. Cause: the NixOS tor module's `services.tor.relay.onionServices.<name>.secretKey` defaults to `null`, in which case Tor reuses any preexisting key in `path` (default `/var/lib/tor/onion/<name>`) or generates one. Because that directory lives on persistent disk, the onion address stays stable across reboots and rebuilds. Fix: no action needed on persistent hosts; point `secretKey` at an agenix-managed key only if the address must survive a full storage wipe. Onion services render regardless of `services.tor.relay.enable` — no relay is needed. See `modules/nixos/tor-ssh/`.
+
+---
+
 **NCCL (cuda-nccl) builds from source for hours — dep chain: nvshmem → openmpi → ucc → nccl**
 
 Symptom: Running `nix run` on a host with `my.profiles.ai.enable` + `my.profiles.gpu.nvidia-headless` triggers NCCL to compile from source, taking hours. The build list shows `cuda12.9-nccl-2.28.7-1`, `ucc`, `openmpi` all being compiled. None of the configured substituters have these pre-built. Cause: The dependency chain is `python3-nvidia-nvshmem-cu13` (a pip wheel) → `pkgs.openmpi` (added as extra dependency by the stable-diffusion-webui-nix requirements overlay) → `ucc` (Unified Communication Collection) → `cuda12.9-nccl` (raw NCCL library, compiled from C++ source). This chain exists even though the Python-level `nvidia-nccl-cu13` wheel is already built and provides `libnccl.so.2`. Fix: Added an overlay in `modules/nixos/graphics/config.nix` that removes `ucc` from `openmpi`'s buildInputs via `overrideAttrs` + `builtins.filter`. OpenMPI auto-detects UCC at configure time — without it in build inputs, it simply disables UCC support. The Python `nvidia-nccl-cu13` wheel still provides NCCL to PyTorch/Bitsandbytes at the Python level. Also fixed the `cache.nixos-cuda.org` public key in `modules/flake-parts/caches.nix` which was mismatched (configured `cache.nixos-cuda.org-1:dykfIg...` vs actual `cache.nixos-cuda.org:74DUi4Ye...`).
@@ -446,5 +488,27 @@ Symptom: `ssh seanc@server` times out. From a healthy peer: `tailscale ping serv
 
 **Server appears "wedged" but MTU is fine — actually OOM (nix flake check on the server)**
 Symptom: Same signature as the MTU wedge — `tailscale ping server` pongs (userspace) but `nc server 22` and all TCP time out; from the PiKVM console `ip link show tailscale0` shows the correct `mtu 1200` and the `tailscale-mtu.timer` is firing every 5min cleanly. The real cause: a `nix` process (e.g. `nix flake check` or `nix run .#...` run on the server) ballooned to ~9GB RSS and got **OOM-killed** (server has 13Gi RAM, **no swap**), stalling the whole box — `uptime` load ~100, sshd/tailscaled can't respond in time, so TCP times out exactly like the data-plane wedge. Confirm: `uptime` shows load > 50 and `dmesg -T | grep -i oom` shows `Out of memory: Killed process ... (nix) total-vm:~9GB`. Recovery: the OOM kill itself resolves it (box recovers once the process is gone); `systemctl restart tailscaled` gives an immediate nudge. Prevention: **don't run `nix flake check` (or a full `nix run .#test`) on the server** — evaluating all flake outputs needs > 9GB. Run checks on the desktop instead, or add swap/zram to the server. Related bug (2026-08-01): the watchdog was silently dead — `HOSTNAME=$(hostname)` failed with `hostname: command not found` (coreutils provides `uname`, not `hostname`; the `writeShellApplication` PATH doesn't include it) → exit 127 → no auto-repair, no alerts. Fixed to `HOSTNAME=$(uname -n)`. Fastest diagnosis next time: check `uptime` (load) and `systemctl --failed` from the PiKVM before touching MTU.
+
+---
+
+**Cloud secrets (.age files) can't be decrypted after hosts were rekeyed**
+Symptom: `nix run .#gcp -- plan` fails with provider auth errors, or `age -d -i <hostkey> modules/nixos/secrets/aws-cloud.age` reports `no identity matched any of the recipients`. Cause: the encrypted `.age` blobs were encrypted to host keys that have since been rotated (`/etc/ssh/ssh_host_ed25519_key` no longer matches any recipient in `/etc/agenix/secrets.nix`). The files are structurally valid but useless. Fix: regenerate via agenix-manager (`nix develop .#secrets && agenix-manager edit aws-cloud`) so they re-encrypt to the current keys. Guard all credential consumption in `modules/flake-parts/cloud.nix` with `[ -r /run/agenix/<name> ]` checks so evaluation never breaks on machines/CI without the secret.
+
+---
+
+**Terranix configs must live outside `modules/nixos/` (namespace violation)**
+Symptom: a terranix module (options like `terraform.required_providers`, `resource.*`, `variable.*`) placed under `modules/nixos/<name>/default.nix` is autowired as `nixosModules.<name>`. It only evaluates because no host imports it — the moment `common.nix` or any host globs it, every host eval fails with `attribute 'terraform' missing` (terranix options aren't NixOS options). Fix: keep terranix modules under `cloud/` (see `cloud/README.md`); the flake-parts layer (`modules/flake-parts/cloud.nix`) wires them via `terranix.terranixConfigurations.*`.
+
+---
+
+**Terranix `${}` escaping is easy to get wrong**
+Symptom: Terraform references render literally (e.g. the generated JSON contains `\${var.region}` or the wrong `$var.region`), or provider evaluation throws on unescaped Nix interpolation. Fix: use `lib.tf.ref "var.region"` / `lib.tf.file` in terranix modules instead of hand-rolling `\${...}`. Inside Nix string interpolation wrapping a reference (e.g. `"seanc:${lib.tf.ref "var.ssh_pub_key"}"`) the result is the literal `seanc:${var.ssh_pub_key}` — correct Terraform. Verify with `nix run .#tf-show-config | jq .`.
+
+---
+
+**Computed Terraform values can't feed Nix evaluation**
+Symptom: interpolating an instance IP / resource attribute (known only after `apply`) into a NixOS config (e.g. via `terraform-nixos` deploy modules) renders an empty drvPath or `<computed>`. Cause: Nix evaluates at build time, Terraform resources resolve at plan/apply time. Fix: don't feed computed values into Nix. Use Terraform **outputs** + stage-2 tools (`nixos-anywhere`, `colmena`, or `nixos-rebuild --target-host`); pass only known-at-plan-time values (AMI ids, image families, key names) as variables.
+
+---
 
 Last updated: 2026-08-01
