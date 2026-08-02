@@ -2,6 +2,18 @@
 
 ---
 
+**`nix flake check --no-build` fails with `path '...-secrets' is not valid` in a fresh CI store**
+
+Symptom: Smart CI `flake-check` job fails with `error: path '/nix/store/<hash>-secrets' is not valid` while agenix-manager's `builtins.pathExists` reads the secrets manifest. The host `eval-*` jobs pass. Cause: `agenixManager.secretsPath = ./secrets` creates a *filtered* store copy named `<hash>-secrets` that is only realized lazily when its string context is forced. Under `--no-build` in a fresh store (no prior builds), that path doesn't exist yet, so `pathExists` on `${secretsPath}/secrets-manifest.json` aborts evaluation. Paths inside the flake's own source tree (`flake.inputs.self`, i.e. `<hash>-source`) are always realized during evaluation, so they never hit this. Fix: set `agenixManager.secretsPath = flake.inputs.self + /modules/nixos/secrets` instead of `./secrets` in `modules/nixos/common.nix`. This is the same `flake.inputs.self` pattern `nebula` already uses for its key files. Locally this issue is masked because the `-secrets` path already exists from prior builds. Bonus: the CLI's `_resolve_store_path` maps the `-source` tree path back to `$PWD/modules/nixos/secrets` correctly, so mutating operations (`new`, `remove`, `import`) now work when run from the flake checkout — the old `-secrets` path was too short for the resolver to handle.
+
+---
+
+**`update-flake` workflow fails with git exit 128 in the `Create Pull Request` step**
+
+Symptom: The weekly `Update Flake Inputs` workflow fails at the `Create Pull Request` step with `The process '/usr/bin/git' failed with exit code 128`. Cause: `peter-evans/create-pull-request` pushes to the `update-flake-inputs` branch, but if a previous PR was closed without merging, the remote branch is far behind master (e.g. 277 commits behind) while the workflow's local branch is based on current master — the push is a non-fast-forward and git rejects it with exit 128. Fix: add `force: true` to the `create-pull-request` step in `.github/workflows/update-flake.yml`. The branch is bot-managed, so force-pushing resets it to current master + flake.lock update every run. See `peter-evans/create-pull-request` docs.
+
+---
+
 **`ollama-pull-models.service` fails with `connect: no route to host` and fails the whole `nix run`**
 
 Symptom: Running `nix run` (nixos-rebuild switch) returns non-zero exit status 4 because `ollama-pull-models.service` failed during model pull. Journal shows `Error: pull model manifest: Get "https://hf.co/...": dial tcp <IP>:443: connect: no route to host`. Cause: the pull service was a `Type=oneshot` with no retry — any transient network blip (e.g. IPv4 egress dead while IPv6 works, gateway ARP `INCOMPLETE`) failed the pull once, and `switch-to-configuration` reported the failed unit, failing the whole rebuild. Fix: `modules/nixos/ollama/services.nix` now wraps each `ollama pull` in a retry loop (`cfg.pull.retries`, default 5) with linear backoff (`cfg.pull.retryDelaySec`, default 10) and defaults `cfg.pull.restartOnFailure = true` which sets `Restart=on-failure`, `RestartSec=30s`, `StartLimitIntervalSec=0` on the service so a failed pull auto-retries indefinitely. See `modules/nixos/ollama/options.nix`.

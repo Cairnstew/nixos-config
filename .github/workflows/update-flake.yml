@@ -66,6 +66,12 @@ jobs:
           token: ${{ secrets.GH_PAT || secrets.GITHUB_TOKEN }}
           branch: update-flake-inputs
           title: 'chore: update flake inputs'
+          # Force-push the branch: the automation branch can drift far from
+          # master (e.g. when a prior PR was closed without merging), so a
+          # plain push would be rejected as non-fast-forward (git exit 128).
+          # The branch is bot-managed; force-pushing resets it to the current
+          # master + flake.lock update every run.
+          force: true
           body: |
             ## Automated Flake Update
 

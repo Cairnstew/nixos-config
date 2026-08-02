@@ -165,9 +165,17 @@ in
   # extraGroups overrides can't accidentally drop docker access.
   my.virtualisation.docker.users = [ flake.config.me.username ];
 
+  # NOTE: secretsPath must resolve inside the flake's own source tree
+  # (flake.inputs.self) rather than a bare relative path like ./secrets.
+  # A bare path creates a filtered store copy (/nix/store/<hash>-secrets)
+  # that is realized lazily — it does not exist in a fresh CI store when
+  # `nix flake check --no-build` evaluates agenix-manager's
+  # `builtins.pathExists` on the manifest path, failing with
+  # "path '...-secrets' is not valid". Paths inside flake.inputs.self
+  # (/nix/store/<hash>-source) are always realized during evaluation.
   agenixManager = {
     enable = true;
-    secretsPath = ./secrets;
+    secretsPath = flake.inputs.self + /modules/nixos/secrets;
 
     keys.groups.systems = systemsKeys;
     keys.groups.users = usersKeys;
@@ -225,7 +233,7 @@ in
     text = ''
       if [ ! -f /etc/agenix/secrets-manifest.json ]; then
         echo "[agenixManager] Bootstrapping secrets manifest -> /etc/agenix/secrets-manifest.json"
-        install -m 644 ${./secrets/secrets-manifest.json} /etc/agenix/secrets-manifest.json
+        install -m 644 ${flake.inputs.self}/modules/nixos/secrets/secrets-manifest.json /etc/agenix/secrets-manifest.json
       fi
     '';
   };
