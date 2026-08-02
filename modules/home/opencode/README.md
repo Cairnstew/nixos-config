@@ -55,6 +55,31 @@ the terminal, with support for 15+ LLM providers, custom skills, agents, and MCP
 | `my.programs.opencode.azure.deployment` | `null` | Azure deployment name |
 | `my.programs.opencode.mcp` | `{}` | MCP server configurations |
 
+## Shopping MCP Servers
+
+The home-manager wiring (`modules/nixos/homeManager/config.nix`) declares three
+shopping MCP servers for opencode. Each is **enabled only when its agenix secret
+exists** in `modules/nixos/secrets/secrets-manifest.json`, so creating the
+secret is what activates the server (create with `agenix-manager new`):
+
+| Server | Purpose | Secret(s) needed | Cost |
+|--------|---------|------------------|------|
+| `ebay` | eBay + Facebook Marketplace search & listing details (official Browse API) | `ebay-client-id`, `ebay-client-secret` | Free eBay dev keys |
+| `amazon` | Amazon offers, buybox, product info, reviews (ShoppingScraper API) | `ssc-api-key` | Paid (credit-based) |
+| `keepa` | Amazon price history, deals, sellers (Keepa API) | `keepa-api-key` | Paid (token-based) |
+
+The servers are wired as agenix-guarded `mkIf` entries in the opencode `mcp`
+block. The keepa server uses a locally-packaged binary
+(`packages/keepa-mcp`) rather than a remote `npx` download.
+
+A companion command, `shopping-research`, chains all three servers into one
+"find the best value for product X" workflow (search both markets → judge price
+history → check reviews → verify seller → verdict). Run it from opencode with:
+
+```
+/shopping-research <product description>
+```
+
 ## Default Skills
 
 This module includes pre-configured skills for common tasks:

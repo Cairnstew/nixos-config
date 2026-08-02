@@ -2,6 +2,18 @@
 
 ---
 
+**steamcmd dedicated servers: run through `steam-run`, never harden with NoNewPrivileges**
+
+Symptom: `game-server-<name>.service` fails to exec or the server binary crashes with missing 32-bit/glibc libs; or bwrap errors appear when the unit has strict systemd sandboxing. Cause: nixpkgs `pkgs.steamcmd` wraps the installer in `steam-run`'s FHS environment automatically, but the **game server binary itself** must also be executed via `steam-run` (that's why `my.services.game-servers` sets `ExecStart = steam-run ./<startCommand>`). steam-run is bwrap-based, so `NoNewPrivileges`, `PrivateMounts`, `ProtectSystem=strict` with no `ReadWritePaths`, and aggressive `SystemCallFilter`/`RestrictAddressFamilies` sets break it (same family as the jan AppImage gotcha). Fix: invoke every server through `steam-run`, keep hardening to `PrivateTmp` + `ProtectSystem=strict` + `ReadWritePaths=<stateDir>` + `ProtectHome=true`, and never set `NoNewPrivileges`. See `modules/nixos/game-servers/services.nix`. Related gotchas: `pkgs.steamcmd` fetches its installer from **web.archive.org** (Valve's CDN `steamcdn-a.akamaihd.net` is dead) so hash churn breaks rebuilds; steamcmd **refuses to run as root** (always use a dedicated service user); Unity-based servers (Valheim/Palworld/7DTD) need `steamworks-sdk-redist` in the FHS target pkgs.
+
+---
+
+**LinuxGSM is not packaged in nixpkgs (and never will be) — use steamcmd**
+
+Symptom: Trying to add LinuxGSM to this flake fails — there is no `linuxgsm` package, and nixpkgs maintainers deliberately closed the packaging request (NixOS/nixpkgs#137459). Cause: LinuxGSM is an imperative, self-updating installer that shells out to apt/yum/dnf for dependencies and assumes a mutable `~/serverfiles/` layout — an anti-pattern on NixOS. Fix: Use `pkgs.steamcmd` + systemd instead (the `my.services.game-servers` module does exactly this). If a specific game's LinuxGSM script is truly required, the supported route is a declarative Ubuntu/Debian container, not a NixOS module.
+
+---
+
 **NCCL (cuda-nccl) builds from source for hours — dep chain: nvshmem → openmpi → ucc → nccl**
 
 Symptom: Running `nix run` on a host with `my.profiles.ai.enable` + `my.profiles.gpu.nvidia-headless` triggers NCCL to compile from source, taking hours. The build list shows `cuda12.9-nccl-2.28.7-1`, `ucc`, `openmpi` all being compiled. None of the configured substituters have these pre-built. Cause: The dependency chain is `python3-nvidia-nvshmem-cu13` (a pip wheel) → `pkgs.openmpi` (added as extra dependency by the stable-diffusion-webui-nix requirements overlay) → `ucc` (Unified Communication Collection) → `cuda12.9-nccl` (raw NCCL library, compiled from C++ source). This chain exists even though the Python-level `nvidia-nccl-cu13` wheel is already built and provides `libnccl.so.2`. Fix: Added an overlay in `modules/nixos/graphics/config.nix` that removes `ucc` from `openmpi`'s buildInputs via `overrideAttrs` + `builtins.filter`. OpenMPI auto-detects UCC at configure time — without it in build inputs, it simply disables UCC support. The Python `nvidia-nccl-cu13` wheel still provides NCCL to PyTorch/Bitsandbytes at the Python level. Also fixed the `cache.nixos-cuda.org` public key in `modules/flake-parts/caches.nix` which was mismatched (configured `cache.nixos-cuda.org-1:dykfIg...` vs actual `cache.nixos-cuda.org:74DUi4Ye...`).
@@ -447,4 +459,22 @@ Symptom: `ssh seanc@server` times out. From a healthy peer: `tailscale ping serv
 **Server appears "wedged" but MTU is fine — actually OOM (nix flake check on the server)**
 Symptom: Same signature as the MTU wedge — `tailscale ping server` pongs (userspace) but `nc server 22` and all TCP time out; from the PiKVM console `ip link show tailscale0` shows the correct `mtu 1200` and the `tailscale-mtu.timer` is firing every 5min cleanly. The real cause: a `nix` process (e.g. `nix flake check` or `nix run .#...` run on the server) ballooned to ~9GB RSS and got **OOM-killed** (server has 13Gi RAM, **no swap**), stalling the whole box — `uptime` load ~100, sshd/tailscaled can't respond in time, so TCP times out exactly like the data-plane wedge. Confirm: `uptime` shows load > 50 and `dmesg -T | grep -i oom` shows `Out of memory: Killed process ... (nix) total-vm:~9GB`. Recovery: the OOM kill itself resolves it (box recovers once the process is gone); `systemctl restart tailscaled` gives an immediate nudge. Prevention: **don't run `nix flake check` (or a full `nix run .#test`) on the server** — evaluating all flake outputs needs > 9GB. Run checks on the desktop instead, or add swap/zram to the server. Related bug (2026-08-01): the watchdog was silently dead — `HOSTNAME=$(hostname)` failed with `hostname: command not found` (coreutils provides `uname`, not `hostname`; the `writeShellApplication` PATH doesn't include it) → exit 127 → no auto-repair, no alerts. Fixed to `HOSTNAME=$(uname -n)`. Fastest diagnosis next time: check `uptime` (load) and `systemctl --failed` from the PiKVM before touching MTU.
 
-Last updated: 2026-08-01
+Last updated: 2026-08-02
+
+---
+
+**New untracked files aren't visible to pure flake eval (`nix build` / `nix eval .#...`)**
+
+Symptom: You add `packages/keepa-mcp/default.nix`, but `nix build .#packages.x86_64-linux.keepa-mcp` fails with `does not provide attribute 'packages.x86_64-linux.keepa-mcp'` — even though `nix eval --impure --expr 'builtins.getFlake ...'` lists it. Cause: Pure flake evaluation only sees **git-tracked** files; the autowiring (nixos-unified) globs `packages/` at eval time, but an untracked file isn't in the git tree snapshot. Fix: `git add packages/keepa-mcp/default.nix` before building/eval'ing it (no commit needed — staging is enough). Same applies to any new file that's supposed to be auto-wired as a flake output.
+
+---
+
+**cunicopia-dev/ebay-mcp (PyPI `ebay-mcp` 0.1.0) crashes on startup — `AttributeError: 'Server' object has no attribute 'list_tools'`**
+
+Symptom: Running `uvx ebay-mcp` exits immediately with `AttributeError: 'Server' object has no attribute 'list_tools'` at import. Cause: The package pins `mcp>=1.0.0`, but its code uses the pre-1.0 FastMCP-style API (`@app.list_tools()` decorator on a raw `mcp.server.Server`), which was removed in mcp 1.0. You can't pin `mcp<1.0` because the dependency constraint forbids it. Fix: Don't use this package. Use `secondhand-mcp` (npm) or the official `@ebay/npm-public-api-mcp` for eBay; both work and are actively maintained.
+
+---
+
+**home-manager `systemd.user.*` units now use INI-section format — old flat keys (`after`, `wantedBy`, `serviceConfig`) fail the type check**
+
+Symptom: `nixos-rebuild switch` dies with `A definition for option 'home-manager.users.seanc.systemd.user.services.easyeffects.after' is not of type 'attribute set of (...)'. Definition values: [ "pipewire.service" "pipewire-pulse.service" ]`. Cause: The pinned home-manager reworked `systemd.user.services/timers/...` to the systemd INI format (sections `Unit` / `Service` / `Install`). `after`/`before`/`wants`/`partOf` now live under `Unit`, `wantedBy` under `Install.WantedBy`, and `serviceConfig.*` fields become bare keys in the `Service` section; the old options were removed, so a list assigned to `after` is reinterpreted as a bogus section and rejected. Fix: migrate definitions, e.g. `{ serviceConfig.Type = "simple"; after = [ "x.service" ]; wantedBy = [ "default.target" ]; }` becomes `{ Unit = { After = [ "x.service" ]; }; Install = { WantedBy = [ "default.target" ]; }; Service = { Type = "simple"; }; }`. Notes: there is no `script`/`path`/`environment` convenience anymore — put shell in `Service.ExecStart` (wrap with `pkgs.writeShellScript` if needed) and set `Service.Environment = [ "PATH=..." ]`; `ExecStart` and `Environment` are the only typed `Service` fields (rest are freeform). See `modules/nixos/audio/config.nix` (fixed 2026-08-02); files still on the old format: `modules/nixos/hyprland/{idle,pyprland,bar,wallpapers,awww}/config.nix`, `modules/nixos/gitreposync/{services,tests}.nix`.

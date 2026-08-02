@@ -287,6 +287,21 @@ All `my.*` options declared across module files.
 
 | Option | Type | Default | Description |
 |--------|------|---------|-------------|
+| `my.services.game-servers.enable` | bool | `false` | Steam/generic dedicated game servers via steamcmd |
+| `my.services.game-servers.user` | str | `"game-servers"` | Service user |
+| `my.services.game-servers.group` | str | `"game-servers"` | Service group |
+| `my.services.game-servers.dataDir` | str | `"/var/lib/game-servers"` | Base install dir |
+| `my.services.game-servers.servers.<name>.appId` | str | — | Steam App ID of dedicated server |
+| `my.services.game-servers.servers.<name>.startCommand` | str | — | Server binary relative to stateDir |
+| `my.services.game-servers.servers.<name>.args` | list | `[]` | Extra server args |
+| `my.services.game-servers.servers.<name>.autoUpdate` | bool | `false` | steamcmd update at start |
+| `my.services.game-servers.servers.<name>.updateSchedule` | null/str | `null` | Optional update timer (e.g. `"daily"`) |
+| `my.services.game-servers.servers.<name>.openFirewall` | bool | `false` | Open `ports` in firewall |
+| `my.services.game-servers.servers.<name>.ports` | list | `[]` | `{ port, protocol }` list |
+| `my.services.game-servers.servers.<name>.monitoring.enable` | bool | `false` | A2S exporter for this server |
+| `my.services.game-servers.servers.<name>.monitoring.queryPort` | null/port | `null` | A2S query port (game port + 1) |
+| `my.services.game-servers.monitoring.enable` | bool | `false` | Enable exporter units |
+| `my.services.game-servers.monitoring.exporter` | null/package | self pkg | a2s-exporter package |
 | `my.services.tailscale.enable` | bool | `false` | Tailscale mesh VPN |
 | `my.services.tailscale.openFirewall` | bool | `true` | Open Tailscale UDP port |
 | `my.services.tailscale.exitNode` | bool | `false` | Advertise as exit node |

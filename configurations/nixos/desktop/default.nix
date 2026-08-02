@@ -75,6 +75,22 @@
     outputCap = 3.0;
   };
 
+  # ── Audio: virtual mixer + declared default mic ──────────────────────────
+  # Pulsemeeter provides VoiceMeeter-style virtual buses; EasyEffects adds
+  # per-stream EQ/compression. The mic name is baked into WirePlumber config as
+  # the default source — update `name` from `wpctl status` if it differs.
+  my.system.audio = {
+    virtualMixer = {
+      enable = true;
+      patchbay = "qpwgraph";
+    };
+    mic = {
+      enable = true;
+      name = "alsa_input.usb-C-Media_Electronics_Inc._USB_PnP_Sound_Device-00.analog-stereo";
+      description = "USB headset";
+    };
+  };
+
   # ── Desktop Environment ────────────────────────────────────────────────────
   # Toggle between "hyprland" and "gnome" to switch desktop environments.
   my.profiles.desktop.choice = "hyprland";
