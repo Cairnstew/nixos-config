@@ -33,3 +33,7 @@ my.services.bootAlerting = {
 - Network is started on a best-effort basis in emergency mode (not guaranteed).
 - The emergency hook adds ExecStartPost to the existing emergency.service.
 - On next clean boot after an emergency, a detailed failure report is sent and the flag is consumed.
+
+## Related Modules
+
+- **Imported by** [`modules/nixos/common.nix`](../common.nix) — enabled on all hosts via `my.*` options.

@@ -63,7 +63,6 @@ and nothing else.  All implementation lives in side-cars.
 { lib, ... }:
 {
   imports = [
-    ./meta.nix
     ./options.nix
     ./config.nix
     ./services.nix
@@ -177,14 +176,14 @@ Home Manager (`homeConfigurations.*`).
 | **Dotfiles** | Use `xdg.configFile.<name>.source` / `.text` or `home.file.<path>.source`. Avoid raw string concatenation when the HM module already manages the target file. |
 | **User Services** | On NixOS you may declare `systemd.user.services.*` in a side-car imported by `home-manager.sharedModules`. On standalone HM these still evaluate but only activate if the host runs systemd. |
 | **Shells** | Configure `programs.zsh.*`, `programs.bash.*`, or `programs.fish.*` rather than writing static `~/.zshrc` fragments. |
-| **Secrets** | Per-user secrets via `my.programs.direnv.secretFiles` (see root `AGENTS.md` §3.1). |
+| **Secrets** | Per-user secrets via `my.programs.direnv.secretFiles` (see root `AGENTS.md` §6.4 Secrets Handling). |
 | **Activation** | Use `home.activation.<name>` for one-shot setup that runs during `home-manager switch`. |
 | **System references** | **Never** reference `config.system.*`, `services.*`, `boot.*`, or `hardware.*` — these do not exist in standalone Home Manager. |
 | **Tests** | Smoke tests should validate `home.file` source paths and activation script idempotency. |
 
 **Agent rule:** A Home Manager module must be safe for both
 `home-manager.users.<name>` (inside a NixOS config) and a standalone
-`configurations/home/<name>.nix`. Do not assume NixOS-level state exists.
+`configurations/home/<name>.nix` (dir not yet present — dormant). Do not assume NixOS-level state exists.
 
 ---
 
@@ -200,8 +199,8 @@ devShells, and exported modules.
 | **`flake.*`** | Use `flake.nixosModules.*`, `flake.homeModules.*`, `flake.overlays.*` to export reusable modules. Do NOT instantiate NixOS system config directly here (e.g. do not set `services.foo.enable` at the flake level). |
 | **Autoload** | `flake.nix` imports **all** `.nix` files in this directory automatically, plus any subdirectory containing a `default.nix`. Any new file or subdirectory becomes a live flake module. |
 | **Identity Pattern** | `config.nix` (repo root) is imported by `modules/flake-parts/config.nix`. Extend the submodule there when adding new identity fields; consume via `config.me.*` / `config.tailnet.*`. |
-| **`pkgs` wiring** | Use the existing `_module.args.pkgs` pattern in `perSystem` (see root `AGENTS.md` §3.4). Do not shadow `pkgs` with a custom import unless you are adding overlays. |
-| **Manual Wiring** | Packages/apps are often exposed explicitly in `perSystem.packages` / `perSystem.apps` (see `packages.nix` and `terranix.nix` for examples). Autowiring does not cover these. |
+| **`pkgs` wiring** | Use the existing `_module.args.pkgs` pattern in `perSystem` (see this document's §3.4 flake-parts Modules). Do not shadow `pkgs` with a custom import unless you are adding overlays. |
+| **Manual Wiring** | Packages/apps are often exposed explicitly in `perSystem.packages` / `perSystem.apps` (see `packages.nix` and `cloud.nix` for examples). Autowiring does not cover these. |
 | **Cross-flake inputs** | Use `inputs.<name>` sparingly; prefer forwarding via `follows` to keep closure sizes small. Declare primary inputs in `nixos-flake.nix` under `nixos-unified.primary-inputs`. |
 | **Tests** | Validate via `nix flake check`. |
 
@@ -447,7 +446,6 @@ Always nest under `options.my`.
 ```nix
 # GOOD
 imports = [
-  ./meta.nix
   ./options.nix
   ./config.nix
   ./services.nix
@@ -461,8 +459,8 @@ imports = lib.mapAttrsToList (n: _: ./${n}) (builtins.readDir ./.);
 ### 9.1 Cross-Module Dependencies
 
 If module `A` depends on options from module `B`, import `B` at the
-configuration level (e.g. in `modules/nixos/default.nix`) rather than inside
-`A/default.nix`.  This keeps modules loosely coupled.
+configuration level (e.g. in `modules/nixos/common.nix`, which all hosts import)
+rather than inside `A/default.nix`.  This keeps modules loosely coupled.
 
 ---
 

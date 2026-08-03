@@ -67,7 +67,7 @@ someService.tokenFile = lib.mkIf (config.age.secrets ? "github-token")
   config.age.secrets."github-token".path;
 ```
 
-**Always use the `?` guard** when the secret might not exist — for example, in CI builds where `agenixManager.enable = false`.
+**Always use the `?` guard** when the secret might not exist on the current host (the manifest `hosts` / `scope` fields restrict it) or when evaluating in CI. A bare `config.age.secrets.<name>.path` aborts evaluation the moment the attribute is absent.
 
 ## Encryption Keys
 
@@ -77,7 +77,7 @@ someService.tokenFile = lib.mkIf (config.age.secrets ? "github-token")
 | Host SSH host key | Auto-decryption at boot | `/etc/ssh/ssh_host_ed25519_key` |
 | macOS agenix key | nix-darwin decryption | `~/.ssh/agenix` (set by `modules/home/core/agenix.nix`) |
 
-All host public keys are listed in `nixos/common.nix` under `agenixManager.keys.systems`. Most secrets use `scope: "all"` so they work on every host.
+All host public keys are listed in `modules/nixos/common.nix` under `agenixManager.keys.groups.systems`. Most secrets use `scope: "main"` (→ `keys.groups.main` = systems + users); a few use `scope: "all"` (shared secrets) or `scope: "deployment"` (nixos-anywhere deployment keys).
 
 ## Rekeying (Adding a New Host)
 
@@ -86,7 +86,7 @@ All host public keys are listed in `nixos/common.nix` under `agenixManager.keys.
 cat /etc/ssh/ssh_host_ed25519_key.pub
 
 # 2. Add the key to modules/nixos/common.nix:
-#    agenixManager.keys.systems = [ ... "ssh-ed25519 ... root@newhost" ];
+#    agenixManager.keys.groups.systems = [ ... "ssh-ed25519 ... root@newhost" ];
 
 # 3. Rekey all .age files so the new host can decrypt them:
 agenix-manager rekey
@@ -106,18 +106,18 @@ git commit -m "secrets: add new host key"
 | `agenix-manager` (in devShell) | TUI for creating/editing/rekeying secrets |
 | `agenix -e modules/nixos/secrets/<name>.age` | Edit a secret via plain agenix |
 
-## CI / Builds Without Secrets
+## CI / Package Builds
 
-In CI (see `modules/flake-parts/packages.nix`), secrets are disabled:
+CI package builds (`modules/flake-parts/packages.nix`) evaluate every host's `default`
+package with `services.tailscale.enable = lib.mkForce false` and
+`services.tailscale-manager.enable = lib.mkForce false` so no tailnet is needed at build
+time. agenix-manager is **not** disabled there — the committed `.age` blobs evaluate
+fine, so a direct `config.age.secrets.<name>.path` reference will not fail in CI for that
+reason alone.
 
-```nix
-nixosCfg.extendModules {
-  modules = [ { agenixManager.enable = false; } ];
-}
-```
-
-This means any module that references `config.age.secrets.*` without a `?` guard
-will **fail during CI evaluation**. Always guard secret access.
+`?`-guards are still mandatory because a secret may not exist on a given host (the
+manifest `hosts` / `scope` fields restrict it), and a bare reference aborts evaluation
+the moment the attribute is missing.
 
 ## Quick Reference
 

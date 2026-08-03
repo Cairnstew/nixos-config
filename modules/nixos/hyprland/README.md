@@ -35,10 +35,13 @@ Set `parent.enable = true` to enable all default submodules. Each can be overrid
 | Submodule | Option | Type | Default | Description |
 |-----------|--------|------|---------|-------------|
 | `core` | `enable` | bool | `true` | Compositor core: programs.hyprland, env vars, appearance, keybinds |
+| | `workspaceStartup` | list | `[]` | Launch commands on specific workspaces `[{command, workspace, class?, title?}]` |
+| | `extraWindowRules` | `[str]` | `[]` | Extra hyprland window rules (e.g. `"float, class:^(pavucontrol)$"`) |
 | `bar` | `enable` | bool | `true` | Waybar status bar |
 | | `style` | lines | `""` | Extra CSS for waybar |
 | | `position` | enum | `"top"` | Waybar position (`top`/`bottom`) |
 | | `height` | int | `30` | Waybar height in pixels |
+| | `customModules` | attrs | `{}` | Custom waybar modules `{name = {exec, execIf?, interval?, format?, returnType?, position?}}` |
 | `launcher` | `enable` | bool | `true` | Wofi app launcher (SUPER+D) |
 | | `package` | pkg | `pkgs.wofi` | Launcher package |
 | | `args` | str | `"--show drun"` | Extra launcher args |
@@ -67,9 +70,11 @@ Set `parent.enable = true` to enable all default submodules. Each can be overrid
 | `clipboard` | `enable` | bool | `true` | wl-clipboard + cliphist |
 | | `history` | bool | `true` | Enable cliphist |
 | `portal` | `enable` | bool | `true` | xdg-desktop-portal-hyprland |
-| `displayManager` | `enable` | bool | `true` | Greetd + tuigreet TTY greeter |
-| | `greeter` | pkg | `pkgs.tuigreet` | Greeter package |
-| | `sessionCommand` | str | `"Hyprland"` | Session command |
+| `displayManager` | `enable` | bool | `true` | Display manager (greetd or SDDM) |
+| | `greeter` | enum | `"greetd"` | Display manager choice: `greetd` (TTY-based) or `sddm` (graphical) |
+| | `greeterPackage` | pkg | `pkgs.tuigreet` | Greeter package for greetd (e.g. tuigreet, gtkgreet) |
+| | `extraGreetdArgs` | `[str]` | `["--time" "--remember"]` | Extra CLI args for the greetd greeter command |
+| | `sessionCommand` | str | `"start-hyprland"` | Session command passed to the greeter |
 | `audio` | `enable` | bool | `true` | PipeWire + WirePlumber |
 | `utilities` | `enable` | bool | `true` | polkit, thunar, gvfs, tumbler, nm-applet, fonts, brightnessctl, playerctl, imv, mpv, GTK theme |
 | `nvidia` | `enable` | bool | `false` | Nvidia modesetting + kernel params + env vars (LIBVA_DRIVER_NAME, etc.) |
@@ -88,6 +93,8 @@ Set `parent.enable = true` to enable all default submodules. Each can be overrid
 | `pyprland` | `enable` | bool | `false` | Pyprland IPC plugins (scratchpads, expose, etc.) |
 | | `plugins` | list | `[]` | Plugin names to enable |
 | `awww` | `enable` | bool | `false` | Standalone awww (use `wallpapers.backend = "awww"` instead) |
+| `wallpaper` | `enable` | bool | `false` | Legacy hyprpaper daemon submodule (singular; superseded by `wallpapers`) |
+| | `images` | `[path]` | `[]` | Wallpaper image paths to preload and set |
 
 ## Per-Monitor Configuration
 
@@ -123,3 +130,7 @@ my.desktop.hyprland = {
   wallpapers.settings.awww.transitionType = "center";
 };
 ```
+
+## Related Modules
+
+- **Imported by** [`modules/nixos/common.nix`](../common.nix) — enabled on all hosts via `my.*` options.

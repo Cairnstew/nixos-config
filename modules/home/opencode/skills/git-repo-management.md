@@ -47,6 +47,26 @@ my.services.gitRepoSync = {
 - `fetchPrune`: Remove stale remote-tracking refs
 - `agenix.enable`: Use agenix for GitHub token injection
 
+### Branch-Per-Host Rollout
+
+The `nixos-config` repo uses a **branch-per-host** model:
+
+```
+host commit → gitreposync autoPush → origin/<host>
+    → merge-per-host.yml (validate + auto-PR) → master
+    → gitreposync mergeUpstream (ff-only) → other host branches
+```
+
+- Each host stays on `origin/<hostname>` (`branch = config.networking.hostName`,
+  `autoPush = true`, `mergeUpstream = "master"` in `modules/nixos/common.nix`).
+- CI (`merge-per-host.yml`) validates the pushed host and auto-merges a PR to
+  `master`. Full docs: `modules/nixos/gitreposync/README.md` and
+  `.github/workflows/README.md`.
+- **When adding a host**, add its branch to `merge-per-host.yml`
+  `on.push.branches`, or it will push but never be merged into `master`.
+- **Caveat:** `mergeUpstream` is hard-coded `--ff-only` — a host with unmerged
+  local commits (or a dirty tree) skips the master merge until its own PR lands.
+
 ## Common Git Tasks in This Repo
 
 ### Adding a New Host Configuration
@@ -79,19 +99,22 @@ nix fmt  # Runs nixpkgs-fmt on all .nix files
 nix run
 
 # Test specific host
-nix run .#test run <hostname>
+nix run .#nixtests-run
 
-# List all hosts
-nix run .#test list
+# Build smoke tests for the current host
+just test
+
+# Run a VM test for a host (e.g. just vm-test laptop)
+just vm-test <hostname>
 ```
 
 ### Secrets Management
 
-Secrets are managed with agenix:
+Secrets are managed with agenix-manager (flat `.age` files in `modules/nixos/secrets/`):
 
-1. Edit `secrets/secrets.nix` to declare secrets and keys
-2. Run `agenix -e secret-name` to encrypt
-3. Reference in configs: `config.age.secrets.<name>.path`
+1. Edit/add to `modules/nixos/secrets/secrets-manifest.json` to declare a secret
+2. Run `nix develop .#secrets` then `agenix-manager new` (or plain `agenix -e modules/nixos/secrets/<name>.age -r /etc/agenix/secrets.nix`) to encrypt
+3. Reference in configs: `config.age.secrets.<name>.path` (guard with `config.age.secrets ? "<name>"`)
 
 Never commit plaintext secrets or reference secret paths directly without
 checking if the secret exists first.

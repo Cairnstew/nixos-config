@@ -28,6 +28,10 @@ my.services.zerotier = {
 
 ## Notes
 
-- Not auto-started at boot — `wantedBy` is cleared so the tailscale-watchdog manages start/stop.
+- Always-on at boot — `wantedBy = [ "multi-user.target" ]` (independent recovery mesh, not managed by tailscale-watchdog).
 - `Restart` is forced to `on-failure` with 5 second delay for fallback reliability.
 - Firewall UDP port 9993 is opened by default.
+
+## Related Modules
+
+- **Imported by** [`modules/nixos/common.nix`](../common.nix) — enabled on all hosts via `my.*` options.

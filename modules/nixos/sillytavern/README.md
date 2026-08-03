@@ -2,6 +2,8 @@
 
 LLM frontend with Ollama integration, declarative presets, and basic auth.
 
+This module wraps the upstream Cairnstew/SillyTavern flake — options live under `services.sillytavern.*`, not `my.*`. See [default.nix](default.nix) for the upstream import of `sillytavern.nixosModules.default`.
+
 ## Options
 
 | Option | Type | Description |
@@ -39,7 +41,7 @@ LLM frontend with Ollama integration, declarative presets, and basic auth.
 ## Usage
 
 ```nix
-my.services.sillytavern = {
+services.sillytavern = {
   enable = true;
   ollama = {
     enable = true;
@@ -74,3 +76,7 @@ my.services.sillytavern = {
 - Preset files written on each activation (service start)
 - Models auto-populate `my.services.ollama.models` and auto-pull
 - L2 smoke test: `systemctl start sillytavern-smoke-test`
+
+## Related Modules
+
+- **Imported by** [`modules/nixos/common.nix`](../common.nix) — enabled on all hosts via `my.*` options.

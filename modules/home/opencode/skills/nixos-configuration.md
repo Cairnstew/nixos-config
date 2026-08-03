@@ -12,17 +12,17 @@ This is a multi-system Nix configuration using:
 ```
 .
 ├── configurations/          # Host configurations
-│   ├── nixos/              # NixOS hosts
-│   ├── darwin/             # macOS hosts (dormant)
-│   └── home/               # Standalone home-manager configs
+│   └── nixos/              # NixOS hosts (darwin + home dirs dormant — not yet present)
 ├── modules/
 │   ├── nixos/              # NixOS modules
-│   ├── darwin/             # nix-darwin modules
 │   ├── home/               # Home Manager modules
 │   └── flake-parts/        # Flake-level modules
 ├── overlays/               # Nixpkgs overlays
 ├── packages/               # Custom packages
-└── secrets/                # Agenix secrets
+├── templates/              # Project templates (foundation-mod, godot, tmodloader, ...)
+├── tools/                  # Repo tooling (nix-graph)
+├── tests/                  # Nix test suites
+└── modules/nixos/secrets/  # Agenix-manager secrets (flat `.age` files)
 ```
 
 ## Key Conventions
@@ -120,7 +120,7 @@ nix fmt
 | Category | Path | Purpose |
 |----------|------|---------|
 | System | `modules/nixos/` | NixOS-specific |
-| Darwin | `modules/darwin/` | macOS-specific |
+| Darwin | *(dormant — dir not yet present)* | macOS-specific (nix-darwin modules when added) |
 | Home | `modules/home/` | Home Manager |
 | Flake-parts | `modules/flake-parts/` | Flake outputs |
 
@@ -138,10 +138,10 @@ nix fmt
 
 Use agenix for secrets:
 
-1. Add to `secrets/secrets.nix`
-2. Encrypt: `agenix -e secret-name`
+1. Declare in `modules/nixos/secrets/secrets-manifest.json`
+2. Encrypt: `nix develop .#secrets` → `agenix-manager new` (or plain `agenix -e modules/nixos/secrets/<name>.age -r /etc/agenix/secrets.nix`)
 3. Use in config: `config.age.secrets.<name>.path`
-4. Check existence before use: `config.age.secrets ? "name"`
+4. Check existence before use: `config.age.secrets ? "<name>"`
 
 Never commit plaintext secrets!
 
@@ -167,5 +167,5 @@ Never commit plaintext secrets!
 ### "Secret not found"
 
 - Verify agenix identity is set up
-- Check secret is declared in `secrets.nix`
+- Check secret is declared in `modules/nixos/secrets/secrets-manifest.json`
 - Ensure host has access to the secret

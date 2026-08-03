@@ -20,11 +20,24 @@ user timers.
 | `my.services.gitRepoSync.user` | — | User that owns the timers |
 | `my.services.gitRepoSync.repos.<name>.url` | — | Remote URL (https or ssh) |
 | `my.services.gitRepoSync.repos.<name>.path` | — | Absolute local path |
-| `my.services.gitRepoSync.repos.<name>.branches` | `[]` | Branches to track (empty = current branch) |
+| `my.services.gitRepoSync.repos.<name>.homeDir` | `"%h"` | `HOME` env var for the service (systemd user specifier) |
+| `my.services.gitRepoSync.repos.<name>.remote` | `"origin"` | Name of the git remote to fetch from |
+| `my.services.gitRepoSync.repos.<name>.branches` | `[]` | Branches to track (empty = fetch all refs, current branch) |
+| `my.services.gitRepoSync.repos.<name>.cloneBranch` | `null` | Branch to check out on initial clone |
+| `my.services.gitRepoSync.repos.<name>.branch` | `null` | Branch to check out after every sync (e.g. hostname-based rollout) |
+| `my.services.gitRepoSync.repos.<name>.mergeUpstream` | `null` | Upstream branch to merge via `--ff-only` after syncing |
+| `my.services.gitRepoSync.repos.<name>.autoPush` | `false` | Push local commits after syncing/merging |
+| `my.services.gitRepoSync.repos.<name>.cloneBare` | `false` | Clone as a bare repository (mirrors) |
+| `my.services.gitRepoSync.repos.<name>.autoPull` | `true` | Apply `conflictStrategy` after fetch (false = fetch only) |
 | `my.services.gitRepoSync.repos.<name>.conflictStrategy` | `"ff-only"` | How to integrate remote changes |
+| `my.services.gitRepoSync.repos.<name>.fetchPrune` | `true` | Pass `--prune` to git fetch |
+| `my.services.gitRepoSync.repos.<name>.fetchDepth` | `null` | Shallow fetch depth (null = full history) |
 | `my.services.gitRepoSync.repos.<name>.interval` | `"15m"` | Sync interval |
+| `my.services.gitRepoSync.repos.<name>.onBootDelaySec` | `"30s"` | Delay after boot before first sync |
+| `my.services.gitRepoSync.repos.<name>.timerPersistent` | `true` | Trigger missed runs on next boot |
 | `my.services.gitRepoSync.repos.<name>.agenix.enable` | `false` | Enable token injection |
 | `my.services.gitRepoSync.repos.<name>.agenix.secretPath` | `/run/agenix/github-token-<name>` | Path to decrypted token |
+| `my.services.gitRepoSync.repos.<name>.agenix.tokenUser` | `"oauth2"` | Username injected alongside the token (e.g. `x-access-token`) |
 
 ## Usage Example
 
@@ -52,6 +65,54 @@ my.services.gitRepoSync = {
 | `reset-hard` | Destructive — discards all local changes. Good for mirrors. |
 | `stash-and-pull` | Stashes local work, fast-forwards, pops stash. |
 
+## Per-Host Branch Workflow
+
+This flake uses a **branch-per-host rollout** model for the `nixos-config` repo:
+
+```
+host commit ──autoPush──▶ origin/<hostname> ──merge-per-host.yml──▶ master ──mergeUpstream──▶ other host branches
+```
+
+1. **Host → own branch**: configured in `modules/nixos/common.nix` with
+   `branch = config.networking.hostName`, `autoPush = true`, and
+   `mergeUpstream = "master"`. On each tick the service stays on the host
+   branch, attempts a fast-forward merge of `master`, then pushes committed
+   changes to `origin/<hostname>`. (It pushes commits — it does not commit.)
+
+2. **CI checks + auto-merge to master**: `.github/workflows/merge-per-host.yml`
+   triggers on push to any per-host branch. It validates the affected host
+   (`nix build ".#nixosConfigurations.<host>.config.system.build.toplevel" --dry-run`),
+   then creates/updates a PR `<host> → master` and enables auto-merge.
+   `smart-ci.yml` runs its path-aware checks on the PR, so auto-merge only
+   lands once they are green.
+
+3. **Master full CI**: on push to `master`, `smart-ci.yml` runs everything
+   (eval all hosts, builds, tests, Cachix caching).
+
+4. **Other hosts pull**: each other host's sync merges `master` into its own
+   branch via `mergeUpstream` (always `--ff-only`).
+
+### ff-only caveats
+
+- `mergeUpstream` is **hard-coded `--ff-only`** (see `services.nix`) — it does
+  not honour `conflictStrategy`. If the merge cannot fast-forward it is skipped
+  and logged as `SKIP — upstream merge not fast-forward`.
+- A host with its **own unmerged commits** cannot fast-forward to `master` and
+  goes stale until its own PR lands. Once the PR merges, `master` contains that
+  host's commits, so the next sync fast-forwards cleanly and picks up everyone
+  else's changes too. This is intended rollout-gating behaviour, not a bug.
+- A **dirty working tree** also blocks the ff-only merge — uncommitted edits to
+  files that also changed upstream cause the merge to be skipped. Commit or
+  stash them first.
+
+### Maintenance when adding a new host
+
+- Add the new hostname to `on.push.branches` in
+  `.github/workflows/merge-per-host.yml`. Hosts not listed are pushed by
+  `autoPush` but are never merged into `master`.
+- The `branch` / `mergeUpstream` defaults in `common.nix` follow the hostname
+  automatically — no per-host config needed.
+
 ## Testing
 
 Run the smoke test manually:
@@ -60,3 +121,7 @@ Run the smoke test manually:
 systemctl --user start git-repo-sync-smoke-test
 journalctl --user -u git-repo-sync-smoke-test -n 30 --no-pager
 ```
+
+## Related Modules
+
+- **Imported by** [`modules/nixos/common.nix`](../common.nix) — enabled on all hosts via `my.*` options.

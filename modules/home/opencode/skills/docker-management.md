@@ -32,11 +32,11 @@ my.virtualisation.docker.enable = true;
 
 ### Custom Data Directory
 ```nix
-my.virtualisation.docker.dataRoot = "/mnt/docker";
+my.virtualisation.docker.dataRoot = "/mnt/data/docker";
 ```
 
 Useful when the root partition is small. The desktop has a dedicated 500GB SATA SSD
-at `/mnt/docker` for Docker data.
+at `/mnt/data/docker` for Docker data.
 
 ### NVIDIA GPU Passthrough
 ```nix
@@ -143,12 +143,12 @@ Test with: `docker run --rm --gpus all nvidia/cuda:12.0-base nvidia-smi`
 
 ### "disk quota exceeded" on Docker pulls
 Docker uses overlay2 storage by default. If `dataRoot` is on a small partition:
-1. Move data: `my.virtualisation.docker.dataRoot = "/mnt/docker";`
+1. Move data: `my.virtualisation.docker.dataRoot = "/mnt/data/docker";`
 2. Or migrate existing data:
    ```bash
    systemctl stop docker
-   mv /var/lib/docker /mnt/docker/
-   ln -s /mnt/docker /var/lib/docker
+   mv /var/lib/docker /mnt/data/docker/
+   ln -s /mnt/data/docker /var/lib/docker
    systemctl start docker
    ```
 

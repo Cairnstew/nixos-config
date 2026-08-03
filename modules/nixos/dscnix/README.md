@@ -19,7 +19,10 @@ rules, and more using Nix, with values derived from your host config.
 | `my.services.dscnix.windowsFeatures.*` | `{}` | Windows features (legacy) |
 | `my.services.dscnix.firewallRules.*` | `{}` | Firewall rules (read-only) |
 | `my.services.dscnix.optionalFeatures.*` | `{}` | Optional features (read-only) |
+| `my.services.dscnix.featuresOnDemand.*` | `{}` | Windows Features on Demand (read-only) |
 | `my.services.dscnix.runCommands.*` | `{}` | Commands to run on set |
+| `my.services.dscnix.powerShellScripts.*` | `{}` | Inline PowerShell 7 scripts |
+| `my.services.dscnix.windowsPowerShellScripts.*` | `{}` | Inline Windows PowerShell 5.1 scripts |
 | `my.services.dscnix.files.*` | `{}` | File resources |
 | `my.services.dscnix.services.*` | `{}` | Legacy service resources |
 | `my.services.dscnix.osInfo.*` | `{}` | OS assertion (read-only) |
@@ -70,3 +73,7 @@ The generated YAML is available at:
   They can be tested/asserted but not set.
 - The IANA→Windows timezone mapping covers ~300 timezone identifiers.
   If your TZ is not found, the raw IANA name is passed to tzutil as a fallback.
+
+## Related Modules
+
+- **Imported by** [`modules/nixos/common.nix`](../common.nix) — enabled on all hosts via `my.*` options.

@@ -45,3 +45,7 @@ my.services.tor = {
 - `installMethod = "auto"` prefers home-manager if enabled, otherwise uses `environment.systemPackages`.
 - When `wrapper.useIPCTorService` is enabled, the Tor Browser will connect to the system Tor daemon via a control socket instead of using its bundled Tor.
 - Assertions prevent `installMethod = "home"` if home-manager is not enabled.
+
+## Related Modules
+
+- **Imported by** [`modules/nixos/common.nix`](../common.nix) — enabled on all hosts via `my.*` options.

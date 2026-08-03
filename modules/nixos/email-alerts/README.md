@@ -35,5 +35,10 @@ Uses the `alert-gmail` agenix secret — a Gmail app password. Enable
 account, then generate an app password at
 https://myaccount.google.com/apppasswords.
 
-The secret is encrypted with the `deployment` key group; ensure it's
-available on target hosts.
+The secret is encrypted with the `main` key group
+(`keys.groups.main` in `modules/nixos/common.nix`); ensure the target host's
+SSH host key is in that group.
+
+## Related Modules
+
+- **Imported by** [`modules/nixos/common.nix`](../common.nix) — enabled on all hosts via `my.*` options.

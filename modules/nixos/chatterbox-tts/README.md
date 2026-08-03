@@ -7,6 +7,10 @@ OpenAI-compatible TTS server with Web UI, voice cloning, and multi-engine suppor
 | Option | Default | Description |
 |--------|---------|-------------|
 | `my.services.chatterbox-tts.enable` | `false` | Enable |
+| `my.services.chatterbox-tts.package` | — | Chatterbox TTS server package |
+| `my.services.chatterbox-tts.user` | `"chatterbox-tts"` | User the server runs as |
+| `my.services.chatterbox-tts.group` | `"chatterbox-tts"` | Group the server runs as |
+| `my.services.chatterbox-tts.stateDir` | `"/var/lib/chatterbox-tts"` | Persistent state dir (model cache, config, voices, outputs) |
 | `my.services.chatterbox-tts.port` | `8004` | API port |
 | `my.services.chatterbox-tts.host` | `"127.0.0.1"` | Listen address |
 | `my.services.chatterbox-tts.backend` | `"cpu"` | Compute backend (cpu/cuda/rocm) |
@@ -38,3 +42,7 @@ The server exposes an OpenAI-compatible `/v1/audio/speech` endpoint.
 - Model weights are cached in `stateDir/model_cache` (HuggingFace cache) so they persist across deployments.
 - CPU-only by default to avoid VRAM contention with Ollama.
 - Switch between Original/Turbo/Multilingual engines at runtime via the Web UI dropdown.
+
+## Related Modules
+
+- **Imported by** [`modules/nixos/common.nix`](../common.nix) — enabled on all hosts via `my.*` options.

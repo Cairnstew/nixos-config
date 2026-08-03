@@ -31,3 +31,7 @@ my.theming.stylix = {
 - Fonts default to JetBrainsMono Nerd Font (monospace), Inter (sans-serif), Noto Color Emoji.
 - GNOME target is enabled when `my.desktop.gnome.enable` is set.
 - Overrides `qt.platformTheme` to `"adwaita"` (upstream default `"gnome"` is deprecated).
+
+## Related Modules
+
+- **Imported by** [`modules/nixos/common.nix`](../common.nix) — enabled on all hosts via `my.*` options.

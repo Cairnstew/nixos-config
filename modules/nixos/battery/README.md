@@ -33,3 +33,7 @@ my.profiles.battery.enable = true;
 - Uses `auto-cpufreq` with powersave governor on battery, performance on charger.
 - Uses `thermald` for thermal management.
 - `disableSuspend` nukes all systemd suspend/sleep/hibernate targets for remote-access machines.
+
+## Related Modules
+
+- **Imported by** [`modules/nixos/common.nix`](../common.nix) — enabled on all hosts via `my.*` options.

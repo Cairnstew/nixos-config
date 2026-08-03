@@ -44,3 +44,7 @@ my.live.isos.diagnostics = {
 - This is an options-only module; ISOs are built by the flake-parts ventoy layer.
 - Base module presets: minimal, graphical, graphical-kde, graphical-combined.
 - Each ISO can optionally auto-connect to Tailscale with an encrypted auth key.
+
+## Related Modules
+
+- **Imported by** [`modules/nixos/common.nix`](../common.nix) — enabled on all hosts via `my.*` options.

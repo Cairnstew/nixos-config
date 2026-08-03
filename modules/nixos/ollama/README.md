@@ -21,3 +21,7 @@ my.services.ollama = {
   gpu.enable = true;
 };
 ```
+
+## Related Modules
+
+- **Imported by** [`modules/nixos/common.nix`](../common.nix) — enabled on all hosts via `my.*` options.

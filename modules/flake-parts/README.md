@@ -64,8 +64,9 @@ The `nixos-unified.flakeModules.autoWire` module (imported via
   errors (see `GOTCHAS.md`).
 - **`packages/` autowiring calls `pkgs.callPackage`** on each file. If a
   package requires arguments that aren't in nixpkgs (e.g., `ventoyJson`), it
-  **must not** be in `packages/`. Use an underscore prefix (`_foo/`) or place
-  it elsewhere.
+  **must not** be in `packages/` — the underscore prefix does *not* skip
+  autowiring (see the Caveat below). Place the file elsewhere, outside
+  `packages/`.
 - **Module name = file/dir name**. `modules/nixos/foo.nix` →
   `nixosModules.foo`.
 
@@ -175,21 +176,21 @@ via `callPackage ./relative/path` from a flake-parts `perSystem` block.
 
 1. Create a new `.nix` file in this directory, or a subdirectory with a
    `default.nix`. Both are auto-imported by `flake.nix`.
-3. Decide if your module produces:
+2. Decide if your module produces:
    - **`perSystem`** outputs (packages, apps, checks, devShells, formatter)
    - **`flake`** outputs (exported modules, overlays, top-level options)
-4. For flake-level options that configure the repo itself (identity, metadata),
+3. For flake-level options that configure the repo itself (identity, metadata),
    use top-level `options.*` (e.g., `options.me`).
-5. For options that control host behavior, declare them
+4. For options that control host behavior, declare them
    under `options.my.*` so NixOS / darwin / home modules can consume them.
-6. Keep system-level implementation out of this directory.  If you need to add
+5. Keep system-level implementation out of this directory.  If you need to add
    a NixOS module, create it under `modules/nixos/` and only *export* it here
    via `flake.nixosModules.<name> = import ../nixos/<name>;`.
-7. **Subdirectories** with a `default.nix` are auto-imported (like nixos-unified
+6. **Subdirectories** with a `default.nix` are auto-imported (like nixos-unified
    autowiring). Organize related modules into a directory with a `default.nix`
    that imports sidecar files. See `modules/flake-parts/ventoy/README.md` and
     `modules/flake-parts/nixos-anywhere-deploy/` for examples.
-8. Run `nix fmt` and ensure `nix eval .#flake` succeeds before committing.
+7. Run `nix fmt` and ensure `nix eval .#flake` succeeds before committing.
 
 ## Conventions
 

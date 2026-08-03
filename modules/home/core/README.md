@@ -7,3 +7,7 @@ Git, Nix settings, and agenix secrets for home-manager.
 - `git.nix` — Git configuration
 - `nix.nix` — Nix daemon settings
 - `agenix.nix` — User secrets via agenix
+
+## Related Modules
+
+No other modules currently import this one.

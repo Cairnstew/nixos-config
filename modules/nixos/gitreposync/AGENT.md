@@ -100,6 +100,34 @@ Timers are user units, running in the user's systemd session.
 
 ---
 
+## Per-Host Branch Rollout
+
+The `nixos-config` repo follows a branch-per-host rollout:
+
+```
+host commit → autoPush → origin/<host> → merge-per-host.yml (validate + auto-PR) → master
+   → mergeUpstream (ff-only) → other host branches
+```
+
+- Config lives in `modules/nixos/common.nix` (`branch = config.networking.hostName`,
+  `autoPush = true`, `mergeUpstream = "master"`).
+- CI half: `.github/workflows/merge-per-host.yml` validates the pushed host
+  (`nix build --dry-run` of its toplevel) and auto-merges a PR `<host> → master`.
+- Full end-to-end description: `README.md`; CI details: `.github/workflows/README.md`.
+
+**Maintenance when adding a new host:**
+1. Add the new hostname to `merge-per-host.yml` `on.push.branches` — hosts not
+   listed are pushed by `autoPush` but never merged into `master`.
+2. The `branch`/`mergeUpstream` defaults in `common.nix` follow the hostname
+   automatically; no per-host config required.
+
+**Footguns (update `README.md` / `GOTCHAS.md` when behaviour changes):**
+- `mergeUpstream` is hard-coded `--ff-only` (`services.nix`) and ignores
+  `conflictStrategy` — a host with unmerged local commits skips the master merge
+  until its own PR lands (self-heals once merged).
+- Uncommitted local edits to files that also changed upstream block the ff-only
+  merge (SKIP), e.g. a dirty `GOTCHAS.md`/`HEATMAP.md`/`common.nix`.
+
 ## See Also
 
 - `modules/home/opencode/skills/git-repo-management.md` - OpenCode skill

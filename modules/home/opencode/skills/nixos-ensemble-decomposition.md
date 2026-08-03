@@ -17,13 +17,13 @@ The repo's module structure at `modules/nixos/` makes subsystem boundaries clear
 
 | Slice | Scope | Files | Independent? |
 |---|---|---|---|
-| Networking | Tailscale, firewall, SSH, mDNS | `modules/nixos/tailscale.nix`, related profiles | Usually yes |
+| Networking | Tailscale, firewall, SSH, mDNS | `modules/nixos/tailscale/`, related profiles | Usually yes |
 | Services | Docker, Ollama, syncthing, gitreposync | `modules/nixos/docker/`, `modules/nixos/ollama/` | Often yes |
-| Hardware | GPU, CPU, power, disks | `modules/nixos/hardware/`, profiles | Yes |
-| Desktop | GNOME, fonts, display manager | `modules/nixos/profiles/desktop/` | Yes |
-| Secrets | agenix configs and wiring | `modules/nixos/secrets/`, `secrets/` | Mostly yes |
+| Hardware | GPU, CPU, power, disks | `modules/nixos/{graphics,battery,monitors,mouse}/`, profiles | Yes |
+| Desktop | GNOME, fonts, display manager | `modules/nixos/gnome/`, `modules/nixos/hyprland/` (via `my.profiles.desktop.*`) | Yes |
+| Secrets | agenix configs and wiring | `modules/nixos/secrets/` | Mostly yes |
 | Users | Home Manager configs, user mgmt | `modules/nixos/homeManager/` | Tied to secrets |
-| Development | Docker, devenv, git, direnv | `modules/nixos/profiles/development.nix` | Yes |
+| Development | Docker, devenv, git, direnv | `modules/nixos/profiles/system/development.nix` | Yes |
 | CI/Formatters | treefmt, act, justfile | `modules/flake-parts/` | Yes |
 
 ### By Host
@@ -76,7 +76,7 @@ reviewer (reviewer): Verify no secrets leaked and proper ?-guards used
 
 ### "Update secrets"
 
-1. Scout — trace the secret from `secrets/secrets.nix` to its usage sites
+1. Scout — trace the secret from `modules/nixos/secrets/secrets-manifest.json` to its usage sites
 2. Builder — rekey/replace the `.age` file and update consuming module(s)
 3. Reviewer — verify `config.age.secrets ? "name"` guards, no plaintext in store
 
@@ -99,7 +99,7 @@ nix flake check --no-build        # evaluation & assertion check
 For changes to specific host:
 
 ```bash
-nix run .#test run <hostname>     # quick eval sanity
+nix run .#nixtests-run           # quick eval sanity
 ```
 
 The lead must run these on the merged result before cleanup.
