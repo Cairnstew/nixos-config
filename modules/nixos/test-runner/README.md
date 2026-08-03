@@ -44,3 +44,7 @@ Tests follow the conventions in `modules/AGENT.md` §5:
   manually or triggered by this test runner.
 
 The test runner discovers both L1 and L2 tests automatically — no registration needed.
+
+## Related Modules
+
+- **Imported by** [`modules/nixos/common.nix`](../common.nix) — enabled on all hosts via `my.*` options.

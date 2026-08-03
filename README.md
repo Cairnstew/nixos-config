@@ -30,9 +30,10 @@ just local
 
 | Hostname | Type | Platform | Profile |
 |----------|------|----------|---------|
-| `laptop` | ThinkPad/Intel Laptop | `x86_64-linux` | Workstation |
-| `desktop` | AMD Desktop PC | `x86_64-linux` | Workstation |
+| `laptop` | Intel Laptop | `x86_64-linux` | Workstation |
+| `desktop` | AMD Desktop PC | `x86_64-linux` | Workstation + Development + Entertainment + Gaming + Media + Testing + Theming (Stylix) |
 | `server` | AMD Headless Server | `x86_64-linux` | Server |
+| `minimal` | Minimal host | `x86_64-linux` | Minimal + Dev |
 | `wsl` | Windows Subsystem Linux | `x86_64-linux` | Minimal + Dev |
 
 ## Architecture
@@ -52,14 +53,14 @@ just local
 | Path | Flake Output | Description |
 |------|--------------|-------------|
 | `configurations/nixos/<host>/` | `nixosConfigurations.<host>` | NixOS host configurations |
-| `configurations/darwin/<host>.nix` | `darwinConfigurations.<host>` | macOS host configurations (dormant) |
-| `configurations/home/<user>.nix` | `homeConfigurations.<user>` | Standalone Home Manager configs |
+| `configurations/darwin/<host>.nix` | `darwinConfigurations.<host>` | macOS host configurations (dormant — dir not yet present) |
+| `configurations/home/<user>.nix` | `homeConfigurations.<user>` | Standalone Home Manager configs (dormant — dir not yet present) |
 | `modules/nixos/` | `nixosModules.*` | NixOS modules (import via `nixosModules.common`) |
 | `modules/home/` | `homeModules.*` | Home Manager modules |
 | `modules/flake-parts/` | `flake` options | Flake-level modules (templates, testing, etc.) |
 | `overlays/` | `overlays.*` | Package overlays |
 | `packages/` | `perSystem.packages.*` | Custom packages |
-| `secrets/` | N/A | Agenix-encrypted secrets |
+| `modules/nixos/secrets/` | N/A | Agenix-encrypted secrets (flat `.age` files) |
 
 ### Profile System
 
@@ -70,17 +71,26 @@ Use profiles for common configuration patterns instead of manual service enablem
 - `server` — Headless server (SSH, Tailscale, no GUI)
 - `development` — Dev tools (git, docker, direnv)
 - `minimal` — Bare essentials only
+- `gaming` — Steam and gaming tools
+- `media` — Media stack (Prowlarr, Sonarr, Radarr, Jellyfin)
+- `entertainment` — Gaming, music, media services
+- `ai` — AI frontends (RisuAI, Open WebUI, Letta, Jan)
 
 **Feature Profiles**:
-- `desktop.gnome` — Desktop environment
+- `desktop.gnome` / `desktop.hyprland` — Desktop environments
 - `gpu.mesa` / `gpu.nvidia` / `gpu.nvidia-headless` — Graphics drivers
 - `battery` — Power management
 - `location` — Timezone/geolocation
+- `power.desktop` / `power.laptop` — Power profiles (never-sleep vs battery-aware)
+- `theming.stylix` — Stylix theming framework
+- `testing` — Module smoke tests and health checks
 
 **Home Profiles** (`my.homeProfiles.*`):
 - `common` — Shell, direnv, git, basic tools
 - `desktop` — GUI applications (Firefox, Discord, Obsidian)
 - `development` — VSCode, dev tools
+- `minimal` — Essential only
+- `server` — Minimal GUI (disables Firefox, enables VS Code)
 
 Example host configuration:
 
@@ -112,21 +122,28 @@ Example host configuration:
 | Update all flake inputs | `nix flake update` or `just update` |
 | Update specific inputs | `nix flake lock --update-input nixpkgs --update-input home-manager` |
 | Format all Nix files | `nix fmt` (or `nixpkgs-fmt **/*.nix`) |
-| Run tests | `nix run .#test run [hostname]` |
-| List hosts | `nix run .#test list` |
-| Deploy to server | `nix run . <hostname>` |
+| Run tests | `nix run .#nixtests-run` |
+| Deploy a host | `just deploy-run <host> <target>` (or `nix run .#deploy-<host> -- <target>`) |
 | Clean old generations | `just fuckboot` |
-| Local CI check | `nix --accept-flake-config run github:juspay/omnix ci build` |
+| Build a host | `nix build .#<host>` (ci.yml matrix builds laptop/server/wsl) |
+| Check flake evaluation | `nix flake check --no-build` |
 
 ## Secrets
 
-Secrets are managed with [agenix](https://github.com/ryantm/agenix). To edit a secret:
+Secrets are managed with [agenix-manager](https://github.com/Cairnstew/agenix-manager) using flat `.age` files. To edit a secret:
 
 ```bash
-agenix -e secrets/<name>.age
+nix develop .#secrets
+agenix-manager new
 ```
 
-SSH public keys that can decrypt secrets are defined in `secrets/secrets.nix`.
+Or via plain agenix:
+
+```bash
+agenix -e modules/nixos/secrets/<name>.age -r /etc/agenix/secrets.nix
+```
+
+Encrypted blobs live in `modules/nixos/secrets/` and are declared in `secrets-manifest.json`. See `SECRETS.md` for the full reference.
 
 ## Documentation
 
@@ -137,4 +154,4 @@ SSH public keys that can decrypt secrets are defined in `secrets/secrets.nix`.
 
 ## License
 
-MIT — See [LICENSE](./LICENSE) for details.
+MIT — see the [license badge](https://opensource.org/licenses/MIT) at the top of this README.

@@ -53,3 +53,7 @@ my.hardware.mouse = {
 - GNOME integration sets accel-profile to "flat" to avoid double-acceleration.
 - `maccel-watch` CLI provides interactive monitoring (`--diff`, `--watch`, `--json`).
 - Logging detects unexpected maccel parameter changes and logs to journald.
+
+## Related Modules
+
+- **Imported by** [`modules/nixos/common.nix`](../common.nix) — enabled on all hosts via `my.*` options.

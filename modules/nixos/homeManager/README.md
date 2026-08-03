@@ -16,3 +16,7 @@ Wires all home-manager modules into a NixOS system user.
 my.homeManager.enable = true;
 my.homeManager.extraConfig.my.programs.firefox.enable = true;
 ```
+
+## Related Modules
+
+- **Imported by** [`modules/nixos/common.nix`](../common.nix) — enabled on all hosts via `my.*` options.

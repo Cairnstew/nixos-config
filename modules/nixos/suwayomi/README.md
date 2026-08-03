@@ -22,6 +22,14 @@ Manga reader server (Tachidesk-compatible) with systemd service and optional Tai
 | `my.services.suwayomi.settings.server.downloadAsCbz` | bool | false | Download chapters as .cbz |
 | `my.services.suwayomi.settings.server.systemTrayEnabled` | bool | false | System tray icon (X11) |
 | `my.services.suwayomi.settings.server.extensionRepos` | list of string | `[]` | Extension repository URLs |
+| `my.services.suwayomi.sync.export.enable` | bool | false | Export the Suwayomi library to a git repo |
+| `my.services.suwayomi.sync.export.interval` | string | `"weekly"` | systemd OnCalendar expression for export frequency |
+| `my.services.suwayomi.sync.export.repoPath` | path | — | Git repo path where the filtered backup is committed |
+| `my.services.suwayomi.sync.export.destFile` | string | `"suwayomi-backup.tachibk"` | Relative path inside repoPath for the backup file |
+| `my.services.suwayomi.sync.export.autoPush` | bool | false | Git push after committing (requires `secretPath`) |
+| `my.services.suwayomi.sync.export.secretPath` | null or path | null | GitHub token file for HTTPS push auth (required when `autoPush`) |
+| `my.services.suwayomi.sync.import.enable` | bool | false | Import the Suwayomi library from a git repo |
+| `my.services.suwayomi.sync.import.interval` | string | `"hourly"` | systemd OnCalendar expression for import frequency |
 
 ## Usage
 
@@ -48,3 +56,7 @@ my.services.suwayomi = {
 - Auth password is injected via the `TACHIDESK_SERVER_AUTH_PASSWORD` environment variable.
 - The `server.conf` HOCON config is generated on first service start only; subsequent edits persist.
 - `autoBindTailscaleIp` resolves via `tailscale ip -4` at runtime and falls back to `settings.server.ip`.
+
+## Related Modules
+
+- **Imported by** [`modules/nixos/common.nix`](../common.nix) — enabled on all hosts via `my.*` options.

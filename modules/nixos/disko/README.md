@@ -42,3 +42,7 @@ my.disko.dualBoot = {
 - "useExisting" declares all four partitions but only formats NixOS.
 - A `windows-post-install` systemd service restores GRUB EFI boot order after Windows Setup resets it.
 - `nixosSizeGB` is required when `reservedSizeGB > 0`.
+
+## Related Modules
+
+- **Imported by** [`modules/nixos/common.nix`](../common.nix) — enabled on all hosts via `my.*` options.

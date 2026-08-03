@@ -72,6 +72,22 @@ nixos-rebuild build --flake .#<hostname>
 systemctl status myservice.service
 ```
 
+## VM Testing
+
+Build and boot a host as a QEMU VM to validate the system closure before
+deploying to real hardware:
+
+```bash
+# Build the VM runner for a host (justfile: vm-test → nix build .#<host>-vm)
+just vm-test <hostname>
+```
+
+- `-vm` outputs are generated per-host by `modules/flake-parts/vm/` for hosts
+  with `my.vm.enable = true` — currently only desktop (`desktop-vm`,
+  `desktop-vm-headless`). Other hosts have no `.#<host>-vm` output yet.
+- See [deploy-workflow.md](deploy-workflow.md) (§ Testing Deployments) for how
+  VM testing fits into the deploy pipeline.
+
 ## Module Test Conventions
 
 ### Structure
@@ -124,11 +140,12 @@ causes "option does not exist" errors. It is only for agents/tooling.
 ## CI Integration
 
 GitHub Actions workflows in `.github/workflows/`:
-- `ci.yml` — Main CI: `nix flake check --no-build` (eval only, no KVM)
-- `build-cache.yml` — Binary cache building
+- `ci.yml` — Full CI (cron): `nix build .#laptop|server|wsl` + devShell builds; its `flake-check` job is commented out (fails on secret path resolution in CI)
+- `build-cache.yml` — Daily binary cache warm-up builds for laptop/server/wsl
 - `format-check.yml` — nixpkgs-fmt formatting
 - `pr-checks.yml` — PR validation workflow
-Local CI simulation with `just act*` commands:
+- `local-verify.yml` — Eval-only checks (`eval-check`, `format-check`, `lint-nix`, `flake-check`) for local verification
+Local CI simulation with `just act*` commands (runs `local-verify.yml`):
 ```bash
 just act            # Run all local-verify jobs
 just act-eval       # Eval check only

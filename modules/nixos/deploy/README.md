@@ -91,3 +91,7 @@ every ISO.
 | `tests.nix` | L0 assertion + validation service |
 | `live-iso-ssh-key` | Plaintext age private key for decrypting tailscale auth at boot |
 | `README.md` | This file |
+
+## Related Modules
+
+- **Imported by** [`modules/nixos/common.nix`](../common.nix) — enabled on all hosts via `my.*` options.

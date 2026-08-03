@@ -46,3 +46,7 @@ my.monitors = [
 
 - This is an options-only module with no config.nix — it defines the data model for desktop environments.
 - Transform values: 0=normal, 1=90° CW, 2=180°, 3=270° CW, 4-7=flipped variants.
+
+## Related Modules
+
+- **Imported by** [`modules/nixos/common.nix`](../common.nix) — enabled on all hosts via `my.*` options.

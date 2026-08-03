@@ -20,7 +20,10 @@ Docker OCI container runtime and daemon configuration with optional NVIDIA Conta
 | `my.virtualisation.docker.users` | `[]` | Users to add to docker group |
 | `my.virtualisation.docker.autoPrune.enable` | `false` | Enable automatic cleanup |
 | `my.virtualisation.docker.autoPrune.dates` | `"weekly"` | When to run cleanup |
+| `my.virtualisation.docker.autoPrune.flags` | `[]` | Extra flags passed to `docker system prune` (e.g. `["--filter=until=24h"]`) |
+| `my.virtualisation.docker.daemon.settings` | `{}` | Docker daemon config written to `/etc/docker/daemon.json` |
 | `my.virtualisation.docker.rootless.enable` | `false` | Enable rootless mode |
+| `my.virtualisation.docker.rootless.daemon.settings` | `{}` | Rootless Docker daemon config |
 
 ## Usage Example
 
@@ -90,3 +93,7 @@ sudo systemctl status docker-smoke-test
 - NVIDIA support requires properly configured NVIDIA drivers - use the GPU profiles.
 - Rootless mode is incompatible with the `users` option (no docker group needed).
 - CDI (Container Device Interface) is the modern approach for GPU access.
+
+## Related Modules
+
+- **Imported by** [`modules/nixos/common.nix`](../common.nix) — enabled on all hosts via `my.*` options.

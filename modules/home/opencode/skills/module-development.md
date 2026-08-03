@@ -25,7 +25,6 @@ The entrypoint must only contain imports:
 { ... }:
 {
   imports = [
-    ./meta.nix
     ./options.nix
     ./config.nix
     ./tests.nix
@@ -184,7 +183,7 @@ Any caveats or upstream links.
 
 ### Module Names
 
-- Match file name to option: `my.services.tailscale` → `tailscale.nix`
+- Match file name to option: `my.services.tailscale` → `tailscale/`
 - Use directories for complex modules
 - Flat files only for trivial one-liners
 
@@ -258,9 +257,12 @@ When a `.nix` file grows:
 # Check evaluation
 nix flake check --no-build
 
-# Build with your module enabled
-nixos-rebuild build --flake .#testhost
+# Run the nixtest suite (option + eval checks, snapshot-based)
+nix run .#nixtests-run
 
-# Run VM test (if L3)
-nix run .#test
+# Build smoke tests for the desktop host (systemd-based smoke tests + health checks)
+just test
+
+# Run a VM test for a host (e.g. just vm-test laptop)
+just vm-test laptop
 ```

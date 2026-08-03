@@ -1,14 +1,17 @@
 # Windows Integration
 
-> Skill for managing Windows dual-boot, PXE netboot, DSC configuration, and unattended installs
+> Skill for managing Windows dual-boot, DSC configuration, and unattended installs via Ventoy
 
 ## Overview
 
 This system supports Windows integration at multiple levels:
 - **Dual-boot**: GRUB chainloads Windows Boot Manager on the desktop
-- **PXE Netboot**: Network-boot Windows installer for headless machines
-- **DSC (Desired State Configuration)**: Nix-to-Windows managed config
-- **Ventoy**: Multi-boot USB with Windows ISOs
+- **DSC (Desired State Configuration)**: Nix-to-Windows managed config, rendered to YAML on the NixOS side
+- **Ventoy**: Multi-boot USB with Windows ISOs and unattended answer files
+
+> **Note (2026-08-03):** PXE netboot (`my.services.netboot`) was removed from the repo. Any
+> reference to `modules/nixos/netboot/`, `packages/autounattend-xml`, or
+> `modules/nixos/windows-installer/` is stale — those modules/packages no longer exist.
 
 ## Dual-Boot (Desktop)
 
@@ -37,57 +40,16 @@ boot.loader.grub.extraEntries = ''
 
 ### Post-Install: Restore GRUB Boot Order
 Windows Setup always sets itself as first EFI entry. A one-shot systemd service
-(`windows-post-install` in `configurations/nixos/desktop/default.nix`) restores
-GRUB to the front after the first boot following a Windows install.
-
-## PXE Netboot
-
-The `my.services.netboot` module provides network booting (DHCP + TFTP + HTTP).
-
-### Modes
-- **CLI mode** (`serveMode = "cli"`): Interactive tool to start/stop PXE services
-- **Daemon mode** (`serveMode = "daemon"`): Persistent systemd services
-
-### Windows Netboot
-```nix
-my.services.netboot = {
-  enable = true;
-  serveMode = "cli";  # or "daemon"
-  interface = "eth0";
-  serverAddress = "192.168.100.1";
-  windows.enable = true;
-};
-```
-
-### Machine Definitions
-```nix
-my.services.netboot.machines."aa:bb:cc:dd:ee:ff" = {
-  windows.unattended = {
-    enable = true;
-    edition = "Windows 11 Pro";
-    localUser = "admin";
-    password = "temporary-password";  # Change after install!
-    timeZone = "GMT Standard Time";
-    computerName = "DESKTOP-ABC";
-  };
-};
-```
-
-### NixOS Auto-Install via Netboot
-```nix
-my.services.netboot.machines."aa:bb:cc:dd:ee:ff" = {
-  nixos.autoInstall = {
-    enable = true;
-    diskoConfig = { ... };  # disko layout attrset
-    nixosConfig = ''...'';  # NixOS module expression as string
-  };
-};
-```
+(`windows-post-install`) restores GRUB to the front after the first boot following a
+Windows install. It lives in two places:
+- `systemd.services.windows-post-install` in `configurations/nixos/desktop/default.nix`
+- The same service is also defined in `modules/nixos/disko/config.nix` (dual-boot flow)
 
 ## DSC (Desired State Configuration)
 
-DSC v3 generates a YAML configuration from Nix options, applied by a PowerShell
-script during Windows setup.
+DSC v3 generates a YAML configuration from Nix options. The module is `my.services.dscnix`
+(`modules/nixos/dscnix/`); the rendered YAML is exposed on the NixOS host, not injected
+into a Windows installer (the old PXE-delivered `apply-dsc.ps1` bootstrap is gone).
 
 ```nix
 my.services.dscnix = {
@@ -108,13 +70,15 @@ my.services.dscnix = {
 ```
 
 ### How It Works
-1. `autounattend.xml` is generated at build time by `packages/autounattend-xml`
-2. Contains a `FirstLogonCommand` that downloads `apply-dsc.ps1` from the PXE HTTP server
-3. The script installs PowerShell 7 + DSC v3 and applies the YAML config
+1. `my.services.dscnix` renders a DSC v3 YAML document at eval time
+2. Output available at `config.my.services.dscnix.configFile` (a Nix derivation) and
+   deployed to `/etc/dscnix/desktop.yaml` on the NixOS host
+3. Auto-derived values (hostname, dark mode, timezone) come from the host config
 
-## Unattended Windows Install (autounattend.xml)
+## Unattended Windows Install via Ventoy
 
-The answer file drives Windows Setup without user interaction.
+Windows unattended install is driven by answer-file XML templates on a Ventoy USB —
+not by the removed netboot/autounattend-xml path.
 
 ### Answer File Templates
 Located at `packages/ventoy/answer-files/`:
@@ -124,10 +88,17 @@ Located at `packages/ventoy/answer-files/`:
 - `kiosk.xml` — Kiosk mode (999 auto-logons)
 - `dual-boot.xml` — Dual-boot setup (wipes disk)
 
+Templates use `@VAR@` placeholders (`@productKey@`, `@computerName@`, `@username@`,
+`@password@`, `@diskId@`, …) substituted at eval time by
+`modules/flake-parts/ventoy/answer-files.nix`. Each profile is exported as a
+`windows-answ-pro-<name>` package (e.g. `nix build .#windows-answ-pro-dual-boot`).
+See `packages/ventoy/answer-files/README.md` for the full variable reference.
+
 ### Security Notes
-- The admin password is in plaintext in `autounattend.xml` over HTTP
-- Mitigation: Use isolated PXE VLAN, set temporary password
-- Use `passwordFile` for eval-time file reads (not runtime paths like `/run/agenix/`)
+- The admin password is in plaintext in the answer XML
+- Mitigation: use a temporary password, change it after install
+- Use `ventoy.answerFileSettings.password` (eval-time value), not a runtime path like
+  `/run/agenix/` which doesn't exist at eval time
 
 ## Ventoy Windows ISO
 
@@ -152,13 +123,8 @@ sudo efibootmgr -o 0000,0001  # Put GRUB first
 The disko nodev config references `/dev/disk/by-label/nixos` — if the partition
 doesn't exist or has a different label, the mount fails. Verify with `lsblk -f`.
 
-### Netboot client gets DHCP but no PXE
-Check dnsmasq config doesn't conflict with natShare. If both target the same
-interface, netboot delegates PXE options to natShare via `extraDnsmasqSettings`.
-
-### ISO repack fails with "same Joliet name"
-Add `-joliet-long` to genisoimage flags (already fixed in `windows-installer/services.nix`).
-
-### UEFI firmware can't boot repacked ISO
-Verify both BIOS (`-b boot/etfsboot.com`) and UEFI (`-eltorito-alt-boot -e efi/microsoft/boot/efisys.bin`)
-El Torito entries are present (already fixed in `windows-installer/services.nix`).
+### Windows-post-install runs on every boot
+The `windows-post-install` service is idempotent via a `/var/lib/windows-post-install/.done`
+stamp — it exits immediately if the stamp exists, and touches it after reordering the EFI
+boot entries. If it keeps re-running, check the stamp logic in
+`configurations/nixos/desktop/default.nix` (or `modules/nixos/disko/config.nix`).

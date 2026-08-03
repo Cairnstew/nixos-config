@@ -19,6 +19,7 @@ cat > configurations/nixos/myhost/default.nix
   imports = [ flake.inputs.self.nixosModules.common ];
   
   networking.hostName = "myhost";
+  nixpkgs.hostPlatform = "x86_64-linux";
   
   # Pick profiles
   my.profiles.workstation.enable = true;
@@ -34,12 +35,27 @@ cat > configurations/nixos/myhost/default.nix
 
 ```
 configurations/nixos/
-├── laptop/                    # Laptop with GUI
-│   ├── default.nix           # Host configuration
+├── desktop/                   # AMD Desktop PC (dual-boot Windows)
+│   ├── configuration.nix
+│   ├── default.nix            # Host configuration
+│   ├── disk-config.nix        # Disko partitioning
 │   └── hardware-configuration.nix  # Generated hardware config
+├── laptop/                    # Laptop with GUI
+│   ├── default.nix            # Host configuration
+│   ├── disk-config.nix        # Disko partitioning
+│   └── hardware-configuration.nix  # Generated hardware config
+├── minimal/                   # Minimal host
+│   ├── configuration.nix
+│   ├── default.nix
+│   ├── disk-config.nix
+│   └── hardware-configuration.nix
 ├── server/                    # Headless server
-│   └── default.nix
+│   ├── configuration.nix
+│   ├── default.nix
+│   ├── disk-config.nix
+│   └── hardware-configuration.nix
 └── wsl/                       # WSL instance
+    ├── configuration.nix
     └── default.nix
 ```
 

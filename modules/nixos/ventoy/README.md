@@ -1,14 +1,14 @@
 # Ventoy
 
 Ventoy USB multi-boot tool — define ISOs and `ventoy.json` configuration at the
-flake level (via `modules/flake-parts/ventoy.nix`), then deploy to a USB with a
+flake level (via `modules/flake-parts/ventoy/`), then deploy to a USB with a
 single command. ISOs can be declared per-host using `my.ventoy.isos`.
 
 ## Architecture
 
 ```
-modules/flake-parts/ventoy.nix        ← declares ventoy.* options, generates ventoy-deploy
-modules/flake-parts/ventoy-config.nix ← common config + per-host ISO aggregation
+modules/flake-parts/ventoy/options.nix   ← declares ventoy.* options
+modules/flake-parts/ventoy/config.nix     ← common config + per-host ISO aggregation
                                             │
                     ┌───────────────────────┴───────────────────────┐
                     ↓                                               ↓
@@ -25,8 +25,8 @@ configurations/nixos/desktop/default.nix        configurations/nixos/server/defa
 
 | Layer | File | What it does |
 |-------|------|-------------|
-| **Flake-part module** | `modules/flake-parts/ventoy.nix` | Defines `ventoy.*` options, generates `ventoy-deploy` + answer file packages |
-| **Config** | `modules/flake-parts/ventoy-config.nix` | Sets common config (control, menu_class, GParted ISO, answer files). Aggregates per-host ISOs from `config.flake.nixosConfigurations` |
+| **Flake-part module** | `modules/flake-parts/ventoy/options.nix` | Defines `ventoy.*` options, generates `ventoy-deploy` + answer file packages |
+| **Config** | `modules/flake-parts/ventoy/config.nix` | Sets common config (control, menu_class, GParted ISO, answer files). Aggregates per-host ISOs from `config.flake.nixosConfigurations` |
 | **NixOS host module** | `modules/nixos/ventoy/` | Host-level options: `my.programs.ventoy.enable` (install tools), `my.ventoy.enable` + `my.ventoy.isos` (contribute ISOs) |
 
 ## Flake-Level Options (`ventoy.*`)
@@ -128,7 +128,7 @@ In the host config (e.g. `configurations/nixos/desktop/default.nix`):
 }
 ```
 
-### 2. Common config + aggregation in `modules/flake-parts/ventoy-config.nix`
+### 2. Common config + aggregation in `modules/flake-parts/ventoy/config.nix`
 
 Common ISOs (GParted), global settings (menu_class, control), and answer files
 are defined here. Per-host ISOs from all hosts are automatically merged.
@@ -161,3 +161,7 @@ The script:
 nix build .#ventoy-bundle       # all ISOs + ventoy.json + grub.cfg as derivation
 nix run .#ventoy-deploy         # run deploy script directly
 ```
+
+## Related Modules
+
+- **Imported by** [`modules/nixos/common.nix`](../common.nix) — enabled on all hosts via `my.*` options.

@@ -40,3 +40,7 @@ my.services.tailscaleWatchdog = {
   restarts `tailscaled` (the documented recovery) and emails an alert.
 - Cooldown tracking uses epoch timestamps in `stateDir` to prevent alert spam.
 - `emailTo` defaults to `my.services.emailAlerts.to` if not set.
+
+## Related Modules
+
+- **Imported by** [`modules/nixos/common.nix`](../common.nix) — enabled on all hosts via `my.*` options.

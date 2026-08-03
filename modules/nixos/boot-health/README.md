@@ -32,3 +32,7 @@ my.services.bootHealth = {
 - Auto-rollback does `nix-env --rollback` on the system profile and reboots.
 - `maxAttempts = 1` prevents infinite rollback loops.
 - If boot-alerting is not installed, auto-rollback still works but with less context.
+
+## Related Modules
+
+- **Imported by** [`modules/nixos/common.nix`](../common.nix) — enabled on all hosts via `my.*` options.

@@ -99,19 +99,22 @@ nix fmt  # Runs nixpkgs-fmt on all .nix files
 nix run
 
 # Test specific host
-nix run .#test run <hostname>
+nix run .#nixtests-run
 
-# List all hosts
-nix run .#test list
+# Build smoke tests for the current host
+just test
+
+# Run a VM test for a host (e.g. just vm-test laptop)
+just vm-test <hostname>
 ```
 
 ### Secrets Management
 
-Secrets are managed with agenix:
+Secrets are managed with agenix-manager (flat `.age` files in `modules/nixos/secrets/`):
 
-1. Edit `secrets/secrets.nix` to declare secrets and keys
-2. Run `agenix -e secret-name` to encrypt
-3. Reference in configs: `config.age.secrets.<name>.path`
+1. Edit/add to `modules/nixos/secrets/secrets-manifest.json` to declare a secret
+2. Run `nix develop .#secrets` then `agenix-manager new` (or plain `agenix -e modules/nixos/secrets/<name>.age -r /etc/agenix/secrets.nix`) to encrypt
+3. Reference in configs: `config.age.secrets.<name>.path` (guard with `config.age.secrets ? "<name>"`)
 
 Never commit plaintext secrets or reference secret paths directly without
 checking if the secret exists first.

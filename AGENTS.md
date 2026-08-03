@@ -43,7 +43,8 @@ When you discover a new problem and its solution, append an entry to `GOTCHAS.md
 This is a multi-system Nix configuration managed by one flake targeting:
 
 * **NixOS** laptops, servers, WSL instances, and cloud VMs
-* **nix-darwin** (macOS) — currently dormant but wired
+* **nix-darwin** (macOS) — dormant but wired (`aarch64-darwin` is in the flake's
+  systems list; no darwin host config exists yet)
 * **Home Manager** standalone configurations
 
 The two structural pillars are:
@@ -60,16 +61,16 @@ The two structural pillars are:
 | Path | Flake output |
 |------|--------------|
 | `configurations/nixos/(host-name).nix` or `…/(host-name)/default.nix` | `nixosConfigurations.(host-name)` |
-| `configurations/darwin/(host-name).nix` or `…/(host-name)/default.nix` | `darwinConfigurations.(host-name)` |
-| `configurations/home/(user-name).nix` | `homeConfigurations.(user-name)` |
+| `configurations/darwin/(host-name).nix` or `…/(host-name)/default.nix` | `darwinConfigurations.(host-name)` *(dir not yet present — dormant)* |
+| `configurations/home/(user-name).nix` | `homeConfigurations.(user-name)` *(dir not yet present)* |
 | `modules/nixos/(name).nix` or `…/(name)/default.nix` | `nixosModules.(name)` |
-| `modules/darwin/(name).nix` or `…/(name)/default.nix` | `darwinModules.(name)` |
+| `modules/darwin/(name).nix` or `…/(name)/default.nix` | `darwinModules.(name)` *(dir not yet present — dormant)* |
 | `modules/home/(name).nix` or `…/(name)/default.nix` | `homeModules.(name)` |
 | `modules/flake-parts/(name).nix` | imported into `flake-parts` top-level |
 | `modules/flake-parts/(name)/default.nix` | auto-imported from subdirectories (like autowiring) |
 | `overlays/(name).nix` | `overlays.(name)` |
 | `packages/(name)/` or `packages/(name).nix` | auto-wired via `perSystem` |
-| `secrets/` | agenix secrets (not a flake output) |
+| `modules/nixos/secrets/` | agenix secrets (not a flake output) |
 
 **Agent rule:** If you add a new file in one of the autowired directories it
 *will* become a flake output automatically. Do not duplicate imports in
@@ -108,12 +109,27 @@ cat > configurations/nixos/myhost/default.nix
 
 ```
 configurations/nixos/           # Host configurations
-├── laptop/                    # Laptop with GUI
+├── desktop/                    # Desktop PC (AMD, dual-boot Windows)
+│   ├── configuration.nix
 │   ├── default.nix             # Host configuration (imports common)
+│   ├── disk-config.nix         # Disko partitioning
 │   └── hardware-configuration.nix  # Generated hardware config
-├── server/                    # Headless server
-│   └── default.nix
-└── wsl/                       # WSL instance
+├── laptop/                     # Laptop with GUI
+│   ├── default.nix             # Host configuration (imports common)
+│   ├── disk-config.nix         # Disko partitioning
+│   └── hardware-configuration.nix  # Generated hardware config
+├── minimal/                    # Minimal host
+│   ├── configuration.nix
+│   ├── default.nix
+│   ├── disk-config.nix
+│   └── hardware-configuration.nix
+├── server/                     # Headless server
+│   ├── configuration.nix
+│   ├── default.nix
+│   ├── disk-config.nix
+│   └── hardware-configuration.nix
+└── wsl/                        # WSL instance
+    ├── configuration.nix
     └── default.nix
 
 modules/nixos/                 # NixOS modules
@@ -123,15 +139,14 @@ modules/nixos/                 # NixOS modules
 │   │   ├── workstation.nix
 │   │   ├── server.nix
 │   │   ├── development.nix
-│   │   └── minimal.nix
+│   │   ├── minimal.nix
+│   │   └── ...                # gaming, media, entertainment, ai
 │   └── home/                  # Home-level profiles
 │       ├── default.nix
 │       ├── common.nix
-│       └── desktop.nix
+│       ├── desktop.nix
+│       └── ...
 └── ...                        # Individual modules
-
-modules/home/                  # Home Manager modules
-└── ...                        # Individual program modules
 ```
 
 ### 3.3 Key Principles
@@ -156,18 +171,26 @@ Profiles provide convenient bundles of related configuration.
 | `minimal` | Bare essentials | Core services only |
 | `development` | Dev tools | Docker, git, direnv |
 | `gaming` | Gaming setup | Steam, gaming tools |
+| `media` | Media stack | Prowlarr, Sonarr, Radarr, Jellyfin |
+| `entertainment` | Entertainment | Gaming, music, media services |
+| `ai` | AI frontends | RisuAI, Open WebUI, Letta, Jan |
 
 **Feature Profiles:**
 
 | Profile | Purpose |
 |---------|---------|
 | `desktop.gnome` | GNOME desktop |
-
+| `desktop.hyprland` | Hyprland Wayland compositor |
+| `desktop.choice` | Desktop-environment selection (hyprland/gnome) |
 | `gpu.mesa` | Intel/AMD graphics |
 | `gpu.nvidia` | NVIDIA graphics |
 | `gpu.nvidia-headless` | NVIDIA (headless/CUDA) |
 | `battery` | Power management |
 | `location` | Timezone/geolocation |
+| `power.desktop` | Desktop power profile (never sleep, no lock) |
+| `power.laptop` | Laptop power profile (battery-aware, lock on idle) |
+| `testing` | Module smoke tests and health checks |
+| `theming.stylix` | Stylix theming framework |
 
 **Example:**
 
@@ -185,7 +208,7 @@ my.profiles = {
 
 | Profile | Purpose | Programs |
 |---------|---------|----------|
-| `common` | Basic shell tools | bash, zsh, direnv, gh |
+| `common` | Basic shell tools | bash, zsh, direnv, gh, ghostty, just, yazi |
 | `desktop` | GUI applications | firefox, discord, obsidian |
 | `development` | Dev tools | vscode, cudatext |
 | `server` | Server user | minimal GUI |
@@ -219,7 +242,7 @@ my.homeManager.extraConfig.my.programs = {
 ### 5.1 All Modules
 
 * All custom options MUST live under the `my.*` namespace
-* Module file names match the option path: `my.services.tailscale` → `modules/nixos/tailscale.nix`
+* Module file names match the option path: `my.services.tailscale` → `modules/nixos/tailscale/`
 * Directories are used for complex modules: `modules/nixos/tailscale/`
 
 ### 5.2 Module Structure
@@ -227,10 +250,12 @@ my.homeManager.extraConfig.my.programs = {
 ```
 modules/nixos/example/
 ├── default.nix      # Entrypoint (imports only)
+├── meta.nix         # Machine-readable metadata (pure attrset)
 ├── options.nix      # Option declarations
 ├── config.nix       # Main implementation
 ├── services.nix     # systemd units
-└── tests.nix        # Tests & assertions
+├── tests.nix        # Tests & assertions
+└── README.md        # Human documentation
 ```
 
 **Rule:** `default.nix` is an **import manifest** — contains only `imports`, no logic.
@@ -304,21 +329,23 @@ Don't reference secrets directly. Use conditional guards:
 
 ```nix
 # Good: Check if secret exists first
-my.services.cachix-push.enable = config.age.secrets ? "cache-token";
+my.caches.personal.push.enable = config.age.secrets ? "nixos-config-cache-token";
 
 # Bad: Will fail if secret missing
-my.services.cachix-push.tokenFile = config.age.secrets.cache-token.path;
+my.caches.personal.push.tokenFile = config.age.secrets."nixos-config-cache-token".path;
 ```
 
 ---
 
 ## 7. Secrets
 
-Secrets are managed with **agenix**. See `SECRETS.md` for the full reference.
+Secrets are managed with **agenix-manager**. See `SECRETS.md` for the full reference.
 
-* Encryption rules: `secrets/secrets.nix` — which keys can decrypt which `.age` files
-* Encrypted blobs: `secrets/<category>/<name>.age`
-* Catalog: `modules/nixos/secrets/catalog.nix` — maps logical paths to agenix names
+* Encryption rules: `modules/nixos/secrets/secrets-manifest.json` — declares each
+  secret's name, scope, owner, group, and mode
+* Encrypted blobs: `modules/nixos/secrets/<name>.age` (flat, no subdirectories)
+* Catalog: `modules/nixos/secrets/` — the manifest is the SSOT; key groups are
+  defined in `modules/nixos/common.nix` under `agenixManager.keys.groups.*`
 * Decryption: At activation time via SSH host keys → `/run/agenix/<name>`
 
 **Key patterns:**
@@ -328,8 +355,9 @@ config.age.secrets ? "<name>"      # existence guard (use this!)
 ```
 
 **Agent rule:** Never commit plaintext secrets. Always guard secret access with
-the `?` existence check — CI builds disable secrets and will fail on bare
-`config.age.secrets.<name>.path` references.
+the `?` existence check. Note: CI package builds (`modules/flake-parts/packages.nix`)
+do not currently disable agenix-manager — the committed `.age` files evaluate fine —
+but the guard pattern is still required for any secret that may not exist on every host.
 
 ---
 
@@ -341,10 +369,10 @@ the `?` existence check — CI builds disable secrets and will fail on bare
 | Update all flake inputs | `nix flake update` or `nix run .#update` |
 | Update specific inputs | `nix flake lock --update-input nixpkgs --update-input home-manager` |
 | Format the tree | `nix fmt` |
-| Build all outputs (CI) | `nix --accept-flake-config run github:juspay/omnix ci build` |
+| Build a host (CI) | `nix build .#<host>` (ci.yml matrix: laptop/server/wsl) |
 | Check flake | `nix flake check --no-build` |
-| Test specific host | `nix run .#test run (hostname)` |
-| List hosts | `nix run .#test list` |
+| Deploy a host | `just deploy-run <host> <target>` (or `nix run .#deploy-<host> -- <target>`) |
+| Run nixtest suites | `nix run .#nixtests-run` |
 | Garbage collect | `sudo nix-env -p /nix/var/nix/profiles/system --delete-generations +2 && sudo nixos-rebuild boot` |
 
 ---

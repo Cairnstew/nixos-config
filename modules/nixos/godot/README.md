@@ -11,12 +11,27 @@ and optional companion applications.
 | `my.programs.godot.enable` | `false` | Enable Godot game engine and tools |
 | `my.programs.godot.engine.enable` | `true` | Install Godot Engine editor |
 | `my.programs.godot.engine.headless.enable` | `false` | Install Godot headless/server build |
+| `my.programs.godot.engine.headless.package` | `null` | Custom headless Godot package |
 | `my.programs.godot.engine.package` | `null` | Custom Godot package (version pin) |
 | `my.programs.godot.exportTemplates.enable` | `false` | Install export templates |
+| `my.programs.godot.exportTemplates.package` | `null` | Export templates package (null = nixpkgs default) |
 | `my.programs.godot.exportTemplates.autoDownload` | `false` | Auto-place templates in editor dir |
+| `my.programs.godot.exportTemplates.targetDir` | `".local/share/godot/export_templates"` | Template placement dir (relative to HOME) |
 | `my.programs.godot.gdscript.enable` | `false` | GDScript tooling (linter, formatter) |
+| `my.programs.godot.gdscript.gdtoolkit` | `true` | Install gdtoolkit (parser, linter, formatter) |
+| `my.programs.godot.gdscript.formatter` | `true` | Install gdscript-formatter |
 | `my.programs.godot.mono.enable` | `false` | Mono/C# support — switches engine to godot-mono and installs .NET SDK |
 | `my.programs.godot.mcp.enable` | `false` | Godot MCP server for AI assistance |
+| `my.programs.godot.mcp.port` | `3101` | MCP server listen port |
+| `my.programs.godot.mcp.openFirewall` | `false` | Open the MCP port in the firewall |
+| `my.programs.godot.pckTool` | `false` | Install godotpcktool for .pck extraction/creation |
+| `my.programs.godot.editor.settingsFile` | `null` | Pre-populate editor settings |
+| `my.programs.godot.editor.projectManager.favoriteDirectories` | `[]` | Favorites shown in the Godot project manager |
+| `my.programs.godot.editor.projectManager.defaultRenderers` | `["forward_plus" "mobile" "gl_compatibility"]` | Default renderers in the project creation dialog |
+| `my.programs.godot.projects` | `{}` | Declared Godot projects |
+| `my.programs.godot.projects.<name>.defaultScene` | `null` | Default main scene (e.g. `res://scenes/main.tscn`) |
+| `my.programs.godot.projects.<name>.xrMode` | `"off"` | XR mode: `off`/`openxr`/`webxr` |
+| `my.programs.godot.projects.<name>.plugins` | `[]` | Plugins enabled for this project |
 | `my.programs.godot.companionApps.enable` | `false` | Companion game dev applications |
 | `my.programs.godot.companionApps.aseprite` | `false` | Aseprite pixel art editor |
 | `my.programs.godot.companionApps.blender` | `false` | Blender 3D modelling |
@@ -25,8 +40,7 @@ and optional companion applications.
 | `my.programs.godot.companionApps.pixelorama` | `false` | Pixelorama sprite editor |
 | `my.programs.godot.companionApps.tiled` | `false` | Tiled tile map editor |
 | `my.programs.godot.companionApps.texturePacker` | `false` | TexturePacker sprite sheets |
-| `my.programs.godot.editor.settingsFile` | `null` | Pre-populate editor settings |
-| `my.programs.godot.projects` | `{}` | Declared Godot projects |
+| `my.programs.godot.companionApps.extraPackages` | `[]` | Extra companion packages |
 
 ## Usage
 
@@ -117,3 +131,7 @@ my.programs.godot = {
 - **Mono/C#**: Enable `my.programs.godot.mono.enable` to use `godot-mono` (C# build). The engine package automatically switches from `pkgs.godot` to `pkgs.godot-mono`, and export templates use `godotPackages.export-templates-mono-bin`. Open the editor with `godot-mono .`.
 - **Blank window on Wayland**: If the editor shows a grey/blank window on Wayland, try: `godot-mono --display-driver wayland .` or `godot-mono --rendering-driver opengl3 .`.
 - Companion apps are individually opt-in for minimal install footprints.
+
+## Related Modules
+
+- **Imported by** [`modules/nixos/common.nix`](../common.nix) — enabled on all hosts via `my.*` options.

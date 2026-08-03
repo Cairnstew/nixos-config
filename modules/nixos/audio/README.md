@@ -17,6 +17,9 @@ mixer (VoiceMeeter-style).
 | `my.system.audio.virtualMixer.patchbay` | `none` | GUI patchbay: `none` or `qpwgraph` |
 | `my.system.audio.virtualMixer.autostart` | `true` | Start mixer as systemd user services |
 | `my.system.audio.virtualMixer.virtualSinks` | `[]` | Declarative PipeWire null-audio-sinks |
+| `my.system.audio.virtualMixer.virtualSinks.<name>.name` | — | PipeWire node name (e.g. `sink.music`) |
+| `my.system.audio.virtualMixer.virtualSinks.<name>.description` | — | Human-readable label in audio apps |
+| `my.system.audio.virtualMixer.virtualSinks.<name>.channels` | `2` | Number of channels (2 = stereo, 6 = 5.1) |
 
 ## Usage
 
@@ -47,3 +50,7 @@ my.system.audio = {
   PulseAudio daemon would break Pulsemeeter's pulsectl control.
 - No VoiceMeeter macro-buttons / VBAN equivalent; use EasyEffects presets or
   `pw-link` scripts for that.
+
+## Related Modules
+
+- **Imported by** [`modules/nixos/common.nix`](../common.nix) — enabled on all hosts via `my.*` options.

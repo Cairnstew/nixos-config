@@ -32,3 +32,7 @@ my.profiles.gaming.enable = true;
 - Requires `my.programs.steam.enable` (or directly `programs.steam.enable`).
 - GE-Proton is packaged as `proton-ge-bin` (not `proton-ge-custom`) in nixpkgs.
 - `protonup-qt` allows managing GE-Proton/Wine-GE versions at runtime via a GUI.
+
+## Related Modules
+
+- **Imported by** [`modules/nixos/common.nix`](../common.nix) — enabled on all hosts via `my.*` options.

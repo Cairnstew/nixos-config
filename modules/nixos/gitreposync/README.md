@@ -20,11 +20,24 @@ user timers.
 | `my.services.gitRepoSync.user` | — | User that owns the timers |
 | `my.services.gitRepoSync.repos.<name>.url` | — | Remote URL (https or ssh) |
 | `my.services.gitRepoSync.repos.<name>.path` | — | Absolute local path |
-| `my.services.gitRepoSync.repos.<name>.branches` | `[]` | Branches to track (empty = current branch) |
+| `my.services.gitRepoSync.repos.<name>.homeDir` | `"%h"` | `HOME` env var for the service (systemd user specifier) |
+| `my.services.gitRepoSync.repos.<name>.remote` | `"origin"` | Name of the git remote to fetch from |
+| `my.services.gitRepoSync.repos.<name>.branches` | `[]` | Branches to track (empty = fetch all refs, current branch) |
+| `my.services.gitRepoSync.repos.<name>.cloneBranch` | `null` | Branch to check out on initial clone |
+| `my.services.gitRepoSync.repos.<name>.branch` | `null` | Branch to check out after every sync (e.g. hostname-based rollout) |
+| `my.services.gitRepoSync.repos.<name>.mergeUpstream` | `null` | Upstream branch to merge via `--ff-only` after syncing |
+| `my.services.gitRepoSync.repos.<name>.autoPush` | `false` | Push local commits after syncing/merging |
+| `my.services.gitRepoSync.repos.<name>.cloneBare` | `false` | Clone as a bare repository (mirrors) |
+| `my.services.gitRepoSync.repos.<name>.autoPull` | `true` | Apply `conflictStrategy` after fetch (false = fetch only) |
 | `my.services.gitRepoSync.repos.<name>.conflictStrategy` | `"ff-only"` | How to integrate remote changes |
+| `my.services.gitRepoSync.repos.<name>.fetchPrune` | `true` | Pass `--prune` to git fetch |
+| `my.services.gitRepoSync.repos.<name>.fetchDepth` | `null` | Shallow fetch depth (null = full history) |
 | `my.services.gitRepoSync.repos.<name>.interval` | `"15m"` | Sync interval |
+| `my.services.gitRepoSync.repos.<name>.onBootDelaySec` | `"30s"` | Delay after boot before first sync |
+| `my.services.gitRepoSync.repos.<name>.timerPersistent` | `true` | Trigger missed runs on next boot |
 | `my.services.gitRepoSync.repos.<name>.agenix.enable` | `false` | Enable token injection |
 | `my.services.gitRepoSync.repos.<name>.agenix.secretPath` | `/run/agenix/github-token-<name>` | Path to decrypted token |
+| `my.services.gitRepoSync.repos.<name>.agenix.tokenUser` | `"oauth2"` | Username injected alongside the token (e.g. `x-access-token`) |
 
 ## Usage Example
 
@@ -108,3 +121,7 @@ Run the smoke test manually:
 systemctl --user start git-repo-sync-smoke-test
 journalctl --user -u git-repo-sync-smoke-test -n 30 --no-pager
 ```
+
+## Related Modules
+
+- **Imported by** [`modules/nixos/common.nix`](../common.nix) — enabled on all hosts via `my.*` options.

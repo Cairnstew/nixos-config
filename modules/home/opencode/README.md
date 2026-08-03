@@ -29,6 +29,8 @@ the terminal, with support for 15+ LLM providers, custom skills, agents, and MCP
 | DeepInfra | OpenAI-compatible | `{file:...}` substitution |
 | Clarifai | OpenAI-compatible | `{file:...}` substitution |
 | Azure | Cloud | `AZURE_API_KEY` env var + endpoint |
+| OpenCode Go | First-class | `keyFile` → `auth.json` (not in provider block) |
+| OpenCode Zen | First-class | `keyFile` → `auth.json` (not in provider block) |
 
 ## Options
 
@@ -89,6 +91,13 @@ This module includes pre-configured skills for common tasks:
 | `git-repo-management` | Git repository management, gitreposync service, common git tasks |
 | `nixos-configuration` | Working with this NixOS configuration repository |
 | `module-development` | Creating modules following repo conventions |
+| `deploy-workflow` | Deploying NixOS via nixos-anywhere, Ventoy USB, and related tools |
+| `docker-management` | Docker/Podman containers, Ollama, and OCI tooling |
+| `nixos-ensemble-decomposition` | Splitting NixOS work into parallel team slices |
+| `opencode-ensemble` | Coordinating ensemble teams, delegating, reviewing teammate output |
+| `secrets-management` | Managing agenix-encrypted secrets |
+| `testing-patterns` | Writing and running tests |
+| `windows-integration` | Windows dual-boot, DSC, unattended installs via Ventoy |
 
 ## Usage Example
 
@@ -173,3 +182,7 @@ See https://opencode.ai/docs/mcp-servers for more details.
 When working with this module locally, no extra env vars are needed — keys are
 read from files at runtime via opencode's `{file:...}` substitution or via
 `home.sessionVariables` exports.
+
+## Related Modules
+
+No other modules currently import this one.
