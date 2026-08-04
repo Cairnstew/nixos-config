@@ -69,6 +69,11 @@ let
         .metric-value { font-size: 1.3rem; font-weight: 700; margin-top: 0.4rem; }
         .metrics-info { display: flex; flex-wrap: wrap; gap: 1.5rem; font-size: 0.85rem; color: #777; margin-top: 1rem; padding: 1rem; background: #1a1a24; border: 1px solid #2a2a38; border-radius: 10px; }
         .metrics-info span { white-space: nowrap; }
+        .oc-instance { background: #1a1a24; border: 1px solid #2a2a38; border-radius: 10px; padding: 1rem; display: flex; flex-direction: column; gap: 0.6rem; }
+        .oc-instance .oc-sessions { display: flex; flex-direction: column; gap: 0.25rem; }
+        .oc-session { font-size: 0.8rem; color: #9db4ff; text-decoration: none; padding: 0.2rem 0.4rem; border-radius: 6px; background: #14141d; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .oc-session:hover { background: #1e1e2e; color: #c3d0ff; }
+        .oc-empty { font-size: 0.8rem; color: #555; }
       </style>
     </head>
     <body>
@@ -170,6 +175,64 @@ let
         </script>
         ''}
 
+        ${lib.optionalString (cfg.dashboard.opencode != []) ''
+        <h2 class="section-title">OpenCode</h2>
+        <div class="grid">
+          ${lib.concatStringsSep "\n" (map (i: ''
+          <div class="oc-instance" data-api="${i.apiPath}" data-href="${i.href}"${lib.optionalString (i.servePort != null) " data-serve-port=\"${toString i.servePort}\""} data-directory="${i.directory}">
+            <a href="${i.href}" class="card">
+              <h2>opencode · ${i.label}</h2>
+              <div class="path">${i.directory}</div>
+            </a>
+            <div class="oc-sessions"><span class="oc-empty">Loading sessions…</span></div>
+          </div>
+          '') cfg.dashboard.opencode)}
+        </div>
+        <script>
+        // Live opencode session list per instance. Sessions are fetched through a
+        // same-origin Caddy handle (apiPath) so it works over both http/https;
+        // each session deep-links into the web UI via the legacy
+        // /<base64(directory)>/session/<id> route.
+        //
+        // UI links: when the instance is exposed on the tailnet (servePort set)
+        // and the dashboard is viewed via the tailnet hostname, link to
+        // https://<current-host>:<servePort>/; otherwise fall back to the direct
+        // href (http://localhost:<backend port>/).
+        function ocUiLink(inst) {
+          var host = window.location.hostname;
+          var local = host === 'localhost' || host === '127.0.0.1' || host === '::1';
+          if (!local && inst.dataset.servePort) {
+            return 'https://' + host + ':' + inst.dataset.servePort + '/';
+          }
+          return inst.dataset.href;
+        }
+        document.querySelectorAll('.oc-instance').forEach(function (inst) {
+          var api = inst.dataset.api;
+          var ui = ocUiLink(inst);
+          var dirB64 = btoa(inst.dataset.directory);
+          var box = inst.querySelector('.oc-sessions');
+          var card = inst.querySelector('a.card');
+          card.href = ui;
+          fetch(api + '/session').then(function (r) {
+            if (!r.ok) throw new Error('status ' + r.status);
+            return r.json();
+          }).then(function (d) {
+            var list = Array.isArray(d) ? d : ((d && (d.sessions || d.data)) || []);
+            if (!list.length) {
+              box.innerHTML = '<span class="oc-empty">No sessions</span>';
+              return;
+            }
+            box.innerHTML = list.slice(0, 10).map(function (s) {
+              var title = s.title || s.id || '(untitled)';
+              return '<a class="oc-session" href="' + ui + '/' + dirB64 + '/session/' + s.id + '">' + title + '</a>';
+            }).join("");
+          }).catch(function (e) {
+            box.innerHTML = '<span class="oc-empty">Sessions unavailable (' + e.message + ')</span>';
+          });
+        });
+        </script>
+        ''}
+
         <p class="footer"><script>document.write(window.location.host)</script></p>
       </div>
     </body>
@@ -199,6 +262,14 @@ let
         file_server
       }
       ''}
+
+      ${lib.concatStringsSep "\n" (map (i: ''
+      handle_path ${i.apiPath}/* {
+        reverse_proxy ${i.host}:${toString i.port} {
+          ${lib.optionalString (i.apiAuthEnv != null) "header_up Authorization \"{\$${i.apiAuthEnv}}\""}
+        }
+      }
+      '') cfg.dashboard.opencode)}
 
       ${lib.concatStringsSep "\n" (lib.mapAttrsToList handleBlock enabledUpstreams)}
 
@@ -324,6 +395,8 @@ in
       enable = true;
       configFile = caddyfile;
     };
+
+    systemd.services.caddy.serviceConfig.EnvironmentFile = cfg.extraCaddyEnvironmentFiles;
 
     systemd.services.metrics-collect = lib.mkIf cfg.systemMetrics.enable {
       description = "Collect system metrics for dashboard";

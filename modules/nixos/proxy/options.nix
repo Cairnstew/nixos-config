@@ -109,6 +109,16 @@ in
       description = "Extra raw Caddyfile lines appended to the site block.";
     };
 
+    extraCaddyEnvironmentFiles = lib.mkOption {
+      type = lib.types.listOf lib.types.path;
+      default = [ ];
+      description = ''
+        Additional EnvironmentFiles for the caddy service. Consumed by the
+        dashboard's opencode API handles (<option>apiAuthEnv</option>) to inject
+        credentials server-side without baking secrets into the Caddyfile.
+      '';
+    };
+
     dashboard = {
       enable = lib.mkOption {
         type = lib.types.bool;
@@ -126,6 +136,77 @@ in
         type = lib.types.lines;
         default = "Browse available services";
         description = "Short description shown below the title.";
+      };
+
+      opencode = lib.mkOption {
+        type = lib.types.listOf (lib.types.submodule {
+          options = {
+            name = lib.mkOption {
+              type = lib.types.str;
+              description = "Unique instance name (repo name).";
+            };
+
+            label = lib.mkOption {
+              type = lib.types.str;
+              description = "Display label on the dashboard card.";
+            };
+
+            port = lib.mkOption {
+              type = lib.types.port;
+              description = "Backend port of the opencode web instance.";
+            };
+
+            host = lib.mkOption {
+              type = lib.types.str;
+              default = "127.0.0.1";
+              description = "Backend host of the opencode web instance.";
+            };
+
+            href = lib.mkOption {
+              type = lib.types.str;
+              description = "URL that opens the instance's web UI.";
+            };
+
+            servePort = lib.mkOption {
+              type = lib.types.nullOr lib.types.port;
+              default = null;
+              description = ''
+                Tailnet HTTPS port for the instance (tailscale serve). When set,
+                the dashboard links to <literal>https://&lt;current-host&gt;:&lt;servePort&gt;/</literal>
+                instead of <literal>href</literal> when viewed via the tailnet
+                hostname.
+              '';
+            };
+
+            apiPath = lib.mkOption {
+              type = lib.types.str;
+              description = "Same-origin path prefix proxied to the instance (e.g. /opencode-api/nix-config).";
+            };
+
+            apiAuthEnv = lib.mkOption {
+              type = lib.types.nullOr lib.types.str;
+              default = null;
+              description = ''
+                Name of a Caddyfile env var (set via an EnvironmentFile on the
+                caddy service) whose value is the <literal>Authorization</literal>
+                header to inject when proxying the API handle. Used when the
+                backend requires basic auth so the dashboard's session fetch
+                works without the browser sending credentials.
+              '';
+            };
+
+            directory = lib.mkOption {
+              type = lib.types.str;
+              description = "Project directory served by the instance — base64-encoded at runtime for session deep-links.";
+            };
+          };
+        });
+        default = [ ];
+        description = ''
+          OpenCode web instances rendered in the dashboard's OpenCode section
+          with a live session list. Populated by the opencode-web module
+          (<option>my.services.opencodeWeb</option>).
+        '';
       };
     };
 

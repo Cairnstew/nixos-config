@@ -177,6 +177,7 @@ in
       clarifai-pat = { owner = lib.mkForce username; };
       deepinfra-key = { owner = lib.mkForce username; };
       opencode-token = { owner = lib.mkForce username; };
+      opencodeWeb-password = { owner = lib.mkForce username; group = lib.mkForce "users"; };
       groq-token = { owner = lib.mkForce username; };
       github-token = { owner = lib.mkForce username; group = lib.mkForce "users"; };
       spotify-cred = { owner = lib.mkForce username; };
