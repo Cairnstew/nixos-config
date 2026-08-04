@@ -5,28 +5,10 @@ let
 in
 {
   config = lib.mkMerge [
-    # Desktop choice (convenience toggle — sets hyprland or gnome)
+    # Desktop choice (convenience toggle — only flips the enable flag; the
+    # hyprland/gnome profile blocks below provide the full attrset bodies)
     (lib.mkIf (cfg.desktop.choice == "hyprland") {
-      my.desktop.hyprland = {
-        enable = true;
-        idle = {
-          enable = true;
-          dpmsTimeout = 60;
-          suspendTimeout = 0;
-        };
-        colorpicker.enable = true;
-        nightLight.enable = true;
-        pyprland.enable = true;
-        pyprland.plugins = [ "scratchpads" "expose" "toggle_dpms" ];
-        wallpapers = {
-          backend = "awww";
-          settings.awww = {
-            transitionType = "simple";
-            transitionStep = 2;
-            transitionFps = 30;
-          };
-        };
-      };
+      my.desktop.hyprland.enable = true;
     })
     (lib.mkIf (cfg.desktop.choice == "gnome") {
       my.desktop.gnome.enable = true;
@@ -128,12 +110,9 @@ in
     })
 
     # Assertions to prevent conflicting profiles
+    # NOTE: mesa+nvidia exclusivity assertion lives only in profiles/tests.nix
     {
       assertions = [
-        {
-          assertion = !(cfg.gpu.mesa.enable && cfg.gpu.nvidia.enable);
-          message = "Cannot enable both Mesa and NVIDIA GPU profiles.";
-        }
         {
           assertion = !(cfg.power.desktop.enable && cfg.power.laptop.enable);
           message = "Cannot enable both desktop and laptop power profiles.";
