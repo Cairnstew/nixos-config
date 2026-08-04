@@ -1,7 +1,9 @@
-{ lib, pkgs, ... }:
+{ config, lib, pkgs, ... }:
 
 let
   inherit (lib) mkEnableOption mkOption types literalExpression;
+
+  cfg = config.my.services.opencodeWeb;
 
   instanceOptions = {
     port = mkOption {
@@ -124,6 +126,54 @@ in
           machine than the opencode instances. With <option>tailnetServe</option>
           enabled the dashboard builds tailnet links automatically from the
           current page's hostname instead.
+        '';
+      };
+    };
+
+    memoryHigh = mkOption {
+      type = types.nullOr types.str;
+      default = "4G";
+      example = "4G";
+      description = ''
+        Soft memory limit (<literal>MemoryHigh</literal>) for each opencode web
+        service. Teammates spawned by the ensemble run inside the same systemd
+        unit cgroup, so this bounds a whole browser team. Set to
+        <literal>null</literal> to leave the unit uncapped.
+      '';
+    };
+
+    memoryMax = mkOption {
+      type = types.nullOr types.str;
+      default = "8G";
+      example = "8G";
+      description = ''
+        Hard memory limit (<literal>MemoryMax</literal>) for each opencode web
+        service. When the cgroup exceeds this the kernel OOM-kills the largest
+        member (usually a teammate) instead of the whole host. Set to
+        <literal>null</literal> to leave the unit uncapped.
+      '';
+    };
+
+    sessionGate = {
+      enable = mkOption {
+        type = types.bool;
+        default = true;
+        description = ''
+          Refuse to start the opencode web service while a terminal opencode
+          session is running (and vice versa — see
+          <option>my.programs.opencode.sessionGate</option>). Both sessions
+          share <filename>~/.config/opencode</filename> and the ensemble state
+          DB, so running them concurrently corrupts team orchestration.
+        '';
+      };
+
+      lockPath = mkOption {
+        type = types.path;
+        default = "${config.users.users.${cfg.user}.home or "/home/${cfg.user}"}/.local/share/opencode/terminal.lock";
+        description = ''
+          Lock file written by a terminal opencode session (its PID) that the
+          web service checks before starting. Must match
+          <option>my.programs.opencode.sessionGate</option>.
         '';
       };
     };

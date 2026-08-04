@@ -25,6 +25,44 @@ let
         --prefix LD_LIBRARY_PATH : "${pkgs.lib.makeLibraryPath [ pkgs.stdenv.cc.cc.lib ]}"
     '';
   };
+
+  # Terminal session gate: when enabled, a terminal opencode refuses to start
+  # while the opencode web (browser) service is running, and otherwise writes a
+  # PID lock that the web service checks before starting. Both sessions share
+  # ~/.config/opencode and the ensemble DB, so running them concurrently
+  # corrupts team orchestration (see GOTCHAS.md). Matches
+  # my.services.opencodeWeb.sessionGate on the system side.
+  #
+  # The gate runs before `exec`, so the wrapper shell is replaced by opencode
+  # and the PID in the lock is preserved (exec keeps the PID). Stale locks
+  # (dead PIDs) are cleaned by the web service's ExecStartPre. OPENCODE_ALLOW_CONCURRENT=1
+  # bypasses both directions.
+  opencodeGated = pkgs.writeShellScriptBin "opencode" ''
+    set -euo pipefail
+    export PATH="${pkgs.systemd}/bin:${pkgs.gnugrep}/bin:${pkgs.coreutils}/bin:$PATH"
+
+    ${optionalString cfg.sessionGate.enable ''
+      if [[ -z "''${OPENCODE_SESSION_GATED:-}" ]]; then
+        export OPENCODE_SESSION_GATED=1
+        if [[ -z "''${OPENCODE_ALLOW_CONCURRENT:-}" ]]; then
+          # Refuse to start while any opencode web (browser) service is active.
+          if systemctl list-units 'opencode-web-*.service' --state=active --no-legend --no-pager | grep -q .; then
+            echo "opencode: refusing to start — the opencode web (browser) session is running." >&2
+            echo "  Stop it first:  sudo systemctl stop 'opencode-web-*.service'" >&2
+            echo "  or force:       OPENCODE_ALLOW_CONCURRENT=1 opencode" >&2
+            exit 1
+          fi
+          # Write the terminal PID lock for the web service's ExecStartPre.
+          lock=${cfg.sessionGate.lockPath}
+          mkdir -p "$(dirname "$lock")"
+          echo $$ > "$lock"
+        fi
+      fi
+    ''}
+
+    exec ${opencodeWrapped}/bin/opencode "$@"
+  '';
+
   providers = import ./providers.nix { inherit lib cfg; };
 
   # Python environment with networkx for the nix-graph MCP server
@@ -277,7 +315,7 @@ in
     {
       programs.opencode = {
         enable = true;
-        package = opencodeWrapped;
+        package = opencodeGated;
         enableMcpIntegration = cfg.enableMcpIntegration;
         context = cfg.context;
         commands = cfg.commands;
