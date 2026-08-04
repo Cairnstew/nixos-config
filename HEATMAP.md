@@ -410,6 +410,23 @@ All `my.*` options declared across module files.
 | `my.services.gitRepoSync.enable` | bool | `false` | Git repository sync service |
 | `my.services.gitRepoSync.user` | str | — | User for sync timers |
 | `my.services.gitRepoSync.repos` | attrs | `{}` | Repositories to sync |
+| `my.services.opencodeWeb.enable` | bool | `false` | opencode web — browser UI for opencode (one systemd instance per synced repo) |
+| `my.services.opencodeWeb.user` | null/str | `null` | User to run the servers as (must have opencode configured) |
+| `my.services.opencodeWeb.repos` | list of str | `["nix-config"]` | gitRepoSync repo names to serve |
+| `my.services.opencodeWeb.instances.<repo>.port` | null/port | `null` | Per-instance port (auto: basePort + index) |
+| `my.services.opencodeWeb.instances.<repo>.servePort` | null/port | `null` | Per-instance tailnet HTTPS port (auto: tailnetServe.basePort + index) |
+| `my.services.opencodeWeb.instances.<repo>.hostname` | null/str | `null` | Per-instance bind address |
+| `my.services.opencodeWeb.instances.<repo>.openFirewall` | null/bool | `null` | Open this port in the firewall |
+| `my.services.opencodeWeb.instances.<repo>.extraArgs` | list | `[]` | Extra `opencode web` args (e.g. `--cors`) |
+| `my.services.opencodeWeb.basePort` | port | `4200` | First auto-allocated port |
+| `my.services.opencodeWeb.hostname` | str | `"127.0.0.1"` | Default bind address |
+| `my.services.opencodeWeb.openFirewall` | bool | `false` | Open instance ports in the firewall |
+| `my.services.opencodeWeb.passwordFile` | null/path | `null` | File with `OPENCODE_SERVER_PASSWORD` (basic auth) |
+| `my.services.opencodeWeb.tailnetServe.enable` | bool | `true` | Expose instances on the tailnet via `tailscale serve` |
+| `my.services.opencodeWeb.tailnetServe.basePort` | port | `8443` | First tailnet serve HTTPS port |
+| `my.services.opencodeWeb.dashboard.enable` | bool | `true` | Add an OpenCode section to the proxy dashboard |
+| `my.services.opencodeWeb.dashboard.baseUrl` | str | `"http://localhost"` | Base URL for dashboard instance links |
+| `my.services.proxy.dashboard.opencode` | list | `[]` | OpenCode instances shown in the dashboard (populated by opencode-web) |
 | `my.services.xmltv.enable` | bool | `false` | XMLTV EPG grabber service for UK Freeview TV listings |
 | `my.services.xmltv.package` | package | `null` | XMLTV package to use |
 | `my.services.xmltv.grabber` | str | `"tv_grab_uk_freeview"` | XMLTV grabber script |

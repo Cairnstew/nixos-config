@@ -50,5 +50,23 @@ in
       interval = lib.mkDefault "15m";
       conflictStrategy = lib.mkDefault "ff-only";
     };
+
+    # ── OpenCode Web ───────────────────────────────────────────────────────
+    # Headless browser UI for opencode. Runs as the primary user (so it picks
+    # up ~/.config/opencode + auth.json) and serves the nixos-config repo by
+    # default — the repo path comes from gitRepoSync, bridging the two modules.
+    # Basic auth via the agenix opencodeWeb-password secret when declared.
+    # Override when: Only want opencode web on specific hosts, or a different
+    #                default repo / remote bind (see my.services.opencodeWeb).
+    my.services.opencodeWeb = {
+      enable = lib.mkDefault true;
+      user = lib.mkDefault flake.config.me.username;
+      repos = lib.mkDefault [ "nix-config" ];
+      passwordFile = lib.mkDefault (
+        if config.age.secrets ? "opencodeWeb-password"
+        then config.age.secrets."opencodeWeb-password".path
+        else null
+      );
+    };
   };
 }

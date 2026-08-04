@@ -21,6 +21,10 @@ let
       EXPECTED_MTU="${lib.optionalString (tailscaleMtu != null) (toString tailscaleMtu)}"
       HOSTNAME=$(uname -n)
 
+      # send-alert is installed via environment.systemPackages (email-alerts module),
+      # which is not on the minimal systemd service PATH.
+      export PATH="/run/current-system/sw/bin:$PATH"
+
       sendAlert() {
         local subject="$1" body="$2"
         $SEND_ALERT -s "$subject" -b "$body" \
@@ -68,8 +72,8 @@ let
       FAIL_REASON=""
       if ! ip link show dev tailscale0 >/dev/null 2>&1; then
         FAIL_REASON="tailscale0 interface is missing"
-      elif ! ip link show dev tailscale0 | grep -q "state UP"; then
-        FAIL_REASON="tailscale0 interface is not UP"
+      elif [[ $(($(cat /sys/class/net/tailscale0/flags 2>/dev/null || echo 0) & 1)) -ne 1 ]]; then
+        FAIL_REASON="tailscale0 interface is not UP (IFF_UP unset)"
       elif [[ -n "$EXPECTED_MTU" ]] && [[ "$(cat /sys/class/net/tailscale0/mtu 2>/dev/null)" != "$EXPECTED_MTU" ]]; then
         FAIL_REASON="tailscale0 MTU drifted to $(cat /sys/class/net/tailscale0/mtu 2>/dev/null) (expected $EXPECTED_MTU)"
       else

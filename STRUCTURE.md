@@ -164,6 +164,7 @@ NixOS system modules. Import `nixosModules.common` to get the base profile syste
 | `docker/` | Docker OCI container runtime and daemon [→ nixosModules.docker] |
 | `email-alerts/` | Centralized email alerting via SMTP (msmtp) with `send-alert` script |
 | `gitreposync/` | systemd-timer git repo sync with conflict strategies and agenix token injection |
+| `opencode-web/` | opencode web headless service — one instance per gitRepoSync-synced repo (default nixos-config), registered on the proxy dashboard with live session links |
 | `homeManager/` | Home Manager NixOS integration |
 | `live-iso/` | Custom NixOS live ISO configuration options |
 | `mosh/` | mosh with tmux for session persistence over flaky links |
