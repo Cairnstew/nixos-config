@@ -970,6 +970,14 @@
     };
   };
 
+  # Self-healing tailnet data plane: restart tailscaled when an online peer stops
+  # answering through-tunnel pings (the documented "data-plane wedge" — local
+  # interface/MTU/self-ping all look fine while every TCP connection times out).
+  my.services.tailscaleWatchdog = {
+    enable = true;
+    canaryPeers = [ "100.78.102.28" "100.70.43.44" ]; # server, pikvm
+  };
+
   my.services.ollama = {
     enable = true;
     gpu.enable = true;

@@ -19,6 +19,7 @@ let
       LAST_STATE_FILE="${cfg.stateDir}/last-known-state"
       SEND_ALERT="send-alert"
       EXPECTED_MTU="${lib.optionalString (tailscaleMtu != null) (toString tailscaleMtu)}"
+      CANARY_PEERS="${lib.concatStringsSep " " cfg.canaryPeers}"
       HOSTNAME=$(uname -n)
 
       # send-alert is installed via environment.systemPackages (email-alerts module),
@@ -38,6 +39,43 @@ let
         last=$(cat "$LAST_ALERT_FILE" 2>/dev/null || echo "0")
         elapsed=$((now - last))
         [[ $elapsed -lt ${toString cfg.alertCooldown} ]]
+      }
+
+      # Kernel data-plane probe to a real peer. The local checks above (interface
+      # UP, MTU match, self-ping) only prove the LOCAL tunnel is configured; a
+      # tailscaled data-plane wedge accepts control-plane ping/handshakes yet
+      # drops forwarded IP packets, so it passes every local check while all TCP
+      # to a peer times out. To catch it we ping a peer THROUGH tailscale0: if an
+      # Online peer exists but none answer, the tunnel is not forwarding packets.
+      # Empty success, non-empty failure message.
+      checkRemotePeer() {
+        local peer="" candidates="$CANARY_PEERS"
+        if [[ -z "$candidates" ]]; then
+          candidates=$(tailscale status --json 2>/dev/null | jq -r '
+            [.Peer | to_entries[]
+             | select(.value.Online == true)
+             | select((.value.OS // "") != "iOS" and (.value.OS // "") != "windows")
+             | {ip: .value.TailscaleIPs[0], seen: (.value.LastSeen // "0000-00-00T00:00:00Z")}]
+            | sort_by(.seen) | reverse | .[].ip' 2>/dev/null)
+        fi
+        # No online peer to test (empty tailnet / not authenticated) — nothing
+        # the data plane can be checked against, so don't flag.
+        if [[ -z "$candidates" ]]; then
+          return 0
+        fi
+        # If no peer answers on the first pass, retry once after a short pause
+        # so a transient loss or a just-restarted peer doesn't false-positive.
+        for pass in 1 2; do
+          for peer in $candidates; do
+            if ping -c 2 -W 2 "$peer" >/dev/null 2>&1; then
+              return 0
+            fi
+          done
+          [[ $pass -eq 1 ]] || break
+          sleep 5
+        done
+        echo "no data path to online peer(s): $candidates"
+        return 1
       }
 
       # BackendState is a userspace signal only — a wedged kernel data plane
@@ -80,6 +118,11 @@ let
         SELF_IP=$(tailscale ip -4 2>/dev/null | head -1 || true)
         if [[ -n "$SELF_IP" ]] && ! ping -c 1 -W 2 "$SELF_IP" >/dev/null 2>&1; then
           FAIL_REASON="kernel data path dead (self-ping $SELF_IP failed)"
+        else
+          REMOTE_FAIL=$(checkRemotePeer || true)
+          if [[ -n "$REMOTE_FAIL" ]]; then
+            FAIL_REASON="remote data plane dead ($REMOTE_FAIL)"
+          fi
         fi
       fi
 

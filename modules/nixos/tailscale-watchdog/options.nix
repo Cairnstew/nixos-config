@@ -44,9 +44,25 @@ in
       default = true;
       description = ''
         Restart tailscaled automatically when the kernel data plane is unhealthy
-        (tailscale0 missing/down, MTU drifted from my.services.tailscale.mtu, or
-        self-path ping fails). BackendState == "Running" only proves tailscaled's
-        userspace is up — it does not prove the tunnel forwards packets.
+        (tailscale0 missing/down, MTU drifted from my.services.tailscale.mtu,
+        self-path ping fails, or no online peer answers a through-tunnel ping).
+        BackendState == "Running" only proves tailscaled's userspace is up — it
+        does not prove the tunnel forwards packets.
+      '';
+    };
+
+    canaryPeers = mkOption {
+      type = types.listOf types.str;
+      default = [ ];
+      example = [ "100.121.125.58" "100.70.43.44" ];
+      description = ''
+        Tailnet IPs probed for remote data-plane health. If empty, the watchdog
+        auto-selects the most recently seen Online peer (skipping iOS/Windows,
+        which may not answer ICMP). The probe pings each candidate THROUGH
+        tailscale0; when at least one candidate answers, the data plane is
+        healthy. If every candidate fails on two attempts, the tunnel is not
+        forwarding packets and tailscaled is restarted (autoRepair) + alerted.
+        Set these explicitly to pin the probe to always-on hosts.
       '';
     };
   };

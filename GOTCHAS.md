@@ -1,11 +1,28 @@
 # GOTCHAS.md — Known Footguns and Fixes
 
-> Living log of problems that have caused failures or wasted cycles.  
-> **Check this before debugging any evaluation or build failure.**
+> Living log of problems that have caused failures or wasted
+  cycles.> **Check
+  this
+  before
+  debugging
+  any evaluation or build
+  failure.**
 
----
+  ---
 
-**Concurrent opencode sessions (browser + terminal) share one state dir and corrupt the ensemble — gate with a PID lock**
+  **Concurrent
+  opencode
+  sessions
+  (browser + terminal)
+  share
+  one
+  state
+  dir
+  and
+  corrupt
+  the
+  ensemble —
+  gate with a PID lock**
 
 Symptom: running `nix-refine` from the opencode web (browser) session breaks team orchestration — teammates won't spawn, or `team_create`/`team_spawn` hang or fight. Cause: both `opencode web` (systemd `opencode-web-*.service`) and a terminal `opencode` run as the same user, so they share `~/.config/opencode/ensemble.db` (SQLite) and `~/.local/share/opencode/opencode-stable.db` (multi-hundred-MB). Two processes holding the DB + ensemble dashboard port 4747 → the plugin flags one as a `stale-server` and `team_*` state diverges. Also the web service OOM-killed the host twice when a team was spawned from the browser (teammates run in the service's cgroup). Fix (2026-08-04): `my.services.opencodeWeb.sessionGate` (default on) adds an `ExecStartPre` to each web unit that refuses to start while a terminal session's PID lock (`~/.local/share/opencode/terminal.lock`) is alive, clearing stale locks; `my.programs.opencode.sessionGate` (default off; enabled on `server`) wraps the terminal `opencode` binary to refuse to start while any `opencode-web-*.service` is active and to write the PID lock. `OPENCODE_ALLOW_CONCURRENT=1` bypasses both. `MemoryHigh`/`MemoryMax` (defaults 4G/8G) cap the web service cgroup so a runaway team can't OOM the host. Stale-worktree aftermath of a crashed run is cleaned with `git worktree list` + `git worktree remove --force`.
 
@@ -172,6 +189,12 @@ Symptom: `ssh seanc@server` times out. From a healthy peer: `tailscale ping serv
 **Server appears "wedged" but MTU is fine — actually OOM (nix flake check on the server)**
 
 Symptom: Same signature as the MTU wedge — `tailscale ping server` pongs (userspace) but `nc server 22` and all TCP time out; from the PiKVM console `ip link show tailscale0` shows the correct `mtu 1200` and the `tailscale-mtu.timer` is firing every 5min cleanly. The real cause: a `nix` process (e.g. `nix flake check` or `nix run .#...` run on the server) ballooned to ~9GB RSS and got **OOM-killed** (server has 13Gi RAM, **no swap**), stalling the whole box — `uptime` load ~100, sshd/tailscaled can't respond in time, so TCP times out exactly like the data-plane wedge. Confirm: `uptime` shows load > 50 and `dmesg -T | grep -i oom` shows `Out of memory: Killed process ... (nix) total-vm:~9GB`. Recovery: the OOM kill itself resolves it (box recovers once the process is gone); `systemctl restart tailscaled` gives an immediate nudge. Prevention: **don't run `nix flake check` (or a full `nix run .#test`) on the server** — evaluating all flake outputs needs > 9GB. Run checks on the desktop instead, or add swap/zram to the server. Related bug (2026-08-01): the watchdog was silently dead — `HOSTNAME=$(hostname)` failed with `hostname: command not found` (coreutils provides `uname`, not `hostname`; the `writeShellApplication` PATH doesn't include it) → exit 127 → no auto-repair, no alerts. Fixed to `HOSTNAME=$(uname -n)`. Fastest diagnosis next time: check `uptime` (load) and `systemctl --failed` from the PiKVM before touching MTU.
+
+---
+
+**Tailscale data-plane wedge that passes every local watchdog probe — a remote peer never answers (2026-08-05)**
+
+Symptom: `ssh seanc@server` times out, `tailscale ping server` pongs, and the desktop's `tailscale status --json` shows `lastHandshake` = zero epoch / `rxBytes: 0` for the server even though `txBytes` grows (this machine is sending handshakes that never complete). Server-side diagnostics via the PiKVM look perfect: `tailscale0` UP with the correct `mtu 1200`, `tailscale-mtu.timer` AND `tailscale-watchdog.timer` both active, load 0.04, sshd healthy on the LAN (`SSH-2.0-OpenSSH_10.3` banner, port 22 open). Crucially, a third machine on the **same LAN as the server** (the PiKVM at `192.168.12.122:41641`, 2ms direct) also times out on ALL TCP to the server over tailscale while the plain-LAN TCP to the server works — so this is NOT the MTU wedge (no constrained path involved) and NOT OOM (load is fine); it's tailscaled's kernel data plane wedged for everyone while its userspace (BackendState "Running", disco pings, WireGuard handshakes) keeps answering. The old watchdog probe missed it entirely: it only checks `tailscale0` exists/UP, MTU match, and a **self-ping** to the local IP — none of which exercise the remote forwarding path. Confirm: `ip link show tailscale0` (MTU correct), `systemctl is-active tailscale-mtu.timer tailscale-watchdog.timer` (both active), and from a peer on the same LAN `nc <server> 22` times out while `nc <server-LAN-ip> 22` succeeds. Fix: (1) watchdog gained a **remote-peer kernel data-plane probe** — when any peer reports `Online`, it pings candidates **through tailscale0** (explicit `canaryPeers`, or auto-selected most-recent Online non-iOS/Windows peer); if no candidate answers after two passes it restarts `tailscaled` + emails, see `modules/nixos/tailscale-watchdog/config.nix`. (2) New `my.services.tailscaleWatchdog.canaryPeers` option pins the probe to always-on hosts (desktop/server/PiKVM). (3) Watchdog now enabled on the **desktop** too, not just the server. Immediate recovery: `systemctl restart tailscaled` on the wedged host (via PiKVM LAN SSH: desktop → `ssh -A root@100.70.43.44` → `ssh root@192.168.12.122`). Note: `writeShellApplication` scripts run `set -o errexit` — any command-substitution probe that can return non-zero MUST be guarded with `|| true` (the `REMOTE_FAIL=$(checkRemotePeer || true)` pattern), or the watchdog aborts before it can restart anything.
 
 ---
 
@@ -744,3 +767,4 @@ When you discover a new problem and its solution:
 ---
 
 Last updated: 2026-08-04
+

@@ -13,6 +13,7 @@ Periodic Tailscale connectivity monitor that probes the kernel data plane, sends
 | `my.services.tailscaleWatchdog.stateDir` | string | `/var/lib/tailscale-watchdog` | State directory |
 | `my.services.tailscaleWatchdog.emailTo` | null or string | null | Alert recipient override |
 | `my.services.tailscaleWatchdog.autoRepair` | bool | `true` | Restart tailscaled on data-plane failure |
+| `my.services.tailscaleWatchdog.canaryPeers` | list of string | `[]` | Tailnet IPs to probe (auto-select Online peer if empty) |
 
 ## Usage
 
@@ -32,12 +33,18 @@ my.services.tailscaleWatchdog = {
 
 - `BackendState == "Running"` only proves tailscaled's userspace is up. The
   watchdog additionally probes the **kernel data plane**: tailscale0 exists and
-  is UP, its MTU matches `my.services.tailscale.mtu` (if set), and a self-path
-  ping to the tailnet IP succeeds.
+  is UP, its MTU matches `my.services.tailscale.mtu` (if set), a self-path ping
+  to the tailnet IP succeeds, AND — new — at least one online peer answers an
+  ICMP ping **through tailscale0** (`canaryPeers`, or auto-selected). The remote
+  peer probe catches a tailscaled data-plane wedge that passes every local check:
+  the interface looks perfect but the tunnel drops forwarded packets.
 - A wedge looks like: all TCP/ICMP to the host times out, yet `tailscale ping`
   still pongs — the tunnel is "up" but no packets reach the kernel.
 - When the data plane is unhealthy and `autoRepair` is true, the watchdog
   restarts `tailscaled` (the documented recovery) and emails an alert.
+- `canaryPeers` default `[]` auto-selects the most recently seen Online peer,
+  skipping iOS/Windows (which may not answer ICMP). Pin always-on hosts
+  (server/desktop/PiKVM) explicitly for deterministic probing.
 - Cooldown tracking uses epoch timestamps in `stateDir` to prevent alert spam.
 - `emailTo` defaults to `my.services.emailAlerts.to` if not set.
 
