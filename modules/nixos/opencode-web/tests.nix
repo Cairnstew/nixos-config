@@ -5,6 +5,28 @@ let
   syncRepos = config.my.services.gitRepoSync.repos or { };
   missingRepos = builtins.filter (r: !(syncRepos ? ${r})) cfg.repos;
   orphanInstances = builtins.filter (name: !(builtins.elem name cfg.repos)) (builtins.attrNames cfg.instances);
+
+  # ── L1: OOM-resilience guard invariants ──────────────────────────────────
+  # systemd-oomd's global SwapUsedLimit (default 90%) kills the WHOLE unit when
+  # a memory-stressed team pushes the cgroup deep into swap — the 2026-08-05
+  # "blank browser / no messages" incident. The guards below (MemorySwapMax +
+  # ManagedOOMMemoryPressure/OOMSwap=never) exist to prevent that; if they're
+  # disabled the unit is one nix-refine away from taking the browser down.
+  oomResilienceAssertions = [
+    {
+      assertion = !cfg.enable || !cfg.oomd.enable || cfg.memorySwapMax != null;
+      message = "my.services.opencodeWeb.oomd.enable = true (default) but memorySwapMax = null. "
+        + "Without a swap cap, a memory-stressed team can trip systemd-oomd's SwapUsedLimit and "
+        + "OOM-kill the whole web unit (blank browser). Either set memorySwapMax (e.g. \"4G\") or "
+        + "set oomd.enable = false to keep the swap cap optional.";
+    }
+    {
+      assertion = !cfg.enable || cfg.oomd.enable || cfg.memorySwapMax == null;
+      message = "my.services.opencodeWeb.oomd.enable = false but memorySwapMax is set. "
+        + "When oomd is disabled the unit is no longer opted out of wholesale kills, so the swap "
+        + "cap is the only guard left — leave both on, or accept the risk explicitly.";
+    }
+  ];
 in
 {
   # ── L0: Nix assertions ────────────────────────────────────────────────────
@@ -29,7 +51,7 @@ in
       assertion = !cfg.enable || cfg.repos != [ ];
       message = "my.services.opencodeWeb.repos must not be empty when opencodeWeb is enabled.";
     }
-  ];
+  ] ++ oomResilienceAssertions;
 
   # ── Diagnostic warnings ──────────────────────────────────────────────────
   # Exposing opencode on the tailnet without basic auth means any tailnet node

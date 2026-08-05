@@ -112,6 +112,23 @@ Skills should follow the [OpenCode skills documentation](https://opencode.ai/doc
 
 ---
 
+## Self-Improvement
+
+Follow the self-improvement protocol in `../../../AGENTS.md` §11: at the end of
+every session, fix anything in this file that misled you, went stale, or is
+missing — grounded in what actually happened this session or exists in the repo
+now, never aspirational. Record each applied change in the RUN LOG below.
+
+## RUN LOG
+
+### 2026-08-05 — added self-improvement protocol
+- Lesson: this file had no mechanism for sessions to record guidance fixes, so
+  opencode/agent-convention drift could accumulate unnoticed.
+- Fix: added this section pointing to the root `AGENTS.md` §11 protocol and a RUN
+  LOG for dated entries.
+
+---
+
 ## See Also
 
 - `modules/nixos/gitreposync/` - Git repository sync service

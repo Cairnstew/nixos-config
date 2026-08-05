@@ -20,6 +20,9 @@ Before doing anything in this repo, read these files in order:
 8. `modules/flake-parts/ventoy/README.md` — Ventoy multi-boot USB system: ISO build, deploy, answer files, debugging
 
 When you discover a new problem and its solution, append an entry to `GOTCHAS.md` immediately.
+When your session teaches you something about these guidance files themselves
+(stale path, misleading rule, missing convention), apply it before you finish —
+see §11 Self-Improvement.
 
 ---
 
@@ -35,6 +38,7 @@ When you discover a new problem and its solution, append an entry to `GOTCHAS.md
 8. [Common Tasks](#8-common-tasks)
 9. [Style & Lint](#9-style--lint)
 10. [Subdirectory Policies](#10-subdirectory-policies)
+11. [Self-Improvement](#11-self-improvement)
 
 ---
 
@@ -403,6 +407,58 @@ policy docs. When they conflict, the **most specific** `AGENT.md` wins.
 
 ---
 
+## 11. Self-Improvement
+
+The `nix-refine` and `nix-doc-audit` commands improve themselves after each run
+(Phase 6 + RUN LOG). The guidance files follow the same discipline: **each session
+leaves the guidance better than it found it.** This section is the protocol; the
+sub `AGENT.md` files (`modules/AGENT.md`, `configurations/AGENT.md`,
+`modules/home/opencode/AGENT.md`) each carry a pointer and their own RUN LOG.
+
+### 11.1 When
+
+At the end of your task, before reporting done, take a short pass over the
+guidance file(s) you relied on this session.
+
+### 11.2 What to fix
+
+- **Misleading guidance** — an instruction you followed that wasted effort or led
+  you astray this session. Fix the instruction, don't just work around it.
+- **Stale facts** — paths, `my.*` option names, profile/host names, or commands
+  that no longer match the repo.
+- **Missing guidance** — a pattern, trap, or convention you had to discover the
+  hard way and the next agent would also need.
+- **Contradictions** — two rules that conflict; reconcile them in-place.
+
+### 11.3 Grounding discipline (mirrors the commands' Phase 6)
+
+- Every edit must be grounded in something that **actually happened this session**
+  (cite `file:line`) or **exists in the repo now**. Never add aspirational or
+  speculative guidance ("in future we might…").
+- Keep edits tight and in-place — improve the section the rule lives in; don't
+  append a parallel version of it.
+- Behavioural problems/solutions belong in `GOTCHAS.md` (see Required Reading);
+  this section is for guidance-file fixes only.
+- Do not let the file balloon. Fix what is true now; leave the rest for a real
+  event.
+
+### 11.4 RUN LOG
+
+Record every applied improvement as a dated entry at the bottom of the file you
+changed:
+
+```
+## RUN LOG
+
+### <date> — <one-line title>
+- Lesson: <what happened and why the guidance misled or was missing>
+- Fix: <what changed in this file>
+```
+
+Append newest at the bottom. Entries describe real events only.
+
+---
+
 ## Summary
 
 **For Agents:**
@@ -412,3 +468,17 @@ policy docs. When they conflict, the **most specific** `AGENT.md` wins.
 3. Import **`nixosModules.common`** for base functionality
 4. Set `networking.hostName` and `nixpkgs.hostPlatform`
 5. Follow the **AGENT.md** hierarchy for detailed conventions
+6. Improve these guidance docs at the end of your session (§11 Self-Improvement)
+
+---
+
+## RUN LOG
+
+### 2026-08-05 — added self-improvement protocol to the guidance files
+- Lesson: `nix-refine` and `nix-doc-audit` improve their own command files after
+  each run, but the AGENTS guidance files had no equivalent — so doc drift (stale
+  paths, rules that misled sessions) could only be fixed by the manual
+  `nix-doc-audit` pass.
+- Fix: added §11 Self-Improvement and this RUN LOG. Added matching pointer
+  sections + RUN LOGs to `modules/AGENT.md`, `configurations/AGENT.md`, and
+  `modules/home/opencode/AGENT.md`.

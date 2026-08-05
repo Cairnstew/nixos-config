@@ -125,6 +125,25 @@ refuse (see "Merge pitfalls" below) — a clean tree keeps the merge path simple
 > a clean baseline so each task's changes — and any regression — are attributable to that task
 > alone.
 
+### R-pre memory check (do NOT skip — see GOTCHAS.md "systemd-oomd killed the whole web unit")
+
+The ensemble team runs entirely inside the `opencode-web-*.service` cgroup (browser runs) or a
+terminal opencode process (console runs). A full 16-teammate spawn + concurrent `nixos-rebuild
+dry-activate` builds can spike past the cgroup's `MemorySwapMax` (default 4G) and get teammates
+OOM-killed one at a time — or, on an older host without the oomd opt-out, take the whole web unit
+down. Check headroom first:
+
+```bash
+free -h
+```
+
+- **Available RAM < 6G** → proceed in **waves**: spawn at most 4 builders per wave, wait for each
+  wave to be merged before spawning the next (see Spawn sequence step 3b). Report the memory
+  constraint in the final report.
+- **Available RAM ≥ 6G** → normal parallel spawn.
+- The verifier's full dry-activate matrix is the single most memory-heavy step; run it once with
+  the host loop, not in parallel with anything else.
+
 ---
 
 ## LIVE CONTEXT (lead gathers before spawning)
@@ -224,6 +243,10 @@ created up front.
    `plan`), and spawn the parallel-safe builders in parallel (`build`, own worktree, `claim_task`
    their task). **Do NOT use `plan_approval: true`** — see the warning below. Each builder gets: its
    DECISION LOG row (the task spec), the shared rules, and the applicable rules from Phase 3.
+   **3b — memory waves:** if the R-pre memory check said RAM < 6G, spawn builders in waves of ≤ 4
+   and wait for each wave to merge (step 4) before spawning the next. Never spawn the full builder
+   roster at once on a constrained host — that is what OOMs the cgroup and gets teammates killed
+   mid-task.
 4. As each builder reports done: `team_results`, `team_shutdown`, `team_merge`. **Inspect the
    merged diff before trusting it** — confirm it contains only that task's files and matches the
    DECISION LOG row. Then commit that task's changes yourself with the task-scoped message
@@ -672,6 +695,17 @@ are exempt from the "only document what exists" rule *for the command file's own
 each entry must still describe a real event.
 
 ## RUN LOG
+
+### 2026-08-05 — browser-side run OOM-killed the whole web unit; added R-pre memory check + builder waves
+- Lesson: Running this command from the opencode **web** session on the server ended with blank
+  browser sessions and no sendable messages. The session data was intact — `systemd-oomd`
+  (SwapUsedLimit=90%) had killed the *entire* `opencode-web-nix-config.service` cgroup (~4.3G
+  memory + 5.8G swap across the team), taking the web server down with it. The module's
+  `MemoryHigh`/`MemoryMax` caps bound RAM but not swap, so oomd's whole-unit kill fired first.
+- Fix: `modules/nixos/opencode-web/` now sets `MemorySwapMax` (default 4G) and opts units out of
+  oomd (`ManagedOOMMemoryPressure`/`ManagedOOMSwap = "never"`) so the kernel OOM-killer removes one
+  teammate at a time instead of the web server. Added an R-pre `free -h` memory check and builder
+  spawning in waves (≤ 4) on constrained hosts so a full parallel spawn can't spike the cgroup.
 
 ### 2026-08-03 — converted from serial human-gated loop to always-team orchestration + self-improvement
 - Lesson: The previous command executed one task at a time ("show diff → state invariant → wait for
