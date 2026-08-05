@@ -48,8 +48,8 @@ Nine mkForce sites inside the VM-test branch of the desktop host config
 | 30 | `my.profiles.desktop.choice` |
 | 32 | `my.system.battery.enable` |
 | 33 | `my.services.proxy.listenAddresses` |
-| 43 | `services.displayManager.session.command` |
-| 44 | `services.displayManager.session.user` |
+| 43 | `services.greetd.settings.default_session.command` |
+| 44 | `services.greetd.settings.default_session.user` |
 
 These are test-only overrides that force a known-good minimal VM configuration.
 Line 33 (`proxy.listenAddresses`) had no explanatory comment at the time of this
