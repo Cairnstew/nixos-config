@@ -32,7 +32,8 @@ in
     # ── Defaults ───────────────────────────────────────────────────────────
     # mkDefault false: Spotify not needed on headless servers
     # Override when: Media server with Spotify Connect
-    my.programs.spotify.enable = lib.mkDefault false;
+    # Renamed from my.programs.spotify (firewall shim) — now my.services.spotify
+    my.services.spotify.enable = lib.mkDefault false;
     home-manager.users.${username}.my.programs.spotify.enable = lib.mkDefault false;
 
     # ── Secrets ────────────────────────────────────────────────────────────

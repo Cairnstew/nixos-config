@@ -39,6 +39,9 @@
 
   # ── Home Manager Extra ───────────────────────────────────────────────────
   my.homeManager.extraConfig.my.programs.goals.enable = true;
+  # Terminal opencode must not run while the browser (web) session is live —
+  # both share ~/.config/opencode and the ensemble DB. Gate both directions.
+  my.homeManager.extraConfig.my.programs.opencode.sessionGate.enable = true;
 
   # ── Location ─────────────────────────────────────────────────────────────
   my.system.location = {

@@ -75,6 +75,25 @@ let
       ${concatStringsSep " " inst.extraArgs}
   '';
 
+  # Session gate: refuse to start while a terminal opencode session holds the
+  # lock (its PID). A stale lock (dead PID) is cleared so the service recovers
+  # after a crash.
+  sessionGateScript = pkgs.writeShellScript "opencode-web-session-gate" ''
+    set -euo pipefail
+    lock=${cfg.sessionGate.lockPath}
+    if [[ -f "$lock" ]]; then
+      pid=$(cat "$lock")
+      if kill -0 "$pid" 2>/dev/null; then
+        echo "opencode-web: refusing to start — terminal opencode session (pid $pid) is running." >&2
+        echo "  Close the terminal session, or remove $lock to force start." >&2
+        exit 1
+      fi
+      echo "opencode-web: removing stale terminal lock (pid $pid)" >&2
+      rm -f "$lock"
+    fi
+    exit 0
+  '';
+
   mkService = inst: {
     "opencode-web-${inst.name}" = {
       description = "opencode web: ${inst.name} (${inst.path})";
@@ -95,7 +114,15 @@ let
           "GIT_TERMINAL_PROMPT=0"
         ];
         ExecStart = mkScript inst;
-      };
+      }
+      # Teammates spawned by the ensemble run in this cgroup; cap it so a
+      # runaway browser team can't OOM the host (see GOTCHAS.md).
+      // (lib.optionalAttrs (cfg.memoryHigh != null) { MemoryHigh = cfg.memoryHigh; })
+      // (lib.optionalAttrs (cfg.memoryMax != null) { MemoryMax = cfg.memoryMax; })
+      # Session gate: refuse to start while a terminal opencode session holds
+      # the lock (its PID). A stale lock (dead PID) is cleared so the service
+      # recovers after a crash.
+      // (lib.optionalAttrs cfg.sessionGate.enable { ExecStartPre = sessionGateScript; });
     };
   };
 
@@ -179,7 +206,8 @@ in
     # ── Basic auth: feed the dashboard API handles through Caddy ────────────
     (mkIf (cfg.passwordFile != null) {
       systemd.services.opencode-web-auth-env = mkAuthEnvService."opencode-web-auth-env";
-      systemd.services.caddy.serviceConfig.EnvironmentFile = [ "/run/opencode-web/caddy.env" ];
+      # Route through the proxy module (Co1): extraCaddyEnvironmentFiles merges into the caddy unit
+      my.services.proxy.extraCaddyEnvironmentFiles = [ "/run/opencode-web/caddy.env" ];
     })
 
     # ── Firewall ────────────────────────────────────────────────────────────

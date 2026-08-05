@@ -35,7 +35,8 @@ in
     # ── Defaults ───────────────────────────────────────────────────────────
     # mkDefault true: Common workstation apps/services
     # Override when: Not using Docker or Tailscale
-    my.programs.spotify.enable = lib.mkDefault true;
+    # Renamed from my.programs.spotify (firewall shim) — now my.services.spotify
+    my.services.spotify.enable = lib.mkDefault true;
     my.programs.tor-browser.enable = lib.mkDefault true;
     my.virtualisation.docker.enable = lib.mkDefault true;
     my.services.tailscale.enable = lib.mkDefault true;

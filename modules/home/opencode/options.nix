@@ -126,6 +126,33 @@ in
       description = "The opencode package to use.";
     };
 
+    sessionGate = {
+      enable = mkOption {
+        type = types.bool;
+        default = false;
+        description = ''
+          Refuse to start a terminal opencode session while the opencode web
+          (browser) service is running, and write a PID lock the web service
+          checks before starting. Both sessions share
+          <filename>~/.config/opencode</filename> and the ensemble state DB, so
+          running them concurrently corrupts team orchestration. Set
+          <literal>true</literal> on hosts that run
+          <option>my.services.opencodeWeb</option>. Set
+          <literal>OPENCODE_ALLOW_CONCURRENT=1</literal> to bypass.
+        '';
+      };
+
+      lockPath = mkOption {
+        type = types.path;
+        default = "${config.home.homeDirectory}/.local/share/opencode/terminal.lock";
+        description = ''
+          Lock file holding the terminal session's PID, checked by the web
+          service. Must match
+          <option>my.services.opencodeWeb.sessionGate.lockPath</option>.
+        '';
+      };
+    };
+
     enableMcpIntegration = mkOption {
       type = types.bool;
       default = false;

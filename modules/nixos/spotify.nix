@@ -1,10 +1,11 @@
 { config, lib, ... }:
 
 let
-  cfg = config.my.programs.spotify;
+  cfg = config.my.services.spotify;
 in
 {
-  options.my.programs.spotify = {
+  # Renamed from my.programs.spotify (was: firewall shim) — my.services.spotify
+  options.my.services.spotify = {
     enable = lib.mkOption {
       type = lib.types.bool;
       default = false;

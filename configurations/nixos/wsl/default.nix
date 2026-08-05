@@ -3,7 +3,6 @@
 { flake, ... }:
 {
   imports = [
-    ./configuration.nix
     flake.inputs.self.nixosModules.common
   ];
 
@@ -12,6 +11,9 @@
 
   # ── System Identity ──────────────────────────────────────────────────────
   networking.hostName = "wsl";
+
+  # stateVersion inlined from deleted configuration.nix stub (W2)
+  system.stateVersion = "25.11";
 
   # ── WSL Specific ───────────────────────────────────────────────────────
   wsl = {
@@ -35,14 +37,6 @@
   my.homeProfiles = {
     common.enable = true;
     minimal.enable = true;
-  };
-
-  # ── Location ────────────────────────────────────────────────────────────
-  my.system.location = {
-    # enable = true — redundant: profile already sets via mkIf cfg.location.enable (M3)
-    timeZone = "GB";
-    latitude = 55.8617;
-    longitude = 4.2583;
   };
 
   # ── Home Manager Extra ─────────────────────────────────────────────────

@@ -6,35 +6,9 @@ let
     then "${pkgs.docker}/bin/docker"
     else "${pkgs.podman}/bin/podman";
 
-  ollamaMcpWrapper = pkgs.buildNpmPackage {
-    pname = "ollama-mcp-wrapper";
-    version = "1.0.0";
-    nodejs = pkgs.nodejs_22;
-    src = pkgs.runCommand "ollama-mcp-wrapper-src" { } ''
-      mkdir -p $out
-      cp ${pkgs.writeText "package.json" (builtins.toJSON {
-        name = "ollama-mcp-wrapper";
-        version = "1.0.0";
-        dependencies = {
-          "ollama-mcp-server" = "1.1.0";
-          "supergateway" = "3.4.3";
-        };
-      })} $out/package.json
-      cp ${./mcp-package-lock.json} $out/package-lock.json
-    '';
-    npmDepsHash = "sha256-2q0ImcLtkJmtHTGnEfCYG/g0n7ysUWe7g00qncNSwmA=";
-    dontNpmBuild = true;
-    nativeBuildInputs = [ pkgs.makeWrapper ];
-    installPhase = ''
-      runHook preInstall
-      mkdir -p $out/lib/node_modules
-      cp -r . $out/lib/node_modules/ollama-mcp-wrapper
-      mkdir -p $out/bin
-      makeWrapper ${pkgs.nodejs_22}/bin/node $out/bin/supergateway \
-        --add-flags "$out/lib/node_modules/ollama-mcp-wrapper/node_modules/supergateway/dist/index.js"
-      runHook postInstall
-    '';
-  };
+  # F9e: buildNpmPackage expression extracted to packages.nix; the let-bound
+  # import below keeps the reference point identical (see packages.nix header).
+  ollamaMcpWrapper = (import ./packages.nix { inherit pkgs; }).ollamaMcpWrapper;
 
   ollamaMcpServerBin =
     "${ollamaMcpWrapper}/lib/node_modules/ollama-mcp-wrapper/node_modules/ollama-mcp-server/build/index.js";
