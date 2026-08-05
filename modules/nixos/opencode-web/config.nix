@@ -206,7 +206,8 @@ in
     # ── Basic auth: feed the dashboard API handles through Caddy ────────────
     (mkIf (cfg.passwordFile != null) {
       systemd.services.opencode-web-auth-env = mkAuthEnvService."opencode-web-auth-env";
-      systemd.services.caddy.serviceConfig.EnvironmentFile = [ "/run/opencode-web/caddy.env" ];
+      # Route through the proxy module (Co1): extraCaddyEnvironmentFiles merges into the caddy unit
+      my.services.proxy.extraCaddyEnvironmentFiles = [ "/run/opencode-web/caddy.env" ];
     })
 
     # ── Firewall ────────────────────────────────────────────────────────────
