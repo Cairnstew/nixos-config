@@ -15,7 +15,8 @@ in
     my.programs.proton.enable = lib.mkDefault true;
 
     # ── Music ──────────────────────────────────────────────────────────
-    my.programs.spotify.enable = lib.mkDefault true;
+    # Renamed from my.programs.spotify (firewall shim) — now my.services.spotify
+    my.services.spotify.enable = lib.mkDefault true;
     home-manager.users.${username}.my.programs.spotify.enable = lib.mkDefault true;
 
     # ── Manga Reader ─────────────────────────────────────────────────
