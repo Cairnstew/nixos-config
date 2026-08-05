@@ -24,6 +24,7 @@
 10. [Flat-File → Directory Migration](#10-flat-file--directory-migration)
 11. [Failure Modes (Hard Gates)](#11-failure-modes-hard-gates)
 12. [Design Philosophy](#12-design-philosophy)
+13. [Self-Improvement](#13-self-improvement)
 
 ---
 
@@ -518,3 +519,21 @@ Discoverability**.  Every module should be understandable by:
 Prefer boring, explicit code over clever Nix abstractions.  If a module feels
 too large, split it.  If an option is hard to name, it probably belongs
 elsewhere.
+
+---
+
+## 13. Self-Improvement
+
+Follow the self-improvement protocol in `../AGENTS.md` §11: at the end of every
+session, fix anything in this file that misled you, went stale, or is missing —
+grounded in what actually happened this session or exists in the repo now, never
+aspirational. Record each applied change in the RUN LOG below.
+
+## RUN LOG
+
+### 2026-08-05 — added self-improvement protocol
+- Lesson: this file had no mechanism for sessions to record guidance fixes, so
+  module-structure conventions could drift unnoticed between `nix-doc-audit`
+  passes.
+- Fix: added §13 pointing to the root `AGENTS.md` §11 protocol and a RUN LOG for
+  dated entries.
