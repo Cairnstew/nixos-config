@@ -28,6 +28,17 @@ self: super: {
   # Interactive Nix flake template selector
   nix-template-selector = self.callPackage "${packages}/nix-template-selector.nix" { };
 
+  # opencode pinned to a version whose web UI works (1.16.2 in the current
+  # nixpkgs crashes with "Settings context must be used within a context
+  # provider", breaking browser permission prompts). x86_64-linux only —
+  # the official release artifact is linux-x64; other platforms fall back to
+  # the nixpkgs package.
+  opencode =
+    if self.stdenv.hostPlatform.isx86_64 then
+      self.callPackage "${packages}/opencode" { }
+    else
+      super.opencode;
+
   # GitHub Actions workflow run cleanup tool
   github-actions-cleanup = self.callPackage "${packages}/github-actions-cleanup" { };
 

@@ -100,6 +100,13 @@ let
       after = [ "network-online.target" ];
       wants = [ "network-online.target" ];
       wantedBy = [ "multi-user.target" ];
+      # PATH for the server process (top-level key, NOT inside serviceConfig —
+      # see GOTCHAS.md "serviceConfig.path is silently ignored"). Extends the
+      # NixOS default systemd path with git + bash so the ensemble plugin's
+      # worktree creation (`git worktree add`, spawned by opencode's Worktree
+      # service) and start commands (`bash -lc`) resolve. Without git every
+      # `worktree=true` teammate spawn fails with `spawn:worktree:failed`.
+      path = with pkgs; [ git bash coreutils findutils gnugrep gnused systemd ];
       serviceConfig = {
         Type = "simple";
         User = cfg.user;
