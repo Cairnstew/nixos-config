@@ -103,7 +103,10 @@
   my.services.emailAlerts.enable = true;
 
   # Tailscale watchdog: monitors connectivity, starts zerotier on failure, alerts via email
-  my.services.tailscaleWatchdog.enable = true;
+  my.services.tailscaleWatchdog = {
+    enable = true;
+    canaryPeers = [ "100.121.125.58" "100.70.43.44" ]; # desktop, pikvm
+  };
 
   # ── SSH Resilience Stack ─────────────────────────────────────────────────
   # MSS clamping: root-cause fix for the MTU blackhole (tailscaled resets

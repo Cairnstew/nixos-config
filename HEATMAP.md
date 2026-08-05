@@ -323,6 +323,7 @@ All `my.*` options declared across module files.
 | `my.services.tailscaleWatchdog.interval` | str | `"10min"` | Watchdog check interval |
 | `my.services.tailscaleWatchdog.autoRepair` | bool | `true` | Restart tailscaled on data-plane failure |
 | `my.services.tailscaleWatchdog.alertCooldown` | int | `3600` | Min seconds between duplicate alerts |
+| `my.services.tailscaleWatchdog.canaryPeers` | list of str | `[]` | Tailnet IPs probed through the tunnel for remote data-plane health (auto-select Online peer if empty) |
 | `my.services.mssClamp.enable` | bool | `false` | TCP MSS clamp on mesh tunnel interfaces (MTU blackhole fix) |
 | `my.services.mssClamp.mss` | int or null | `null` | MSS value (auto: tailscale MTU − 60, fallback 1140) |
 | `my.services.mssClamp.interfaces` | list | `["tailscale0"]` | Tunnel interfaces to clamp |

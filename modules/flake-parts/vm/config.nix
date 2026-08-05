@@ -44,6 +44,8 @@ in
                     enable = lib.mkForce false;
                     manager.enable = lib.mkForce false;
                   };
+                  # watchdog's autoRepair requires tailscaled; VM builds have no tailnet
+                  my.services.tailscaleWatchdog.enable = lib.mkForce false;
                 })
                 hostCfg.extraConfig
                 variantExtra
