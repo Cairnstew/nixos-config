@@ -33,6 +33,10 @@ without a terminal.
 | `my.services.opencodeWeb.hostname` | `127.0.0.1` | Default bind address |
 | `my.services.opencodeWeb.openFirewall` | `false` | Open instance ports in the firewall |
 | `my.services.opencodeWeb.passwordFile` | `null` | File with `OPENCODE_SERVER_PASSWORD` (basic auth) |
+| `my.services.opencodeWeb.memoryHigh` | `"4G"` | Soft memory cap (`MemoryHigh`) per unit — bounds a whole browser team |
+| `my.services.opencodeWeb.memoryMax` | `"8G"` | Hard memory cap (`MemoryMax`) per unit; kernel OOM-kills one teammate at a time when hit |
+| `my.services.opencodeWeb.memorySwapMax` | `"4G"` | Swap cap (`MemorySwapMax`) per unit; stops a team from tripping systemd-oomd's `SwapUsedLimit` (see GOTCHAS) |
+| `my.services.opencodeWeb.oomd.enable` | `true` | Opt units out of systemd-oomd wholesale kills (`ManagedOOMMemoryPressure=never` / `ManagedOOMSwap=never`) so the web server survives memory spikes |
 | `my.services.opencodeWeb.tailnetServe.enable` | `true` | Expose instances on the tailnet via `tailscale serve` |
 | `my.services.opencodeWeb.tailnetServe.basePort` | `8443` | First tailnet serve HTTPS port |
 | `my.services.opencodeWeb.dashboard.enable` | `true` | Add an OpenCode section to the proxy dashboard |

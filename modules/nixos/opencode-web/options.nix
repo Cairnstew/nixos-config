@@ -154,6 +154,39 @@ in
       '';
     };
 
+    memorySwapMax = mkOption {
+      type = types.nullOr types.str;
+      default = "4G";
+      example = "4G";
+      description = ''
+        Per-unit swap limit (<literal>MemorySwapMax</literal>). Without this a
+        memory-stressed team can push the cgroup deep into system swap and trip
+        systemd-oomd's global <literal>SwapUsedLimit</literal> (default 90%),
+        which kills the ENTIRE unit — web server and every teammate at once —
+        the "blank browser / can't send messages" incident of 2026-08-05
+        (peak 4.3G memory + 5.8G swap). Capping swap makes the kernel OOM-kill
+        a single largest member (a teammate) inside the cgroup instead, so the
+        web session survives. Set <literal>null</literal> to leave swap
+        uncapped.
+      '';
+    };
+
+    oomd = {
+      enable = mkOption {
+        type = types.bool;
+        default = true;
+        description = ''
+          Opt each opencode web unit out of systemd-oomd's wholesale kills by
+          setting <literal>ManagedOOMMemoryPressure=never</literal> and
+          <literal>ManagedOOMSwap=never</literal>. Degradation then falls to
+          the kernel cgroup OOM-killer (bounded by <option>memoryHigh</option> /
+          <option>memoryMax</option> / <option>memorySwapMax</option>), which
+          kills one process at a time — a teammate, not the web server — so the
+          browser session survives a memory spike instead of going blank.
+        '';
+      };
+    };
+
     sessionGate = {
       enable = mkOption {
         type = types.bool;

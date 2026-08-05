@@ -126,6 +126,18 @@ let
       # runaway browser team can't OOM the host (see GOTCHAS.md).
       // (lib.optionalAttrs (cfg.memoryHigh != null) { MemoryHigh = cfg.memoryHigh; })
       // (lib.optionalAttrs (cfg.memoryMax != null) { MemoryMax = cfg.memoryMax; })
+      # Bound swap so a memory-stressed team can't trip systemd-oomd's global
+      # SwapUsedLimit (default 90%), which OOM-kills the whole unit and blanks
+      # the browser (see GOTCHAS.md). The kernel then OOM-kills one teammate at
+      # a time inside the cgroup instead of the web server.
+      // (lib.optionalAttrs (cfg.memorySwapMax != null) { MemorySwapMax = cfg.memorySwapMax; })
+      # Opt the unit out of systemd-oomd wholesale kills so degradation falls to
+      # the kernel cgroup OOM-killer (one process at a time), keeping the web
+      # server — and therefore the browser session — alive under memory pressure.
+      // (lib.optionalAttrs cfg.oomd.enable {
+        ManagedOOMMemoryPressure = "never";
+        ManagedOOMSwap = "never";
+      })
       # Session gate: refuse to start while a terminal opencode session holds
       # the lock (its PID). A stale lock (dead PID) is cleared so the service
       # recovers after a crash.
