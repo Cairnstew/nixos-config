@@ -267,6 +267,9 @@ in
           nix-doc-audit = ./commands/nix-doc-audit.md;
           shopping-research = ./commands/shopping-research.md;
         };
+        pluginFiles = lib.mkDefault {
+          copylast = ./plugins/copylast.ts;
+        };
         mcp.nix-graph = {
           enabled = true;
           type = "local";
@@ -336,15 +339,25 @@ in
     })
 
     # ── Local plugin files ──────────────────────────────────────────────────
+    # Render each plugin into ~/.config/opencode/plugins/. Source paths ending
+    # in `.ts` keep a `.ts` extension so opencode loads them as TypeScript;
+    # everything else (and inline text) renders as `.js`.
     (mkIf (cfg.pluginFiles != { }) {
       home.file = builtins.listToAttrs (mapAttrsToList
-        (name: src: {
-          name = ".config/opencode/plugins/${name}.js";
-          value =
-            if builtins.isPath src
-            then { source = src; }
-            else { text = src; };
-        })
+        (name: src:
+          let
+            ext =
+              if builtins.isPath src && lib.hasSuffix ".ts" (builtins.baseNameOf src)
+              then ".ts"
+              else ".js";
+          in
+          {
+            name = ".config/opencode/plugins/${name}${ext}";
+            value =
+              if builtins.isPath src
+              then { source = src; }
+              else { text = src; };
+          })
         cfg.pluginFiles);
     })
 

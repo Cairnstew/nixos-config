@@ -1,6 +1,6 @@
 {
   name = "opencode";
-  description = "OpenCode AI coding agent with support for 15+ LLM providers, 8 custom skills, 6 custom tools, custom agents, and MCP integration.";
+  description = "OpenCode AI coding agent with support for 15+ LLM providers, 10 custom skills, 6 custom tools, 7 custom commands, 6 custom agents, and MCP integration.";
   category = "programs";
   tags = [ "ai" "llm" "coding" "opencode" "skills" "mcp" "nix" "deploy" "secrets" "testing" "docker" "windows" ];
   provides = [
