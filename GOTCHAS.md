@@ -8,9 +8,15 @@
   any evaluation or build
   failure.**
 
-  ---
+---
 
-  **Concurrent
+**Root-owned files in the repo tree (`tools/nix-graph/*.json`) block `git pull`/`checkout` — `error: unable to unlink old '…': Permission denied`**
+
+Symptom (2026-08-06): Running `git pull`/`git checkout` after `git fetch` fails with `error: unable to unlink old 'tools/nix-graph/graph.json': Permission denied`, leaving the branch behind its remote and the file showing as `M` (modified) even though you never edited it. `tools/nix-graph/` contains root-owned files (`graph.json` tracked, `extraction-result.json` untracked, dir owned by root) — the nix-graph MCP server writes them as root. Cause: root-owned paths in the working tree make git's unlink/rewrite fail for a non-root user; a stale root-written copy then diverges from the committed version and shows as a spurious modification. Fix: `sudo rm -f tools/nix-graph/graph.json tools/nix-graph/extraction-result.json`, fix the directory ownership (`sudo chown seanc:users tools/nix-graph`), then `git checkout -- tools/nix-graph/graph.json`. If the dir was already root-owned the `rm` may also fail — chown the dir first. Also check `git worktree list` before cleanup: stale worktrees pin branches (delete them with `git worktree remove --force` before `git branch -D`).
+
+---
+
+**Concurrent
   opencode
   sessions
   (browser + terminal)
@@ -766,5 +772,5 @@ When you discover a new problem and its solution:
 
 ---
 
-Last updated: 2026-08-04
+Last updated: 2026-08-06
 
