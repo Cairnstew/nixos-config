@@ -960,7 +960,20 @@
     acceptRoutes = true;
     manager = {
       enable = true;
-      policy.interNodePorts = [ "tcp:22" "tcp:4567" ];
+      # tcp:9100: allow server's Prometheus to scrape desktop's node-exporter.
+      # (This explicit list overrides the common.nix mkDefault, so tcp:9100
+      # must be listed here to take effect.)
+      policy.interNodePorts = [ "tcp:22" "tcp:4567" "tcp:9100" ];
+    };
+  };
+
+  # ── Monitoring ─────────────────────────────────────────────────────────
+  # Expose node-exporter metrics so the server's Prometheus can scrape them
+  # over the tailnet. openFirewall opens tcp:9100 in the NixOS firewall.
+  my.services.monitoring = {
+    enable = true;
+    nodeExporter = {
+      openFirewall = true;
     };
   };
 

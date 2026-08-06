@@ -46,6 +46,9 @@ in
     # ── Reverse Proxy ───────────────────────────────────────────────────────
     ./proxy
 
+    # ── Monitoring ──────────────────────────────────────────────────────────
+    ./monitoring
+
     # ── AI Frontends ────────────────────────────────────────────────────────
     ./open-webui
     ./letta
@@ -328,7 +331,7 @@ in
             "tag:temp" = [ "tag:nixos" ];
           };
 
-          interNodePorts = lib.mkDefault [ "tcp:22" "tcp:4567" "tcp:8000" "tcp:8080" "tcp:8188" ];
+          interNodePorts = lib.mkDefault [ "tcp:22" "tcp:4567" "tcp:8000" "tcp:8080" "tcp:8188" "tcp:9100" ];
 
           grants = lib.mkDefault [
             {

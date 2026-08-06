@@ -65,6 +65,22 @@
     tailscaleServe.enable = true;
   };
 
+  # ── Monitoring ─────────────────────────────────────────────────────────
+  # Prometheus collects node-exporter metrics from this host and the
+  # desktop (100.121.125.58); Grafana is served at /grafana behind Caddy.
+  # Grafana binds 3001 (3000 is used by open-webui via the ai profile).
+  my.services.monitoring = {
+    enable = true;
+    prometheus = {
+      enable = true;
+      scrapeTargets = [ "100.121.125.58:9100" ]; # desktop node-exporter
+    };
+    grafana = {
+      enable = true;
+      rootUrl = "https://server.tail685690.ts.net/grafana/";
+    };
+  };
+
   # ── Container Storage ──────────────────────────────────────────────────
   # Store container images and volumes on the large SATA data drive (1.8T)
   # to preserve NVMe space for the Nix store and OS.
