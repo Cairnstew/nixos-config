@@ -35,6 +35,10 @@ agenixManager = {
 
 ## Common Tasks
 
+### Check Status
+
+Get a live snapshot of secret status with the `agenix-manager` tool (`sudo agenix-manager status`).
+
 ### Add a New Secret
 
 1. **Declare in manifest**: `modules/nixos/secrets/secrets-manifest.json`
