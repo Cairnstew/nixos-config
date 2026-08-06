@@ -34,7 +34,7 @@
 
     # Hardware
     gpu.mesa.enable = true;
-    battery.enable = true;
+    # F6: redundant — power.laptop profile already mkDefaults battery.enable
     location.enable = true;
     power.laptop.enable = true;
 
@@ -49,16 +49,8 @@
     development.enable = true;
   };
 
-  # ── Location ────────────────────────────────────────────────────────────
-  my.system.location = {
-    # enable = true — redundant: profile already sets via mkIf cfg.location.enable (M3)
-    timeZone = "Europe/London";
-    latitude = 55.8617;
-    longitude = 4.2583;
-  };
-
   # ── SSH Access
-  my.services.ssh.authorizedKeys = [ flake.config.me.sshKey ];
+  # F12: authorizedKeys inherited from common.nix mkDefault (single source of truth)
 
   # ── Laptop-specific services ─────────────────────────────────────────────
   services.fwupd.enable = true;

@@ -258,6 +258,7 @@ in
           testing-patterns = builtins.readFile ./skills/testing-patterns.md;
           windows-integration = builtins.readFile ./skills/windows-integration.md;
           docker-management = builtins.readFile ./skills/docker-management.md;
+          network-security = builtins.readFile ./skills/network-security.md;
         };
         commands = {
           copy-last = ./commands/copylast.md;
@@ -265,7 +266,11 @@ in
           nix-map = ./commands/nix-map.md;
           nix-refine = ./commands/nix-refine.md;
           nix-doc-audit = ./commands/nix-doc-audit.md;
+          nix-net-audit = ./commands/nix-net-audit.md;
           shopping-research = ./commands/shopping-research.md;
+        };
+        pluginFiles = lib.mkDefault {
+          copylast = ./plugins/copylast.ts;
         };
         mcp.nix-graph = {
           enabled = true;
@@ -336,15 +341,25 @@ in
     })
 
     # ── Local plugin files ──────────────────────────────────────────────────
+    # Render each plugin into ~/.config/opencode/plugins/. Source paths ending
+    # in `.ts` keep a `.ts` extension so opencode loads them as TypeScript;
+    # everything else (and inline text) renders as `.js`.
     (mkIf (cfg.pluginFiles != { }) {
       home.file = builtins.listToAttrs (mapAttrsToList
-        (name: src: {
-          name = ".config/opencode/plugins/${name}.js";
-          value =
-            if builtins.isPath src
-            then { source = src; }
-            else { text = src; };
-        })
+        (name: src:
+          let
+            ext =
+              if builtins.isPath src && lib.hasSuffix ".ts" (builtins.baseNameOf src)
+              then ".ts"
+              else ".js";
+          in
+          {
+            name = ".config/opencode/plugins/${name}${ext}";
+            value =
+              if builtins.isPath src
+              then { source = src; }
+              else { text = src; };
+          })
         cfg.pluginFiles);
     })
 

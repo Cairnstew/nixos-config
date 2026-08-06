@@ -72,6 +72,9 @@ nixos-rebuild build --flake .#<hostname>
 systemctl status myservice.service
 ```
 
+**Agent shortcuts:** use the `nix-eval` tool for safe L0/option checks, `nix-flake-check`
+for the memory-capped flake check, and `nix-hosts` to list hosts and their profiles.
+
 ## VM Testing
 
 Build and boot a host as a QEMU VM to validate the system closure before

@@ -1,10 +1,13 @@
-{ lib, flake, config, ... }: {
+# Import manifest for the secrets module.
+#
+# G3: `options.my.secrets.enable` was moved to ./options.nix so that this file
+# is a pure import manifest (see modules/AGENT.md). Behavior is identical — the
+# option is declared by ./options.nix, which is imported below.
+{ flake, ... }:
+{
   imports = [
-    flake.inputs.agenix.nixosModules.default
+    ./options.nix
     ./tests.nix
+    flake.inputs.agenix.nixosModules.default
   ];
-
-  options.my.secrets.enable = lib.mkEnableOption "agenix-managed secrets" // {
-    description = "Enable agenix secrets management. Delegates to agenixManager.enable at the system level.";
-  };
 }

@@ -106,6 +106,15 @@ Also known (confirmed 2026-08-03): `nix-graph_node_info` matches by suffix, so q
 `node_info` on a bare module path returns a single canonical node — check which sub-node came back
 before using its fields.
 
+**The committed graph can be stale — and rebuilding it needs sudo.** Confirmed 2026-08-06:
+`tools/nix-graph/graph.json` had been stale for a month (pre-F5, mkForce line refs off by several
+lines, profile dependents missing). Any plan built on its answers should be cross-checked against
+`grep`/`nix eval` before acting. Rebuilding per `tools/nix-graph/README.md` (extract.py →
+build_graph.py) requires **sudo**: the whole `tools/nix-graph/` dir is root-owned from prior runs
+under sudo, so a plain run dies with `PermissionError` writing `extraction-result.json`. Run it as
+`sudo -n nix shell nixpkgs#python3 ... -c '<extract+build commands>'`. Note the graph.json is
+committed as root-owned; that is pre-existing state.
+
 ---
 
 ## R-pre. Preflight
@@ -137,10 +146,24 @@ down. Check headroom first:
 free -h
 ```
 
-- **Available RAM < 6G** → proceed in **waves**: spawn at most 4 builders per wave, wait for each
-  wave to be merged before spawning the next (see Spawn sequence step 3b). Report the memory
-  constraint in the final report.
-- **Available RAM ≥ 6G** → normal parallel spawn.
+**The resting `free -h` number is NOT the real constraint.** Confirmed 2026-08-06: the host had
+11Gi "available" at rest, so the command did a "normal parallel spawn" of 9-11 builders — each
+builder's 5-host dry-activate loop meant 9+ concurrent `nixos-rebuild dry-activate` evals, each
+peaking 2-6GB RAM on a 15Gi host. The kernel global OOM killer fired and took out `ssh-agent` /
+`dbus-broker` along with the evals — dropping the SSH session and killing every builder as
+`[error]`. Twice. The fix that worked (zero crashes after): **waves of 2 builders, each dry-activating
+ONLY its own affected host (1 eval, not the 5-host loop), plus a per-builder memory guard**
+(`free -h` before each eval; wait 30s if available < 5Gi). The verifier's full matrix then runs
+alone at the end.
+
+- **Always spawn in waves of 2** (not 4, not "normal parallel spawn"). Each builder verifies its
+  single affected host. Pair a light host (laptop/minimal) with a heavy host (desktop/server) so a
+  heavy eval never runs twice concurrently. If a task's change is host-agnostic (sharedModules,
+  module options), have the builder verify on the lightest host that exercises it.
+- **Every builder prompt MUST carry the memory constraint** verbatim: one dry-activate at a time,
+  `free -h` before each eval, wait if < 5Gi available.
+- Never spawn the full builder roster at once — that is what OOMs the host and drops the session
+  (see RUN LOG 2026-08-06).
 - The verifier's full dry-activate matrix is the single most memory-heavy step; run it once with
   the host loop, not in parallel with anything else.
 
@@ -205,6 +228,13 @@ the human only reviews the outcome. Rollback (per-task commit) makes that safe.
 Create the team (`team_create` — name it `nix-refine`), then record the recon/plan/verify tasks up
 front with `team_tasks_add`. **Use the returned IDs for `depends_on` — do not invent IDs.**
 
+> **Team-name collision (confirmed 2026-08-06):** `nix-refine` may already exist as a stale
+> archived record from a prior run (the plugin keeps an archive with preserved branches; a stale
+> record that can't be purged returns "Team 'nix-refine' already exists" while `team_status` says
+> "This session is not in a team"). If so, create the team under a suffixed name (e.g.
+> `nix-refine-r2`) and note the rename in the final report. Do not attempt to purge the stale
+> record mid-run — `team_cleanup` purge on it can fail on leftover non-preserved worktree branches.
+
 > **`depends_on` label trap (confirmed 2026-08-03 in nix-doc-audit):** the Task key column below is
 > a label for humans only. Real task IDs come from `team_tasks_add`'s return (format
 > `task_<rand>_<n>`). Passing the labels as `depends_on` values creates a phantom dependency that
@@ -268,16 +298,25 @@ created up front.
 > `plan_approval: true` anyway (e.g. pasted from an older version), the fix is
 > `team_shutdown --force` + re-spawn without the flag, embedding the approved plan as the task.
 
-> **Merge pitfalls (learned 2026-08-03 from nix-doc-audit):** R-pre keeps the tree clean, so the
-> dirty-file refusal path is avoided — but two other cases still occur. (a) If `team_merge`
-> **refuses** because of local changes (e.g. the tree got dirtied mid-run), the builder's branch is
-> preserved at `ensemble/preserved/<team>#<run>/<builder>`; verify with
+> **Merge pitfalls (learned 2026-08-03 from nix-doc-audit; extended 2026-08-06):** R-pre keeps the
+> tree clean, so the dirty-file refusal path is avoided — but three other cases occur. (a) If
+> `team_merge` **refuses** because of local changes (e.g. the tree got dirtied mid-run), the
+> builder's branch is preserved at `ensemble/preserved/<team>#<run>/<builder>`; verify with
 > `git diff "<preserved-branch>" -- <files>` (must show ONLY the intended edits) then
 > `git restore --source="<preserved-branch>" --worktree -- <files>`. (b) If `team_merge` **applies
 > nothing** (the builder only stashed, uncommitted, its work), copy the files directly from the
 > worktree: `cp <worktree>/<file> /home/seanc/nixos-config/<file>` after verifying the worktree
 > diff shows exactly the intended edits. **Every builder must commit in its worktree before
-> reporting done** — an uncommitted builder produces an empty merge.
+> reporting done** — an uncommitted builder produces an empty merge. (c) **Session crash prunes
+> worktrees and loses uncommitted work.** Confirmed 2026-08-06: an SSH/connection drop (itself
+> caused by OOM from too many concurrent dry-activates — see R-pre) killed every builder session
+> as `[error]`; the plugin pruned their worktrees and their uncommitted edits were unrecoverable
+> (preserved branches were at base, no dangling blobs). Only a builder that had *committed* in its
+> worktree (b-t7) survived via normal merge; one uncommitted worktree (b-t8-r2) survived only
+> because it was idle when the crash hit, and its files were reclaimed by `cp` from the worktree.
+> Recovery playbook: check `git worktree list` + `git status --porcelain` in each surviving
+> worktree, `cp` any intended edits into the main tree, verify, commit as that task. Do not assume
+> a preserved branch contains the work — check its `git log` for a real commit first.
 
 If any teammate stalls or errs: message it directly first; `team_shutdown --force` only as a last
 resort; record the disruption in the final report.
@@ -427,11 +466,22 @@ not pre-empted.
 ## Lead verification of the plan
 
 You still sanity-check the plan before spawning builders (you own the integration, not the
-decisions):
+decisions). **This step must re-verify the planner's and scouts' FACTUAL CLAIMS, not just the
+task-to-finding grounding** — the recon findings themselves can be wrong:
 
 - Verify the planner grounded each task in a real recon finding or map reference — no task may be
   invented from memory.
 - Confirm no two parallel-safe tasks share a touched file (the Parallel-safe flag).
+- **Re-verify every option/namespace/freeform claim before spawning a builder.** Confirmed
+  2026-08-06, twice: (a) a scout + planner both claimed `workstation.nix` tailscale.enable was a
+  dup of `common.nix:274` — but common.nix sets the NixOS-native `services.tailscale`, not the
+  module option `my.services.tailscale` (a `mkEnableOption` defaulting to `false`); the plan would
+  have disabled tailscale on all workstation hosts. (b) a plan wanted to promote
+  `settings.server.backupInterval` to a module default, but it is a **freeform HOCON field**
+  (`freeformType = format.type`), which cannot carry a `default`/`mkDefault`. Both were caught only
+  because the lead `grep`-ed the real option declaration + host config before spawning. For any
+  task that moves/removes/re-defaults an option, `grep -n` the option's declaration and every host
+  that sets it before the builder starts.
 - If you disagree with any ruling: verify the disputed finding yourself (re-read the code /
   nix-graph). If you still disagree, record the reversal as **`OVERRIDE`** in the DECISION LOG with
   both positions, and include the override row in the owning builder's prompt. The human sees it in
@@ -518,6 +568,16 @@ If any host errors or nix-graph invariants are broken, revert the change immedia
 failure, and do not commit. `ventoy-deploy` is excluded from the dry-activate loop (known OOM
 issue).
 
+**Known pre-existing host failure — do NOT revert a good change over it.** Confirmed 2026-08-06:
+the `desktop` dry-activate fails at a pre-existing SillyTavern fetch 404 (pinned rev
+`9c3aa6686289bdcf26e7664a4dc18a777215108b` — `curl: (22) ... error: 404` on the archive tarball,
+`desktop/default.nix:721` "Extension-WebSearch"). This is unrelated to any refactor task: the
+config/eval stage passes and the failure is in the build phase of an input. When a builder or the
+verifier hits it, treat **eval-stage pass as the bar for desktop**, confirm the root cause is the
+SillyTavern 404 (not a config error from the task), and continue — do not revert. Log it as a NOTE
+in the final report. (A `nix flake update`/rev-bump is the eventual fix, outside this command's
+scope.)
+
 ### Step 5 — Commit in the worktree, then report
 
 Commit the task in your worktree:
@@ -548,13 +608,17 @@ the check list below. It must verify **every task was implemented as specified**
 
 - **One task, one commit** — the main-repo history has exactly one commit per task, and `git show
   --stat HEAD~N` file lists match the DECISION LOG rows.
-- **Dry-activate passes** across the full host matrix (excluding `ventoy-deploy`).
+- **Dry-activate passes** across the full host matrix (excluding `ventoy-deploy`; desktop = the
+  pre-existing SillyTavern 404, eval-stage pass is the bar — see Phase 3 Step 4).
 - **No `meta.nix` `tested` flags touched**, no `secrets/`/`/run/agenix/` paths touched.
 - **No `lib.mkForce` added** outside DECISION LOG rows, and every added `mkForce` has a comment.
 - **Every changed line has an explanatory comment** or is pure whitespace/formatting.
 - **Only the task's owned files changed** per commit; no overlap, no unexpected file types.
 - **nix-graph invariants hold** after the refactor (`nix-graph_graph_stats` node counts don't
-  regress; renames have their dependents resolved).
+  regress; renames have their dependents resolved). Note: the committed `graph.json` and the
+  *running* MCP server can be out of sync — the MCP server bakes a store-path copy from the
+  pre-refactor opencode switch. Verify against `tools/nix-graph/graph.json` directly, not the live
+  MCP answers, if the task rebuilt it.
 
 The verifier reports `VERIFY PASS` or a list of `VERIFY FAIL` items with file:line. Any FAIL goes
 back to the owning builder (message it, re-merge, re-verify) or is fixed directly by you for
@@ -565,8 +629,14 @@ trivial issues, recorded in the report.
 ```bash
 git log --oneline -20          # confirm one commit per task, scoped messages
 git status --porcelain         # tree clean again at the end
-nix fmt -- --check             # formatting enforced by the repo
+nixpkgs-fmt --check $(git diff --name-only <base>..HEAD -- '*.nix')  # touched files only
 ```
+
+`nix fmt -- --check` on the WHOLE tree is expected to FAIL on 5 pre-existing `templates/*.nix`
+files (confirmed 2026-08-06: templates/cli, foundation-mod, godot, nixos-module, uv2nix) that this
+command never touches. Do not treat that as a regression — scope the fmt check to the files this
+run's commits changed (the `nixpkgs-fmt --check` form above), and report the whole-tree failure as
+a pre-existing condition.
 
 Then, only if the refactor touched evaluation-critical structure, run the full dry-activate matrix
 once more yourself:
@@ -728,5 +798,23 @@ each entry must still describe a real event.
   (mirroring `nix-doc-audit`'s disagreement protocol). Added a rollback callout in the intro, a
   per-task-commit rollback section in Phase 5, and reworded all approval-gate references to team
   decision-making. `mkForce` now requires a comment + DECISION LOG row instead of human approval.
+
+### 2026-08-06 — two global-OOM crashes from concurrent dry-activates; wave-of-2 execution + single-host verify
+- Lesson: The R-pre memory check used resting `free -h` (11Gi available ≥ 6G → "normal parallel
+  spawn") and spawned 9-11 builders, each running a 5-host dry-activate loop. 9+ concurrent evals
+  (each peaking 2-6GB on a 15Gi host) hit the kernel global OOM killer, which took out `ssh-agent`/
+  `dbus-broker` along with the evals — dropping the SSH session twice and killing every builder as
+  `[error]`. Worktrees were pruned on session crash and uncommitted edits were lost; only
+  committed work (b-t7) merged normally and one idle uncommitted worktree (b-t8-r2) was reclaimed
+  by `cp`. Wave-of-2 + single-host-verify + a per-builder `free -h` guard had zero crashes after.
+- Fix: Rewrote R-pre to make waves of 2 (not ≥6G parallel spawn) mandatory, with each builder
+  dry-activating only its own affected host and a memory guard in every builder prompt. Extended
+  the merge-pitfalls box with the session-crash worktree-pruning recovery playbook. Added a
+  "known pre-existing host failure" note (desktop SillyTavern 404) so builders don't revert good
+  changes over it. Strengthened Phase 2 lead verification to re-verify option/namespace/freeform
+  claims with grep (T10 tailscale namespace misread; T13 freeform backupInterval — both caught by
+  lead source-check). Documented the root-owned `tools/nix-graph/` dir needing sudo for graph
+  rebuild, the pre-existing `nix fmt` failures on 5 `templates/*.nix`, the MCP-vs-committed graph
+  staleness, and the team-name collision (`nix-refine` stale archive → suffixed team).
 
 # END OF COMMAND

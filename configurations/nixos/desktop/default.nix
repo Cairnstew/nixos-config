@@ -30,9 +30,10 @@
         desktop.choice = lib.mkForce "hyprland";
       };
       my.system.battery.enable = lib.mkForce false;
+      # VM-only: Caddy loopback in QEMU test VM (DECISION LOG R3).
       my.services.proxy.listenAddresses = lib.mkForce [ "127.0.0.1" ];
       my.testing = {
-        enable = true;
+        # F16: enable=true redundant — my.profiles.testing.enable already set at line 63
         startAtBoot = true;
       };
 
@@ -256,9 +257,8 @@
   # ── Location ────────────────────────────────────────────────────────────
   my.system.location = {
     # enable = true — redundant: profile already sets via mkIf cfg.location.enable (M3)
-    timeZone = "GB";
-    latitude = 55.8617;
-    longitude = -4.2583;
+    # F2: lat/lon (55.8617/-4.2583) equal current-location.nix:26-34 defaults — keep only IANA timeZone
+    timeZone = "Europe/London";
   };
 
   # ── Partition Layout (existing, DO NOT REPARTITION)
@@ -365,7 +365,7 @@
   my.services.emailAlerts.enable = true;
 
   # ── SSH Access
-  my.services.ssh.authorizedKeys = [ flake.config.me.sshKey ];
+  # F12: authorizedKeys inherited from common.nix mkDefault (single source of truth)
 
   # ── Data Volume (sdb — 500GB SATA SSD) ────────────────────────────────
   # sdb → /mnt/data, ext4, Docker + Ollama data
@@ -943,22 +943,16 @@
   # Moku connects to the server's Suwayomi instance over Tailscale
   my.programs.moku.serverUrl = "http://100.78.102.28:4567/suwayomi";
   my.services.suwayomi = {
+    # F11: extensionRepos, sync.export.{enable,autoPush,repoPath,secretPath}, sync.import.enable
+    # now module defaults (suwayomi/sync-options.nix) — invariant core duplicated desktop/server removed
     settings.server = {
+      # backupInterval is a FREEFORM HOCON field (options.nix freeformType) — cannot carry a
+      # module default, so it stays explicit here (recon F11)
       backupInterval = 0;
-      extensionRepos = [
-        "https://raw.githubusercontent.com/keiyoushi/extensions/repo/index.min.json"
-      ];
     };
     openFirewall = true;
     extraReadWritePaths = [ "/mnt/media/suwayomi" ];
-    sync.export = {
-      enable = true;
-      autoPush = true;
-      repoPath = "/home/seanc/nixos-config";
-      secretPath = "/run/agenix/github-token";
-      interval = "hourly";
-    };
-    sync.import.enable = true;
+    sync.export.interval = "hourly"; # F11: divergent — desktop hourly vs server daily (recon F11)
   };
 
   # Only the desktop manages tailscale ACL policy (auth keys, port grants)
@@ -1004,22 +998,16 @@
       };
     };
     my.programs = {
+      # F10-desktop: discord/firefox/obsidian/thunderbird/vscode already mkDefault'd by
+      # homeProfiles.desktop (profiles/home/config.nix:26-38) — only genuinely per-host
+      # extras kept below.
       squidProxyClient = {
         enable = true;
         proxyPasswordFile = config.age.secrets."squid-htpasswd".path;
       };
-      discord.enable = true;
       localsend.enable = true;
-      firefox.enable = true;
-      obsidian.enable = true;
-      thunderbird.enable = true;
-      vscode.enable = true;
       "whatsapp-electron".enable = true;
       "youtube-music".enable = true;
-      thunderbird = {
-        email = flake.config.me.email;
-        username = flake.config.me.username;
-      };
     };
 
     # GNOME-specific extras removed: host-info extension (broken/unused),

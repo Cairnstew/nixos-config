@@ -8,6 +8,8 @@
 
   nixpkgs.hostPlatform = "x86_64-linux";
   networking.hostName = "minimal";
+  # F17: add sshTarget so minimal is deployable via nixos-unified like other hosts (recon F17)
+  nixos-unified.sshTarget = "seanc@minimal";
 
   my.profiles = {
     minimal.enable = true;
@@ -27,5 +29,5 @@
     longitude = -97.7431;
   };
 
-  my.services.ssh.authorizedKeys = [ flake.config.me.sshKey ];
+  # F12: authorizedKeys inherited from common.nix mkDefault (single source of truth)
 }

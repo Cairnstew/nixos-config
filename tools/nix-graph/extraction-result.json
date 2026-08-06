@@ -1,0 +1,2134 @@
+{
+  "files": [
+    {
+      "category": "nixos",
+      "convention": "other",
+      "extraction_method": "regex",
+      "imports": [
+        "./nix.nix",
+        "./primary-as-admin.nix",
+        "./self-ide.nix",
+        "./_1password",
+        "./audio",
+        "./battery",
+        "./bluetooth.nix",
+        "./graphics",
+        "./gnome",
+        "./hyprland",
+        "./monitors",
+        "./mouse",
+        "./docker",
+        "./ollama",
+        "./proxy",
+        "./open-webui",
+        "./letta",
+        "./jan",
+        "./ai/comfyui",
+        "./ssh",
+        "./tailscale",
+        "./tailscale-watchdog",
+        "./natShare",
+        "./nebula",
+        "./zerotier",
+        "./squid-proxy",
+        "./mss-clamp",
+        "./mosh",
+        "./tor-ssh",
+        "./autossh",
+        "./ttyd",
+        "./vscode-server.nix",
+        "./opencode-web",
+        "./udisks2.nix",
+        "./ventoy",
+        "./gitreposync",
+        "./email-alerts",
+        "./caches",
+        "./default-build.nix",
+        "./live-iso",
+        "./disko",
+        "./dscnix",
+        "./spotify.nix",
+        "./steam",
+        "./proton",
+        "./hearthstone",
+        "./godot",
+        "./sillytavern",
+        "./risuai",
+        "./suwayomi",
+        "./neko",
+        "./game-servers",
+        "./xmltv",
+        "./prowlarr",
+        "./sonarr",
+        "./radarr",
+        "./jellyfin",
+        "./chatterbox-tts",
+        "./moku.nix",
+        "./boot-alerting",
+        "./boot-health",
+        "./hardening",
+        "./current-location.nix",
+        "./secrets",
+        "./deploy",
+        "./tor-browser",
+        "./stylix",
+        "./test-runner",
+        "./vm",
+        "./profiles",
+        "./homeManager",
+        "inputs.agenix.nixosModules.default",
+        "inputs.stylix.nixosModules.stylix"
+      ],
+      "mkDefault": [
+        "modules/nixos/common.nix:156",
+        "modules/nixos/common.nix:162",
+        "modules/nixos/common.nix:249",
+        "modules/nixos/common.nix:250",
+        "modules/nixos/common.nix:256",
+        "modules/nixos/common.nix:261",
+        "modules/nixos/common.nix:267",
+        "modules/nixos/common.nix:273",
+        "modules/nixos/common.nix:280",
+        "modules/nixos/common.nix:284",
+        "modules/nixos/common.nix:289",
+        "modules/nixos/common.nix:293",
+        "modules/nixos/common.nix:297",
+        "modules/nixos/common.nix:301",
+        "modules/nixos/common.nix:302",
+        "modules/nixos/common.nix:304",
+        "modules/nixos/common.nix:324",
+        "modules/nixos/common.nix:326",
+        "modules/nixos/common.nix:331",
+        "modules/nixos/common.nix:333",
+        "modules/nixos/common.nix:346",
+        "modules/nixos/common.nix:382",
+        "modules/nixos/common.nix:389",
+        "modules/nixos/common.nix:390",
+        "modules/nixos/common.nix:394",
+        "modules/nixos/common.nix:398",
+        "modules/nixos/common.nix:402",
+        "modules/nixos/common.nix:406",
+        "modules/nixos/common.nix:410",
+        "modules/nixos/common.nix:414",
+        "modules/nixos/common.nix:418",
+        "modules/nixos/common.nix:429",
+        "modules/nixos/common.nix:433",
+        "modules/nixos/common.nix:437"
+      ],
+      "mkForce": [
+        "modules/nixos/common.nix:205",
+        "modules/nixos/common.nix:225"
+      ],
+      "mkIf": [],
+      "mkOverride": [],
+      "namespace_violations": [],
+      "option_declarations": [],
+      "option_references": [],
+      "path": "modules/nixos/common.nix"
+    },
+    {
+      "category": "nixos",
+      "convention": "default.nix",
+      "extraction_method": "tree-sitter",
+      "imports": [
+        "./options.nix",
+        "./config.nix",
+        "./manager.nix",
+        "./tests.nix"
+      ],
+      "mkDefault": [],
+      "mkForce": [],
+      "mkIf": [],
+      "mkOverride": [],
+      "namespace_violations": [],
+      "option_declarations": [],
+      "option_references": [],
+      "path": "modules/nixos/tailscale/default.nix"
+    },
+    {
+      "category": "nixos",
+      "convention": "options.nix",
+      "extraction_method": "regex",
+      "imports": [],
+      "mkDefault": [],
+      "mkForce": [],
+      "mkIf": [],
+      "mkOverride": [],
+      "namespace_violations": [],
+      "option_declarations": [
+        "options.my.services.tailscale"
+      ],
+      "option_references": [
+        "config.my.services.tailscale.tags"
+      ],
+      "path": "modules/nixos/tailscale/options.nix"
+    },
+    {
+      "category": "nixos",
+      "convention": "config.nix",
+      "extraction_method": "regex",
+      "imports": [],
+      "mkDefault": [],
+      "mkForce": [
+        "modules/nixos/tailscale/config.nix:24"
+      ],
+      "mkIf": [],
+      "mkOverride": [],
+      "namespace_violations": [],
+      "option_declarations": [],
+      "option_references": [
+        "config.my.services.tailscale",
+        "config.my.services.tailscale.manager.enable"
+      ],
+      "path": "modules/nixos/tailscale/config.nix"
+    },
+    {
+      "category": "nixos",
+      "convention": "meta.nix",
+      "extraction_method": "tree-sitter",
+      "imports": [],
+      "mkDefault": [],
+      "mkForce": [],
+      "mkIf": [],
+      "mkOverride": [],
+      "namespace_violations": [],
+      "option_declarations": [],
+      "option_references": [],
+      "path": "modules/nixos/tailscale/meta.nix"
+    },
+    {
+      "category": "nixos",
+      "convention": "tests.nix",
+      "extraction_method": "regex",
+      "imports": [],
+      "mkDefault": [],
+      "mkForce": [],
+      "mkIf": [
+        "modules/nixos/tailscale/tests.nix:22",
+        "modules/nixos/tailscale/tests.nix:55"
+      ],
+      "mkOverride": [],
+      "namespace_violations": [],
+      "option_declarations": [],
+      "option_references": [
+        "config.my.services.tailscale"
+      ],
+      "path": "modules/nixos/tailscale/tests.nix"
+    },
+    {
+      "category": "nixos",
+      "convention": "other",
+      "extraction_method": "tree-sitter",
+      "imports": [],
+      "mkDefault": [],
+      "mkForce": [],
+      "mkIf": [],
+      "mkOverride": [],
+      "namespace_violations": [],
+      "option_declarations": [],
+      "option_references": [],
+      "path": "modules/nixos/tailscale/manager.nix"
+    },
+    {
+      "category": "nixos",
+      "convention": "default.nix",
+      "extraction_method": "tree-sitter",
+      "imports": [
+        "./options.nix",
+        "./config.nix",
+        "./tests.nix"
+      ],
+      "mkDefault": [],
+      "mkForce": [],
+      "mkIf": [],
+      "mkOverride": [],
+      "namespace_violations": [],
+      "option_declarations": [],
+      "option_references": [],
+      "path": "modules/nixos/docker/default.nix"
+    },
+    {
+      "category": "nixos",
+      "convention": "options.nix",
+      "extraction_method": "tree-sitter",
+      "imports": [],
+      "mkDefault": [],
+      "mkForce": [],
+      "mkIf": [],
+      "mkOverride": [],
+      "namespace_violations": [],
+      "option_declarations": [
+        "options.my.virtualisation.docker"
+      ],
+      "option_references": [],
+      "path": "modules/nixos/docker/options.nix"
+    },
+    {
+      "category": "nixos",
+      "convention": "config.nix",
+      "extraction_method": "regex",
+      "imports": [],
+      "mkDefault": [],
+      "mkForce": [],
+      "mkIf": [],
+      "mkOverride": [],
+      "namespace_violations": [],
+      "option_declarations": [],
+      "option_references": [
+        "config.my.virtualisation.docker"
+      ],
+      "path": "modules/nixos/docker/config.nix"
+    },
+    {
+      "category": "nixos",
+      "convention": "meta.nix",
+      "extraction_method": "tree-sitter",
+      "imports": [],
+      "mkDefault": [],
+      "mkForce": [],
+      "mkIf": [],
+      "mkOverride": [],
+      "namespace_violations": [],
+      "option_declarations": [],
+      "option_references": [],
+      "path": "modules/nixos/docker/meta.nix"
+    },
+    {
+      "category": "nixos",
+      "convention": "tests.nix",
+      "extraction_method": "regex",
+      "imports": [],
+      "mkDefault": [],
+      "mkForce": [],
+      "mkIf": [],
+      "mkOverride": [],
+      "namespace_violations": [],
+      "option_declarations": [],
+      "option_references": [
+        "config.my.virtualisation.docker"
+      ],
+      "path": "modules/nixos/docker/tests.nix"
+    },
+    {
+      "category": "nixos",
+      "convention": "default.nix",
+      "extraction_method": "tree-sitter",
+      "imports": [
+        "./config.nix",
+        "./system",
+        "./home",
+        "./tests.nix"
+      ],
+      "mkDefault": [],
+      "mkForce": [],
+      "mkIf": [],
+      "mkOverride": [],
+      "namespace_violations": [],
+      "option_declarations": [],
+      "option_references": [],
+      "path": "modules/nixos/profiles/default.nix"
+    },
+    {
+      "category": "nixos",
+      "convention": "meta.nix",
+      "extraction_method": "tree-sitter",
+      "imports": [],
+      "mkDefault": [],
+      "mkForce": [],
+      "mkIf": [],
+      "mkOverride": [],
+      "namespace_violations": [],
+      "option_declarations": [],
+      "option_references": [],
+      "path": "modules/nixos/profiles/meta.nix"
+    },
+    {
+      "category": "nixos",
+      "convention": "tests.nix",
+      "extraction_method": "tree-sitter",
+      "imports": [],
+      "mkDefault": [],
+      "mkForce": [],
+      "mkIf": [],
+      "mkOverride": [],
+      "namespace_violations": [],
+      "option_declarations": [],
+      "option_references": [],
+      "path": "modules/nixos/profiles/tests.nix"
+    },
+    {
+      "category": "nixos",
+      "convention": "default.nix",
+      "extraction_method": "tree-sitter",
+      "imports": [
+        "./options.nix",
+        "./config.nix",
+        "./development.nix",
+        "./entertainment.nix",
+        "./gaming.nix",
+        "./media.nix",
+        "./workstation.nix",
+        "./server.nix",
+        "./minimal.nix",
+        "./ai.nix"
+      ],
+      "mkDefault": [],
+      "mkForce": [],
+      "mkIf": [],
+      "mkOverride": [],
+      "namespace_violations": [],
+      "option_declarations": [],
+      "option_references": [],
+      "path": "modules/nixos/profiles/system/default.nix"
+    },
+    {
+      "category": "nixos",
+      "convention": "other",
+      "extraction_method": "regex",
+      "imports": [],
+      "mkDefault": [
+        "modules/nixos/profiles/system/workstation.nix:15",
+        "modules/nixos/profiles/system/workstation.nix:16",
+        "modules/nixos/profiles/system/workstation.nix:21",
+        "modules/nixos/profiles/system/workstation.nix:25",
+        "modules/nixos/profiles/system/workstation.nix:30",
+        "modules/nixos/profiles/system/workstation.nix:39",
+        "modules/nixos/profiles/system/workstation.nix:40",
+        "modules/nixos/profiles/system/workstation.nix:41",
+        "modules/nixos/profiles/system/workstation.nix:42",
+        "modules/nixos/profiles/system/workstation.nix:46",
+        "modules/nixos/profiles/system/workstation.nix:48"
+      ],
+      "mkForce": [],
+      "mkIf": [
+        "modules/nixos/profiles/system/workstation.nix:11"
+      ],
+      "mkOverride": [],
+      "namespace_violations": [],
+      "option_declarations": [],
+      "option_references": [
+        "config.my.profiles.workstation"
+      ],
+      "path": "modules/nixos/profiles/system/workstation.nix"
+    },
+    {
+      "category": "nixos",
+      "convention": "other",
+      "extraction_method": "regex",
+      "imports": [],
+      "mkDefault": [
+        "modules/nixos/profiles/system/server.nix:13",
+        "modules/nixos/profiles/system/server.nix:18",
+        "modules/nixos/profiles/system/server.nix:24",
+        "modules/nixos/profiles/system/server.nix:29",
+        "modules/nixos/profiles/system/server.nix:30",
+        "modules/nixos/profiles/system/server.nix:36",
+        "modules/nixos/profiles/system/server.nix:37",
+        "modules/nixos/profiles/system/server.nix:42"
+      ],
+      "mkForce": [],
+      "mkIf": [
+        "modules/nixos/profiles/system/server.nix:9"
+      ],
+      "mkOverride": [],
+      "namespace_violations": [],
+      "option_declarations": [],
+      "option_references": [
+        "config.my.profiles.server"
+      ],
+      "path": "modules/nixos/profiles/system/server.nix"
+    },
+    {
+      "category": "nixos",
+      "convention": "other",
+      "extraction_method": "regex",
+      "imports": [],
+      "mkDefault": [
+        "modules/nixos/profiles/system/minimal.nix:13",
+        "modules/nixos/profiles/system/minimal.nix:14"
+      ],
+      "mkForce": [],
+      "mkIf": [
+        "modules/nixos/profiles/system/minimal.nix:9"
+      ],
+      "mkOverride": [],
+      "namespace_violations": [],
+      "option_declarations": [],
+      "option_references": [
+        "config.my.profiles.minimal"
+      ],
+      "path": "modules/nixos/profiles/system/minimal.nix"
+    },
+    {
+      "category": "nixos",
+      "convention": "other",
+      "extraction_method": "regex",
+      "imports": [],
+      "mkDefault": [
+        "modules/nixos/profiles/system/development.nix:13",
+        "modules/nixos/profiles/system/development.nix:18",
+        "modules/nixos/profiles/system/development.nix:21",
+        "modules/nixos/profiles/system/development.nix:27",
+        "modules/nixos/profiles/system/development.nix:28",
+        "modules/nixos/profiles/system/development.nix:37",
+        "modules/nixos/profiles/system/development.nix:42",
+        "modules/nixos/profiles/system/development.nix:48",
+        "modules/nixos/profiles/system/development.nix:49",
+        "modules/nixos/profiles/system/development.nix:50",
+        "modules/nixos/profiles/system/development.nix:51",
+        "modules/nixos/profiles/system/development.nix:62",
+        "modules/nixos/profiles/system/development.nix:63",
+        "modules/nixos/profiles/system/development.nix:64",
+        "modules/nixos/profiles/system/development.nix:65"
+      ],
+      "mkForce": [],
+      "mkIf": [
+        "modules/nixos/profiles/system/development.nix:9"
+      ],
+      "mkOverride": [],
+      "namespace_violations": [],
+      "option_declarations": [],
+      "option_references": [
+        "config.my.profiles.development"
+      ],
+      "path": "modules/nixos/profiles/system/development.nix"
+    },
+    {
+      "category": "nixos",
+      "convention": "other",
+      "extraction_method": "regex",
+      "imports": [],
+      "mkDefault": [
+        "modules/nixos/profiles/system/entertainment.nix:11",
+        "modules/nixos/profiles/system/entertainment.nix:14",
+        "modules/nixos/profiles/system/entertainment.nix:15",
+        "modules/nixos/profiles/system/entertainment.nix:19",
+        "modules/nixos/profiles/system/entertainment.nix:20",
+        "modules/nixos/profiles/system/entertainment.nix:23",
+        "modules/nixos/profiles/system/entertainment.nix:26",
+        "modules/nixos/profiles/system/entertainment.nix:27"
+      ],
+      "mkForce": [],
+      "mkIf": [
+        "modules/nixos/profiles/system/entertainment.nix:9"
+      ],
+      "mkOverride": [],
+      "namespace_violations": [],
+      "option_declarations": [],
+      "option_references": [
+        "config.my.profiles.entertainment"
+      ],
+      "path": "modules/nixos/profiles/system/entertainment.nix"
+    },
+    {
+      "category": "nixos",
+      "convention": "other",
+      "extraction_method": "regex",
+      "imports": [],
+      "mkDefault": [
+        "modules/nixos/profiles/system/gaming.nix:11",
+        "modules/nixos/profiles/system/gaming.nix:12",
+        "modules/nixos/profiles/system/gaming.nix:13",
+        "modules/nixos/profiles/system/gaming.nix:14",
+        "modules/nixos/profiles/system/gaming.nix:23",
+        "modules/nixos/profiles/system/gaming.nix:26"
+      ],
+      "mkForce": [],
+      "mkIf": [
+        "modules/nixos/profiles/system/gaming.nix:9"
+      ],
+      "mkOverride": [],
+      "namespace_violations": [],
+      "option_declarations": [],
+      "option_references": [
+        "config.my.profiles.gaming"
+      ],
+      "path": "modules/nixos/profiles/system/gaming.nix"
+    },
+    {
+      "category": "nixos",
+      "convention": "default.nix",
+      "extraction_method": "tree-sitter",
+      "imports": [
+        "./options.nix",
+        "./config.nix"
+      ],
+      "mkDefault": [],
+      "mkForce": [],
+      "mkIf": [],
+      "mkOverride": [],
+      "namespace_violations": [],
+      "option_declarations": [],
+      "option_references": [],
+      "path": "modules/nixos/profiles/home/default.nix"
+    },
+    {
+      "category": "nixos",
+      "convention": "default.nix",
+      "extraction_method": "tree-sitter",
+      "imports": [
+        "./core",
+        "./bar",
+        "./launcher",
+        "./notifications",
+        "./lockscreen",
+        "./screenshot",
+        "./clipboard",
+        "./portal",
+        "./display-manager",
+        "./audio",
+        "./utilities",
+        "./nvidia",
+        "./idle",
+        "./colorpicker",
+        "./night-light",
+        "./pyprland",
+        "./awww",
+        "./wallpapers",
+        "./options.nix",
+        "./enable.nix",
+        "./tests.nix"
+      ],
+      "mkDefault": [],
+      "mkForce": [],
+      "mkIf": [],
+      "mkOverride": [],
+      "namespace_violations": [],
+      "option_declarations": [],
+      "option_references": [],
+      "path": "modules/nixos/hyprland/default.nix"
+    },
+    {
+      "category": "nixos",
+      "convention": "options.nix",
+      "extraction_method": "tree-sitter",
+      "imports": [],
+      "mkDefault": [],
+      "mkForce": [],
+      "mkIf": [],
+      "mkOverride": [],
+      "namespace_violations": [],
+      "option_declarations": [
+        "options.my.desktop.hyprland"
+      ],
+      "option_references": [],
+      "path": "modules/nixos/hyprland/options.nix"
+    },
+    {
+      "category": "nixos",
+      "convention": "meta.nix",
+      "extraction_method": "tree-sitter",
+      "imports": [],
+      "mkDefault": [],
+      "mkForce": [],
+      "mkIf": [],
+      "mkOverride": [],
+      "namespace_violations": [],
+      "option_declarations": [],
+      "option_references": [],
+      "path": "modules/nixos/hyprland/meta.nix"
+    },
+    {
+      "category": "nixos",
+      "convention": "tests.nix",
+      "extraction_method": "regex",
+      "imports": [],
+      "mkDefault": [],
+      "mkForce": [],
+      "mkIf": [],
+      "mkOverride": [],
+      "namespace_violations": [],
+      "option_declarations": [],
+      "option_references": [
+        "config.my.system.bluetooth.enable",
+        "config.my.desktop.hyprland",
+        "config.my.monitors"
+      ],
+      "path": "modules/nixos/hyprland/tests.nix"
+    },
+    {
+      "category": "nixos",
+      "convention": "other",
+      "extraction_method": "tree-sitter",
+      "imports": [],
+      "mkDefault": [],
+      "mkForce": [],
+      "mkIf": [],
+      "mkOverride": [],
+      "namespace_violations": [],
+      "option_declarations": [],
+      "option_references": [],
+      "path": "modules/nixos/hyprland/enable.nix"
+    },
+    {
+      "category": "nixos",
+      "convention": "options.nix",
+      "extraction_method": "tree-sitter",
+      "imports": [],
+      "mkDefault": [],
+      "mkForce": [],
+      "mkIf": [],
+      "mkOverride": [],
+      "namespace_violations": [],
+      "option_declarations": [
+        "options.my.desktop.hyprland.core"
+      ],
+      "option_references": [],
+      "path": "modules/nixos/hyprland/core/options.nix"
+    },
+    {
+      "category": "nixos",
+      "convention": "config.nix",
+      "extraction_method": "regex",
+      "imports": [],
+      "mkDefault": [],
+      "mkForce": [],
+      "mkIf": [
+        "modules/nixos/hyprland/core/config.nix:277"
+      ],
+      "mkOverride": [],
+      "namespace_violations": [],
+      "option_declarations": [],
+      "option_references": [
+        "config.my.system.bluetooth.enable",
+        "config.my.desktop.hyprland",
+        "config.my.monitors"
+      ],
+      "path": "modules/nixos/hyprland/core/config.nix"
+    },
+    {
+      "category": "nixos",
+      "convention": "default.nix",
+      "extraction_method": "tree-sitter",
+      "imports": [
+        "./options.nix",
+        "./config.nix"
+      ],
+      "mkDefault": [],
+      "mkForce": [],
+      "mkIf": [],
+      "mkOverride": [],
+      "namespace_violations": [],
+      "option_declarations": [],
+      "option_references": [],
+      "path": "modules/nixos/hyprland/core/default.nix"
+    },
+    {
+      "category": "nixos",
+      "convention": "options.nix",
+      "extraction_method": "tree-sitter",
+      "imports": [],
+      "mkDefault": [],
+      "mkForce": [],
+      "mkIf": [],
+      "mkOverride": [],
+      "namespace_violations": [],
+      "option_declarations": [
+        "options.my.desktop.hyprland.bar"
+      ],
+      "option_references": [],
+      "path": "modules/nixos/hyprland/bar/options.nix"
+    },
+    {
+      "category": "nixos",
+      "convention": "config.nix",
+      "extraction_method": "regex",
+      "imports": [],
+      "mkDefault": [],
+      "mkForce": [],
+      "mkIf": [],
+      "mkOverride": [],
+      "namespace_violations": [],
+      "option_declarations": [],
+      "option_references": [
+        "config.my.desktop.hyprland",
+        "config.my.hardware.gpu.mesa.enable"
+      ],
+      "path": "modules/nixos/hyprland/bar/config.nix"
+    },
+    {
+      "category": "nixos",
+      "convention": "default.nix",
+      "extraction_method": "tree-sitter",
+      "imports": [
+        "./options.nix",
+        "./config.nix"
+      ],
+      "mkDefault": [],
+      "mkForce": [],
+      "mkIf": [],
+      "mkOverride": [],
+      "namespace_violations": [],
+      "option_declarations": [],
+      "option_references": [],
+      "path": "modules/nixos/hyprland/bar/default.nix"
+    },
+    {
+      "category": "nixos",
+      "convention": "options.nix",
+      "extraction_method": "tree-sitter",
+      "imports": [],
+      "mkDefault": [],
+      "mkForce": [],
+      "mkIf": [],
+      "mkOverride": [],
+      "namespace_violations": [],
+      "option_declarations": [
+        "options.my.desktop.hyprland.launcher"
+      ],
+      "option_references": [],
+      "path": "modules/nixos/hyprland/launcher/options.nix"
+    },
+    {
+      "category": "nixos",
+      "convention": "config.nix",
+      "extraction_method": "tree-sitter",
+      "imports": [],
+      "mkDefault": [],
+      "mkForce": [],
+      "mkIf": [
+        "modules/nixos/hyprland/launcher/config.nix:7"
+      ],
+      "mkOverride": [],
+      "namespace_violations": [],
+      "option_declarations": [],
+      "option_references": [],
+      "path": "modules/nixos/hyprland/launcher/config.nix"
+    },
+    {
+      "category": "nixos",
+      "convention": "default.nix",
+      "extraction_method": "tree-sitter",
+      "imports": [
+        "./options.nix",
+        "./config.nix"
+      ],
+      "mkDefault": [],
+      "mkForce": [],
+      "mkIf": [],
+      "mkOverride": [],
+      "namespace_violations": [],
+      "option_declarations": [],
+      "option_references": [],
+      "path": "modules/nixos/hyprland/launcher/default.nix"
+    },
+    {
+      "category": "nixos",
+      "convention": "options.nix",
+      "extraction_method": "tree-sitter",
+      "imports": [],
+      "mkDefault": [],
+      "mkForce": [],
+      "mkIf": [],
+      "mkOverride": [],
+      "namespace_violations": [],
+      "option_declarations": [
+        "options.my.desktop.hyprland.notifications"
+      ],
+      "option_references": [],
+      "path": "modules/nixos/hyprland/notifications/options.nix"
+    },
+    {
+      "category": "nixos",
+      "convention": "config.nix",
+      "extraction_method": "tree-sitter",
+      "imports": [],
+      "mkDefault": [],
+      "mkForce": [],
+      "mkIf": [
+        "modules/nixos/hyprland/notifications/config.nix:24"
+      ],
+      "mkOverride": [],
+      "namespace_violations": [],
+      "option_declarations": [],
+      "option_references": [],
+      "path": "modules/nixos/hyprland/notifications/config.nix"
+    },
+    {
+      "category": "nixos",
+      "convention": "default.nix",
+      "extraction_method": "tree-sitter",
+      "imports": [
+        "./options.nix",
+        "./config.nix"
+      ],
+      "mkDefault": [],
+      "mkForce": [],
+      "mkIf": [],
+      "mkOverride": [],
+      "namespace_violations": [],
+      "option_declarations": [],
+      "option_references": [],
+      "path": "modules/nixos/hyprland/notifications/default.nix"
+    },
+    {
+      "category": "nixos",
+      "convention": "options.nix",
+      "extraction_method": "tree-sitter",
+      "imports": [],
+      "mkDefault": [],
+      "mkForce": [],
+      "mkIf": [],
+      "mkOverride": [],
+      "namespace_violations": [],
+      "option_declarations": [
+        "options.my.desktop.hyprland.lockscreen"
+      ],
+      "option_references": [],
+      "path": "modules/nixos/hyprland/lockscreen/options.nix"
+    },
+    {
+      "category": "nixos",
+      "convention": "config.nix",
+      "extraction_method": "tree-sitter",
+      "imports": [],
+      "mkDefault": [],
+      "mkForce": [],
+      "mkIf": [
+        "modules/nixos/hyprland/lockscreen/config.nix:47",
+        "modules/nixos/hyprland/lockscreen/config.nix:57"
+      ],
+      "mkOverride": [],
+      "namespace_violations": [],
+      "option_declarations": [],
+      "option_references": [],
+      "path": "modules/nixos/hyprland/lockscreen/config.nix"
+    },
+    {
+      "category": "nixos",
+      "convention": "default.nix",
+      "extraction_method": "tree-sitter",
+      "imports": [
+        "./options.nix",
+        "./config.nix"
+      ],
+      "mkDefault": [],
+      "mkForce": [],
+      "mkIf": [],
+      "mkOverride": [],
+      "namespace_violations": [],
+      "option_declarations": [],
+      "option_references": [],
+      "path": "modules/nixos/hyprland/lockscreen/default.nix"
+    },
+    {
+      "category": "nixos",
+      "convention": "options.nix",
+      "extraction_method": "tree-sitter",
+      "imports": [],
+      "mkDefault": [],
+      "mkForce": [],
+      "mkIf": [],
+      "mkOverride": [],
+      "namespace_violations": [],
+      "option_declarations": [
+        "options.my.desktop.hyprland.screenshot"
+      ],
+      "option_references": [],
+      "path": "modules/nixos/hyprland/screenshot/options.nix"
+    },
+    {
+      "category": "nixos",
+      "convention": "config.nix",
+      "extraction_method": "tree-sitter",
+      "imports": [],
+      "mkDefault": [],
+      "mkForce": [],
+      "mkIf": [
+        "modules/nixos/hyprland/screenshot/config.nix:7"
+      ],
+      "mkOverride": [],
+      "namespace_violations": [],
+      "option_declarations": [],
+      "option_references": [],
+      "path": "modules/nixos/hyprland/screenshot/config.nix"
+    },
+    {
+      "category": "nixos",
+      "convention": "default.nix",
+      "extraction_method": "tree-sitter",
+      "imports": [
+        "./options.nix",
+        "./config.nix"
+      ],
+      "mkDefault": [],
+      "mkForce": [],
+      "mkIf": [],
+      "mkOverride": [],
+      "namespace_violations": [],
+      "option_declarations": [],
+      "option_references": [],
+      "path": "modules/nixos/hyprland/screenshot/default.nix"
+    },
+    {
+      "category": "nixos",
+      "convention": "options.nix",
+      "extraction_method": "tree-sitter",
+      "imports": [],
+      "mkDefault": [],
+      "mkForce": [],
+      "mkIf": [],
+      "mkOverride": [],
+      "namespace_violations": [],
+      "option_declarations": [
+        "options.my.desktop.hyprland.clipboard"
+      ],
+      "option_references": [],
+      "path": "modules/nixos/hyprland/clipboard/options.nix"
+    },
+    {
+      "category": "nixos",
+      "convention": "config.nix",
+      "extraction_method": "tree-sitter",
+      "imports": [],
+      "mkDefault": [],
+      "mkForce": [],
+      "mkIf": [
+        "modules/nixos/hyprland/clipboard/config.nix:7"
+      ],
+      "mkOverride": [],
+      "namespace_violations": [],
+      "option_declarations": [],
+      "option_references": [],
+      "path": "modules/nixos/hyprland/clipboard/config.nix"
+    },
+    {
+      "category": "nixos",
+      "convention": "default.nix",
+      "extraction_method": "tree-sitter",
+      "imports": [
+        "./options.nix",
+        "./config.nix"
+      ],
+      "mkDefault": [],
+      "mkForce": [],
+      "mkIf": [],
+      "mkOverride": [],
+      "namespace_violations": [],
+      "option_declarations": [],
+      "option_references": [],
+      "path": "modules/nixos/hyprland/clipboard/default.nix"
+    },
+    {
+      "category": "nixos",
+      "convention": "options.nix",
+      "extraction_method": "tree-sitter",
+      "imports": [],
+      "mkDefault": [],
+      "mkForce": [],
+      "mkIf": [],
+      "mkOverride": [],
+      "namespace_violations": [],
+      "option_declarations": [
+        "options.my.desktop.hyprland.portal"
+      ],
+      "option_references": [],
+      "path": "modules/nixos/hyprland/portal/options.nix"
+    },
+    {
+      "category": "nixos",
+      "convention": "config.nix",
+      "extraction_method": "tree-sitter",
+      "imports": [],
+      "mkDefault": [],
+      "mkForce": [],
+      "mkIf": [
+        "modules/nixos/hyprland/portal/config.nix:7"
+      ],
+      "mkOverride": [],
+      "namespace_violations": [],
+      "option_declarations": [],
+      "option_references": [],
+      "path": "modules/nixos/hyprland/portal/config.nix"
+    },
+    {
+      "category": "nixos",
+      "convention": "default.nix",
+      "extraction_method": "tree-sitter",
+      "imports": [
+        "./options.nix",
+        "./config.nix"
+      ],
+      "mkDefault": [],
+      "mkForce": [],
+      "mkIf": [],
+      "mkOverride": [],
+      "namespace_violations": [],
+      "option_declarations": [],
+      "option_references": [],
+      "path": "modules/nixos/hyprland/portal/default.nix"
+    },
+    {
+      "category": "nixos",
+      "convention": "options.nix",
+      "extraction_method": "tree-sitter",
+      "imports": [],
+      "mkDefault": [],
+      "mkForce": [],
+      "mkIf": [],
+      "mkOverride": [],
+      "namespace_violations": [],
+      "option_declarations": [
+        "options.my.desktop.hyprland.displayManager"
+      ],
+      "option_references": [],
+      "path": "modules/nixos/hyprland/display-manager/options.nix"
+    },
+    {
+      "category": "nixos",
+      "convention": "config.nix",
+      "extraction_method": "regex",
+      "imports": [],
+      "mkDefault": [],
+      "mkForce": [
+        "modules/nixos/hyprland/display-manager/config.nix:35"
+      ],
+      "mkIf": [
+        "modules/nixos/hyprland/display-manager/config.nix:7",
+        "modules/nixos/hyprland/display-manager/config.nix:10",
+        "modules/nixos/hyprland/display-manager/config.nix:41"
+      ],
+      "mkOverride": [],
+      "namespace_violations": [],
+      "option_declarations": [],
+      "option_references": [
+        "config.my.desktop.hyprland"
+      ],
+      "path": "modules/nixos/hyprland/display-manager/config.nix"
+    },
+    {
+      "category": "nixos",
+      "convention": "default.nix",
+      "extraction_method": "tree-sitter",
+      "imports": [
+        "./options.nix",
+        "./config.nix"
+      ],
+      "mkDefault": [],
+      "mkForce": [],
+      "mkIf": [],
+      "mkOverride": [],
+      "namespace_violations": [],
+      "option_declarations": [],
+      "option_references": [],
+      "path": "modules/nixos/hyprland/display-manager/default.nix"
+    },
+    {
+      "category": "nixos",
+      "convention": "options.nix",
+      "extraction_method": "tree-sitter",
+      "imports": [],
+      "mkDefault": [],
+      "mkForce": [],
+      "mkIf": [],
+      "mkOverride": [],
+      "namespace_violations": [],
+      "option_declarations": [
+        "options.my.desktop.hyprland.audio"
+      ],
+      "option_references": [],
+      "path": "modules/nixos/hyprland/audio/options.nix"
+    },
+    {
+      "category": "nixos",
+      "convention": "config.nix",
+      "extraction_method": "tree-sitter",
+      "imports": [],
+      "mkDefault": [],
+      "mkForce": [],
+      "mkIf": [
+        "modules/nixos/hyprland/audio/config.nix:7"
+      ],
+      "mkOverride": [],
+      "namespace_violations": [],
+      "option_declarations": [],
+      "option_references": [],
+      "path": "modules/nixos/hyprland/audio/config.nix"
+    },
+    {
+      "category": "nixos",
+      "convention": "default.nix",
+      "extraction_method": "tree-sitter",
+      "imports": [
+        "./options.nix",
+        "./config.nix"
+      ],
+      "mkDefault": [],
+      "mkForce": [],
+      "mkIf": [],
+      "mkOverride": [],
+      "namespace_violations": [],
+      "option_declarations": [],
+      "option_references": [],
+      "path": "modules/nixos/hyprland/audio/default.nix"
+    },
+    {
+      "category": "nixos",
+      "convention": "options.nix",
+      "extraction_method": "tree-sitter",
+      "imports": [],
+      "mkDefault": [],
+      "mkForce": [],
+      "mkIf": [],
+      "mkOverride": [],
+      "namespace_violations": [],
+      "option_declarations": [
+        "options.my.desktop.hyprland.utilities"
+      ],
+      "option_references": [],
+      "path": "modules/nixos/hyprland/utilities/options.nix"
+    },
+    {
+      "category": "nixos",
+      "convention": "config.nix",
+      "extraction_method": "tree-sitter",
+      "imports": [],
+      "mkDefault": [],
+      "mkForce": [],
+      "mkIf": [
+        "modules/nixos/hyprland/utilities/config.nix:7"
+      ],
+      "mkOverride": [],
+      "namespace_violations": [],
+      "option_declarations": [],
+      "option_references": [],
+      "path": "modules/nixos/hyprland/utilities/config.nix"
+    },
+    {
+      "category": "nixos",
+      "convention": "default.nix",
+      "extraction_method": "tree-sitter",
+      "imports": [
+        "./options.nix",
+        "./config.nix"
+      ],
+      "mkDefault": [],
+      "mkForce": [],
+      "mkIf": [],
+      "mkOverride": [],
+      "namespace_violations": [],
+      "option_declarations": [],
+      "option_references": [],
+      "path": "modules/nixos/hyprland/utilities/default.nix"
+    },
+    {
+      "category": "nixos",
+      "convention": "options.nix",
+      "extraction_method": "tree-sitter",
+      "imports": [],
+      "mkDefault": [],
+      "mkForce": [],
+      "mkIf": [],
+      "mkOverride": [],
+      "namespace_violations": [],
+      "option_declarations": [
+        "options.my.desktop.hyprland.nvidia"
+      ],
+      "option_references": [],
+      "path": "modules/nixos/hyprland/nvidia/options.nix"
+    },
+    {
+      "category": "nixos",
+      "convention": "config.nix",
+      "extraction_method": "tree-sitter",
+      "imports": [],
+      "mkDefault": [],
+      "mkForce": [],
+      "mkIf": [
+        "modules/nixos/hyprland/nvidia/config.nix:7"
+      ],
+      "mkOverride": [],
+      "namespace_violations": [],
+      "option_declarations": [],
+      "option_references": [],
+      "path": "modules/nixos/hyprland/nvidia/config.nix"
+    },
+    {
+      "category": "nixos",
+      "convention": "default.nix",
+      "extraction_method": "tree-sitter",
+      "imports": [
+        "./options.nix",
+        "./config.nix"
+      ],
+      "mkDefault": [],
+      "mkForce": [],
+      "mkIf": [],
+      "mkOverride": [],
+      "namespace_violations": [],
+      "option_declarations": [],
+      "option_references": [],
+      "path": "modules/nixos/hyprland/nvidia/default.nix"
+    },
+    {
+      "category": "nixos",
+      "convention": "options.nix",
+      "extraction_method": "tree-sitter",
+      "imports": [],
+      "mkDefault": [],
+      "mkForce": [],
+      "mkIf": [],
+      "mkOverride": [],
+      "namespace_violations": [],
+      "option_declarations": [
+        "options.my.desktop.hyprland.idle"
+      ],
+      "option_references": [],
+      "path": "modules/nixos/hyprland/idle/options.nix"
+    },
+    {
+      "category": "nixos",
+      "convention": "config.nix",
+      "extraction_method": "tree-sitter",
+      "imports": [],
+      "mkDefault": [],
+      "mkForce": [],
+      "mkIf": [
+        "modules/nixos/hyprland/idle/config.nix:44"
+      ],
+      "mkOverride": [],
+      "namespace_violations": [],
+      "option_declarations": [],
+      "option_references": [],
+      "path": "modules/nixos/hyprland/idle/config.nix"
+    },
+    {
+      "category": "nixos",
+      "convention": "default.nix",
+      "extraction_method": "tree-sitter",
+      "imports": [
+        "./options.nix",
+        "./config.nix"
+      ],
+      "mkDefault": [],
+      "mkForce": [],
+      "mkIf": [],
+      "mkOverride": [],
+      "namespace_violations": [],
+      "option_declarations": [],
+      "option_references": [],
+      "path": "modules/nixos/hyprland/idle/default.nix"
+    },
+    {
+      "category": "nixos",
+      "convention": "options.nix",
+      "extraction_method": "tree-sitter",
+      "imports": [],
+      "mkDefault": [],
+      "mkForce": [],
+      "mkIf": [],
+      "mkOverride": [],
+      "namespace_violations": [],
+      "option_declarations": [
+        "options.my.desktop.hyprland.colorpicker"
+      ],
+      "option_references": [],
+      "path": "modules/nixos/hyprland/colorpicker/options.nix"
+    },
+    {
+      "category": "nixos",
+      "convention": "config.nix",
+      "extraction_method": "tree-sitter",
+      "imports": [],
+      "mkDefault": [],
+      "mkForce": [],
+      "mkIf": [
+        "modules/nixos/hyprland/colorpicker/config.nix:7"
+      ],
+      "mkOverride": [],
+      "namespace_violations": [],
+      "option_declarations": [],
+      "option_references": [],
+      "path": "modules/nixos/hyprland/colorpicker/config.nix"
+    },
+    {
+      "category": "nixos",
+      "convention": "default.nix",
+      "extraction_method": "tree-sitter",
+      "imports": [
+        "./options.nix",
+        "./config.nix"
+      ],
+      "mkDefault": [],
+      "mkForce": [],
+      "mkIf": [],
+      "mkOverride": [],
+      "namespace_violations": [],
+      "option_declarations": [],
+      "option_references": [],
+      "path": "modules/nixos/hyprland/colorpicker/default.nix"
+    },
+    {
+      "category": "nixos",
+      "convention": "options.nix",
+      "extraction_method": "tree-sitter",
+      "imports": [],
+      "mkDefault": [],
+      "mkForce": [],
+      "mkIf": [],
+      "mkOverride": [],
+      "namespace_violations": [],
+      "option_declarations": [
+        "options.my.desktop.hyprland.nightLight"
+      ],
+      "option_references": [],
+      "path": "modules/nixos/hyprland/night-light/options.nix"
+    },
+    {
+      "category": "nixos",
+      "convention": "config.nix",
+      "extraction_method": "tree-sitter",
+      "imports": [],
+      "mkDefault": [],
+      "mkForce": [],
+      "mkIf": [
+        "modules/nixos/hyprland/night-light/config.nix:7"
+      ],
+      "mkOverride": [],
+      "namespace_violations": [],
+      "option_declarations": [],
+      "option_references": [],
+      "path": "modules/nixos/hyprland/night-light/config.nix"
+    },
+    {
+      "category": "nixos",
+      "convention": "default.nix",
+      "extraction_method": "tree-sitter",
+      "imports": [
+        "./options.nix",
+        "./config.nix"
+      ],
+      "mkDefault": [],
+      "mkForce": [],
+      "mkIf": [],
+      "mkOverride": [],
+      "namespace_violations": [],
+      "option_declarations": [],
+      "option_references": [],
+      "path": "modules/nixos/hyprland/night-light/default.nix"
+    },
+    {
+      "category": "nixos",
+      "convention": "options.nix",
+      "extraction_method": "tree-sitter",
+      "imports": [],
+      "mkDefault": [],
+      "mkForce": [],
+      "mkIf": [],
+      "mkOverride": [],
+      "namespace_violations": [],
+      "option_declarations": [
+        "options.my.desktop.hyprland.pyprland"
+      ],
+      "option_references": [],
+      "path": "modules/nixos/hyprland/pyprland/options.nix"
+    },
+    {
+      "category": "nixos",
+      "convention": "config.nix",
+      "extraction_method": "tree-sitter",
+      "imports": [],
+      "mkDefault": [],
+      "mkForce": [],
+      "mkIf": [
+        "modules/nixos/hyprland/pyprland/config.nix:12"
+      ],
+      "mkOverride": [],
+      "namespace_violations": [],
+      "option_declarations": [],
+      "option_references": [],
+      "path": "modules/nixos/hyprland/pyprland/config.nix"
+    },
+    {
+      "category": "nixos",
+      "convention": "default.nix",
+      "extraction_method": "tree-sitter",
+      "imports": [
+        "./options.nix",
+        "./config.nix"
+      ],
+      "mkDefault": [],
+      "mkForce": [],
+      "mkIf": [],
+      "mkOverride": [],
+      "namespace_violations": [],
+      "option_declarations": [],
+      "option_references": [],
+      "path": "modules/nixos/hyprland/pyprland/default.nix"
+    },
+    {
+      "category": "nixos",
+      "convention": "options.nix",
+      "extraction_method": "regex",
+      "imports": [],
+      "mkDefault": [],
+      "mkForce": [],
+      "mkIf": [],
+      "mkOverride": [],
+      "namespace_violations": [],
+      "option_declarations": [
+        "options.my.desktop.hyprland.awww"
+      ],
+      "option_references": [],
+      "path": "modules/nixos/hyprland/awww/options.nix"
+    },
+    {
+      "category": "nixos",
+      "convention": "config.nix",
+      "extraction_method": "tree-sitter",
+      "imports": [],
+      "mkDefault": [],
+      "mkForce": [],
+      "mkIf": [
+        "modules/nixos/hyprland/awww/config.nix:29",
+        "modules/nixos/hyprland/awww/config.nix:46",
+        "modules/nixos/hyprland/awww/config.nix:48"
+      ],
+      "mkOverride": [],
+      "namespace_violations": [],
+      "option_declarations": [],
+      "option_references": [],
+      "path": "modules/nixos/hyprland/awww/config.nix"
+    },
+    {
+      "category": "nixos",
+      "convention": "default.nix",
+      "extraction_method": "tree-sitter",
+      "imports": [
+        "./options.nix",
+        "./config.nix"
+      ],
+      "mkDefault": [],
+      "mkForce": [],
+      "mkIf": [],
+      "mkOverride": [],
+      "namespace_violations": [],
+      "option_declarations": [],
+      "option_references": [],
+      "path": "modules/nixos/hyprland/awww/default.nix"
+    },
+    {
+      "category": "nixos",
+      "convention": "options.nix",
+      "extraction_method": "regex",
+      "imports": [],
+      "mkDefault": [],
+      "mkForce": [],
+      "mkIf": [],
+      "mkOverride": [],
+      "namespace_violations": [],
+      "option_declarations": [
+        "options.my.desktop.hyprland.wallpapers"
+      ],
+      "option_references": [
+        "config.my.desktop.hyprland.wallpapers.wallpaperDir"
+      ],
+      "path": "modules/nixos/hyprland/wallpapers/options.nix"
+    },
+    {
+      "category": "nixos",
+      "convention": "config.nix",
+      "extraction_method": "regex",
+      "imports": [],
+      "mkDefault": [],
+      "mkForce": [],
+      "mkIf": [
+        "modules/nixos/hyprland/wallpapers/config.nix:168",
+        "modules/nixos/hyprland/wallpapers/config.nix:169",
+        "modules/nixos/hyprland/wallpapers/config.nix:195",
+        "modules/nixos/hyprland/wallpapers/config.nix:254",
+        "modules/nixos/hyprland/wallpapers/config.nix:255",
+        "modules/nixos/hyprland/wallpapers/config.nix:256",
+        "modules/nixos/hyprland/wallpapers/config.nix:257",
+        "modules/nixos/hyprland/wallpapers/config.nix:258"
+      ],
+      "mkOverride": [],
+      "namespace_violations": [],
+      "option_declarations": [],
+      "option_references": [
+        "config.my.desktop.hyprland",
+        "config.my.monitors"
+      ],
+      "path": "modules/nixos/hyprland/wallpapers/config.nix"
+    },
+    {
+      "category": "nixos",
+      "convention": "default.nix",
+      "extraction_method": "tree-sitter",
+      "imports": [
+        "./options.nix",
+        "./config.nix"
+      ],
+      "mkDefault": [],
+      "mkForce": [],
+      "mkIf": [],
+      "mkOverride": [],
+      "namespace_violations": [],
+      "option_declarations": [],
+      "option_references": [],
+      "path": "modules/nixos/hyprland/wallpapers/default.nix"
+    },
+    {
+      "category": "nixos",
+      "convention": "options.nix",
+      "extraction_method": "tree-sitter",
+      "imports": [],
+      "mkDefault": [],
+      "mkForce": [],
+      "mkIf": [],
+      "mkOverride": [],
+      "namespace_violations": [],
+      "option_declarations": [
+        "options.my.desktop.hyprland.wallpaper"
+      ],
+      "option_references": [],
+      "path": "modules/nixos/hyprland/wallpaper/options.nix"
+    },
+    {
+      "category": "nixos",
+      "convention": "config.nix",
+      "extraction_method": "tree-sitter",
+      "imports": [],
+      "mkDefault": [],
+      "mkForce": [],
+      "mkIf": [
+        "modules/nixos/hyprland/wallpaper/config.nix:18"
+      ],
+      "mkOverride": [],
+      "namespace_violations": [],
+      "option_declarations": [],
+      "option_references": [],
+      "path": "modules/nixos/hyprland/wallpaper/config.nix"
+    },
+    {
+      "category": "nixos",
+      "convention": "default.nix",
+      "extraction_method": "tree-sitter",
+      "imports": [
+        "./options.nix",
+        "./config.nix"
+      ],
+      "mkDefault": [],
+      "mkForce": [],
+      "mkIf": [],
+      "mkOverride": [],
+      "namespace_violations": [],
+      "option_declarations": [],
+      "option_references": [],
+      "path": "modules/nixos/hyprland/wallpaper/default.nix"
+    },
+    {
+      "category": "home",
+      "convention": "other",
+      "extraction_method": "tree-sitter",
+      "imports": [],
+      "mkDefault": [],
+      "mkForce": [],
+      "mkIf": [
+        "modules/home/bash.nix:61"
+      ],
+      "mkOverride": [],
+      "namespace_violations": [],
+      "option_declarations": [
+        "options.my.programs.bash"
+      ],
+      "option_references": [],
+      "path": "modules/home/bash.nix"
+    },
+    {
+      "category": "home",
+      "convention": "other",
+      "extraction_method": "tree-sitter",
+      "imports": [],
+      "mkDefault": [],
+      "mkForce": [],
+      "mkIf": [],
+      "mkOverride": [],
+      "namespace_violations": [],
+      "option_declarations": [],
+      "option_references": [],
+      "path": "modules/home/core/git.nix"
+    },
+    {
+      "category": "home",
+      "convention": "default.nix",
+      "extraction_method": "tree-sitter",
+      "imports": [
+        "./git.nix",
+        "./nix.nix",
+        "./agenix.nix",
+        "./tests.nix"
+      ],
+      "mkDefault": [],
+      "mkForce": [],
+      "mkIf": [],
+      "mkOverride": [],
+      "namespace_violations": [],
+      "option_declarations": [],
+      "option_references": [],
+      "path": "modules/home/core/default.nix"
+    },
+    {
+      "category": "home",
+      "convention": "meta.nix",
+      "extraction_method": "tree-sitter",
+      "imports": [],
+      "mkDefault": [],
+      "mkForce": [],
+      "mkIf": [],
+      "mkOverride": [],
+      "namespace_violations": [],
+      "option_declarations": [],
+      "option_references": [],
+      "path": "modules/home/core/meta.nix"
+    },
+    {
+      "category": "home",
+      "convention": "other",
+      "extraction_method": "tree-sitter",
+      "imports": [
+        "agenix.homeManagerModules.default"
+      ],
+      "mkDefault": [],
+      "mkForce": [
+        "modules/home/core/agenix.nix:27"
+      ],
+      "mkIf": [],
+      "mkOverride": [],
+      "namespace_violations": [],
+      "option_declarations": [],
+      "option_references": [],
+      "path": "modules/home/core/agenix.nix"
+    },
+    {
+      "category": "home",
+      "convention": "other",
+      "extraction_method": "tree-sitter",
+      "imports": [],
+      "mkDefault": [],
+      "mkForce": [],
+      "mkIf": [],
+      "mkOverride": [],
+      "namespace_violations": [],
+      "option_declarations": [],
+      "option_references": [],
+      "path": "modules/home/core/nix.nix"
+    },
+    {
+      "category": "home",
+      "convention": "default.nix",
+      "extraction_method": "tree-sitter",
+      "imports": [
+        "./options.nix",
+        "./config.nix",
+        "./tests.nix"
+      ],
+      "mkDefault": [],
+      "mkForce": [],
+      "mkIf": [],
+      "mkOverride": [],
+      "namespace_violations": [],
+      "option_declarations": [],
+      "option_references": [],
+      "path": "modules/home/opencode/default.nix"
+    },
+    {
+      "category": "home",
+      "convention": "options.nix",
+      "extraction_method": "regex",
+      "imports": [],
+      "mkDefault": [],
+      "mkForce": [],
+      "mkIf": [],
+      "mkOverride": [],
+      "namespace_violations": [],
+      "option_declarations": [
+        "options.my.programs.opencode"
+      ],
+      "option_references": [],
+      "path": "modules/home/opencode/options.nix"
+    },
+    {
+      "category": "home",
+      "convention": "config.nix",
+      "extraction_method": "regex",
+      "imports": [],
+      "mkDefault": [
+        "modules/home/opencode/config.nix:221",
+        "modules/home/opencode/config.nix:244",
+        "modules/home/opencode/config.nix:252",
+        "modules/home/opencode/config.nix:272",
+        "modules/home/opencode/config.nix:291",
+        "modules/home/opencode/config.nix:295",
+        "modules/home/opencode/config.nix:328",
+        "modules/home/opencode/config.nix:368",
+        "modules/home/opencode/config.nix:384"
+      ],
+      "mkForce": [],
+      "mkIf": [],
+      "mkOverride": [],
+      "namespace_violations": [],
+      "option_declarations": [],
+      "option_references": [
+        "config.my.programs.opencode"
+      ],
+      "path": "modules/home/opencode/config.nix"
+    },
+    {
+      "category": "home",
+      "convention": "meta.nix",
+      "extraction_method": "tree-sitter",
+      "imports": [],
+      "mkDefault": [],
+      "mkForce": [],
+      "mkIf": [],
+      "mkOverride": [],
+      "namespace_violations": [],
+      "option_declarations": [],
+      "option_references": [],
+      "path": "modules/home/opencode/meta.nix"
+    },
+    {
+      "category": "home",
+      "convention": "tests.nix",
+      "extraction_method": "regex",
+      "imports": [],
+      "mkDefault": [],
+      "mkForce": [],
+      "mkIf": [],
+      "mkOverride": [],
+      "namespace_violations": [],
+      "option_declarations": [],
+      "option_references": [
+        "config.my.programs.opencode"
+      ],
+      "path": "modules/home/opencode/tests.nix"
+    },
+    {
+      "category": "home",
+      "convention": "other",
+      "extraction_method": "regex",
+      "imports": [],
+      "mkDefault": [],
+      "mkForce": [],
+      "mkIf": [],
+      "mkOverride": [],
+      "namespace_violations": [],
+      "option_declarations": [],
+      "option_references": [],
+      "path": "modules/home/opencode/providers.nix"
+    },
+    {
+      "category": "host",
+      "convention": "default.nix",
+      "extraction_method": "regex",
+      "imports": [
+        "./hardware-configuration.nix",
+        "./configuration.nix",
+        "./disk-config.nix",
+        "flake.inputs.self.nixosModules.common"
+      ],
+      "mkDefault": [],
+      "mkForce": [
+        "configurations/nixos/desktop/default.nix:26",
+        "configurations/nixos/desktop/default.nix:27",
+        "configurations/nixos/desktop/default.nix:28",
+        "configurations/nixos/desktop/default.nix:29",
+        "configurations/nixos/desktop/default.nix:30",
+        "configurations/nixos/desktop/default.nix:32",
+        "configurations/nixos/desktop/default.nix:34",
+        "configurations/nixos/desktop/default.nix:44",
+        "configurations/nixos/desktop/default.nix:45"
+      ],
+      "mkIf": [],
+      "mkOverride": [],
+      "namespace_violations": [],
+      "option_declarations": [],
+      "option_references": [],
+      "path": "configurations/nixos/desktop/default.nix"
+    },
+    {
+      "category": "host",
+      "convention": "other",
+      "extraction_method": "regex",
+      "imports": [],
+      "mkDefault": [],
+      "mkForce": [],
+      "mkIf": [],
+      "mkOverride": [],
+      "namespace_violations": [],
+      "option_declarations": [],
+      "option_references": [],
+      "path": "configurations/nixos/desktop/configuration.nix"
+    },
+    {
+      "category": "host",
+      "convention": "hardware-configuration.nix",
+      "extraction_method": "regex",
+      "imports": [],
+      "mkDefault": [
+        "configurations/nixos/desktop/hardware-configuration.nix:17",
+        "configurations/nixos/desktop/hardware-configuration.nix:18"
+      ],
+      "mkForce": [],
+      "mkIf": [],
+      "mkOverride": [],
+      "namespace_violations": [],
+      "option_declarations": [],
+      "option_references": [],
+      "path": "configurations/nixos/desktop/hardware-configuration.nix"
+    },
+    {
+      "category": "host",
+      "convention": "other",
+      "extraction_method": "regex",
+      "imports": [],
+      "mkDefault": [],
+      "mkForce": [],
+      "mkIf": [],
+      "mkOverride": [],
+      "namespace_violations": [],
+      "option_declarations": [],
+      "option_references": [],
+      "path": "configurations/nixos/desktop/disk-config.nix"
+    },
+    {
+      "category": "host",
+      "convention": "default.nix",
+      "extraction_method": "regex",
+      "imports": [
+        "./hardware-configuration.nix",
+        "flake.inputs.self.nixosModules.common"
+      ],
+      "mkDefault": [],
+      "mkForce": [],
+      "mkIf": [],
+      "mkOverride": [],
+      "namespace_violations": [],
+      "option_declarations": [],
+      "option_references": [],
+      "path": "configurations/nixos/laptop/default.nix"
+    },
+    {
+      "category": "host",
+      "convention": "hardware-configuration.nix",
+      "extraction_method": "regex",
+      "imports": [],
+      "mkDefault": [
+        "configurations/nixos/laptop/hardware-configuration.nix:51",
+        "configurations/nixos/laptop/hardware-configuration.nix:52"
+      ],
+      "mkForce": [],
+      "mkIf": [],
+      "mkOverride": [],
+      "namespace_violations": [],
+      "option_declarations": [],
+      "option_references": [],
+      "path": "configurations/nixos/laptop/hardware-configuration.nix"
+    },
+    {
+      "category": "host",
+      "convention": "other",
+      "extraction_method": "tree-sitter",
+      "imports": [],
+      "mkDefault": [
+        "configurations/nixos/laptop/disk-config.nix:4"
+      ],
+      "mkForce": [],
+      "mkIf": [],
+      "mkOverride": [],
+      "namespace_violations": [],
+      "option_declarations": [],
+      "option_references": [],
+      "path": "configurations/nixos/laptop/disk-config.nix"
+    },
+    {
+      "category": "host",
+      "convention": "default.nix",
+      "extraction_method": "regex",
+      "imports": [
+        "./configuration.nix",
+        "./hardware-configuration.nix",
+        "./disk-config.nix",
+        "flake.inputs.self.nixosModules.common"
+      ],
+      "mkDefault": [
+        "configurations/nixos/server/default.nix:228",
+        "configurations/nixos/server/default.nix:231"
+      ],
+      "mkForce": [],
+      "mkIf": [],
+      "mkOverride": [],
+      "namespace_violations": [],
+      "option_declarations": [],
+      "option_references": [],
+      "path": "configurations/nixos/server/default.nix"
+    },
+    {
+      "category": "host",
+      "convention": "other",
+      "extraction_method": "regex",
+      "imports": [
+        "./hardware-configuration.nix"
+      ],
+      "mkDefault": [],
+      "mkForce": [],
+      "mkIf": [],
+      "mkOverride": [],
+      "namespace_violations": [],
+      "option_declarations": [],
+      "option_references": [],
+      "path": "configurations/nixos/server/configuration.nix"
+    },
+    {
+      "category": "host",
+      "convention": "hardware-configuration.nix",
+      "extraction_method": "regex",
+      "imports": [],
+      "mkDefault": [
+        "configurations/nixos/server/hardware-configuration.nix:39",
+        "configurations/nixos/server/hardware-configuration.nix:44",
+        "configurations/nixos/server/hardware-configuration.nix:56",
+        "configurations/nixos/server/hardware-configuration.nix:57",
+        "configurations/nixos/server/hardware-configuration.nix:59",
+        "configurations/nixos/server/hardware-configuration.nix:60"
+      ],
+      "mkForce": [],
+      "mkIf": [],
+      "mkOverride": [],
+      "namespace_violations": [],
+      "option_declarations": [],
+      "option_references": [],
+      "path": "configurations/nixos/server/hardware-configuration.nix"
+    },
+    {
+      "category": "host",
+      "convention": "other",
+      "extraction_method": "tree-sitter",
+      "imports": [],
+      "mkDefault": [
+        "configurations/nixos/server/disk-config.nix:4"
+      ],
+      "mkForce": [],
+      "mkIf": [],
+      "mkOverride": [],
+      "namespace_violations": [],
+      "option_declarations": [],
+      "option_references": [],
+      "path": "configurations/nixos/server/disk-config.nix"
+    },
+    {
+      "category": "host",
+      "convention": "default.nix",
+      "extraction_method": "regex",
+      "imports": [
+        "./configuration.nix",
+        "./hardware-configuration.nix",
+        "./disk-config.nix",
+        "flake.inputs.self.nixosModules.common"
+      ],
+      "mkDefault": [],
+      "mkForce": [],
+      "mkIf": [],
+      "mkOverride": [],
+      "namespace_violations": [],
+      "option_declarations": [],
+      "option_references": [],
+      "path": "configurations/nixos/minimal/default.nix"
+    },
+    {
+      "category": "host",
+      "convention": "other",
+      "extraction_method": "regex",
+      "imports": [],
+      "mkDefault": [],
+      "mkForce": [],
+      "mkIf": [],
+      "mkOverride": [],
+      "namespace_violations": [],
+      "option_declarations": [],
+      "option_references": [],
+      "path": "configurations/nixos/minimal/configuration.nix"
+    },
+    {
+      "category": "host",
+      "convention": "hardware-configuration.nix",
+      "extraction_method": "tree-sitter",
+      "imports": [],
+      "mkDefault": [
+        "configurations/nixos/minimal/hardware-configuration.nix:9",
+        "configurations/nixos/minimal/hardware-configuration.nix:13",
+        "configurations/nixos/minimal/hardware-configuration.nix:18",
+        "configurations/nixos/minimal/hardware-configuration.nix:19",
+        "configurations/nixos/minimal/hardware-configuration.nix:20"
+      ],
+      "mkForce": [],
+      "mkIf": [],
+      "mkOverride": [],
+      "namespace_violations": [],
+      "option_declarations": [],
+      "option_references": [],
+      "path": "configurations/nixos/minimal/hardware-configuration.nix"
+    },
+    {
+      "category": "host",
+      "convention": "other",
+      "extraction_method": "tree-sitter",
+      "imports": [],
+      "mkDefault": [
+        "configurations/nixos/minimal/disk-config.nix:4"
+      ],
+      "mkForce": [],
+      "mkIf": [],
+      "mkOverride": [],
+      "namespace_violations": [],
+      "option_declarations": [],
+      "option_references": [],
+      "path": "configurations/nixos/minimal/disk-config.nix"
+    },
+    {
+      "category": "host",
+      "convention": "default.nix",
+      "extraction_method": "regex",
+      "imports": [
+        "flake.inputs.self.nixosModules.common"
+      ],
+      "mkDefault": [],
+      "mkForce": [],
+      "mkIf": [],
+      "mkOverride": [],
+      "namespace_violations": [],
+      "option_declarations": [],
+      "option_references": [],
+      "path": "configurations/nixos/wsl/default.nix"
+    },
+    {
+      "category": "other",
+      "convention": "flake.nix",
+      "extraction_method": "tree-sitter",
+      "imports": [],
+      "mkDefault": [],
+      "mkForce": [],
+      "mkIf": [],
+      "mkOverride": [],
+      "namespace_violations": [],
+      "option_declarations": [],
+      "option_references": [],
+      "path": "flake.nix"
+    }
+  ],
+  "summary": {
+    "errors": 0,
+    "namespace_violations": [],
+    "regex_fallback": 35,
+    "total_files": 114,
+    "total_import_edges": 179,
+    "total_mkDefault": 113,
+    "total_mkForce": 14,
+    "total_mkIf": 39,
+    "total_mkOverride": 0,
+    "total_option_declarations": 24,
+    "total_option_references": 26,
+    "ts_parsed": 79
+  }
+}

@@ -193,16 +193,10 @@ in
         imports = cfg.extraModules;
       }
 
-      {
-        my.programs = {
-          bash.enable = lib.mkDefault true;
-          zsh.enable = lib.mkDefault true;
-          direnv.enable = lib.mkDefault true;
-          ghostty.enable = lib.mkDefault true;
-          just.enable = lib.mkDefault true;
-          yazi.enable = lib.mkDefault true;
-        };
-      }
+      # G8: my.programs defaults are declared once in profiles/home/config.nix
+      # (common profile, imported via modules/nixos/profiles) — this duplicate
+      # block removed (recon G8). Do not re-add bash/zsh/direnv/ghostty/just/yazi
+      # mkDefault true here; keep single source of truth.
 
       {
         # Enable home-manager's centralized MCP server registry

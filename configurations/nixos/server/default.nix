@@ -60,8 +60,8 @@
   # https://server.tail685690.ts.net/<service>/.
   # Dashboard at / shows all registered services.
   my.services.proxy = {
-    enable = true;
-    listenAddresses = [ "127.0.0.1" ];
+    # F4: proxy.enable is common.nix mkDefault true — redundant here (recon F4)
+    # F5: listenAddresses [ "127.0.0.1" ] is the proxy/options.nix default — redundant here (recon F5)
     tailscaleServe.enable = true;
   };
 
@@ -162,7 +162,7 @@
 
   # ── ComfyUI (AI Image Generation) ───────────────────────────────────────
   my.services.comfyui = {
-    enable = true;
+    # F7: comfyui.enable is mkDefault true via profiles/system/ai.nix — redundant here (recon F7)
     dataDir = "/mnt/data/comfyui";
   };
 
@@ -171,20 +171,14 @@
     enable = true;
     autoBindTailscaleIp = true;
     settings.server = {
+      # backupInterval is a FREEFORM HOCON field (options.nix freeformType) — cannot carry a
+      # module default, so it stays explicit here (recon F11)
       backupInterval = 0;
-      extensionRepos = [
-        "https://raw.githubusercontent.com/keiyoushi/extensions/repo/index.min.json"
-      ];
     };
     openFirewall = true;
-    sync.export = {
-      enable = true;
-      autoPush = true;
-      repoPath = "/home/seanc/nixos-config";
-      secretPath = "/run/agenix/github-token";
-      interval = "daily";
-    };
-    sync.import.enable = true;
+    # F11: extensionRepos, sync.export.{enable,autoPush,repoPath,secretPath}, sync.import.enable
+    # now module defaults (suwayomi/sync-options.nix) — invariant core duplicated desktop/server removed
+    sync.export.interval = "daily"; # F11: divergent — desktop hourly vs server daily (recon F11)
   };
 
   # Caddy upstream must point to the Tailscale IP when autoBindTailscaleIp is on
@@ -209,7 +203,7 @@
 
   # ── RisuAI (LLM Roleplay Frontend) ────────────────────────────────────
   my.services.risuai = {
-    enable = true;
+    # F7: risuai.enable is mkDefault true via profiles/system/ai.nix — redundant here (recon F7)
     dataDir = "/mnt/data/risuai";
     ollama.enable = true;
   };
@@ -233,10 +227,11 @@
   };
 
   # ── SSH Access ──────────────────────────────────────────────────────────
-  my.services.ssh.authorizedKeys = [
-    flake.config.me.sshKey
-    "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIGEp55lp8743MYUsvmZ4XXnhvJ7c5GQDQzIg9GQzWPbg sean.cairnsst@gmail.com" # desktop
-  ];
+  # F12: extra key only — me.sshKey is inherited from common.nix mkDefault.
+  # Must stay lib.mkDefault: a plain assignment would override common's
+  # mkDefault and LOSE me.sshKey; same-priority mkDefaults merge via
+  # types.listOf concatenation → [ me.sshKey "desktop-key" ].
+  my.services.ssh.authorizedKeys = lib.mkDefault [ "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIGEp55lp8743MYUsvmZ4XXnhvJ7c5GQDQzIg9GQzWPbg sean.cairnsst@gmail.com" ]; # desktop
 
   # Temporary console password for initial recovery.
   # Remove this line after first SSH login.

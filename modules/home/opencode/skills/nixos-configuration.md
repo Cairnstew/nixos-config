@@ -115,6 +115,9 @@ nix flake check --no-build
 nix fmt
 ```
 
+**Agent shortcuts:** use the `nix-hosts` tool to list hosts and their profiles, `nix-eval`
+for safe eval checks, and `nix-flake-check` for the memory-capped flake check.
+
 ## Module Categories
 
 | Category | Path | Purpose |

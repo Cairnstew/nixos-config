@@ -3,7 +3,7 @@ import type { Plugin } from "@opencode-ai/plugin";
 export const CopyLastPlugin: Plugin = async ({ client, $ }) => {
   return {
     "command.execute.before": async (input, output) => {
-      if (input.command !== "copylast") return;
+      if (input.command !== "copylast" && input.command !== "copy-last") return;
 
       let text = "";
 
