@@ -1,11 +1,17 @@
 { lib, ... }:
 
 let
-  inherit (lib) mkOption mkEnableOption types;
+  # F11: mkEnableOption dropped — both enables now declared via mkOption with invariant-core defaults
+  inherit (lib) mkOption types;
 in
 {
   options.my.services.suwayomi.sync.export = {
-    enable = mkEnableOption "Suwayomi library export to git repo";
+    enable = mkOption {
+      type = types.bool;
+      # F11: invariant core default — desktop/server duplicate this; hosts may override (recon F11)
+      default = true;
+      description = "Whether to enable Suwayomi library export to git repo";
+    };
 
     interval = mkOption {
       type = types.str;
@@ -16,6 +22,8 @@ in
 
     repoPath = mkOption {
       type = types.path;
+      # F11: invariant core default — desktop/server duplicate this; hosts may override (recon F11)
+      default = "/home/seanc/nixos-config";
       description = "Path to the git repo where the filtered backup is committed";
       example = "/home/seanc/nixos-config";
     };
@@ -29,7 +37,8 @@ in
 
     autoPush = mkOption {
       type = types.bool;
-      default = false;
+      # F11: invariant core default — desktop/server duplicate this; hosts may override (recon F11)
+      default = true;
       description = ''
         Whether to git push after committing.
         When false, the commit stays local and will be picked up by gitreposync
@@ -39,7 +48,8 @@ in
 
     secretPath = mkOption {
       type = types.nullOr types.path;
-      default = null;
+      # F11: invariant core default — desktop/server duplicate this; hosts may override (recon F11)
+      default = "/run/agenix/github-token";
       example = "/run/agenix/github-token";
       description = ''
         Path to a file containing a GitHub token for HTTPS push authentication.
@@ -53,7 +63,12 @@ in
   };
 
   options.my.services.suwayomi.sync.import = {
-    enable = mkEnableOption "Suwayomi library import from git repo";
+    enable = mkOption {
+      type = types.bool;
+      # F11: invariant core default — desktop/server duplicate this; hosts may override (recon F11)
+      default = true;
+      description = "Whether to enable Suwayomi library import from git repo";
+    };
 
     interval = mkOption {
       type = types.str;

@@ -943,22 +943,16 @@
   # Moku connects to the server's Suwayomi instance over Tailscale
   my.programs.moku.serverUrl = "http://100.78.102.28:4567/suwayomi";
   my.services.suwayomi = {
+    # F11: extensionRepos, sync.export.{enable,autoPush,repoPath,secretPath}, sync.import.enable
+    # now module defaults (suwayomi/sync-options.nix) — invariant core duplicated desktop/server removed
     settings.server = {
+      # backupInterval is a FREEFORM HOCON field (options.nix freeformType) — cannot carry a
+      # module default, so it stays explicit here (recon F11)
       backupInterval = 0;
-      extensionRepos = [
-        "https://raw.githubusercontent.com/keiyoushi/extensions/repo/index.min.json"
-      ];
     };
     openFirewall = true;
     extraReadWritePaths = [ "/mnt/media/suwayomi" ];
-    sync.export = {
-      enable = true;
-      autoPush = true;
-      repoPath = "/home/seanc/nixos-config";
-      secretPath = "/run/agenix/github-token";
-      interval = "hourly";
-    };
-    sync.import.enable = true;
+    sync.export.interval = "hourly"; # F11: divergent — desktop hourly vs server daily (recon F11)
   };
 
   # Only the desktop manages tailscale ACL policy (auth keys, port grants)

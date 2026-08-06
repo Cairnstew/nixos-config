@@ -105,7 +105,8 @@ in
 
             extensionRepos = lib.mkOption {
               type = lib.types.listOf lib.types.str;
-              default = [ ];
+              # F11: invariant core default — desktop/server duplicate this; hosts may override (recon F11)
+              default = [ "https://raw.githubusercontent.com/keiyoushi/extensions/repo/index.min.json" ];
               example = [ "https://raw.githubusercontent.com/.../index.min.json" ];
               description = "URLs of extension repositories";
             };

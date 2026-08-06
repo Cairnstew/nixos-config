@@ -168,20 +168,14 @@
     enable = true;
     autoBindTailscaleIp = true;
     settings.server = {
+      # backupInterval is a FREEFORM HOCON field (options.nix freeformType) — cannot carry a
+      # module default, so it stays explicit here (recon F11)
       backupInterval = 0;
-      extensionRepos = [
-        "https://raw.githubusercontent.com/keiyoushi/extensions/repo/index.min.json"
-      ];
     };
     openFirewall = true;
-    sync.export = {
-      enable = true;
-      autoPush = true;
-      repoPath = "/home/seanc/nixos-config";
-      secretPath = "/run/agenix/github-token";
-      interval = "daily";
-    };
-    sync.import.enable = true;
+    # F11: extensionRepos, sync.export.{enable,autoPush,repoPath,secretPath}, sync.import.enable
+    # now module defaults (suwayomi/sync-options.nix) — invariant core duplicated desktop/server removed
+    sync.export.interval = "daily"; # F11: divergent — desktop hourly vs server daily (recon F11)
   };
 
   # Caddy upstream must point to the Tailscale IP when autoBindTailscaleIp is on
