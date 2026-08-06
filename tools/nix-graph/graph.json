@@ -77,6 +77,31 @@
     },
     {
       "source": "modules/nixos/common.nix",
+      "target": "modules/nixos/proxy",
+      "type": "IMPORTS"
+    },
+    {
+      "source": "modules/nixos/common.nix",
+      "target": "modules/nixos/open-webui",
+      "type": "IMPORTS"
+    },
+    {
+      "source": "modules/nixos/common.nix",
+      "target": "modules/nixos/letta",
+      "type": "IMPORTS"
+    },
+    {
+      "source": "modules/nixos/common.nix",
+      "target": "modules/nixos/jan",
+      "type": "IMPORTS"
+    },
+    {
+      "source": "modules/nixos/common.nix",
+      "target": "modules/nixos/ai/comfyui",
+      "type": "IMPORTS"
+    },
+    {
+      "source": "modules/nixos/common.nix",
       "target": "modules/nixos/ssh",
       "type": "IMPORTS"
     },
@@ -107,7 +132,42 @@
     },
     {
       "source": "modules/nixos/common.nix",
+      "target": "modules/nixos/squid-proxy",
+      "type": "IMPORTS"
+    },
+    {
+      "source": "modules/nixos/common.nix",
+      "target": "modules/nixos/mss-clamp",
+      "type": "IMPORTS"
+    },
+    {
+      "source": "modules/nixos/common.nix",
+      "target": "modules/nixos/mosh",
+      "type": "IMPORTS"
+    },
+    {
+      "source": "modules/nixos/common.nix",
+      "target": "modules/nixos/tor-ssh",
+      "type": "IMPORTS"
+    },
+    {
+      "source": "modules/nixos/common.nix",
+      "target": "modules/nixos/autossh",
+      "type": "IMPORTS"
+    },
+    {
+      "source": "modules/nixos/common.nix",
+      "target": "modules/nixos/ttyd",
+      "type": "IMPORTS"
+    },
+    {
+      "source": "modules/nixos/common.nix",
       "target": "modules/nixos/vscode-server.nix",
+      "type": "IMPORTS"
+    },
+    {
+      "source": "modules/nixos/common.nix",
+      "target": "modules/nixos/opencode-web",
       "type": "IMPORTS"
     },
     {
@@ -172,6 +232,11 @@
     },
     {
       "source": "modules/nixos/common.nix",
+      "target": "modules/nixos/hearthstone",
+      "type": "IMPORTS"
+    },
+    {
+      "source": "modules/nixos/common.nix",
       "target": "modules/nixos/godot",
       "type": "IMPORTS"
     },
@@ -182,7 +247,47 @@
     },
     {
       "source": "modules/nixos/common.nix",
+      "target": "modules/nixos/risuai",
+      "type": "IMPORTS"
+    },
+    {
+      "source": "modules/nixos/common.nix",
       "target": "modules/nixos/suwayomi",
+      "type": "IMPORTS"
+    },
+    {
+      "source": "modules/nixos/common.nix",
+      "target": "modules/nixos/neko",
+      "type": "IMPORTS"
+    },
+    {
+      "source": "modules/nixos/common.nix",
+      "target": "modules/nixos/game-servers",
+      "type": "IMPORTS"
+    },
+    {
+      "source": "modules/nixos/common.nix",
+      "target": "modules/nixos/xmltv",
+      "type": "IMPORTS"
+    },
+    {
+      "source": "modules/nixos/common.nix",
+      "target": "modules/nixos/prowlarr",
+      "type": "IMPORTS"
+    },
+    {
+      "source": "modules/nixos/common.nix",
+      "target": "modules/nixos/sonarr",
+      "type": "IMPORTS"
+    },
+    {
+      "source": "modules/nixos/common.nix",
+      "target": "modules/nixos/radarr",
+      "type": "IMPORTS"
+    },
+    {
+      "source": "modules/nixos/common.nix",
+      "target": "modules/nixos/jellyfin",
       "type": "IMPORTS"
     },
     {
@@ -203,6 +308,11 @@
     {
       "source": "modules/nixos/common.nix",
       "target": "modules/nixos/boot-health",
+      "type": "IMPORTS"
+    },
+    {
+      "source": "modules/nixos/common.nix",
+      "target": "modules/nixos/hardening",
       "type": "IMPORTS"
     },
     {
@@ -262,92 +372,57 @@
     },
     {
       "source": "modules/nixos/common.nix",
-      "target": "mk:modules/nixos/common.nix_161",
+      "target": "mk:modules/nixos/common.nix_205",
       "type": "MKFORCE_ON"
     },
     {
       "source": "modules/nixos/common.nix",
-      "target": "mk:modules/nixos/common.nix_181",
+      "target": "mk:modules/nixos/common.nix_225",
       "type": "MKFORCE_ON"
     },
     {
       "source": "modules/nixos/common.nix",
-      "target": "mk:modules/nixos/common.nix_120",
+      "target": "mk:modules/nixos/common.nix_156",
       "type": "MKDEFAULT_ON"
     },
     {
       "source": "modules/nixos/common.nix",
-      "target": "mk:modules/nixos/common.nix_126",
+      "target": "mk:modules/nixos/common.nix_162",
       "type": "MKDEFAULT_ON"
     },
     {
       "source": "modules/nixos/common.nix",
-      "target": "mk:modules/nixos/common.nix_206",
+      "target": "mk:modules/nixos/common.nix_249",
       "type": "MKDEFAULT_ON"
     },
     {
       "source": "modules/nixos/common.nix",
-      "target": "mk:modules/nixos/common.nix_211",
+      "target": "mk:modules/nixos/common.nix_250",
       "type": "MKDEFAULT_ON"
     },
     {
       "source": "modules/nixos/common.nix",
-      "target": "mk:modules/nixos/common.nix_218",
+      "target": "mk:modules/nixos/common.nix_256",
       "type": "MKDEFAULT_ON"
     },
     {
       "source": "modules/nixos/common.nix",
-      "target": "mk:modules/nixos/common.nix_222",
+      "target": "mk:modules/nixos/common.nix_261",
       "type": "MKDEFAULT_ON"
     },
     {
       "source": "modules/nixos/common.nix",
-      "target": "mk:modules/nixos/common.nix_227",
+      "target": "mk:modules/nixos/common.nix_267",
       "type": "MKDEFAULT_ON"
     },
     {
       "source": "modules/nixos/common.nix",
-      "target": "mk:modules/nixos/common.nix_231",
+      "target": "mk:modules/nixos/common.nix_273",
       "type": "MKDEFAULT_ON"
     },
     {
       "source": "modules/nixos/common.nix",
-      "target": "mk:modules/nixos/common.nix_235",
-      "type": "MKDEFAULT_ON"
-    },
-    {
-      "source": "modules/nixos/common.nix",
-      "target": "mk:modules/nixos/common.nix_239",
-      "type": "MKDEFAULT_ON"
-    },
-    {
-      "source": "modules/nixos/common.nix",
-      "target": "mk:modules/nixos/common.nix_240",
-      "type": "MKDEFAULT_ON"
-    },
-    {
-      "source": "modules/nixos/common.nix",
-      "target": "mk:modules/nixos/common.nix_242",
-      "type": "MKDEFAULT_ON"
-    },
-    {
-      "source": "modules/nixos/common.nix",
-      "target": "mk:modules/nixos/common.nix_262",
-      "type": "MKDEFAULT_ON"
-    },
-    {
-      "source": "modules/nixos/common.nix",
-      "target": "mk:modules/nixos/common.nix_264",
-      "type": "MKDEFAULT_ON"
-    },
-    {
-      "source": "modules/nixos/common.nix",
-      "target": "mk:modules/nixos/common.nix_269",
-      "type": "MKDEFAULT_ON"
-    },
-    {
-      "source": "modules/nixos/common.nix",
-      "target": "mk:modules/nixos/common.nix_271",
+      "target": "mk:modules/nixos/common.nix_280",
       "type": "MKDEFAULT_ON"
     },
     {
@@ -357,52 +432,122 @@
     },
     {
       "source": "modules/nixos/common.nix",
-      "target": "mk:modules/nixos/common.nix_320",
+      "target": "mk:modules/nixos/common.nix_289",
       "type": "MKDEFAULT_ON"
     },
     {
       "source": "modules/nixos/common.nix",
-      "target": "mk:modules/nixos/common.nix_327",
+      "target": "mk:modules/nixos/common.nix_293",
       "type": "MKDEFAULT_ON"
     },
     {
       "source": "modules/nixos/common.nix",
-      "target": "mk:modules/nixos/common.nix_328",
+      "target": "mk:modules/nixos/common.nix_297",
       "type": "MKDEFAULT_ON"
     },
     {
       "source": "modules/nixos/common.nix",
-      "target": "mk:modules/nixos/common.nix_332",
+      "target": "mk:modules/nixos/common.nix_301",
       "type": "MKDEFAULT_ON"
     },
     {
       "source": "modules/nixos/common.nix",
-      "target": "mk:modules/nixos/common.nix_336",
+      "target": "mk:modules/nixos/common.nix_302",
       "type": "MKDEFAULT_ON"
     },
     {
       "source": "modules/nixos/common.nix",
-      "target": "mk:modules/nixos/common.nix_340",
+      "target": "mk:modules/nixos/common.nix_304",
       "type": "MKDEFAULT_ON"
     },
     {
       "source": "modules/nixos/common.nix",
-      "target": "mk:modules/nixos/common.nix_344",
+      "target": "mk:modules/nixos/common.nix_324",
       "type": "MKDEFAULT_ON"
     },
     {
       "source": "modules/nixos/common.nix",
-      "target": "mk:modules/nixos/common.nix_355",
+      "target": "mk:modules/nixos/common.nix_326",
       "type": "MKDEFAULT_ON"
     },
     {
       "source": "modules/nixos/common.nix",
-      "target": "mk:modules/nixos/common.nix_359",
+      "target": "mk:modules/nixos/common.nix_331",
       "type": "MKDEFAULT_ON"
     },
     {
       "source": "modules/nixos/common.nix",
-      "target": "mk:modules/nixos/common.nix_363",
+      "target": "mk:modules/nixos/common.nix_333",
+      "type": "MKDEFAULT_ON"
+    },
+    {
+      "source": "modules/nixos/common.nix",
+      "target": "mk:modules/nixos/common.nix_346",
+      "type": "MKDEFAULT_ON"
+    },
+    {
+      "source": "modules/nixos/common.nix",
+      "target": "mk:modules/nixos/common.nix_382",
+      "type": "MKDEFAULT_ON"
+    },
+    {
+      "source": "modules/nixos/common.nix",
+      "target": "mk:modules/nixos/common.nix_389",
+      "type": "MKDEFAULT_ON"
+    },
+    {
+      "source": "modules/nixos/common.nix",
+      "target": "mk:modules/nixos/common.nix_390",
+      "type": "MKDEFAULT_ON"
+    },
+    {
+      "source": "modules/nixos/common.nix",
+      "target": "mk:modules/nixos/common.nix_394",
+      "type": "MKDEFAULT_ON"
+    },
+    {
+      "source": "modules/nixos/common.nix",
+      "target": "mk:modules/nixos/common.nix_398",
+      "type": "MKDEFAULT_ON"
+    },
+    {
+      "source": "modules/nixos/common.nix",
+      "target": "mk:modules/nixos/common.nix_402",
+      "type": "MKDEFAULT_ON"
+    },
+    {
+      "source": "modules/nixos/common.nix",
+      "target": "mk:modules/nixos/common.nix_406",
+      "type": "MKDEFAULT_ON"
+    },
+    {
+      "source": "modules/nixos/common.nix",
+      "target": "mk:modules/nixos/common.nix_410",
+      "type": "MKDEFAULT_ON"
+    },
+    {
+      "source": "modules/nixos/common.nix",
+      "target": "mk:modules/nixos/common.nix_414",
+      "type": "MKDEFAULT_ON"
+    },
+    {
+      "source": "modules/nixos/common.nix",
+      "target": "mk:modules/nixos/common.nix_418",
+      "type": "MKDEFAULT_ON"
+    },
+    {
+      "source": "modules/nixos/common.nix",
+      "target": "mk:modules/nixos/common.nix_429",
+      "type": "MKDEFAULT_ON"
+    },
+    {
+      "source": "modules/nixos/common.nix",
+      "target": "mk:modules/nixos/common.nix_433",
+      "type": "MKDEFAULT_ON"
+    },
+    {
+      "source": "modules/nixos/common.nix",
+      "target": "mk:modules/nixos/common.nix_437",
       "type": "MKDEFAULT_ON"
     },
     {
@@ -452,17 +597,17 @@
     },
     {
       "source": "modules/nixos/tailscale/config.nix",
-      "target": "option:config.my.services.tailscale.manager.enable",
-      "type": "REFERENCES"
-    },
-    {
-      "source": "modules/nixos/tailscale/config.nix",
       "target": "option:config.my.services.tailscale",
       "type": "REFERENCES"
     },
     {
       "source": "modules/nixos/tailscale/config.nix",
-      "target": "mk:modules/nixos/tailscale/config.nix_25",
+      "target": "option:config.my.services.tailscale.manager.enable",
+      "type": "REFERENCES"
+    },
+    {
+      "source": "modules/nixos/tailscale/config.nix",
+      "target": "mk:modules/nixos/tailscale/config.nix_24",
       "type": "MKFORCE_ON"
     },
     {
@@ -557,6 +702,11 @@
     },
     {
       "source": "modules/nixos/profiles/default.nix",
+      "target": "modules/nixos/profiles/config.nix",
+      "type": "IMPORTS"
+    },
+    {
+      "source": "modules/nixos/profiles/default.nix",
       "target": "modules/nixos/profiles/system",
       "type": "IMPORTS"
     },
@@ -569,16 +719,6 @@
       "source": "modules/nixos/profiles/default.nix",
       "target": "modules/nixos/profiles/tests.nix",
       "type": "IMPORTS"
-    },
-    {
-      "source": "modules/nixos/profiles/default.nix",
-      "target": "mk:modules/nixos/profiles/default.nix_10",
-      "type": "MKDEFAULT_ON"
-    },
-    {
-      "source": "modules/nixos/profiles/default.nix",
-      "target": "mk:modules/nixos/profiles/default.nix_11",
-      "type": "MKDEFAULT_ON"
     },
     {
       "source": "modules/nixos/profiles/meta.nix",
@@ -597,6 +737,16 @@
     },
     {
       "source": "modules/nixos/profiles/system/default.nix",
+      "target": "modules/nixos/profiles/system/options.nix",
+      "type": "IMPORTS"
+    },
+    {
+      "source": "modules/nixos/profiles/system/default.nix",
+      "target": "modules/nixos/profiles/system/config.nix",
+      "type": "IMPORTS"
+    },
+    {
+      "source": "modules/nixos/profiles/system/default.nix",
       "target": "modules/nixos/profiles/system/development.nix",
       "type": "IMPORTS"
     },
@@ -608,6 +758,11 @@
     {
       "source": "modules/nixos/profiles/system/default.nix",
       "target": "modules/nixos/profiles/system/gaming.nix",
+      "type": "IMPORTS"
+    },
+    {
+      "source": "modules/nixos/profiles/system/default.nix",
+      "target": "modules/nixos/profiles/system/media.nix",
       "type": "IMPORTS"
     },
     {
@@ -627,163 +782,8 @@
     },
     {
       "source": "modules/nixos/profiles/system/default.nix",
-      "target": "option:options.my.profiles",
-      "type": "DEFINES"
-    },
-    {
-      "source": "modules/nixos/profiles/system/default.nix",
-      "target": "option:config.my.profiles",
-      "type": "REFERENCES"
-    },
-    {
-      "source": "modules/nixos/profiles/system/default.nix",
-      "target": "mk:modules/nixos/profiles/system/default.nix_58",
-      "type": "MKIF_ON"
-    },
-    {
-      "source": "modules/nixos/profiles/system/default.nix",
-      "target": "mk:modules/nixos/profiles/system/default.nix_80",
-      "type": "MKIF_ON"
-    },
-    {
-      "source": "modules/nixos/profiles/system/default.nix",
-      "target": "mk:modules/nixos/profiles/system/default.nix_85",
-      "type": "MKIF_ON"
-    },
-    {
-      "source": "modules/nixos/profiles/system/default.nix",
-      "target": "mk:modules/nixos/profiles/system/default.nix_108",
-      "type": "MKIF_ON"
-    },
-    {
-      "source": "modules/nixos/profiles/system/default.nix",
-      "target": "mk:modules/nixos/profiles/system/default.nix_113",
-      "type": "MKIF_ON"
-    },
-    {
-      "source": "modules/nixos/profiles/system/default.nix",
-      "target": "mk:modules/nixos/profiles/system/default.nix_119",
-      "type": "MKIF_ON"
-    },
-    {
-      "source": "modules/nixos/profiles/system/default.nix",
-      "target": "mk:modules/nixos/profiles/system/default.nix_125",
-      "type": "MKIF_ON"
-    },
-    {
-      "source": "modules/nixos/profiles/system/default.nix",
-      "target": "mk:modules/nixos/profiles/system/default.nix_130",
-      "type": "MKIF_ON"
-    },
-    {
-      "source": "modules/nixos/profiles/system/default.nix",
-      "target": "mk:modules/nixos/profiles/system/default.nix_135",
-      "type": "MKIF_ON"
-    },
-    {
-      "source": "modules/nixos/profiles/system/default.nix",
-      "target": "mk:modules/nixos/profiles/system/default.nix_148",
-      "type": "MKIF_ON"
-    },
-    {
-      "source": "modules/nixos/profiles/system/default.nix",
-      "target": "mk:modules/nixos/profiles/system/default.nix_153",
-      "type": "MKIF_ON"
-    },
-    {
-      "source": "modules/nixos/profiles/system/default.nix",
-      "target": "mk:modules/nixos/profiles/system/default.nix_158",
-      "type": "MKIF_ON"
-    },
-    {
-      "source": "modules/nixos/profiles/system/default.nix",
-      "target": "mk:modules/nixos/profiles/system/default.nix_163",
-      "type": "MKIF_ON"
-    },
-    {
-      "source": "modules/nixos/profiles/system/default.nix",
-      "target": "mk:modules/nixos/profiles/system/default.nix_137",
-      "type": "MKDEFAULT_ON"
-    },
-    {
-      "source": "modules/nixos/profiles/system/default.nix",
-      "target": "mk:modules/nixos/profiles/system/default.nix_138",
-      "type": "MKDEFAULT_ON"
-    },
-    {
-      "source": "modules/nixos/profiles/system/default.nix",
-      "target": "mk:modules/nixos/profiles/system/default.nix_139",
-      "type": "MKDEFAULT_ON"
-    },
-    {
-      "source": "modules/nixos/profiles/system/default.nix",
-      "target": "mk:modules/nixos/profiles/system/default.nix_140",
-      "type": "MKDEFAULT_ON"
-    },
-    {
-      "source": "modules/nixos/profiles/system/default.nix",
-      "target": "mk:modules/nixos/profiles/system/default.nix_141",
-      "type": "MKDEFAULT_ON"
-    },
-    {
-      "source": "modules/nixos/profiles/system/default.nix",
-      "target": "mk:modules/nixos/profiles/system/default.nix_142",
-      "type": "MKDEFAULT_ON"
-    },
-    {
-      "source": "modules/nixos/profiles/system/default.nix",
-      "target": "mk:modules/nixos/profiles/system/default.nix_143",
-      "type": "MKDEFAULT_ON"
-    },
-    {
-      "source": "modules/nixos/profiles/system/default.nix",
-      "target": "mk:modules/nixos/profiles/system/default.nix_165",
-      "type": "MKDEFAULT_ON"
-    },
-    {
-      "source": "modules/nixos/profiles/system/default.nix",
-      "target": "mk:modules/nixos/profiles/system/default.nix_166",
-      "type": "MKDEFAULT_ON"
-    },
-    {
-      "source": "modules/nixos/profiles/system/default.nix",
-      "target": "mk:modules/nixos/profiles/system/default.nix_167",
-      "type": "MKDEFAULT_ON"
-    },
-    {
-      "source": "modules/nixos/profiles/system/default.nix",
-      "target": "mk:modules/nixos/profiles/system/default.nix_168",
-      "type": "MKDEFAULT_ON"
-    },
-    {
-      "source": "modules/nixos/profiles/system/default.nix",
-      "target": "mk:modules/nixos/profiles/system/default.nix_169",
-      "type": "MKDEFAULT_ON"
-    },
-    {
-      "source": "modules/nixos/profiles/system/default.nix",
-      "target": "mk:modules/nixos/profiles/system/default.nix_170",
-      "type": "MKDEFAULT_ON"
-    },
-    {
-      "source": "modules/nixos/profiles/system/default.nix",
-      "target": "mk:modules/nixos/profiles/system/default.nix_171",
-      "type": "MKDEFAULT_ON"
-    },
-    {
-      "source": "modules/nixos/profiles/system/default.nix",
-      "target": "mk:modules/nixos/profiles/system/default.nix_172",
-      "type": "MKDEFAULT_ON"
-    },
-    {
-      "source": "modules/nixos/profiles/system/default.nix",
-      "target": "mk:modules/nixos/profiles/system/default.nix_173",
-      "type": "MKDEFAULT_ON"
-    },
-    {
-      "source": "modules/nixos/profiles/system/default.nix",
-      "target": "mk:modules/nixos/profiles/system/default.nix_175",
-      "type": "MKDEFAULT_ON"
+      "target": "modules/nixos/profiles/system/ai.nix",
+      "type": "IMPORTS"
     },
     {
       "source": "modules/nixos/profiles/system/workstation.nix",
@@ -827,11 +827,6 @@
     },
     {
       "source": "modules/nixos/profiles/system/workstation.nix",
-      "target": "mk:modules/nixos/profiles/system/workstation.nix_38",
-      "type": "MKDEFAULT_ON"
-    },
-    {
-      "source": "modules/nixos/profiles/system/workstation.nix",
       "target": "mk:modules/nixos/profiles/system/workstation.nix_39",
       "type": "MKDEFAULT_ON"
     },
@@ -847,12 +842,17 @@
     },
     {
       "source": "modules/nixos/profiles/system/workstation.nix",
-      "target": "mk:modules/nixos/profiles/system/workstation.nix_45",
+      "target": "mk:modules/nixos/profiles/system/workstation.nix_42",
       "type": "MKDEFAULT_ON"
     },
     {
       "source": "modules/nixos/profiles/system/workstation.nix",
-      "target": "mk:modules/nixos/profiles/system/workstation.nix_47",
+      "target": "mk:modules/nixos/profiles/system/workstation.nix_46",
+      "type": "MKDEFAULT_ON"
+    },
+    {
+      "source": "modules/nixos/profiles/system/workstation.nix",
+      "target": "mk:modules/nixos/profiles/system/workstation.nix_48",
       "type": "MKDEFAULT_ON"
     },
     {
@@ -882,11 +882,6 @@
     },
     {
       "source": "modules/nixos/profiles/system/server.nix",
-      "target": "mk:modules/nixos/profiles/system/server.nix_23",
-      "type": "MKDEFAULT_ON"
-    },
-    {
-      "source": "modules/nixos/profiles/system/server.nix",
       "target": "mk:modules/nixos/profiles/system/server.nix_24",
       "type": "MKDEFAULT_ON"
     },
@@ -902,7 +897,17 @@
     },
     {
       "source": "modules/nixos/profiles/system/server.nix",
-      "target": "mk:modules/nixos/profiles/system/server.nix_35",
+      "target": "mk:modules/nixos/profiles/system/server.nix_36",
+      "type": "MKDEFAULT_ON"
+    },
+    {
+      "source": "modules/nixos/profiles/system/server.nix",
+      "target": "mk:modules/nixos/profiles/system/server.nix_37",
+      "type": "MKDEFAULT_ON"
+    },
+    {
+      "source": "modules/nixos/profiles/system/server.nix",
+      "target": "mk:modules/nixos/profiles/system/server.nix_42",
       "type": "MKDEFAULT_ON"
     },
     {
@@ -962,37 +967,62 @@
     },
     {
       "source": "modules/nixos/profiles/system/development.nix",
-      "target": "mk:modules/nixos/profiles/system/development.nix_26",
+      "target": "mk:modules/nixos/profiles/system/development.nix_27",
       "type": "MKDEFAULT_ON"
     },
     {
       "source": "modules/nixos/profiles/system/development.nix",
-      "target": "mk:modules/nixos/profiles/system/development.nix_34",
+      "target": "mk:modules/nixos/profiles/system/development.nix_28",
       "type": "MKDEFAULT_ON"
     },
     {
       "source": "modules/nixos/profiles/system/development.nix",
-      "target": "mk:modules/nixos/profiles/system/development.nix_39",
+      "target": "mk:modules/nixos/profiles/system/development.nix_37",
       "type": "MKDEFAULT_ON"
     },
     {
       "source": "modules/nixos/profiles/system/development.nix",
-      "target": "mk:modules/nixos/profiles/system/development.nix_45",
-      "type": "MKDEFAULT_ON"
-    },
-    {
-      "source": "modules/nixos/profiles/system/development.nix",
-      "target": "mk:modules/nixos/profiles/system/development.nix_46",
-      "type": "MKDEFAULT_ON"
-    },
-    {
-      "source": "modules/nixos/profiles/system/development.nix",
-      "target": "mk:modules/nixos/profiles/system/development.nix_47",
+      "target": "mk:modules/nixos/profiles/system/development.nix_42",
       "type": "MKDEFAULT_ON"
     },
     {
       "source": "modules/nixos/profiles/system/development.nix",
       "target": "mk:modules/nixos/profiles/system/development.nix_48",
+      "type": "MKDEFAULT_ON"
+    },
+    {
+      "source": "modules/nixos/profiles/system/development.nix",
+      "target": "mk:modules/nixos/profiles/system/development.nix_49",
+      "type": "MKDEFAULT_ON"
+    },
+    {
+      "source": "modules/nixos/profiles/system/development.nix",
+      "target": "mk:modules/nixos/profiles/system/development.nix_50",
+      "type": "MKDEFAULT_ON"
+    },
+    {
+      "source": "modules/nixos/profiles/system/development.nix",
+      "target": "mk:modules/nixos/profiles/system/development.nix_51",
+      "type": "MKDEFAULT_ON"
+    },
+    {
+      "source": "modules/nixos/profiles/system/development.nix",
+      "target": "mk:modules/nixos/profiles/system/development.nix_62",
+      "type": "MKDEFAULT_ON"
+    },
+    {
+      "source": "modules/nixos/profiles/system/development.nix",
+      "target": "mk:modules/nixos/profiles/system/development.nix_63",
+      "type": "MKDEFAULT_ON"
+    },
+    {
+      "source": "modules/nixos/profiles/system/development.nix",
+      "target": "mk:modules/nixos/profiles/system/development.nix_64",
+      "type": "MKDEFAULT_ON"
+    },
+    {
+      "source": "modules/nixos/profiles/system/development.nix",
+      "target": "mk:modules/nixos/profiles/system/development.nix_65",
       "type": "MKDEFAULT_ON"
     },
     {
@@ -1027,27 +1057,27 @@
     },
     {
       "source": "modules/nixos/profiles/system/entertainment.nix",
-      "target": "mk:modules/nixos/profiles/system/entertainment.nix_18",
-      "type": "MKDEFAULT_ON"
-    },
-    {
-      "source": "modules/nixos/profiles/system/entertainment.nix",
       "target": "mk:modules/nixos/profiles/system/entertainment.nix_19",
       "type": "MKDEFAULT_ON"
     },
     {
       "source": "modules/nixos/profiles/system/entertainment.nix",
-      "target": "mk:modules/nixos/profiles/system/entertainment.nix_22",
+      "target": "mk:modules/nixos/profiles/system/entertainment.nix_20",
       "type": "MKDEFAULT_ON"
     },
     {
       "source": "modules/nixos/profiles/system/entertainment.nix",
-      "target": "mk:modules/nixos/profiles/system/entertainment.nix_25",
+      "target": "mk:modules/nixos/profiles/system/entertainment.nix_23",
       "type": "MKDEFAULT_ON"
     },
     {
       "source": "modules/nixos/profiles/system/entertainment.nix",
       "target": "mk:modules/nixos/profiles/system/entertainment.nix_26",
+      "type": "MKDEFAULT_ON"
+    },
+    {
+      "source": "modules/nixos/profiles/system/entertainment.nix",
+      "target": "mk:modules/nixos/profiles/system/entertainment.nix_27",
       "type": "MKDEFAULT_ON"
     },
     {
@@ -1082,12 +1112,17 @@
     },
     {
       "source": "modules/nixos/profiles/system/gaming.nix",
-      "target": "mk:modules/nixos/profiles/system/gaming.nix_22",
+      "target": "mk:modules/nixos/profiles/system/gaming.nix_14",
       "type": "MKDEFAULT_ON"
     },
     {
       "source": "modules/nixos/profiles/system/gaming.nix",
-      "target": "mk:modules/nixos/profiles/system/gaming.nix_25",
+      "target": "mk:modules/nixos/profiles/system/gaming.nix_23",
+      "type": "MKDEFAULT_ON"
+    },
+    {
+      "source": "modules/nixos/profiles/system/gaming.nix",
+      "target": "mk:modules/nixos/profiles/system/gaming.nix_26",
       "type": "MKDEFAULT_ON"
     },
     {
@@ -1097,193 +1132,13 @@
     },
     {
       "source": "modules/nixos/profiles/home/default.nix",
-      "target": "modules/nixos/profiles/home/common.nix",
+      "target": "modules/nixos/profiles/home/options.nix",
       "type": "IMPORTS"
     },
     {
       "source": "modules/nixos/profiles/home/default.nix",
-      "target": "modules/nixos/profiles/home/development.nix",
+      "target": "modules/nixos/profiles/home/config.nix",
       "type": "IMPORTS"
-    },
-    {
-      "source": "modules/nixos/profiles/home/default.nix",
-      "target": "modules/nixos/profiles/home/desktop.nix",
-      "type": "IMPORTS"
-    },
-    {
-      "source": "modules/nixos/profiles/home/default.nix",
-      "target": "modules/nixos/profiles/home/minimal.nix",
-      "type": "IMPORTS"
-    },
-    {
-      "source": "modules/nixos/profiles/home/default.nix",
-      "target": "option:options.my.homeProfiles",
-      "type": "DEFINES"
-    },
-    {
-      "source": "modules/nixos/profiles/home/default.nix",
-      "target": "mk:modules/nixos/profiles/home/default.nix_27",
-      "type": "MKIF_ON"
-    },
-    {
-      "source": "modules/nixos/profiles/home/default.nix",
-      "target": "mk:modules/nixos/profiles/home/default.nix_29",
-      "type": "MKIF_ON"
-    },
-    {
-      "source": "modules/nixos/profiles/home/default.nix",
-      "target": "mk:modules/nixos/profiles/home/default.nix_40",
-      "type": "MKIF_ON"
-    },
-    {
-      "source": "modules/nixos/profiles/home/default.nix",
-      "target": "mk:modules/nixos/profiles/home/default.nix_55",
-      "type": "MKIF_ON"
-    },
-    {
-      "source": "modules/nixos/profiles/home/default.nix",
-      "target": "mk:modules/nixos/profiles/home/default.nix_63",
-      "type": "MKIF_ON"
-    },
-    {
-      "source": "modules/nixos/profiles/home/default.nix",
-      "target": "mk:modules/nixos/profiles/home/default.nix_70",
-      "type": "MKIF_ON"
-    },
-    {
-      "source": "modules/nixos/profiles/home/default.nix",
-      "target": "mk:modules/nixos/profiles/home/default.nix_30",
-      "type": "MKDEFAULT_ON"
-    },
-    {
-      "source": "modules/nixos/profiles/home/default.nix",
-      "target": "mk:modules/nixos/profiles/home/default.nix_31",
-      "type": "MKDEFAULT_ON"
-    },
-    {
-      "source": "modules/nixos/profiles/home/default.nix",
-      "target": "mk:modules/nixos/profiles/home/default.nix_32",
-      "type": "MKDEFAULT_ON"
-    },
-    {
-      "source": "modules/nixos/profiles/home/default.nix",
-      "target": "mk:modules/nixos/profiles/home/default.nix_33",
-      "type": "MKDEFAULT_ON"
-    },
-    {
-      "source": "modules/nixos/profiles/home/default.nix",
-      "target": "mk:modules/nixos/profiles/home/default.nix_34",
-      "type": "MKDEFAULT_ON"
-    },
-    {
-      "source": "modules/nixos/profiles/home/default.nix",
-      "target": "mk:modules/nixos/profiles/home/default.nix_35",
-      "type": "MKDEFAULT_ON"
-    },
-    {
-      "source": "modules/nixos/profiles/home/default.nix",
-      "target": "mk:modules/nixos/profiles/home/default.nix_36",
-      "type": "MKDEFAULT_ON"
-    },
-    {
-      "source": "modules/nixos/profiles/home/default.nix",
-      "target": "mk:modules/nixos/profiles/home/default.nix_41",
-      "type": "MKDEFAULT_ON"
-    },
-    {
-      "source": "modules/nixos/profiles/home/default.nix",
-      "target": "mk:modules/nixos/profiles/home/default.nix_42",
-      "type": "MKDEFAULT_ON"
-    },
-    {
-      "source": "modules/nixos/profiles/home/default.nix",
-      "target": "mk:modules/nixos/profiles/home/default.nix_44",
-      "type": "MKDEFAULT_ON"
-    },
-    {
-      "source": "modules/nixos/profiles/home/default.nix",
-      "target": "mk:modules/nixos/profiles/home/default.nix_45",
-      "type": "MKDEFAULT_ON"
-    },
-    {
-      "source": "modules/nixos/profiles/home/default.nix",
-      "target": "mk:modules/nixos/profiles/home/default.nix_47",
-      "type": "MKDEFAULT_ON"
-    },
-    {
-      "source": "modules/nixos/profiles/home/default.nix",
-      "target": "mk:modules/nixos/profiles/home/default.nix_48",
-      "type": "MKDEFAULT_ON"
-    },
-    {
-      "source": "modules/nixos/profiles/home/default.nix",
-      "target": "mk:modules/nixos/profiles/home/default.nix_49",
-      "type": "MKDEFAULT_ON"
-    },
-    {
-      "source": "modules/nixos/profiles/home/default.nix",
-      "target": "mk:modules/nixos/profiles/home/default.nix_50",
-      "type": "MKDEFAULT_ON"
-    },
-    {
-      "source": "modules/nixos/profiles/home/default.nix",
-      "target": "mk:modules/nixos/profiles/home/default.nix_51",
-      "type": "MKDEFAULT_ON"
-    },
-    {
-      "source": "modules/nixos/profiles/home/default.nix",
-      "target": "mk:modules/nixos/profiles/home/default.nix_56",
-      "type": "MKDEFAULT_ON"
-    },
-    {
-      "source": "modules/nixos/profiles/home/default.nix",
-      "target": "mk:modules/nixos/profiles/home/default.nix_57",
-      "type": "MKDEFAULT_ON"
-    },
-    {
-      "source": "modules/nixos/profiles/home/default.nix",
-      "target": "mk:modules/nixos/profiles/home/default.nix_58",
-      "type": "MKDEFAULT_ON"
-    },
-    {
-      "source": "modules/nixos/profiles/home/default.nix",
-      "target": "mk:modules/nixos/profiles/home/default.nix_59",
-      "type": "MKDEFAULT_ON"
-    },
-    {
-      "source": "modules/nixos/profiles/home/default.nix",
-      "target": "mk:modules/nixos/profiles/home/default.nix_65",
-      "type": "MKDEFAULT_ON"
-    },
-    {
-      "source": "modules/nixos/profiles/home/default.nix",
-      "target": "mk:modules/nixos/profiles/home/default.nix_66",
-      "type": "MKDEFAULT_ON"
-    },
-    {
-      "source": "modules/nixos/profiles/home/default.nix",
-      "target": "mk:modules/nixos/profiles/home/default.nix_71",
-      "type": "MKDEFAULT_ON"
-    },
-    {
-      "source": "modules/nixos/profiles/home/common.nix",
-      "target": "module:nixos/profiles.home.common",
-      "type": "BELONGS_TO"
-    },
-    {
-      "source": "modules/nixos/profiles/home/desktop.nix",
-      "target": "module:nixos/profiles.home.desktop",
-      "type": "BELONGS_TO"
-    },
-    {
-      "source": "modules/nixos/profiles/home/development.nix",
-      "target": "module:nixos/profiles.home.development",
-      "type": "BELONGS_TO"
-    },
-    {
-      "source": "modules/nixos/profiles/home/minimal.nix",
-      "target": "module:nixos/profiles.home.minimal",
-      "type": "BELONGS_TO"
     },
     {
       "source": "modules/nixos/hyprland/default.nix",
@@ -1502,12 +1357,12 @@
     },
     {
       "source": "modules/nixos/hyprland/bar/config.nix",
-      "target": "option:config.my.hardware.gpu.mesa.enable",
+      "target": "option:config.my.desktop.hyprland",
       "type": "REFERENCES"
     },
     {
       "source": "modules/nixos/hyprland/bar/config.nix",
-      "target": "option:config.my.desktop.hyprland",
+      "target": "option:config.my.hardware.gpu.mesa.enable",
       "type": "REFERENCES"
     },
     {
@@ -2317,47 +2172,47 @@
     },
     {
       "source": "modules/home/opencode/config.nix",
-      "target": "mk:modules/home/opencode/config.nix_180",
-      "type": "MKDEFAULT_ON"
-    },
-    {
-      "source": "modules/home/opencode/config.nix",
-      "target": "mk:modules/home/opencode/config.nix_203",
-      "type": "MKDEFAULT_ON"
-    },
-    {
-      "source": "modules/home/opencode/config.nix",
-      "target": "mk:modules/home/opencode/config.nix_211",
-      "type": "MKDEFAULT_ON"
-    },
-    {
-      "source": "modules/home/opencode/config.nix",
       "target": "mk:modules/home/opencode/config.nix_221",
       "type": "MKDEFAULT_ON"
     },
     {
       "source": "modules/home/opencode/config.nix",
-      "target": "mk:modules/home/opencode/config.nix_233",
+      "target": "mk:modules/home/opencode/config.nix_244",
       "type": "MKDEFAULT_ON"
     },
     {
       "source": "modules/home/opencode/config.nix",
-      "target": "mk:modules/home/opencode/config.nix_237",
+      "target": "mk:modules/home/opencode/config.nix_252",
       "type": "MKDEFAULT_ON"
     },
     {
       "source": "modules/home/opencode/config.nix",
-      "target": "mk:modules/home/opencode/config.nix_270",
+      "target": "mk:modules/home/opencode/config.nix_272",
       "type": "MKDEFAULT_ON"
     },
     {
       "source": "modules/home/opencode/config.nix",
-      "target": "mk:modules/home/opencode/config.nix_300",
+      "target": "mk:modules/home/opencode/config.nix_291",
       "type": "MKDEFAULT_ON"
     },
     {
       "source": "modules/home/opencode/config.nix",
-      "target": "mk:modules/home/opencode/config.nix_316",
+      "target": "mk:modules/home/opencode/config.nix_295",
+      "type": "MKDEFAULT_ON"
+    },
+    {
+      "source": "modules/home/opencode/config.nix",
+      "target": "mk:modules/home/opencode/config.nix_328",
+      "type": "MKDEFAULT_ON"
+    },
+    {
+      "source": "modules/home/opencode/config.nix",
+      "target": "mk:modules/home/opencode/config.nix_368",
+      "type": "MKDEFAULT_ON"
+    },
+    {
+      "source": "modules/home/opencode/config.nix",
+      "target": "mk:modules/home/opencode/config.nix_384",
       "type": "MKDEFAULT_ON"
     },
     {
@@ -2437,23 +2292,23 @@
     },
     {
       "source": "configurations/nixos/desktop/default.nix",
-      "target": "mk:configurations/nixos/desktop/default.nix_42",
+      "target": "mk:configurations/nixos/desktop/default.nix_34",
       "type": "MKFORCE_ON"
     },
     {
       "source": "configurations/nixos/desktop/default.nix",
-      "target": "mk:configurations/nixos/desktop/default.nix_43",
+      "target": "mk:configurations/nixos/desktop/default.nix_44",
+      "type": "MKFORCE_ON"
+    },
+    {
+      "source": "configurations/nixos/desktop/default.nix",
+      "target": "mk:configurations/nixos/desktop/default.nix_45",
       "type": "MKFORCE_ON"
     },
     {
       "source": "configurations/nixos/desktop/configuration.nix",
       "target": "host:desktop",
       "type": "BELONGS_TO"
-    },
-    {
-      "source": "configurations/nixos/desktop/configuration.nix",
-      "target": "configurations/nixos/desktop/hardware-configuration.nix",
-      "type": "IMPORTS"
     },
     {
       "source": "configurations/nixos/desktop/hardware-configuration.nix",
@@ -2488,16 +2343,6 @@
     {
       "source": "configurations/nixos/laptop/default.nix",
       "target": "external:flake.inputs.self.nixosModules.common",
-      "type": "IMPORTS"
-    },
-    {
-      "source": "configurations/nixos/laptop/configuration.nix",
-      "target": "host:laptop",
-      "type": "BELONGS_TO"
-    },
-    {
-      "source": "configurations/nixos/laptop/configuration.nix",
-      "target": "configurations/nixos/laptop/hardware-configuration.nix",
       "type": "IMPORTS"
     },
     {
@@ -2549,6 +2394,16 @@
       "source": "configurations/nixos/server/default.nix",
       "target": "external:flake.inputs.self.nixosModules.common",
       "type": "IMPORTS"
+    },
+    {
+      "source": "configurations/nixos/server/default.nix",
+      "target": "mk:configurations/nixos/server/default.nix_228",
+      "type": "MKDEFAULT_ON"
+    },
+    {
+      "source": "configurations/nixos/server/default.nix",
+      "target": "mk:configurations/nixos/server/default.nix_231",
+      "type": "MKDEFAULT_ON"
     },
     {
       "source": "configurations/nixos/server/configuration.nix",
@@ -2682,24 +2537,14 @@
     },
     {
       "source": "configurations/nixos/wsl/default.nix",
-      "target": "configurations/nixos/wsl/configuration.nix",
-      "type": "IMPORTS"
-    },
-    {
-      "source": "configurations/nixos/wsl/default.nix",
       "target": "external:flake.inputs.self.nixosModules.common",
       "type": "IMPORTS"
-    },
-    {
-      "source": "configurations/nixos/wsl/configuration.nix",
-      "target": "host:wsl",
-      "type": "BELONGS_TO"
     }
   ],
   "metadata": {
     "description": "nixos-config structural graph (v1 scope)",
-    "edge_count": 539,
-    "node_count": 553
+    "edge_count": 508,
+    "node_count": 525
   },
   "nodes": [
     {
@@ -2885,7 +2730,7 @@
     {
       "category": "nixos",
       "convention": "default.nix",
-      "extraction_method": "regex",
+      "extraction_method": "tree-sitter",
       "id": "modules/nixos/profiles/system/default.nix",
       "type": "File"
     },
@@ -2976,54 +2821,6 @@
     {
       "id": "module:nixos/profiles.home.default",
       "name": "nixos/profiles.home.default",
-      "type": "Module"
-    },
-    {
-      "category": "nixos",
-      "convention": "other",
-      "extraction_method": "tree-sitter",
-      "id": "modules/nixos/profiles/home/common.nix",
-      "type": "File"
-    },
-    {
-      "id": "module:nixos/profiles.home.common",
-      "name": "nixos/profiles.home.common",
-      "type": "Module"
-    },
-    {
-      "category": "nixos",
-      "convention": "other",
-      "extraction_method": "tree-sitter",
-      "id": "modules/nixos/profiles/home/desktop.nix",
-      "type": "File"
-    },
-    {
-      "id": "module:nixos/profiles.home.desktop",
-      "name": "nixos/profiles.home.desktop",
-      "type": "Module"
-    },
-    {
-      "category": "nixos",
-      "convention": "other",
-      "extraction_method": "tree-sitter",
-      "id": "modules/nixos/profiles/home/development.nix",
-      "type": "File"
-    },
-    {
-      "id": "module:nixos/profiles.home.development",
-      "name": "nixos/profiles.home.development",
-      "type": "Module"
-    },
-    {
-      "category": "nixos",
-      "convention": "other",
-      "extraction_method": "tree-sitter",
-      "id": "modules/nixos/profiles/home/minimal.nix",
-      "type": "File"
-    },
-    {
-      "id": "module:nixos/profiles.home.minimal",
-      "name": "nixos/profiles.home.minimal",
       "type": "Module"
     },
     {
@@ -3961,13 +3758,6 @@
     },
     {
       "category": "host",
-      "convention": "other",
-      "extraction_method": "regex",
-      "id": "configurations/nixos/laptop/configuration.nix",
-      "type": "File"
-    },
-    {
-      "category": "host",
       "convention": "hardware-configuration.nix",
       "extraction_method": "regex",
       "id": "configurations/nixos/laptop/hardware-configuration.nix",
@@ -4057,13 +3847,6 @@
       "id": "host:wsl",
       "name": "wsl",
       "type": "Host"
-    },
-    {
-      "category": "host",
-      "convention": "other",
-      "extraction_method": "tree-sitter",
-      "id": "configurations/nixos/wsl/configuration.nix",
-      "type": "File"
     },
     {
       "category": "other",
@@ -4173,6 +3956,41 @@
     {
       "category": "other",
       "convention": "other",
+      "id": "modules/nixos/proxy",
+      "in_v1_scope": false,
+      "type": "File"
+    },
+    {
+      "category": "other",
+      "convention": "other",
+      "id": "modules/nixos/open-webui",
+      "in_v1_scope": false,
+      "type": "File"
+    },
+    {
+      "category": "other",
+      "convention": "other",
+      "id": "modules/nixos/letta",
+      "in_v1_scope": false,
+      "type": "File"
+    },
+    {
+      "category": "other",
+      "convention": "other",
+      "id": "modules/nixos/jan",
+      "in_v1_scope": false,
+      "type": "File"
+    },
+    {
+      "category": "other",
+      "convention": "other",
+      "id": "modules/nixos/ai/comfyui",
+      "in_v1_scope": false,
+      "type": "File"
+    },
+    {
+      "category": "other",
+      "convention": "other",
       "id": "modules/nixos/ssh",
       "in_v1_scope": false,
       "type": "File"
@@ -4215,7 +4033,56 @@
     {
       "category": "other",
       "convention": "other",
+      "id": "modules/nixos/squid-proxy",
+      "in_v1_scope": false,
+      "type": "File"
+    },
+    {
+      "category": "other",
+      "convention": "other",
+      "id": "modules/nixos/mss-clamp",
+      "in_v1_scope": false,
+      "type": "File"
+    },
+    {
+      "category": "other",
+      "convention": "other",
+      "id": "modules/nixos/mosh",
+      "in_v1_scope": false,
+      "type": "File"
+    },
+    {
+      "category": "other",
+      "convention": "other",
+      "id": "modules/nixos/tor-ssh",
+      "in_v1_scope": false,
+      "type": "File"
+    },
+    {
+      "category": "other",
+      "convention": "other",
+      "id": "modules/nixos/autossh",
+      "in_v1_scope": false,
+      "type": "File"
+    },
+    {
+      "category": "other",
+      "convention": "other",
+      "id": "modules/nixos/ttyd",
+      "in_v1_scope": false,
+      "type": "File"
+    },
+    {
+      "category": "other",
+      "convention": "other",
       "id": "modules/nixos/vscode-server.nix",
+      "in_v1_scope": false,
+      "type": "File"
+    },
+    {
+      "category": "other",
+      "convention": "other",
+      "id": "modules/nixos/opencode-web",
       "in_v1_scope": false,
       "type": "File"
     },
@@ -4306,6 +4173,13 @@
     {
       "category": "other",
       "convention": "other",
+      "id": "modules/nixos/hearthstone",
+      "in_v1_scope": false,
+      "type": "File"
+    },
+    {
+      "category": "other",
+      "convention": "other",
       "id": "modules/nixos/godot",
       "in_v1_scope": false,
       "type": "File"
@@ -4320,7 +4194,63 @@
     {
       "category": "other",
       "convention": "other",
+      "id": "modules/nixos/risuai",
+      "in_v1_scope": false,
+      "type": "File"
+    },
+    {
+      "category": "other",
+      "convention": "other",
       "id": "modules/nixos/suwayomi",
+      "in_v1_scope": false,
+      "type": "File"
+    },
+    {
+      "category": "other",
+      "convention": "other",
+      "id": "modules/nixos/neko",
+      "in_v1_scope": false,
+      "type": "File"
+    },
+    {
+      "category": "other",
+      "convention": "other",
+      "id": "modules/nixos/game-servers",
+      "in_v1_scope": false,
+      "type": "File"
+    },
+    {
+      "category": "other",
+      "convention": "other",
+      "id": "modules/nixos/xmltv",
+      "in_v1_scope": false,
+      "type": "File"
+    },
+    {
+      "category": "other",
+      "convention": "other",
+      "id": "modules/nixos/prowlarr",
+      "in_v1_scope": false,
+      "type": "File"
+    },
+    {
+      "category": "other",
+      "convention": "other",
+      "id": "modules/nixos/sonarr",
+      "in_v1_scope": false,
+      "type": "File"
+    },
+    {
+      "category": "other",
+      "convention": "other",
+      "id": "modules/nixos/radarr",
+      "in_v1_scope": false,
+      "type": "File"
+    },
+    {
+      "category": "other",
+      "convention": "other",
+      "id": "modules/nixos/jellyfin",
       "in_v1_scope": false,
       "type": "File"
     },
@@ -4349,6 +4279,13 @@
       "category": "other",
       "convention": "other",
       "id": "modules/nixos/boot-health",
+      "in_v1_scope": false,
+      "type": "File"
+    },
+    {
+      "category": "other",
+      "convention": "other",
+      "id": "modules/nixos/hardening",
       "in_v1_scope": false,
       "type": "File"
     },
@@ -4428,6 +4365,13 @@
     {
       "category": "other",
       "convention": "other",
+      "id": "modules/nixos/profiles/config.nix",
+      "in_v1_scope": false,
+      "type": "File"
+    },
+    {
+      "category": "other",
+      "convention": "other",
       "id": "modules/nixos/profiles/system",
       "in_v1_scope": false,
       "type": "File"
@@ -4436,6 +4380,48 @@
       "category": "other",
       "convention": "other",
       "id": "modules/nixos/profiles/home",
+      "in_v1_scope": false,
+      "type": "File"
+    },
+    {
+      "category": "other",
+      "convention": "other",
+      "id": "modules/nixos/profiles/system/options.nix",
+      "in_v1_scope": false,
+      "type": "File"
+    },
+    {
+      "category": "other",
+      "convention": "other",
+      "id": "modules/nixos/profiles/system/config.nix",
+      "in_v1_scope": false,
+      "type": "File"
+    },
+    {
+      "category": "other",
+      "convention": "other",
+      "id": "modules/nixos/profiles/system/media.nix",
+      "in_v1_scope": false,
+      "type": "File"
+    },
+    {
+      "category": "other",
+      "convention": "other",
+      "id": "modules/nixos/profiles/system/ai.nix",
+      "in_v1_scope": false,
+      "type": "File"
+    },
+    {
+      "category": "other",
+      "convention": "other",
+      "id": "modules/nixos/profiles/home/options.nix",
+      "in_v1_scope": false,
+      "type": "File"
+    },
+    {
+      "category": "other",
+      "convention": "other",
+      "id": "modules/nixos/profiles/home/config.nix",
       "in_v1_scope": false,
       "type": "File"
     },
@@ -4593,13 +4579,13 @@
       "type": "Option"
     },
     {
-      "dotted_path": "config.my.services.tailscale.manager.enable",
-      "id": "option:config.my.services.tailscale.manager.enable",
+      "dotted_path": "config.my.services.tailscale",
+      "id": "option:config.my.services.tailscale",
       "type": "Option"
     },
     {
-      "dotted_path": "config.my.services.tailscale",
-      "id": "option:config.my.services.tailscale",
+      "dotted_path": "config.my.services.tailscale.manager.enable",
+      "id": "option:config.my.services.tailscale.manager.enable",
       "type": "Option"
     },
     {
@@ -4610,16 +4596,6 @@
     {
       "dotted_path": "config.my.virtualisation.docker",
       "id": "option:config.my.virtualisation.docker",
-      "type": "Option"
-    },
-    {
-      "dotted_path": "options.my.profiles",
-      "id": "option:options.my.profiles",
-      "type": "Option"
-    },
-    {
-      "dotted_path": "config.my.profiles",
-      "id": "option:config.my.profiles",
       "type": "Option"
     },
     {
@@ -4650,11 +4626,6 @@
     {
       "dotted_path": "config.my.profiles.gaming",
       "id": "option:config.my.profiles.gaming",
-      "type": "Option"
-    },
-    {
-      "dotted_path": "options.my.homeProfiles",
-      "id": "option:options.my.homeProfiles",
       "type": "Option"
     },
     {
@@ -4798,111 +4769,69 @@
       "type": "Option"
     },
     {
-      "id": "mk:modules/nixos/common.nix_161",
+      "id": "mk:modules/nixos/common.nix_205",
       "kind": "mkForce",
-      "location": "modules/nixos/common.nix:161",
+      "location": "modules/nixos/common.nix:205",
       "type": "MkSite"
     },
     {
-      "id": "mk:modules/nixos/common.nix_181",
+      "id": "mk:modules/nixos/common.nix_225",
       "kind": "mkForce",
-      "location": "modules/nixos/common.nix:181",
+      "location": "modules/nixos/common.nix:225",
       "type": "MkSite"
     },
     {
-      "id": "mk:modules/nixos/common.nix_120",
+      "id": "mk:modules/nixos/common.nix_156",
       "kind": "mkDefault",
-      "location": "modules/nixos/common.nix:120",
+      "location": "modules/nixos/common.nix:156",
       "type": "MkSite"
     },
     {
-      "id": "mk:modules/nixos/common.nix_126",
+      "id": "mk:modules/nixos/common.nix_162",
       "kind": "mkDefault",
-      "location": "modules/nixos/common.nix:126",
+      "location": "modules/nixos/common.nix:162",
       "type": "MkSite"
     },
     {
-      "id": "mk:modules/nixos/common.nix_206",
+      "id": "mk:modules/nixos/common.nix_249",
       "kind": "mkDefault",
-      "location": "modules/nixos/common.nix:206",
+      "location": "modules/nixos/common.nix:249",
       "type": "MkSite"
     },
     {
-      "id": "mk:modules/nixos/common.nix_211",
+      "id": "mk:modules/nixos/common.nix_250",
       "kind": "mkDefault",
-      "location": "modules/nixos/common.nix:211",
+      "location": "modules/nixos/common.nix:250",
       "type": "MkSite"
     },
     {
-      "id": "mk:modules/nixos/common.nix_218",
+      "id": "mk:modules/nixos/common.nix_256",
       "kind": "mkDefault",
-      "location": "modules/nixos/common.nix:218",
+      "location": "modules/nixos/common.nix:256",
       "type": "MkSite"
     },
     {
-      "id": "mk:modules/nixos/common.nix_222",
+      "id": "mk:modules/nixos/common.nix_261",
       "kind": "mkDefault",
-      "location": "modules/nixos/common.nix:222",
+      "location": "modules/nixos/common.nix:261",
       "type": "MkSite"
     },
     {
-      "id": "mk:modules/nixos/common.nix_227",
+      "id": "mk:modules/nixos/common.nix_267",
       "kind": "mkDefault",
-      "location": "modules/nixos/common.nix:227",
+      "location": "modules/nixos/common.nix:267",
       "type": "MkSite"
     },
     {
-      "id": "mk:modules/nixos/common.nix_231",
+      "id": "mk:modules/nixos/common.nix_273",
       "kind": "mkDefault",
-      "location": "modules/nixos/common.nix:231",
+      "location": "modules/nixos/common.nix:273",
       "type": "MkSite"
     },
     {
-      "id": "mk:modules/nixos/common.nix_235",
+      "id": "mk:modules/nixos/common.nix_280",
       "kind": "mkDefault",
-      "location": "modules/nixos/common.nix:235",
-      "type": "MkSite"
-    },
-    {
-      "id": "mk:modules/nixos/common.nix_239",
-      "kind": "mkDefault",
-      "location": "modules/nixos/common.nix:239",
-      "type": "MkSite"
-    },
-    {
-      "id": "mk:modules/nixos/common.nix_240",
-      "kind": "mkDefault",
-      "location": "modules/nixos/common.nix:240",
-      "type": "MkSite"
-    },
-    {
-      "id": "mk:modules/nixos/common.nix_242",
-      "kind": "mkDefault",
-      "location": "modules/nixos/common.nix:242",
-      "type": "MkSite"
-    },
-    {
-      "id": "mk:modules/nixos/common.nix_262",
-      "kind": "mkDefault",
-      "location": "modules/nixos/common.nix:262",
-      "type": "MkSite"
-    },
-    {
-      "id": "mk:modules/nixos/common.nix_264",
-      "kind": "mkDefault",
-      "location": "modules/nixos/common.nix:264",
-      "type": "MkSite"
-    },
-    {
-      "id": "mk:modules/nixos/common.nix_269",
-      "kind": "mkDefault",
-      "location": "modules/nixos/common.nix:269",
-      "type": "MkSite"
-    },
-    {
-      "id": "mk:modules/nixos/common.nix_271",
-      "kind": "mkDefault",
-      "location": "modules/nixos/common.nix:271",
+      "location": "modules/nixos/common.nix:280",
       "type": "MkSite"
     },
     {
@@ -4912,69 +4841,153 @@
       "type": "MkSite"
     },
     {
-      "id": "mk:modules/nixos/common.nix_320",
+      "id": "mk:modules/nixos/common.nix_289",
       "kind": "mkDefault",
-      "location": "modules/nixos/common.nix:320",
+      "location": "modules/nixos/common.nix:289",
       "type": "MkSite"
     },
     {
-      "id": "mk:modules/nixos/common.nix_327",
+      "id": "mk:modules/nixos/common.nix_293",
       "kind": "mkDefault",
-      "location": "modules/nixos/common.nix:327",
+      "location": "modules/nixos/common.nix:293",
       "type": "MkSite"
     },
     {
-      "id": "mk:modules/nixos/common.nix_328",
+      "id": "mk:modules/nixos/common.nix_297",
       "kind": "mkDefault",
-      "location": "modules/nixos/common.nix:328",
+      "location": "modules/nixos/common.nix:297",
       "type": "MkSite"
     },
     {
-      "id": "mk:modules/nixos/common.nix_332",
+      "id": "mk:modules/nixos/common.nix_301",
       "kind": "mkDefault",
-      "location": "modules/nixos/common.nix:332",
+      "location": "modules/nixos/common.nix:301",
       "type": "MkSite"
     },
     {
-      "id": "mk:modules/nixos/common.nix_336",
+      "id": "mk:modules/nixos/common.nix_302",
       "kind": "mkDefault",
-      "location": "modules/nixos/common.nix:336",
+      "location": "modules/nixos/common.nix:302",
       "type": "MkSite"
     },
     {
-      "id": "mk:modules/nixos/common.nix_340",
+      "id": "mk:modules/nixos/common.nix_304",
       "kind": "mkDefault",
-      "location": "modules/nixos/common.nix:340",
+      "location": "modules/nixos/common.nix:304",
       "type": "MkSite"
     },
     {
-      "id": "mk:modules/nixos/common.nix_344",
+      "id": "mk:modules/nixos/common.nix_324",
       "kind": "mkDefault",
-      "location": "modules/nixos/common.nix:344",
+      "location": "modules/nixos/common.nix:324",
       "type": "MkSite"
     },
     {
-      "id": "mk:modules/nixos/common.nix_355",
+      "id": "mk:modules/nixos/common.nix_326",
       "kind": "mkDefault",
-      "location": "modules/nixos/common.nix:355",
+      "location": "modules/nixos/common.nix:326",
       "type": "MkSite"
     },
     {
-      "id": "mk:modules/nixos/common.nix_359",
+      "id": "mk:modules/nixos/common.nix_331",
       "kind": "mkDefault",
-      "location": "modules/nixos/common.nix:359",
+      "location": "modules/nixos/common.nix:331",
       "type": "MkSite"
     },
     {
-      "id": "mk:modules/nixos/common.nix_363",
+      "id": "mk:modules/nixos/common.nix_333",
       "kind": "mkDefault",
-      "location": "modules/nixos/common.nix:363",
+      "location": "modules/nixos/common.nix:333",
       "type": "MkSite"
     },
     {
-      "id": "mk:modules/nixos/tailscale/config.nix_25",
+      "id": "mk:modules/nixos/common.nix_346",
+      "kind": "mkDefault",
+      "location": "modules/nixos/common.nix:346",
+      "type": "MkSite"
+    },
+    {
+      "id": "mk:modules/nixos/common.nix_382",
+      "kind": "mkDefault",
+      "location": "modules/nixos/common.nix:382",
+      "type": "MkSite"
+    },
+    {
+      "id": "mk:modules/nixos/common.nix_389",
+      "kind": "mkDefault",
+      "location": "modules/nixos/common.nix:389",
+      "type": "MkSite"
+    },
+    {
+      "id": "mk:modules/nixos/common.nix_390",
+      "kind": "mkDefault",
+      "location": "modules/nixos/common.nix:390",
+      "type": "MkSite"
+    },
+    {
+      "id": "mk:modules/nixos/common.nix_394",
+      "kind": "mkDefault",
+      "location": "modules/nixos/common.nix:394",
+      "type": "MkSite"
+    },
+    {
+      "id": "mk:modules/nixos/common.nix_398",
+      "kind": "mkDefault",
+      "location": "modules/nixos/common.nix:398",
+      "type": "MkSite"
+    },
+    {
+      "id": "mk:modules/nixos/common.nix_402",
+      "kind": "mkDefault",
+      "location": "modules/nixos/common.nix:402",
+      "type": "MkSite"
+    },
+    {
+      "id": "mk:modules/nixos/common.nix_406",
+      "kind": "mkDefault",
+      "location": "modules/nixos/common.nix:406",
+      "type": "MkSite"
+    },
+    {
+      "id": "mk:modules/nixos/common.nix_410",
+      "kind": "mkDefault",
+      "location": "modules/nixos/common.nix:410",
+      "type": "MkSite"
+    },
+    {
+      "id": "mk:modules/nixos/common.nix_414",
+      "kind": "mkDefault",
+      "location": "modules/nixos/common.nix:414",
+      "type": "MkSite"
+    },
+    {
+      "id": "mk:modules/nixos/common.nix_418",
+      "kind": "mkDefault",
+      "location": "modules/nixos/common.nix:418",
+      "type": "MkSite"
+    },
+    {
+      "id": "mk:modules/nixos/common.nix_429",
+      "kind": "mkDefault",
+      "location": "modules/nixos/common.nix:429",
+      "type": "MkSite"
+    },
+    {
+      "id": "mk:modules/nixos/common.nix_433",
+      "kind": "mkDefault",
+      "location": "modules/nixos/common.nix:433",
+      "type": "MkSite"
+    },
+    {
+      "id": "mk:modules/nixos/common.nix_437",
+      "kind": "mkDefault",
+      "location": "modules/nixos/common.nix:437",
+      "type": "MkSite"
+    },
+    {
+      "id": "mk:modules/nixos/tailscale/config.nix_24",
       "kind": "mkForce",
-      "location": "modules/nixos/tailscale/config.nix:25",
+      "location": "modules/nixos/tailscale/config.nix:24",
       "type": "MkSite"
     },
     {
@@ -4987,198 +5000,6 @@
       "id": "mk:modules/nixos/tailscale/tests.nix_55",
       "kind": "mkIf",
       "location": "modules/nixos/tailscale/tests.nix:55",
-      "type": "MkSite"
-    },
-    {
-      "id": "mk:modules/nixos/profiles/default.nix_10",
-      "kind": "mkDefault",
-      "location": "modules/nixos/profiles/default.nix:10",
-      "type": "MkSite"
-    },
-    {
-      "id": "mk:modules/nixos/profiles/default.nix_11",
-      "kind": "mkDefault",
-      "location": "modules/nixos/profiles/default.nix:11",
-      "type": "MkSite"
-    },
-    {
-      "id": "mk:modules/nixos/profiles/system/default.nix_58",
-      "kind": "mkIf",
-      "location": "modules/nixos/profiles/system/default.nix:58",
-      "type": "MkSite"
-    },
-    {
-      "id": "mk:modules/nixos/profiles/system/default.nix_80",
-      "kind": "mkIf",
-      "location": "modules/nixos/profiles/system/default.nix:80",
-      "type": "MkSite"
-    },
-    {
-      "id": "mk:modules/nixos/profiles/system/default.nix_85",
-      "kind": "mkIf",
-      "location": "modules/nixos/profiles/system/default.nix:85",
-      "type": "MkSite"
-    },
-    {
-      "id": "mk:modules/nixos/profiles/system/default.nix_108",
-      "kind": "mkIf",
-      "location": "modules/nixos/profiles/system/default.nix:108",
-      "type": "MkSite"
-    },
-    {
-      "id": "mk:modules/nixos/profiles/system/default.nix_113",
-      "kind": "mkIf",
-      "location": "modules/nixos/profiles/system/default.nix:113",
-      "type": "MkSite"
-    },
-    {
-      "id": "mk:modules/nixos/profiles/system/default.nix_119",
-      "kind": "mkIf",
-      "location": "modules/nixos/profiles/system/default.nix:119",
-      "type": "MkSite"
-    },
-    {
-      "id": "mk:modules/nixos/profiles/system/default.nix_125",
-      "kind": "mkIf",
-      "location": "modules/nixos/profiles/system/default.nix:125",
-      "type": "MkSite"
-    },
-    {
-      "id": "mk:modules/nixos/profiles/system/default.nix_130",
-      "kind": "mkIf",
-      "location": "modules/nixos/profiles/system/default.nix:130",
-      "type": "MkSite"
-    },
-    {
-      "id": "mk:modules/nixos/profiles/system/default.nix_135",
-      "kind": "mkIf",
-      "location": "modules/nixos/profiles/system/default.nix:135",
-      "type": "MkSite"
-    },
-    {
-      "id": "mk:modules/nixos/profiles/system/default.nix_148",
-      "kind": "mkIf",
-      "location": "modules/nixos/profiles/system/default.nix:148",
-      "type": "MkSite"
-    },
-    {
-      "id": "mk:modules/nixos/profiles/system/default.nix_153",
-      "kind": "mkIf",
-      "location": "modules/nixos/profiles/system/default.nix:153",
-      "type": "MkSite"
-    },
-    {
-      "id": "mk:modules/nixos/profiles/system/default.nix_158",
-      "kind": "mkIf",
-      "location": "modules/nixos/profiles/system/default.nix:158",
-      "type": "MkSite"
-    },
-    {
-      "id": "mk:modules/nixos/profiles/system/default.nix_163",
-      "kind": "mkIf",
-      "location": "modules/nixos/profiles/system/default.nix:163",
-      "type": "MkSite"
-    },
-    {
-      "id": "mk:modules/nixos/profiles/system/default.nix_137",
-      "kind": "mkDefault",
-      "location": "modules/nixos/profiles/system/default.nix:137",
-      "type": "MkSite"
-    },
-    {
-      "id": "mk:modules/nixos/profiles/system/default.nix_138",
-      "kind": "mkDefault",
-      "location": "modules/nixos/profiles/system/default.nix:138",
-      "type": "MkSite"
-    },
-    {
-      "id": "mk:modules/nixos/profiles/system/default.nix_139",
-      "kind": "mkDefault",
-      "location": "modules/nixos/profiles/system/default.nix:139",
-      "type": "MkSite"
-    },
-    {
-      "id": "mk:modules/nixos/profiles/system/default.nix_140",
-      "kind": "mkDefault",
-      "location": "modules/nixos/profiles/system/default.nix:140",
-      "type": "MkSite"
-    },
-    {
-      "id": "mk:modules/nixos/profiles/system/default.nix_141",
-      "kind": "mkDefault",
-      "location": "modules/nixos/profiles/system/default.nix:141",
-      "type": "MkSite"
-    },
-    {
-      "id": "mk:modules/nixos/profiles/system/default.nix_142",
-      "kind": "mkDefault",
-      "location": "modules/nixos/profiles/system/default.nix:142",
-      "type": "MkSite"
-    },
-    {
-      "id": "mk:modules/nixos/profiles/system/default.nix_143",
-      "kind": "mkDefault",
-      "location": "modules/nixos/profiles/system/default.nix:143",
-      "type": "MkSite"
-    },
-    {
-      "id": "mk:modules/nixos/profiles/system/default.nix_165",
-      "kind": "mkDefault",
-      "location": "modules/nixos/profiles/system/default.nix:165",
-      "type": "MkSite"
-    },
-    {
-      "id": "mk:modules/nixos/profiles/system/default.nix_166",
-      "kind": "mkDefault",
-      "location": "modules/nixos/profiles/system/default.nix:166",
-      "type": "MkSite"
-    },
-    {
-      "id": "mk:modules/nixos/profiles/system/default.nix_167",
-      "kind": "mkDefault",
-      "location": "modules/nixos/profiles/system/default.nix:167",
-      "type": "MkSite"
-    },
-    {
-      "id": "mk:modules/nixos/profiles/system/default.nix_168",
-      "kind": "mkDefault",
-      "location": "modules/nixos/profiles/system/default.nix:168",
-      "type": "MkSite"
-    },
-    {
-      "id": "mk:modules/nixos/profiles/system/default.nix_169",
-      "kind": "mkDefault",
-      "location": "modules/nixos/profiles/system/default.nix:169",
-      "type": "MkSite"
-    },
-    {
-      "id": "mk:modules/nixos/profiles/system/default.nix_170",
-      "kind": "mkDefault",
-      "location": "modules/nixos/profiles/system/default.nix:170",
-      "type": "MkSite"
-    },
-    {
-      "id": "mk:modules/nixos/profiles/system/default.nix_171",
-      "kind": "mkDefault",
-      "location": "modules/nixos/profiles/system/default.nix:171",
-      "type": "MkSite"
-    },
-    {
-      "id": "mk:modules/nixos/profiles/system/default.nix_172",
-      "kind": "mkDefault",
-      "location": "modules/nixos/profiles/system/default.nix:172",
-      "type": "MkSite"
-    },
-    {
-      "id": "mk:modules/nixos/profiles/system/default.nix_173",
-      "kind": "mkDefault",
-      "location": "modules/nixos/profiles/system/default.nix:173",
-      "type": "MkSite"
-    },
-    {
-      "id": "mk:modules/nixos/profiles/system/default.nix_175",
-      "kind": "mkDefault",
-      "location": "modules/nixos/profiles/system/default.nix:175",
       "type": "MkSite"
     },
     {
@@ -5218,12 +5039,6 @@
       "type": "MkSite"
     },
     {
-      "id": "mk:modules/nixos/profiles/system/workstation.nix_38",
-      "kind": "mkDefault",
-      "location": "modules/nixos/profiles/system/workstation.nix:38",
-      "type": "MkSite"
-    },
-    {
       "id": "mk:modules/nixos/profiles/system/workstation.nix_39",
       "kind": "mkDefault",
       "location": "modules/nixos/profiles/system/workstation.nix:39",
@@ -5242,15 +5057,21 @@
       "type": "MkSite"
     },
     {
-      "id": "mk:modules/nixos/profiles/system/workstation.nix_45",
+      "id": "mk:modules/nixos/profiles/system/workstation.nix_42",
       "kind": "mkDefault",
-      "location": "modules/nixos/profiles/system/workstation.nix:45",
+      "location": "modules/nixos/profiles/system/workstation.nix:42",
       "type": "MkSite"
     },
     {
-      "id": "mk:modules/nixos/profiles/system/workstation.nix_47",
+      "id": "mk:modules/nixos/profiles/system/workstation.nix_46",
       "kind": "mkDefault",
-      "location": "modules/nixos/profiles/system/workstation.nix:47",
+      "location": "modules/nixos/profiles/system/workstation.nix:46",
+      "type": "MkSite"
+    },
+    {
+      "id": "mk:modules/nixos/profiles/system/workstation.nix_48",
+      "kind": "mkDefault",
+      "location": "modules/nixos/profiles/system/workstation.nix:48",
       "type": "MkSite"
     },
     {
@@ -5272,12 +5093,6 @@
       "type": "MkSite"
     },
     {
-      "id": "mk:modules/nixos/profiles/system/server.nix_23",
-      "kind": "mkDefault",
-      "location": "modules/nixos/profiles/system/server.nix:23",
-      "type": "MkSite"
-    },
-    {
       "id": "mk:modules/nixos/profiles/system/server.nix_24",
       "kind": "mkDefault",
       "location": "modules/nixos/profiles/system/server.nix:24",
@@ -5296,9 +5111,21 @@
       "type": "MkSite"
     },
     {
-      "id": "mk:modules/nixos/profiles/system/server.nix_35",
+      "id": "mk:modules/nixos/profiles/system/server.nix_36",
       "kind": "mkDefault",
-      "location": "modules/nixos/profiles/system/server.nix:35",
+      "location": "modules/nixos/profiles/system/server.nix:36",
+      "type": "MkSite"
+    },
+    {
+      "id": "mk:modules/nixos/profiles/system/server.nix_37",
+      "kind": "mkDefault",
+      "location": "modules/nixos/profiles/system/server.nix:37",
+      "type": "MkSite"
+    },
+    {
+      "id": "mk:modules/nixos/profiles/system/server.nix_42",
+      "kind": "mkDefault",
+      "location": "modules/nixos/profiles/system/server.nix:42",
       "type": "MkSite"
     },
     {
@@ -5344,45 +5171,75 @@
       "type": "MkSite"
     },
     {
-      "id": "mk:modules/nixos/profiles/system/development.nix_26",
+      "id": "mk:modules/nixos/profiles/system/development.nix_27",
       "kind": "mkDefault",
-      "location": "modules/nixos/profiles/system/development.nix:26",
+      "location": "modules/nixos/profiles/system/development.nix:27",
       "type": "MkSite"
     },
     {
-      "id": "mk:modules/nixos/profiles/system/development.nix_34",
+      "id": "mk:modules/nixos/profiles/system/development.nix_28",
       "kind": "mkDefault",
-      "location": "modules/nixos/profiles/system/development.nix:34",
+      "location": "modules/nixos/profiles/system/development.nix:28",
       "type": "MkSite"
     },
     {
-      "id": "mk:modules/nixos/profiles/system/development.nix_39",
+      "id": "mk:modules/nixos/profiles/system/development.nix_37",
       "kind": "mkDefault",
-      "location": "modules/nixos/profiles/system/development.nix:39",
+      "location": "modules/nixos/profiles/system/development.nix:37",
       "type": "MkSite"
     },
     {
-      "id": "mk:modules/nixos/profiles/system/development.nix_45",
+      "id": "mk:modules/nixos/profiles/system/development.nix_42",
       "kind": "mkDefault",
-      "location": "modules/nixos/profiles/system/development.nix:45",
-      "type": "MkSite"
-    },
-    {
-      "id": "mk:modules/nixos/profiles/system/development.nix_46",
-      "kind": "mkDefault",
-      "location": "modules/nixos/profiles/system/development.nix:46",
-      "type": "MkSite"
-    },
-    {
-      "id": "mk:modules/nixos/profiles/system/development.nix_47",
-      "kind": "mkDefault",
-      "location": "modules/nixos/profiles/system/development.nix:47",
+      "location": "modules/nixos/profiles/system/development.nix:42",
       "type": "MkSite"
     },
     {
       "id": "mk:modules/nixos/profiles/system/development.nix_48",
       "kind": "mkDefault",
       "location": "modules/nixos/profiles/system/development.nix:48",
+      "type": "MkSite"
+    },
+    {
+      "id": "mk:modules/nixos/profiles/system/development.nix_49",
+      "kind": "mkDefault",
+      "location": "modules/nixos/profiles/system/development.nix:49",
+      "type": "MkSite"
+    },
+    {
+      "id": "mk:modules/nixos/profiles/system/development.nix_50",
+      "kind": "mkDefault",
+      "location": "modules/nixos/profiles/system/development.nix:50",
+      "type": "MkSite"
+    },
+    {
+      "id": "mk:modules/nixos/profiles/system/development.nix_51",
+      "kind": "mkDefault",
+      "location": "modules/nixos/profiles/system/development.nix:51",
+      "type": "MkSite"
+    },
+    {
+      "id": "mk:modules/nixos/profiles/system/development.nix_62",
+      "kind": "mkDefault",
+      "location": "modules/nixos/profiles/system/development.nix:62",
+      "type": "MkSite"
+    },
+    {
+      "id": "mk:modules/nixos/profiles/system/development.nix_63",
+      "kind": "mkDefault",
+      "location": "modules/nixos/profiles/system/development.nix:63",
+      "type": "MkSite"
+    },
+    {
+      "id": "mk:modules/nixos/profiles/system/development.nix_64",
+      "kind": "mkDefault",
+      "location": "modules/nixos/profiles/system/development.nix:64",
+      "type": "MkSite"
+    },
+    {
+      "id": "mk:modules/nixos/profiles/system/development.nix_65",
+      "kind": "mkDefault",
+      "location": "modules/nixos/profiles/system/development.nix:65",
       "type": "MkSite"
     },
     {
@@ -5410,33 +5267,33 @@
       "type": "MkSite"
     },
     {
-      "id": "mk:modules/nixos/profiles/system/entertainment.nix_18",
-      "kind": "mkDefault",
-      "location": "modules/nixos/profiles/system/entertainment.nix:18",
-      "type": "MkSite"
-    },
-    {
       "id": "mk:modules/nixos/profiles/system/entertainment.nix_19",
       "kind": "mkDefault",
       "location": "modules/nixos/profiles/system/entertainment.nix:19",
       "type": "MkSite"
     },
     {
-      "id": "mk:modules/nixos/profiles/system/entertainment.nix_22",
+      "id": "mk:modules/nixos/profiles/system/entertainment.nix_20",
       "kind": "mkDefault",
-      "location": "modules/nixos/profiles/system/entertainment.nix:22",
+      "location": "modules/nixos/profiles/system/entertainment.nix:20",
       "type": "MkSite"
     },
     {
-      "id": "mk:modules/nixos/profiles/system/entertainment.nix_25",
+      "id": "mk:modules/nixos/profiles/system/entertainment.nix_23",
       "kind": "mkDefault",
-      "location": "modules/nixos/profiles/system/entertainment.nix:25",
+      "location": "modules/nixos/profiles/system/entertainment.nix:23",
       "type": "MkSite"
     },
     {
       "id": "mk:modules/nixos/profiles/system/entertainment.nix_26",
       "kind": "mkDefault",
       "location": "modules/nixos/profiles/system/entertainment.nix:26",
+      "type": "MkSite"
+    },
+    {
+      "id": "mk:modules/nixos/profiles/system/entertainment.nix_27",
+      "kind": "mkDefault",
+      "location": "modules/nixos/profiles/system/entertainment.nix:27",
       "type": "MkSite"
     },
     {
@@ -5464,189 +5321,21 @@
       "type": "MkSite"
     },
     {
-      "id": "mk:modules/nixos/profiles/system/gaming.nix_22",
+      "id": "mk:modules/nixos/profiles/system/gaming.nix_14",
       "kind": "mkDefault",
-      "location": "modules/nixos/profiles/system/gaming.nix:22",
+      "location": "modules/nixos/profiles/system/gaming.nix:14",
       "type": "MkSite"
     },
     {
-      "id": "mk:modules/nixos/profiles/system/gaming.nix_25",
+      "id": "mk:modules/nixos/profiles/system/gaming.nix_23",
       "kind": "mkDefault",
-      "location": "modules/nixos/profiles/system/gaming.nix:25",
+      "location": "modules/nixos/profiles/system/gaming.nix:23",
       "type": "MkSite"
     },
     {
-      "id": "mk:modules/nixos/profiles/home/default.nix_27",
-      "kind": "mkIf",
-      "location": "modules/nixos/profiles/home/default.nix:27",
-      "type": "MkSite"
-    },
-    {
-      "id": "mk:modules/nixos/profiles/home/default.nix_29",
-      "kind": "mkIf",
-      "location": "modules/nixos/profiles/home/default.nix:29",
-      "type": "MkSite"
-    },
-    {
-      "id": "mk:modules/nixos/profiles/home/default.nix_40",
-      "kind": "mkIf",
-      "location": "modules/nixos/profiles/home/default.nix:40",
-      "type": "MkSite"
-    },
-    {
-      "id": "mk:modules/nixos/profiles/home/default.nix_55",
-      "kind": "mkIf",
-      "location": "modules/nixos/profiles/home/default.nix:55",
-      "type": "MkSite"
-    },
-    {
-      "id": "mk:modules/nixos/profiles/home/default.nix_63",
-      "kind": "mkIf",
-      "location": "modules/nixos/profiles/home/default.nix:63",
-      "type": "MkSite"
-    },
-    {
-      "id": "mk:modules/nixos/profiles/home/default.nix_70",
-      "kind": "mkIf",
-      "location": "modules/nixos/profiles/home/default.nix:70",
-      "type": "MkSite"
-    },
-    {
-      "id": "mk:modules/nixos/profiles/home/default.nix_30",
+      "id": "mk:modules/nixos/profiles/system/gaming.nix_26",
       "kind": "mkDefault",
-      "location": "modules/nixos/profiles/home/default.nix:30",
-      "type": "MkSite"
-    },
-    {
-      "id": "mk:modules/nixos/profiles/home/default.nix_31",
-      "kind": "mkDefault",
-      "location": "modules/nixos/profiles/home/default.nix:31",
-      "type": "MkSite"
-    },
-    {
-      "id": "mk:modules/nixos/profiles/home/default.nix_32",
-      "kind": "mkDefault",
-      "location": "modules/nixos/profiles/home/default.nix:32",
-      "type": "MkSite"
-    },
-    {
-      "id": "mk:modules/nixos/profiles/home/default.nix_33",
-      "kind": "mkDefault",
-      "location": "modules/nixos/profiles/home/default.nix:33",
-      "type": "MkSite"
-    },
-    {
-      "id": "mk:modules/nixos/profiles/home/default.nix_34",
-      "kind": "mkDefault",
-      "location": "modules/nixos/profiles/home/default.nix:34",
-      "type": "MkSite"
-    },
-    {
-      "id": "mk:modules/nixos/profiles/home/default.nix_35",
-      "kind": "mkDefault",
-      "location": "modules/nixos/profiles/home/default.nix:35",
-      "type": "MkSite"
-    },
-    {
-      "id": "mk:modules/nixos/profiles/home/default.nix_36",
-      "kind": "mkDefault",
-      "location": "modules/nixos/profiles/home/default.nix:36",
-      "type": "MkSite"
-    },
-    {
-      "id": "mk:modules/nixos/profiles/home/default.nix_41",
-      "kind": "mkDefault",
-      "location": "modules/nixos/profiles/home/default.nix:41",
-      "type": "MkSite"
-    },
-    {
-      "id": "mk:modules/nixos/profiles/home/default.nix_42",
-      "kind": "mkDefault",
-      "location": "modules/nixos/profiles/home/default.nix:42",
-      "type": "MkSite"
-    },
-    {
-      "id": "mk:modules/nixos/profiles/home/default.nix_44",
-      "kind": "mkDefault",
-      "location": "modules/nixos/profiles/home/default.nix:44",
-      "type": "MkSite"
-    },
-    {
-      "id": "mk:modules/nixos/profiles/home/default.nix_45",
-      "kind": "mkDefault",
-      "location": "modules/nixos/profiles/home/default.nix:45",
-      "type": "MkSite"
-    },
-    {
-      "id": "mk:modules/nixos/profiles/home/default.nix_47",
-      "kind": "mkDefault",
-      "location": "modules/nixos/profiles/home/default.nix:47",
-      "type": "MkSite"
-    },
-    {
-      "id": "mk:modules/nixos/profiles/home/default.nix_48",
-      "kind": "mkDefault",
-      "location": "modules/nixos/profiles/home/default.nix:48",
-      "type": "MkSite"
-    },
-    {
-      "id": "mk:modules/nixos/profiles/home/default.nix_49",
-      "kind": "mkDefault",
-      "location": "modules/nixos/profiles/home/default.nix:49",
-      "type": "MkSite"
-    },
-    {
-      "id": "mk:modules/nixos/profiles/home/default.nix_50",
-      "kind": "mkDefault",
-      "location": "modules/nixos/profiles/home/default.nix:50",
-      "type": "MkSite"
-    },
-    {
-      "id": "mk:modules/nixos/profiles/home/default.nix_51",
-      "kind": "mkDefault",
-      "location": "modules/nixos/profiles/home/default.nix:51",
-      "type": "MkSite"
-    },
-    {
-      "id": "mk:modules/nixos/profiles/home/default.nix_56",
-      "kind": "mkDefault",
-      "location": "modules/nixos/profiles/home/default.nix:56",
-      "type": "MkSite"
-    },
-    {
-      "id": "mk:modules/nixos/profiles/home/default.nix_57",
-      "kind": "mkDefault",
-      "location": "modules/nixos/profiles/home/default.nix:57",
-      "type": "MkSite"
-    },
-    {
-      "id": "mk:modules/nixos/profiles/home/default.nix_58",
-      "kind": "mkDefault",
-      "location": "modules/nixos/profiles/home/default.nix:58",
-      "type": "MkSite"
-    },
-    {
-      "id": "mk:modules/nixos/profiles/home/default.nix_59",
-      "kind": "mkDefault",
-      "location": "modules/nixos/profiles/home/default.nix:59",
-      "type": "MkSite"
-    },
-    {
-      "id": "mk:modules/nixos/profiles/home/default.nix_65",
-      "kind": "mkDefault",
-      "location": "modules/nixos/profiles/home/default.nix:65",
-      "type": "MkSite"
-    },
-    {
-      "id": "mk:modules/nixos/profiles/home/default.nix_66",
-      "kind": "mkDefault",
-      "location": "modules/nixos/profiles/home/default.nix:66",
-      "type": "MkSite"
-    },
-    {
-      "id": "mk:modules/nixos/profiles/home/default.nix_71",
-      "kind": "mkDefault",
-      "location": "modules/nixos/profiles/home/default.nix:71",
+      "location": "modules/nixos/profiles/system/gaming.nix:26",
       "type": "MkSite"
     },
     {
@@ -5848,57 +5537,57 @@
       "type": "MkSite"
     },
     {
-      "id": "mk:modules/home/opencode/config.nix_180",
-      "kind": "mkDefault",
-      "location": "modules/home/opencode/config.nix:180",
-      "type": "MkSite"
-    },
-    {
-      "id": "mk:modules/home/opencode/config.nix_203",
-      "kind": "mkDefault",
-      "location": "modules/home/opencode/config.nix:203",
-      "type": "MkSite"
-    },
-    {
-      "id": "mk:modules/home/opencode/config.nix_211",
-      "kind": "mkDefault",
-      "location": "modules/home/opencode/config.nix:211",
-      "type": "MkSite"
-    },
-    {
       "id": "mk:modules/home/opencode/config.nix_221",
       "kind": "mkDefault",
       "location": "modules/home/opencode/config.nix:221",
       "type": "MkSite"
     },
     {
-      "id": "mk:modules/home/opencode/config.nix_233",
+      "id": "mk:modules/home/opencode/config.nix_244",
       "kind": "mkDefault",
-      "location": "modules/home/opencode/config.nix:233",
+      "location": "modules/home/opencode/config.nix:244",
       "type": "MkSite"
     },
     {
-      "id": "mk:modules/home/opencode/config.nix_237",
+      "id": "mk:modules/home/opencode/config.nix_252",
       "kind": "mkDefault",
-      "location": "modules/home/opencode/config.nix:237",
+      "location": "modules/home/opencode/config.nix:252",
       "type": "MkSite"
     },
     {
-      "id": "mk:modules/home/opencode/config.nix_270",
+      "id": "mk:modules/home/opencode/config.nix_272",
       "kind": "mkDefault",
-      "location": "modules/home/opencode/config.nix:270",
+      "location": "modules/home/opencode/config.nix:272",
       "type": "MkSite"
     },
     {
-      "id": "mk:modules/home/opencode/config.nix_300",
+      "id": "mk:modules/home/opencode/config.nix_291",
       "kind": "mkDefault",
-      "location": "modules/home/opencode/config.nix:300",
+      "location": "modules/home/opencode/config.nix:291",
       "type": "MkSite"
     },
     {
-      "id": "mk:modules/home/opencode/config.nix_316",
+      "id": "mk:modules/home/opencode/config.nix_295",
       "kind": "mkDefault",
-      "location": "modules/home/opencode/config.nix:316",
+      "location": "modules/home/opencode/config.nix:295",
+      "type": "MkSite"
+    },
+    {
+      "id": "mk:modules/home/opencode/config.nix_328",
+      "kind": "mkDefault",
+      "location": "modules/home/opencode/config.nix:328",
+      "type": "MkSite"
+    },
+    {
+      "id": "mk:modules/home/opencode/config.nix_368",
+      "kind": "mkDefault",
+      "location": "modules/home/opencode/config.nix:368",
+      "type": "MkSite"
+    },
+    {
+      "id": "mk:modules/home/opencode/config.nix_384",
+      "kind": "mkDefault",
+      "location": "modules/home/opencode/config.nix:384",
       "type": "MkSite"
     },
     {
@@ -5938,15 +5627,21 @@
       "type": "MkSite"
     },
     {
-      "id": "mk:configurations/nixos/desktop/default.nix_42",
+      "id": "mk:configurations/nixos/desktop/default.nix_34",
       "kind": "mkForce",
-      "location": "configurations/nixos/desktop/default.nix:42",
+      "location": "configurations/nixos/desktop/default.nix:34",
       "type": "MkSite"
     },
     {
-      "id": "mk:configurations/nixos/desktop/default.nix_43",
+      "id": "mk:configurations/nixos/desktop/default.nix_44",
       "kind": "mkForce",
-      "location": "configurations/nixos/desktop/default.nix:43",
+      "location": "configurations/nixos/desktop/default.nix:44",
+      "type": "MkSite"
+    },
+    {
+      "id": "mk:configurations/nixos/desktop/default.nix_45",
+      "kind": "mkForce",
+      "location": "configurations/nixos/desktop/default.nix:45",
       "type": "MkSite"
     },
     {
@@ -5977,6 +5672,18 @@
       "id": "mk:configurations/nixos/laptop/disk-config.nix_4",
       "kind": "mkDefault",
       "location": "configurations/nixos/laptop/disk-config.nix:4",
+      "type": "MkSite"
+    },
+    {
+      "id": "mk:configurations/nixos/server/default.nix_228",
+      "kind": "mkDefault",
+      "location": "configurations/nixos/server/default.nix:228",
+      "type": "MkSite"
+    },
+    {
+      "id": "mk:configurations/nixos/server/default.nix_231",
+      "kind": "mkDefault",
+      "location": "configurations/nixos/server/default.nix:231",
       "type": "MkSite"
     },
     {
@@ -6060,21 +5767,21 @@
   ],
   "stats": {
     "edges_by_type": {
-      "BELONGS_TO": 119,
-      "DEFINES": 26,
-      "IMPORTS": 157,
-      "MKDEFAULT_ON": 139,
-      "MKFORCE_ON": 13,
-      "MKIF_ON": 58,
-      "REFERENCES": 27
+      "BELONGS_TO": 113,
+      "DEFINES": 24,
+      "IMPORTS": 179,
+      "MKDEFAULT_ON": 113,
+      "MKFORCE_ON": 14,
+      "MKIF_ON": 39,
+      "REFERENCES": 26
     },
     "nodes_by_type": {
       "ExternalImport": 4,
-      "File": 190,
+      "File": 213,
       "Host": 5,
-      "MkSite": 210,
-      "Module": 101,
-      "Option": 43
+      "MkSite": 166,
+      "Module": 97,
+      "Option": 40
     }
   }
 }
