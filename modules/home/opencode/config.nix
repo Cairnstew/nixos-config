@@ -258,6 +258,7 @@ in
           testing-patterns = builtins.readFile ./skills/testing-patterns.md;
           windows-integration = builtins.readFile ./skills/windows-integration.md;
           docker-management = builtins.readFile ./skills/docker-management.md;
+          network-security = builtins.readFile ./skills/network-security.md;
         };
         commands = {
           copy-last = ./commands/copylast.md;
@@ -265,6 +266,7 @@ in
           nix-map = ./commands/nix-map.md;
           nix-refine = ./commands/nix-refine.md;
           nix-doc-audit = ./commands/nix-doc-audit.md;
+          nix-net-audit = ./commands/nix-net-audit.md;
           shopping-research = ./commands/shopping-research.md;
         };
         pluginFiles = lib.mkDefault {
