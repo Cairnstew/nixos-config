@@ -66,6 +66,11 @@
         default = "grafana-admin-password";
         description = "agenix secret name holding the Grafana admin password.";
       };
+      secretKeySecret = lib.mkOption {
+        type = lib.types.str;
+        default = "grafana-secret-key";
+        description = "agenix secret name holding the Grafana secret_key (required since Grafana 13 has no default).";
+      };
     };
   };
 }
