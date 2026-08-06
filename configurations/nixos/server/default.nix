@@ -60,8 +60,8 @@
   # https://server.tail685690.ts.net/<service>/.
   # Dashboard at / shows all registered services.
   my.services.proxy = {
-    enable = true;
-    listenAddresses = [ "127.0.0.1" ];
+    # F4: proxy.enable is common.nix mkDefault true — redundant here (recon F4)
+    # F5: listenAddresses [ "127.0.0.1" ] is the proxy/options.nix default — redundant here (recon F5)
     tailscaleServe.enable = true;
   };
 
@@ -159,7 +159,7 @@
 
   # ── ComfyUI (AI Image Generation) ───────────────────────────────────────
   my.services.comfyui = {
-    enable = true;
+    # F7: comfyui.enable is mkDefault true via profiles/system/ai.nix — redundant here (recon F7)
     dataDir = "/mnt/data/comfyui";
   };
 
@@ -206,7 +206,7 @@
 
   # ── RisuAI (LLM Roleplay Frontend) ────────────────────────────────────
   my.services.risuai = {
-    enable = true;
+    # F7: risuai.enable is mkDefault true via profiles/system/ai.nix — redundant here (recon F7)
     dataDir = "/mnt/data/risuai";
     ollama.enable = true;
   };
