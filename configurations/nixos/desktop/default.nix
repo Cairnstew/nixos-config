@@ -30,9 +30,10 @@
         desktop.choice = lib.mkForce "hyprland";
       };
       my.system.battery.enable = lib.mkForce false;
+      # VM-only: Caddy loopback in QEMU test VM (DECISION LOG R3).
       my.services.proxy.listenAddresses = lib.mkForce [ "127.0.0.1" ];
       my.testing = {
-        enable = true;
+        # F16: enable=true redundant — my.profiles.testing.enable already set at line 63
         startAtBoot = true;
       };
 
@@ -256,9 +257,8 @@
   # ── Location ────────────────────────────────────────────────────────────
   my.system.location = {
     # enable = true — redundant: profile already sets via mkIf cfg.location.enable (M3)
-    timeZone = "GB";
-    latitude = 55.8617;
-    longitude = -4.2583;
+    # F2: lat/lon (55.8617/-4.2583) equal current-location.nix:26-34 defaults — keep only IANA timeZone
+    timeZone = "Europe/London";
   };
 
   # ── Partition Layout (existing, DO NOT REPARTITION)
@@ -996,22 +996,16 @@
       };
     };
     my.programs = {
+      # F10-desktop: discord/firefox/obsidian/thunderbird/vscode already mkDefault'd by
+      # homeProfiles.desktop (profiles/home/config.nix:26-38) — only genuinely per-host
+      # extras kept below.
       squidProxyClient = {
         enable = true;
         proxyPasswordFile = config.age.secrets."squid-htpasswd".path;
       };
-      discord.enable = true;
       localsend.enable = true;
-      firefox.enable = true;
-      obsidian.enable = true;
-      thunderbird.enable = true;
-      vscode.enable = true;
       "whatsapp-electron".enable = true;
       "youtube-music".enable = true;
-      thunderbird = {
-        email = flake.config.me.email;
-        username = flake.config.me.username;
-      };
     };
 
     # GNOME-specific extras removed: host-info extension (broken/unused),
