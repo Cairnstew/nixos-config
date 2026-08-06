@@ -260,6 +260,12 @@ in
     # Override when: WSL instances (use Windows OpenSSH) or isolated systems
     services.ssh.enable = lib.mkDefault true;
 
+    # F12: single source of truth for authorizedKeys — hosts inherit this
+    # mkDefault; server adds its extra key via same-priority mkDefault
+    # (types.listOf merges by concatenation, so both keys survive).
+    # mkDefault so hosts can still fully override with a plain assignment.
+    services.ssh.authorizedKeys = lib.mkDefault [ flake.config.me.sshKey ];
+
     # Memory/CPU pressure hardening: zram swap + oomd + OOM-protected
     # SSH-critical services. mkDefault so hosts can tune or disable.
     # Override when: Minimal containers or systems where the box's memory

@@ -230,10 +230,11 @@
   };
 
   # ── SSH Access ──────────────────────────────────────────────────────────
-  my.services.ssh.authorizedKeys = [
-    flake.config.me.sshKey
-    "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIGEp55lp8743MYUsvmZ4XXnhvJ7c5GQDQzIg9GQzWPbg sean.cairnsst@gmail.com" # desktop
-  ];
+  # F12: extra key only — me.sshKey is inherited from common.nix mkDefault.
+  # Must stay lib.mkDefault: a plain assignment would override common's
+  # mkDefault and LOSE me.sshKey; same-priority mkDefaults merge via
+  # types.listOf concatenation → [ me.sshKey "desktop-key" ].
+  my.services.ssh.authorizedKeys = lib.mkDefault [ "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIGEp55lp8743MYUsvmZ4XXnhvJ7c5GQDQzIg9GQzWPbg sean.cairnsst@gmail.com" ]; # desktop
 
   # Temporary console password for initial recovery.
   # Remove this line after first SSH login.

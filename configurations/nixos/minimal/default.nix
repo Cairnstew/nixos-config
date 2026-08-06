@@ -29,5 +29,5 @@
     longitude = -97.7431;
   };
 
-  my.services.ssh.authorizedKeys = [ flake.config.me.sshKey ];
+  # F12: authorizedKeys inherited from common.nix mkDefault (single source of truth)
 }

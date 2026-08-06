@@ -365,7 +365,7 @@
   my.services.emailAlerts.enable = true;
 
   # ── SSH Access
-  my.services.ssh.authorizedKeys = [ flake.config.me.sshKey ];
+  # F12: authorizedKeys inherited from common.nix mkDefault (single source of truth)
 
   # ── Data Volume (sdb — 500GB SATA SSD) ────────────────────────────────
   # sdb → /mnt/data, ext4, Docker + Ollama data
