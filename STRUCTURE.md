@@ -146,7 +146,7 @@ NixOS system modules. Import `nixosModules.common` to get the base profile syste
 | `audio/` | PipeWire audio stack with ALSA, PulseAudio compat, Bluetooth codecs, WirePlumber |
 | `battery/` | Power management for laptops: auto-cpufreq, thermald, lid switch, suspend |
 | `gnome/` | GNOME desktop environment with GDM, dconf settings, fonts, home-manager integration |
-| `hyprland/` | Hyprland Wayland compositor with modular submodules (core, bar, launcher, notifications, lockscreen, screenshot, clipboard, portal, display-manager, audio, utilities, nvidia, idle, colorpicker, night-light, pyprland, awww, wallpapers, wallpaper) |
+| `hyprland/` | Hyprland Wayland compositor with modular submodules (core, bar, launcher, notifications, lockscreen, screenshot, clipboard, portal, display-manager, audio, utilities, nvidia, idle, colorpicker, night-light, pyprland, wallpapers) <!-- standalone awww + singular wallpaper submodules removed, recon M3/M4 --> |
 | `monitors/` | Universal declarative monitor layout consumed by desktop environments |
 | `graphics/` | GPU and graphics driver configuration (NVIDIA, AMD, Mesa, Vulkan) |
 | `stylix/` | Stylix theming framework integration — wires `me.colorScheme` to stylix.base16Scheme |

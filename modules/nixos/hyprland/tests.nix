@@ -81,10 +81,9 @@ in
       assertion = !cfg.enable || !cfg.idle.enable || cfg.lockscreen.enable;
       message = "my.desktop.hyprland.lockscreen must be enabled for idle to lock the screen.";
     }
-    {
-      assertion = !cfg.enable || !cfg.wallpapers.enable || !cfg.awww.enable;
-      message = "Cannot enable both wallpapers and standalone awww module. Use wallpapers.backend = \"awww\" instead.";
-    }
+    # The standalone awww submodule was removed (recon M3) — it duplicated the
+    # awww-daemon unit from ./wallpapers. awww is now configured exclusively via
+    # wallpapers.backend = "awww"; the assertion that forbade enabling both is gone.
     {
       assertion = !cfg.enable || !wpCfg.enable || (wpCfg.focused >= 0.0 && wpCfg.focused <= 1.0);
       message = "my.desktop.hyprland.core.windowOpacity.focused (${toString wpCfg.focused}) must be between 0.0 and 1.0.";
@@ -191,8 +190,8 @@ in
             ${lib.optionalString (cfg.wallpapers.enable && cfg.wallpapers.backend == "swaybg") (mkBinaryCheck "swaybg" "${pkgs.swaybg}/bin/swaybg")}
             ${lib.optionalString (cfg.wallpapers.enable && cfg.wallpapers.backend == "mpvpaper") (mkBinaryCheck "mpvpaper" "${pkgs.mpvpaper}/bin/mpvpaper")}
             ${lib.optionalString (cfg.wallpapers.enable && cfg.wallpapers.backend == "waypaper") (mkBinaryCheck "waypaper" "${pkgs.waypaper}/bin/waypaper")}
-            ${lib.optionalString cfg.awww.enable (mkBinaryCheck "awww" "${pkgs.awww}/bin/awww")}
-            ${lib.optionalString cfg.awww.enable (mkBinaryCheck "awww-daemon" "${pkgs.awww}/bin/awww-daemon")}
+            # standalone cfg.awww.enable binary checks removed (recon M3) — awww
+            # binaries are checked above via wallpapers.backend == "awww".
 
             # Bar config validation
             if [ "${toString cfg.bar.enable}" = 1 ]; then
@@ -458,8 +457,8 @@ in
             ${lib.optionalString (cfg.wallpapers.enable && cfg.wallpapers.backend == "swaybg") (mkBinaryCheck "swaybg" "${pkgs.swaybg}/bin/swaybg")}
             ${lib.optionalString (cfg.wallpapers.enable && cfg.wallpapers.backend == "mpvpaper") (mkBinaryCheck "mpvpaper" "${pkgs.mpvpaper}/bin/mpvpaper")}
             ${lib.optionalString (cfg.wallpapers.enable && cfg.wallpapers.backend == "waypaper") (mkBinaryCheck "waypaper" "${pkgs.waypaper}/bin/waypaper")}
-            ${lib.optionalString cfg.awww.enable (mkBinaryCheck "awww" "${pkgs.awww}/bin/awww")}
-            ${lib.optionalString cfg.awww.enable (mkBinaryCheck "awww-daemon" "${pkgs.awww}/bin/awww-daemon")}
+            # standalone cfg.awww.enable binary checks removed (recon M3) — awww
+            # binaries are checked above via wallpapers.backend == "awww".
 
             # Bar config validation
             if [ "${toString cfg.bar.enable}" = 1 ]; then
