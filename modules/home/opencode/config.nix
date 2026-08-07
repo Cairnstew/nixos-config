@@ -240,6 +240,24 @@ in
             mode = "primary";
             permission = { edit = "allow"; bash = "allow"; };
           };
+          researcher = {
+            description = "In-depth web researcher — fetches and cross-references online docs, articles, and specifications";
+            mode = "subagent";
+            temperature = 0.2;
+            prompt = builtins.readFile ./agents/researcher.md;
+            permission = {
+              webfetch = "allow";
+              read = "allow";
+              glob = "allow";
+              grep = "allow";
+              list = "allow";
+              question = "allow";
+              # Read-only everywhere except its own definition file, so the
+              # optional self-improvement pass (SELF_IMPROVE=true) can update it.
+              edit = { "*agents/researcher.md" = "allow"; };
+              bash = "deny";
+            };
+          };
         };
         tools = lib.mkDefault {
           tailscale-manager = ./tools/tailscale-manager.ts;

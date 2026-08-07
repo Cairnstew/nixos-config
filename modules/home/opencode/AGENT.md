@@ -24,7 +24,12 @@ modules/home/opencode/
 ├── providers.md     # Provider documentation
 ├── tests.nix        # Module tests
 ├── README.md        # Human documentation
-└── AGENT.md         # This file
+├── AGENT.md         # This file
+├── agents/          # Custom agent prompt definitions (researcher.md)
+├── commands/        # Custom slash-command definitions (nix-refine.md, ...)
+├── skills/          # Custom skill definitions
+├── plugins/         # Local opencode plugins
+└── tools/           # Local MCP tool definitions
 ```
 
 ---
@@ -109,6 +114,9 @@ Skills should follow the [OpenCode skills documentation](https://opencode.ai/doc
 2. **Prefer local models**: Ollama for privacy-sensitive work
 3. **Use skills for repo patterns**: Document conventions in skills
 4. **Agent permissions**: Restrict `plan`/`explore` agents, allow `build`
+5. **Self-improving agents**: Agent prompts that want to learn from runs use the
+   `SELF_IMPROVE` toggle + RUN LOG pattern (see `agents/researcher.md`, mirroring
+   `commands/nix-refine.md`); scope `edit` permission to the agent's own file.
 
 ---
 
@@ -120,6 +128,16 @@ missing — grounded in what actually happened this session or exists in the rep
 now, never aspirational. Record each applied change in the RUN LOG below.
 
 ## RUN LOG
+
+### 2026-08-07 — moved researcher agent into the module as a self-improving prompt
+- Lesson: the `researcher` subagent lived only in the project-level
+  `.opencode/opencode.json` (inline read-only prompt), inconsistent with every
+  other agent being defined in `my.programs.opencode.agents`. It had no way to
+  learn from runs, unlike the self-improving command files.
+- Fix: added `agents/researcher.md` (research guidelines + `SELF_IMPROVE`
+  toggle + RUN LOG, mirroring `nix-refine`), wired it as
+  `my.programs.opencode.agents.researcher` with `edit` scoped to its own file,
+  and removed the now-duplicate `.opencode/opencode.json`.
 
 ### 2026-08-05 — added self-improvement protocol
 - Lesson: this file had no mechanism for sessions to record guidance fixes, so
