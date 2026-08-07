@@ -116,6 +116,13 @@ path, so `get_dependents("modules/nixos/common.nix")` is always `[]` regardless 
 the module under study is imported through the flake alias, grep (`grep -rln "nixosModules.common"`)
 is the required cross-check, not optional.
 
+Also known (confirmed 2026-08-07): the extractor's v1 scope (a hardcoded ~125-file list in
+`tools/nix-graph/extract.py:42` `V1_SCOPE`) **excludes all of `modules/flake-parts/`**, so
+`get_dependents("modules/flake-parts/ventoy")`, `…/live-iso`, `…/packages` return `[]` regardless
+of freshness — out of scope, not missing. Likewise the graph's `MKFORCE_ON` edge count (~14) is an
+in-scope lower bound, far below the whole-repo `grep mkForce` count (~43). Cross-check any
+flake-parts or mkForce-count claim with grep before acting.
+
 Also known (confirmed 2026-08-03): `nix-graph_node_info` matches by suffix, so querying
 `module:nixos/tailscale` returns the `.default` sub-node, not a directory-level node. Don't assume
 `node_info` on a bare module path returns a single canonical node — check which sub-node came back
@@ -148,6 +155,14 @@ a dirty tree at task-start makes it impossible to attribute a bad dry-activate t
 that caused it (see GOTCHAS.md: "Generations built from an uncommitted (dirty) working tree are
 hard to diagnose retroactively", ~GOTCHAS:345). It also makes builder worktree merges
 refuse (see "Merge pitfalls" below) — a clean tree keeps the merge path simple.
+
+Also check `.git/objects` ownership once before spawning builders (confirmed 2026-08-07): prior
+`sudo`-run tooling can leave root-owned loose objects in the shared object DB, and a builder's
+`git commit` then dies with "insufficient permission for adding an object to repository database
+.git/objects" mid-wave. Fix up front:
+```bash
+sudo find .git/objects -not -user "$(whoami)" -exec chown "$(whoami)":"$(id -gn)" {} +
+```
 
 > This is the opposite of `nix-doc-audit`, which *targets* dirty `.md` files. Refactoring requires
 > a clean baseline so each task's changes — and any regression — are attributable to that task
@@ -261,6 +276,12 @@ front with `team_tasks_add`. **Use the returned IDs for `depends_on` — do not 
 > no builder can claim it. If that happens, tell the builders to proceed **without claiming** and
 > use `team_tasks_complete` on the tasks once the owning teammate is done. The table is
 > illustrative; treat the returned IDs as authoritative.
+>
+> **Board bookkeeping is advisory, not authoritative (confirmed 2026-08-07):** `team_tasks_complete`
+> and `team_claim` can themselves return "Task not found" for a valid board ID (one builder failed,
+> a sibling succeeded on the same run). Do not stall the run on board state — the per-task git
+> history is the authoritative progress tracker; the lead marks tasks done when it merges each
+> commit, and a "Task not found" is recorded as a NOTE, not a blocker.
 
 | Task key (label) | Description | depends_on (real IDs) |
 |------------------|-------------|------------|
@@ -335,7 +356,11 @@ created up front.
 > because it was idle when the crash hit, and its files were reclaimed by `cp` from the worktree.
 > Recovery playbook: check `git worktree list` + `git status --porcelain` in each surviving
 > worktree, `cp` any intended edits into the main tree, verify, commit as that task. Do not assume
-> a preserved branch contains the work — check its `git log` for a real commit first.
+> a preserved branch contains the work — check its `git log` for a real commit first. (d)
+> **External PR merges can land mid-run** (confirmed 2026-08-07: PRs #73-#77 from Cairnstew/server
+> merged while builders were active). Tree stayed clean and flake check passed, but re-check
+> `git status --porcelain` before each new wave and before the verifier, so an interleaved merge
+> can't be misattributed to a task.
 
 If any teammate stalls or errs: message it directly first; `team_shutdown --force` only as a last
 resort; record the disruption in the final report.
@@ -493,7 +518,7 @@ task-to-finding grounding** — the recon findings themselves can be wrong:
 - Confirm no two parallel-safe tasks share a touched file (the Parallel-safe flag).
 - **Re-verify every option/namespace/freeform claim before spawning a builder.** Confirmed
   2026-08-06, twice: (a) a scout + planner both claimed `workstation.nix` tailscale.enable was a
-  dup of `common.nix:274` — but common.nix sets the NixOS-native `services.tailscale`, not the
+  dup of `common.nix:285` — but common.nix sets the NixOS-native `services.tailscale`, not the
   module option `my.services.tailscale` (a `mkEnableOption` defaulting to `false`); the plan would
   have disabled tailscale on all workstation hosts. (b) a plan wanted to promote
   `settings.server.backupInterval` to a module default, but it is a **freeform HOCON field**
@@ -501,11 +526,20 @@ task-to-finding grounding** — the recon findings themselves can be wrong:
   because the lead `grep`-ed the real option declaration + host config before spawning. For any
   task that moves/removes/re-defaults an option, `grep -n` the option's declaration and every host
   that sets it before the builder starts.
+- **For "redundant because of the default" claims, `nix eval` the value at base AND after — grep
+  is not enough.** Confirmed 2026-08-07: recon K1 claimed
+  `boot.loader.efi.canTouchEfiVariables = true` was redundant because "NixOS upstream default is
+  already true" — wrong, the nixpkgs default is `false`. The disko `mkDefault` that would cover it
+  (modules/nixos/disko/config.nix:126) is gated behind `my.disko.dualBoot.enable`, which no host
+  sets, so the "redundant" lines were load-bearing: eval flipped `true`→`false` on
+  laptop/desktop/minimal and required a `git revert`. When a scout/planner claims an assignment
+  duplicates a default, `nix eval .#nixosConfigurations.<host>.config.<option>` at base, apply the
+  change, and eval again — the value must be identical.
 - **Also re-verify the FIX MECHANISM, not just the fact** (confirmed 2026-08-07). Recon H1 noted
   desktop's plain `systemPackages` assignment drops workstation's `mkDefault` list, and the planned
   fix was `lib.mkAfter` on the desktop host. Builder b-t1's sandbox test showed `mkDefault[A] +
   mkAfter[B] → [B]` for list types: the mkDefault is dropped by ANY plain priority-1000 assignment
-  (common.nix:444 has one), so the desktop-side mkAfter was behavior-neutral and the real fix was
+  (common.nix:449 has one), so the desktop-side mkAfter was behavior-neutral and the real fix was
   workstation.nix `mkDefault` → `mkAfter` (lead re-scoped T1 → T1b). Lesson: when a task's fix
   depends on Nix module-system priority semantics (mkDefault/mkAfter/mkForce), verify the *merge
   outcome* before spawning — and if a builder's investigation invalidates a task's approach, let
@@ -577,7 +611,7 @@ Full output is written to a log file; paste the tail plus the log path:
 mkdir -p /tmp/opencode/refine/<task-id>
 for host in $(ls configurations/nixos/ | grep -v ventoy-deploy); do
   echo "=== $host ===" | tee -a /tmp/opencode/refine/<task-id>/dry-activate.log
-  nixos-rebuild dry-activate --flake ".#$host" --fast \
+  sudo nixos-rebuild dry-activate --flake ".#$host" --fast \
     > /tmp/opencode/refine/<task-id>/dry-activate-$host.log 2>&1
   tail -20 /tmp/opencode/refine/<task-id>/dry-activate-$host.log
 done
@@ -610,8 +644,11 @@ line refs updated 2026-08-07: the `desktop` dry-activate fails at a pre-existing
 404 — `curl: (22) ... error: 404` on a pinned archive tarball. The exact pinned rev that fails
 drifts as the extension block moves: 2026-08-06 it was rev `9c3aa6686289bdcf26e7664a4dc18a777215108b`
 (Extension-WebSearch, then `desktop/default.nix:721`); 2026-08-07 it was rev
-`4225ff5d5078e4fc583d3e92d3cf78f487da715c` (Extension-Idle, now `desktop/default.nix:647`, with the
-WebSearch block at `:651-656`). This is unrelated to any refactor task: the config/eval stage passes
+`4225ff5d5078e4fc583d3e92d3cf78f487da715c` (Extension-Idle, then `desktop/default.nix:647`). As of
+2026-08-07 (post-run merges) the blocks sit at `desktop/default.nix:639-647` (Idle rev at `:644`)
+and `:648-656` (WebSearch rev at `:653`); the failing revs drift as the extension list moves, so
+re-grep (`grep -n "Extension-Idle\|Extension-WebSearch" configurations/nixos/desktop/default.nix`)
+before confirming. This is unrelated to any refactor task: the config/eval stage passes
 and the failure is in the build phase of an input. When a builder or the verifier hits it, treat
 **eval-stage pass as the bar for desktop**, confirm the root cause is the SillyTavern 404 (a
 `curl: (22) error: 404` on a `github.com/SillyTavern/SillyTavern/archive/...tar.gz` source — not a
@@ -683,7 +720,7 @@ once more yourself:
 
 ```bash
 for host in $(ls configurations/nixos/ | grep -v ventoy-deploy); do
-  nixos-rebuild dry-activate --flake ".#$host" --fast 2>&1 | tail -5
+  sudo nixos-rebuild dry-activate --flake ".#$host" --fast 2>&1 | tail -5
 done
 ```
 
@@ -861,7 +898,7 @@ each entry must still describe a real event.
 - Lesson: Recon H1 diagnosed desktop's plain `systemPackages` as overriding workstation's `mkDefault`
   and the plan fixed the desktop host with `lib.mkAfter`. Builder b-t1's sandbox lib test proved
   `mkDefault[A] + mkAfter[B] → [B]` — for list types the mkDefault is dropped by ANY plain
-  priority-1000 assignment (common.nix:444), so the desktop-side change was behavior-neutral; the
+  priority-1000 assignment (common.nix:449), so the desktop-side change was behavior-neutral; the
   real fix was workstation.nix `mkDefault → mkAfter`. The lead re-scoped T1→T1b after the builder's
   investigation (a correct re-scope). Also this run: non-root `nixos-rebuild dry-activate` fails at
   the final systemd-run step with "interactive authentication" — eval-stage pass + toplevel
@@ -876,5 +913,23 @@ each entry must still describe a real event.
   model (not just staleness); the "GRUB rollback incident" GOTCHAS ref now points to the real
   dirty-tree entry; the root-owned `tools/nix-graph/` claim updated to reflect the post-T14
   ownership split; and the ventoy-deploy exclusion noted as defensive (it's a package, not a host).
+
+### 2026-08-07 — T4 regression proved grep-only verification insufficient; dry-activate loops now sudo
+- Lesson: Recon K1 claimed `boot.loader.efi.canTouchEfiVariables = true` was "redundant because the
+  NixOS default is already true" — factually wrong (nixpkgs default is `false`). The disko mkDefault
+  that would cover it (modules/nixos/disko/config.nix:126) is gated behind `my.disko.dualBoot.enable`,
+  which no host sets, so the removed lines were load-bearing and eval flipped `true`→`false` on
+  laptop/desktop/minimal. The lead's grep of the option declaration did not catch it; only the
+  verifier's `nix eval` before/after did → required `git revert 96e324a`. Also this run: three
+  builders hit polkit "interactive authentication" running the dry-activate loop unsudoed
+  (passwordless sudo works); b-t7's commit died on root-owned `.git/objects`; `team_tasks_complete`
+  returned "Task not found" for a valid board ID; the extractor's v1 scope excludes all of
+  `modules/flake-parts/`; and external PRs (#73-#77) merged mid-run without breaking the tree.
+- Fix: Phase 2 lead verification now requires `nix eval` at base AND after for any "redundant
+  because of the default" claim. Both dry-activate loops (Phase 3 Step 4 + Phase 4 lead) now run
+  `sudo nixos-rebuild dry-activate`. R-pre checks `.git/objects` ownership up front. Added the
+  board-API-is-advisory note, the flake-parts v1-scope exclusion note, an external-merge mid-run
+  note to Merge pitfalls, and refreshed the SillyTavern + common.nix stale line refs. Kept the
+  `checks.x86_64-linux.build-<host>` fallback (verified it exists: build-desktop/laptop/…).
 
 # END OF COMMAND
