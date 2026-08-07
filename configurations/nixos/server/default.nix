@@ -241,10 +241,6 @@
   # types.listOf concatenation → [ me.sshKey "desktop-key" ].
   my.services.ssh.authorizedKeys = lib.mkDefault [ "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIGEp55lp8743MYUsvmZ4XXnhvJ7c5GQDQzIg9GQzWPbg sean.cairnsst@gmail.com" ]; # desktop
 
-  # Temporary console password for initial recovery.
-  # Remove this line after first SSH login.
-  users.users.seanc.initialPassword = "changeme123";
-
   # ── Unfree Software (allowUnfree set globally in flake.nix) ────────────
   nixpkgs.config = {
     # allowUnfree removed — globally set in flake.nix perSystem (M4d)
