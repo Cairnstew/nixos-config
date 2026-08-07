@@ -5,9 +5,8 @@
 { config, pkgs, ... }:
 
 {
-  imports = [
-    ./hardware-configuration.nix
-  ];
+  # T4: empty imports block removed (recon H10) — hardware-configuration.nix
+  # is imported by default.nix, not here (duplicate import was dead).
 
   # ── Bootloader: GRUB with EFI ──────────────────────────────────────────
   # UEFI-only system. Installed as removable so EFI vars aren't touched
