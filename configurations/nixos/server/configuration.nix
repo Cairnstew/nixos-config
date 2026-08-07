@@ -22,7 +22,10 @@
   boot.kernelParams = [ "panic=10" ];
 
   # ── Locale ─────────────────────────────────────────────────────────────
+  # en_GB is also generated so remote clients (desktop's LANG=en_GB.UTF-8)
+  # can run mosh-server, which hard-requires the client locale to exist.
   i18n.defaultLocale = "en_US.UTF-8";
+  i18n.supportedLocales = [ "en_US.UTF-8/UTF-8" "en_GB.UTF-8/UTF-8" ];
   i18n.extraLocaleSettings = {
     LC_ADDRESS = "en_US.UTF-8";
     LC_IDENTIFICATION = "en_US.UTF-8";
