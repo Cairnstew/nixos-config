@@ -4,6 +4,10 @@ let
 
   serverCfg = config.my.services.suwayomi;
 
+  # GraphQL API is served under settings.server.webUISubpath (e.g. "/suwayomi").
+  # When unset/empty the API is at the root path, so this degrades to "".
+  webUISubpath = serverCfg.settings.server.webUISubpath or "";
+
   exportPkg = pkgs.writeShellApplication {
     name = "suwayomi-sync-export";
     runtimeInputs = with pkgs; [ curl jq git coreutils gnused diffutils tailscale ];
@@ -20,10 +24,12 @@ let
         TS_IP=$(tailscale ip -4 2>/dev/null) && BIND_IP="$TS_IP"
       ''}
       BASE="http://$BIND_IP:$PORT"
+      # API is served under settings.server.webUISubpath (e.g. /suwayomi); empty → root
+      API_BASE="$BASE${webUISubpath}"
 
       # 1. Fire mutation to create filtered backup
       # shellcheck disable=SC2016
-      RESPONSE=$(curl -s -X POST "$BASE/api/graphql" \
+      RESPONSE=$(curl -s -X POST "$API_BASE/api/graphql" \
         -H "Content-Type: application/json" \
         -d '{"query":"mutation($input: CreateBackupInput!) { createBackup(input: $input) { url } }","variables":{"input":{"flags":{"includeManga":true,"includeCategories":true,"includeChapters":false,"includeTracking":true,"includeHistory":true,"includeClientData":false,"includeServerSettings":false}}}}')
 
@@ -33,9 +39,10 @@ let
         exit 1
       fi
 
-      # 2. Download the backup file
+      # 2. Download the backup file (createBackup returns an API-relative path, so
+      #    it must be prefixed with API_BASE too)
       TMPFILE=$(mktemp)
-      curl -s -o "$TMPFILE" "$BASE$URL"
+      curl -s -o "$TMPFILE" "$API_BASE$URL"
 
       # 3. Compare with existing file
       if [ -f "$REPO/$DEST" ] && cmp -s "$TMPFILE" "$REPO/$DEST"; then

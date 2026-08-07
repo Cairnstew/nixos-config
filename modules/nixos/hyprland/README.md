@@ -92,9 +92,10 @@ Set `parent.enable = true` to enable all default submodules. Each can be overrid
 | | `temperature` | int | `3500` | Color temperature in Kelvin |
 | `pyprland` | `enable` | bool | `false` | Pyprland IPC plugins (scratchpads, expose, etc.) |
 | | `plugins` | list | `[]` | Plugin names to enable |
-| `awww` | `enable` | bool | `false` | Standalone awww (use `wallpapers.backend = "awww"` instead) |
-| `wallpaper` | `enable` | bool | `false` | Legacy hyprpaper daemon submodule (singular; superseded by `wallpapers`) |
-| | `images` | `[path]` | `[]` | Wallpaper image paths to preload and set |
+
+<!-- awww + singular wallpaper submodule rows removed (recon M3/M4): standalone awww
+     and legacy hyprpaper-daemon submodules were deleted; awww is configured via
+     wallpapers.backend = "awww" and wallpapers owns all wallpaper backends. -->
 
 ## Per-Monitor Configuration
 

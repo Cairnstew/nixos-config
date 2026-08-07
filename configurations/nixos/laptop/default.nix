@@ -71,19 +71,12 @@
 
   # ── Home Manager Extra ───────────────────────────────────────────────────
   my.homeManager.extraConfig.my.programs = {
-    discord.enable = true;
+    # T2: discord/firefox/spotify/obsidian/thunderbird/vscode already mkDefault'd by
+    # homeProfiles.desktop (profiles/home/config.nix:26-38) — only genuinely per-host
+    # extras kept below.
     localsend.enable = true;
-    firefox.enable = true;
-    spotify.enable = true;
-    obsidian.enable = true;
-    thunderbird.enable = true;
-    vscode.enable = true;
     "whatsapp-electron".enable = true;
     "youtube-music".enable = true;
-    thunderbird = {
-      email = flake.config.me.email;
-      username = flake.config.me.username;
-    };
   };
 
   my.homeManager.extraConfig.my.programs.direnv.secretFiles.spotify = {

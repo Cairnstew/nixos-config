@@ -22,7 +22,8 @@
     "my.desktop.hyprland.colorpicker"
     "my.desktop.hyprland.nightLight"
     "my.desktop.hyprland.pyprland"
-    "my.desktop.hyprland.awww"
+    # "my.desktop.hyprland.awww" removed (recon M3): standalone awww submodule
+    # deleted — awww is provided by my.desktop.hyprland.wallpapers.
   ];
   expects = [ "my.monitors" ];
   complexity = "complex";

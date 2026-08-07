@@ -19,7 +19,8 @@ in
       audio.enable = mkDefault true;
       utilities.enable = mkDefault true;
       nvidia.enable = mkDefault false;
-      awww.enable = mkDefault false;
+      # awww.enable removed (recon M3): the standalone awww submodule was
+      # deleted; awww is configured via wallpapers.backend = "awww".
     };
   };
 }

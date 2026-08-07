@@ -17,7 +17,9 @@
     ./colorpicker
     ./night-light
     ./pyprland
-    ./awww
+    # standalone ./awww submodule removed (recon M3) — awww is provided by
+    # ./wallpapers via wallpapers.backend = "awww"; the standalone module
+    # duplicated the awww-daemon unit.
     ./wallpapers
     ./options.nix
     ./enable.nix
