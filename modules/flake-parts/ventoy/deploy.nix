@@ -1,6 +1,7 @@
 { config, lib, inputs, ... }:
 let
-  vCfg = config.ventoy;
+  # flake-parts my.* namespace (renamed from config.ventoy)
+  vCfg = config.my.ventoy;
 
   # Collect ventoy-tagged live ISOs from all NixOS host configs.
   hostVentoyIsos = builtins.foldl'

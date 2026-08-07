@@ -1,6 +1,7 @@
 { config, lib, ... }:
 let
-  vCfg = config.ventoy;
+  # flake-parts my.* namespace (renamed from config.ventoy)
+  vCfg = config.my.ventoy;
 
 in
 {

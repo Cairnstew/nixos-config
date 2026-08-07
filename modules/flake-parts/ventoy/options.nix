@@ -325,7 +325,8 @@ let
 
 in
 {
-  options.ventoy = {
+  # my.* namespace convention (renamed from options.ventoy)
+  options.my.ventoy = {
     _internal = {
       pluginNames = mkOption {
         type = types.listOf types.str;

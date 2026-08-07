@@ -4,7 +4,8 @@ let
   isoSettingsSubmodule = (import ../../nixos/live-iso/submodule.nix { inherit lib; }).isoSettingsSubmodule;
 in
 {
-  options.live = {
+  # my.* namespace convention (renamed from options.live)
+  options.my.live = {
     isos = mkOption {
       type = types.attrsOf isoSettingsSubmodule;
       default = { };
