@@ -4,8 +4,13 @@ description: Refactor the NixOS flake config — deduplicate, modularise, apply 
 
 You are the **lead** of a refactoring team working inside the nixos-config repo. You orchestrate a
 team of parallel agents via the opencode-ensemble plugin; you do not do the task work yourself.
-This command assumes you have already run `nix-map` to produce an architecture audit. If you don't
-have one, stop and run `nix-map` first.
+This command assumes you have already run `nix-map` to produce an architecture audit. Note that
+`nix-map` is a **read-only** ensemble that persists nothing (its output is a team_message report,
+not a file) — so "having one" means a prior `nix-map` run in this session or a genuinely fresh
+architecture picture. Confirmed 2026-08-07: with no persisted audit available, the run proceeded by
+folding the architecture audit (host/module/duplication mapping) into the recon phase — the
+`recon-*` scouts subsume nix-map's M1-M5 axes. If a saved audit exists, hand it to the planner;
+otherwise let recon produce it.
 
 The team maps the target, plans the refactor, executes parallel-safe tasks, and verifies the
 result. **The team — not the human — decides which changes to make.** Per-task diffs are reviewed by
@@ -34,7 +39,10 @@ workflow before starting.
 - **One task, one commit.** No task's changes are committed alongside another task's. No commit
   happens without a passing dry-activate (or eval) for that task.
 - `ventoy-deploy` is excluded from any `nixos-rebuild dry-activate` loop (known OOM issue — use
-  `nix derivation show .#checks.x86_64-linux.build-<host>` instead if it needs checking).
+  `nix derivation show .#checks.x86_64-linux.build-<host>` instead if it needs checking). Note
+  (confirmed 2026-08-07): `ventoy-deploy` is a *package* output (`modules/flake-parts/ventoy/deploy.nix`),
+  never a `nixosConfiguration`, so `grep -v ventoy-deploy` in the host loop filters nothing in
+  practice — the exclusion is defensive, not active.
 
 ---
 
@@ -101,6 +109,13 @@ path. Querying `modules/nixos/tailscale` also returns `modules/nixos/tailscale-w
 sibling, not a dependent. Any use of `get_dependents` output in a refactor plan must filter to
 exact path-segment matches before acting on it.
 
+Also known (confirmed 2026-08-07): `get_dependents` on a module imported via
+`flake.inputs.self.nixosModules.*` returns `[]` **by graph model, not just staleness** — hosts that
+import common.nix through the flake alias resolve to the `external:` node, never back to the local
+path, so `get_dependents("modules/nixos/common.nix")` is always `[]` regardless of freshness. When
+the module under study is imported through the flake alias, grep (`grep -rln "nixosModules.common"`)
+is the required cross-check, not optional.
+
 Also known (confirmed 2026-08-03): `nix-graph_node_info` matches by suffix, so querying
 `module:nixos/tailscale` returns the `.default` sub-node, not a directory-level node. Don't assume
 `node_info` on a bare module path returns a single canonical node — check which sub-node came back
@@ -110,10 +125,13 @@ before using its fields.
 `tools/nix-graph/graph.json` had been stale for a month (pre-F5, mkForce line refs off by several
 lines, profile dependents missing). Any plan built on its answers should be cross-checked against
 `grep`/`nix eval` before acting. Rebuilding per `tools/nix-graph/README.md` (extract.py →
-build_graph.py) requires **sudo**: the whole `tools/nix-graph/` dir is root-owned from prior runs
-under sudo, so a plain run dies with `PermissionError` writing `extraction-result.json`. Run it as
-`sudo -n nix shell nixpkgs#python3 ... -c '<extract+build commands>'`. Note the graph.json is
-committed as root-owned; that is pre-existing state.
+build_graph.py) requires **sudo**: as of 2026-08-06 the `.py`/`.md` sources in `tools/nix-graph/`
+are root-owned from prior runs under sudo, so a plain run dies with `PermissionError` writing
+`extraction-result.json`. Run it as `sudo -n nix shell nixpkgs#python3 ... -c '<extract+build
+commands>'`. Updated 2026-08-07: the dir itself and the two output JSONs (`graph.json`,
+`extraction-result.json`) are now seanc-owned after the T14 (2026-08-06) rebuild — only the
+`.py`/`.md` sources remain root-owned, so a rebuild that reuses the existing output paths may
+succeed without sudo. Check ownership with `ls -la tools/nix-graph/` before assuming.
 
 ---
 
@@ -127,7 +145,8 @@ git status --porcelain
 
 If this returns any output, stop and report it. Do not proceed until the tree is clean —
 a dirty tree at task-start makes it impossible to attribute a bad dry-activate to the task
-that caused it (see GOTCHAS.md: GRUB rollback incident). It also makes builder worktree merges
+that caused it (see GOTCHAS.md: "Generations built from an uncommitted (dirty) working tree are
+hard to diagnose retroactively", ~GOTCHAS:345). It also makes builder worktree merges
 refuse (see "Merge pitfalls" below) — a clean tree keeps the merge path simple.
 
 > This is the opposite of `nix-doc-audit`, which *targets* dirty `.md` files. Refactoring requires
@@ -273,10 +292,10 @@ created up front.
    `plan`), and spawn the parallel-safe builders in parallel (`build`, own worktree, `claim_task`
    their task). **Do NOT use `plan_approval: true`** — see the warning below. Each builder gets: its
    DECISION LOG row (the task spec), the shared rules, and the applicable rules from Phase 3.
-   **3b — memory waves:** if the R-pre memory check said RAM < 6G, spawn builders in waves of ≤ 4
-   and wait for each wave to merge (step 4) before spawning the next. Never spawn the full builder
-   roster at once on a constrained host — that is what OOMs the cgroup and gets teammates killed
-   mid-task.
+   **3b — memory waves:** always spawn builders in waves of 2, regardless of resting RAM (see
+   R-pre; the resting `free -h` number is not the real constraint). Wait for each wave to merge
+   (step 4) before spawning the next. Never spawn the full builder roster at once on a constrained
+   host — that is what OOMs the cgroup and gets teammates killed mid-task.
 4. As each builder reports done: `team_results`, `team_shutdown`, `team_merge`. **Inspect the
    merged diff before trusting it** — confirm it contains only that task's files and matches the
    DECISION LOG row. Then commit that task's changes yourself with the task-scoped message
@@ -482,6 +501,15 @@ task-to-finding grounding** — the recon findings themselves can be wrong:
   because the lead `grep`-ed the real option declaration + host config before spawning. For any
   task that moves/removes/re-defaults an option, `grep -n` the option's declaration and every host
   that sets it before the builder starts.
+- **Also re-verify the FIX MECHANISM, not just the fact** (confirmed 2026-08-07). Recon H1 noted
+  desktop's plain `systemPackages` assignment drops workstation's `mkDefault` list, and the planned
+  fix was `lib.mkAfter` on the desktop host. Builder b-t1's sandbox test showed `mkDefault[A] +
+  mkAfter[B] → [B]` for list types: the mkDefault is dropped by ANY plain priority-1000 assignment
+  (common.nix:444 has one), so the desktop-side mkAfter was behavior-neutral and the real fix was
+  workstation.nix `mkDefault` → `mkAfter` (lead re-scoped T1 → T1b). Lesson: when a task's fix
+  depends on Nix module-system priority semantics (mkDefault/mkAfter/mkForce), verify the *merge
+  outcome* before spawning — and if a builder's investigation invalidates a task's approach, let
+  the lead re-scope the task rather than forcing the original edit through.
 - If you disagree with any ruling: verify the disputed finding yourself (re-read the code /
   nix-graph). If you still disagree, record the reversal as **`OVERRIDE`** in the DECISION LOG with
   both positions, and include the override row in the owning builder's prompt. The human sees it in
@@ -568,15 +596,27 @@ If any host errors or nix-graph invariants are broken, revert the change immedia
 failure, and do not commit. `ventoy-deploy` is excluded from the dry-activate loop (known OOM
 issue).
 
-**Known pre-existing host failure — do NOT revert a good change over it.** Confirmed 2026-08-06:
-the `desktop` dry-activate fails at a pre-existing SillyTavern fetch 404 (pinned rev
-`9c3aa6686289bdcf26e7664a4dc18a777215108b` — `curl: (22) ... error: 404` on the archive tarball,
-`desktop/default.nix:721` "Extension-WebSearch"). This is unrelated to any refactor task: the
-config/eval stage passes and the failure is in the build phase of an input. When a builder or the
-verifier hits it, treat **eval-stage pass as the bar for desktop**, confirm the root cause is the
-SillyTavern 404 (not a config error from the task), and continue — do not revert. Log it as a NOTE
-in the final report. (A `nix flake update`/rev-bump is the eventual fix, outside this command's
-scope.)
+**Non-root dry-activate limitation (confirmed 2026-08-07):** when run as non-root (e.g. from a
+builder's worktree shell), `nixos-rebuild dry-activate` reaches full eval + toplevel derivation
+build but the final `systemd-run ... switch-to-configuration dry-activate` step fails with "Access
+denied as the requested operation requires interactive authentication" — a polkit/env limitation,
+NOT a config error. The reliable bar is **eval-stage pass + toplevel derivation build**; if the
+final systemd-run step fails only on interactive-auth, treat it as pass (`sudo nixos-rebuild
+dry-activate` can confirm). Add this note to builder prompts so they don't revert good changes over
+the auth failure.
+
+**Known pre-existing host failure — do NOT revert a good change over it.** Confirmed 2026-08-06,
+line refs updated 2026-08-07: the `desktop` dry-activate fails at a pre-existing SillyTavern fetch
+404 — `curl: (22) ... error: 404` on a pinned archive tarball. The exact pinned rev that fails
+drifts as the extension block moves: 2026-08-06 it was rev `9c3aa6686289bdcf26e7664a4dc18a777215108b`
+(Extension-WebSearch, then `desktop/default.nix:721`); 2026-08-07 it was rev
+`4225ff5d5078e4fc583d3e92d3cf78f487da715c` (Extension-Idle, now `desktop/default.nix:647`, with the
+WebSearch block at `:651-656`). This is unrelated to any refactor task: the config/eval stage passes
+and the failure is in the build phase of an input. When a builder or the verifier hits it, treat
+**eval-stage pass as the bar for desktop**, confirm the root cause is the SillyTavern 404 (a
+`curl: (22) error: 404` on a `github.com/SillyTavern/SillyTavern/archive/...tar.gz` source — not a
+config error from the task), and continue — do not revert. Log it as a NOTE in the final report.
+(A `nix flake update`/rev-bump is the eventual fix, outside this command's scope.)
 
 ### Step 5 — Commit in the worktree, then report
 
@@ -816,5 +856,25 @@ each entry must still describe a real event.
   lead source-check). Documented the root-owned `tools/nix-graph/` dir needing sudo for graph
   rebuild, the pre-existing `nix fmt` failures on 5 `templates/*.nix`, the MCP-vs-committed graph
   staleness, and the team-name collision (`nix-refine` stale archive → suffixed team).
+
+### 2026-08-07 — T1→T1b fix-semantics re-scope; non-root dry-activate bar; command-file self-corrections
+- Lesson: Recon H1 diagnosed desktop's plain `systemPackages` as overriding workstation's `mkDefault`
+  and the plan fixed the desktop host with `lib.mkAfter`. Builder b-t1's sandbox lib test proved
+  `mkDefault[A] + mkAfter[B] → [B]` — for list types the mkDefault is dropped by ANY plain
+  priority-1000 assignment (common.nix:444), so the desktop-side change was behavior-neutral; the
+  real fix was workstation.nix `mkDefault → mkAfter`. The lead re-scoped T1→T1b after the builder's
+  investigation (a correct re-scope). Also this run: non-root `nixos-rebuild dry-activate` fails at
+  the final systemd-run step with "interactive authentication" — eval-stage pass + toplevel
+  derivation build is the reliable bar, `sudo` to confirm. And the desktop SillyTavern 404's pinned
+  rev changed (now 4225ff5d at :647, not 9c3aa668 at :721).
+- Fix: Added the "re-verify the FIX MECHANISM, not just the fact" bullet to Phase 2 lead
+  verification (with the mkDefault/mkAfter merge semantics warning and the re-scope policy). Added
+  the non-root dry-activate limitation note to Phase 3 Step 4. Updated the SillyTavern known-failure
+  note to current line refs + both revs. Also fixed: nix-map prerequisite now notes its output is
+  ephemeral and can be folded into recon; the waves-of-2 vs waves-of-≤4 contradiction in 3b resolved
+  to always-waves-of-2; `get_dependents` returns `[]` for flake-alias-imported modules by graph
+  model (not just staleness); the "GRUB rollback incident" GOTCHAS ref now points to the real
+  dirty-tree entry; the root-owned `tools/nix-graph/` claim updated to reflect the post-T14
+  ownership split; and the ventoy-deploy exclusion noted as defensive (it's a package, not a host).
 
 # END OF COMMAND
