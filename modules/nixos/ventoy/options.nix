@@ -62,16 +62,5 @@ in
         };
       };
     };
-
-    hostIso = {
-      enable = mkOption {
-        type = types.bool;
-        default = false;
-        description = ''
-          Deprecated: The installer ISO is now defined via the live-iso system
-          (`live.isos.ventoy` in `modules/flake-parts/ventoy/config.nix`).
-        '';
-      };
-    };
   };
 }
