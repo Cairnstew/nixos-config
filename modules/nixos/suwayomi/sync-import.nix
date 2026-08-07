@@ -33,6 +33,8 @@ in
               TS_IP=$(tailscale ip -4 2>/dev/null) && BIND_IP="$TS_IP"
             ''}
             BASE="http://$BIND_IP:$PORT"
+            # API is served under settings.server.webUISubpath (e.g. /suwayomi); empty → root
+            API_BASE="$BASE${cfg.settings.server.webUISubpath or ""}"
 
             # 1. Pull latest from git (same auth pattern as export)
             if [ -f "${exportCfg.secretPath}" ] && [ -x "${pkgs.git}/bin/git" ]; then
@@ -57,7 +59,7 @@ in
               if [ "$NEW_HASH" = "$LAST_HASH" ]; then
                 echo "suwayomi-sync-import: backup unchanged — skipping import"
                 # Still refresh extension list from repos
-                curl -s -X POST "$BASE/api/graphql" \
+                curl -s -X POST "$API_BASE/api/graphql" \
                   -H "Content-Type: application/json" \
                   -d '{"query":"mutation { fetchExtensions(input: {}) { clientMutationId } }"}' > /dev/null 2>&1 || true
                 exit 0
@@ -68,7 +70,7 @@ in
             echo "suwayomi-sync-import: restoring backup..."
             RESTORE=""
             for i in $(${pkgs.coreutils}/bin/seq 1 10); do
-              RESTORE=$(curl -s -X POST "$BASE/api/graphql" \
+              RESTORE=$(curl -s -X POST "$API_BASE/api/graphql" \
                 -F "operations={\"query\":\"mutation(\$file: Upload!) { restoreBackup(input: { backup: \$file, flags: { includeManga: true, includeCategories: true, includeChapters: false, includeTracking: true, includeHistory: true, includeClientData: false, includeServerSettings: false } }) { status { state } } }\",\"variables\":{\"file\":null}}" \
                 -F "map={\"0\":[\"variables.file\"]}" \
                 -F "0=@$BACKUP_FILE;type=application/octet-stream" 2>&1) || true
@@ -86,7 +88,7 @@ in
 
             # 5. Refresh extension list from configured repos
             echo "suwayomi-sync-import: fetching extensions..."
-            curl -s -X POST "$BASE/api/graphql" \
+            curl -s -X POST "$API_BASE/api/graphql" \
               -H "Content-Type: application/json" \
               -d '{"query":"mutation { fetchExtensions(input: {}) { clientMutationId } }"}' > /dev/null 2>&1 || true
 
