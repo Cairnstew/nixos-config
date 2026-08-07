@@ -30,9 +30,10 @@ let
   # Merge ISOs from NixOS host configs and direct flake-parts config.
   # A "default" demo ISO is always available so users can immediately
   # run `nix build .#live-iso-default` without any host config.
-  allIsos = hostIsos // config.live.isos // lib.mapAttrs
+  # flake-parts my.* namespace (renamed from config.live.isos)
+  allIsos = hostIsos // config.my.live.isos // lib.mapAttrs
     (_: default: default)
-    (lib.filterAttrs (name: _: !(hostIsos ? name || config.live.isos ? name))
+    (lib.filterAttrs (name: _: !(hostIsos ? name || config.my.live.isos ? name))
       {
         default = {
           baseModule = "minimal";

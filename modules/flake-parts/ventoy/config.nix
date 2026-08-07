@@ -16,7 +16,8 @@ let
     (builtins.attrNames (config.flake.nixosConfigurations or { }));
 in
 {
-  ventoy = {
+  # my.* namespace convention (renamed from options.ventoy)
+  my.ventoy = {
     settings = {
       control = [
         { VTOY_DEFAULT_MENU_MODE = "0"; }

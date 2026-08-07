@@ -30,7 +30,6 @@
   my.profiles = {
     # Minimal profile for WSL
     minimal.enable = true;
-    development.enable = true;
   };
 
   # ── Home Profiles ───────────────────────────────────────────────────────
