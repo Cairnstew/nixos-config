@@ -1001,7 +1001,9 @@
 
   my.services.chatterbox-tts.enable = false;
 
-  environment.systemPackages = with pkgs; [ ntfs3g ];
+  # mosh client — pair with server's my.services.mosh for lag-free sessions
+  # over the flaky Scotland→Texas tailnet path (UDP, survives relay flaps).
+  environment.systemPackages = with pkgs; [ mosh ntfs3g ];
 
   # ── Home Manager Extra ───────────────────────────────────────────────────
   my.homeManager.extraConfig = {
