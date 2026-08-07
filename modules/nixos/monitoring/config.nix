@@ -1,10 +1,11 @@
 # Monitoring module config: option-gated orchestration of the nixpkgs
 # prometheus/grafana/node-exporter services. Service wiring (proxy upstream,
 # datasource provisioning) lives in services.nix, imported below.
-{ config, lib, ... }:
+{ config, lib, flake, ... }:
 let
   cfg = config.my.services.monitoring;
   hasGrafanaSecret = lib.hasAttr cfg.grafana.adminPasswordSecret config.age.secrets;
+  hasGrafanaSecretKey = lib.hasAttr cfg.grafana.secretKeySecret config.age.secrets;
 
   # Service wiring (services.nix) — proxy upstream registration and Grafana
   # datasource provisioning. mkMerge (not //) so nested `services.grafana`
@@ -58,11 +59,20 @@ in
             serve_from_sub_path = true;
           };
           security = {
-            admin_user = "admin";
+            # Grafana admin identity comes from config.me, matching the
+            # convention in squid-proxy/options.nix and boot-alerting/options.nix
+            # (plain default, hosts can override by setting admin_user/admin_email
+            # at a higher priority).
+            admin_user = flake.config.me.username;
+            admin_email = flake.config.me.email;
           } // lib.optionalAttrs hasGrafanaSecret {
             # File provider keeps the password out of the world-readable Nix
             # store. Guarded so hosts without the secret (e.g. CI) still eval.
             admin_password = "$__file{${config.age.secrets.${cfg.grafana.adminPasswordSecret}.path}}";
+          } // lib.optionalAttrs hasGrafanaSecretKey {
+            # secret_key has no default since Grafana 13 (nixpkgs assertion);
+            # inject via file provider like admin_password.
+            secret_key = "$__file{${config.age.secrets.${cfg.grafana.secretKeySecret}.path}}";
           };
         };
       };
