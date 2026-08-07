@@ -7,8 +7,6 @@
     flake.inputs.self.nixosModules.common
   ];
 
-  nixpkgs.hostPlatform = "x86_64-linux";
-
   # ── System Identity ──────────────────────────────────────────────────────
   networking.hostName = "server";
   nixos-unified.sshTarget = "seanc@server";

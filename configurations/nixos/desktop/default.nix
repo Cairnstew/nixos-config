@@ -7,7 +7,6 @@
     flake.inputs.self.nixosModules.common
   ];
 
-  nixpkgs.hostPlatform = "x86_64-linux";
   system.stateVersion = "26.05";
   networking.hostName = "desktop";
   nixos-unified.sshTarget = "seanc@desktop";

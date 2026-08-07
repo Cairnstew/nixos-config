@@ -6,7 +6,6 @@
     flake.inputs.self.nixosModules.common
   ];
 
-  nixpkgs.hostPlatform = "x86_64-linux";
   networking.hostName = "minimal";
   # F17: add sshTarget so minimal is deployable via nixos-unified like other hosts (recon F17)
   nixos-unified.sshTarget = "seanc@minimal";

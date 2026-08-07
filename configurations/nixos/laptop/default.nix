@@ -8,9 +8,6 @@
     flake.inputs.self.nixosModules.common
   ];
 
-  # Explicitly set hostPlatform to ensure pkgs is available
-  nixpkgs.hostPlatform = "x86_64-linux";
-
   # ── Bootloader (was in configuration.nix, now inlined) ─────────────────
   boot.loader.systemd-boot.enable = true;
   boot.kernelParams = [ "acpi_backlight=native" ];
