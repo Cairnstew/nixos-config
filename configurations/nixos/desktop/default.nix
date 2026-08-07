@@ -33,7 +33,9 @@
       # VM-only: Caddy loopback in QEMU test VM (DECISION LOG R3).
       my.services.proxy.listenAddresses = lib.mkForce [ "127.0.0.1" ];
       my.testing = {
-        # F16: enable=true redundant — my.profiles.testing.enable already set at line 63
+        # T3: stale F16 comment removed (recon H8) — it referenced an "enable=true
+        #     redundant" finding, but the value below is startAtBoot = true, not
+        #     enable, so the comment was wrong. Keep startAtBoot.
         startAtBoot = true;
       };
 
@@ -255,11 +257,10 @@
   };
 
   # ── Location ────────────────────────────────────────────────────────────
-  my.system.location = {
-    # enable = true — redundant: profile already sets via mkIf cfg.location.enable (M3)
-    # F2: lat/lon (55.8617/-4.2583) equal current-location.nix:26-34 defaults — keep only IANA timeZone
-    timeZone = "Europe/London";
-  };
+  # T3: my.system.location block removed (recon H3) — timeZone "Europe/London"
+  #     equals the current-location.nix:19 default (flake config.nix:135), so the
+  #     block was behavior-identical to the default. Profile enable still applies
+  #     via my.profiles.location.enable = true.
 
   # ── Partition Layout (existing, DO NOT REPARTITION)
   #   label "EFI":    vfat  512M  ESP — shared Windows/NixOS EFI
@@ -411,78 +412,12 @@
   my.services.udisks2.enable = true;
 
   # ── DSC v3 YAML Generation (Nix→Windows managed config) ─────────────────
-  # Auto-derives hostname, timezone, dark mode from NixOS config.
-  # Adds aggressive Windows Update control + telemetry reduction.
-  my.services.dscnix = {
-    enable = false;
-    configurationName = "DesktopWindowsDSC";
-
-    # ── Gaming-only Windows: aggressive update management ────────────────
-    registry = {
-      "DisableCortana" = {
-        keyPath = "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\Windows Search";
-        valueName = "AllowCortana";
-        valueData = { DWord = 0; };
-      };
-      "DisableBingSearch" = {
-        keyPath = "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\Explorer";
-        valueName = "DisableSearchBoxSuggestions";
-        valueData = { DWord = 1; };
-      };
-      "NoAutoRebootWithLoggedOnUsers" = {
-        keyPath = "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\WindowsUpdate\\AU";
-        valueName = "NoAutoRebootWithLoggedOnUsers";
-        valueData = { DWord = 1; };
-      };
-      "AUOptions" = {
-        keyPath = "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\WindowsUpdate\\AU";
-        valueName = "AUOptions";
-        valueData = { DWord = 3; };
-      };
-      "DeferFeatureUpdates" = {
-        keyPath = "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\WindowsUpdate";
-        valueName = "DeferFeatureUpdates";
-        valueData = { DWord = 1; };
-      };
-      "DeferFeatureUpdatesPeriodInDays" = {
-        keyPath = "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\WindowsUpdate";
-        valueName = "DeferFeatureUpdatesPeriodInDays";
-        valueData = { DWord = 365; };
-      };
-      "ExcludeWUDriversInQualityUpdate" = {
-        keyPath = "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\WindowsUpdate";
-        valueName = "ExcludeWUDriversInQualityUpdate";
-        valueData = { DWord = 1; };
-      };
-      "DisableDeliveryOptimization" = {
-        keyPath = "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\DeliveryOptimization";
-        valueName = "DODownloadMode";
-        valueData = { DWord = 0; };
-      };
-      "AllowTelemetry" = {
-        keyPath = "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\DataCollection";
-        valueName = "AllowTelemetry";
-        valueData = { DWord = 1; };
-      };
-      "DisableTailoredExperiences" = {
-        keyPath = "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\DataCollection";
-        valueName = "AllowTailoredExperiencesWithDiagnosticData";
-        valueData = { DWord = 0; };
-      };
-    };
-
-    optionalFeatures = {
-      "Microsoft-Windows-Subsystem-Linux" = { state = "Installed"; };
-      "VirtualMachinePlatform" = { state = "Installed"; };
-    };
-
-    runCommands = {
-      "RemoveBingBloat" = {
-        executable = "powershell.exe";
-        arguments = [ "-NoProfile" "-Command" "Get-AppxPackage *bing* | Remove-AppxPackage" ];
-      };
-    };
-  };
+  # T3: my.services.dscnix block removed (recon H7) — service was disabled
+  #     (enable = false) with a full unused registry/optionalFeatures/runCommands
+  #     payload (~60 lines). The disabled service had no effect, so removal is
+  #     behavior-identical. Re-enable the service before repopulating this config.
+  #     (Previously auto-derived hostname/timezone/dark mode and added aggressive
+  #     Windows Update control + telemetry reduction for the gaming-only Windows.)
 
   # ── Ventoy: multi-boot USB (Windows ISO) ───────────────────────────────
   my.programs.ventoy.enable = true;
@@ -999,7 +934,8 @@
     ollama.enable = true;
   };
 
-  my.services.chatterbox-tts.enable = false;
+  # T3: my.services.chatterbox-tts.enable = false removed (recon H9) — mkEnableOption
+  #     default is already false (chatterbox-tts/options.nix:4), so this was redundant.
 
   # mosh client — pair with server's my.services.mosh for lag-free sessions
   # over the flaky Scotland→Texas tailnet path (UDP, survives relay flaps).
