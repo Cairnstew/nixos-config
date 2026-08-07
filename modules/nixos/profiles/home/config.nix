@@ -35,6 +35,18 @@ in
       thunderbird.email = lib.mkDefault flake.config.me.email;
       thunderbird.username = lib.mkDefault username;
       vscode.enable = lib.mkDefault true;
+      # Program trio consolidated from per-host extraConfig (recon D2/D3) —
+      # was duplicated verbatim in desktop/default.nix + laptop/default.nix.
+      localsend.enable = lib.mkDefault true;
+      "whatsapp-electron".enable = lib.mkDefault true;
+      "youtube-music".enable = lib.mkDefault true;
+      # direnv spotify secretFiles consolidated from per-host extraConfig
+      # (recon D2/D3); guarded on the secret existing on this host.
+      direnv.secretFiles.spotify = lib.mkIf (config.age.secrets ? "spotify-cred") {
+        paths = {
+          SPOTIFY_CRED = lib.mkDefault config.age.secrets."spotify-cred".path;
+        };
+      };
     })
 
     # Development profile

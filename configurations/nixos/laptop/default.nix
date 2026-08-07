@@ -1,15 +1,12 @@
 # Laptop Configuration
 # See: ../../AGENT.md for configuration conventions
-{ flake, config, lib, ... }:
+{ flake, ... }:
 {
   imports = [
     # Import hardware config FIRST to set hostPlatform
     ./hardware-configuration.nix
     flake.inputs.self.nixosModules.common
   ];
-
-  # Explicitly set hostPlatform to ensure pkgs is available
-  nixpkgs.hostPlatform = "x86_64-linux";
 
   # ── Bootloader (was in configuration.nix, now inlined) ─────────────────
   boot.loader.systemd-boot.enable = true;
@@ -32,7 +29,6 @@
 
     # Hardware
     gpu.mesa.enable = true;
-    # F6: redundant — power.laptop profile already mkDefaults battery.enable
     location.enable = true;
     power.laptop.enable = true;
 
@@ -67,19 +63,4 @@
   # ── Additional Programs ────────────────────────────────────────────────
   my.programs.ventoy.enable = true;
 
-  # ── Home Manager Extra ───────────────────────────────────────────────────
-  my.homeManager.extraConfig.my.programs = {
-    # T2: discord/firefox/spotify/obsidian/thunderbird/vscode already mkDefault'd by
-    # homeProfiles.desktop (profiles/home/config.nix:26-38) — only genuinely per-host
-    # extras kept below.
-    localsend.enable = true;
-    "whatsapp-electron".enable = true;
-    "youtube-music".enable = true;
-  };
-
-  my.homeManager.extraConfig.my.programs.direnv.secretFiles.spotify = {
-    paths = {
-      SPOTIFY_CRED = config.age.secrets."spotify-cred".path;
-    };
-  };
 }
