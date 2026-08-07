@@ -1,6 +1,6 @@
 # Laptop Configuration
 # See: ../../AGENT.md for configuration conventions
-{ flake, config, lib, ... }:
+{ flake, ... }:
 {
   imports = [
     # Import hardware config FIRST to set hostPlatform
@@ -67,19 +67,4 @@
   # ── Additional Programs ────────────────────────────────────────────────
   my.programs.ventoy.enable = true;
 
-  # ── Home Manager Extra ───────────────────────────────────────────────────
-  my.homeManager.extraConfig.my.programs = {
-    # T2: discord/firefox/spotify/obsidian/thunderbird/vscode already mkDefault'd by
-    # homeProfiles.desktop (profiles/home/config.nix:26-38) — only genuinely per-host
-    # extras kept below.
-    localsend.enable = true;
-    "whatsapp-electron".enable = true;
-    "youtube-music".enable = true;
-  };
-
-  my.homeManager.extraConfig.my.programs.direnv.secretFiles.spotify = {
-    paths = {
-      SPOTIFY_CRED = config.age.secrets."spotify-cred".path;
-    };
-  };
 }

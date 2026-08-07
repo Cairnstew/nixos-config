@@ -941,22 +941,15 @@
 
   # ── Home Manager Extra ───────────────────────────────────────────────────
   my.homeManager.extraConfig = {
-    my.programs.direnv.secretFiles.spotify = {
-      paths = {
-        SPOTIFY_CRED = config.age.secrets."spotify-cred".path;
-      };
-    };
     my.programs = {
       # F10-desktop: discord/firefox/obsidian/thunderbird/vscode already mkDefault'd by
       # homeProfiles.desktop (profiles/home/config.nix:26-38) — only genuinely per-host
-      # extras kept below.
+      # extras kept below. localsend/whatsapp-electron/youtube-music + direnv spotify
+      # secretFiles moved to homeProfiles.desktop (recon D2/D3).
       squidProxyClient = {
         enable = true;
         proxyPasswordFile = config.age.secrets."squid-htpasswd".path;
       };
-      localsend.enable = true;
-      "whatsapp-electron".enable = true;
-      "youtube-music".enable = true;
     };
 
     # GNOME-specific extras removed: host-info extension (broken/unused),
