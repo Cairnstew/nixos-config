@@ -13,7 +13,6 @@
 
   my.profiles = {
     minimal.enable = true;
-    development.enable = true;
     location.enable = true;
   };
 

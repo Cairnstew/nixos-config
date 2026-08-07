@@ -57,7 +57,6 @@
   # ── System Profiles ──────────────────────────────────────────────────────
   my.profiles = {
     workstation.enable = true;
-    development.enable = true;
     entertainment.enable = true;
     gpu.mesa.enable = true;
     location.enable = true;

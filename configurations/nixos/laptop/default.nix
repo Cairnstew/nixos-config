@@ -27,7 +27,6 @@
   my.profiles = {
     # Role
     workstation.enable = true;
-    development.enable = true;
 
     # Desktop — GNOME
     desktop.gnome.enable = true;

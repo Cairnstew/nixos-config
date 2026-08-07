@@ -20,7 +20,6 @@
   # ── System Profiles ──────────────────────────────────────────────────────
   my.profiles = {
     server.enable = true;
-    development.enable = true;
     ai.enable = true;
     gpu.nvidia-headless.enable = true;
     location.enable = true;

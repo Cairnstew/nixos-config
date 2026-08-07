@@ -252,6 +252,11 @@ in
     services.proxy.enable = lib.mkDefault true;
     services.proxy.systemMetrics.enable = lib.mkDefault true;
 
+    # Development profile enabled universally: all 5 hosts enable it (recon O1),
+    # so it becomes a mkDefault in common instead of per-host duplication.
+    # Override when: Host needs a minimal surface (set false explicitly).
+    profiles.development.enable = lib.mkDefault true;
+
     # Secrets enabled by default: Safe to have enabled as agenix gracefully
     # handles missing secret files. Disabling is mainly for containers or
     # minimal systems where secret management isn't needed.
