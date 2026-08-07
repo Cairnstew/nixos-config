@@ -222,6 +222,9 @@
     # F7: risuai.enable is mkDefault true via profiles/system/ai.nix — redundant here (recon F7)
     dataDir = "/mnt/data/risuai";
     ollama.enable = true;
+    # H12: attach risuai to ollama-net (so it resolves ollama:11434) via the module's
+    # network.name option — replaces the hand-rolled docker-risuai-ollama-net unit removed below.
+    network.name = "ollama-net";
   };
 
   # ── Neko (Remote Browser) — disabled 2026-07-30 ─────────────────────────
@@ -230,17 +233,9 @@
   # ── Squid Forward Proxy (Browser Egress) ────────────────────────────────
   my.services.squidProxy.enable = true;
 
-  # Connect risuai container to ollama-net so it can resolve ollama:11434
-  systemd.services."docker-risuai-ollama-net" = {
-    description = "Connect risuai container to ollama-net";
-    after = [ "docker-risuai.service" ];
-    requires = [ "docker-risuai.service" ];
-    wantedBy = [ "multi-user.target" ];
-    serviceConfig.Type = "oneshot";
-    script = ''
-      ${pkgs.docker}/bin/docker network connect ollama-net risuai 2>/dev/null || true
-    '';
-  };
+  # H12: hand-rolled docker-risuai-ollama-net oneshot removed — the risuai module's
+  # network.name option (set above to "ollama-net") now attaches the container at creation,
+  # and the module + ollama both inspect-guard network creation, so no duplicate unit is needed.
 
   # ── SSH Access ──────────────────────────────────────────────────────────
   # F12: extra key only — me.sshKey is inherited from common.nix mkDefault.
