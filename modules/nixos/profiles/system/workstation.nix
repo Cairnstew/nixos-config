@@ -25,9 +25,11 @@ in
     services.xserver.xkb.layout = lib.mkDefault (prefs.keyboardLayout or "us");
 
     # ── Common workstation programs ────────────────────────────────────────
-    # mkDefault for packages: Core GUI apps for daily use
+    # mkAfter for packages: Core GUI apps for daily use. mkDefault was dropped
+    # silently by common.nix's plain environment.systemPackages list (priority
+    # 1000 beats priority 100); mkAfter merges this list instead of losing it.
     # Override when: Different browser/office suite preferred, or minimal setup
-    environment.systemPackages = lib.mkDefault (with pkgs; [
+    environment.systemPackages = lib.mkAfter (with pkgs; [
       thunderbird
       libreoffice
     ]);
