@@ -29,7 +29,6 @@
 
     # Hardware
     gpu.mesa.enable = true;
-    # F6: redundant — power.laptop profile already mkDefaults battery.enable
     location.enable = true;
     power.laptop.enable = true;
 

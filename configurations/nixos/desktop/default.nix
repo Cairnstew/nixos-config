@@ -19,7 +19,6 @@
     enable = true;
     memory = 4096;
     cores = 4;
-    # hosts = [];  # empty = all hosts, or list specific ones
     extraConfig = { lib, pkgs, ... }: {
       my.profiles = {
         workstation.enable = lib.mkForce false;
