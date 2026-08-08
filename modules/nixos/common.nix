@@ -87,6 +87,10 @@ in
     ./caches
     ./default-build.nix
 
+    # ── Backup ──────────────────────────────────────────────────────────────
+    ./backup-target
+    ./backup-source
+
     # ── ISO Building ────────────────────────────────────────────────────────
     ./live-iso
 
