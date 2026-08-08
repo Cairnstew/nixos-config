@@ -64,4 +64,14 @@
   # ── Additional Programs ────────────────────────────────────────────────
   my.programs.ventoy.enable = true;
 
+  # ── Backup Source ───────────────────────────────────────────────────────
+  # Push /home/seanc to the server's restic repository over SFTP (tailnet
+  # SSH port 22). Inert until the backup-repo-passphrase agenix secret exists.
+  my.services.backup-source = {
+    enable = true;
+    jobs.home = {
+      paths = [ "/home/seanc" ];
+    };
+  };
+
 }
