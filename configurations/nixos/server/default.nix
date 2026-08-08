@@ -86,8 +86,12 @@
   my.services.backup-target = {
     enable = true;
     sources = {
-      desktop = { };
-      laptop = { };
+      desktop = {
+        publicKey = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIBeutWkI0m3IvLKyb67OoKQ/q6CKAgeEtd43+kAi6X2C backup@nixos";
+      };
+      laptop = {
+        publicKey = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIBeutWkI0m3IvLKyb67OoKQ/q6CKAgeEtd43+kAi6X2C backup@nixos";
+      };
     };
   };
 
