@@ -115,7 +115,10 @@ in
     # monitors the first configured source's repository by default (override
     # with my.services.backup-target.monitoring.repository). Runs as the backup
     # user so it can read/write the repositories; the passphrase reaches it via
-    # systemd LoadCredential (no direct read needed).
+    # systemd LoadCredential (no direct read needed). restic-exporter.py crashes
+    # on a not-yet-initialized repository (no config file), so retry slowly and
+    # without a start rate limit — it self-heals once the first source backup
+    # runs restic init.
     (mkIf (monitoringEnabled && hasPassphrase && sourceHosts != [ ]) {
       services.prometheus.exporters.restic = {
         enable = true;
@@ -126,6 +129,11 @@ in
             "${cfg.targetDir}/${builtins.head sourceHosts}";
         passwordFile = config.age.secrets."backup-repo-passphrase".path;
         inherit (cfg) user group;
+      };
+      systemd.services.prometheus-restic-exporter.serviceConfig = {
+        Restart = "on-failure";
+        RestartSec = "10min";
+        StartLimitIntervalSec = 0;
       };
     })
   ]);
