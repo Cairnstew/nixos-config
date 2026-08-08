@@ -10,6 +10,12 @@
 
 ---
 
+**Root-owned `.git/objects/xx` subdirs (from a root-run auto-commit) block `git add` — `insufficient permission for adding an object to repository database .git/objects`**
+
+Symptom (2026-08-08): `git add`/`git commit` fail with `error: insufficient permission for adding an object to repository database .git/objects`, and the working tree has root-owned `.git/objects/<xx>/` subdirectories (check: `find .git/objects -maxdepth 1 -not -user $(whoami)`). Cause: a git process running as root (e.g. the `suwayomi-sync-export` auto-commit service, which runs as root and commits at midnight) creates `.git/objects` subdirs owned by root; a non-root user then cannot write new objects into them. Distinct from the `tools/nix-graph/*.json` entry — this is the object store itself, and it breaks `git add` rather than `git pull`/`checkout`. Fix: `sudo chown -R seanc:users .git/objects/<xx> .git/objects/<yy>` (the specific root-owned subdirs), then re-run the failed git command. Recurrence is expected until the root-run auto-commit is taught to preserve ownership (`sudo -u seanc git commit` or a `git config core.sharedRepository` arrangement).
+
+---
+
 **Root-owned files in the repo tree (`tools/nix-graph/*.json`) block `git pull`/`checkout` — `error: unable to unlink old '…': Permission denied`**
 
 Symptom (2026-08-06): Running `git pull`/`git checkout` after `git fetch` fails with `error: unable to unlink old 'tools/nix-graph/graph.json': Permission denied`, leaving the branch behind its remote and the file showing as `M` (modified) even though you never edited it. `tools/nix-graph/` contains root-owned files (`graph.json` tracked, `extraction-result.json` untracked, dir owned by root) — the nix-graph MCP server writes them as root. Cause: root-owned paths in the working tree make git's unlink/rewrite fail for a non-root user; a stale root-written copy then diverges from the committed version and shows as a spurious modification. Fix: `sudo rm -f tools/nix-graph/graph.json tools/nix-graph/extraction-result.json`, fix the directory ownership (`sudo chown seanc:users tools/nix-graph`), then `git checkout -- tools/nix-graph/graph.json`. If the dir was already root-owned the `rm` may also fail — chown the dir first. Also check `git worktree list` before cleanup: stale worktrees pin branches (delete them with `git worktree remove --force` before `git branch -D`).

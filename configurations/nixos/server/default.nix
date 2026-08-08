@@ -78,6 +78,23 @@
     };
   };
 
+  # ── Backup Target ──────────────────────────────────────────────────────
+  # Hosts restic repositories for desktop/laptop under /mnt/data/backup
+  # (SFTP-chrooted over tailnet SSH port 22 — no new ports). Each source's
+  # subdirectory is pre-provisioned here; public keys are filled in once the
+  # shared backup-ssh-key is generated (Tier 1 secrets step).
+  my.services.backup-target = {
+    enable = true;
+    sources = {
+      desktop = {
+        publicKey = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIBeutWkI0m3IvLKyb67OoKQ/q6CKAgeEtd43+kAi6X2C backup@nixos";
+      };
+      laptop = {
+        publicKey = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIBeutWkI0m3IvLKyb67OoKQ/q6CKAgeEtd43+kAi6X2C backup@nixos";
+      };
+    };
+  };
+
   # ── Container Storage ──────────────────────────────────────────────────
   # Store container images and volumes on the large SATA data drive (1.8T)
   # to preserve NVMe space for the Nix store and OS.
