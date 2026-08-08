@@ -45,7 +45,7 @@ in
       # can safely be the chroot root without createHome.
       users.users.${cfg.user} = {
         isSystemUser = true;
-        group = cfg.group;
+        inherit (cfg) group;
         home = cfg.targetDir;
         createHome = false;
         description = "restic backup target SFTP user (chrooted to targetDir)";
@@ -125,8 +125,7 @@ in
           else
             "${cfg.targetDir}/${builtins.head sourceHosts}";
         passwordFile = config.age.secrets."backup-repo-passphrase".path;
-        user = cfg.user;
-        group = cfg.group;
+        inherit (cfg) user group;
       };
     })
   ]);

@@ -23,13 +23,8 @@ in
             extraOptions = [
               "sftp.args='-i ${cfg.sshIdentity} -o StrictHostKeyChecking=accept-new -o ServerAliveInterval=60 -o ServerAliveCountMax=240'"
             ];
-            paths = job.paths;
             exclude = cfg.defaultExcludes ++ job.exclude;
-            timerConfig = job.timerConfig;
-            pruneOpts = job.pruneOpts;
-            initialize = job.initialize;
-            checkOpts = job.checkOpts;
-            extraBackupArgs = job.extraBackupArgs;
+            inherit (job) paths timerConfig pruneOpts initialize checkOpts extraBackupArgs;
             user = "root";
           })
         cfg.jobs

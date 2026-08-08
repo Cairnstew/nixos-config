@@ -1,4 +1,4 @@
-{ config, lib, ... }:
+{ config, ... }:
 let
   cfg = config.my.services.backup-target;
 in
