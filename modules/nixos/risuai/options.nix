@@ -86,6 +86,25 @@
       description = "Logging driver for the container.";
     };
 
+    settings = lib.mkOption {
+      type = lib.types.attrsOf (lib.types.nullOr (lib.types.oneOf [ lib.types.bool lib.types.int lib.types.str ]));
+      default = { };
+      example = {
+        ollamaThinkingMode = "on";
+        strictJsonSchema = false;
+      };
+      description = ''
+        Default user settings to enforce in RisuAI's save database
+        (the root record of `database/database.bin`). Applied by a
+        oneshot unit before the container starts, so defaults can be
+        managed from Nix instead of the web UI. Best-effort: any
+        settings changed in the UI are reverted on the next container
+        restart. Set `{}` (the default) to disable enforcement.
+        Note: values must match keys RisuAI actually stores (e.g.
+        `ollamaThinkingMode`, `strictJsonSchema`, `maxContext`).
+      '';
+    };
+
     autoPrune = lib.mkOption {
       type = lib.types.bool;
       default = true;

@@ -130,10 +130,12 @@ in
         passwordFile = config.age.secrets."backup-repo-passphrase".path;
         inherit (cfg) user group;
       };
-      systemd.services.prometheus-restic-exporter.serviceConfig = {
-        Restart = "on-failure";
-        RestartSec = "10min";
-        StartLimitIntervalSec = 0;
+      systemd.services.prometheus-restic-exporter = {
+        serviceConfig = {
+          Restart = "on-failure";
+          RestartSec = "10min";
+        };
+        unitConfig.StartLimitIntervalSec = 0;
       };
     })
   ]);
