@@ -131,6 +131,12 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
+    # Declarative Minecraft server packages & NixOS module (vanilla/fabric/neoforge/paper/velocity)
+    nix-minecraft = {
+      url = "github:Infinidoge/nix-minecraft";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+
   };
 
   # Wired using https://nixos-unified.org/autowiring.html

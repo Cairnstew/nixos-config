@@ -8,6 +8,22 @@
   any evaluation or build
   failure.**
 
+**`error: dynamic attribute 'seanc' already defined` when adding a second `home-manager.users.${username}.my.programs.X` line in one profile**
+
+Symptom (2026-08-08): Adding `home-manager.users.${username}.my.programs.minecraft.enable = lib.mkDefault true;` as a sibling of the existing `home-manager.users.${username}.my.programs.discord.tui = { ... };` in `modules/nixos/profiles/system/gaming.nix` fails with `error: dynamic attribute 'seanc' already defined at .../gaming.nix:15:5` / `at .../gaming.nix:23:5`. Cause: in Nix an attrset literal can only assign a given dynamic attribute (`users.${username}`) once, so two `home-manager.users.${username}.my.programs.<name>` lines collide at parse time. Fix: merge them into a single block — `home-manager.users.${username}.my.programs = { minecraft.enable = lib.mkDefault true; discord.tui = { enable = lib.mkDefault false; }; };` — the module system merges the sub-paths fine.
+
+**nix-minecraft: module is `nixosModules.minecraft-servers` (plural) and options are `services.minecraft-servers.servers.<name>` (plural) — no `extraServiceConfig`**
+
+Symptom (2026-08-12): Wiring nix-minecraft into the `my.services.minecraftServer` wrapper, two names were easy to get wrong. (1) The flake exposes `nixosModules.minecraft-servers` (plural "servers"), not `minecraft-server`; the option tree is `services.minecraft-servers.servers.<name>` (both plural). (2) The server submodule has NO `extraServiceConfig`/`extraSystemd` option — a host config that sets `services.minecraft-servers.servers.<name>.extraServiceConfig.MemoryMax = "12G"` fails with `Did you mean ...extraReload / extraStartPre?`. Cause: nix-minecraft hardens the unit internally (its own `serviceConfig` is derived in the module, `modules/minecraft-servers.nix` ~line 948/998) and does not forward arbitrary systemd fields. Fix: augment the generated unit directly at the NixOS level — `systemd.services.minecraft-server-<name>.serviceConfig.MemoryMax = "12G"`. Also note `dataDir` is a `types.path` (must exist / be coercible at eval time); for big local modpacks point `pack` at a plain string runtime path and create symlinks in `extraStartPre` (nix-minecraft appends it to `ExecStartPre`), NOT via `symlinks` (which copies into the store). See `modules/nixos/minecraft-server/`.
+
+---
+
+---
+
+**Some repo files are root-owned (`configurations/nixos/desktop/default.nix`, `GOTCHAS.md`) — Edit/write tools fail with `PermissionDenied`**
+
+Symptom (2026-08-08): The Edit tool refused to modify `configurations/nixos/desktop/default.nix` and `GOTCHAS.md` (`FileSystem.writeFile: PermissionDenied`) even though the repo dir and most files are `seanc`-owned. Cause: those files are `-rw-r--r-- root root` (unlike `modules/…`, `HEATMAP.md` which are all `seanc`). Fix: edit a temp copy owned by your user (`cp` → `chown seanc:users` → Edit) then `sudo install -m 644 -o root -g root <tmp> <target>` to preserve ownership, and confirm with `stat`. Related to the existing `tools/nix-graph/` root-owned-files gotcha — these were likely written by a root deploy.
+
 ---
 
 **Root-owned `.git/objects/xx` subdirs (from a root-run auto-commit) block `git add` — `insufficient permission for adding an object to repository database .git/objects`**
@@ -778,5 +794,5 @@ When you discover a new problem and its solution:
 
 ---
 
-Last updated: 2026-08-06
+Last updated: 2026-08-12
 

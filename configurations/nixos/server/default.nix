@@ -214,6 +214,43 @@
   # Caddy upstream must point to the Tailscale IP when autoBindTailscaleIp is on
   my.services.proxy.upstreams.suwayomi.host = "100.78.102.28";
 
+  # ── Minecraft Server (Dragon Technology modpack) ─────────────────────────
+  # Prism Launcher is a client launcher and cannot run a server. This wraps the
+  # exported modpack (NeoForge 1.21.1) into a declarative nix-minecraft server.
+  my.services.minecraftServer = {
+    enable = true;
+    eula = true; # Mojang EULA — required
+    dataDir = "/mnt/data/minecraft";
+
+    servers.dragon-technology = {
+      package = pkgs.neoforgeServers.neoforge-1_21_1-21_1_238;
+      jvmOpts = "-Xms4G -Xmx8G";
+      # pack: server-safe modpack content dir (mods/config/kubejs/scripts/datapacks/
+      # defaultconfigs are symlinked in). Create it on the server by extracting the
+      # Prism export's minecraft/ dir and stripping client-only junk (saves,
+      # shaderpacks, screenshots, .mixin.out, .sable). The Dragon Technology pack
+      # is 834 MB, so it is NOT committed to this repo:
+      #   ssh server "mkdir -p /mnt/data/minecraft/packs && rsync -a minecraft/ ..."
+      # For a small published pack you can instead use:
+      #   pack = pkgs.fetchModrinthModpack { url = "..."; packHash = "sha256-..."; side = "server"; };
+      pack = "/mnt/data/minecraft/packs/dragon-technology";
+
+      serverProperties = {
+        server-port = 25565;
+        max-players = 12;
+        motd = "Dragon Technology";
+        white-list = true;
+        enable-query = true;
+      };
+      whitelist = { };
+      operators = { };
+      openFirewall = true;
+    };
+  };
+
+  # Memory cap for the Minecraft server (nix-minecraft hardens the rest).
+  systemd.services.minecraft-server-dragon-technology.serviceConfig.MemoryMax = "12G";
+
   # ── Ollama (LLM Serving) ───────────────────────────────────────────────
   my.services.ollama = {
     enable = true;

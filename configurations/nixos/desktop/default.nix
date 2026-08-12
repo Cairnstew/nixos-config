@@ -959,6 +959,17 @@
         enable = true;
         proxyPasswordFile = config.age.secrets."squid-htpasswd".path;
       };
+
+      # Prism Launcher data (instances, libraries, assets) on the external media
+      # drive to keep the system SSD free.
+      minecraft.dataDir = "/mnt/media/Modding/PrismLauncher";
+
+      # Modpack engineering tooling (Modrinth MCP lookup). Mod jars live next to
+      # Prism Launcher data on the media drive.
+      modpack = {
+        enable = true;
+        modsDir = "/mnt/media/Modding/mods";
+      };
     };
 
     # GNOME-specific extras removed: host-info extension (broken/unused),

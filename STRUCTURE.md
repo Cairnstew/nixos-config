@@ -205,6 +205,7 @@ NixOS system modules. Import `nixosModules.common` to get the base profile syste
 | `hearthstone/` | Native Hearthstone launcher (no Wine/Battle.net) |
 | `proton/` | GE-Proton + ProtonUp-Qt for Steam |
 | `game-servers/` | Dedicated game servers via steamcmd + systemd |
+| `minecraft-server/` | Declarative Minecraft servers via nix-minecraft (vanilla/fabric/neoforge/paper/velocity) + modpack support |
 | `ai/comfyui/` | ComfyUI diffusion GUI with node-based workflow editor |
 | `godot/` | Godot game engine — export templates, GDScript tools, MCP |
 | `houdini/` | SideFX Houdini 3D/VFX software |
@@ -259,6 +260,7 @@ Home Manager modules for user-level configuration.
 | `goals/` | Personal goals tracker with MCP behavioral traits |
 | `helix-ide/` | Helix editor + Zellij terminal multiplexer IDE |
 | `kanshi/` | Kanshi Wayland output management daemon |
+| `minecraft/` | Minecraft launcher (Prism Launcher or Modrinth App) with optional gamescope wrapper |
 | `obsidian/` | Obsidian note-taking with optional git-backed vault clone |
 | `opencode/` | OpenCode AI coding agent — providers, keyFiles, skills, commands, tools, MCP |
 | `rstudio/` | RStudio IDE with custom R packages and fonts |
@@ -436,3 +438,4 @@ Miscellaneous documentation.
 | File | Description |
 |------|-------------|
 | `tools/README.md` | Tooling documentation |
+
