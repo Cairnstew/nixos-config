@@ -259,7 +259,7 @@
     models = {
       "hf.co/Lewdiculous/DS-R1-Qwen3-8B-ArliAI-RpR-v4-Small-GGUF-IQ-Imatrix:Q4_K_M-imat" = {
         name = "ArliAI DS-R1-Qwen3-8B RpR v4";
-        numCtx = 8192;
+        numCtx = 16000;
         temperature = 0.6;
         topP = 0.95;
         topK = 40;
@@ -276,6 +276,13 @@
     # H12: attach risuai to ollama-net (so it resolves ollama:11434) via the module's
     # network.name option — replaces the hand-rolled docker-risuai-ollama-net unit removed below.
     network.name = "ollama-net";
+    # Default user settings enforced into the RisuAI save DB on container start:
+    # parse thinking out of replies (was 'auto', which leaked <think> blocks) and
+    # disable strict JSON schema so prose stays conversational.
+    settings = {
+      ollamaThinkingMode = "on";
+      strictJsonSchema = false;
+    };
   };
 
   # ── Neko (Remote Browser) — disabled 2026-07-30 ─────────────────────────
