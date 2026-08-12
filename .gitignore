@@ -12,5 +12,6 @@ modules/flake-parts/ventoy/ts.key
 *.db
 *.sqlite
 /CMakeFiles/
+__pycache__/
 .playwright-mcp/
 arch_userspace.tar.gz

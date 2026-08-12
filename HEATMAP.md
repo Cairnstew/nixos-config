@@ -1,6 +1,6 @@
 # Task Heatmap
 
-Quick reference for common maintenance tasks. Lists files to read and edit in order.
+Quick reference for common maintenance tasks.Lists files to read and edit in order.
 
 ---
 
@@ -267,6 +267,20 @@ All `my.*` options declared across module files.
 | `my.programs.lutris.battlenet.gamescope.refreshRate` | int? | `null` | Refresh rate limit |
 | `my.programs.lutris.battlenet.gamescope.extraArgs` | list | `[]` | Extra Gamescope arguments |
 | `my.programs.lutris.extraPackages` | list | `[]` | Extra Lutris-related packages |
+| `my.programs.minecraft.enable` | bool | `false` | Minecraft client launcher |
+| `my.programs.minecraft.launcher` | enum | `"prismlauncher"` | Launcher (`prismlauncher`/`modrinth-app`) |
+| `my.programs.minecraft.package` | null/pkg | `null` | Override the launcher package entirely |
+| `my.programs.minecraft.jdks` | list | `[]` | Extra JDKs exposed to the launcher |
+| `my.programs.minecraft.extraPackages` | list | `[]` | Extra Minecraft-related packages |
+| `my.programs.minecraft.dataDir` | null/path | `null` | Prism Launcher data dir (e.g. /mnt/media/Modding/PrismLauncher) |
+| `my.programs.minecraft.repo.url` | null/str | `null` | Git remote (e.g. GitHub) mirroring the data dir |
+| `my.programs.minecraft.repo.branch` | null/str | `null` | Branch to check out after sync |
+| `my.programs.minecraft.repo.interval` | str | `"15m"` | Sync interval |
+| `my.programs.minecraft.repo.conflictStrategy` | enum | `"stash-and-pull"` | How to integrate remote changes |
+| `my.programs.minecraft.repo.autoPush` | bool | `false` | Push local commits after syncing |
+| `my.programs.minecraft.repo.agenix.enable` | bool | `false` | Inject GitHub token for private repos |
+| `my.programs.minecraft.gamescope.enable` | bool | `false` | Wrap launcher in gamescope |
+| `my.programs.minecraft.gamescope.package` | package | `pkgs.gamescope` | gamescope package |
 | `my.programs.steam.extraPackages` | list | `[]` | Extra Steam-related packages |
 | `my.programs.steam.hyprland.enable` | bool | `false` | Enable Hyprland window rules for Steam games |
 | `my.programs.steam.hyprland.forceMonitor` | str? | `null` | Fallback monitor for all Steam games (e.g. DP-1) |
@@ -302,6 +316,20 @@ All `my.*` options declared across module files.
 | `my.services.game-servers.servers.<name>.monitoring.queryPort` | null/port | `null` | A2S query port (game port + 1) |
 | `my.services.game-servers.monitoring.enable` | bool | `false` | Enable exporter units |
 | `my.services.game-servers.monitoring.exporter` | null/package | self pkg | a2s-exporter package |
+| `my.services.minecraftServer.enable` | bool | `false` | Declarative Minecraft servers (nix-minecraft) |
+| `my.services.minecraftServer.eula` | bool | `false` | Accept Mojang's EULA (required) |
+| `my.services.minecraftServer.dataDir` | path | `/mnt/data/minecraft` | Base data dir for all servers |
+| `my.services.minecraftServer.openFirewall` | bool | `false` | Open ports for all servers |
+| `my.services.minecraftServer.servers.<name>.package` | pkg | — | Server package (e.g. neoforgeServers.neoforge-1_21_1-21_1_238) |
+| `my.services.minecraftServer.servers.<name>.jvmOpts` | str | `"-Xmx4G -Xms2G"` | JVM flags |
+| `my.services.minecraftServer.servers.<name>.serverProperties` | attrs | `{}` | Declarative server.properties |
+| `my.services.minecraftServer.servers.<name>.whitelist` | attrs | `{}` | Username → UUID map |
+| `my.services.minecraftServer.servers.<name>.operators` | attrs | `{}` | Username → UUID map |
+| `my.services.minecraftServer.servers.<name>.openFirewall` | bool | `false` | Open this server's ports |
+| `my.services.minecraftServer.servers.<name>.pack` | null/str | `null` | Modpack content dir (symlinked at start) |
+| `my.services.minecraftServer.servers.<name>.extraSymlinks` | attrs | `{}` | Extra path → data-dir symlinks |
+| `my.services.minecraftServer.servers.<name>.restart` | str | `"on-failure"` | systemd Restart policy |
+| `my.services.minecraftServer.servers.<name>.managementSystem` | submodule | `{ tmux.enable = true; }` | Console: tmux or systemd-socket |
 | `my.services.tailscale.enable` | bool | `false` | Tailscale mesh VPN |
 | `my.services.tailscale.openFirewall` | bool | `true` | Open Tailscale UDP port |
 | `my.services.tailscale.exitNode` | bool | `false` | Advertise as exit node |

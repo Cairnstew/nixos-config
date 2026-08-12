@@ -104,6 +104,7 @@ in
     ./risuai
     ./suwayomi
     ./neko
+    ./minecraft-server
     ./game-servers
 
     # ── TV & EPG ─────────────────────────────────────────────────────────
