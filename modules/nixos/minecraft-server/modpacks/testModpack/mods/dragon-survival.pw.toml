@@ -1,0 +1,8 @@
+name = "Dragon Survival"
+filename = "DragonSurvival-1.21.1-v2.0.63-02.08.2026-all.jar"
+side = "both"
+
+[download]
+url = "https://edge.forgecdn.net/files/8564/714/DragonSurvival-1.21.1-v2.0.63-02.08.2026-all.jar"
+hash-format = "sha256"
+hash = "5f2b88a5779ce05b0910f2d30c0383b33d77d5362af0e216b3d366596d7e9add"

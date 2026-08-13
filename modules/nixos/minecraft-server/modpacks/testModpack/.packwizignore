@@ -1,0 +1,2 @@
+# Nix-side build artifact — never shipped to players, keep out of the index.
+checksums.json

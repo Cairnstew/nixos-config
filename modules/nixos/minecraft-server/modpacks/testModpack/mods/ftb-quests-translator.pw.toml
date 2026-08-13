@@ -1,0 +1,8 @@
+name = "FTB Quests Translator"
+filename = "ftbquesttransl-1.21.1-neoforge-1.4.0.jar"
+side = "both"
+
+[download]
+url = "https://edge.forgecdn.net/files/7977/168/ftbquesttransl-1.21.1-neoforge-1.4.0.jar"
+hash-format = "sha256"
+hash = "8c4c37ffec497cab69645164c217bc5df84b7d02cca7a891a6b6df8656188036"

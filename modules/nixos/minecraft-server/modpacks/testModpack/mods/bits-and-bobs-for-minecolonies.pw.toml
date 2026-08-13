@@ -1,0 +1,8 @@
+name = "Bits and Bobs for Minecolonies"
+filename = "bits-and-bobs-1.21.1-1.0.6.jar"
+side = "both"
+
+[download]
+url = "https://edge.forgecdn.net/files/8110/550/bits-and-bobs-1.21.1-1.0.6.jar"
+hash-format = "sha256"
+hash = "72aed74fbcf4b3a19e151e900f40af67f9a3ac8bd656cf370d95073459ceb4fc"

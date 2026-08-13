@@ -1,0 +1,13 @@
+name = "Star Dragon"
+filename = "star_dragon-2.0.1.jar"
+side = "both"
+
+[download]
+url = "https://cdn.modrinth.com/data/vGncK2EZ/versions/PiFOdC0O/star_dragon-2.0.1.jar"
+hash-format = "sha512"
+hash = "9060e4004479b471b9b5573e0e2dbbb10cbc443f6499d1324c7300c712efe13f86c2e522720e173dd9e767daa98760ab7ba5e74916d4e212112ea10005e007f3"
+
+[update]
+[update.modrinth]
+mod-id = "vGncK2EZ"
+version = "PiFOdC0O"

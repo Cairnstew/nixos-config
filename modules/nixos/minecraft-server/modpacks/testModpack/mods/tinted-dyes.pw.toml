@@ -1,0 +1,13 @@
+name = "Tinted Dyes"
+filename = "tinted_dyes-2.1.1-neoforge-1.21.1.jar"
+side = "both"
+
+[download]
+url = "https://cdn.modrinth.com/data/77VVvOOe/versions/DuFm9fdR/tinted_dyes-2.1.1-neoforge-1.21.1.jar"
+hash-format = "sha512"
+hash = "808840837ca58964f6c35632c7d7b7a155848b8c6b804b7a011bc7e6c48a2bed590898822c22698bb3e675f61718a97f36fd4db13c72f1962c92b3f3c288ce51"
+
+[update]
+[update.modrinth]
+mod-id = "77VVvOOe"
+version = "DuFm9fdR"

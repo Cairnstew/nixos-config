@@ -1,0 +1,8 @@
+name = "Project Resonance for MineColonies"
+filename = "projectresonance-1.21.1 v1.5.4.6.jar"
+side = "both"
+
+[download]
+url = "https://edge.forgecdn.net/files/7983/841/projectresonance-1.21.1%20v1.5.4.6.jar"
+hash-format = "sha256"
+hash = "3f5c81806db6e4ad3089239d05e81bdad4550332e7fe2e064a7b794ff3b5ae8c"

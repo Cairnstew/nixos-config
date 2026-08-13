@@ -1046,6 +1046,41 @@
         "type": "github"
       }
     },
+    "packwiz": {
+      "inputs": {
+        "nixpkgs": [
+          "nixpkgs"
+        ]
+      },
+      "locked": {
+        "lastModified": 1771455222,
+        "narHash": "sha256-QK8sY7e6QHhg+GH8NiiePGFlsQBI0jjUlsgBuq1Yopc=",
+        "owner": "packwiz",
+        "repo": "packwiz",
+        "rev": "dfd8b68a4796c763e25bad50265ea1f1233e24f1",
+        "type": "github"
+      },
+      "original": {
+        "owner": "packwiz",
+        "repo": "packwiz",
+        "type": "github"
+      }
+    },
+    "packwiz2nix": {
+      "locked": {
+        "lastModified": 1683887515,
+        "narHash": "sha256-eYxlzal5DNUvpv3F9W42wREdRi6h1hceOcgoiN6gvRg=",
+        "owner": "getchoo",
+        "repo": "packwiz2nix",
+        "rev": "1c9c0ef2e40fbd1a921b446d8fe5884e645e4308",
+        "type": "github"
+      },
+      "original": {
+        "owner": "getchoo",
+        "repo": "packwiz2nix",
+        "type": "github"
+      }
+    },
     "pyproject-build-systems": {
       "inputs": {
         "nixpkgs": [
@@ -1215,6 +1250,8 @@
         "nixpkgs-stable": "nixpkgs-stable",
         "nixtest": "nixtest",
         "nuenv": "nuenv",
+        "packwiz": "packwiz",
+        "packwiz2nix": "packwiz2nix",
         "sillytavern": "sillytavern",
         "stable-diffusion-webui-nix": "stable-diffusion-webui-nix",
         "steamlink-archlinux": "steamlink-archlinux",

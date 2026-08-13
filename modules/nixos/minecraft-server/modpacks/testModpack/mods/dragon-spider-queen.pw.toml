@@ -1,0 +1,8 @@
+name = "Dragon Spider Queen - Dragon Survival Addon"
+filename = "ds_realistic_spider-1.05_27.07.2026-neoforge-1.21.1.jar"
+side = "both"
+
+[download]
+url = "https://edge.forgecdn.net/files/8521/202/ds_realistic_spider-1.05_27.07.2026-neoforge-1.21.1.jar"
+hash-format = "sha256"
+hash = "36c5b9dc1f8e38f1f893cb4776cfbb34d7c6e49d2b9b40ebb72a9d95300ecd51"

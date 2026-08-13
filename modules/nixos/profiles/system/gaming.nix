@@ -6,6 +6,18 @@ let
   inherit (flake.config.me) username;
 in
 {
+  options.my.profiles.gaming.minecraftServers = lib.mkOption {
+    type = lib.types.listOf lib.types.str;
+    default = [ ];
+    example = [ "test" ];
+    description = ''
+      Minecraft dedicated servers (names from
+      <literal>my.services.minecraftServer.servers</literal>, defined in
+      <literal>modules/nixos/minecraft-server/servers/</literal>) to enable on
+      this host. Servers default to disabled; listing a name here turns it on.
+    '';
+  };
+
   config = lib.mkIf cfg.enable {
     # ── Gaming dependencies ────────────────────────────────────────────────
     my.system.audio.enable = lib.mkDefault true;
@@ -27,5 +39,11 @@ in
     # will show no acceleration (because maccel handles it in the kernel),
     # but the cursor movement will have the configured curve applied.
     my.hardware.mouse.enable = lib.mkDefault true;
+
+    # ── Minecraft servers ──────────────────────────────────────────────────
+    # Enable the servers listed in my.profiles.gaming.minecraftServers.
+    my.services.minecraftServer.servers = lib.genAttrs cfg.minecraftServers (_name: {
+      enable = true;
+    });
   };
 }

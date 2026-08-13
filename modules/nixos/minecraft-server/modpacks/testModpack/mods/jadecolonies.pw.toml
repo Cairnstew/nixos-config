@@ -1,0 +1,8 @@
+name = "JadeColonies"
+filename = "jadecolonies-1.21.1-1.6.0.jar"
+side = "both"
+
+[download]
+url = "https://edge.forgecdn.net/files/5721/338/jadecolonies-1.21.1-1.6.0.jar"
+hash-format = "sha256"
+hash = "b6d29ba52eb7c12b26f90868da909924034f6b6d633b3d30f3d36b721e4dcc65"

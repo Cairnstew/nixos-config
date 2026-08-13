@@ -1,0 +1,13 @@
+name = "Applied Extended Crafting"
+filename = "applied_extended_crafting-1.1.2.jar"
+side = "both"
+
+[download]
+url = "https://cdn.modrinth.com/data/g2V0EJdS/versions/u74BawQ2/applied_extended_crafting-1.1.2.jar"
+hash-format = "sha512"
+hash = "dc8708d97b641fa2a8251acb568d4aa246278b7557fe443c045e1396472302c05aab2b376af1a90e2d11b046f2be8c159479ef374c50e2cdca6905f1b94981b3"
+
+[update]
+[update.modrinth]
+mod-id = "g2V0EJdS"
+version = "u74BawQ2"

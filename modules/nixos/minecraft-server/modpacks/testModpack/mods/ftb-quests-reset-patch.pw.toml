@@ -1,0 +1,8 @@
+name = "FTB Quests Reset Patch"
+filename = "ftbquestsresetpatch-1.21.1-1.0.0.jar"
+side = "both"
+
+[download]
+url = "https://edge.forgecdn.net/files/8529/964/ftbquestsresetpatch-1.21.1-1.0.0.jar"
+hash-format = "sha256"
+hash = "51902095d7694cb40a9063102d1a95fd4230c4eb0a89b1ae3e910913b92359ce"

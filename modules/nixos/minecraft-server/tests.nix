@@ -95,6 +95,14 @@ in
                 fi
               done
             '' else ""}
+            ${if srv.packwiz != null then ''
+              echo "[smoke-test] ${name}: packwiz = ${srv.packwiz}"
+              if [ -f "${srv.packwiz}/checksums.json" ]; then
+                echo "[smoke-test] PASS: ${name} packwiz checksums.json present — mods will be symlinked at start"
+              else
+                echo "[smoke-test] WARN: ${name} packwiz set but no checksums.json — run .#packwiz-checksums-<pack> from the modpack dir" >&2
+              fi
+            '' else ""}
           '';
         in
         ''

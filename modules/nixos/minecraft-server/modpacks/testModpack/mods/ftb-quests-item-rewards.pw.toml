@@ -1,0 +1,13 @@
+name = "FTB Quests: Item Rewards"
+filename = "ftb_quests_item_rewards-1.0-neoforge-1.21.1.jar"
+side = "both"
+
+[download]
+url = "https://cdn.modrinth.com/data/OPbKa6vi/versions/Dwx3Gqvj/ftb_quests_item_rewards-1.0-neoforge-1.21.1.jar"
+hash-format = "sha512"
+hash = "eeb35d55b4013e2ac520bb6ce714dfd96e5a37bf5d0980e7a7d524095007b4dc3189bef1e12d93c104ed9c5a8e8207cf11486fa5309e6309198d80af857d4ae0"
+
+[update]
+[update.modrinth]
+mod-id = "OPbKa6vi"
+version = "Dwx3Gqvj"

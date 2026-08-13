@@ -1,0 +1,13 @@
+name = "Aures - Dragon Survival"
+filename = "DragonSurvival-1.21.1-v2.0.54-29.04.2026-all.jar"
+side = "both"
+
+[download]
+url = "https://cdn.modrinth.com/data/9v90aG1X/versions/AO5xRbec/DragonSurvival-1.21.1-v2.0.54-29.04.2026-all.jar"
+hash-format = "sha512"
+hash = "4e400bdc98a556b941b2e0ebf732b59f0f87a8254781c47820d2bc1ff990ec038da038e4955bba973c469a371319e2dea87592fe0fbe618f331497d025d4e9eb"
+
+[update]
+[update.modrinth]
+mod-id = "9v90aG1X"
+version = "AO5xRbec"

@@ -1,0 +1,8 @@
+name = "MineColonies"
+filename = "minecolonies-1.1.1374-1.21.1-snapshot.jar"
+side = "both"
+
+[download]
+url = "https://edge.forgecdn.net/files/8621/898/minecolonies-1.1.1374-1.21.1-snapshot.jar"
+hash-format = "sha256"
+hash = "9ea739a273cb20d02a3a0ce05f6e3d315aa7e9ddd17a23f0e70ee5f00c3e4cfa"

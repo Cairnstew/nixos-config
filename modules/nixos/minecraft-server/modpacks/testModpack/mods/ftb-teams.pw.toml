@@ -1,0 +1,8 @@
+name = "FTB Teams (NeoForge)"
+filename = "ftb-teams-neoforge-2101.1.10.jar"
+side = "both"
+
+[download]
+url = "https://edge.forgecdn.net/files/7878/281/ftb-teams-neoforge-2101.1.10.jar"
+hash-format = "sha256"
+hash = "a656f2aa0e11a933aab3ba697690aa0eb2041f65e6c5daa448897ee0a6d37a6c"

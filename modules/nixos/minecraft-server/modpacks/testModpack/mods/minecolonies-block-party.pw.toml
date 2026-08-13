@@ -1,0 +1,13 @@
+name = "MineColonies: Block Party"
+filename = "block_party-2.0.0-neoforge-1.21.1.jar"
+side = "both"
+
+[download]
+url = "https://cdn.modrinth.com/data/wdfIaSqz/versions/yBetsOp9/block_party-2.0.0-neoforge-1.21.1.jar"
+hash-format = "sha512"
+hash = "e1f40d54406269d1f7c3a92e48c652e8cfdc1a461732c9e267c6a2492c64b05570102c1213fcfcad38eef9a53fe616ff55026aa16bbe89ad151e86cec67f475d"
+
+[update]
+[update.modrinth]
+mod-id = "wdfIaSqz"
+version = "yBetsOp9"

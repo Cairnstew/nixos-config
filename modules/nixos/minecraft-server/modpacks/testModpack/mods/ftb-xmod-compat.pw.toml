@@ -1,0 +1,8 @@
+name = "FTB XMod Compat"
+filename = "ftb-xmod-compat-neoforge-21.1.10.jar"
+side = "both"
+
+[download]
+url = "https://edge.forgecdn.net/files/8520/191/ftb-xmod-compat-neoforge-21.1.10.jar"
+hash-format = "sha256"
+hash = "781cbeb22e932c7a44de6b0b6528d86fdd30295a44f1558bcd51864def755419"

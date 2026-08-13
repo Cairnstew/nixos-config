@@ -1,0 +1,8 @@
+name = "Be Bee Queen - Dragon Survival Addon"
+filename = "bee_queen_ds-30.07.2026_1.05-neoforge-1.21.1.jar"
+side = "both"
+
+[download]
+url = "https://edge.forgecdn.net/files/8542/869/bee_queen_ds-30.07.2026_1.05-neoforge-1.21.1.jar"
+hash-format = "sha256"
+hash = "5011032fa6af09cbe25627a61635cb3e5cea724ce1172a8c1d1adab5e08e6286"

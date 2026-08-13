@@ -1,0 +1,8 @@
+name = "FTB Quests Throughput Addon"
+filename = "throughput-1.1.0-1.21.1.jar"
+side = "both"
+
+[download]
+url = "https://edge.forgecdn.net/files/7927/135/throughput-1.1.0-1.21.1.jar"
+hash-format = "sha256"
+hash = "9d95dea0b0590f421aa0c42eaf275f4153025b6a651032725e1ad4990b526e79"

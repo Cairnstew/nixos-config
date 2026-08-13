@@ -1,0 +1,8 @@
+name = "Minecolonies: Epicfied (Epic Colonies)"
+filename = "EpicColonies-NeoForge-1.21.1-EFM-21.16.4-21.0.8.jar"
+side = "both"
+
+[download]
+url = "https://edge.forgecdn.net/files/8485/616/EpicColonies-NeoForge-1.21.1-EFM-21.16.4-21.0.8.jar"
+hash-format = "sha256"
+hash = "bcab85c7c0b46217acdbc6240796079eb77326c75835074a9760d8abb07aeecc"

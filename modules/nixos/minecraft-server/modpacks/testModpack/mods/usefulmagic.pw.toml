@@ -1,0 +1,13 @@
+name = "UsefulMagic"
+filename = "UsefulMagic-NeoForge-1.21.1-3.0.3.jar"
+side = "both"
+
+[download]
+url = "https://cdn.modrinth.com/data/T5YpEgSg/versions/CDvflNk2/UsefulMagic-NeoForge-1.21.1-3.0.3.jar"
+hash-format = "sha512"
+hash = "ce06efb55fb4f1af8c83a5676a6054ae510f656b8968efbb53a46c5525cf08efdf66cdd9a1123d13630f2b34f5ff71a186a86fa164981f1130668def415be710"
+
+[update]
+[update.modrinth]
+mod-id = "T5YpEgSg"
+version = "CDvflNk2"
