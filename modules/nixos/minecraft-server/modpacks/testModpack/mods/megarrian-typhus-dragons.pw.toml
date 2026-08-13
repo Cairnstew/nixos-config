@@ -1,0 +1,8 @@
+name = "Megarrian Typhus Dragons - Dragon Survival Addon"
+filename = "Megarria_Dragons_Addon_1.1.4_17.06.2026_1.21.1_neoforge.jar"
+side = "both"
+
+[download]
+url = "https://edge.forgecdn.net/files/8264/480/Megarria_Dragons_Addon_1.1.4_17.06.2026_1.21.1_neoforge.jar"
+hash-format = "sha256"
+hash = "0a554157c2bec3912731beb27e5a1fdfba23d6429f80aee921162c5a96255ddf"

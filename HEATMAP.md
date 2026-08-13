@@ -153,6 +153,7 @@ All `my.*` options declared across module files.
 | `my.profiles.server.enable` | bool | `false` | Server profile (headless) |
 | `my.profiles.minimal.enable` | bool | `false` | Minimal profile (bare essentials) |
 | `my.profiles.gaming.enable` | bool | `false` | Gaming profile (Steam, games, etc.) |
+| `my.profiles.gaming.minecraftServers` | list[str] | `[]` | Minecraft servers to enable (names from `my.services.minecraftServer.servers`, defined in `modules/nixos/minecraft-server/servers/`) |
 | `my.profiles.development.enable` | bool | `false` | Development profile (dev tools, containers) |
 | `my.profiles.desktop.gnome.enable` | bool | `false` | GNOME desktop environment |
 | `my.profiles.gpu.mesa.enable` | bool | `false` | Mesa GPU drivers (Intel/AMD) |
@@ -327,6 +328,7 @@ All `my.*` options declared across module files.
 | `my.services.game-servers.monitoring.exporter` | null/package | self pkg | a2s-exporter package |
 | `my.services.minecraftServer.enable` | bool | `false` | Declarative Minecraft servers (nix-minecraft) |
 | `my.services.minecraftServer.eula` | bool | `false` | Accept Mojang's EULA (required) |
+| `my.services.minecraftServer.opencode.enable` | bool | `true` | Add packwiz/modpack tools (CLI, checksums, status, config/patch, inspect, pin, update-safe), skill & command to opencode |
 | `my.services.minecraftServer.dataDir` | path | `/mnt/data/minecraft` | Base data dir for all servers |
 | `my.services.minecraftServer.packDir` | path | `/mnt/data/minecraft/packs` | Drop directory for modpack zips (scp here) |
 | `my.services.minecraftServer.openFirewall` | bool | `false` | Open ports for all servers |
@@ -347,6 +349,7 @@ All `my.*` options declared across module files.
 | `my.services.minecraftServer.servers.<name>.openFirewall` | bool | `false` | Open this server's ports |
 | `my.services.minecraftServer.servers.<name>.packZip` | null/str | `null` | Modpack zip/mrpack in packDir to unpack at start |
 | `my.services.minecraftServer.servers.<name>.restartOnZipChange` | bool | `true` | Auto-restart server when packZip changes |
+| `my.services.minecraftServer.servers.<name>.packwiz` | null/path | `null` | Path to a packwiz modpack dir in this flake (mods built via packwiz2nix) |
 | `my.services.minecraftServer.servers.<name>.pack` | null/str | `null` | Modpack content dir or fetchModrinthModpack derivation |
 | `my.services.minecraftServer.servers.<name>.migrateFrom` | null/str | `null` | Copy world from old server-data dir on first start |
 | `my.services.minecraftServer.servers.<name>.extraSymlinks` | attrs | `{}` | Extra path → data-dir symlinks |

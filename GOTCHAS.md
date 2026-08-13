@@ -8,6 +8,24 @@
   any evaluation or build
   failure.**
 
+**`just` runs each recipe line in a separate shell — a `cd` on one line does not persist to the next**
+
+Symptom (2026-08-13): `just packwiz testModpack init` (recipe: `cd modules/…/testModpack` then `nix run "…/nixos-config#packwiz" -- init`) ran packwiz from the **repo root** — the interactive default name showed "Nixos Config" (the git repo name) instead of "testModpack", and init failed mid-"Refreshing index" with `read result: is a directory`, leaving a stray 0-byte `index.toml` in the repo root. Cause: `just` executes each recipe line in its own shell, so `cd` on line 1 has no effect on line 2; packwiz (which operates on CWD) therefore ran in the repo root and choked on the repo's directory structure. Fix: chain on one line — `cd … && nix run … -- …` — or use a shebang recipe. Same applies to any multi-line `just` recipe that relies on a directory change.
+
+---
+
+**`packwiz refresh` indexes `checksums.json` at the pack root — breaking index.toml sync (index 256 vs 255 mods) unless `.packwizignore` excludes it**
+
+Symptom (2026-08-13): After adding `[options] datapack-folder = "config/paxi/datapacks"` to `testModpack/pack.toml` and running `packwiz refresh`, `mc-pack-status` reported `index.toml entries: 256 (MISMATCH)` while only 255 mods exist. Cause: packwiz indexes **every file** in the pack dir, and `checksums.json` (a Nix-side build artifact that lives at the pack root for packwiz2nix) is not in the default ignore list — so `refresh` added it as an internal file, and installers would have copied it into the game folder. Fix: add a `.packwizignore` (gitignore-format) at the pack root containing `checksums.json`. Re-run `packwiz refresh` → back to 255 in sync. Any other pack-root artifact (exported zips, etc.) needs the same treatment. See `modules/nixos/minecraft-server/modpacks/testModpack/.packwizignore`.
+
+---
+
+**packwiz internal files (configs, datapacks, kubejs/scripts) are indexed but never reach the server unless the module symlinks them — mods only come from checksums.json**
+
+Symptom (2026-08-13): The `servers.<name>.packwiz` path built every mod jar via packwiz2nix (`mkModLinks`) but **nothing else** — a pack shipping `config/<mod>/…` default configs or `config/paxi/datapacks/…` patches had them silently absent from the server's data dir. Cause: the packwiz deploy path only consumed `checksums.json` (mod jars); internal files are a separate packwiz concept that packwiz-installer copies on client install, and our Nix server had no equivalent. Fix: the module now symlinks the pack's `config/`, `kubejs/`, `scripts/`, `datapacks/`, `defaultconfigs/` subdirs into the data dir at start (`packwizStartPre` in `modules/nixos/minecraft-server/config.nix`, wired into `extraStartPre`) — `mods` is excluded since jars come from checksums.json. Verify with `mc-pack-status` (it now checks that every on-disk internal file is in index.toml and that Paxi datapack pack_formats match the pack's MC version; 1.21.1 = 48). Related: `config-preserve`/`config-add`/`datapack-add` opencode tools live in `modules/nixos/minecraft-server/opencode/tools/mc-pack.py` — every file edit must `packwiz refresh` or the file is on disk but unindexed (never installed).
+
+---
+
 **`error: The option 'my.<name>' does not exist` — new module never imported into a host config**
 
 Symptom (2026-08-12): Created `modules/nixos/remote-gui/` (meta/options/config/services/tests), then `nix eval .#nixosConfigurations.server.config.my.services.remoteGui` failed with `error: The option 'my.services.remoteGui' does not exist. Did you mean 'my.services.comfyui' ...`. Cause: autowiring only exports the module as a flake output (`nixosModules.remote-gui`) — it does **not** import it into any NixOS configuration. Hosts get options only from the modules listed in `modules/nixos/common.nix` imports (which every host imports), so a brand-new module's options are invisible until you add `./<name>` there. Fix: add `./remote-gui` to `modules/nixos/common.nix` imports, then `git add` the new dir (see the untracked-files entry below — pure flake eval only sees git-tracked paths) before eval/`flake check`. Confirmed working: submodule option defaults may reference `flake.config.me.username` (e.g. `default = flake.config.me.username` inside a `types.submodule`).

@@ -1,0 +1,13 @@
+name = "Just Another Witchery Remake"
+filename = "witchery-0.5.7+mc1.21.1.jar"
+side = "both"
+
+[download]
+url = "https://cdn.modrinth.com/data/LCO8KZvC/versions/XzdUmonc/witchery-0.5.7%2Bmc1.21.1.jar"
+hash-format = "sha512"
+hash = "214b20cd0bc35bdac0a72122effe0decab7d3e8449da53d661eb4cee5bb5777b3a10b910c8d2559da5267f384bfbedc1fe83b7fe6788b33b7b269580dba42dbd"
+
+[update]
+[update.modrinth]
+mod-id = "LCO8KZvC"
+version = "XzdUmonc"

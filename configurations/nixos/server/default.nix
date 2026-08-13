@@ -231,50 +231,25 @@
   # Caddy upstream must point to the Tailscale IP when autoBindTailscaleIp is on
   my.services.proxy.upstreams.suwayomi.host = "100.78.102.28";
 
-  # ── Minecraft Server (Dragon Technology modpack) ─────────────────────────
-  # Prism Launcher is a client launcher and cannot run a server. This wraps the
-  # NeoForge 1.21.1 server in a declarative nix-minecraft module. Mods are
-  # provisioned by zipping the instance's minecraft/ folder in Prism and
-  # scp'ing it to packDir — the module unpacks it into the data dir when the
-  # zip changes:
-  #   scp dragon-technology.zip seanc@server:/mnt/data/minecraft/packs/
-  # then `sudo systemctl restart minecraft-server-dragon-technology`.
+  # ── Minecraft Server ────────────────────────────────────────────────────
+  # Server definitions live in modules/nixos/minecraft-server/servers/ — each
+  # file defines one complete server. They are disabled by default; enable the
+  # ones you want here or from a profile (e.g. my.profiles.gaming.minecraftServers).
   my.services.minecraftServer = {
     enable = true;
     eula = true; # Mojang EULA — required
     dataDir = "/mnt/data/minecraft";
     packDir = "/mnt/data/minecraft/packs"; # scp modpack zips here
 
-    # Web console: https://server.tail685690.ts.net/mc/dragon-technology/
+    # Web console: https://server.tail685690.ts.net/mc/test/
     web = {
       enable = true;
       portBase = 7781; # avoid colliding with my.services.ttyd (7681)
       proxyUpstream = true;
     };
 
-    servers.dragon-technology = {
-      packZip = "dragon-technology.zip";
-      package = pkgs.neoforgeServers.neoforge-1_21_1-21_1_238;
-      jvmOpts = "-Xms4G -Xmx8G";
-
-      # Preserve the world from the old Prism server-data on first start.
-      migrateFrom = "/mnt/data/prismlauncher/server-data/Dragon Technology";
-
-      serverProperties = {
-        server-port = 25565;
-        max-players = 12;
-        motd = "Dragon Technology";
-        white-list = true;
-        enable-query = true;
-      };
-      whitelist = { };
-      operators = { };
-      openFirewall = true;
-    };
+    servers.test.enable = true;
   };
-
-  # Memory cap for the Minecraft server (nix-minecraft hardens the rest).
-  systemd.services.minecraft-server-dragon-technology.serviceConfig.MemoryMax = "12G";
 
   # ── Ollama (LLM Serving) ───────────────────────────────────────────────
   my.services.ollama = {

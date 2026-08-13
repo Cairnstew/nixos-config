@@ -137,6 +137,20 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
+    # packwiz CLI — create & edit packwiz modpacks (pack.toml / mods/*.pw.toml).
+    # NOTE: the upstream package output is broken (empty nix/vendor-hash); we
+    # build `packwiz` from pkgs (nixpkgs) instead. Input kept for parity/future.
+    packwiz = {
+      url = "github:packwiz/packwiz";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+
+    # packwiz → Nix fixed-output derivations: mkPackwizPackages + mkModLinks
+    # (no own nixpkgs input; the lib takes an instance of nixpkgs as an argument)
+    packwiz2nix = {
+      url = "github:getchoo/packwiz2nix";
+    };
+
   };
 
   # Wired using https://nixos-unified.org/autowiring.html

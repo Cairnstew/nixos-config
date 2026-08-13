@@ -1,0 +1,13 @@
+name = "AE2 Dynamic Trees Fix"
+filename = "ae2-dynamic-trees-fix-1.0.jar"
+side = "server"
+
+[download]
+url = "https://cdn.modrinth.com/data/w2c2560c/versions/1i6VitG6/ae2-dynamic-trees-fix-1.0.jar"
+hash-format = "sha512"
+hash = "85cb8f6f08a35d37510fc2ba6df342f932325c7b4730def3e6d064044e554f2eaff9a90d69f2ab179977bf82a67598d83a6f5bb8002ede3f556be9883335b47d"
+
+[update]
+[update.modrinth]
+mod-id = "w2c2560c"
+version = "1i6VitG6"

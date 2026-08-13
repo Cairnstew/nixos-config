@@ -1,0 +1,13 @@
+name = "Dungeons and Taverns Desert Temple Overhaul"
+filename = "dungeons-and-taverns-desert-temple-replacement-v1.2.jar"
+side = "both"
+
+[download]
+url = "https://cdn.modrinth.com/data/7JTDDmRT/versions/jwKNecIA/dungeons-and-taverns-desert-temple-replacement-v1.2.jar"
+hash-format = "sha512"
+hash = "7cf39c892417940f8d4dc4efd9ac4ec42af9e8d4ab443356766898ed1a8d4af76cacb4accb1a2c86da536e97263db366e3270fc83b19a63f46a329812c7a1b5e"
+
+[update]
+[update.modrinth]
+mod-id = "7JTDDmRT"
+version = "jwKNecIA"

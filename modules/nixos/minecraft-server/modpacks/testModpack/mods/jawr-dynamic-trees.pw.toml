@@ -1,0 +1,8 @@
+name = "JAWR: Dynamic Trees"
+filename = "witchery_dynamic_trees-0.5.2+mc1.21.1.jar"
+side = "both"
+
+[download]
+url = "https://edge.forgecdn.net/files/8625/828/witchery_dynamic_trees-0.5.2%2Bmc1.21.1.jar"
+hash-format = "sha256"
+hash = "a1144a0f77dc6c60e275707acef89d74a1196517d57da525e3a2523636c35652"

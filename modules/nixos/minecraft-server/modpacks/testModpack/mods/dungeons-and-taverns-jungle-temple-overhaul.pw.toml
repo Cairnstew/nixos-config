@@ -1,0 +1,13 @@
+name = "Dungeons and Taverns Jungle Temple Overhaul"
+filename = "dungeons-and-taverns-jungle-temple-replacement-v1.2.jar"
+side = "both"
+
+[download]
+url = "https://cdn.modrinth.com/data/oHjYCS0f/versions/8Xxj6Gaj/dungeons-and-taverns-jungle-temple-replacement-v1.2.jar"
+hash-format = "sha512"
+hash = "d2fcac25cda8bcc5f925516f94525651276d5f353e34d3762b6f07407c8ae98ad41c1d6459d5091dbd7901e5eeb8929b13c6931a5ff282ee359b0115f99b13c9"
+
+[update]
+[update.modrinth]
+mod-id = "oHjYCS0f"
+version = "8Xxj6Gaj"

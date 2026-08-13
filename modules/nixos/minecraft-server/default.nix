@@ -5,5 +5,6 @@
     ./config.nix
     ./services.nix
     ./tests.nix
+    ./servers
   ];
 }

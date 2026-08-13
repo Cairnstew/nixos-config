@@ -96,12 +96,22 @@ information from the web and project files.
   (pkgs/by-name/mi/minecraft-server) and `papermcServers.*`
   (pkgs/games/papermc) — don't attribute those to the overlay.
 - packwiz: docs live at packwiz.infra.link (packwiz.in.th 404s/transport
-  errors). There are NO `packwiz curseforge install` / `packwiz mr install`
-  subcommands (only `curseforge add/detect/export/import/open` and
-  `modrinth add/export`); the server installer is the separate Java tool
-  `packwiz-installer` (`java -jar packwiz-installer-bootstrap.jar -g -s
-  server <url>/pack.toml`), which is NOT in nixpkgs. `packwiz serve -p
-  <port>` hosts the pack for it.
+  errors). The site's INDEX pages (`/tutorials/`, `/reference/`,
+  `/reference/pack-format/`) 404 — only LEAF pages serve; the nav sidebar on
+  any leaf page reveals the real URLs. There are NO `packwiz install`,
+  `packwiz datapack add` / `packwiz resourcepack add` subcommands — only
+  `curseforge add/detect/export/import/open`, `modrinth add/export`, `url
+  add`; the installer is the separate Java tool `packwiz-installer`
+  (`java -jar packwiz-installer-bootstrap.jar -g -s server <url>/pack.toml`),
+  NOT in nixpkgs. `packwiz serve -p <port>` hosts the pack for it. Configs /
+  datapacks ship as "internal files": drop them in the pack dir (`config/`,
+  or `config/paxi/datapacks` with the Paxi loader) and run `packwiz refresh`;
+  index.toml's `preserve` flag (kept across refresh, honored by
+  packwiz-installer) means "don't overwrite the player's copy"; `packwiz pin`
+  hard-blocks updates (explicit `update <mod>` exits 1). packwiz-installer's
+  GitHub README is a stub — verify such behavior in source with
+  `github_search_code` (Go in packwiz/packwiz, Kotlin in
+  packwiz/packwiz-installer, e.g. DownloadTask.kt).
 - Prism Launcher wiki pages (prismlauncher.org/wiki/…) are Astro JS shells;
   raw markdown is at
   `github.com/PrismLauncher/prismlauncher.org/src/content/docs/wiki/`.
@@ -244,3 +254,16 @@ Append newest at the bottom. Entries are facts about this agent's own operation.
   mechanism, nix-minecraft's actual API, packwiz/packwiz-installer CLI shape,
   Prism wiki raw-markdown location + `--server` semantics, and Minecraft
   monitoring protocols/tools.
+
+### 2026-08-13 — packwiz docs are leaf-only; verify CLI behavior in source
+- Lesson: researching packwiz configs/datapacks/pinning, the site's index
+  pages (`/tutorials/`, `/reference/`, `/reference/pack-format/`) all 404'd —
+  only leaf pages serve, with the nav sidebar carrying the real URLs. The
+  packwiz-installer GitHub README is a one-line stub, so `preserve`,
+  `datapack-folder` and `pin` behavior had to be confirmed in source
+  (DownloadTask.kt, modrinth.go, indexfiles.go, update.go) via
+  `github_search_code` — which proved `packwiz refresh` keeps the `preserve`
+  flag (updateFileEntry) and pin hard-blocks even explicit `update <mod>`.
+- Fix: extended the packwiz guideline with leaf-page-only URLs, the
+  no-install / no-datapack-add command surface, internal-files + `preserve`
+  semantics, and the source-verification technique for packwiz behavior.

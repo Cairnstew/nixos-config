@@ -1,0 +1,13 @@
+name = "Cosy Critters & Creepy Crawlies [Neo]"
+filename = "cosycritters-1.21.1-NeoForge-0.0.6.jar"
+side = "client"
+
+[download]
+url = "https://cdn.modrinth.com/data/lOKz1gkH/versions/HmcDuDsO/cosycritters-1.21.1-NeoForge-0.0.6.jar"
+hash-format = "sha512"
+hash = "4fc5dfedd6df42337c52f08844e572765c167c62abc7165ed8e18d9447445ce03bd417327815c212b62ac594989bac168f62b9a1b6a5c15b432c77a082f33c81"
+
+[update]
+[update.modrinth]
+mod-id = "lOKz1gkH"
+version = "HmcDuDsO"

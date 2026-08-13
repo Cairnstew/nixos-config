@@ -1,0 +1,8 @@
+name = "Ex Meteor Shower"
+filename = "meteor_shower-0.0.5.jar"
+side = "both"
+
+[download]
+url = "https://edge.forgecdn.net/files/8518/516/meteor_shower-0.0.5.jar"
+hash-format = "sha256"
+hash = "e5c3fbf84e720d7e42ee49d477c7e9811b07efa14e1a0810f58cda7ba196d65e"

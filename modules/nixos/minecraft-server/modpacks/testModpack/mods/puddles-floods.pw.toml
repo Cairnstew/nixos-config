@@ -1,0 +1,13 @@
+name = "Puddles & Floods"
+filename = "puddleflood-1.1.5+1.21.1-neoforge.jar"
+side = "both"
+
+[download]
+url = "https://cdn.modrinth.com/data/xeRVd78z/versions/E6TfZDKF/puddleflood-1.1.5%2B1.21.1-neoforge.jar"
+hash-format = "sha512"
+hash = "f262bf01f3b3dad2beda6ee21939c0dbae5d76c1851383e6edc99fe0b25fc8c5f7284c3688d95c8660bb745d898cb22a11c429513c765d162c9937b4e8772e3e"
+
+[update]
+[update.modrinth]
+mod-id = "xeRVd78z"
+version = "E6TfZDKF"

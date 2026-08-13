@@ -166,6 +166,26 @@ in
       };
     };
 
+    opencode = {
+      enable = mkOption {
+        type = types.bool;
+        default = true;
+        description = ''
+          When this module is enabled, add packwiz/modpack utilities to the
+          user's opencode configuration (<option>my.programs.opencode</option>):
+          the <literal>packwiz</literal>, <literal>packwiz-checksums</literal>,
+          <literal>mc-pack-status</literal> tools, plus the config/patch tooling
+          (<literal>packwiz-config-add</literal>/<literal>-preserve</literal>/
+          <literal>-list</literal>/<literal>-diff</literal>,
+          <literal>packwiz-datapack-add</literal>/<literal>-remove</literal>,
+          <literal>packwiz-mod-pin</literal>, <literal>packwiz-inspect-mod</literal>,
+          <literal>packwiz-update-safe</literal>), the <literal>mc-modpack</literal>
+          skill and the <literal>mc-modpack</literal> command. Set to
+          <literal>false</literal> to keep opencode untouched.
+        '';
+      };
+    };
+
     servers = mkOption {
       type = types.attrsOf (types.submodule {
         options = {
@@ -216,10 +236,9 @@ in
             '';
             example = literalExpression ''
               {
-                max-players = 12;
-                motd = "Dragon Technology";
-                white-list = true;
-                enable-query = true;
+                max-players = 4;
+                motd = "A NixOS Test Server";
+                white-list = false;
               }
             '';
           };
@@ -268,7 +287,7 @@ in
               <option>pack</option> (zip extracted first, pack symlinked after
               so pack wins on conflicts).
             '';
-            example = "dragon-technology.mrpack";
+            example = "test-server.zip";
           };
 
           restartOnZipChange = mkOption {
@@ -284,6 +303,33 @@ in
               file), so spurious events are ignored. Set to <literal>false</literal>
               to restart manually only. No effect when <option>packZip</option>
               is null.
+            '';
+          };
+
+          packwiz = mkOption {
+            type = types.nullOr types.path;
+            default = null;
+            description = ''
+              Path to a <link xlink:href="https://packwiz.infra.link">packwiz</link>
+              modpack directory in this flake (e.g.
+              <literal>../modpacks/my-pack</literal>). The module reads its
+              <literal>checksums.json</literal> — generated with
+              <literal>just packwiz-checksums &lt;pack&gt;</literal> after
+              editing mods with the packwiz CLI — and builds every mod as a
+              fixed-output derivation, symlinked into the server's
+              <literal>mods/</literal> directory via packwiz2nix
+              (<literal>mkPackwizPackages</literal> + <literal>mkModLinks</literal>).
+              The pack's internal content — <literal>config/</literal> (default
+              player configs), <literal>datapacks/</literal> / Paxi datapacks in
+              <literal>config/paxi/datapacks</literal>, <literal>kubejs/</literal>
+              and <literal>scripts/</literal> — is symlinked into the data dir at
+              server start so shipped defaults and patches reach the server too.
+              Mods are only linked when <literal>checksums.json</literal>
+              exists; until it is generated the server starts without them.
+              See "Provisioning mods with packwiz" in the module README.
+            '';
+            example = literalExpression ''
+              ../modpacks/my-pack
             '';
           };
 
@@ -306,7 +352,7 @@ in
               (zip extracted first, pack symlinked after so pack wins on
               conflicts).
             '';
-            example = "/mnt/data/minecraft/packs/dragon-technology";
+            example = "/mnt/data/minecraft/packs/test-server";
           };
 
           migrateFrom = mkOption {
@@ -320,7 +366,7 @@ in
               start (only if no <literal>world/</literal> exists yet — idempotent).
               Use to preserve worlds when migrating to this module.
             '';
-            example = "/mnt/data/prismlauncher/server-data/Dragon Technology";
+            example = "/mnt/data/prismlauncher/server-data/My Old Server";
           };
 
           extraSymlinks = mkOption {

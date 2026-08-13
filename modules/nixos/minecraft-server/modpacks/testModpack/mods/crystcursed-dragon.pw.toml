@@ -1,0 +1,8 @@
+name = "Crystcursed Dragon (Dragon Survival Add-On)"
+filename = "crystcursed_dragon-1.4.0.jar"
+side = "both"
+
+[download]
+url = "https://edge.forgecdn.net/files/8424/194/crystcursed_dragon-1.4.0.jar"
+hash-format = "sha256"
+hash = "15331d5815dc76d37228b548d2dbf3d55b81e393e243d95a48963949e5d58743"

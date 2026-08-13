@@ -1,0 +1,8 @@
+name = "Domino Trees (Dynamic Trees addon)"
+filename = "dominotrees-neoforge-1.21.1-1.1.5.jar"
+side = "both"
+
+[download]
+url = "https://edge.forgecdn.net/files/8618/45/dominotrees-neoforge-1.21.1-1.1.5.jar"
+hash-format = "sha256"
+hash = "acce704d13a5fd5deee60e88fb659f703cb0a8ba9e2211190507ed26a602c87b"

@@ -32,6 +32,7 @@ derivations, and a per-server **web console** for monitoring and start/stop.
 | `my.services.minecraftServer.servers.<name>.openFirewall` | `false` | Open this server's ports |
 | `my.services.minecraftServer.servers.<name>.packZip` | `null` | Modpack zip/mrpack in `packDir` to unpack at start |
 | `my.services.minecraftServer.servers.<name>.restartOnZipChange` | `true` | Auto-restart server when `packZip` changes |
+| `my.services.minecraftServer.servers.<name>.packwiz` | `null` | Path to a packwiz modpack dir in this flake (built via packwiz2nix) |
 | `my.services.minecraftServer.servers.<name>.pack` | `null` | Modpack content dir or `fetchModrinthModpack` derivation |
 | `my.services.minecraftServer.servers.<name>.migrateFrom` | `null` | Copy world from an old server-data dir on first start |
 | `my.services.minecraftServer.servers.<name>.extraSymlinks` | `{}` | Extra path → data-dir symlinks |
@@ -47,27 +48,137 @@ my.services.minecraftServer = {
   eula = true;
   dataDir = "/mnt/data/minecraft";
   packDir = "/mnt/data/minecraft/packs"; # scp modpack zips here
-
-  # Web consoles: https://server.tail…ts.net/mc/dragon-technology/ via the
-  # reverse proxy (bound to 127.0.0.1 by default).
   web.enable = true;
-
-  servers.dragon-technology = {
-    packZip = "dragon-technology.mrpack"; # exported from Prism, scp'd to packDir
-    package = pkgs.neoforgeServers.neoforge-1_21_1-21_1_238;
-    jvmOpts = "-Xms4G -Xmx8G";
-    serverProperties = {
-      max-players = 12;
-      motd = "Dragon Technology";
-      white-list = true;
-      enable-query = true;
-    };
-    whitelist = { seanc = "01234567-89ab-cdef-0123-456789abcdef"; };
-    operators = { seanc = "01234567-89ab-cdef-0123-456789abcdef"; };
-    openFirewall = true;
-  };
 };
 ```
+
+## Server definitions (the servers/ folder)
+
+Each server is defined **in full** in its own file under
+`modules/nixos/minecraft-server/servers/` — one file per server, everything
+about that server in one place. Add a new server by creating a file there and
+listing it in `servers/default.nix`.
+
+A server definition sets `my.services.minecraftServer.servers.<name>` and is
+**disabled by default** (`enable = lib.mkDefault false`), so defining a server
+never starts it. Enable the servers you want from a host config or a profile:
+
+```nix
+# host or profile
+my.services.minecraftServer.servers.test.enable = true;
+# or, from a profile (e.g. my.profiles.gaming.minecraftServers):
+my.profiles.gaming.minecraftServers = [ "test" ];
+```
+
+Example definition (`servers/test.nix`):
+
+```nix
+{ lib, pkgs, ... }:
+{
+  my.services.minecraftServer.servers.test = {
+    enable = lib.mkDefault false;
+    package = pkgs.vanillaServers.vanilla-1_21_1;
+    jvmOpts = "-Xmx2G -Xms1G";
+    port = 25565;
+    serverProperties = {
+      motd = "A NixOS Test Server";
+      max-players = 4;
+    };
+  };
+}
+```
+
+## Provisioning mods with packwiz (declarative, reproducible)
+
+The most declarative workflow: author the modpack with the
+[packwiz CLI](https://packwiz.infra.link) in the repo's `modpacks/` directory,
+then [packwiz2nix](https://github.com/getchoo/packwiz2nix) turns it into
+hash-verified fixed-output derivations that are symlinked into the server's
+`mods/` at start. No zips to scp, no manual jar management — the pack is just
+git-tracked metadata.
+
+### 1. Author the pack
+
+Modpacks live in `modules/nixos/minecraft-server/modpacks/<pack>/`. The flake
+exposes the packwiz CLI as `.#packwiz` and one checksum app per pack; the
+`just` recipes wrap them so you don't have to chase paths:
+
+```bash
+just packwiz testModpack init                 # create pack.toml + index.toml
+just packwiz testModpack modrinth add <mod>   # add mods from Modrinth
+just packwiz testModpack update --all         # bump mods
+```
+
+(`just packwiz <pack> ...` cd's into the modpack dir and runs
+`nix run <repo>#packwiz -- ...`; packwiz operates on the current directory.)
+
+Each mod becomes a `<pack>/mods/<name>.pw.toml` metadata file. Any mod added
+via `curseforge` will fail checksum generation — packwiz2nix has no CurseForge
+support (no URL is kept in the metadata); prefer Modrinth.
+
+### 2. Generate checksums
+
+packwiz verifies mods with SHA-1, which Nix fetchers can't use, so packwiz2nix
+needs a SHA-256 `checksums.json`. Regenerate it whenever the pack changes:
+
+```bash
+just packwiz-checksums testModpack            # writes checksums.json (commit it!)
+```
+
+This downloads every mod jar (at runtime, when the app runs) and records its
+SHA-256 — no `--impure` needed, and `nix flake check` stays green. Commit
+`checksums.json` so fresh machines can build the pack.
+
+> **CurseForge mods:** packwiz stores CurseForge mods as `mode = "metadata:curseforge"`
+> with **no download URL** — packwiz2nix cannot fetch them, so checksum generation
+> fails. Convert them to Modrinth (`packwiz modrinth add <slug>`) or to a direct
+> URL (`packwiz url add <url>` — the CurseForge CDN URL is derivable from the
+> mod's file-id: `https://edge.forgecdn.net/files/<id//1000>/<id%1000>/<filename>`).
+> The testModpack was fully converted this way (255/255 have URLs).
+
+> **Gotcha:** Nix flakes only snapshot **git-tracked** files, so a modpack's
+> `packwiz-checksums-<pack>` app only appears once its files are `git add`ed
+> (staging is enough for the flake to see them). Add the pack's files after
+> each edit before running the checksum app.
+
+### 3. Point a server at the pack
+
+```nix
+my.services.minecraftServer.servers.my-server = {
+  enable = true;
+  package = pkgs.fabricServers.fabric-1_21_1;  # must match the pack's loader
+  packwiz = ../modpacks/testModpack;           # relative to the server def
+  # packwiz = (flake inputs self) + "/modules/nixos/minecraft-server/modpacks/testModpack";
+};
+```
+
+The module reads `<pack>/checksums.json`, builds every mod with
+`mkPackwizPackages`, and symlinks them into the data dir's `mods/` via
+`mkModLinks` (nix-minecraft's `symlinks`, which permits `/nix/store`). The
+pack's internal content — `config/` (default player configs), Paxi datapacks
+under `config/paxi/datapacks`, `kubejs/`, `scripts/` — is symlinked into the
+data dir at server start too, so shipped defaults and patches reach the server.
+If `checksums.json` is missing the server starts without mods and the build
+warns.
+
+> The server's `package` loader/version must match the pack's `pack.toml`
+> (`minecraft` + `modloader`). The mod jars are symlinked regardless; a
+> mismatched loader simply won't load them.
+
+### 4. Ship default player configs & datapack patches
+
+Files dropped under the pack's `config/` are indexed by packwiz and copied to
+players on install — this is how you ship **default mod configs** (e.g.
+`config/jei/jei.toml`). For each config decide the index.toml `preserve` flag
+(`packwiz-config-preserve`): `true` installs only when absent (player edits
+win), no flag overwrites on every install. Review an override against the
+mod's stock default with `packwiz-config-diff`.
+
+**Patches** ship as datapacks via Paxi (`config/paxi/datapacks/`,
+`packwiz-datapack-add`), loaded into every world including servers. `pack.mcmeta`
+`pack_format` must match the pack's MC version (1.21.1 = 48). KubeJS
+(`kubejs/`) and CraftTweaker (`scripts/`) are the script-based patch route.
+These internal files deploy to the server via the same packwiz symlink step.
 
 ## Provisioning mods with packZip (the simple workflow)
 
@@ -78,7 +189,7 @@ my.services.minecraftServer = {
    folder zip is self-contained.)
 2. Copy the file to the server's `packDir`:
    ```bash
-   scp dragon-technology.zip seanc@server:/mnt/data/minecraft/packs/
+   scp my-pack.zip seanc@server:/mnt/data/minecraft/packs/
    ```
 3. **That's it** — by default (`restartOnZipChange = true`) a `systemd.path`
    watcher notices the new/changed zip, restarts the server automatically, and
@@ -104,17 +215,20 @@ fresh generation and are never clobbered.
 
 ## Mods on fresh machines
 
-Two ways to get jars onto a fresh server, beyond `packZip`:
+Three ways to get jars onto a fresh server, beyond `packZip`:
 
-1. **Local path** — keep mods outside git, e.g.
-   `pack = "/mnt/data/minecraft/packs/dragon-technology"` (a dir with
+1. **packwiz modpack (recommended)** — `servers.<name>.packwiz = ../modpacks/<pack>`
+   builds every mod as a hash-verified fixed-output derivation from the
+   pack's `checksums.json` (see "Provisioning mods with packwiz").
+2. **Local path** — keep mods outside git, e.g.
+   `pack = "/mnt/data/minecraft/packs/my-pack"` (a dir with
    `mods/`, `config/`, …). Symlinked at start; no Nix-store copy. Suitable for
    big packs, but must be populated manually on each machine.
 2. **Declarative derivation** — export the instance as a **server-side
    `.mrpack`** and fetch it:
    ```nix
    pack = pkgs.fetchModrinthModpack {
-     url = "https://example.com/packs/dragon-technology.mrpack"; # or src = <repo path>
+     url = "https://example.com/packs/my-pack.mrpack"; # or src = <repo path>
      packHash = "sha256-…";
      side = "server";   # auto-filters client-only mods (OptiFine, shaders, …)
    };
@@ -155,8 +269,8 @@ flake approach), point `migrateFrom` at it — on first start the module copies
 `world/` and `usercache.json` into the new `dataDir/<name>/` (idempotent):
 
 ```nix
-servers.dragon-technology.migrateFrom =
-  "/mnt/data/prismlauncher/server-data/Dragon Technology";
+servers.my-server.migrateFrom =
+  "/mnt/data/prismlauncher/server-data/My Old Server";
 ```
 
 ## Monitoring
@@ -169,6 +283,30 @@ Minecraft does **not** speak A2S. Options:
   the nix-minecraft README for `symlinks.mods`.
 - RCON (`enable-rcon = true` + `rcon.password`) for admin commands only — never
   expose it to the internet.
+
+## OpenCode integration
+
+Enabling this module also wires modpack utilities into the user's
+[opencode](https://opencode.ai) config (`my.programs.opencode`), via
+`my.homeManager.extraConfig` — so agents can edit/verify modpacks directly:
+
+- **CLI tools**: `packwiz` (run the CLI inside a pack), `packwiz-checksums`
+  (regenerate `checksums.json`), `mc-pack-status` (verify the pack, including
+  internal files and datapack pack_formats).
+- **Config tools** (default player configs): `packwiz-config-add`,
+  `packwiz-config-preserve`, `packwiz-config-list`, `packwiz-config-diff`.
+- **Patch tools** (Paxi datapacks): `packwiz-datapack-add`,
+  `packwiz-datapack-remove`.
+- **Version / QA tools**: `packwiz-mod-pin`, `packwiz-inspect-mod`,
+  `packwiz-update-safe`.
+- **Skill** `mc-modpack`: the packwiz/checksum/CurseForge-conversion workflow
+  plus the config/patch tooling.
+- **Command** `/mc-modpack`: orchestrated add/convert/config/patch/verify flow.
+
+Toggle with `my.services.minecraftServer.opencode.enable` (default `true`;
+only applied on hosts that also enable opencode). Files live in
+`modules/nixos/minecraft-server/opencode/`; the config/patch logic is in
+`opencode/tools/mc-pack.py`.
 
 ## Notes
 

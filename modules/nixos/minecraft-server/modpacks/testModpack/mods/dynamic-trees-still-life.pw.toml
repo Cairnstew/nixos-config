@@ -1,0 +1,13 @@
+name = "Dynamic Trees - Still Life(1.0+)"
+filename = "dtstill-life-1.0.3.jar"
+side = "both"
+
+[download]
+url = "https://cdn.modrinth.com/data/8gWlsPXl/versions/sDsyY30R/dtstill-life-1.0.3.jar"
+hash-format = "sha512"
+hash = "981ecd427c30a8f7f7f1a919970e531c0633b05e9eb1b17a8537f88332629fdb4c5449d5711021a87ce6838e8abc4894e289805598825f3efe920dbedc238c1f"
+
+[update]
+[update.modrinth]
+mod-id = "8gWlsPXl"
+version = "sDsyY30R"

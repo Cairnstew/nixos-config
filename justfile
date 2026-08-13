@@ -75,6 +75,18 @@ ventoy-iso:
 steamlink-deploy *args:
     sudo nix run .#steamlink-deploy -- {{ args }}
 
+# ── Minecraft modpacks (packwiz) ─────────────────────────────────────────────
+
+# Run the packwiz CLI inside a modpack dir (e.g. just packwiz testModpack init)
+# The flake must be referenced by absolute path — packwiz operates on the CWD.
+# `cd … && …` on ONE line: just runs each recipe line in its own shell.
+packwiz modpack *args:
+    cd modules/nixos/minecraft-server/modpacks/{{ modpack }} && nix run "{{ justfile_directory() }}#packwiz" -- {{ args }}
+
+# Regenerate checksums.json for a modpack after editing mods (then commit it)
+packwiz-checksums modpack:
+    cd modules/nixos/minecraft-server/modpacks/{{ modpack }} && nix run "{{ justfile_directory() }}#packwiz-checksums-{{ modpack }}"
+
 # ── Testing ──────────────────────────────────────────────────────────────────
 
 # Run all nixtest suites (unit, snapshot, script tests)

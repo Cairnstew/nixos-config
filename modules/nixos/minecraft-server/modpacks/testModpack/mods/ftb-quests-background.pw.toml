@@ -1,0 +1,13 @@
+name = "FTB Quests Background"
+filename = "ftbquests_chapter_bg-1.0.0.jar"
+side = "both"
+
+[download]
+url = "https://cdn.modrinth.com/data/c894uCh4/versions/CtSwN01X/ftbquests_chapter_bg-1.0.0.jar"
+hash-format = "sha512"
+hash = "35d15b6938d6673ac54ecf6d052f8d4b81fac3beba3a6aeb49a1eae5aa0cbc87f617528c97cf92d0247b5f358ef29358779c1dbdce95270d286dc26248816227"
+
+[update]
+[update.modrinth]
+mod-id = "c894uCh4"
+version = "CtSwN01X"
