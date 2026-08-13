@@ -216,24 +216,32 @@
 
   # ── Minecraft Server (Dragon Technology modpack) ─────────────────────────
   # Prism Launcher is a client launcher and cannot run a server. This wraps the
-  # exported modpack (NeoForge 1.21.1) into a declarative nix-minecraft server.
+  # NeoForge 1.21.1 server in a declarative nix-minecraft module. Mods are
+  # provisioned by zipping the instance's minecraft/ folder in Prism and
+  # scp'ing it to packDir — the module unpacks it into the data dir when the
+  # zip changes:
+  #   scp dragon-technology.zip seanc@server:/mnt/data/minecraft/packs/
+  # then `sudo systemctl restart minecraft-server-dragon-technology`.
   my.services.minecraftServer = {
     enable = true;
     eula = true; # Mojang EULA — required
     dataDir = "/mnt/data/minecraft";
+    packDir = "/mnt/data/minecraft/packs"; # scp modpack zips here
+
+    # Web console: https://server.tail685690.ts.net/mc/dragon-technology/
+    web = {
+      enable = true;
+      portBase = 7781; # avoid colliding with my.services.ttyd (7681)
+      proxyUpstream = true;
+    };
 
     servers.dragon-technology = {
+      packZip = "dragon-technology.zip";
       package = pkgs.neoforgeServers.neoforge-1_21_1-21_1_238;
       jvmOpts = "-Xms4G -Xmx8G";
-      # pack: server-safe modpack content dir (mods/config/kubejs/scripts/datapacks/
-      # defaultconfigs are symlinked in). Create it on the server by extracting the
-      # Prism export's minecraft/ dir and stripping client-only junk (saves,
-      # shaderpacks, screenshots, .mixin.out, .sable). The Dragon Technology pack
-      # is 834 MB, so it is NOT committed to this repo:
-      #   ssh server "mkdir -p /mnt/data/minecraft/packs && rsync -a minecraft/ ..."
-      # For a small published pack you can instead use:
-      #   pack = pkgs.fetchModrinthModpack { url = "..."; packHash = "sha256-..."; side = "server"; };
-      pack = "/mnt/data/minecraft/packs/dragon-technology";
+
+      # Preserve the world from the old Prism server-data on first start.
+      migrateFrom = "/mnt/data/prismlauncher/server-data/Dragon Technology";
 
       serverProperties = {
         server-port = 25565;

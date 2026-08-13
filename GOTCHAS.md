@@ -18,6 +18,24 @@ Symptom (2026-08-12): Wiring nix-minecraft into the `my.services.minecraftServer
 
 ---
 
+**nix-minecraft `managementSystem` is kebab-case (`systemd-socket`); our wrapper option is camelCase — pass-through silently breaks systemd-socket mode**
+
+Symptom (2026-08-12): The `my.services.minecraftServer` wrapper declared `managementSystem.systemdSocket.enable` (camelCase) and forwarded it verbatim with `inherit (srv) managementSystem` into `services.minecraft-servers`. But nix-minecraft's submodule option is `managementSystem."systemd-socket".enable` (kebab). Result: tmux mode worked (names happen to match), but `systemdSocket.enable = true` set an undeclared option path → eval error, so the (recommended) FIFO+journald console was unreachable. Fix: translate camelCase → kebab when building the nix-minecraft attrset (`mkManagement` in `modules/nixos/minecraft-server/config.nix`). Related: the web console (`mc-web-<name>`) REQUIRES systemd-socket management — there's no FIFO to write under tmux. Assertion in `tests.nix` guards this.
+
+**Prism Launcher gitignores `mods/` — a git-repo-synced instance has config text but no mod jars**
+
+Symptom (2026-08-12): Pointing a server at `rootDir`/`instance` from the synced Prism repo yields a working config/kubejs/datapacks layout but an EMPTY `mods/` dir — the repo's `.gitignore` excludes `instances/*/minecraft/mods/` (jars are re-downloadable; the repo only commits `mods.manifest` name+sha1+size listings). The desktop `mrpack/modrinth.index.json` is also stale (base managed pack only, e.g. 55 files vs 229 real mods).
+
+Resolution (2026-08-12, same day): `rootDir`/`instance` were removed from the module entirely — the git-repo-sync approach was replaced by **zip-drop provisioning**. Export the pack from Prism ("Export → Modrinth pack", `.mrpack` is just a zip) and scp it to `packDir`; the server sets `servers.<name>.packZip = "dragon-technology.mrpack"` and unpacks it into the data dir when the zip's SHA-256 changes. The `.mrpack`'s index is small (URL+sha512+env references) but does NOT bundle jars the way a full export zip does — for a fully self-contained drop, zip the instance's `minecraft/` folder instead (the module detects a top-level `minecraft/`). See "Provisioning mods with packZip" in `modules/nixos/minecraft-server/README.md`.
+
+---
+
+**systemd-tmpfiles silently refuses to create paths under a non-root-owned parent ("unsafe path transition") — minecraft-server fails with status=200/CHDIR**
+
+Symptom (2026-08-12): Deploying the `my.services.minecraftServer` module with `dataDir = "/mnt/data/minecraft"` made `minecraft-server-dragon-technology.service` fail on start: `ExecStartPre ... status=200/CHDIR`, `Dependency failed`, and the `.socket` hitting `start-limit-hit`. Root cause: nix-minecraft creates each server's `WorkingDirectory` (`${dataDir}/<name>`) via a **tmpfiles rule**, but `systemd-tmpfiles` detects `/mnt/data` (owned by the primary user `seanc`, not root) and skips the rule with `Detected unsafe path transition /mnt/data (owned by seanc) → /mnt/data/minecraft`. The data dir never gets created, so systemd cannot `chdir` into it. Fix (module): a root oneshot `minecraft-server-prepare-dirs` (`Before=` every server unit) that `install -d`s `dataDir` + each `<name>` subdir as `minecraft:minecraft 0770` — tmpfiles is the wrong tool whenever a data path passes through a user-owned mount point like `/mnt/data`. See `modules/nixos/minecraft-server/config.nix`. Related: `packDir` must also be user-accessible — the module adds the primary user to the `minecraft` group (dataDir is `0770 minecraft:minecraft`, so without membership the user cannot traverse it to scp zips).
+
+---
+
 ---
 
 **Some repo files are root-owned (`configurations/nixos/desktop/default.nix`, `GOTCHAS.md`) — Edit/write tools fail with `PermissionDenied`**
