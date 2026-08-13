@@ -294,6 +294,15 @@ All `my.*` options declared across module files.
 | `my.programs.steam.games.<name>.gamescope.adaptiveSync` | bool | `false` | Adaptive sync / VRR |
 | `my.programs.steam.games.<name>.gamescope.extraArgs` | list | `[]` | Extra gamescope arguments |
 | `my.programs.rstudio.enable` | bool | `false` | RStudio IDE |
+| `my.programs.vncviewer.enable` | bool | `false` | VNC viewer client (pairs with `my.services.remoteGui`) |
+| `my.programs.vncviewer.package` | pkg | `pkgs.tigervnc` | VNC viewer package (provides `vncviewer`) |
+| `my.programs.vncviewer.connections.<name>.host` | str | — | VNC server hostname/IP |
+| `my.programs.vncviewer.connections.<name>.port` | port | `5900` | VNC server port |
+| `my.programs.vncviewer.connections.<name>.passwordFile` | null/path | `null` | VNC password file (first line) |
+| `my.programs.vncviewer.connections.<name>.viewOnly` | bool | `false` | No keyboard/mouse input |
+| `my.programs.vncviewer.connections.<name>.fullscreen` | bool | `false` | Start fullscreen |
+| `my.programs.vncviewer.connections.<name>.scale` | null/int | `null` | Scaling percentage (10–400) |
+| `my.programs.vncviewer.connections.<name>.extraArgs` | list | `[]` | Extra `vncviewer` args |
 | `my.programs.yazi.enable` | bool | `false` | Yazi terminal file manager |
 | `my.programs.ssh-1password.enable` | bool | `false` | 1Password SSH agent |
 
