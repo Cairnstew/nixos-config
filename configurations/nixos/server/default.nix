@@ -36,6 +36,23 @@
 
   # ── Home Manager Extra ───────────────────────────────────────────────────
   my.homeManager.extraConfig.my.programs.goals.enable = true;
+  # Prism Launcher (Minecraft client) — launcher defaults to prismlauncher,
+  # data dir defaults to ~/.local/share/PrismLauncher
+  my.homeManager.extraConfig.my.programs.minecraft.enable = true;
+
+  # ── Remote GUI (Prism Launcher on a virtual display) ──────────────────────
+  # Runs the launcher's GUI headlessly on Xvfb :10, shared via x11vnc so it can
+  # be viewed from the desktop host over the tailnet. No firewall change needed
+  # (tailscale0 is trusted). Connect with any VNC client:
+  #   vncviewer server.tail685690.ts.net:5900   (or GNOME Connections)
+  my.services.remoteGui = {
+    enable = true;
+    windowManager = pkgs.openbox; # decorations + focus for the launcher window
+    apps.prismlauncher = {
+      command = "${pkgs.prismlauncher}/bin/prismlauncher";
+      user = "seanc";
+    };
+  };
   # Terminal opencode must not run while the browser (web) session is live —
   # both share ~/.config/opencode and the ensemble DB. Gate both directions.
   my.homeManager.extraConfig.my.programs.opencode.sessionGate.enable = true;

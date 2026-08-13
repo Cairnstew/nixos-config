@@ -8,6 +8,12 @@
   any evaluation or build
   failure.**
 
+**`error: The option 'my.<name>' does not exist` — new module never imported into a host config**
+
+Symptom (2026-08-12): Created `modules/nixos/remote-gui/` (meta/options/config/services/tests), then `nix eval .#nixosConfigurations.server.config.my.services.remoteGui` failed with `error: The option 'my.services.remoteGui' does not exist. Did you mean 'my.services.comfyui' ...`. Cause: autowiring only exports the module as a flake output (`nixosModules.remote-gui`) — it does **not** import it into any NixOS configuration. Hosts get options only from the modules listed in `modules/nixos/common.nix` imports (which every host imports), so a brand-new module's options are invisible until you add `./<name>` there. Fix: add `./remote-gui` to `modules/nixos/common.nix` imports, then `git add` the new dir (see the untracked-files entry below — pure flake eval only sees git-tracked paths) before eval/`flake check`. Confirmed working: submodule option defaults may reference `flake.config.me.username` (e.g. `default = flake.config.me.username` inside a `types.submodule`).
+
+---
+
 **`error: dynamic attribute 'seanc' already defined` when adding a second `home-manager.users.${username}.my.programs.X` line in one profile**
 
 Symptom (2026-08-08): Adding `home-manager.users.${username}.my.programs.minecraft.enable = lib.mkDefault true;` as a sibling of the existing `home-manager.users.${username}.my.programs.discord.tui = { ... };` in `modules/nixos/profiles/system/gaming.nix` fails with `error: dynamic attribute 'seanc' already defined at .../gaming.nix:15:5` / `at .../gaming.nix:23:5`. Cause: in Nix an attrset literal can only assign a given dynamic attribute (`users.${username}`) once, so two `home-manager.users.${username}.my.programs.<name>` lines collide at parse time. Fix: merge them into a single block — `home-manager.users.${username}.my.programs = { minecraft.enable = lib.mkDefault true; discord.tui = { enable = lib.mkDefault false; }; };` — the module system merges the sub-paths fine.
