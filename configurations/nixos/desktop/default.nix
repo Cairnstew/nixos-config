@@ -970,6 +970,17 @@
         enable = true;
         modsDir = "/mnt/media/Modding/mods";
       };
+
+      # VNC viewer for the server's remote-gui virtual display (Prism Launcher
+      # headless on Xvfb, shared via x11vnc). Connect with `vnc-server` or the
+      # "VNC: server" desktop entry.
+      vncviewer = {
+        enable = true;
+        connections.server = {
+          host = "server.tail685690.ts.net";
+          port = 5900;
+        };
+      };
     };
 
     # GNOME-specific extras removed: host-info extension (broken/unused),
