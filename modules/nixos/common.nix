@@ -75,6 +75,9 @@ in
     ./autossh
     ./ttyd
 
+    # ── Remote GUI (headless virtual display + VNC) ──────────────────────
+    ./remote-gui
+
     # ── Development ────────────────────────────────────────────────────────
     ./vscode-server.nix
     ./opencode-web

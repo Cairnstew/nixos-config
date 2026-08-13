@@ -8,6 +8,12 @@
   any evaluation or build
   failure.**
 
+**`error: The option 'my.<name>' does not exist` — new module never imported into a host config**
+
+Symptom (2026-08-12): Created `modules/nixos/remote-gui/` (meta/options/config/services/tests), then `nix eval .#nixosConfigurations.server.config.my.services.remoteGui` failed with `error: The option 'my.services.remoteGui' does not exist. Did you mean 'my.services.comfyui' ...`. Cause: autowiring only exports the module as a flake output (`nixosModules.remote-gui`) — it does **not** import it into any NixOS configuration. Hosts get options only from the modules listed in `modules/nixos/common.nix` imports (which every host imports), so a brand-new module's options are invisible until you add `./<name>` there. Fix: add `./remote-gui` to `modules/nixos/common.nix` imports, then `git add` the new dir (see the untracked-files entry below — pure flake eval only sees git-tracked paths) before eval/`flake check`. Confirmed working: submodule option defaults may reference `flake.config.me.username` (e.g. `default = flake.config.me.username` inside a `types.submodule`).
+
+---
+
 **`error: dynamic attribute 'seanc' already defined` when adding a second `home-manager.users.${username}.my.programs.X` line in one profile**
 
 Symptom (2026-08-08): Adding `home-manager.users.${username}.my.programs.minecraft.enable = lib.mkDefault true;` as a sibling of the existing `home-manager.users.${username}.my.programs.discord.tui = { ... };` in `modules/nixos/profiles/system/gaming.nix` fails with `error: dynamic attribute 'seanc' already defined at .../gaming.nix:15:5` / `at .../gaming.nix:23:5`. Cause: in Nix an attrset literal can only assign a given dynamic attribute (`users.${username}`) once, so two `home-manager.users.${username}.my.programs.<name>` lines collide at parse time. Fix: merge them into a single block — `home-manager.users.${username}.my.programs = { minecraft.enable = lib.mkDefault true; discord.tui = { enable = lib.mkDefault false; }; };` — the module system merges the sub-paths fine.
@@ -15,6 +21,24 @@ Symptom (2026-08-08): Adding `home-manager.users.${username}.my.programs.minecra
 **nix-minecraft: module is `nixosModules.minecraft-servers` (plural) and options are `services.minecraft-servers.servers.<name>` (plural) — no `extraServiceConfig`**
 
 Symptom (2026-08-12): Wiring nix-minecraft into the `my.services.minecraftServer` wrapper, two names were easy to get wrong. (1) The flake exposes `nixosModules.minecraft-servers` (plural "servers"), not `minecraft-server`; the option tree is `services.minecraft-servers.servers.<name>` (both plural). (2) The server submodule has NO `extraServiceConfig`/`extraSystemd` option — a host config that sets `services.minecraft-servers.servers.<name>.extraServiceConfig.MemoryMax = "12G"` fails with `Did you mean ...extraReload / extraStartPre?`. Cause: nix-minecraft hardens the unit internally (its own `serviceConfig` is derived in the module, `modules/minecraft-servers.nix` ~line 948/998) and does not forward arbitrary systemd fields. Fix: augment the generated unit directly at the NixOS level — `systemd.services.minecraft-server-<name>.serviceConfig.MemoryMax = "12G"`. Also note `dataDir` is a `types.path` (must exist / be coercible at eval time); for big local modpacks point `pack` at a plain string runtime path and create symlinks in `extraStartPre` (nix-minecraft appends it to `ExecStartPre`), NOT via `symlinks` (which copies into the store). See `modules/nixos/minecraft-server/`.
+
+---
+
+**nix-minecraft `managementSystem` is kebab-case (`systemd-socket`); our wrapper option is camelCase — pass-through silently breaks systemd-socket mode**
+
+Symptom (2026-08-12): The `my.services.minecraftServer` wrapper declared `managementSystem.systemdSocket.enable` (camelCase) and forwarded it verbatim with `inherit (srv) managementSystem` into `services.minecraft-servers`. But nix-minecraft's submodule option is `managementSystem."systemd-socket".enable` (kebab). Result: tmux mode worked (names happen to match), but `systemdSocket.enable = true` set an undeclared option path → eval error, so the (recommended) FIFO+journald console was unreachable. Fix: translate camelCase → kebab when building the nix-minecraft attrset (`mkManagement` in `modules/nixos/minecraft-server/config.nix`). Related: the web console (`mc-web-<name>`) REQUIRES systemd-socket management — there's no FIFO to write under tmux. Assertion in `tests.nix` guards this.
+
+**Prism Launcher gitignores `mods/` — a git-repo-synced instance has config text but no mod jars**
+
+Symptom (2026-08-12): Pointing a server at `rootDir`/`instance` from the synced Prism repo yields a working config/kubejs/datapacks layout but an EMPTY `mods/` dir — the repo's `.gitignore` excludes `instances/*/minecraft/mods/` (jars are re-downloadable; the repo only commits `mods.manifest` name+sha1+size listings). The desktop `mrpack/modrinth.index.json` is also stale (base managed pack only, e.g. 55 files vs 229 real mods).
+
+Resolution (2026-08-12, same day): `rootDir`/`instance` were removed from the module entirely — the git-repo-sync approach was replaced by **zip-drop provisioning**. Export the pack from Prism ("Export → Modrinth pack", `.mrpack` is just a zip) and scp it to `packDir`; the server sets `servers.<name>.packZip = "dragon-technology.mrpack"` and unpacks it into the data dir when the zip's SHA-256 changes. The `.mrpack`'s index is small (URL+sha512+env references) but does NOT bundle jars the way a full export zip does — for a fully self-contained drop, zip the instance's `minecraft/` folder instead (the module detects a top-level `minecraft/`). See "Provisioning mods with packZip" in `modules/nixos/minecraft-server/README.md`.
+
+---
+
+**systemd-tmpfiles silently refuses to create paths under a non-root-owned parent ("unsafe path transition") — minecraft-server fails with status=200/CHDIR**
+
+Symptom (2026-08-12): Deploying the `my.services.minecraftServer` module with `dataDir = "/mnt/data/minecraft"` made `minecraft-server-dragon-technology.service` fail on start: `ExecStartPre ... status=200/CHDIR`, `Dependency failed`, and the `.socket` hitting `start-limit-hit`. Root cause: nix-minecraft creates each server's `WorkingDirectory` (`${dataDir}/<name>`) via a **tmpfiles rule**, but `systemd-tmpfiles` detects `/mnt/data` (owned by the primary user `seanc`, not root) and skips the rule with `Detected unsafe path transition /mnt/data (owned by seanc) → /mnt/data/minecraft`. The data dir never gets created, so systemd cannot `chdir` into it. Fix (module): a root oneshot `minecraft-server-prepare-dirs` (`Before=` every server unit) that `install -d`s `dataDir` + each `<name>` subdir as `minecraft:minecraft 0770` — tmpfiles is the wrong tool whenever a data path passes through a user-owned mount point like `/mnt/data`. See `modules/nixos/minecraft-server/config.nix`. Related: `packDir` must also be user-accessible — the module adds the primary user to the `minecraft` group (dataDir is `0770 minecraft:minecraft`, so without membership the user cannot traverse it to scp zips).
 
 ---
 

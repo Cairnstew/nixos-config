@@ -319,14 +319,27 @@ All `my.*` options declared across module files.
 | `my.services.minecraftServer.enable` | bool | `false` | Declarative Minecraft servers (nix-minecraft) |
 | `my.services.minecraftServer.eula` | bool | `false` | Accept Mojang's EULA (required) |
 | `my.services.minecraftServer.dataDir` | path | `/mnt/data/minecraft` | Base data dir for all servers |
+| `my.services.minecraftServer.packDir` | path | `/mnt/data/minecraft/packs` | Drop directory for modpack zips (scp here) |
 | `my.services.minecraftServer.openFirewall` | bool | `false` | Open ports for all servers |
+| `my.services.minecraftServer.managementSystem` | submodule | `{ systemdSocket.enable = true; }` | Console system (systemd-socket default / tmux) |
+| `my.services.minecraftServer.web.enable` | bool | `false` | Per-server ttyd web consoles |
+| `my.services.minecraftServer.web.portBase` | port | `7681` | First console port (base + sorted index) |
+| `my.services.minecraftServer.web.bind` | str | `"127.0.0.1"` | Console bind address |
+| `my.services.minecraftServer.web.user` | str | `"minecraft-web"` | Console user (in group `minecraft`) |
+| `my.services.minecraftServer.web.username` / `.passwordFile` | null | `null` | Optional basic auth |
+| `my.services.minecraftServer.web.proxyUpstream` | bool | `true` | Register consoles on proxy dashboard |
 | `my.services.minecraftServer.servers.<name>.package` | pkg | — | Server package (e.g. neoforgeServers.neoforge-1_21_1-21_1_238) |
 | `my.services.minecraftServer.servers.<name>.jvmOpts` | str | `"-Xmx4G -Xms2G"` | JVM flags |
+| `my.services.minecraftServer.servers.<name>.port` | port | `25565` | Game port (merged into serverProperties) |
+| `my.services.minecraftServer.servers.<name>.autoStart` | bool | `true` | Start at boot |
 | `my.services.minecraftServer.servers.<name>.serverProperties` | attrs | `{}` | Declarative server.properties |
 | `my.services.minecraftServer.servers.<name>.whitelist` | attrs | `{}` | Username → UUID map |
 | `my.services.minecraftServer.servers.<name>.operators` | attrs | `{}` | Username → UUID map |
 | `my.services.minecraftServer.servers.<name>.openFirewall` | bool | `false` | Open this server's ports |
-| `my.services.minecraftServer.servers.<name>.pack` | null/str | `null` | Modpack content dir (symlinked at start) |
+| `my.services.minecraftServer.servers.<name>.packZip` | null/str | `null` | Modpack zip/mrpack in packDir to unpack at start |
+| `my.services.minecraftServer.servers.<name>.restartOnZipChange` | bool | `true` | Auto-restart server when packZip changes |
+| `my.services.minecraftServer.servers.<name>.pack` | null/str | `null` | Modpack content dir or fetchModrinthModpack derivation |
+| `my.services.minecraftServer.servers.<name>.migrateFrom` | null/str | `null` | Copy world from old server-data dir on first start |
 | `my.services.minecraftServer.servers.<name>.extraSymlinks` | attrs | `{}` | Extra path → data-dir symlinks |
 | `my.services.minecraftServer.servers.<name>.restart` | str | `"on-failure"` | systemd Restart policy |
 | `my.services.minecraftServer.servers.<name>.managementSystem` | submodule | `{ tmux.enable = true; }` | Console: tmux or systemd-socket |
