@@ -383,6 +383,29 @@ in
       description = "Ollama language model configurations for local AI inference.";
     };
 
+    minecraft = lib.mkOption {
+      type = lib.types.submodule {
+        options = {
+          dataDir = lib.mkOption {
+            type = lib.types.nullOr lib.types.path;
+            default = null;
+            description = ''
+              Prism Launcher data directory (instances, libraries, assets).
+              Keep it on a large/secondary drive (e.g.
+              <literal>/mnt/media/Modding/PrismLauncher</literal>) so instances
+              never fill the system disk. Used as the default target for the
+              <literal>.#modpack-build-&lt;name&gt;</literal> /
+              <literal>.#modpack-update-&lt;name&gt;</literal> apps and the home
+              module instance sync when
+              <literal>my.programs.minecraft.dataDir</literal> is unset.
+            '';
+          };
+        };
+      };
+      default = { };
+      description = "Minecraft / Prism Launcher shared defaults.";
+    };
+
     mail = lib.mkOption {
       type = lib.types.submodule {
         options = {

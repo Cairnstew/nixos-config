@@ -87,6 +87,17 @@ packwiz modpack *args:
 packwiz-checksums modpack:
     cd modules/nixos/minecraft-server/modpacks/{{ modpack }} && nix run "{{ justfile_directory() }}#packwiz-checksums-{{ modpack }}"
 
+# Build + install a modpack's client content into a Prism instance WITHOUT a
+# full system rebuild. dataDir defaults to ~/.local/share/PrismLauncher.
+# e.g. just modpack-build testModpack /mnt/media/Modding/PrismLauncher
+modpack-build modpack *args:
+    nix run "{{ justfile_directory() }}#modpack-build-{{ modpack }}" -- {{ args }}
+
+# Full manual update: regenerate checksums.json, rebuild, reinstall into Prism.
+# Run from the repo root. e.g. just modpack-update testModpack /mnt/media/Modding/PrismLauncher
+modpack-update modpack *args:
+    nix run "{{ justfile_directory() }}#modpack-update-{{ modpack }}" -- {{ args }}
+
 # ── Testing ──────────────────────────────────────────────────────────────────
 
 # Run all nixtest suites (unit, snapshot, script tests)

@@ -4,12 +4,19 @@
 # package `.#minecraft-modpack-<name>` (built from the pack's checksums.json —
 # the same one the server uses) and gets:
 #   - an instance dir under <dataDir>/instances/<name>/ with instance.cfg +
-#     .minecraft/mmc-pack.json generated from the pack's meta.json,
+#     mmc-pack.json generated from the pack's meta.json (mmc-pack.json lives at
+#     the instance root next to instance.cfg — Prism reads it via
+#     instanceRoot()/mmc-pack.json, not inside .minecraft/),
 #   - .minecraft/mods/*.jar synced from the built pack (pack owns mods/),
 #   - .minecraft/config kubejs scripts datapacks defaultconfigs installed only
 #     when absent, so player-edited files win (preserve semantics).
 # Refreshed on home activation and on a timer, so client and server stay in
 # sync with the same modpack definition.
+#
+# The instance.cfg + mmc-pack.json + mods/internal-dirs sync logic lives in
+# modules/flake-parts/packwiz-instance-sync.py and is shared with the manual
+# CLI apps `.#modpack-build-<name>` and `.#modpack-update-<name>`, so the
+# declarative timer and the manual commands do exactly the same thing.
 { config, lib, pkgs, flake, ... }:
 
 let
@@ -20,6 +27,7 @@ let
 
   dataDir =
     if cfg.dataDir != null then cfg.dataDir
+    else if (flake.config.minecraft or { }).dataDir or null != null then flake.config.minecraft.dataDir
     else "${config.home.homeDirectory}/.local/share/PrismLauncher";
 
   # Resolve the built client content for an instance: explicit package, else
@@ -36,13 +44,17 @@ let
 
   # One-shot script: write instance.cfg + mmc-pack.json from meta.json, then
   # sync mods (pack-owned, with --delete) and seed pack internal dirs only when
-  # absent (player edits win).
+  # absent (player edits win). The Python logic lives in the shared
+  # packwiz-instance-sync.py (modules/flake-parts/) so the manual CLI apps
+  # (`.#modpack-build-<name>`, `.#modpack-update-<name>`) do exactly the same.
   syncScript = name: inst:
     let
       pkg = instancePkg name inst;
+      syncPy = ../../flake-parts/packwiz-instance-sync.py;
     in
     pkgs.writeShellScript "minecraft-instance-${name}-sync" ''
       set -euo pipefail
+      export PATH=${pkgs.rsync}/bin:${pkgs.coreutils}/bin:$PATH
       INST="${dataDir}/instances/${name}"
       SRC="${pkg}/.minecraft"
       META="${pkg}/meta.json"
@@ -51,54 +63,7 @@ let
         exit 0
       fi
       mkdir -p "$INST/.minecraft"
-
-      # instance.cfg + mmc-pack.json from the pack's meta.json.
-      ${pkgs.python3}/bin/python3 - "$INST" "$META" "${inst.server}" <<'PY'
-      import json, os, sys
-      inst, meta_path, server = sys.argv[1], sys.argv[2], sys.argv[3]
-      meta = json.load(open(meta_path))
-      os.makedirs(inst + "/.minecraft", exist_ok=True)
-
-      lines = ["InstanceType=OneSix", "name=" + (meta.get("packName") or meta["name"]), "[Java]"]
-      if server:
-          lines += ["[JoinServerOnLaunch]", "address=" + server]
-      lines += [
-          "[OneSix]",
-          "MinecraftVersion=" + meta["mc"],
-          "Components=" + meta["loaderUid"] + ":" + meta["loaderVersion"],
-      ]
-      with open(inst + "/instance.cfg", "w") as f:
-          f.write("\n".join(lines) + "\n")
-
-      mmc = {
-          "components": [
-              {"uid": "net.minecraft", "version": meta["mc"]},
-              {"uid": meta["loaderUid"], "version": meta["loaderVersion"], "important": True},
-          ],
-          "formatVersion": 1,
-      }
-      with open(inst + "/.minecraft/mmc-pack.json", "w") as f:
-          json.dump(mmc, f, indent=2)
-      PY
-
-      # Mods: pack owns the mods dir — refresh wholesale (dereference the
-      # store symlinks so the instance is self-contained). Store paths are
-      # read-only, so chmod before --delete or rsync can't clear stale jars.
-      if [ -d "$SRC/mods" ]; then
-        ${pkgs.rsync}/bin/rsync -a -L --chmod=F644 "$SRC/mods/" "$INST/.minecraft/mods/"
-        ${pkgs.coreutils}/bin/chmod -R u+w "$INST/.minecraft/mods"
-        ${pkgs.rsync}/bin/rsync -a --delete -L "$SRC/mods/" "$INST/.minecraft/mods/"
-        ${pkgs.coreutils}/bin/chmod -R a-w,u+w "$INST/.minecraft/mods"
-      fi
-
-      # Pack internal content: seed defaults only when absent (player edits win).
-      for d in config kubejs scripts datapacks defaultconfigs; do
-        if [ -d "$SRC/$d" ]; then
-          mkdir -p "$INST/.minecraft/$d"
-          ${pkgs.rsync}/bin/rsync -a -L --ignore-existing "$SRC/$d/" "$INST/.minecraft/$d/"
-        fi
-      done
-
+      ${pkgs.python3}/bin/python3 ${syncPy} "$INST" "$META" "$SRC" "${inst.server}"
       echo "minecraft-instance-${name}: installed ${pkg} -> $INST"
     '';
 

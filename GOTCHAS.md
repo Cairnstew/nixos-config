@@ -8,6 +8,12 @@
   any evaluation or build
   failure.**
 
+**Prism Launcher: "Components file …/mmc-pack.json doesn't exist. This should never happen." — the file must live at the instance ROOT, not in .minecraft/**
+
+Symptom (2026-08-14): A declarative instance (`my.programs.minecraft.instances.*`, sync script in `modules/home/minecraft/instances.nix`) synced mods into `<dataDir>/instances/<name>/.minecraft/` and wrote `mmc-pack.json` there too, but launching Prism failed with `Instance update failed because: Components file /…/instances/testModpack/mmc-pack.json doesn't exist. This should never happen.` Cause: Prism Launcher reads the components file via `PackProfile::componentsFilePath()` = `PathCombine(instanceRoot(), "mmc-pack.json")` (launcher/minecraft/PackProfile.cpp:269) — the **instance root** (beside `instance.cfg`), not inside `.minecraft/`. The sync script wrote it to `<inst>/.minecraft/mmc-pack.json`, so Prism saw no components file and refused to load the instance. Fix: write `mmc-pack.json` to the instance root (`inst + "/mmc-pack.json"`), same place `instance.cfg` goes. Repair an existing instance by `mv .minecraft/mmc-pack.json ./mmc-pack.json` in the instance dir.
+
+---
+
 **`just` runs each recipe line in a separate shell — a `cd` on one line does not persist to the next**
 
 Symptom (2026-08-13): `just packwiz testModpack init` (recipe: `cd modules/…/testModpack` then `nix run "…/nixos-config#packwiz" -- init`) ran packwiz from the **repo root** — the interactive default name showed "Nixos Config" (the git repo name) instead of "testModpack", and init failed mid-"Refreshing index" with `read result: is a directory`, leaving a stray 0-byte `index.toml` in the repo root. Cause: `just` executes each recipe line in its own shell, so `cd` on line 1 has no effect on line 2; packwiz (which operates on CWD) therefore ran in the repo root and choked on the repo's directory structure. Fix: chain on one line — `cd … && nix run … -- …` — or use a shebang recipe. Same applies to any multi-line `just` recipe that relies on a directory change.
@@ -854,5 +860,5 @@ When you discover a new problem and its solution:
 
 ---
 
-Last updated: 2026-08-12
+Last updated: 2026-08-14
 
