@@ -11,12 +11,17 @@
 #   - packages.packwiz                    → the packwiz CLI
 #   - packages."minecraft-modpack-<name>" → built client instance content for a modpack
 #   - apps."packwiz-checksums-<modpack>"  → writes <modpack>/checksums.json
+#   - apps."modpack-build-<modpack>"      → build + install client content into a Prism
+#                                           instance WITHOUT a full system rebuild
+#   - apps."modpack-update-<modpack>"     → regenerate checksums, rebuild, reinstall
 #
 # Usage:
 #   cd modules/nixos/minecraft-server/modpacks/testModpack
 #   nix run .#packwiz -- init            # create the pack
 #   nix run .#packwiz -- modrinth add <mod> ...
 #   nix run .#packwiz-checksums-testModpack  # regenerate checksums.json
+#   nix run .#modpack-build-testModpack       # install into Prism (no rebuild)
+#   nix run .#modpack-update-testModpack      # checksums → rebuild → reinstall
 #
 # The checksum app downloads and hashes every mod at RUNTIME (when `nix run`
 # runs it) rather than at eval or build time: packwiz2nix's mkChecksums uses
@@ -25,11 +30,16 @@
 # still producing a committed, reproducible checksums.json.
 # =============================================================================
 
-{ inputs, lib, ... }:
+{ config, inputs, lib, ... }:
 let
-  inherit (lib) concatStringsSep;
+  inherit (lib) concatMap concatStringsSep;
   inherit (inputs) packwiz2nix;
   p2n = packwiz2nix.lib;
+
+  # Default Prism Launcher data dir for the manual CLI apps: the shared
+  # `config.minecraft.dataDir` (external media drive) when set, else the
+  # launcher's default under $HOME. Keep instances off the system disk.
+  defaultDataDir = config.minecraft.dataDir or null;
 
   # Directory holding packwiz modpacks (one subdir per modpack). Read at eval
   # time so a new modpack directory automatically gets a checksums app.
@@ -41,6 +51,11 @@ let
       [ ];
 
   checksumsScript = ./packwiz-checksums.py;
+
+  # Shared instance sync (instance.cfg + mmc-pack.json + mods/internal dirs).
+  # Used by the home module's minecraft-instance-<name> service AND the manual
+  # CLI apps below so both install identical layouts.
+  instanceSyncScript = ./packwiz-instance-sync.py;
 
   # App that writes <modpack>/checksums.json into the CURRENT WORKING DIRECTORY
   # (run from the modpack dir, matching upstream packwiz2nix behavior).
@@ -126,6 +141,80 @@ let
       ${internalLinks}
       cp ${meta} $out/meta.json
     '';
+
+  # CLI: build + install a modpack's client content into a Prism instance
+  # WITHOUT a full system rebuild. Usage (from anywhere):
+  #   nix run .#modpack-build-<name> [dataDir] [server]
+  #   dataDir defaults to config.minecraft.dataDir (external media drive) or
+  #   ~/.local/share/PrismLauncher if unset; server (host:port) is optional and
+  #   writes [JoinServerOnLaunch] into instance.cfg.
+  # The embedded ${pkg} forces the modpack client derivation to build, then the
+  # shared sync script installs it — same layout the home module's timer uses.
+  mkBuildApp = pkgs: name:
+    let
+      pkg = mkClientInstance pkgs name;
+      script = pkgs.writeShellScriptBin "modpack-build-${name}" ''
+        set -euo pipefail
+        export PATH=${pkgs.rsync}/bin:${pkgs.coreutils}/bin:$PATH
+        DATA_DIR=''${1:-${if defaultDataDir != null then toString defaultDataDir else "$HOME/.local/share/PrismLauncher"}}
+        SERVER=''${2:-}
+        INST="$DATA_DIR/instances/${name}"
+        SRC="${pkg}/.minecraft"
+        META="${pkg}/meta.json"
+        if [ ! -f "$META" ] || [ ! -d "$SRC" ]; then
+          echo "modpack-build-${name}: ${pkg} has no built content" >&2
+          exit 1
+        fi
+        echo "modpack-build-${name}: installing ${pkg} -> $INST"
+        ${pkgs.python3}/bin/python3 ${instanceSyncScript} "$INST" "$META" "$SRC" "$SERVER"
+        echo "modpack-build-${name}: done — open $INST in Prism Launcher"
+      '';
+    in
+    {
+      type = "app";
+      program = "${script}/bin/modpack-build-${name}";
+    };
+
+  # CLI: full manual update of a modpack — regenerate checksums.json, stage it
+  # (the flake only snapshots git-tracked files), rebuild the client content
+  # via the flake package and install it into a Prism instance. Must run from
+  # the repo root. Usage:
+  #   nix run .#modpack-update-<name> [dataDir] [server]
+  mkUpdateApp = pkgs: name:
+    let
+      # Path into the LIVE working tree (relative to the repo root the app is
+      # run from), NOT ${modpacksDir} — that resolves to the read-only flake
+      # store snapshot. The app writes checksums.json back into the working
+      # tree so it can be committed.
+      script = pkgs.writeShellScriptBin "modpack-update-${name}" ''
+        set -euo pipefail
+        export PATH=${pkgs.rsync}/bin:${pkgs.coreutils}/bin:$PATH
+        if [ ! -f flake.nix ]; then
+          echo "modpack-update-${name}: run this from the repo root" >&2
+          exit 1
+        fi
+        PACK="$PWD/modules/nixos/minecraft-server/modpacks/${name}"
+        if [ ! -d "$PACK" ]; then
+          echo "modpack-update-${name}: no modpack dir at $PACK" >&2
+          exit 1
+        fi
+        DATA_DIR=''${1:-${if defaultDataDir != null then toString defaultDataDir else "$HOME/.local/share/PrismLauncher"}}
+        SERVER=''${2:-}
+        echo "modpack-update-${name}: regenerating checksums.json ..."
+        (cd "$PACK" && ${pkgs.python3}/bin/python3 ${checksumsScript} mods > checksums.json)
+        git add "$PACK/checksums.json"
+        echo "modpack-update-${name}: building client content ..."
+        OUT=$(${pkgs.nix}/bin/nix build ".#minecraft-modpack-${name}" --no-link --print-out-paths 2>/dev/null | tail -1)
+        INST="$DATA_DIR/instances/${name}"
+        echo "modpack-update-${name}: installing $OUT -> $INST"
+        ${pkgs.python3}/bin/python3 ${instanceSyncScript} "$INST" "$OUT/meta.json" "$OUT/.minecraft" "$SERVER"
+        echo "modpack-update-${name}: done — commit checksums.json"
+      '';
+    in
+    {
+      type = "app";
+      program = "${script}/bin/modpack-update-${name}";
+    };
 in
 {
   perSystem = { pkgs, ... }: {
@@ -141,8 +230,12 @@ in
       (name: lib.nameValuePair "minecraft-modpack-${name}" (mkClientInstance pkgs name))
       modpackNames);
 
-    apps = lib.listToAttrs (map
-      (name: lib.nameValuePair "packwiz-checksums-${name}" (mkChecksumsApp pkgs name))
+    apps = lib.listToAttrs (concatMap
+      (name: [
+        (lib.nameValuePair "packwiz-checksums-${name}" (mkChecksumsApp pkgs name))
+        (lib.nameValuePair "modpack-build-${name}" (mkBuildApp pkgs name))
+        (lib.nameValuePair "modpack-update-${name}" (mkUpdateApp pkgs name))
+      ])
       modpackNames);
   };
 }

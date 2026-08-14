@@ -366,6 +366,22 @@
   };
 
   # ============================================================================
+  # Minecraft / Prism Launcher (minecraft.*)
+  # ============================================================================
+  # Shared defaults for the Prism Launcher data dir. Keep instances on the
+  # media drive so the system SSD never fills up.
+  # Consumed by: .#modpack-build-<name> / .#modpack-update-<name> apps
+  #              (modules/flake-parts/packwiz.nix), and as the fallback for
+  #              my.programs.minecraft.dataDir when unset.
+  # ============================================================================
+  minecraft = {
+    # Prism Launcher data dir — instances, libraries, assets live here.
+    # See also: configurations/nixos/desktop/default.nix
+    #           (my.programs.minecraft.dataDir = this same path).
+    dataDir = "/mnt/media/Modding/PrismLauncher";
+  };
+
+  # ============================================================================
   # Mail Organization (mail.*)
   # ============================================================================
   # Canonical tag/folder taxonomy for email organization in Gmail/Thunderbird.

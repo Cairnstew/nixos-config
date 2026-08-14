@@ -32,6 +32,19 @@ inst, meta_path, src, server = (
 meta = json.load(open(meta_path))
 os.makedirs(os.path.join(inst, ".minecraft"), exist_ok=True)
 
+# If no server arg given, preserve an existing [JoinServerOnLaunch] address
+# from a previous instance.cfg (e.g. the home module's declarative `server`),
+# so a manual `modpack-build` never silently drops it.
+if not server:
+    try:
+        with open(os.path.join(inst, "instance.cfg")) as f:
+            for line in f:
+                if line.startswith("address="):
+                    server = line.rstrip("\n").split("=", 1)[1]
+                    break
+    except OSError:
+        pass
+
 lines = ["InstanceType=OneSix", "name=" + (meta.get("packName") or meta["name"]), "[Java]"]
 if server:
     lines += ["[JoinServerOnLaunch]", "address=" + server]

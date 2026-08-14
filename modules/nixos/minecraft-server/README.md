@@ -180,6 +180,30 @@ mod's stock default with `packwiz-config-diff`.
 (`kubejs/`) and CraftTweaker (`scripts/`) are the script-based patch route.
 These internal files deploy to the server via the same packwiz symlink step.
 
+### 5. Manual client build / update (no system rebuild)
+
+The same pack builds into Prism Launcher instances. On hosts that declare
+`my.programs.minecraft.instances.<name>`, a systemd timer keeps them in sync —
+but you can also do it by hand, without touching the rest of the system:
+
+```bash
+# Build + install client content into a Prism instance dir. Default dataDir is
+# config.minecraft.dataDir (external media drive, see config.nix) or
+# ~/.local/share/PrismLauncher if unset. Optional 2nd arg = server to auto-join.
+nix run .#modpack-build-testModpack
+nix run .#modpack-build-testModpack /mnt/media/Modding/PrismLauncher server.tail685690.ts.net:25565
+
+# Full manual update: regenerate checksums.json, rebuild, reinstall.
+# Run from the repo root (it stages checksums.json, so commit after).
+nix run .#modpack-update-testModpack [dataDir] [server]
+```
+
+Shortcuts: `just modpack-build <pack> [dataDir]`, `just modpack-update <pack> [dataDir]`.
+Both use the same instance layout code as the home-module timer
+(`modules/flake-parts/packwiz-instance-sync.py`), so the manual result is
+identical to the declarative one. If you don't pass a server, an existing
+`[JoinServerOnLaunch]` address in the instance is preserved.
+
 ## Provisioning mods with packZip (the simple workflow)
 
 1. In Prism Launcher, **zip the instance's `minecraft/` folder** (right-click
