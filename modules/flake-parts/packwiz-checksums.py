@@ -17,6 +17,7 @@ import os
 import re
 import json
 import hashlib
+import base64
 import urllib.request
 
 mods_dir = sys.argv[1]
@@ -40,7 +41,13 @@ for f in sorted(os.listdir(mods_dir)):
         continue
     try:
         data = urllib.request.urlopen(url, timeout=180).read()
-        result[f] = {"url": url, "sha256": "sha256-" + hashlib.sha256(data).hexdigest()}
+        # Nix SRI form (sha256-<base64>), matching packwiz2nix's mkChecksums
+        # (hashFile "sha256"); hexdigest() after "sha256-" would decode as
+        # 48 bytes and fail with "invalid SRI hash ... length 48 != 32".
+        result[f] = {
+            "url": url,
+            "sha256": "sha256-" + base64.b64encode(hashlib.sha256(data).digest()).decode(),
+        }
     except Exception as e:  # noqa: BLE001
         errors.append(f"{f}: {e}")
 

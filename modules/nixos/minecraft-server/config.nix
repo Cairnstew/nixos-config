@@ -99,7 +99,8 @@ let
           but no checksums.json exists yet. Generate it with
           `just packwiz-checksums <pack>` (after `packwiz init` / adding mods)
           and commit it. Starting this server without mods for now.
-        '' { };
+        ''
+          { };
 
   # Internal (non-mod) content subdirs from the packwiz pack dir. packwiz
   # installers copy these into the game folder on install; our server must do

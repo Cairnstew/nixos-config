@@ -191,5 +191,62 @@ in
         description = "The gamescope package to use for wrapping.";
       };
     };
+
+    # Prism Launcher instances built from the repo's packwiz modpacks. Each key
+    # is a modpack name under modules/nixos/minecraft-server/modpacks/. The
+    # mods, loader version, and internal content all come from that pack's
+    # definition (same checksums.json the server uses) — a modpack defined in
+    # the repo is automatically available as a client here.
+    instances = lib.mkOption {
+      type = types.attrsOf (types.submodule {
+        options = {
+          enable = lib.mkEnableOption "this Prism Launcher instance";
+          package = lib.mkOption {
+            type = types.nullOr types.package;
+            default = null;
+            description = ''
+              Built client content for the instance. Defaults to the flake's
+              <literal>minecraft-modpack-&lt;name&gt;</literal> package when the
+              key matches a modpack under
+              <literal>modules/nixos/minecraft-server/modpacks/</literal>.
+            '';
+          };
+          server = lib.mkOption {
+            type = types.nullOr types.str;
+            default = null;
+            example = "server.tail685690.ts.net:25565";
+            description = ''
+              Server address to auto-join on launch (<literal>host:port</literal>).
+              Written into <literal>instance.cfg</literal> as
+              <literal>[JoinServerOnLaunch]</literal>.
+            '';
+          };
+          syncInterval = lib.mkOption {
+            type = types.str;
+            default = "1h";
+            description = "How often to rebuild/refresh the instance (systemd time span).";
+          };
+          onBootDelaySec = lib.mkOption {
+            type = types.str;
+            default = "60s";
+            description = "Delay after boot before the first refresh.";
+          };
+          refreshOnActivation = lib.mkOption {
+            type = types.bool;
+            default = true;
+            description = "Refresh the instance on home activation (in addition to the timer).";
+          };
+        };
+      });
+      default = { };
+      description = ''
+        Prism Launcher instances built from the repo's packwiz modpacks. Keys
+        are modpack names (see <literal>my.services.minecraftServer.servers.*.packwiz</literal>).
+        A systemd user service + timer rebuilds each instance from its pack
+        definition (via <literal>nix build .#minecraft-modpack-&lt;name&gt;</literal>)
+        and installs it into the Prism data dir, so client and server always
+        match the same pack.
+      '';
+    };
   };
 }

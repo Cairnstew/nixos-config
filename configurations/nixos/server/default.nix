@@ -37,8 +37,11 @@
   # ── Home Manager Extra ───────────────────────────────────────────────────
   my.homeManager.extraConfig.my.programs.goals.enable = true;
   # Prism Launcher (Minecraft client) — launcher defaults to prismlauncher,
-  # data dir defaults to ~/.local/share/PrismLauncher
-  my.homeManager.extraConfig.my.programs.minecraft.enable = true;
+  # data dir on the large SATA drive to keep NVMe free.
+  my.homeManager.extraConfig.my.programs.minecraft = {
+    enable = true;
+    dataDir = "/mnt/data/prismlauncher";
+  };
 
   # ── Remote GUI (Prism Launcher on a virtual display) ──────────────────────
   # Runs the launcher's GUI headlessly on Xvfb :10, shared via x11vnc so it can
@@ -49,7 +52,7 @@
     enable = true;
     windowManager = pkgs.openbox; # decorations + focus for the launcher window
     apps.prismlauncher = {
-      command = "${pkgs.prismlauncher}/bin/prismlauncher";
+      command = "${pkgs.prismlauncher}/bin/prismlauncher --dir /mnt/data/prismlauncher";
       user = "seanc";
     };
   };

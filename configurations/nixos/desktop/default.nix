@@ -964,6 +964,15 @@
       # drive to keep the system SSD free.
       minecraft.dataDir = "/mnt/media/Modding/PrismLauncher";
 
+      # Client instances built from the repo's packwiz modpacks (same packs the
+      # server runs). Each key is a modpack name (matches the modpacks/ dir); a
+      # systemd timer rebuilds the instance from its pack definition and
+      # installs it into Prism.
+      minecraft.instances.testModpack = {
+        enable = true;
+        server = "server.tail685690.ts.net:25565";
+      };
+
       # Modpack engineering tooling (Modrinth MCP lookup). Mod jars live next to
       # Prism Launcher data on the media drive.
       modpack = {
