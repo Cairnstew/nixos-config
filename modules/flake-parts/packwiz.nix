@@ -89,7 +89,7 @@ let
         else lib.throw "minecraft-modpack-${name}: no supported loader in pack.toml";
       loaderVersion =
         packToml.versions.neoforge or packToml.versions.fabric or packToml.versions.forge
-        or packToml.versions.quilt;
+          or packToml.versions.quilt;
 
       modLinks =
         if builtins.pathExists checksums then

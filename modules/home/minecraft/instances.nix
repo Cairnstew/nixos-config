@@ -114,35 +114,39 @@ in
         enabled)
     );
 
-    systemd.user.services = mkMerge (mapAttrsToList (name: inst: {
-      "minecraft-instance-${name}" = {
-        Unit = {
-          Description = "Prism Launcher instance ${name} (from packwiz modpack)";
-          After = [ "network-online.target" ];
-          Wants = [ "network-online.target" ];
+    systemd.user.services = mkMerge (mapAttrsToList
+      (name: inst: {
+        "minecraft-instance-${name}" = {
+          Unit = {
+            Description = "Prism Launcher instance ${name} (from packwiz modpack)";
+            After = [ "network-online.target" ];
+            Wants = [ "network-online.target" ];
+          };
+          Service = {
+            Type = "oneshot";
+            ExecStart = "${syncScript name inst}";
+          };
         };
-        Service = {
-          Type = "oneshot";
-          ExecStart = "${syncScript name inst}";
-        };
-      };
-    }) enabled);
+      })
+      enabled);
 
-    systemd.user.timers = mkMerge (mapAttrsToList (name: inst: {
-      "minecraft-instance-${name}" = {
-        Unit = {
-          Description = "Prism Launcher instance ${name} refresh timer";
+    systemd.user.timers = mkMerge (mapAttrsToList
+      (name: inst: {
+        "minecraft-instance-${name}" = {
+          Unit = {
+            Description = "Prism Launcher instance ${name} refresh timer";
+          };
+          Timer = {
+            OnBootSec = inst.onBootDelaySec;
+            OnUnitActiveSec = inst.syncInterval;
+            OnActiveSec = inst.syncInterval;
+            Persistent = true;
+          };
+          Install = {
+            WantedBy = [ "timers.target" ];
+          };
         };
-        Timer = {
-          OnBootSec = inst.onBootDelaySec;
-          OnUnitActiveSec = inst.syncInterval;
-          OnActiveSec = inst.syncInterval;
-          Persistent = true;
-        };
-        Install = {
-          WantedBy = [ "timers.target" ];
-        };
-      };
-    }) enabled);
+      })
+      enabled);
   };
 }
