@@ -1,2 +1,5 @@
-# Nix-side build artifact — never shipped to players, keep out of the index.
+# Nix-side build artifacts — never shipped to players, keep out of the index.
 checksums.json
+# Nix-side patch machinery — same treatment (packwiz refresh indexes these otherwise).
+patches.nix
+patches/
