@@ -39,5 +39,14 @@ in
         holds instances and saves — prefer "stash-and-pull" or "ff-only".
       '';
     }
+    {
+      assertion = cfg.instances == { } || cfg.launcher == "prismlauncher";
+      message = ''
+        my.programs.minecraft.instances installs built modpack content into the
+        Prism Launcher instances dir (<dataDir>/instances/), which only exists
+        for the prismlauncher launcher. Keep the default launcher
+        (prismlauncher) or remove `instances` when using modrinth-app.
+      '';
+    }
   ];
 }
