@@ -236,12 +236,12 @@ metafile = true
 
 [[files]]
 file = "mods/connector-extras.pw.toml"
-hash = "52e2cb54ee2933bf00e9b7886f47938a2dce1bf998293be2b38552083ffa5f9a"
+hash = "3b247848879885198f4831d9430267abfc2242d47a1f1ff22327490ede940fb1"
 metafile = true
 
 [[files]]
 file = "mods/connector.pw.toml"
-hash = "c19c2e5a0b485648c801c4663ece3596d7e3bd1164f9065f27242346655066bf"
+hash = "3f4c6cada3345061b58ab4a1f54cb36b6f08efdc8aa33b4d786e4429bf47bf94"
 metafile = true
 
 [[files]]
@@ -641,7 +641,7 @@ metafile = true
 
 [[files]]
 file = "mods/ftb-quests-throughput-addon.pw.toml"
-hash = "2324cdb96db368078a581420475ffef7fcb3bb3ede87534ca9208df77c00d063"
+hash = "3418081469fa67d637a346576d496424b15aa5610df0f07ebbfd9e7c808d19b7"
 metafile = true
 
 [[files]]
@@ -976,7 +976,7 @@ metafile = true
 
 [[files]]
 file = "mods/preloading-tricks.pw.toml"
-hash = "47df56151edc42973e345aded790f8e47118911ef4011bcc5c3003dd9a254ffb"
+hash = "e51f600a2e24c8119164655ecbe0c4693604711ad9e64094565288bdb0645f3f"
 metafile = true
 
 [[files]]
@@ -1221,7 +1221,7 @@ metafile = true
 
 [[files]]
 file = "mods/wakes-reforged.pw.toml"
-hash = "c170c3dd60f365ba7976ae8c143799a9ca07c8651c0b4b39cf6a43f45628d437"
+hash = "6dc2a2da18221ce864036f33092fe15ed5785d0388f2291189169d98e5dec5b6"
 metafile = true
 
 [[files]]

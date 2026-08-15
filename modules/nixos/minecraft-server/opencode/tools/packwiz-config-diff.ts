@@ -15,7 +15,7 @@ export default {
   description:
     "Diff the pack's config/<rel-path> override against the owning mod's stock default config (downloaded from checksums.json, unzipped from the jar). Use to review exactly what your shipped config changes vs the mod default before adding it.",
   args: {
-    modpack: { type: "string", description: "Modpack directory name (e.g. 'testModpack')." },
+    modpack: { type: "string", description: "Modpack directory name (e.g. 'DragonTech')." },
     relPath: { type: "string", description: "Path under config/, e.g. 'jei/jei.toml'." },
   },
   async execute(args: { modpack?: string; relPath?: string }) {

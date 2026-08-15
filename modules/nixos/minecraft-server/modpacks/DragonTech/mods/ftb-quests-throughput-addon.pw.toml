@@ -1,6 +1,6 @@
 name = "FTB Quests Throughput Addon"
 filename = "throughput-1.1.0-1.21.1.jar"
-side = "both"
+side = "client"
 
 [download]
 url = "https://edge.forgecdn.net/files/7927/135/throughput-1.1.0-1.21.1.jar"

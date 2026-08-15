@@ -15,7 +15,7 @@ export default {
   description:
     "Set or clear the `preserve` flag on a config file's index.toml entry. preserve=true installs the file only if it doesn't already exist, so player edits win (they never get your improved defaults later). preserve=false (default packwiz behavior) overwrites player copies on every reinstall. packwiz has no CLI for this — it's an index.toml property.",
   args: {
-    modpack: { type: "string", description: "Modpack directory name (e.g. 'testModpack')." },
+    modpack: { type: "string", description: "Modpack directory name (e.g. 'DragonTech')." },
     relPath: { type: "string", description: "Path under config/, e.g. 'jei/jei.toml'." },
     on: { type: "string", description: "'on' (default) or 'off'." },
   },

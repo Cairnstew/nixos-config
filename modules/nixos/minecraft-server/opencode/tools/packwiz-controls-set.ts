@@ -56,7 +56,7 @@ export default {
   description:
     "Set the default hotkeys/controls a packwiz modpack ships to players. Writes the pack's default options.txt at the PACK ROOT (which maps to the game root on install — not under config/), refreshes the index, and optionally marks it preserve so players who already have an options.txt keep their edits. Use --key key_<id>=<code> for one-off binding overrides or --from <file> to seed from a tuned/generated options.txt. The write step that pairs with the packwiz-controls review tool.",
   args: {
-    modpack: { type: "string", description: "Modpack directory name (e.g. 'testModpack')." },
+    modpack: { type: "string", description: "Modpack directory name (e.g. 'DragonTech')." },
     keys: { type: "string", description: "Space-separated keybind overrides, e.g. 'key_key.sneak=key.keyboard.left.control key_iris.keybind.reload=key.keyboard.r'. Optional if --from is given." },
     from: { type: "string", description: "Absolute path to a source options.txt (e.g. a tuned instance's generated one) to seed the pack default from. Optional if keys is given." },
     preserve: { type: "boolean", description: "Mark the index entry preserve=true so players' existing copies are never overwritten (default false = the pack's default is enforced on every install)." },

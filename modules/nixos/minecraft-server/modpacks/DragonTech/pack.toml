@@ -1,4 +1,4 @@
-name = "Test Modpack"
+name = "DragonTech"
 author = "Cairnstew"
 version = "1.0.0"
 pack-format = "packwiz:1.1.0"
@@ -6,7 +6,7 @@ pack-format = "packwiz:1.1.0"
 [index]
 file = "index.toml"
 hash-format = "sha256"
-hash = "9c5ba1c8ba00f6845c7a19216717b5a06c64b5570f31b8a423828c8d4b677fb6"
+hash = "71f2930c7939dec2488d7578203eddc7b52c56ab3fb3914da4886ba81c1b48c0"
 
 [versions]
 minecraft = "1.21.1"

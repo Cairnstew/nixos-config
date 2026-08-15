@@ -45,7 +45,7 @@ your own default controls) load the `mc-mod-controls-set` skill instead.
 ## Reading `packwiz-controls` output
 
 ```
-## controls for testModpack  (source: /mnt/media/.../testModpack/.minecraft/options.txt)
+## controls for DragonTech  (source: /mnt/media/.../DragonTech/.minecraft/options.txt)
   pack does NOT ship options.txt — players get engine+mod defaults (shown below)
   keybindings: 283 (vanilla 34, mod 249)
 
@@ -130,9 +130,9 @@ your own default controls) load the `mc-mod-controls-set` skill instead.
 ## Example
 
 ```
-user: what are the default hotkeys in testModpack, and does the pack override any?
+user: what are the default hotkeys in DragonTech, and does the pack override any?
 
-1. packwiz-controls testModpack
+1. packwiz-controls DragonTech
    → source: <instance>/.minecraft/options.txt (instance-generated)
      pack does NOT ship options.txt
      283 keybindings (34 vanilla, 249 mod); conflicts listed (e.g. R shared by

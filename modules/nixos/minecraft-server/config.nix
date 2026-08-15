@@ -141,9 +141,23 @@ let
   # scripts actually reach the server. The packwiz dir is a store path, so these
   # symlinks resolve at runtime. `mods` is excluded — mods come from
   # checksums.json via packwizSymlinks above.
+  #
+  # `config` and `defaultconfigs` are NOT symlinked: the server writes to them at
+  # boot (FML generates config/fml.toml, mods write their defaults), and a
+  # symlink into the read-only store crashes with `Read-only file system`. They
+  # are seeded as real dirs with rsync --ignore-existing (pack ships defaults;
+  # existing/server-generated files win) — the same preserve policy the client
+  # instance uses (packwiz-instance-sync.py). Everything else stays symlinked.
   packwizStartPre = srv:
     if srv.packwiz == null then ""
     else
+    # `config` and `defaultconfigs` are seeded as real writable dirs (see
+    # below); the rest are symlinked into the data dir.
+      let
+        writable = [ "config" "defaultconfigs" ];
+        symlinkDirs = builtins.filter (d: d != "mods" && !builtins.elem d writable) packSubdirs;
+        writableDirs = builtins.filter (d: builtins.elem d writable) packSubdirs;
+      in
       concatStringsSep "\n"
         (builtins.map
           (d: ''
@@ -151,7 +165,27 @@ let
               ln -sfn "${srv.packwiz}/${d}" "${d}"
             fi
           '')
-          (lib.filter (d: d != "mods") packSubdirs))
+          symlinkDirs)
+      # Writable dirs: the server writes to config/ (FML generates
+      # config/fml.toml, mods write their defaults) and defaultconfigs/ at boot,
+      # so a symlink into the read-only store crashes with `Read-only file
+      # system`. Seed them as real dirs with rsync --ignore-existing (pack ships
+      # defaults; existing/server-generated files win) — the same preserve
+      # policy the client instance uses (packwiz-instance-sync.py). A stale
+      # store symlink from the pre-writable era is removed first.
+      + concatStringsSep "\n"
+        (builtins.map
+          (d: ''
+            if [ -d "${srv.packwiz}/${d}" ]; then
+              if [ -L "${d}" ]; then rm -f "${d}"; fi
+              mkdir -p "${d}"
+              ${pkgs.rsync}/bin/rsync -a -L --ignore-existing "${srv.packwiz}/${d}/" "${d}/"
+              # The pack dir is read-only in the store; the server must be able
+              # to write (FML generates config/fml.toml, mods write defaults).
+              chmod -R u+w "${d}"
+            fi
+          '')
+          writableDirs)
       # Game-root file (e.g. a shipped default options.txt) — packwiz maps a
       # pack-root file 1:1 to the game root, so symlink it the same way.
       + ''

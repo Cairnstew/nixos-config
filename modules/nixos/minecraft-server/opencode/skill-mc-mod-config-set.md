@@ -120,17 +120,17 @@ is a bug.
 ## Example
 
 ```
-user: set the testModpack default for the dynamic lights mod to quality = high.
+user: set the DragonTech default for the dynamic lights mod to quality = high.
 
-1. packwiz-config-show testModpack sodium-dynamic-lights
+1. packwiz-config-show DragonTech sodium-dynamic-lights
    → ships no config/ files (runtime-generated)
-2. mc-run testModpack monitor=boot   # generates config in the instance
+2. mc-run DragonTech monitor=boot   # generates config in the instance
 3. read <instance>/.minecraft/config/sodium-dynamic-lights.properties,
    set quality = high
-4. packwiz-config-add testModpack sodium-dynamic-lights/sodium-dynamic-lights.properties \
+4. packwiz-config-add DragonTech sodium-dynamic-lights/sodium-dynamic-lights.properties \
      sourceFile=<instance generated file>   # no preserve → overwrites each install
-5. packwiz-config-list testModpack   → shows "overwrite" state, indexed
-6. git add modules/nixos/minecraft-server/modpacks/testModpack
+5. packwiz-config-list DragonTech   → shows "overwrite" state, indexed
+6. git add modules/nixos/minecraft-server/modpacks/DragonTech
    report: file written to pack config/, preserve=off (default guaranteed),
    index refreshed, no checksums regen needed
 ```

@@ -15,7 +15,7 @@ export default {
   description:
     "Inspect a mod via the Modrinth API before adding it to a packwiz modpack: side (client/server/both), downloads, the latest version for the pack's loader+MC version, and dependencies. With --jar, also downloads the jar and lists the config/ files it ships so you know what it'll change.",
   args: {
-    modpack: { type: "string", description: "Modpack directory name (e.g. 'testModpack')." },
+    modpack: { type: "string", description: "Modpack directory name (e.g. 'DragonTech')." },
     slug: { type: "string", description: "Modrinth slug or project name to inspect." },
     jar: { type: "string", description: "'true' to also download the jar and list its config files." },
   },

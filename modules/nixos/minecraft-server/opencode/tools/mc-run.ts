@@ -365,7 +365,7 @@ export default {
   args: {
     modpack: {
       type: "string",
-      description: "Modpack name (e.g. 'testModpack'). Maps to the Prism instance and/or the minecraft-server unit.",
+      description: "Modpack name (e.g. 'DragonTech'). Maps to the Prism instance and/or the minecraft-server unit.",
     },
     server: {
       type: "string",
@@ -397,7 +397,7 @@ export default {
       return appendRunLog(args.note);
     }
     if (!args.modpack) {
-      return "mc-run: provide a modpack name (e.g. 'testModpack').";
+      return "mc-run: provide a modpack name (e.g. 'DragonTech').";
     }
     return run(repoRoot(), args.modpack, args.server, args.dataDir, args.forceNative, args.timeout || 0, args.monitor || "");
   },

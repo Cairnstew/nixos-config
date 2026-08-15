@@ -166,6 +166,21 @@ in
       };
     };
 
+    # Dashboard management API. Exposes per-server status (state, players,
+    # uptime) and start/stop/restart actions to the proxy dashboard's Minecraft
+    # section (my.services.proxy.dashboard.minecraft). A tiny loopback HTTP
+    # service running as the web console user (which already holds NOPASSWD
+    # systemctl rights on minecraft-server-* units).
+    api = {
+      enable = mkEnableOption "dashboard management API (status + start/stop/restart)";
+
+      port = mkOption {
+        type = types.port;
+        default = 7799;
+        description = "Loopback port for the management API. Must match <literal>web.portBase</literal>-adjacent ports to avoid collisions; proxied by the dashboard at <literal>/api/minecraft/</literal>.";
+      };
+    };
+
     opencode = {
       enable = mkOption {
         type = types.bool;

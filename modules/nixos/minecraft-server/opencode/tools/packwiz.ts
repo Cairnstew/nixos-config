@@ -27,7 +27,7 @@ export default {
   args: {
     modpack: {
       type: "string",
-      description: "Name of the modpack directory (e.g. 'testModpack').",
+      description: "Name of the modpack directory (e.g. 'DragonTech').",
     },
     command: {
       type: "string",

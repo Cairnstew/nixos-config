@@ -15,7 +15,7 @@ export default {
   description:
     "Print a member (default META-INF/neoforge.mods.toml) from a mod's PINNED jar in a packwiz modpack — the exact bytes a build-time patch (patches/<mod>.py, registered in patches.nix) must match. Use to write or verify patches for jar metadata that config changes cannot control (e.g. a dependency versionRange that pins a nonexistent version).",
   args: {
-    modpack: { type: "string", description: "Modpack directory name (e.g. 'testModpack')." },
+    modpack: { type: "string", description: "Modpack directory name (e.g. 'DragonTech')." },
     mod: { type: "string", description: "Mod name, slug, or .pw.toml filename (e.g. 'dynamic-trees-still-life')." },
     member: { type: "string", description: "Jar member to print, e.g. 'META-INF/neoforge.mods.toml' (default)." },
   },
