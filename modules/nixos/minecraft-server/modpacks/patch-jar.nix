@@ -26,7 +26,8 @@ let
   inherit (pkgs) unzip zip coreutils python3;
 in
 { name, src, patchScript, member ? "META-INF/neoforge.mods.toml" }:
-pkgs.runCommand name {
+pkgs.runCommand name
+{
   nativeBuildInputs = [ unzip zip coreutils python3 ];
 } ''
   set -euo pipefail
