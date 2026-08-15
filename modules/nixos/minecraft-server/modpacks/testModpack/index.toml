@@ -2,7 +2,7 @@ hash-format = "sha256"
 
 [[files]]
 file = "config/roadweaver/roadweaver.json"
-hash = "3848f8703303d73847bf87cd135059525b811e588cbb93dc1e0839b2d61e896f"
+hash = "25f5fa5d5b0f13e452d220e4c6871700e47c0abecf27df6980248e0341b24cff"
 
 [[files]]
 file = "mods/advanced-loot-info.pw.toml"

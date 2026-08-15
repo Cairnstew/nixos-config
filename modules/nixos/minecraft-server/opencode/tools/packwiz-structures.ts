@@ -95,3 +95,7 @@ export default {
 // ## RUN LOG
 // ### 2026-08-14
 // placeholder-scan
+
+// ## RUN LOG
+// ### 2026-08-15
+// investigate ocean/coastal structures for RoadWeaver road-end-in-sea compatibility
