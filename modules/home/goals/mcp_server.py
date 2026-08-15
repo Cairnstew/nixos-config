@@ -12,6 +12,7 @@ import argparse
 import datetime
 import json
 import os
+import re
 import sqlite3
 import sys
 import traceback
@@ -45,8 +46,104 @@ def init_db(db_path: str, schema_path: str = SCHEMA_PATH) -> sqlite3.Connection:
         created_at TEXT NOT NULL DEFAULT (datetime('now')),
         updated_at TEXT NOT NULL DEFAULT (datetime('now'))
     )""")
+    # Migration: agent self-improvement tables (pre-agent-learning DBs; 2026-08-15
+    # pilot). Additive only — personal goals/traits data is untouched. The full
+    # definitions live in schema.sql; this inline block is the migration-fix
+    # pattern for pre-existing DBs (mirrors the profile_facts block above).
+    conn.execute("""CREATE TABLE IF NOT EXISTS learnings (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        domain TEXT NOT NULL DEFAULT 'agent-learning',
+        command TEXT NOT NULL,
+        lesson TEXT NOT NULL,
+        fix TEXT NOT NULL DEFAULT '',
+        evidence TEXT NOT NULL CHECK (length(trim(evidence)) > 0),
+        status TEXT NOT NULL DEFAULT 'proposed',
+        alpha REAL NOT NULL DEFAULT 1.0,
+        beta REAL NOT NULL DEFAULT 1.0,
+        confidence REAL NOT NULL DEFAULT 0.5,
+        created_at TEXT NOT NULL DEFAULT (datetime('now')),
+        acted_on_commit TEXT,
+        superseded_by INTEGER REFERENCES learnings(id)
+    )""")
+    conn.execute("""CREATE TABLE IF NOT EXISTS learning_evidence (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        learning_id INTEGER NOT NULL REFERENCES learnings(id),
+        evidence_value REAL NOT NULL,
+        note TEXT,
+        observed_date TEXT NOT NULL
+    )""")
+    conn.execute("""CREATE TABLE IF NOT EXISTS fabrication_incidents (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        domain TEXT NOT NULL DEFAULT 'agent-learning',
+        command TEXT NOT NULL,
+        pattern_type TEXT NOT NULL,
+        date TEXT NOT NULL,
+        evidence TEXT NOT NULL CHECK (length(trim(evidence)) > 0),
+        description TEXT NOT NULL
+    )""")
+    _seed_fabrication_incidents(conn)
     conn.commit()
     return conn
+
+
+AGENT_LEARNING_DOMAIN = "agent-learning"
+
+
+def _seed_fabrication_incidents(conn: sqlite3.Connection) -> None:
+    """Idempotently seed fabrication_incidents with the three incidents Tier 0
+    already found. Evidence is cited exactly as in the Tier 0 findings doc
+    (/tmp/opencode/self-improvement/tier0-findings.md §3d) and the RUN LOG rows
+    they came from; nothing is re-derived here. Idempotent on
+    (command, pattern_type, evidence)."""
+    incidents = [
+        {
+            "command": "nix-doc-audit",
+            "pattern_type": "fabricated-grep-output",
+            "date": "2026-08-03",
+            "evidence": "modules/home/opencode/commands/nix-doc-audit.md:967-976",
+            "description": (
+                "M11 faulty-grep fabrication: arbiter SKIP ruling claimed 0 matches for a pattern "
+                "that actually matched 5 times (README lines 4,10,11,28,29,131 reference non-existent "
+                "modules/flake-parts/ventoy.nix/ventoy-config.nix). Caught by lead re-verification."
+            ),
+        },
+        {
+            "command": "nix-refine",
+            "pattern_type": "fabricated-default-claim",
+            "date": "2026-08-07",
+            "evidence": "modules/home/opencode/commands/nix-refine.md:917-933",
+            "description": (
+                "K1 false 'default is already true' claim: recon asserted "
+                "boot.loader.efi.canTouchEfiVariables was redundant because 'NixOS default is already "
+                "true' — factually wrong (nixpkgs default is false). Only nix eval before/after caught "
+                "it; required git revert 96e324a."
+            ),
+        },
+        {
+            "command": "nix-refine",
+            "pattern_type": "namespace-misread",
+            "date": "2026-08-06",
+            "evidence": "modules/home/opencode/commands/nix-refine.md:519-528",
+            "description": (
+                "Tailscale namespace misread: scout + planner claimed workstation.nix tailscale.enable "
+                "duplicated common.nix:285, but common.nix sets NixOS-native services.tailscale, not "
+                "the module option my.services.tailscale; the plan would have disabled tailscale on all "
+                "workstation hosts."
+            ),
+        },
+    ]
+    for row in incidents:
+        hit = conn.execute(
+            "SELECT 1 FROM fabrication_incidents WHERE command = ? AND pattern_type = ? AND evidence = ?",
+            (row["command"], row["pattern_type"], row["evidence"]),
+        ).fetchone()
+        if hit:
+            continue
+        conn.execute(
+            """INSERT INTO fabrication_incidents (command, pattern_type, date, evidence, description)
+               VALUES (?, ?, ?, ?, ?)""",
+            (row["command"], row["pattern_type"], row["date"], row["evidence"], row["description"]),
+        )
 
 
 class TraitEngine:
@@ -633,6 +730,110 @@ def get_full_biography() -> list[dict]:
     return [dict(r) for r in rows]
 
 
+# ── Agent self-improvement (Decisions 1/2/4, pilot: nix-refine) ──────────────
+# These write to the `learnings` / `learning_evidence` / `fabrication_incidents`
+# tables only (domain = 'agent-learning'); they never touch goals/traits/facts.
+# Decision 4 (Option 1) gate: `learning_append` ALWAYS writes status =
+# 'proposed'. Only `learning_promote` — intended for Sean or a human-reviewed
+# session — moves a row to 'validated'/'rejected', and validation requires the
+# commit hash of the edit it acted on. An agent must never call learning_promote
+# on itself mid-run.
+
+_PLACEHOLDER_RE = re.compile(
+    r"^\s*(placeholder|tbd|todo|lorem|none\s*yet|fix\s*(later|me)|n/a|xxx|\.\.\.)\s*$",
+    re.IGNORECASE,
+)
+
+
+def _evidence_valid(evidence: str) -> bool:
+    ev = (evidence or "").strip()
+    if not ev:
+        return False
+    if _PLACEHOLDER_RE.match(ev):
+        return False
+    # Evidence must cite something concrete: a file:line, a path, or quoted
+    # command/output text. Reject bare prose like "investigate x compatibility".
+    has_citation = (
+        ":" in ev
+        or "/" in ev
+        or ev.startswith("`")
+        or ev.startswith('"')
+        or ev.startswith("'")
+        or "file:" in ev.lower()
+        or "line" in ev.lower()
+    )
+    if has_citation:
+        return True
+    # Non-empty prose with enough substance is accepted only if it clearly
+    # references concrete output; if it's short (<40 chars) and lookseudo-ey,
+    # treat as suspect.
+    return len(ev) >= 40
+
+
+def _normalise(s: str) -> str:
+    return re.sub(r"\s+", " ", (s or "").strip().lower())
+
+
+def _near_duplicate_lesson(a: str, b: str) -> bool:
+    """True when two lessons are near-duplicates (same normalised text, or
+    heavy token overlap). Used by learning_append to refuse blind appends."""
+    na, nb = _normalise(a), _normalise(b)
+    if na == nb:
+        return True
+    if not na or not nb:
+        return False
+    ta, tb = set(na.split()), set(nb.split())
+    if not ta or not tb:
+        return False
+    overlap = len(ta & tb) / max(len(ta), len(tb))
+    return overlap >= 0.7
+
+
+def learning_append(command: str, lesson: str, fix: str = "", evidence: str = "") -> dict:
+    """Write a proposed learning. Always status='proposed' (Decision 4 gate).
+
+    Refuses calls missing a concrete `evidence` citation (the placeholder-scan
+    failure class from Tier 0) and dedupes against an existing open (non-stale)
+    learning with the same command + near-duplicate lesson."""
+    cmd = (command or "").strip()
+    lsn = (lesson or "").strip()
+    ev = (evidence or "").strip()
+    if not cmd:
+        raise ValueError("learning_append requires 'command'")
+    if not lsn:
+        raise ValueError("learning_append requires 'lesson'")
+    if not _evidence_valid(ev):
+        raise ValueError(
+            "learning_append requires 'evidence' with a file:line citation (or concrete command "
+            "output) — refusing placeholder/empty evidence"
+        )
+
+    # Dedupe: an existing open (non-stale) learning for this command with a
+    # near-duplicate lesson supersedes the append.
+    rows = conn.execute(
+        "SELECT * FROM learnings WHERE command = ? AND status != 'stale'",
+        (cmd,),
+    ).fetchall()
+    for row in rows:
+        if _near_duplicate_lesson(row["lesson"], lsn):
+            result = dict(row)
+            result["deduped"] = True
+            result["note"] = f"existing open learning {row['id']} covers this lesson; nothing written"
+            return result
+
+    now = datetime.datetime.utcnow().isoformat()
+    cur = conn.execute(
+        """INSERT INTO learnings (domain, command, lesson, fix, evidence, status, alpha, beta, confidence, created_at)
+           VALUES (?, ?, ?, ?, ?, 'proposed', 1.0, 1.0, 0.5, ?)""",
+        (AGENT_LEARNING_DOMAIN, cmd, lsn, fix, ev, now),
+    )
+    conn.commit()
+    learning_id = cur.lastrowid
+    result = dict(conn.execute("SELECT * FROM learnings WHERE id = ?", (learning_id,)).fetchone())
+    result["deduped"] = False
+    return result
+
+
 TOOLS: list[dict] = [
     {
         "name": "list_goals",
@@ -907,6 +1108,20 @@ TOOLS: list[dict] = [
             "properties": {},
         },
     },
+    {
+        "name": "learning_append",
+        "description": "Record a proposed agent self-improvement learning (status ALWAYS 'proposed' — Decision 4 gate; only the human-gated learning_promote can validate/reject). Requires command, lesson, and evidence (file:line citation or concrete command output; placeholder/empty evidence is rejected). Dedupes against an existing open learning with the same command and near-duplicate lesson.",
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "command": {"type": "string", "description": "Command/skill name this learning is about (e.g. 'nix-refine')"},
+                "lesson": {"type": "string", "description": "One-line lesson — what happened and why the guidance misled/wasted effort"},
+                "fix": {"type": "string", "description": "What should change to apply this lesson"},
+                "evidence": {"type": "string", "description": "file:line citation or verbatim command output backing the lesson. REQUIRED; empty/placeholder text is rejected."},
+            },
+            "required": ["command", "lesson", "evidence"],
+        },
+    },
 ]
 
 TOOL_DISPATCH = {
@@ -932,6 +1147,7 @@ TOOL_DISPATCH = {
     "get_fact": get_fact,
     "search_facts": search_facts,
     "get_full_biography": get_full_biography,
+    "learning_append": learning_append,
 }
 
 
