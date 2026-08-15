@@ -1,6 +1,10 @@
 hash-format = "sha256"
 
 [[files]]
+file = "config/roadweaver/roadweaver.json"
+hash = "3848f8703303d73847bf87cd135059525b811e588cbb93dc1e0839b2d61e896f"
+
+[[files]]
 file = "mods/advanced-loot-info.pw.toml"
 hash = "516ed4f0441c233d803038b3c888baa9ba62f2fb9929fe8bd1cdf59329251dcc"
 metafile = true
@@ -1006,6 +1010,11 @@ hash = "55fcb8b7508262d7e384f81dc86c0cf0c28ec98194d2dd842208b96291931c0c"
 metafile = true
 
 [[files]]
+file = "mods/reeses-sodium-options.pw.toml"
+hash = "0f465bf38b13f887dbde506c859c9b5439ee9151ae5f3a98078b9f6c3a2c89ad"
+metafile = true
+
+[[files]]
 file = "mods/rhino.pw.toml"
 hash = "e55ca32b338a0e0540f4fec5170675d860566255ae0f45692a00cb4ebf2eb535"
 metafile = true
@@ -1051,11 +1060,6 @@ hash = "5e263b6eedad21a622e270bb63255fc79bad7158f203fd023e6498d38ff979cd"
 metafile = true
 
 [[files]]
-file = "mods/sodium-core-shader-support.pw.toml"
-hash = "91b4f86a60a84c6b8a81e4dde932630e9e5ca58f67cc0ffd50e00744ed36f4a0"
-metafile = true
-
-[[files]]
 file = "mods/sodium-dynamic-lights.pw.toml"
 hash = "c1e526d3d17cb3563e596d45c7567ed1fe60c31bdc3457f7a747ef8150bd3c1b"
 metafile = true
@@ -1073,11 +1077,6 @@ metafile = true
 [[files]]
 file = "mods/sodium-extras.pw.toml"
 hash = "02b29315d2ec0d055d0ebba1f36879da5bcacc823328a668c7e7340fb2cb03d4"
-metafile = true
-
-[[files]]
-file = "mods/sodium-options-api.pw.toml"
-hash = "d193173f0f5dfb4a921d44e29e8d5cee656dd3a40872939069715bb482b66fc9"
 metafile = true
 
 [[files]]
@@ -1274,3 +1273,7 @@ metafile = true
 file = "mods/yungs-better-nether-fortresses.pw.toml"
 hash = "c0e40691651465b4eb1037749148c2078123604195e19b582dbef3cd5914e3b1"
 metafile = true
+
+[[files]]
+file = "options.txt"
+hash = "858bbdb47dcfb5073256531397c4d0179c95ab376568256aaebf83f8712dc4c9"

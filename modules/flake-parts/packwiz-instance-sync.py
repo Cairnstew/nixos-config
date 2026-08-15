@@ -86,3 +86,11 @@ for d in ["config", "kubejs", "scripts", "datapacks", "defaultconfigs"]:
         d_dst = os.path.join(inst, ".minecraft", d)
         os.makedirs(d_dst, exist_ok=True)
         run(["rsync", "-a", "-L", "--ignore-existing", d_src + "/", d_dst + "/"])
+
+# Game-root files (e.g. a shipped default options.txt) are seeded only when
+# absent, matching the internal-dir policy: players' edits win.
+opt_src = os.path.join(src, "options.txt")
+if os.path.isfile(opt_src):
+    opt_dst = os.path.join(inst, ".minecraft", "options.txt")
+    if not os.path.exists(opt_dst):
+        run(["cp", "-L", opt_src, opt_dst])

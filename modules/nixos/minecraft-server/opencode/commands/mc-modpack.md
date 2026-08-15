@@ -29,10 +29,12 @@ Request: $ARGUMENTS
      (get `file-id` + `filename` from the mod's `[update.curseforge]` /
      `[download]` metadata), then remove the old `.pw.toml`.
    - **Default player configs:** use `packwiz-config-add` to write a file under
-     `config/<mod>/<file>` (the pack's `config/` dir). Before writing, use
-     `packwiz-config-diff` to see what the mod's stock default is, and decide
+     `config/<mod>/<file>` (the pack's `config/` dir). Before writing, review
+     the mod's shipped config with `packwiz-config-show` (list/get contents from
+     the pinned jar) and `packwiz-config-diff` (override vs stock), and decide
      whether to set `preserve` (player edits win, but they never receive later
-     improvements) or not (overwritten every install).
+     improvements) or not (overwritten every install). For a full review
+     workflow, load the `mc-mod-config` skill.
    - **Patches:** use `packwiz-datapack-add` to add a local datapack to
      `config/paxi/datapacks/` (validates pack_format against MC 1.21.1 = 48).
      `packwiz-datapack-remove` to drop one. KubeJS (`kubejs/`) and CraftTweaker

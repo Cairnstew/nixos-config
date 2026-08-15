@@ -351,6 +351,19 @@ in
       };
     }
 
+    # ── Default model context window ────────────────────────────────────────
+    # opencode's `limit.context` caps how many context tokens are sent to the
+    # model; the schema requires `output` alongside it. Default applies to the
+    # shared default model (DeepSeek V4 via opencode-go); hosts override via
+    # my.programs.opencode.settings.
+    {
+      programs.opencode.settings.provider.opencode-go.models."deepseek-v4-flash".limit =
+        lib.mkDefault {
+          context = 500000;
+          output = 8192;
+        };
+    }
+
     # ── Ensemble plugin config → ~/.config/opencode/ensemble.json ─────────
     (mkIf (cfg.ensemble != null) {
       home.file.".config/opencode/ensemble.json" = {

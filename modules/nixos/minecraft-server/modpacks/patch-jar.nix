@@ -21,14 +21,18 @@
 #
 # The member is always META-INF/neoforge.mods.toml (NeoForge 1.21.x). To patch
 # a different member, extend the `member` argument (default: the above).
-{ lib, unzip, zip, coreutils, python3 }:
+{ pkgs, ... }:
+let
+  inherit (pkgs) unzip zip coreutils python3;
+in
 { name, src, patchScript, member ? "META-INF/neoforge.mods.toml" }:
-lib.runCommand name {
+pkgs.runCommand name {
   nativeBuildInputs = [ unzip zip coreutils python3 ];
 } ''
   set -euo pipefail
   export TZ=UTC
   cp '${src}' work.jar
+  chmod u+w work.jar
   mkdir -p "$(dirname '${member}')"
   ${unzip}/bin/unzip -p work.jar '${member}' > '${member}'
   ${python3}/bin/python3 '${patchScript}' '${member}'
