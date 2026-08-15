@@ -1,4 +1,4 @@
-# testModpack — build-time jar patches.
+# DragonTech — build-time jar patches.
 #
 # Each entry overrides one mod symlink produced by packwiz2nix's mkModLinks
 # (key = "mods/<checksums.json key with .pw.toml → .jar>"). Two mechanisms:

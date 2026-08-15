@@ -16,12 +16,12 @@
 #   - apps."modpack-update-<modpack>"     → regenerate checksums, rebuild, reinstall
 #
 # Usage:
-#   cd modules/nixos/minecraft-server/modpacks/testModpack
+#   cd modules/nixos/minecraft-server/modpacks/DragonTech
 #   nix run .#packwiz -- init            # create the pack
 #   nix run .#packwiz -- modrinth add <mod> ...
-#   nix run .#packwiz-checksums-testModpack  # regenerate checksums.json
-#   nix run .#modpack-build-testModpack       # install into Prism (no rebuild)
-#   nix run .#modpack-update-testModpack      # checksums → rebuild → reinstall
+#   nix run .#packwiz-checksums-DragonTech  # regenerate checksums.json
+#   nix run .#modpack-build-DragonTech       # install into Prism (no rebuild)
+#   nix run .#modpack-update-DragonTech      # checksums → rebuild → reinstall
 #
 # The checksum app downloads and hashes every mod at RUNTIME (when `nix run`
 # runs it) rather than at eval or build time: packwiz2nix's mkChecksums uses

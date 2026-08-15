@@ -208,6 +208,32 @@ in
           (<option>my.services.opencodeWeb</option>).
         '';
       };
+
+      # Minecraft server management section (populated by the minecraft-server
+      # module). Mirrors the opencode section: a small management API proxied by
+      # Caddy, rendered as live server status cards with start/stop/restart
+      # buttons.
+      minecraft = {
+        enable = lib.mkEnableOption "Minecraft server management section on the dashboard";
+
+        host = lib.mkOption {
+          type = lib.types.str;
+          default = "127.0.0.1";
+          description = "Backend host of the minecraft management API.";
+        };
+
+        port = lib.mkOption {
+          type = lib.types.port;
+          default = 7799;
+          description = "Backend port of the minecraft management API.";
+        };
+
+        apiPath = lib.mkOption {
+          type = lib.types.str;
+          default = "/api/minecraft";
+          description = "Same-origin path prefix proxied to the minecraft management API.";
+        };
+      };
     };
 
     systemMetrics = {

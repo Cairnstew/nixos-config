@@ -30,5 +30,5 @@ buildModSource {
   patches = [ ./elevated-water.patch ];
   # outputHash filled in below: the sha256 of the built playable jar, computed
   # on first build (`nix build --impure .#... --print-out-paths` → "got:" hash).
-  outputHash = "sha256-aMDD98KrCgzmOrhse0wRRBleN/MsCHaSIauqNFfFbtc=";
+  outputHash = "sha256-PBr/Jaop4dx4PR5iKRNeHSEPKS4wA/dxhcck8nPDKu4=";
 }

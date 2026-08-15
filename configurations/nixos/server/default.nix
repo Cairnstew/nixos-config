@@ -244,14 +244,15 @@
     dataDir = "/mnt/data/minecraft";
     packDir = "/mnt/data/minecraft/packs"; # scp modpack zips here
 
-    # Web console: https://server.tail685690.ts.net/mc/test/
+    # Web console: https://server.tail685690.ts.net/mc/dragentech/
     web = {
       enable = true;
       portBase = 7781; # avoid colliding with my.services.ttyd (7681)
       proxyUpstream = true;
     };
+    api.enable = true; # dashboard management (status + start/stop/restart)
 
-    servers.test.enable = true;
+    servers.dragentech.enable = true;
   };
 
   # ── Ollama (LLM Serving) ───────────────────────────────────────────────

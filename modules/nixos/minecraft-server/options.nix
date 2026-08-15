@@ -45,6 +45,51 @@ let
     };
   };
 
+  # Hardware / resource limits applied to the server's systemd unit. nix-minecraft
+  # hardens the unit internally and does NOT forward arbitrary serviceConfig
+  # fields (see GOTCHAS "nix-minecraft has NO extraServiceConfig"), so this
+  # wrapper exposes the common ones declaratively and wires them into
+  # systemd.services.minecraft-server-<name>.serviceConfig. All null = no cap.
+  hardware = types.submodule {
+    options = {
+      memoryMax = mkOption {
+        type = types.nullOr types.str;
+        default = null;
+        description = "systemd MemoryMax (e.g. \"10G\") — hard cgroup memory cap; OOM-kills the unit above this. null = unlimited.";
+      };
+
+      memoryHigh = mkOption {
+        type = types.nullOr types.str;
+        default = null;
+        description = "systemd MemoryHigh (e.g. \"8G\") — soft memory throttle target; the cgroup is throttled/reclaimed above this but not killed. null = unlimited.";
+      };
+
+      memorySwapMax = mkOption {
+        type = types.nullOr types.str;
+        default = null;
+        description = "systemd MemorySwapMax (e.g. \"2G\") — cap swap usage of the unit so a leak doesn't thrash the host's swap. null = unlimited.";
+      };
+
+      cpuQuota = mkOption {
+        type = types.nullOr types.str;
+        default = null;
+        description = "systemd CPUQuota (e.g. \"200%\") — cap CPU to N% of one core (100% = one core). Useful to stop a modded server saturating all cores. null = unlimited.";
+      };
+
+      nice = mkOption {
+        type = types.nullOr types.int;
+        default = null;
+        description = "systemd Nice level for the server process (e.g. 5 = slightly lower priority than other services). null = leave default.";
+      };
+
+      ioWeight = mkOption {
+        type = types.nullOr types.int;
+        default = null;
+        description = "systemd IOWeight (1-10000) for the server cgroup; lower = deprioritise disk I/O vs other services. null = leave default.";
+      };
+    };
+  };
+
   webServer = types.submodule {
     options = {
       enable = mkOption {
@@ -163,6 +208,21 @@ in
         type = types.bool;
         default = true;
         description = "Register each console as a reverse-proxy upstream (<literal>/mc/&lt;name&gt;/</literal>) on the proxy dashboard.";
+      };
+    };
+
+    # Dashboard management API. Exposes per-server status (state, players,
+    # uptime) and start/stop/restart actions to the proxy dashboard's Minecraft
+    # section (my.services.proxy.dashboard.minecraft). A tiny loopback HTTP
+    # service running as the web console user (which already holds NOPASSWD
+    # systemctl rights on minecraft-server-* units).
+    api = {
+      enable = mkEnableOption "dashboard management API (status + start/stop/restart)";
+
+      port = mkOption {
+        type = types.port;
+        default = 7799;
+        description = "Loopback port for the management API. Must match <literal>web.portBase</literal>-adjacent ports to avoid collisions; proxied by the dashboard at <literal>/api/minecraft/</literal>.";
       };
     };
 
@@ -435,6 +495,12 @@ in
             type = types.str;
             default = "on-failure";
             description = "systemd Restart policy for the server unit.";
+          };
+
+          hardware = mkOption {
+            type = hardware;
+            default = { };
+            description = "Hardware / resource limits for this server (systemd cgroup caps + scheduler niceness). See the <literal>hardware</literal> submodule for fields.";
           };
 
           managementSystem = mkOption {

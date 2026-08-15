@@ -203,7 +203,7 @@ export default {
   args: {
     modpack: {
       type: "string",
-      description: "Modpack name (maps to the Prism Launcher instance and/or the minecraft-server unit, e.g. 'testModpack').",
+      description: "Modpack name (maps to the Prism Launcher instance and/or the minecraft-server unit, e.g. 'DragonTech').",
     },
     log: {
       type: "string",
@@ -235,7 +235,7 @@ export default {
       return appendRunLog(args.note);
     }
     if (!args.modpack) {
-      return "mc-prism-log: provide a modpack name (e.g. 'testModpack').";
+      return "mc-prism-log: provide a modpack name (e.g. 'DragonTech').";
     }
     const tail = args.tail ?? 100;
     const dataDir = args.dataDir || findDataDir() || "";

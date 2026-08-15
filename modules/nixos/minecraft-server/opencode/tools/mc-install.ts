@@ -193,7 +193,7 @@ export default {
   args: {
     modpack: {
       type: "string",
-      description: "Modpack name (e.g. 'testModpack'). Must have a flake app/packages.minecraft-modpack-<name>.",
+      description: "Modpack name (e.g. 'DragonTech'). Must have a flake app/packages.minecraft-modpack-<name>.",
     },
     dataDir: {
       type: "string",
@@ -221,7 +221,7 @@ export default {
       return appendRunLog(args.note);
     }
     if (!args.modpack) {
-      return "mc-install: provide a modpack name (e.g. 'testModpack').";
+      return "mc-install: provide a modpack name (e.g. 'DragonTech').";
     }
     const repo = repoRoot();
     const built = buildContent(repo, args.modpack);

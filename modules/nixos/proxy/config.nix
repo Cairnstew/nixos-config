@@ -28,7 +28,6 @@ let
   dashboard = import ./dashboard.nix {
     inherit cfg enabledUpstreams lib pkgs;
   };
-
   # Dashboard directory (index.html) — aliased so the Caddyfile template
   # below keeps the original dashboardDir reference verbatim.
   dashboardDir = dashboard.dashboardDir;
@@ -49,6 +48,12 @@ let
       handle_path /api/metrics/* {
         root * /run/metrics
         file_server
+      }
+      ''}
+
+      ${lib.optionalString cfg.dashboard.minecraft.enable ''
+      handle_path ${cfg.dashboard.minecraft.apiPath}/* {
+        reverse_proxy ${cfg.dashboard.minecraft.host}:${toString cfg.dashboard.minecraft.port}
       }
       ''}
 

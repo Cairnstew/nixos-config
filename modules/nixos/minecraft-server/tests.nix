@@ -67,7 +67,15 @@ in
         let
           checkServer = name: srv: ''
             echo "[smoke-test] ${name}: package = ${srv.package.pname or "?"} (${srv.package.name or "?"})"
-            JAR=$(find ${srv.package} -name "*.jar" -not -path "*/libraries/*" | head -n1)
+            # The server jar lives under libraries/ for nix-minecraft neoforge
+            # packages (net/minecraft/server/.../server-<ver>.jar), and at the
+            # top level for vanilla/fabric. Prefer the actual server jar name
+            # rather than "any jar outside libraries/" — that filter missed the
+            # neoforge layout and always failed.
+            JAR=$(find ${srv.package} -name "server-*.jar" -o -name "*server.jar" 2>/dev/null | grep -v sources | head -n1)
+            if [ -z "$JAR" ]; then
+              JAR=$(find ${srv.package} -name "*.jar" -not -path "*/libraries/*" 2>/dev/null | head -n1)
+            fi
             if [ -n "$JAR" ]; then
               echo "[smoke-test] PASS: ${name} server jar found: $JAR"
             else

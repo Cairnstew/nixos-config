@@ -15,7 +15,7 @@ export default {
   description:
     "Add a local custom datapack to a packwiz modpack via the Paxi loader folder (config/paxi/datapacks/). Copies a local .zip or directory in, validates its pack.mcmeta pack_format matches the pack's Minecraft version (1.21.1 = 48), and refreshes the index. Use for goal #2: patches / recipe & loot tweaks. Server-side datapacks work; resource packs are client-only.",
   args: {
-    modpack: { type: "string", description: "Modpack directory name (e.g. 'testModpack')." },
+    modpack: { type: "string", description: "Modpack directory name (e.g. 'DragonTech')." },
     source: { type: "string", description: "Absolute path to the local datapack .zip or directory." },
     name: { type: "string", description: "Optional target name (defaults to the source basename)." },
   },

@@ -5,6 +5,6 @@
 { ... }:
 {
   imports = [
-    ./test.nix
+    ./dragentech.nix
   ];
 }

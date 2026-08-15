@@ -216,6 +216,56 @@ let
         </script>
         ''}
 
+        ${lib.optionalString cfg.dashboard.minecraft.enable ''
+        <h2 class="section-title">Minecraft</h2>
+        <div class="metrics-grid" id="minecraft-servers">
+          <div class="oc-empty">Loading…</div>
+        </div>
+        <script>
+        // Minecraft server management: live status + start/stop/restart toggles.
+        // Backed by the minecraft-server module's management API (proxied at
+        // dashboard.minecraft.apiPath), which reports per-server systemd state,
+        // players, and uptime, and accepts start/stop/restart POSTs.
+        var mcApi = '${cfg.dashboard.minecraft.apiPath}';
+        function mcCard(s) {
+          var ok = s.active;
+          var state = ok ? 'online' : 'offline';
+          var pill = '<span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:' + (ok ? '#4ade80' : '#ef4444') + ';margin-right:6px"></span>';
+          var btn = function (a, label) {
+            return '<button data-mc-action="' + a + '" data-mc-name="' + s.name + '" style="padding:4px 12px;margin-right:6px;border-radius:6px;border:1px solid #2a2a38;background:#14141d;color:#e0e0e0;cursor:pointer">' + label + '</button>';
+          };
+          return '<div class="metric-card">' +
+            '<div class="metric-label">' + pill + s.name + ' · ' + state + '</div>' +
+            '<div class="metric-value">' + (s.players != null ? s.players + ' players' : '—') + '</div>' +
+            '<div class="metrics-info">' + (s.uptime ? 'up ' + s.uptime : "") + '</div>' +
+            '<div style="margin-top:10px">' +
+              btn('start', 'Start') + btn('stop', 'Stop') + btn('restart', 'Restart') +
+              (s.console ? '<a href="' + s.console + '" style="padding:4px 12px;border-radius:6px;border:1px solid #2a2a38;background:#14141d;color:#5a8aff;text-decoration:none">Console</a>' : "") +
+            '</div></div>';
+        }
+        function mcRefresh() {
+          fetch(mcApi + '/status').then(function (r) { return r.json(); }).then(function (d) {
+            var servers = Array.isArray(d) ? d : (d && d.servers ? d.servers : []);
+            var box = document.getElementById('minecraft-servers');
+            if (!servers.length) { box.innerHTML = '<div class="oc-empty">No servers configured</div>'; return; }
+            box.innerHTML = servers.map(mcCard).join("");
+          }).catch(function (e) {
+            document.getElementById('minecraft-servers').innerHTML = '<div class="oc-empty">Unavailable (' + e.message + ')</div>';
+          });
+        }
+        document.addEventListener('click', function (ev) {
+          var el = ev.target.closest('[data-mc-action]');
+          if (!el) return;
+          var name = el.dataset.mcName, action = el.dataset.mcAction;
+          fetch(mcApi + '/' + name + '/' + action, { method: 'POST' }).then(function (r) {
+            setTimeout(mcRefresh, 1500);
+          }).catch(function () {});
+        });
+        mcRefresh();
+        setInterval(mcRefresh, 10000);
+        </script>
+        ''}
+
         <p class="footer"><script>document.write(window.location.host)</script></p>
       </div>
     </body>

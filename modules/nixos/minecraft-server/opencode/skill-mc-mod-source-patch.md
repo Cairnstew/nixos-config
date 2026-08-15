@@ -165,6 +165,6 @@ git-format diff) makes every check height-based (`waterColumn = oceanFloor <
 surfaceY`; `waterDepth = surfaceY - oceanFloor`), reusing the correct rule the
 accurate sampler already had. Registered in `patches.nix` as
 `"mods/roadweaver.jar"` via `import ./source-patches/roadweaver { … }`.
-`nix build --impure .#minecraft-modpack-testModpack` produced
+`nix build --impure .#minecraft-modpack-DragonTech` produced
 `roadweaver-2.3.1-elevated-water-patched.jar`; the client symlinks it under
 `.minecraft/mods/` and the server under the pack's `mods/`.

@@ -103,6 +103,42 @@ let
       };
     };
 
+  # ── Dashboard management API ───────────────────────────────────────────────
+  # Loopback HTTP service exposing per-server status (state, players, uptime)
+  # and start/stop/restart actions for the proxy dashboard's Minecraft section
+  # (my.services.proxy.dashboard.minecraft). Runs as the web console user,
+  # which already holds NOPASSWD sudo for `systemctl {start,stop,restart,status}
+  # minecraft-server-*`. Proxied by Caddy at /api/minecraft/.
+  mkApiService =
+    let
+      apiScript = ./api.py;
+      servers = builtins.attrNames (lib.filterAttrs (_: srv: srv.enable) cfg.servers);
+    in
+    {
+      "minecraft-dashboard-api" = {
+        description = "Minecraft dashboard management API";
+        after = [ "network.target" ];
+        wants = [ "network.target" ];
+        wantedBy = [ "multi-user.target" ];
+        # sudo lives in /run/wrappers (NixOS setuid wrapper); systemctl is in
+        # the systemd package. Provide both via PATH so the API's subprocess
+        # calls (sudo systemctl ...) resolve like the web-console shim does.
+        path = [ pkgs.sudo pkgs.systemd pkgs.coreutils ];
+        serviceConfig = {
+          ExecStart = "${pkgs.python3}/bin/python3 ${apiScript}";
+          User = cfg.web.user;
+          Group = "minecraft";
+          Environment = [
+            "MC_DATA_DIR=${cfg.dataDir}"
+            "MC_SERVERS=${lib.concatStringsSep ":" servers}"
+            "MC_API_PORT=${toString cfg.api.port}"
+          ];
+          Restart = "on-failure";
+          RestartSec = "2s";
+        };
+      };
+    };
+
   mkUpstream = name:
     let
       port = webPort name;
@@ -184,6 +220,12 @@ in
       users.users.${cfg.web.user} = {
         isSystemUser = true;
         group = "minecraft";
+        # The NixOS sudo wrapper (/run/wrappers/bin/sudo) is setuid root:wheel
+        # mode 4750 — only wheel members can exec it. The user needs it for the
+        # web-console dot-commands and the dashboard management API; sudoers
+        # (below) already scopes it to exactly `systemctl {start,stop,restart,
+        # status} minecraft-server-*`, so wheel membership is safe.
+        extraGroups = [ "wheel" ];
         shell = "/run/current-system/sw/bin/bash";
       };
 
@@ -201,10 +243,22 @@ in
       networking.firewall.allowedTCPPorts =
         lib.mkIf cfg.web.openFirewall (builtins.map webPort (builtins.attrNames webServers));
 
-      systemd.services = mkMerge (builtins.map mkWebService (builtins.attrNames webServers));
+      systemd.services = mkMerge (
+        (builtins.map mkWebService (builtins.attrNames webServers))
+        # Dashboard management API (status + start/stop/restart actions).
+        ++ lib.optional cfg.api.enable mkApiService
+      );
 
       my.services.proxy.upstreams = lib.mkIf cfg.web.proxyUpstream
         (lib.mkMerge (builtins.map mkUpstream (builtins.attrNames webServers)));
+
+      # Dashboard management section: register the API with the proxy dashboard.
+      my.services.proxy.dashboard.minecraft = lib.mkIf cfg.api.enable {
+        enable = true;
+        host = "127.0.0.1";
+        port = cfg.api.port;
+        apiPath = "/api/minecraft";
+      };
     })
   ];
 }

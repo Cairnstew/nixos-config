@@ -103,6 +103,21 @@ let
         # mechanism as the client's mkClientInstance in modules/flake-parts/
         # packwiz.nix — one patch definition, both sides).
         mods = packwiz2nix.lib.mkPackwizPackages pkgs checksums;
+        # Server-only filter: drop mods marked `side = "client"` in their
+        # packwiz .pw.toml (e.g. Sodium, Iris). A client pack ships render/GL
+        # mods whose PreLaunchChecks require LWJGL, which a headless server
+        # lacks — linking them makes the server crash at boot with
+        # NoClassDefFoundError: org/lwjgl/Version. packwiz does the same
+        # filtering when installing a pack to a server.
+        serverMods = lib.filterAttrs
+          (name: _:
+            let
+              pw = "${srv.packwiz}/mods/${name}";
+            in
+            !builtins.pathExists pw
+            || ((builtins.fromTOML (builtins.readFile pw)).side or "both") != "client"
+          )
+          mods;
         patchedMods =
           if builtins.pathExists "${srv.packwiz}/patches.nix" then
             import "${srv.packwiz}/patches.nix"
@@ -118,7 +133,7 @@ let
           else
             { };
       in
-      (packwiz2nix.lib.mkModLinks mods) // patchedMods;
+      (packwiz2nix.lib.mkModLinks serverMods) // patchedMods;
 
   # Internal (non-mod) content subdirs from the packwiz pack dir. packwiz
   # installers copy these into the game folder on install; our server must do
@@ -126,9 +141,23 @@ let
   # scripts actually reach the server. The packwiz dir is a store path, so these
   # symlinks resolve at runtime. `mods` is excluded — mods come from
   # checksums.json via packwizSymlinks above.
+  #
+  # `config` and `defaultconfigs` are NOT symlinked: the server writes to them at
+  # boot (FML generates config/fml.toml, mods write their defaults), and a
+  # symlink into the read-only store crashes with `Read-only file system`. They
+  # are seeded as real dirs with rsync --ignore-existing (pack ships defaults;
+  # existing/server-generated files win) — the same preserve policy the client
+  # instance uses (packwiz-instance-sync.py). Everything else stays symlinked.
   packwizStartPre = srv:
     if srv.packwiz == null then ""
     else
+    # `config` and `defaultconfigs` are seeded as real writable dirs (see
+    # below); the rest are symlinked into the data dir.
+      let
+        writable = [ "config" "defaultconfigs" ];
+        symlinkDirs = builtins.filter (d: d != "mods" && !builtins.elem d writable) packSubdirs;
+        writableDirs = builtins.filter (d: builtins.elem d writable) packSubdirs;
+      in
       concatStringsSep "\n"
         (builtins.map
           (d: ''
@@ -136,7 +165,27 @@ let
               ln -sfn "${srv.packwiz}/${d}" "${d}"
             fi
           '')
-          (lib.filter (d: d != "mods") packSubdirs))
+          symlinkDirs)
+      # Writable dirs: the server writes to config/ (FML generates
+      # config/fml.toml, mods write their defaults) and defaultconfigs/ at boot,
+      # so a symlink into the read-only store crashes with `Read-only file
+      # system`. Seed them as real dirs with rsync --ignore-existing (pack ships
+      # defaults; existing/server-generated files win) — the same preserve
+      # policy the client instance uses (packwiz-instance-sync.py). A stale
+      # store symlink from the pre-writable era is removed first.
+      + concatStringsSep "\n"
+        (builtins.map
+          (d: ''
+            if [ -d "${srv.packwiz}/${d}" ]; then
+              if [ -L "${d}" ]; then rm -f "${d}"; fi
+              mkdir -p "${d}"
+              ${pkgs.rsync}/bin/rsync -a -L --ignore-existing "${srv.packwiz}/${d}/" "${d}/"
+              # The pack dir is read-only in the store; the server must be able
+              # to write (FML generates config/fml.toml, mods write defaults).
+              chmod -R u+w "${d}"
+            fi
+          '')
+          writableDirs)
       # Game-root file (e.g. a shipped default options.txt) — packwiz maps a
       # pack-root file 1:1 to the game root, so symlink it the same way.
       + ''
@@ -223,6 +272,26 @@ let
       ];
     };
 
+  # Resource / scheduler caps from the per-server `hardware` option, applied to
+  # the generated systemd unit. nix-minecraft does NOT forward arbitrary
+  # serviceConfig, so we augment the unit directly here (the GOTCHAS-verified
+  # pattern). Returns the serviceConfig attrset (possibly empty) for one server.
+  mkHardwareServiceConfig = name: srv:
+    if srv.hardware == { } then { }
+    else
+      {
+        systemd.services.${"minecraft-server-${name}"} = {
+          serviceConfig = lib.filterAttrs (_: v: v != null) {
+            MemoryMax = srv.hardware.memoryMax;
+            MemoryHigh = srv.hardware.memoryHigh;
+            MemorySwapMax = srv.hardware.memorySwapMax;
+            CPUQuota = srv.hardware.cpuQuota;
+            Nice = if srv.hardware.nice != null then toString srv.hardware.nice else null;
+            IOWeight = if srv.hardware.ioWeight != null then toString srv.hardware.ioWeight else null;
+          };
+        };
+      };
+
 in
 {
   imports = [
@@ -240,6 +309,40 @@ in
         servers = mapAttrs' mkServer cfg.servers;
       };
 
+      # Per-server resource caps (memory/CPU/scheduler) from the `hardware`
+      # option, applied to the generated units.
+      systemd.services = lib.mkMerge (
+        (map (name: (mkHardwareServiceConfig name cfg.servers.${name}).systemd.services)
+          (builtins.attrNames cfg.servers))
+        # dataDir + per-server dirs are created by a ROOT oneshot, NOT tmpfiles:
+        # systemd-tmpfiles refuses to descend a path whose parent is owned by a
+        # non-root user ("Detected unsafe path transition /mnt/data (owned by
+        # seanc)") and silently skips the rule. nix-minecraft's tmpfiles rule for
+        # ${dataDir}/${name} therefore never runs when dataDir lives under such a
+        # parent, leaving the server's WorkingDirectory missing → systemd fails the
+        # unit with status=200/CHDIR. This oneshot runs as root before every server
+        # so the dirs always exist on fresh machines too.
+        ++ [
+          {
+            "minecraft-server-prepare-dirs" = {
+              description = "Create Minecraft server data directories";
+              wantedBy = [ "multi-user.target" ];
+              before = map (name: "minecraft-server-${name}.service") (builtins.attrNames cfg.servers);
+              serviceConfig = {
+                Type = "oneshot";
+                RemainAfterExit = true;
+              };
+              script = ''
+                ${pkgs.coreutils}/bin/install -d -o minecraft -g minecraft -m 0770 ${cfg.dataDir}
+                ${builtins.concatStringsSep "\n" (map (name: ''
+                  ${pkgs.coreutils}/bin/install -d -o minecraft -g minecraft -m 0770 ${cfg.dataDir}/${name}
+                '') (builtins.attrNames cfg.servers))}
+              '';
+            };
+          }
+        ]
+      );
+
       # packDir: owned by the primary user so scp works without sudo, group
       # minecraft so the service user can read the zips. dataDir comes from
       # nix-minecraft's user creation.
@@ -251,30 +354,6 @@ in
       # (from nix-minecraft), so without group membership the user cannot traverse
       # it to reach packDir — scp to packDir would fail with "Permission denied".
       users.groups.minecraft.members = [ me.username ];
-
-      # dataDir + per-server dirs are created by a ROOT oneshot, NOT tmpfiles:
-      # systemd-tmpfiles refuses to descend a path whose parent is owned by a
-      # non-root user ("Detected unsafe path transition /mnt/data (owned by
-      # seanc)") and silently skips the rule. nix-minecraft's tmpfiles rule for
-      # ${dataDir}/${name} therefore never runs when dataDir lives under such a
-      # parent, leaving the server's WorkingDirectory missing → systemd fails the
-      # unit with status=200/CHDIR. This oneshot runs as root before every server
-      # so the dirs always exist on fresh machines too.
-      systemd.services.minecraft-server-prepare-dirs = {
-        description = "Create Minecraft server data directories";
-        wantedBy = [ "multi-user.target" ];
-        before = map (name: "minecraft-server-${name}.service") (builtins.attrNames cfg.servers);
-        serviceConfig = {
-          Type = "oneshot";
-          RemainAfterExit = true;
-        };
-        script = ''
-          ${pkgs.coreutils}/bin/install -d -o minecraft -g minecraft -m 0770 ${cfg.dataDir}
-          ${builtins.concatStringsSep "\n" (map (name: ''
-            ${pkgs.coreutils}/bin/install -d -o minecraft -g minecraft -m 0770 ${cfg.dataDir}/${name}
-          '') (builtins.attrNames cfg.servers))}
-        '';
-      };
     })
 
     # ── OpenCode utilities for modpack work ──────────────────────────────────
@@ -308,6 +387,9 @@ in
           mc-prism-log = ./opencode/tools/mc-prism-log.ts;
           mc-run = ./opencode/tools/mc-run.ts;
           mc-install = ./opencode/tools/mc-install.ts;
+          # Dedicated-server management (status/start/stop/restart/boot monitor)
+          # via the dashboard management API, falling back to systemctl.
+          mc-server = ./opencode/tools/mc-server.ts;
         };
         skills.mc-modpack = builtins.readFile ./opencode/skill.md;
         skills.mc-mod-config = builtins.readFile ./opencode/skill-mc-mod-config.md;
@@ -317,6 +399,7 @@ in
         skills.mc-mod-structures = builtins.readFile ./opencode/skill-mc-mod-structures.md;
         skills.mc-mod-controls = builtins.readFile ./opencode/skill-mc-mod-controls.md;
         skills.mc-mod-controls-set = builtins.readFile ./opencode/skill-mc-mod-controls-set.md;
+        skills.mc-server-monitor = builtins.readFile ./opencode/skill-mc-server-monitor.md;
         commands.mc-modpack = ./opencode/commands/mc-modpack.md;
       };
     })

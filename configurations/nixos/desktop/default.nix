@@ -973,7 +973,7 @@
       # server runs). Each key is a modpack name (matches the modpacks/ dir); a
       # systemd timer rebuilds the instance from its pack definition and
       # installs it into Prism.
-      minecraft.instances.testModpack = {
+      minecraft.instances.DragonTech = {
         enable = true;
         server = "server.tail685690.ts.net:25565";
       };

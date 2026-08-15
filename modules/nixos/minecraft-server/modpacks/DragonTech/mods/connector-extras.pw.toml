@@ -1,6 +1,6 @@
 name = "Connector Extras"
 filename = "ConnectorExtras-1.12.1+1.21.1.jar"
-side = "both"
+side = "client"
 
 [download]
 url = "https://cdn.modrinth.com/data/FYpiwiBR/versions/dgLCqZyo/ConnectorExtras-1.12.1%2B1.21.1.jar"
