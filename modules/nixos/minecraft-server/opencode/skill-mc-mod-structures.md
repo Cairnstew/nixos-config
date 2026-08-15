@@ -177,3 +177,6 @@ Fix: none yet; scan to find ocean-spawning structures in the whitelist.
 
 ### 2026-08-14
 placeholder-scan
+
+### 2026-08-15
+investigate ocean/coastal structures for RoadWeaver road-end-in-sea compatibility

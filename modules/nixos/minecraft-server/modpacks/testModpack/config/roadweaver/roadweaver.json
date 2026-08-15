@@ -6,7 +6,6 @@
     "biomePrefilter": true,
     "structureWhitelist": [
       "#minecraft:village",
-      "nova_structures:*",
       "structory:*",
       "dragonsurvival:*",
       "witchery:*"
@@ -17,8 +16,8 @@
       "dragonsurvival:treasure_angry_sea",
       "dragonsurvival:treasure_friendly_sea"
     ],
-    "villageRoadOffset": 60,
-    "otherStructureRoadOffset": 15
+    "villageRoadOffset": 80,
+    "otherStructureRoadOffset": 40
   },
   "planning": {
     "initialPlanRadiusChunks": 128,
@@ -31,14 +30,14 @@
   "pathfindingCost": {
     "orthoStepCost": 1.0,
     "diagStepCost": 1.414,
-    "elevationWeight": 80,
+    "elevationWeight": 160,
     "biomeWeight": 4,
-    "stabilityWeight": 15,
+    "stabilityWeight": 30,
     "waterDepthWeight": 200,
     "nearWaterCost": 160,
     "waterProximityCost": 20,
-    "heuristicWeight": 15.0,
-    "deviationWeight": 0.5,
+    "heuristicWeight": 10.0,
+    "deviationWeight": 2.0,
     "aStarStep": 8,
     "aStarMaxSteps": 200000,
     "pathfindingAlgorithm": "GRADIENT_DESCENT"
@@ -63,9 +62,9 @@
   "bridge": {
     "enabled": true,
     "deckClearance": 2,
-    "maxLengthBlocks": 100,
+    "maxLengthBlocks": 300,
     "useBuoysInstead": false,
-    "useBuoysWhenSkipped": false,
+    "useBuoysWhenSkipped": true,
     "buoyIntervalBlocks": 32,
     "pierInterval": 6,
     "pierWidth": 1,
