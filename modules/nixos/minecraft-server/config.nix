@@ -2,7 +2,7 @@
 { config, lib, flake, pkgs, ... }:
 
 let
-  inherit (lib) mkIf mapAttrs' nameValuePair concatStringsSep optionalAttrs;
+  inherit (lib) mkIf mkMerge mapAttrs' nameValuePair concatStringsSep optionalAttrs;
   inherit (flake) inputs;
   inherit (inputs) nix-minecraft packwiz2nix;
   me = flake.config.me;
@@ -87,20 +87,38 @@ let
   # until checksums.json exists, so a fresh pack never breaks evaluation.
   packwizSymlinks = name: srv:
     if srv.packwiz == null then { }
+    else if !builtins.pathExists "${srv.packwiz}/checksums.json" then
+      lib.warn ''
+        my.services.minecraftServer: server ${name} has packwiz = ${toString srv.packwiz}
+        but no checksums.json exists yet. Generate it with
+        `just packwiz-checksums <pack>` (after `packwiz init` / adding mods)
+        and commit it. Starting this server without mods for now.
+      ''
+        { }
     else
       let
         checksums = "${srv.packwiz}/checksums.json";
+        # Fixed-output derivations for every mod in checksums.json, then any
+        # build-time jar patches from <pack>/patches.nix overlaid on top (same
+        # mechanism as the client's mkClientInstance in modules/flake-parts/
+        # packwiz.nix — one patch definition, both sides).
+        mods = packwiz2nix.lib.mkPackwizPackages pkgs checksums;
+        patchedMods =
+          if builtins.pathExists "${srv.packwiz}/patches.nix" then
+            import "${srv.packwiz}/patches.nix"
+              {
+                inherit mods pkgs;
+                # patchJar must be referenced via inputs.self (the repo), not a
+                # relative path — srv.packwiz is a store-copied standalone dir,
+                # so ../patch-jar.nix would resolve to /nix/store/patch-jar.nix.
+                patchJar = import "${flake.inputs.self}/modules/nixos/minecraft-server/modpacks/patch-jar.nix" { inherit pkgs; };
+                # Source-level jar patches (build the whole mod from source).
+                buildModSource = import "${flake.inputs.self}/modules/nixos/minecraft-server/modpacks/build-mod-source.nix" { inherit pkgs; };
+              }
+          else
+            { };
       in
-      if builtins.pathExists checksums then
-        packwiz2nix.lib.mkModLinks (packwiz2nix.lib.mkPackwizPackages pkgs checksums)
-      else
-        lib.warn ''
-          my.services.minecraftServer: server ${name} has packwiz = ${toString srv.packwiz}
-          but no checksums.json exists yet. Generate it with
-          `just packwiz-checksums <pack>` (after `packwiz init` / adding mods)
-          and commit it. Starting this server without mods for now.
-        ''
-          { };
+      (packwiz2nix.lib.mkModLinks mods) // patchedMods;
 
   # Internal (non-mod) content subdirs from the packwiz pack dir. packwiz
   # installers copy these into the game folder on install; our server must do
@@ -111,13 +129,21 @@ let
   packwizStartPre = srv:
     if srv.packwiz == null then ""
     else
-      concatStringsSep "\n" (builtins.map
-        (d: ''
-          if [ -d "${srv.packwiz}/${d}" ]; then
-            ln -sfn "${srv.packwiz}/${d}" "${d}"
-          fi
-        '')
-        (lib.filter (d: d != "mods") packSubdirs));
+      concatStringsSep "\n"
+        (builtins.map
+          (d: ''
+            if [ -d "${srv.packwiz}/${d}" ]; then
+              ln -sfn "${srv.packwiz}/${d}" "${d}"
+            fi
+          '')
+          (lib.filter (d: d != "mods") packSubdirs))
+      # Game-root file (e.g. a shipped default options.txt) — packwiz maps a
+      # pack-root file 1:1 to the game root, so symlink it the same way.
+      + ''
+        if [ -f "${srv.packwiz}/options.txt" ]; then
+          ln -sfn "${srv.packwiz}/options.txt" "options.txt"
+        fi
+      '';
 
   # One-time world migration from an existing server-data dir (idempotent).
   migratePre = srv:
@@ -203,76 +229,96 @@ in
     nix-minecraft.nixosModules.minecraft-servers
   ];
 
-  config = mkIf cfg.enable {
-    # nix-minecraft's overlay provides vanillaServers/fabricServers/neoforgeServers/…
-    nixpkgs.overlays = [ nix-minecraft.overlay ];
+  config = mkMerge [
+    (mkIf cfg.enable {
+      # nix-minecraft's overlay provides vanillaServers/fabricServers/neoforgeServers/…
+      nixpkgs.overlays = [ nix-minecraft.overlay ];
 
-    services.minecraft-servers = {
-      enable = true;
-      inherit (cfg) eula dataDir openFirewall;
-      servers = mapAttrs' mkServer cfg.servers;
-    };
-
-    # packDir: owned by the primary user so scp works without sudo, group
-    # minecraft so the service user can read the zips. dataDir comes from
-    # nix-minecraft's user creation.
-    systemd.tmpfiles.rules = [
-      "d ${cfg.packDir} 0770 ${me.username} minecraft - -"
-    ];
-
-    # Primary user in the minecraft group: dataDir is 0770 minecraft:minecraft
-    # (from nix-minecraft), so without group membership the user cannot traverse
-    # it to reach packDir — scp to packDir would fail with "Permission denied".
-    users.groups.minecraft.members = [ me.username ];
-
-    # dataDir + per-server dirs are created by a ROOT oneshot, NOT tmpfiles:
-    # systemd-tmpfiles refuses to descend a path whose parent is owned by a
-    # non-root user ("Detected unsafe path transition /mnt/data (owned by
-    # seanc)") and silently skips the rule. nix-minecraft's tmpfiles rule for
-    # ${dataDir}/${name} therefore never runs when dataDir lives under such a
-    # parent, leaving the server's WorkingDirectory missing → systemd fails the
-    # unit with status=200/CHDIR. This oneshot runs as root before every server
-    # so the dirs always exist on fresh machines too.
-    systemd.services.minecraft-server-prepare-dirs = {
-      description = "Create Minecraft server data directories";
-      wantedBy = [ "multi-user.target" ];
-      before = map (name: "minecraft-server-${name}.service") (builtins.attrNames cfg.servers);
-      serviceConfig = {
-        Type = "oneshot";
-        RemainAfterExit = true;
+      services.minecraft-servers = {
+        enable = true;
+        inherit (cfg) eula dataDir openFirewall;
+        servers = mapAttrs' mkServer cfg.servers;
       };
-      script = ''
-        ${pkgs.coreutils}/bin/install -d -o minecraft -g minecraft -m 0770 ${cfg.dataDir}
-        ${builtins.concatStringsSep "\n" (map (name: ''
-          ${pkgs.coreutils}/bin/install -d -o minecraft -g minecraft -m 0770 ${cfg.dataDir}/${name}
-        '') (builtins.attrNames cfg.servers))}
-      '';
-    };
+
+      # packDir: owned by the primary user so scp works without sudo, group
+      # minecraft so the service user can read the zips. dataDir comes from
+      # nix-minecraft's user creation.
+      systemd.tmpfiles.rules = [
+        "d ${cfg.packDir} 0770 ${me.username} minecraft - -"
+      ];
+
+      # Primary user in the minecraft group: dataDir is 0770 minecraft:minecraft
+      # (from nix-minecraft), so without group membership the user cannot traverse
+      # it to reach packDir — scp to packDir would fail with "Permission denied".
+      users.groups.minecraft.members = [ me.username ];
+
+      # dataDir + per-server dirs are created by a ROOT oneshot, NOT tmpfiles:
+      # systemd-tmpfiles refuses to descend a path whose parent is owned by a
+      # non-root user ("Detected unsafe path transition /mnt/data (owned by
+      # seanc)") and silently skips the rule. nix-minecraft's tmpfiles rule for
+      # ${dataDir}/${name} therefore never runs when dataDir lives under such a
+      # parent, leaving the server's WorkingDirectory missing → systemd fails the
+      # unit with status=200/CHDIR. This oneshot runs as root before every server
+      # so the dirs always exist on fresh machines too.
+      systemd.services.minecraft-server-prepare-dirs = {
+        description = "Create Minecraft server data directories";
+        wantedBy = [ "multi-user.target" ];
+        before = map (name: "minecraft-server-${name}.service") (builtins.attrNames cfg.servers);
+        serviceConfig = {
+          Type = "oneshot";
+          RemainAfterExit = true;
+        };
+        script = ''
+          ${pkgs.coreutils}/bin/install -d -o minecraft -g minecraft -m 0770 ${cfg.dataDir}
+          ${builtins.concatStringsSep "\n" (map (name: ''
+            ${pkgs.coreutils}/bin/install -d -o minecraft -g minecraft -m 0770 ${cfg.dataDir}/${name}
+          '') (builtins.attrNames cfg.servers))}
+        '';
+      };
+    })
 
     # ── OpenCode utilities for modpack work ──────────────────────────────────
-    # When this module is enabled (and opencode integration isn't turned off),
-    # add packwiz/modpack tools, a skill and a command to the user's opencode
-    # config via the NixOS → home-manager bridge (my.homeManager.extraConfig).
-    # my.programs.opencode options exist for every user (sharedModules), so this
-    # is inert on hosts where opencode isn't enabled. See options.nix opencode.*.
-    my.homeManager.extraConfig.my.programs.opencode = lib.mkIf cfg.opencode.enable {
-      tools = {
-        packwiz = ./opencode/tools/packwiz.ts;
-        packwiz-checksums = ./opencode/tools/packwiz-checksums.ts;
-        mc-pack-status = ./opencode/tools/mc-pack-status.ts;
-        # Config / patch tooling (see modules/nixos/minecraft-server/opencode/tools/)
-        packwiz-config-add = ./opencode/tools/packwiz-config-add.ts;
-        packwiz-config-preserve = ./opencode/tools/packwiz-config-preserve.ts;
-        packwiz-config-list = ./opencode/tools/packwiz-config-list.ts;
-        packwiz-config-diff = ./opencode/tools/packwiz-config-diff.ts;
-        packwiz-datapack-add = ./opencode/tools/packwiz-datapack-add.ts;
-        packwiz-datapack-remove = ./opencode/tools/packwiz-datapack-remove.ts;
-        packwiz-mod-pin = ./opencode/tools/packwiz-mod-pin.ts;
-        packwiz-inspect-mod = ./opencode/tools/packwiz-inspect-mod.ts;
-        packwiz-update-safe = ./opencode/tools/packwiz-update-safe.ts;
+    # Available on ANY host (client or server) that has opencode enabled, so
+    # modpack editing can happen where the modpack is used (e.g. a desktop with
+    # Prism Launcher) without running a minecraft server. It only shells out to
+    # packwiz/python3 against the repo's modpacks/ dir — no server infra. Gate
+    # with my.services.minecraftServer.opencode.enable (default true). Inert on
+    # hosts where opencode isn't enabled. See options.nix opencode.*.
+    (mkIf cfg.opencode.enable {
+      my.homeManager.extraConfig.my.programs.opencode = {
+        tools = {
+          packwiz = ./opencode/tools/packwiz.ts;
+          packwiz-checksums = ./opencode/tools/packwiz-checksums.ts;
+          mc-pack-status = ./opencode/tools/mc-pack-status.ts;
+          # Config / patch tooling (see modules/nixos/minecraft-server/opencode/tools/)
+          packwiz-config-add = ./opencode/tools/packwiz-config-add.ts;
+          packwiz-config-preserve = ./opencode/tools/packwiz-config-preserve.ts;
+          packwiz-config-list = ./opencode/tools/packwiz-config-list.ts;
+          packwiz-config-diff = ./opencode/tools/packwiz-config-diff.ts;
+          packwiz-config-show = ./opencode/tools/packwiz-config-show.ts;
+          packwiz-jar-meta = ./opencode/tools/packwiz-jar-meta.ts;
+          packwiz-structures = ./opencode/tools/packwiz-structures.ts;
+          packwiz-controls = ./opencode/tools/packwiz-controls.ts;
+          packwiz-controls-set = ./opencode/tools/packwiz-controls-set.ts;
+          packwiz-datapack-add = ./opencode/tools/packwiz-datapack-add.ts;
+          packwiz-datapack-remove = ./opencode/tools/packwiz-datapack-remove.ts;
+          packwiz-mod-pin = ./opencode/tools/packwiz-mod-pin.ts;
+          packwiz-inspect-mod = ./opencode/tools/packwiz-inspect-mod.ts;
+          packwiz-update-safe = ./opencode/tools/packwiz-update-safe.ts;
+          mc-prism-log = ./opencode/tools/mc-prism-log.ts;
+          mc-run = ./opencode/tools/mc-run.ts;
+          mc-install = ./opencode/tools/mc-install.ts;
+        };
+        skills.mc-modpack = builtins.readFile ./opencode/skill.md;
+        skills.mc-mod-config = builtins.readFile ./opencode/skill-mc-mod-config.md;
+        skills.mc-mod-config-set = builtins.readFile ./opencode/skill-mc-mod-config-set.md;
+        skills.mc-mod-patch = builtins.readFile ./opencode/skill-mc-mod-patch.md;
+        skills.mc-mod-source-patch = builtins.readFile ./opencode/skill-mc-mod-source-patch.md;
+        skills.mc-mod-structures = builtins.readFile ./opencode/skill-mc-mod-structures.md;
+        skills.mc-mod-controls = builtins.readFile ./opencode/skill-mc-mod-controls.md;
+        skills.mc-mod-controls-set = builtins.readFile ./opencode/skill-mc-mod-controls-set.md;
+        commands.mc-modpack = ./opencode/commands/mc-modpack.md;
       };
-      skills.mc-modpack = builtins.readFile ./opencode/skill.md;
-      commands.mc-modpack = ./opencode/commands/mc-modpack.md;
-    };
-  };
+    })
+  ];
 }

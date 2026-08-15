@@ -111,7 +111,22 @@ information from the web and project files.
   hard-blocks updates (explicit `update <mod>` exits 1). packwiz-installer's
   GitHub README is a stub — verify such behavior in source with
   `github_search_code` (Go in packwiz/packwiz, Kotlin in
-  packwiz/packwiz-installer, e.g. DownloadTask.kt).
+  packwiz/packwiz-installer, e.g. DownloadTask.kt). `.pw.toml`'s
+  `[download] url` is REQUIRED by the pack-format spec
+  (reference/pack-format/mod-toml/) — there is NO local-file `.pw.toml`;
+  bundled jars ship as non-metafile index entries: drop `mods/foo.jar` in
+  the pack dir, `packwiz refresh` adds a `[[files]] file/hash` entry with no
+  `metafile` key (see the `LICENSE` entry in packwiz/packwiz-example-pack).
+  packwiz-installer downloads non-metafiles from the pack server
+  (`IndexFile.File.getSource` → `file.source()`); a metafile with a null URL
+  throws "No download URL provided" (`ModFile.getSource`).
+- Deterministic mod-jar re-packing (e.g. Nix derivations that patch a jar's
+  `META-INF/neoforge.mods.toml`): Info-ZIP `zip -t` is a date *filter*, not
+  a timestamp setter. Replace one member deterministically with
+  `cp src work.jar; unzip -p work.jar META-INF/x > META-INF/x; <edit>;
+  touch -d @0 META-INF/x; TZ=UTC zip -X -q work.jar META-INF/x; cp work.jar
+  $out` — zip replaces identically-named members and copies all other
+  entries verbatim (linux.die.net/man/1/zip).
 - Prism Launcher wiki pages (prismlauncher.org/wiki/…) are Astro JS shells;
   raw markdown is at
   `github.com/PrismLauncher/prismlauncher.org/src/content/docs/wiki/`.
@@ -267,3 +282,19 @@ Append newest at the bottom. Entries are facts about this agent's own operation.
 - Fix: extended the packwiz guideline with leaf-page-only URLs, the
   no-install / no-datapack-add command surface, internal-files + `preserve`
   semantics, and the source-verification technique for packwiz behavior.
+
+### 2026-08-14 — packwiz has no URL-less .pw.toml; bundled jars are non-metafile index entries
+- Lesson: researching how to ship a patched mod jar through the repo's
+  packwiz + packwiz2nix pipeline, the natural assumption that a `.pw.toml`
+  can point at a local jar in the pack dir is wrong: the pack-format spec
+  requires `[download] url` (HTTP/HTTPS only), packwiz-installer throws
+  "No download URL provided" for a metafile with a null URL, and packwiz's
+  real bundled-file mechanism is a plain jar dropped in the pack dir and
+  indexed by `packwiz refresh` as a non-metafile entry (served by
+  `packwiz serve`). Also learned Info-ZIP `zip -t` is a date filter, not a
+  timestamp setter — deterministic jar re-packing needs `touch -d @0` +
+  `TZ=UTC` + in-place `zip` member replace (unchanged members are copied
+  verbatim).
+- Fix: extended the packwiz guideline bullet with the required-URL rule,
+  the non-metafile mechanism + installer failure mode, and added a
+  deterministic jar-repack recipe bullet.

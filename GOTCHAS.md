@@ -8,6 +8,18 @@
   any evaluation or build
   failure.**
 
+**FOD build-mod-source derivations need `--impure`, and `outputHash` changes whenever src or the patch changes**
+
+Symptom (2026-08-15): `nix build .#minecraft-modpack-testModpack` with a source-patched mod (RoadWeaver) failed with "fixed-output derivation produced path … with sha256 hash … instead of the expected hash" and a `got: sha256-…` — or, with a placeholder hash, plain `nix build` (pure eval) refused the derivation entirely. Cause: `buildModSource` (`modules/nixos/minecraft-server/modpacks/build-mod-source.nix`) is a fixed-output derivation (FOD) — Gradle needs network at build time (Maven repos, the mod's own gradle wrapper distribution), which the sandbox blocks for non-FOD builds; the FOD is allowed network because its output is pinned by `outputHash` (`outputHashMode = "flat"`). Pure eval rejects FODs that must produce their output with network. Fix: build with `--impure` (`nix build --impure .#minecraft-modpack-<pack>`), read the `got: sha256-…` hash from the first run, paste it into `<pack>/source-patches/<mod>/default.nix` `outputHash`, and rebuild to confirm it's cached. Recompute the hash after any change to `src` or the patch. Use the mod's own `./gradlew` wrapper (default `buildCmd`), not nixpkgs' gradle — the mod's Loom plugin can reject the wrong gradle major (RoadWeaver pins 8.8; nixpkgs ships 8.14.x).
+
+---
+
+**Minecraft controls/hotkeys ship in a pack-ROOT `options.txt` — a `config/` copy lands in `config/options.txt` and the game ignores it**
+
+Symptom (2026-08-14): Wanting to ship default keybindings, a config-under-`config/` instinct put `options.txt` there — but Minecraft reads controls only from `options.txt` at the game root (`.minecraft/options.txt`), and packwiz maps pack-relative paths 1:1 to the game folder, so a `config/` copy would install to `config/options.txt` and never apply. Cause: controls are a game-root file, not a config file; packwiz-installer keeps internal files at their pack-relative path, so only a pack-ROOT `options.txt` reaches the game root. Fix: use the `packwiz-controls`/`packwiz-controls-set` tools (or `mc-pack.py controls`/`controls-set`) which read/write `<pack>/options.txt`; the Nix client build (`packwiz.nix mkClientInstance rootLinks`) and server (`config.nix packwizStartPre`) symlink that pack-root file into the game root, and `packwiz refresh` indexes it (it's intentionally NOT in `.packwizignore`). Review reads the effective file (pack-shipped → instance-generated → `--options` path), decodes `key_*` lines, resolves ids to labels via pinned-jar lang files, and reports same-key conflicts.
+
+---
+
 **Prism Launcher: "Components file …/mmc-pack.json doesn't exist. This should never happen." — the file must live at the instance ROOT, not in .minecraft/**
 
 Symptom (2026-08-14): A declarative instance (`my.programs.minecraft.instances.*`, sync script in `modules/home/minecraft/instances.nix`) synced mods into `<dataDir>/instances/<name>/.minecraft/` and wrote `mmc-pack.json` there too, but launching Prism failed with `Instance update failed because: Components file /…/instances/testModpack/mmc-pack.json doesn't exist. This should never happen.` Cause: Prism Launcher reads the components file via `PackProfile::componentsFilePath()` = `PathCombine(instanceRoot(), "mmc-pack.json")` (launcher/minecraft/PackProfile.cpp:269) — the **instance root** (beside `instance.cfg`), not inside `.minecraft/`. The sync script wrote it to `<inst>/.minecraft/mmc-pack.json`, so Prism saw no components file and refused to load the instance. Fix: write `mmc-pack.json` to the instance root (`inst + "/mmc-pack.json"`), same place `instance.cfg` goes. Repair an existing instance by `mv .minecraft/mmc-pack.json ./mmc-pack.json` in the instance dir.
@@ -23,6 +35,12 @@ Symptom (2026-08-13): `just packwiz testModpack init` (recipe: `cd modules/…/t
 **`packwiz refresh` indexes `checksums.json` at the pack root — breaking index.toml sync (index 256 vs 255 mods) unless `.packwizignore` excludes it**
 
 Symptom (2026-08-13): After adding `[options] datapack-folder = "config/paxi/datapacks"` to `testModpack/pack.toml` and running `packwiz refresh`, `mc-pack-status` reported `index.toml entries: 256 (MISMATCH)` while only 255 mods exist. Cause: packwiz indexes **every file** in the pack dir, and `checksums.json` (a Nix-side build artifact that lives at the pack root for packwiz2nix) is not in the default ignore list — so `refresh` added it as an internal file, and installers would have copied it into the game folder. Fix: add a `.packwizignore` (gitignore-format) at the pack root containing `checksums.json`. Re-run `packwiz refresh` → back to 255 in sync. Any other pack-root artifact (exported zips, etc.) needs the same treatment. See `modules/nixos/minecraft-server/modpacks/testModpack/.packwizignore`.
+
+---
+
+**A mod's embedded `versionRange` pins a version that doesn't exist — do NOT remove the mod; patch the jar's metadata at Nix build time**
+
+Symptom (2026-08-14): NeoForge 1.21.1 refused to boot `testModpack`: `Mod dtstilllife requires mr_still_life 1 or above. Currently, mr_still_life is 0.1.1`. The addon "Dynamic Trees - Still Life(1.0+)" (dtstill-life-1.0.3) embeds `versionRange = "[1,)"` on `mr_still_life`, but Still Life has **no 1.0+ release for MC 1.21.1** — its latest is 0.1.1. The addon author anticipated Still Life 1.0, which doesn't exist. Cause: a metadata-only error (the dependency code targets the `mr_still_life` mod id, unchanged across 0.x), so the correct fix is to widen the range, not drop the mod — the pack owner does not want mods removed for fixable dependency conflicts. Fix: build-time jar patch, not runtime patching. Add `<pack>/patches/<mod>.py` (edits `META-INF/neoforge.mods.toml`, fails loudly if the expected line is missing) + a `<pack>/patches.nix` entry; `modules/nixos/minecraft-server/modpacks/patch-jar.nix` replaces the one member from the SAME pinned upstream fetch (`src = mods."<mod>.pw.toml"`), so `.pw.toml`/`index.toml`/`checksums.json` stay byte-identical and the pack remains a pure upstream mod list. Wire into BOTH consumers: `packwiz.nix mkClientInstance` and `minecraft-server/config.nix packwizSymlinks` (see their `patchedMods` overlays). Gotchas: `git add` the new files (flakes only see tracked files) or the overlay silently no-ops; `lib.runCommand` doesn't exist — use `pkgs.runCommand`; store jars are read-only, `chmod u+w` before `zip` replaces the member. Contrast: a REAL upstream incompatibility (e.g. `sodium-core-shader-support` compiled against sodium 0.6.13 internals in a sodium 0.8 pack — no 0.8 build exists and a range widening would still crash at runtime) IS a legitimate removal. Record the reason in the commit so it isn't silently re-added.
 
 ---
 
@@ -860,5 +878,5 @@ When you discover a new problem and its solution:
 
 ---
 
-Last updated: 2026-08-14
+Last updated: 2026-08-15
 

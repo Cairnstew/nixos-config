@@ -1,0 +1,116 @@
+diff --git a/common/src/main/java/net/shiroha233/roadweaver/pathfinding/PathSpanExtractor.java b/common/src/main/java/net/shiroha233/roadweaver/pathfinding/PathSpanExtractor.java
+index 29daf4d..ae376b1 100644
+--- a/common/src/main/java/net/shiroha233/roadweaver/pathfinding/PathSpanExtractor.java
++++ b/common/src/main/java/net/shiroha233/roadweaver/pathfinding/PathSpanExtractor.java
+@@ -15,8 +15,6 @@ import java.util.ArrayList;
+ import java.util.List;
+ import java.util.Map;
+ 
+-import static net.shiroha233.roadweaver.pathfinding.impl.PathfindingHelper.isWaterLike;
+-
+ /**
+  * 道路跨度提取器。
+  */
+@@ -102,14 +100,11 @@ public final class PathSpanExtractor {
+         if (terrain != null && terrain.hasAccurateSample(pos.getX(), pos.getZ())) {
+             return terrain.isBridgeWater(pos.getX(), pos.getZ(), minWaterDepth);
+         }
+-        int sea = level.getSeaLevel();
+         AccurateHeightSample sample = samples.get(AccurateHeightSample.key(pos.getX(), pos.getZ()));
+         int oceanFloor = sample != null ? sample.oceanFloorWg() : accurate.oceanFloorWg(pos.getX(), pos.getZ());
+         int surfaceY = sample != null ? sample.worldSurfaceWg() : accurate.worldSurfaceWg(pos.getX(), pos.getZ());
+-        boolean biomeWater = isWaterLike(cache, pos.getX(), pos.getZ(), level) && oceanFloor < sea;
+-        boolean heightWater = (surfaceY <= sea + 1) && (oceanFloor < surfaceY - 1);
+-        boolean waterColumn = biomeWater || heightWater;
+-        int waterDepth = waterColumn ? Math.max(0, sea - oceanFloor) : 0;
++        boolean waterColumn = oceanFloor < surfaceY;
++        int waterDepth = waterColumn ? Math.max(0, surfaceY - oceanFloor) : 0;
+         return waterColumn && waterDepth >= Math.max(1, minWaterDepth);
+     }
+ 
+diff --git a/common/src/main/java/net/shiroha233/roadweaver/pathfinding/impl/PathPostProcessor.java b/common/src/main/java/net/shiroha233/roadweaver/pathfinding/impl/PathPostProcessor.java
+index 389f154..4c116f6 100644
+--- a/common/src/main/java/net/shiroha233/roadweaver/pathfinding/impl/PathPostProcessor.java
++++ b/common/src/main/java/net/shiroha233/roadweaver/pathfinding/impl/PathPostProcessor.java
+@@ -13,7 +13,6 @@ import net.shiroha233.roadweaver.pathfinding.terrain.PathTerrainField;
+ 
+ import java.util.*;
+ 
+-import static net.shiroha233.roadweaver.pathfinding.impl.PathfindingHelper.isWaterLike;
+ import static net.shiroha233.roadweaver.pathfinding.impl.SplineHelper.*;
+ 
+ /**
+@@ -259,13 +258,11 @@ public final class PathPostProcessor {
+                 mask[i] = terrain.isBridgeWater(p.getX(), p.getZ(), bridgeMinWaterDepth);
+                 continue;
+             }
+-            int sea = level.getSeaLevel();
+             AccurateHeightSample sample = samples.get(AccurateHeightSample.key(p.getX(), p.getZ()));
+             int oceanFloor = sample != null ? sample.oceanFloorWg() : sampler.oceanFloorWg(p.getX(), p.getZ());
+             int surfaceY = sample != null ? sample.worldSurfaceWg() : sampler.worldSurfaceWg(p.getX(), p.getZ());
+-            boolean biomeWater = isWaterLike(cache, p.getX(), p.getZ(), level) && oceanFloor < sea;
+-            boolean heightWater = (surfaceY <= sea + 1) && (oceanFloor < surfaceY - 1);
+-            int waterDepth = (biomeWater || heightWater) ? Math.max(0, sea - oceanFloor) : 0;
++            boolean waterColumn = oceanFloor < surfaceY;
++            int waterDepth = waterColumn ? Math.max(0, surfaceY - oceanFloor) : 0;
+             mask[i] = waterDepth >= Math.max(1, bridgeMinWaterDepth);
+         }
+         return mask;
+diff --git a/common/src/main/java/net/shiroha233/roadweaver/pathfinding/terrain/region/AccurateTerrainRegion.java b/common/src/main/java/net/shiroha233/roadweaver/pathfinding/terrain/region/AccurateTerrainRegion.java
+index 86d3e94..dc25940 100644
+--- a/common/src/main/java/net/shiroha233/roadweaver/pathfinding/terrain/region/AccurateTerrainRegion.java
++++ b/common/src/main/java/net/shiroha233/roadweaver/pathfinding/terrain/region/AccurateTerrainRegion.java
+@@ -59,6 +59,15 @@ public final class AccurateTerrainRegion implements PathTerrainField {
+         return contains(x, z) ? oceanFloors[bounds.indexOfNearest(x, z)] : seaLevel;
+     }
+ 
++    @Override
++    public int waterDepth(int x, int z) {
++        if (!contains(x, z)) {
++            return 0;
++        }
++        int index = bounds.indexOfNearest(x, z);
++        return Math.max(0, heights[index] - oceanFloors[index]);
++    }
++
+     @Override
+     public boolean isColumnWater(int x, int z) {
+         return contains(x, z) && hasFlag(bounds.indexOfNearest(x, z), FLAG_COLUMN_WATER);
+@@ -116,7 +125,7 @@ public final class AccurateTerrainRegion implements PathTerrainField {
+         boolean columnWater = hasFlag(index, FLAG_COLUMN_WATER);
+         boolean waterBiome = hasFlag(index, FLAG_WATER_BIOME);
+         return new SampleBundle(heights[index], oceanFloor, columnWater, waterBiome,
+-                Math.max(0, seaLevel - oceanFloor));
++                Math.max(0, heights[index] - oceanFloor));
+     }
+ 
+     @Override
+diff --git a/common/src/main/java/net/shiroha233/roadweaver/planning/terrain/AdaptiveCorridorTerrainField.java b/common/src/main/java/net/shiroha233/roadweaver/planning/terrain/AdaptiveCorridorTerrainField.java
+index 875d593..4b2ecb2 100644
+--- a/common/src/main/java/net/shiroha233/roadweaver/planning/terrain/AdaptiveCorridorTerrainField.java
++++ b/common/src/main/java/net/shiroha233/roadweaver/planning/terrain/AdaptiveCorridorTerrainField.java
+@@ -117,6 +117,15 @@ final class AdaptiveCorridorTerrainField implements PathTerrainField {
+         return requireSample(x, z).oceanFloorWg();
+     }
+ 
++    @Override
++    public int waterDepth(int x, int z) {
++        AccurateHeightSample sample = requireSample(x, z);
++        int surface = sample.motionBlockingNoLeaves() > seaLevel + 2
++                ? sample.motionBlockingNoLeaves()
++                : sample.worldSurfaceWg();
++        return Math.max(0, surface - sample.oceanFloorWg());
++    }
++
+     @Override
+     public boolean isColumnWater(int x, int z) {
+         AccurateHeightSample sample = requireSample(x, z);
+@@ -187,7 +196,7 @@ final class AdaptiveCorridorTerrainField implements PathTerrainField {
+         boolean columnWater = (waterBiome && sample.oceanFloorWg() < seaLevel)
+                 || sample.oceanFloorWg() < sample.worldSurfaceWg();
+         return new SampleBundle(surface, sample.oceanFloorWg(), columnWater, waterBiome,
+-                Math.max(0, seaLevel - sample.oceanFloorWg()));
++                Math.max(0, surface - sample.oceanFloorWg()));
+     }
+ 
+     private boolean hasCell(int x, int z) {

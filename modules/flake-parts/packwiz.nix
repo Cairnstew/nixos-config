@@ -43,10 +43,12 @@ let
 
   # Directory holding packwiz modpacks (one subdir per modpack). Read at eval
   # time so a new modpack directory automatically gets a checksums app.
+  # Only subdirectories count — the shared patch-jar.nix helper lives here too
+  # and must not be mistaken for a modpack.
   modpacksDir = "${inputs.self}/modules/nixos/minecraft-server/modpacks";
   modpackNames =
     if builtins.pathExists modpacksDir then
-      lib.attrNames (builtins.readDir modpacksDir)
+      builtins.attrNames (lib.filterAttrs (_: t: t == "directory") (builtins.readDir modpacksDir))
     else
       [ ];
 
@@ -106,11 +108,33 @@ let
         packToml.versions.neoforge or packToml.versions.fabric or packToml.versions.forge
           or packToml.versions.quilt;
 
-      modLinks =
+      # Fixed-output derivations for every mod in checksums.json (map from
+      # "<mod>.pw.toml" → store path). Shared by mkModLinks below and the
+      # per-pack patches.nix (which patches jars built from these same fetches).
+      mods =
         if builtins.pathExists checksums then
-          p2n.mkModLinks (p2n.mkPackwizPackages pkgs checksums)
+          p2n.mkPackwizPackages pkgs checksums
         else
           lib.warn "minecraft-modpack-${name}: no checksums.json — client will have no mods. Run .#packwiz-checksums-${name}." { };
+
+      # Build-time jar patches (per-pack patches.nix, if present). Overlays the
+      # modLinks result so the client instance ships patched jars exactly like
+      # the server (minecraft-server/config.nix packwizSymlinks) — one patch
+      # definition, both sides. Keys must match mkModLinks output:
+      # "mods/<checksums.json key with .pw.toml → .jar>".
+      patchedMods =
+        if builtins.pathExists "${pack}/patches.nix" then
+          import "${pack}/patches.nix"
+            {
+              inherit mods pkgs;
+              patchJar = import "${modpacksDir}/patch-jar.nix" { inherit pkgs; };
+              # Source-level jar patches (build the whole mod from source).
+              buildModSource = import "${modpacksDir}/build-mod-source.nix" { inherit pkgs; };
+            }
+        else
+          { };
+
+      modLinks = (p2n.mkModLinks mods) // patchedMods;
 
       # .minecraft/<dir> symlinks (mirrors packwizStartPre on the server side).
       internalDirs = [ "config" "kubejs" "scripts" "datapacks" "defaultconfigs" ];
@@ -121,6 +145,15 @@ let
           fi
         '')
         internalDirs);
+
+      # Game-root file (e.g. a shipped default options.txt) — packwiz installers
+      # map a pack-root file 1:1 to the game root, so symlink it into
+      # .minecraft/ the same way (mirrors packwizStartPre).
+      rootLinks = ''
+        if [ -f '${pack}/options.txt' ]; then
+          ln -s '${pack}/options.txt' "$out/.minecraft/options.txt"
+        fi
+      '';
 
       # mods/<fixup>.jar → store path, one symlink per mod.
       modLinksScript = concatStringsSep "\n" (lib.mapAttrsToList
@@ -139,6 +172,7 @@ let
       mkdir -p $out/.minecraft
       ${modLinksScript}
       ${internalLinks}
+      ${rootLinks}
       cp ${meta} $out/meta.json
     '';
 

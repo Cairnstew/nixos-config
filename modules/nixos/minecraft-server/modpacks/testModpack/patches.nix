@@ -1,17 +1,30 @@
 # testModpack — build-time jar patches.
 #
 # Each entry overrides one mod symlink produced by packwiz2nix's mkModLinks
-# (key = "mods/<checksums.json key with .pw.toml → .jar>") with a patched jar
-# built by patch-jar.nix from the SAME pinned upstream fetch. The pack's
-# .pw.toml / index.toml / checksums.json are left byte-identical — the pack
-# stays a pure list of upstream mods, and the patch re-applies on update.
+# (key = "mods/<checksums.json key with .pw.toml → .jar>"). Two mechanisms:
+#
+#   * patchJar      — replace a TEXT metadata member in an already-built jar
+#                     (patch-jar.nix; e.g. a dependency versionRange).
+#   * buildModSource — build the WHOLE mod from source with a source-level
+#                     patch (build-mod-source.nix; e.g. a bug in compiled
+#                     Java logic that no metadata/config change can fix).
+#
+# The pack's .pw.toml / index.toml / checksums.json are left byte-identical —
+# the pack stays a pure list of upstream mods, and the patch re-applies on
+# update.
 #
 # Imported by BOTH consumers so client (packwiz.nix mkClientInstance) and
 # server (minecraft-server/config.nix packwizSymlinks) ship identical jars:
-#   import "${pack}/patches.nix" { inherit pkgs lib mods; }
-{ pkgs, lib, mods }:
+#   import "${pack}/patches.nix" { inherit pkgs mods patchJar buildModSource; }
+#
+# `patchJar` / `buildModSource` are passed in by the consumer (NOT imported via
+# ../patch-jar.nix or ../build-mod-source.nix): the server's packwiz path is a
+# store-copied standalone dir, so a relative import would resolve to
+# /nix/store/... and fail. The consumers reference the repo helpers via
+# inputs.self instead.
+{ pkgs, mods, patchJar, buildModSource }:
 let
-  patchJar = import ../patch-jar.nix { inherit (pkgs) lib unzip zip coreutils python3; };
+  inherit (pkgs) fetchFromGitHub;
 in
 {
   # Dynamic Trees - Still Life (1.0.3) pins mr_still_life to "[1,)" but Still
@@ -21,4 +34,11 @@ in
     src = mods."dynamic-trees-still-life.pw.toml";
     patchScript = ./patches/dynamic-trees-still-life.py;
   };
+
+  # RoadWeaver — roads paved through elevated water (upstream issue #68).
+  # Built from source at the pinned 2.3.1 commit with a source-level fix.
+  "mods/roadweaver.jar" = import ./source-patches/roadweaver {
+    inherit buildModSource fetchFromGitHub;
+  };
 }
+

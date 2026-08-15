@@ -171,17 +171,70 @@ in
         type = types.bool;
         default = true;
         description = ''
-          When this module is enabled, add packwiz/modpack utilities to the
-          user's opencode configuration (<option>my.programs.opencode</option>):
-          the <literal>packwiz</literal>, <literal>packwiz-checksums</literal>,
-          <literal>mc-pack-status</literal> tools, plus the config/patch tooling
+          Add packwiz/modpack utilities to the user's opencode configuration
+          (<option>my.programs.opencode</option>): the <literal>packwiz</literal>,
+          <literal>packwiz-checksums</literal>, <literal>mc-pack-status</literal>
+          tools, plus the config/patch tooling
           (<literal>packwiz-config-add</literal>/<literal>-preserve</literal>/
-          <literal>-list</literal>/<literal>-diff</literal>,
+          <literal>-list</literal>/<literal>-diff</literal>/<literal>-show</literal>,
           <literal>packwiz-datapack-add</literal>/<literal>-remove</literal>,
+          <literal>packwiz-jar-meta</literal> (print a mod's pinned
+          <literal>META-INF/neoforge.mods.toml</literal> — the bytes a
+          build-time patch must match),
+          <literal>packwiz-structures</literal> (review every worldgen
+          structure/structure-set the pack generates — scanned from pinned
+          jars + the pack's datapacks, jar-cached across runs),
+          <literal>packwiz-controls</literal> (review the default
+          hotkeys/controls for the whole pack — decode every <literal>key_*</literal>
+          binding from the effective <literal>options.txt</literal>, resolve ids to
+          labels/owners, flag same-key conflicts),
+          <literal>packwiz-controls-set</literal> (ship/override default controls
+          by writing the pack-root <literal>options.txt</literal>, refreshed + optional
+          <literal>preserve</literal>),
           <literal>packwiz-mod-pin</literal>, <literal>packwiz-inspect-mod</literal>,
-          <literal>packwiz-update-safe</literal>), the <literal>mc-modpack</literal>
-          skill and the <literal>mc-modpack</literal> command. Set to
-          <literal>false</literal> to keep opencode untouched.
+          <literal>packwiz-update-safe</literal>, <literal>mc-prism-log</literal> (Prism
+          logs with a server-log fallback), <literal>mc-run</literal> (launch a pack via
+          Prism or natively, with auto-close <literal>timeout</literal> and log
+          <literal>monitor</literal> modes), <literal>mc-install</literal> (build via the
+          flake part and install into the Prism instance only when changed — a
+          compare/update workflow); the <literal>mc-*</literal> launcher tools,
+          <literal>packwiz-structures</literal>, and
+          <literal>packwiz-controls</literal>/<literal>-set</literal>
+          self-improve via a RUN LOG protocol), the
+          <literal>mc-modpack</literal>
+          skill, the <literal>mc-mod-config</literal>
+          skill (review/get a specific mod's config — pinned-jar config listing
+          via <literal>packwiz-config-show</literal> plus override diffs via
+          <literal>packwiz-config-diff</literal>), the
+          <literal>mc-mod-config-set</literal>
+          skill (set a mod's default config reproducibly by writing into the
+          pack's <literal>config/</literal> dir via
+          <literal>packwiz-config-add</literal>), the
+          <literal>mc-mod-patch</literal>
+          skill (create build-time jar patches via
+          <literal>packwiz-jar-meta</literal> for mod metadata config changes
+          cannot control — patch scripts under
+          <literal>patches/</literal> registered in <literal>patches.nix</literal>),
+          the <literal>mc-mod-source-patch</literal> skill (build a whole mod
+          from source with a source-level patch via
+          <literal>build-mod-source.nix</literal> when the bug is in compiled
+          Java logic — modules under
+          <literal>source-patches/</literal> registered in <literal>patches.nix</literal>),
+          the <literal>mc-mod-structures</literal> skill (inventory the
+          worldgen structures and structure-sets the pack adds, via
+          <literal>packwiz-structures</literal>, and review what actually
+          spawns in the world),
+          the <literal>mc-mod-controls</literal> skill (review the default
+          hotkeys/controls for the whole pack via <literal>packwiz-controls</literal>),
+          the <literal>mc-mod-controls-set</literal> skill (ship default
+          controls by writing the pack-root <literal>options.txt</literal> via
+          <literal>packwiz-controls-set</literal>),
+          and the
+          <literal>mc-modpack</literal> command. These work on any
+          host with opencode enabled — the tooling only shells out to packwiz /
+          python3 against the repo's <literal>modpacks/</literal> dir and does
+          NOT require running a minecraft server. Set to <literal>false</literal>
+          to keep opencode untouched.
         '';
       };
     };
