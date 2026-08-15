@@ -103,6 +103,21 @@ let
         # mechanism as the client's mkClientInstance in modules/flake-parts/
         # packwiz.nix — one patch definition, both sides).
         mods = packwiz2nix.lib.mkPackwizPackages pkgs checksums;
+        # Server-only filter: drop mods marked `side = "client"` in their
+        # packwiz .pw.toml (e.g. Sodium, Iris). A client pack ships render/GL
+        # mods whose PreLaunchChecks require LWJGL, which a headless server
+        # lacks — linking them makes the server crash at boot with
+        # NoClassDefFoundError: org/lwjgl/Version. packwiz does the same
+        # filtering when installing a pack to a server.
+        serverMods = lib.filterAttrs
+          (name: _:
+            let
+              pw = "${srv.packwiz}/mods/${name}";
+            in
+            !builtins.pathExists pw
+            || ((builtins.fromTOML (builtins.readFile pw)).side or "both") != "client"
+          )
+          mods;
         patchedMods =
           if builtins.pathExists "${srv.packwiz}/patches.nix" then
             import "${srv.packwiz}/patches.nix"
@@ -118,7 +133,7 @@ let
           else
             { };
       in
-      (packwiz2nix.lib.mkModLinks mods) // patchedMods;
+      (packwiz2nix.lib.mkModLinks serverMods) // patchedMods;
 
   # Internal (non-mod) content subdirs from the packwiz pack dir. packwiz
   # installers copy these into the game folder on install; our server must do
