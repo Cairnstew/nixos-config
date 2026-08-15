@@ -124,6 +124,15 @@ enabled:
     then calls `nix run .#modpack-build-<name>` only if differences exist.
     `dryRun=true` reports the diff without installing; `force=true` reinstalls
     regardless; `server` writes `[JoinServerOnLaunch]`.
+  - `mc-server` — manage a **dedicated server** defined in
+    `modules/nixos/minecraft-server/servers/`. Actions: `status` (state,
+    players, uptime, boot progress), `start` / `stop` / `restart`, `boot`
+    (start the unit and wait for the `Done (Ns)!` line, diagnosing crashes),
+    `list` (configured servers). Uses the module's dashboard management API on
+    loopback when reachable, else systemctl. Pass `modpack=<name>` to resolve
+    the server that a pack is wired to. **This is the primary tool for the
+    server-side workflow** — use it after any pack change to confirm the server
+    still boots, and to diagnose a boot crash.
 - `mc-modpack` command — orchestrated workflow for a requested modpack change.
 
  ### Self-improvement (mc-run, mc-prism-log, mc-install, packwiz-structures, packwiz-controls, packwiz-controls-set & packwiz-config-add)
@@ -247,6 +256,56 @@ the server's `mods/` at start. The pack's `config/` (default player configs) and
 Paxi datapacks, `kubejs/` and `scripts/` are symlinked into the data dir too. The
 server's `package` (loader + MC version) must match the pack's `pack.toml`.
 
+### Server-side workflow (use `mc-server`)
+
+1. Wire the pack (`servers.<name>.packwiz = ../modpacks/<pack>`) and enable it
+   (`my.services.minecraftServer.servers.<name>.enable = true` in a host config).
+2. `mc-server list` → confirm the server is registered.
+3. `mc-server <name> boot` → start and wait for `Done (Ns)!`. **A large pack's
+   first boot is SLOW** — 200+ mods can take 10+ minutes (DragonTech took ~675s
+   on a fresh world; subsequent boots ~85s). The tool waits up to 20 min by
+   default. Do not assume the server is wedged just because it's still loading.
+4. `mc-server <name> status` → players / uptime / boot progress anytime.
+5. After any pack change (add mod, mark a mod side, patch, config edit):
+   rebuild the host and re-run `mc-server <name> boot` to confirm it still boots.
+
+### Server-only gotchas (client-first packs hit these on their first server run)
+
+- **The server links ONLY `side = "both"` / `side = "server"` mods.** The module
+  filters `side = "client"` mods out of `mods/` (`packwizSymlinks` in
+  `config.nix`), because client-only render/GL mods (Sodium, Iris, …) crash a
+  headless server (their pre-launch checks need LWJGL). This filtering is
+  correct and should not be removed.
+- **A mod tagged `side = "both"` that loads client-only classes crashes the
+  server at boot.** `mc-pack-status` flags known ones (Sinytra Connector stack,
+  FTB Quests Throughput, Wakes Reforged, …). Symptom:
+  `Failed to create mod instance. ModID: X` / `Failed to register automatic
+  subscribers. ModID: X` / `Attempted to load class net/minecraft/client/...
+  for invalid dist DEDICATED_SERVER` (from `journalctl -u
+  minecraft-server-<name>` or the server log). Fix: set `side = "client"` in
+  the mod's `<pack>/mods/<mod>.pw.toml`, `packwiz refresh`, rebuild. The Prism
+  client still gets the mod; only the server drops it.
+- **Benign mixin warnings are NOT crashes.** A big pack logs hundreds of
+  `@Mixin target ... was not found` / `Error loading class` warnings during
+  first boot (client-only mixins, optional-mod references). Ignore them; only
+  `Failed to (create mod instance|register automatic subscribers)` and
+  `Mod loading has failed` are fatal.
+- **The server writes to `config/` and `defaultconfigs/` at boot** (FML
+  generates `config/fml.toml`, mods write defaults). `packwizStartPre` seeds
+  these as real writable dirs (`rsync --ignore-existing` + `chmod u+w`), NOT
+  symlinks into the read-only store. If you see `Read-only file system` or
+  `AccessDeniedException: .../config/fml.toml`, that's a regression in
+  `packwizStartPre` — fix it there, don't work around it in the pack.
+- **The web console user needs `wheel`.** `security.sudo.extraRules` grants the
+  console/dashboard user NOPASSWD `systemctl ... minecraft-server-*`, but the
+  sudo wrapper itself is setuid `root:wheel` — the user must be in `wheel`
+  (`extraGroups = [ "wheel" ]`) or every `sudo` call returns `Permission
+  denied`. This silently breaks the web-console `.start`/`.stop` dot-commands
+  AND the dashboard toggle buttons.
+- **The dashboard has a Minecraft section** (status + Start/Stop/Restart) backed
+  by the `minecraft-dashboard-api` service, registered by the minecraft-server
+  module via `my.services.proxy.dashboard.minecraft`. No manual wiring needed.
+
 ## RUN LOG
 
 ### 2026-08-14
@@ -257,3 +316,7 @@ Fix: bumped waterDepthWeight 80->200, nearWaterCost 80->160, biomeWeight 2->4; b
 ### 2026-08-15 — source-level patching (build a mod JAR from source)
 Lesson: config and jar-metadata replacement (mc-mod-patch) can't fix a bug in compiled Java logic — RoadWeaver paved roads through elevated water (issue #68) because water detection was sea-level-relative in the placement fallback and accurate terrain `waterDepth()`. No roadweaver.json setting could express the fix.
 Fix: added `modules/nixos/minecraft-server/modpacks/build-mod-source.nix` (fixed-output derivation: builds `:neoforge:build` with the mod's own gradle wrapper and `pkgs.jdk21`, copies the playable jar to `$out`); per-mod `source-patches/<mod>/default.nix` (pinned `fetchFromGitHub` + git-format patch + `outputHash`); wired into `patches.nix` as a second mechanism passed to both consumers. New `mc-mod-source-patch` skill documents the workflow.
+
+### 2026-08-15 — first dedicated-server run: client-first packs crash a headless server
+Lesson: the DragonTech pack (formerly testModpack) ran fine in Prism but boot-looped on the dedicated server. Three distinct server-only failure modes, in order: (1) client-only render/GL mods symlinked into `mods/` crash with `NoClassDefFoundError: org/lwjgl/Version` — fixed by filtering `side = "client"` mods server-side (packwizSymlinks); (2) mods tagged `side = "both"` that load client-only classes (Sinytra Connector stack, FTB Quests Throughput, Wakes Reforged) crash mid-mod-load with `Failed to create mod instance. ModID: X` / `... for invalid dist DEDICATED_SERVER` — fixed by marking them `side = "client"`; (3) `config/` was symlinked into the read-only store so FML couldn't write `config/fml.toml` (`Read-only file system`) — fixed by seeding `config/`/`defaultconfigs/` as writable dirs in `packwizStartPre`. Also discovered the smoke test never passed for neoforge (it searched for a top-level jar, but neoforge's server jar lives under `libraries/`), and the web console user needed `wheel` to exec the sudo wrapper.
+Fix: added the `mc-server` tool (status/start/stop/restart/boot with crash diagnosis), a `side` split + client-crash-risk check to `mc-pack-status`, a longer server boot default timeout in `mc-run`, fixed the smoke-test jar search, and documented the server-side workflow in this skill.

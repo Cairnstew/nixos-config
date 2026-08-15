@@ -69,6 +69,7 @@ def read_toml(p):
 curseforge = 0
 with_url = 0
 no_url = []
+sides = {"client": [], "server": [], "both": []}
 for f in mods:
     txt = read_toml(os.path.join(mods_dir, f))
     if "metadata:curseforge" in txt:
@@ -77,8 +78,58 @@ for f in mods:
         with_url += 1
     else:
         no_url.append(f)
+    m = re.search(r'^side\s*=\s*"(\w+)"', txt, re.M)
+    side = m.group(1) if m else "both"  # packwiz defaults to both when absent
+    if side in sides:
+        sides[side].append(f)
 report.append(f"curseforge-mode mods (no download url): {curseforge}")
 report.append(f"mods with direct download url: {with_url}")
+
+# ── Server-side mod split ────────────────────────────────────────────────────
+# The server links ONLY side = "both" / "server" mods (config.nix packwizSymlinks
+# filters side = "client"). Report what the server will actually load, and flag
+# side = "both" mods that are known to be client-only in practice (they load
+# client classes on a dedicated server and crash it — mark them side = "client").
+report.append(
+    f"server-side mods (side = both/server, WILL load on server): {len(sides['both']) + len(sides['server'])}"
+)
+report.append(f"client-only mods (side = client, skipped by server): {len(sides['client'])}")
+
+# Known client-only mods that upstream tags as both but crash a dedicated
+# server with client-only class loads. If any are present, they will boot-loop
+# the server until marked side = "client".
+CLIENT_CRASH_RISK = {
+    "connector": "Sinytra Connector (Fabric→NeoForge bridge)",
+    "connector-extras": "Connector Extras",
+    "preloading-tricks": "Preloading Tricks (connector bootstrap)",
+    "ftb-quests-throughput-addon": "FTB Quests Throughput Addon",
+    "wakes": "Wakes Reforged",
+    "wakes-reforged": "Wakes Reforged",
+    "sodium": "Sodium (render)",
+    "iris": "Iris (shaders)",
+    "reeses-sodium-options": "Reese's Sodium Options",
+    "continuity": "Continuity (connected textures)",
+    "entity-model-features": "Entity Model Features",
+    "entitytexturefeatures": "Entity Texture Features",
+    "immediatelyfast": "ImmediatelyFast (render)",
+    "badoptimizations": "BadOptimizations (render)",
+    "more-enchantment-info": "More Enchantment Info",
+    "sound-physics-remastered": "Sound Physics Remastered (audio)",
+    "particle-core": "Particle Core (client particles)",
+}
+risk_present = []
+for f in mods:
+    key = f.replace(".pw.toml", "")
+    label = CLIENT_CRASH_RISK.get(key)
+    if not label:
+        continue
+    if key in sides["both"]:
+        risk_present.append(f"  {f} → side = both BUT client-only ({label}) — server will crash at boot; set side = \"client\"")
+if risk_present:
+    report.append("CLIENT-CRASH RISK (side = both, client-only in practice):")
+    report.extend(risk_present)
+else:
+    report.append("client-crash risk mods (side = both): none")
 
 fnames = []
 for f in mods:
@@ -194,7 +245,7 @@ else:
 
 ready = (
     sync and cs_ok and curseforge == 0 and not dups and not no_url
-    and not internal_missing and not datapack_issues
+    and not internal_missing and not datapack_issues and not risk_present
 )
 report.append(f"status: {'READY for Nix build' if ready else 'NEEDS WORK'}")
 print("\n".join(report))

@@ -14,6 +14,14 @@ Symptom (2026-08-15): `minecraft-server-dragentech.service` crash-looped with `j
 
 ---
 
+**The minecraft-server smoke test always failed for neoforge servers — the server jar lives under `libraries/`, not the package root**
+
+Symptom (2026-08-15): `systemctl start minecraft-server-smoke-test.service` exited 1 with `FAIL: <server> — no server jar found in /nix/store/...-neoforge-1.21.1-21.1.238`, even though the server was booted and serving. Cause: `tests.nix` `checkServer` ran `find ${srv.package} -name "*.jar" -not -path "*/libraries/*"`, which was written for vanilla/fabric layouts where the server jar sits at the package root. nix-minecraft's neoforge packages keep the server jar under `libraries/net/minecraft/server/<ver>/server-<ver>.jar`, so the `-not -path "*/libraries/*"` filter excluded it and the check always failed (a silent red herring during server bring-up). Fix: look for the actual server jar name first — `find ${srv.package} \( -name "server-*.jar" -o -name "*server.jar" \) | grep -v sources`, falling back to the old root-level search. Verify: run the smoke-test service after a rebuild; it should now print `PASS: <server> server jar found: .../server-<ver>.jar`.
+
+---
+
+---
+
 **FOD build-mod-source derivations need `--impure`, and `outputHash` changes whenever src or the patch changes**
 
 Symptom (2026-08-15): `nix build .#minecraft-modpack-DragonTech` with a source-patched mod (RoadWeaver) failed with "fixed-output derivation produced path … with sha256 hash … instead of the expected hash" and a `got: sha256-…` — or, with a placeholder hash, plain `nix build` (pure eval) refused the derivation entirely. Cause: `buildModSource` (`modules/nixos/minecraft-server/modpacks/build-mod-source.nix`) is a fixed-output derivation (FOD) — Gradle needs network at build time (Maven repos, the mod's own gradle wrapper distribution), which the sandbox blocks for non-FOD builds; the FOD is allowed network because its output is pinned by `outputHash` (`outputHashMode = "flat"`). Pure eval rejects FODs that must produce their output with network. Fix: build with `--impure` (`nix build --impure .#minecraft-modpack-<pack>`), read the `got: sha256-…` hash from the first run, paste it into `<pack>/source-patches/<mod>/default.nix` `outputHash`, and rebuild to confirm it's cached. Recompute the hash after any change to `src` or the patch. Use the mod's own `./gradlew` wrapper (default `buildCmd`), not nixpkgs' gradle — the mod's Loom plugin can reject the wrong gradle major (RoadWeaver pins 8.8; nixpkgs ships 8.14.x).

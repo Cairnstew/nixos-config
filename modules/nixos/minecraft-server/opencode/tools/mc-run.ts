@@ -235,7 +235,12 @@ function newestCrashReport(crashDir: string): string | null {
   return files[0];
 }
 
-const CRASH_RE = /Mod loading has failed|Fatal errors were detected|crash-reports|Skipping mod |Failed to load|Exception in thread/;
+const CRASH_RE = /Mod loading has failed|Fatal errors were detected|crash-reports|Skipping mod |Failed to load|Exception in thread|Failed to create mod instance|Failed to register automatic subscribers/;
+
+// Fatal server-side mod-load errors (NeoForge dedicated server). Distinguish
+// these from benign `@Mixin target ... was not found` warnings, which are NOT
+// fatal and appear by the hundreds on a big pack's first boot.
+const SERVER_FATAL_RE = /Failed to (create mod instance|register automatic subscribers)\. ModID: (\w+)|Attempted to load class net\/minecraft\/client\/.* for invalid dist DEDICATED_SERVER|Mod loading has failed/;
 
 async function monitorLoop(
   modpack: string,
@@ -247,7 +252,10 @@ async function monitorLoop(
   const logPath = launched.logDir ? join(launched.logDir, "latest.log") : "";
   const start = Date.now();
   let lastLen = 0;
-  const waitMs = timeout > 0 ? timeout * 1000 : 300_000; // default 5 min if no timeout
+  // Dedicated-server first boot of a large pack (200+ mods) is SLOW: DragonTech
+  // took ~675s on a fresh world. Default wait is 20 min for a server, 5 min for
+  // a client instance.
+  const waitMs = timeout > 0 ? timeout * 1000 : launched.kind === "server" ? 1_200_000 : 300_000;
 
   // Boot indicator regex.
   let target: RegExp;
@@ -273,6 +281,15 @@ async function monitorLoop(
     const crash = newestCrashReport(crashDir);
     if (crash) {
       return `mc-run: CRASH detected — ${crash}\n\n${readFileSync(crash, "utf-8").slice(0, 2000)}`;
+    }
+    const fatalServer = launched.kind === "server" ? SERVER_FATAL_RE.exec(newChunk) : null;
+    if (fatalServer) {
+      const modid = fatalServer[2] || "";
+      const tail = newChunk.split("\n").slice(-25).join("\n");
+      const hint = modid
+        ? `\n\nLikely cause: mod '${modid}' loads client-only classes on a dedicated server.\nCheck its packwiz side field (modules/nixos/minecraft-server/modpacks/<pack>/mods/<mod>.pw.toml). If it's a client-only mod marked side = "both", change it to side = "client" — the server's side filter then drops it, the Prism client keeps it. Rebuild the server after editing.`
+        : `\n\nLikely cause: a mod loads client-only classes on the dedicated server. Look for the mod id above and check its pw.toml side field — client-only mods must be side = "client", not "both".`;
+      return `mc-run: server mod-load FAILURE:\n${tail}${hint}`;
     }
     if (CRASH_RE.test(newChunk)) {
       const tail = newChunk.split("\n").slice(-20).join("\n");

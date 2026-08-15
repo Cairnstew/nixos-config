@@ -357,6 +357,9 @@ in
           mc-prism-log = ./opencode/tools/mc-prism-log.ts;
           mc-run = ./opencode/tools/mc-run.ts;
           mc-install = ./opencode/tools/mc-install.ts;
+          # Dedicated-server management (status/start/stop/restart/boot monitor)
+          # via the dashboard management API, falling back to systemctl.
+          mc-server = ./opencode/tools/mc-server.ts;
         };
         skills.mc-modpack = builtins.readFile ./opencode/skill.md;
         skills.mc-mod-config = builtins.readFile ./opencode/skill-mc-mod-config.md;
