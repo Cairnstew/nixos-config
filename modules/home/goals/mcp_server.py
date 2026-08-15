@@ -834,6 +834,60 @@ def learning_append(command: str, lesson: str, fix: str = "", evidence: str = ""
     return result
 
 
+def learning_promote(learning_id: int, decision: str, acted_on_commit: str | None = None) -> dict:
+    """Human-reviewed promotion of a learning.
+
+    THIS TOOL IS FOR SEAN OR A HUMAN-REVIEWED SESSION ONLY. It must NEVER be
+    invoked from within the same run that proposed the learning — that is the
+    whole of Decision 4 (Option 1): the agent may only propose; it may not
+    validate its own learnings. Validation requires the commit hash the
+    corresponding command/skill edit was made in, so edit and promotion are one
+    reviewed action and cannot drift apart."""
+    if decision not in ("validated", "rejected"):
+        raise ValueError("learning_promote decision must be 'validated' or 'rejected'")
+    row = conn.execute(
+        "SELECT * FROM learnings WHERE id = ? AND status = 'proposed'",
+        (learning_id,),
+    ).fetchone()
+    if not row:
+        raise ValueError(f"No 'proposed' learning with id {learning_id}")
+
+    if decision == "validated":
+        commit = (acted_on_commit or "").strip()
+        if not commit:
+            raise ValueError(
+                "learning_promote 'validated' requires acted_on_commit — the commit hash of the "
+                "edit this promotion is validating"
+            )
+        conn.execute(
+            "UPDATE learnings SET status = 'validated', acted_on_commit = ? WHERE id = ?",
+            (commit, learning_id),
+        )
+    else:
+        conn.execute("UPDATE learnings SET status = 'rejected' WHERE id = ?", (learning_id,))
+    conn.commit()
+    return dict(conn.execute("SELECT * FROM learnings WHERE id = ?", (learning_id,)).fetchone())
+
+
+def learning_query(command: str | None = None, status: str | None = None) -> list[dict]:
+    """List learnings, filtered by command and/or status. This is the queue a
+    human review session works from (e.g. all 'proposed' learnings for
+    'nix-refine' awaiting a decision)."""
+    query = "SELECT * FROM learnings"
+    params: list = []
+    where: list[str] = []
+    if command is not None:
+        where.append("command = ?")
+        params.append(command)
+    if status is not None:
+        where.append("status = ?")
+        params.append(status)
+    if where:
+        query += " WHERE " + " AND ".join(where)
+    query += " ORDER BY created_at ASC"
+    return [dict(r) for r in conn.execute(query, params).fetchall()]
+
+
 TOOLS: list[dict] = [
     {
         "name": "list_goals",
@@ -1122,6 +1176,30 @@ TOOLS: list[dict] = [
             "required": ["command", "lesson", "evidence"],
         },
     },
+    {
+        "name": "learning_promote",
+        "description": "Human-reviewed promotion of a proposed learning to 'validated' or 'rejected'. FOR SEAN OR A HUMAN-REVIEWED SESSION ONLY — must NEVER be invoked from within the same run that proposed the learning (Decision 4, Option 1 gate). 'validated' requires acted_on_commit (the hash of the edit being reviewed), so edit and promotion are one action.",
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "learning_id": {"type": "integer", "description": "Learning ID to promote"},
+                "decision": {"type": "string", "enum": ["validated", "rejected"], "description": "validated = learning caused a real, reviewed command/skill edit; rejected = not acted on"},
+                "acted_on_commit": {"type": "string", "description": "Commit hash of the edit this promotion validates. REQUIRED when decision='validated'."},
+            },
+            "required": ["learning_id", "decision"],
+        },
+    },
+    {
+        "name": "learning_query",
+        "description": "List agent learnings, filtered by command and/or status. The review queue a human session works from (e.g. all 'proposed' learnings for 'nix-refine' awaiting a decision).",
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "command": {"type": "string", "description": "Filter by command (e.g. 'nix-refine')"},
+                "status": {"type": "string", "description": "Filter by status (proposed, validated, rejected, stale)"},
+            },
+        },
+    },
 ]
 
 TOOL_DISPATCH = {
@@ -1148,6 +1226,8 @@ TOOL_DISPATCH = {
     "search_facts": search_facts,
     "get_full_biography": get_full_biography,
     "learning_append": learning_append,
+    "learning_promote": learning_promote,
+    "learning_query": learning_query,
 }
 
 

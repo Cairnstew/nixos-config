@@ -109,10 +109,85 @@ def test_distinct_lessons_not_deduped():
     print("PASS distinct_lessons_not_deduped")
 
 
+def test_promote_validated_requires_commit():
+    conn = fresh_db()
+    mcp_server.conn = conn
+    row = mcp_server.learning_append(
+        command="nix-refine",
+        lesson="gate lesson",
+        fix="apply gated",
+        evidence="modules/home/opencode/commands/nix-refine.md:897",
+    )
+    try:
+        mcp_server.learning_promote(row["id"], "validated")
+        raise AssertionError("expected ValueError for validated without acted_on_commit")
+    except ValueError as e:
+        assert "acted_on_commit" in str(e), str(e)
+    # Still proposed after the failed promote.
+    after = mcp_server.learning_query(command="nix-refine")
+    assert after[0]["status"] == "proposed", after
+    print("PASS promote_validated_requires_commit")
+
+
+def test_promote_validated_sets_commit():
+    conn = fresh_db()
+    mcp_server.conn = conn
+    row = mcp_server.learning_append(
+        command="nix-refine",
+        lesson="validate me",
+        fix="land the edit",
+        evidence="modules/home/opencode/commands/nix-refine.md:879",
+    )
+    promoted = mcp_server.learning_promote(row["id"], "validated", acted_on_commit="abc1234")
+    assert promoted["status"] == "validated", promoted
+    assert promoted["acted_on_commit"] == "abc1234", promoted
+    print("PASS promote_validated_sets_commit")
+
+
+def test_promote_rejected():
+    conn = fresh_db()
+    mcp_server.conn = conn
+    row = mcp_server.learning_append(
+        command="nix-refine",
+        lesson="reject me",
+        fix="n/a",
+        evidence="modules/home/opencode/commands/nix-refine.md:917",
+    )
+    rejected = mcp_server.learning_promote(row["id"], "rejected")
+    assert rejected["status"] == "rejected", rejected
+    print("PASS promote_rejected")
+
+
+def test_query_filters():
+    conn = fresh_db()
+    mcp_server.conn = conn
+    mcp_server.learning_append(
+        command="nix-refine",
+        lesson="query me one",
+        fix="x",
+        evidence="modules/home/opencode/commands/nix-refine.md:846",
+    )
+    mcp_server.learning_append(
+        command="nix-doc-audit",
+        lesson="query me two",
+        fix="y",
+        evidence="modules/home/opencode/commands/nix-doc-audit.md:908",
+    )
+    refine = mcp_server.learning_query(command="nix-refine")
+    assert len(refine) == 1 and refine[0]["command"] == "nix-refine", refine
+    all_proposed = mcp_server.learning_query(status="proposed")
+    assert len(all_proposed) == 2, all_proposed
+    print("PASS query_filters")
+
+
 if __name__ == "__main__":
     test_reject_missing_evidence()
     test_reject_placeholder_evidence()
     test_status_always_proposed()
     test_dedupe_near_duplicate_lesson()
     test_distinct_lessons_not_deduped()
+    test_promote_validated_requires_commit()
+    test_promote_validated_sets_commit()
+    test_promote_rejected()
+    test_query_filters()
     print("ALL PASS")
