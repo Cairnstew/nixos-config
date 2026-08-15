@@ -89,3 +89,60 @@ CREATE TABLE IF NOT EXISTS profile_facts (
 CREATE INDEX IF NOT EXISTS idx_profile_facts_category ON profile_facts(category);
 CREATE INDEX IF NOT EXISTS idx_profile_facts_status ON profile_facts(status);
 CREATE INDEX IF NOT EXISTS idx_profile_facts_superseded_by ON profile_facts(superseded_by);
+
+-- Agent self-improvement learnings (Decision 1/4, pilot: nix-refine only).
+-- `domain` discriminator keeps this disjoint from personal goals/traits at
+-- query time, per the redesign split. `status` is the validation gate from
+-- Decision 4 (Option 1): `learning_append` writes ONLY 'proposed'; only a
+-- human-reviewed `learning_promote` moves a row to 'validated'/'rejected'.
+CREATE TABLE IF NOT EXISTS learnings (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    domain TEXT NOT NULL DEFAULT 'agent-learning',
+    command TEXT NOT NULL,
+    lesson TEXT NOT NULL,
+    fix TEXT NOT NULL DEFAULT '',
+    evidence TEXT NOT NULL CHECK (length(trim(evidence)) > 0),
+    status TEXT NOT NULL DEFAULT 'proposed',
+    alpha REAL NOT NULL DEFAULT 1.0,
+    beta REAL NOT NULL DEFAULT 1.0,
+    confidence REAL NOT NULL DEFAULT 0.5,
+    created_at TEXT NOT NULL DEFAULT (datetime('now')),
+    acted_on_commit TEXT,
+    superseded_by INTEGER REFERENCES learnings(id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_learnings_domain ON learnings(domain);
+CREATE INDEX IF NOT EXISTS idx_learnings_command ON learnings(command);
+CREATE INDEX IF NOT EXISTS idx_learnings_status ON learnings(status);
+CREATE INDEX IF NOT EXISTS idx_learnings_superseded_by ON learnings(superseded_by);
+
+-- Supporting observations for one learning over time (mirrors trait_evidence).
+-- Confidence (alpha/beta decay) is applied via the existing TraitEngine, which
+-- is only wired for goals/traits today; wiring it for learnings is a separate
+-- follow-on, not part of this pilot (the schema just provisions the columns).
+CREATE TABLE IF NOT EXISTS learning_evidence (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    learning_id INTEGER NOT NULL REFERENCES learnings(id),
+    evidence_value REAL NOT NULL,
+    note TEXT,
+    observed_date TEXT NOT NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_learning_evidence_learning ON learning_evidence(learning_id);
+CREATE INDEX IF NOT EXISTS idx_learning_evidence_date ON learning_evidence(observed_date);
+
+-- Fabrication register (Decision 6): per-command record of fabricated /
+-- recalled-not-verified incidents so audits start from prior context instead
+-- of zero. Seeded retroactively in mcp_server.init_db.
+CREATE TABLE IF NOT EXISTS fabrication_incidents (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    domain TEXT NOT NULL DEFAULT 'agent-learning',
+    command TEXT NOT NULL,
+    pattern_type TEXT NOT NULL,
+    date TEXT NOT NULL,
+    evidence TEXT NOT NULL CHECK (length(trim(evidence)) > 0),
+    description TEXT NOT NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_fabrication_incidents_command ON fabrication_incidents(command);
+CREATE INDEX IF NOT EXISTS idx_fabrication_incidents_domain ON fabrication_incidents(domain);

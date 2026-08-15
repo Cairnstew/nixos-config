@@ -45,8 +45,104 @@ def init_db(db_path: str, schema_path: str = SCHEMA_PATH) -> sqlite3.Connection:
         created_at TEXT NOT NULL DEFAULT (datetime('now')),
         updated_at TEXT NOT NULL DEFAULT (datetime('now'))
     )""")
+    # Migration: agent self-improvement tables (pre-agent-learning DBs; 2026-08-15
+    # pilot). Additive only — personal goals/traits data is untouched. The full
+    # definitions live in schema.sql; this inline block is the migration-fix
+    # pattern for pre-existing DBs (mirrors the profile_facts block above).
+    conn.execute("""CREATE TABLE IF NOT EXISTS learnings (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        domain TEXT NOT NULL DEFAULT 'agent-learning',
+        command TEXT NOT NULL,
+        lesson TEXT NOT NULL,
+        fix TEXT NOT NULL DEFAULT '',
+        evidence TEXT NOT NULL CHECK (length(trim(evidence)) > 0),
+        status TEXT NOT NULL DEFAULT 'proposed',
+        alpha REAL NOT NULL DEFAULT 1.0,
+        beta REAL NOT NULL DEFAULT 1.0,
+        confidence REAL NOT NULL DEFAULT 0.5,
+        created_at TEXT NOT NULL DEFAULT (datetime('now')),
+        acted_on_commit TEXT,
+        superseded_by INTEGER REFERENCES learnings(id)
+    )""")
+    conn.execute("""CREATE TABLE IF NOT EXISTS learning_evidence (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        learning_id INTEGER NOT NULL REFERENCES learnings(id),
+        evidence_value REAL NOT NULL,
+        note TEXT,
+        observed_date TEXT NOT NULL
+    )""")
+    conn.execute("""CREATE TABLE IF NOT EXISTS fabrication_incidents (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        domain TEXT NOT NULL DEFAULT 'agent-learning',
+        command TEXT NOT NULL,
+        pattern_type TEXT NOT NULL,
+        date TEXT NOT NULL,
+        evidence TEXT NOT NULL CHECK (length(trim(evidence)) > 0),
+        description TEXT NOT NULL
+    )""")
+    _seed_fabrication_incidents(conn)
     conn.commit()
     return conn
+
+
+AGENT_LEARNING_DOMAIN = "agent-learning"
+
+
+def _seed_fabrication_incidents(conn: sqlite3.Connection) -> None:
+    """Idempotently seed fabrication_incidents with the three incidents Tier 0
+    already found. Evidence is cited exactly as in the Tier 0 findings doc
+    (/tmp/opencode/self-improvement/tier0-findings.md §3d) and the RUN LOG rows
+    they came from; nothing is re-derived here. Idempotent on
+    (command, pattern_type, evidence)."""
+    incidents = [
+        {
+            "command": "nix-doc-audit",
+            "pattern_type": "fabricated-grep-output",
+            "date": "2026-08-03",
+            "evidence": "modules/home/opencode/commands/nix-doc-audit.md:967-976",
+            "description": (
+                "M11 faulty-grep fabrication: arbiter SKIP ruling claimed 0 matches for a pattern "
+                "that actually matched 5 times (README lines 4,10,11,28,29,131 reference non-existent "
+                "modules/flake-parts/ventoy.nix/ventoy-config.nix). Caught by lead re-verification."
+            ),
+        },
+        {
+            "command": "nix-refine",
+            "pattern_type": "fabricated-default-claim",
+            "date": "2026-08-07",
+            "evidence": "modules/home/opencode/commands/nix-refine.md:917-933",
+            "description": (
+                "K1 false 'default is already true' claim: recon asserted "
+                "boot.loader.efi.canTouchEfiVariables was redundant because 'NixOS default is already "
+                "true' — factually wrong (nixpkgs default is false). Only nix eval before/after caught "
+                "it; required git revert 96e324a."
+            ),
+        },
+        {
+            "command": "nix-refine",
+            "pattern_type": "namespace-misread",
+            "date": "2026-08-06",
+            "evidence": "modules/home/opencode/commands/nix-refine.md:519-528",
+            "description": (
+                "Tailscale namespace misread: scout + planner claimed workstation.nix tailscale.enable "
+                "duplicated common.nix:285, but common.nix sets NixOS-native services.tailscale, not "
+                "the module option my.services.tailscale; the plan would have disabled tailscale on all "
+                "workstation hosts."
+            ),
+        },
+    ]
+    for row in incidents:
+        hit = conn.execute(
+            "SELECT 1 FROM fabrication_incidents WHERE command = ? AND pattern_type = ? AND evidence = ?",
+            (row["command"], row["pattern_type"], row["evidence"]),
+        ).fetchone()
+        if hit:
+            continue
+        conn.execute(
+            """INSERT INTO fabrication_incidents (command, pattern_type, date, evidence, description)
+               VALUES (?, ?, ?, ?, ?)""",
+            (row["command"], row["pattern_type"], row["date"], row["evidence"], row["description"]),
+        )
 
 
 class TraitEngine:
