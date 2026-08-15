@@ -20,6 +20,12 @@ Symptom (2026-08-15): `systemctl start minecraft-server-smoke-test.service` exit
 
 ---
 
+**nix-minecraft has no per-server resource option — cap memory/CPU via a wrapper `hardware` option that augments the generated unit**
+
+Symptom (2026-08-15): the DragonTech server (RSS ~5.5G on a 15G host already under swap pressure) had no memory/CPU limits — `systemctl show minecraft-server-dragentech -p MemoryMax` = `infinity`. Setting `services.minecraft-servers.servers.<name>.extraServiceConfig.MemoryMax` fails (nix-minecraft has no such option, see the GOTCHAS on `extraServiceConfig`). Cause: nix-minecraft derives its own hardened `serviceConfig` and does not forward arbitrary systemd fields. Fix: the wrapper module (`my.services.minecraftServer`) now exposes a per-server `hardware` submodule (`memoryHigh`, `memoryMax`, `memorySwapMax`, `cpuQuota`, `nice`, `ioWeight`; all null = unlimited) and wires them into `systemd.services.minecraft-server-<name>.serviceConfig` via `mkHardwareServiceConfig` in `modules/nixos/minecraft-server/config.nix`. Sizing: `memoryMax ≈ min(hostRAM - 4, -Xmx + 2G)`, `memoryHigh ≈ memoryMax - 2G`; keep ≥4G host headroom. Note `Nice`/`IOWeight` must be stringified (`toString`) and `MemoryMax` etc. are cgroup v2 — the JVM heap (`-Xmx`) must still be sized; the caps are a safety net, not a substitute. Verify: `nix eval .#nixosConfigurations.<host>.config.systemd.services.minecraft-server-<name>.serviceConfig` shows the caps.
+
+---
+
 ---
 
 **FOD build-mod-source derivations need `--impure`, and `outputHash` changes whenever src or the patch changes**

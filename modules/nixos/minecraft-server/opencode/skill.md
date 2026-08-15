@@ -128,11 +128,14 @@ enabled:
     `modules/nixos/minecraft-server/servers/`. Actions: `status` (state,
     players, uptime, boot progress), `start` / `stop` / `restart`, `boot`
     (start the unit and wait for the `Done (Ns)!` line, diagnosing crashes),
-    `list` (configured servers). Uses the module's dashboard management API on
-    loopback when reachable, else systemctl. Pass `modpack=<name>` to resolve
-    the server that a pack is wired to. **This is the primary tool for the
-    server-side workflow** — use it after any pack change to confirm the server
-    still boots, and to diagnose a boot crash.
+    `perf` (live memory/CPU from the systemd cgroup + TPS/overload/players from
+    the log — no monitoring mod required), `list` (configured servers). Uses the
+    module's dashboard management API on loopback when reachable, else
+    systemctl. Pass `modpack=<name>` to resolve the server that a pack is wired
+    to. **This is the primary tool for the server-side workflow** — use it after
+    any pack change to confirm the server still boots, and to diagnose a boot
+    crash. For performance, load the `mc-server-monitor` skill
+    (`mc-server <name> perf` + how to tune the `hardware` option).
 - `mc-modpack` command — orchestrated workflow for a requested modpack change.
 
  ### Self-improvement (mc-run, mc-prism-log, mc-install, packwiz-structures, packwiz-controls, packwiz-controls-set & packwiz-config-add)
@@ -305,6 +308,14 @@ server's `package` (loader + MC version) must match the pack's `pack.toml`.
 - **The dashboard has a Minecraft section** (status + Start/Stop/Restart) backed
   by the `minecraft-dashboard-api` service, registered by the minecraft-server
   module via `my.services.proxy.dashboard.minecraft`. No manual wiring needed.
+- **Cap server resources via the per-server `hardware` option**, not by editing
+  the JVM string alone. The unit gets systemd cgroup limits
+  (`memoryHigh`/`memoryMax`/`memorySwapMax`/`cpuQuota`/`nice`/`ioWeight`)
+  wired into `systemd.services.minecraft-server-<name>.serviceConfig`. Size the
+  JVM heap for the box and keep ≥4G headroom for the OS + other services; set
+  `memoryMax` well above steady-state RSS or the unit gets OOM-killed. Monitor
+  with `mc-server <name> perf` (cgroup memory/CPU + log TPS/overload), and load
+  the `mc-server-monitor` skill for the full workflow.
 
 ## RUN LOG
 
@@ -320,3 +331,7 @@ Fix: added `modules/nixos/minecraft-server/modpacks/build-mod-source.nix` (fixed
 ### 2026-08-15 — first dedicated-server run: client-first packs crash a headless server
 Lesson: the DragonTech pack (formerly testModpack) ran fine in Prism but boot-looped on the dedicated server. Three distinct server-only failure modes, in order: (1) client-only render/GL mods symlinked into `mods/` crash with `NoClassDefFoundError: org/lwjgl/Version` — fixed by filtering `side = "client"` mods server-side (packwizSymlinks); (2) mods tagged `side = "both"` that load client-only classes (Sinytra Connector stack, FTB Quests Throughput, Wakes Reforged) crash mid-mod-load with `Failed to create mod instance. ModID: X` / `... for invalid dist DEDICATED_SERVER` — fixed by marking them `side = "client"`; (3) `config/` was symlinked into the read-only store so FML couldn't write `config/fml.toml` (`Read-only file system`) — fixed by seeding `config/`/`defaultconfigs/` as writable dirs in `packwizStartPre`. Also discovered the smoke test never passed for neoforge (it searched for a top-level jar, but neoforge's server jar lives under `libraries/`), and the web console user needed `wheel` to exec the sudo wrapper.
 Fix: added the `mc-server` tool (status/start/stop/restart/boot with crash diagnosis), a `side` split + client-crash-risk check to `mc-pack-status`, a longer server boot default timeout in `mc-run`, fixed the smoke-test jar search, and documented the server-side workflow in this skill.
+
+### 2026-08-15 — server performance monitoring + resource caps
+Lesson: the dedicated server (DragonTech) had no memory/CPU limits (`MemoryMax = infinity`) on a tight host (15G RAM, 5G swap used, server RSS ~5.5G vs `-Xmx6G`). First boot showed `Can't keep up! ... 313 ticks behind` during worldgen — transient, not a fault. nix-minecraft forwards no per-server systemd fields, so caps had to go through the wrapper module.
+Fix: new per-server `hardware` submodule (`memoryHigh`/`memoryMax`/`memorySwapMax`/`cpuQuota`/`nice`/`ioWeight`) wired into `systemd.services.minecraft-server-<name>.serviceConfig`; tuned the dragentech server to `-Xmx5G -Xms3G` + `memoryHigh 7G / memoryMax 10G / memorySwapMax 2G / nice 5`. Added `mc-server <name> perf` (cgroup memory/CPU + log TPS/overload/players) and the `mc-server-monitor` skill documenting monitoring + how to size caps.

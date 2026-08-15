@@ -254,6 +254,62 @@ async function waitForBoot(server: string, api: string | null, timeoutSec: numbe
   return `mc-server: '${server}' did not finish booting within ${Math.round(waitMs / 1000)}s. Last log tail:\n${(logPath && existsSync(logPath) ? readFileSync(logPath, "utf-8") : "(no latest.log yet)").split("\n").slice(-30).join("\n")}`;
 }
 
+// ── Performance ──────────────────────────────────────────────────────────────
+// Reports live resource usage + health signals for a server, drawn from the
+// systemd cgroup (memory/CPU), the server log (TPS / "Can't keep up" / players),
+// and the dashboard API. No mod required — the log's periodic tick lag warnings
+// are the TPS proxy.
+function perf(server: string, api: string | null): string {
+  const unit = `minecraft-server-${server}`;
+  const dataDir = findServerLogDir();
+  const logPath = dataDir ? join(dataDir, server, "logs", "latest.log") : "";
+  const lines: string[] = [`server: ${server}`, `unit: ${unit}.service`];
+
+  // systemd cgroup memory + CPU.
+  const memCurrent = execSync(`systemctl show ${unit}.service -p MemoryCurrent --value 2>/dev/null`, { encoding: "utf-8" }).trim();
+  const memMax = execSync(`systemctl show ${unit}.service -p MemoryMax --value 2>/dev/null`, { encoding: "utf-8" }).trim();
+  const cpuNS = execSync(`systemctl show ${unit}.service -p CPUUsageNSec --value 2>/dev/null`, { encoding: "utf-8" }).trim();
+  const cpuMax = execSync(`systemctl show ${unit}.service -p CPUQuotaPerSecUSec --value 2>/dev/null`, { encoding: "utf-8" }).trim();
+  const nproc = execSync(`nproc 2>/dev/null`, { encoding: "utf-8" }).trim();
+
+  const fmtMB = (b: string) => (b && Number(b) > 0 ? `${(Number(b) / 1073741824).toFixed(1)}G` : b);
+  lines.push(`memory: ${fmtMB(memCurrent)} used` + (memMax && memMax !== "infinity" ? ` / ${fmtMB(memMax)} cap` : " (no cap)"));
+  if (cpuMax && cpuMax !== "infinity") {
+    const pct = Number(cpuMax) / 1000000;
+    lines.push(`cpu: ${pct}% quota` + (nproc ? ` of ${nproc} cores` : ""));
+  }
+  if (cpuNS && Number(cpuNS) > 0) {
+    lines.push(`cpu time: ${(Number(cpuNS) / 1e9).toFixed(0)}s total`);
+  }
+
+  // TPS proxy + overload warnings from the server log.
+  if (logPath && existsSync(logPath)) {
+    const text = readFileSync(logPath, "utf-8");
+    const overloads = [...text.matchAll(/Can't keep up!.*?Running (\d+)ms or (\d+) ticks behind/g)].slice(-5);
+    if (overloads.length) {
+      const recent = overloads.map((m) => `${m[2]} ticks behind (${(Number(m[1]) / 1000).toFixed(1)}s)`).join("; ");
+      lines.push(`overload (last ${overloads.length}): ${recent}`);
+    } else {
+      lines.push("overload warnings: none in log");
+    }
+    const joined = [...text.matchAll(/(\w+) joined the game/g)].slice(-5).map((m) => m[1]);
+    if (joined.length) lines.push(`recent joins: ${joined.join(", ")}`);
+  }
+
+  const apiInfo = apiStatus(api, server);
+  if (apiInfo) {
+    if (apiInfo.players) lines.push(`players: ${apiInfo.players}`);
+  }
+
+  // Host-level context: total memory pressure (the server shares the box).
+  try {
+    const free = execSync(`free -g | awk '/Mem:/{print $2"G total, "($2-$7)"G used, "$7"G avail"} /Swap:/{print "swap: "$2"G total, "$3"G used"}' 2>/dev/null`, { encoding: "utf-8" }).trim();
+    if (free) lines.push(`host: ${free.replace(/\n/g, " | ")}`);
+  } catch { /* ignore */ }
+
+  return lines.join("\n");
+}
+
 // ── Top-level ────────────────────────────────────────────────────────────────
 async function run(
   repo: string,
@@ -293,16 +349,18 @@ async function run(
     }
     case "boot":
       return waitForBoot(server, api, timeout);
+    case "perf":
+      return perf(server, api);
     case "list":
       return `mc-server: configured servers: ${listServers(repo).join(", ") || "(none)"}`;
     default:
-      return `mc-server: unknown action '${action}'. Use status|start|stop|restart|boot|list.`;
+      return `mc-server: unknown action '${action}'. Use status|start|stop|restart|boot|perf|list.`;
   }
 }
 
 export default {
   description:
-    "Manage a dedicated Minecraft server defined in this repo (modules/nixos/minecraft-server/servers/). Actions: status (state, players, uptime, boot progress), start, stop, restart, boot (start the unit and wait for 'Done', diagnosing crashes), list (configured servers). Uses the minecraft-server module's dashboard API on loopback when reachable, else falls back to systemctl. Diagnoses the two common dedicated-server boot failures: a client-only mod marked side = \"both\" (crashes with client-only class loads — fix by setting side = \"client\"), and read-only config dirs.",
+    "Manage a dedicated Minecraft server defined in this repo (modules/nixos/minecraft-server/servers/). Actions: status (state, players, uptime, boot progress), start, stop, restart, boot (start the unit and wait for 'Done', diagnosing crashes), perf (live memory/CPU from the systemd cgroup + TPS/overload/players from the log — no mod required), list (configured servers). Uses the minecraft-server module's dashboard API on loopback when reachable, else falls back to systemctl. Diagnoses the two common dedicated-server boot failures: a client-only mod marked side = \"both\" (crashes with client-only class loads — fix by setting side = \"client\"), and read-only config dirs.",
   args: {
     server: {
       type: "string",
@@ -310,7 +368,7 @@ export default {
     },
     action: {
       type: "string",
-      description: "status (default) | start | stop | restart | boot (start + wait for 'Done' with crash diagnosis) | list.",
+      description: "status (default) | start | stop | restart | boot (start + wait for 'Done' with crash diagnosis) | perf (memory/CPU/TPS/overload/players) | list.",
     },
     modpack: {
       type: "string",

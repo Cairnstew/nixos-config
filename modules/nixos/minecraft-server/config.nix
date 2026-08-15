@@ -272,6 +272,26 @@ let
       ];
     };
 
+  # Resource / scheduler caps from the per-server `hardware` option, applied to
+  # the generated systemd unit. nix-minecraft does NOT forward arbitrary
+  # serviceConfig, so we augment the unit directly here (the GOTCHAS-verified
+  # pattern). Returns the serviceConfig attrset (possibly empty) for one server.
+  mkHardwareServiceConfig = name: srv:
+    if srv.hardware == { } then { }
+    else
+      {
+        systemd.services.${"minecraft-server-${name}"} = {
+          serviceConfig = lib.filterAttrs (_: v: v != null) {
+            MemoryMax = srv.hardware.memoryMax;
+            MemoryHigh = srv.hardware.memoryHigh;
+            MemorySwapMax = srv.hardware.memorySwapMax;
+            CPUQuota = srv.hardware.cpuQuota;
+            Nice = if srv.hardware.nice != null then toString srv.hardware.nice else null;
+            IOWeight = if srv.hardware.ioWeight != null then toString srv.hardware.ioWeight else null;
+          };
+        };
+      };
+
 in
 {
   imports = [
@@ -289,6 +309,40 @@ in
         servers = mapAttrs' mkServer cfg.servers;
       };
 
+      # Per-server resource caps (memory/CPU/scheduler) from the `hardware`
+      # option, applied to the generated units.
+      systemd.services = lib.mkMerge (
+        (map (name: (mkHardwareServiceConfig name cfg.servers.${name}).systemd.services)
+          (builtins.attrNames cfg.servers))
+        # dataDir + per-server dirs are created by a ROOT oneshot, NOT tmpfiles:
+        # systemd-tmpfiles refuses to descend a path whose parent is owned by a
+        # non-root user ("Detected unsafe path transition /mnt/data (owned by
+        # seanc)") and silently skips the rule. nix-minecraft's tmpfiles rule for
+        # ${dataDir}/${name} therefore never runs when dataDir lives under such a
+        # parent, leaving the server's WorkingDirectory missing → systemd fails the
+        # unit with status=200/CHDIR. This oneshot runs as root before every server
+        # so the dirs always exist on fresh machines too.
+        ++ [
+          {
+            "minecraft-server-prepare-dirs" = {
+              description = "Create Minecraft server data directories";
+              wantedBy = [ "multi-user.target" ];
+              before = map (name: "minecraft-server-${name}.service") (builtins.attrNames cfg.servers);
+              serviceConfig = {
+                Type = "oneshot";
+                RemainAfterExit = true;
+              };
+              script = ''
+                ${pkgs.coreutils}/bin/install -d -o minecraft -g minecraft -m 0770 ${cfg.dataDir}
+                ${builtins.concatStringsSep "\n" (map (name: ''
+                  ${pkgs.coreutils}/bin/install -d -o minecraft -g minecraft -m 0770 ${cfg.dataDir}/${name}
+                '') (builtins.attrNames cfg.servers))}
+              '';
+            };
+          }
+        ]
+      );
+
       # packDir: owned by the primary user so scp works without sudo, group
       # minecraft so the service user can read the zips. dataDir comes from
       # nix-minecraft's user creation.
@@ -300,30 +354,6 @@ in
       # (from nix-minecraft), so without group membership the user cannot traverse
       # it to reach packDir — scp to packDir would fail with "Permission denied".
       users.groups.minecraft.members = [ me.username ];
-
-      # dataDir + per-server dirs are created by a ROOT oneshot, NOT tmpfiles:
-      # systemd-tmpfiles refuses to descend a path whose parent is owned by a
-      # non-root user ("Detected unsafe path transition /mnt/data (owned by
-      # seanc)") and silently skips the rule. nix-minecraft's tmpfiles rule for
-      # ${dataDir}/${name} therefore never runs when dataDir lives under such a
-      # parent, leaving the server's WorkingDirectory missing → systemd fails the
-      # unit with status=200/CHDIR. This oneshot runs as root before every server
-      # so the dirs always exist on fresh machines too.
-      systemd.services.minecraft-server-prepare-dirs = {
-        description = "Create Minecraft server data directories";
-        wantedBy = [ "multi-user.target" ];
-        before = map (name: "minecraft-server-${name}.service") (builtins.attrNames cfg.servers);
-        serviceConfig = {
-          Type = "oneshot";
-          RemainAfterExit = true;
-        };
-        script = ''
-          ${pkgs.coreutils}/bin/install -d -o minecraft -g minecraft -m 0770 ${cfg.dataDir}
-          ${builtins.concatStringsSep "\n" (map (name: ''
-            ${pkgs.coreutils}/bin/install -d -o minecraft -g minecraft -m 0770 ${cfg.dataDir}/${name}
-          '') (builtins.attrNames cfg.servers))}
-        '';
-      };
     })
 
     # ── OpenCode utilities for modpack work ──────────────────────────────────
@@ -369,6 +399,7 @@ in
         skills.mc-mod-structures = builtins.readFile ./opencode/skill-mc-mod-structures.md;
         skills.mc-mod-controls = builtins.readFile ./opencode/skill-mc-mod-controls.md;
         skills.mc-mod-controls-set = builtins.readFile ./opencode/skill-mc-mod-controls-set.md;
+        skills.mc-server-monitor = builtins.readFile ./opencode/skill-mc-server-monitor.md;
         commands.mc-modpack = ./opencode/commands/mc-modpack.md;
       };
     })
