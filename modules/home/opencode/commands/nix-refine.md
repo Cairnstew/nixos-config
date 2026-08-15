@@ -825,21 +825,28 @@ The lead triages the meta-scout's findings with the same TASK / SKIP / NOTE prot
 - Do not add aspirational self-healing ("in future we might..."); only fix what is true now.
 - Do not let Phase 6 balloon the file; keep each fix tight and referenced to the lesson.
 
-## 6.4 RUN LOG (append at the bottom of this file)
+## 6.4 RUN LOG → `learning_append` (proposal-only, gated)
 
-Record every applied lesson as a dated entry so future runs can read what changed and why. Format:
+**The lead no longer appends RUN LOG entries to this command file directly.** Decision 4
+(Option 1) closes the un-gated write path: a run may only *propose* learnings. For each
+operational lesson captured in 6.1, call the goals MCP tool **`learning_append`** with:
 
-```
-## RUN LOG
+- `command` = `"nix-refine"` (this command's own name)
+- `lesson` — one line: what happened and why the command misled/wasted effort
+- `fix` — what the command file should change to apply the lesson
+- `evidence` — `file:line` of the observed failure or verbatim command output (REQUIRED;
+  the tool rejects empty/placeholder evidence, so never pass "placeholder" or prose)
 
-### <date> — <one-line title>
-- Lesson: <what happened and why the command misled/wasted effort>
-- Fix: <what changed in this command file>
-```
+`learning_append` writes the row with `status = 'proposed'` and dedupes against an existing
+open learning with the same command + near-duplicate lesson. The actual command-file edit the
+learning describes is **not** applied in this run: it happens in a separate, human-reviewed
+step after `learning_promote(<id>, "validated", acted_on_commit=<commit>)` has been called
+with the hash of the edit. Do not call `learning_promote` yourself, and do not apply the
+learning's edit silently. If a review session needs the queue, it uses `learning_query`.
 
-Append newest at the bottom. Entries are facts about the tool's operation, not repo docs, so they
-are exempt from the "only document what exists" rule *for the command file's own machinery* — but
-each entry must still describe a real event.
+**Historical record:** the RUN LOG entries below (from before this pilot) remain in this file
+as history and are **not** migrated to the learnings tables in this task — migrating history
+is a separate decision.
 
 ## RUN LOG
 
