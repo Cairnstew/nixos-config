@@ -92,8 +92,26 @@ then `mc-server <name> perf` to confirm the cgroup caps took effect.
 - The dashboard Minecraft section shows live state + players + Start/Stop/
   Restart; `perf` is the deeper resource view. Prometheus/Grafana
   (`my.services.monitoring`) covers the whole host (node-exporter on :9100).
+- **A fresh-world post-boot CPU stall ≠ a hang.** If the server clears the
+  mod-loading phase (`Done`) but then idles at ~4 full cores for a long time,
+  it's likely RoadWeaver's `preloadBeforePrepareLevels` running with its OpenCL
+  coarse-sampling fallen back to CPU (benign log lines). The fix is the preload
+  radii/threads in `config/roadweaver/roadweaver.json` (DragonTech:
+  `predictRadiusChunks 32`, plan radii `16`, `initialGenerationThreads 6`) —
+  see the `mc-modpack` skill's gotchas. `perf` will show the CPU pinned with a
+  normal memory profile; that signature distinguishes preload from an OOM
+  spiral (memory climbing to `memoryMax`) or a hang (0 CPU).
 
 ## RUN LOG
+
+### 2026-08-16 — preload-stall diagnosis + fresh boot baseline
+Lesson: DragonTech's first post-tune boot reached `Done` in 107s but on the
+initial fresh-world run the RoadWeaver preload phase spun 4 cores for hours
+after boot with the CPU-fallback log lines — a signature that `perf` now
+documents (CPU pinned, normal memory). Also established the fresh baseline:
+RSS ~4.8G (cap 10G), 0 restarts, world 62M+ growing, Chunky pregen ~17 cps.
+Fix: added the preload-stall note above; baseline for comparing any future
+GPU-worldgen attempt.
 
 ### 2026-08-15 — first dedicated-server perf session
 Lesson: DragonTech first boot logged `Can't keep up! ... 313 ticks behind` during

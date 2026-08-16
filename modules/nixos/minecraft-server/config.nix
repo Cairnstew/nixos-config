@@ -419,6 +419,7 @@ in
           mc-server = ./opencode/tools/mc-server.ts;
         };
         skills.mc-modpack = builtins.readFile ./opencode/skill.md;
+        skills.mc-gpu-worldgen = builtins.readFile ./opencode/skill-mc-gpu-worldgen.md;
         skills.mc-mod-config = builtins.readFile ./opencode/skill-mc-mod-config.md;
         skills.mc-mod-config-set = builtins.readFile ./opencode/skill-mc-mod-config-set.md;
         skills.mc-mod-patch = builtins.readFile ./opencode/skill-mc-mod-patch.md;
