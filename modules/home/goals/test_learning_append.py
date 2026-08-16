@@ -299,6 +299,148 @@ def test_dedupe_real_runlog_pairs():
     print(f"PASS dedupe_real_runlog_pairs ({len(_REAL_PAIRS)} pairs)")
 
 
+# ── Task 2: target_type / target_path on learning_append ─────────────────────
+
+def test_new_skill_requires_target_path():
+    conn = fresh_db()
+    mcp_server.conn = conn
+    try:
+        mcp_server.learning_append(
+            command="nix-refine",
+            lesson="create a skills surface",
+            fix="write it",
+            evidence="modules/home/opencode/commands/nix-refine.md:897",
+            target_type="new_skill",
+        )
+        raise AssertionError("expected ValueError for new_skill without target_path")
+    except ValueError as e:
+        assert "target_path" in str(e), str(e)
+    print("PASS new_skill_requires_target_path")
+
+
+def test_new_skill_rejects_existing_target():
+    conn = fresh_db()
+    mcp_server.conn = conn
+    try:
+        mcp_server.learning_append(
+            command="nix-refine",
+            lesson="create a skill that already exists",
+            fix="write it",
+            evidence="modules/home/opencode/commands/nix-refine.md:897",
+            target_type="new_skill",
+            target_path="modules/home/opencode/skills/nixos-configuration.md",
+        )
+        raise AssertionError("expected ValueError for existing target_path")
+    except ValueError as e:
+        assert "already exists" in str(e), str(e)
+    print("PASS new_skill_rejects_existing_target")
+
+
+def test_new_skill_rejects_outside_skills_dir():
+    conn = fresh_db()
+    mcp_server.conn = conn
+    for bad in ("modules/nixos/tailscale/config.nix", "../escape.md", "skills/foo.md"):
+        try:
+            mcp_server.learning_append(
+                command="nix-refine",
+                lesson="create a skill in the wrong place",
+                fix="write it",
+                evidence="modules/home/opencode/commands/nix-refine.md:897",
+                target_type="new_skill",
+                target_path=bad,
+            )
+            raise AssertionError(f"expected ValueError for target_path={bad!r}")
+        except ValueError:
+            pass
+    print("PASS new_skill_rejects_outside_skills_dir")
+
+
+def test_new_command_rejects_existing_target():
+    conn = fresh_db()
+    mcp_server.conn = conn
+    try:
+        mcp_server.learning_append(
+            command="nix-refine",
+            lesson="create a command that already exists",
+            fix="write it",
+            evidence="modules/home/opencode/commands/nix-refine.md:897",
+            target_type="new_command",
+            target_path="modules/home/opencode/commands/nix-refine.md",
+        )
+        raise AssertionError("expected ValueError for existing command target_path")
+    except ValueError as e:
+        assert "already exists" in str(e), str(e)
+    print("PASS new_command_rejects_existing_target")
+
+
+def test_accept_valid_new_skill_proposal():
+    conn = fresh_db()
+    mcp_server.conn = conn
+    row = mcp_server.learning_append(
+        command="nix-refine",
+        lesson="propose a new skill",
+        fix="write modules/home/opencode/skills/self-improve-log.md",
+        evidence="modules/home/opencode/commands/nix-refine.md:897",
+        target_type="new_skill",
+        target_path="modules/home/opencode/skills/self-improve-log.md",
+    )
+    assert row["status"] == "proposed", row
+    assert row["target_type"] == "new_skill", row
+    assert row["target_path"] == "modules/home/opencode/skills/self-improve-log.md", row
+    assert row["deduped"] is False, row
+    print("PASS accept_valid_new_skill_proposal")
+
+
+def test_edit_existing_keeps_null_target():
+    conn = fresh_db()
+    mcp_server.conn = conn
+    row = mcp_server.learning_append(
+        command="nix-refine",
+        lesson="edit existing keeps path null",
+        fix="x",
+        evidence="modules/home/opencode/commands/nix-refine.md:846",
+    )
+    assert row["target_type"] == "edit_existing", row
+    assert row["target_path"] is None, row
+    # edit_existing ignores a passed target_path
+    row2 = mcp_server.learning_append(
+        command="nix-refine",
+        lesson="edit existing ignores passed path",
+        fix="y",
+        evidence="modules/home/opencode/commands/nix-refine.md:879",
+        target_type="edit_existing",
+        target_path="modules/nixos/tailscale/config.nix",
+    )
+    assert row2["target_path"] is None, row2
+    print("PASS edit_existing_keeps_null_target")
+
+
+# ── Task 3: learning_promote gate NOT relaxed for new_skill ──────────────────
+
+def test_promote_new_skill_still_requires_commit():
+    conn = fresh_db()
+    mcp_server.conn = conn
+    row = mcp_server.learning_append(
+        command="nix-refine",
+        lesson="new skill still needs gating",
+        fix="write a new skill file",
+        evidence="modules/home/opencode/commands/nix-refine.md:897",
+        target_type="new_skill",
+        target_path="modules/home/opencode/skills/self-improve-log.md",
+    )
+    # Same gate as edit_existing: validated without acted_on_commit is refused.
+    try:
+        mcp_server.learning_promote(row["id"], "validated")
+        raise AssertionError("expected ValueError for new_skill validated without acted_on_commit")
+    except ValueError as e:
+        assert "acted_on_commit" in str(e), str(e)
+    # With commit it validates, exactly like edit_existing.
+    promoted = mcp_server.learning_promote(row["id"], "validated", acted_on_commit="abc1234")
+    assert promoted["status"] == "validated", promoted
+    assert promoted["acted_on_commit"] == "abc1234", promoted
+    print("PASS promote_new_skill_still_requires_commit")
+
+
 if __name__ == "__main__":
     test_reject_missing_evidence()
     test_reject_placeholder_evidence()
@@ -310,4 +452,11 @@ if __name__ == "__main__":
     test_promote_rejected()
     test_query_filters()
     test_dedupe_real_runlog_pairs()
+    test_new_skill_requires_target_path()
+    test_new_skill_rejects_existing_target()
+    test_new_skill_rejects_outside_skills_dir()
+    test_new_command_rejects_existing_target()
+    test_accept_valid_new_skill_proposal()
+    test_edit_existing_keeps_null_target()
+    test_promote_new_skill_still_requires_commit()
     print("ALL PASS")
