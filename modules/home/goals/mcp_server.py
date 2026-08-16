@@ -836,15 +836,38 @@ def _near_duplicate_lesson(a: str, b: str) -> bool:
     return containment >= 0.30
 
 
-def learning_append(command: str, lesson: str, fix: str = "", evidence: str = "") -> dict:
+SKILL_DIR = "modules/home/opencode/skills/"
+COMMAND_DIR = "modules/home/opencode/commands/"
+
+
+def learning_append(
+    command: str,
+    lesson: str,
+    fix: str = "",
+    evidence: str = "",
+    target_type: str = "edit_existing",
+    target_path: str | None = None,
+) -> dict:
     """Write a proposed learning. Always status='proposed' (Decision 4 gate).
 
     Refuses calls missing a concrete `evidence` citation (the placeholder-scan
     failure class from Tier 0) and dedupes against an existing open (non-stale)
-    learning with the same command + near-duplicate lesson."""
+    learning with the same command + near-duplicate lesson.
+
+    target_type selects what a validated apply would touch:
+      - 'edit_existing' (default): existing file, matches the pilot. No path
+        validation beyond the standard evidence check.
+      - 'new_skill' / 'new_command': target_path is REQUIRED, must live under
+        modules/home/opencode/skills/ or .../commands/ respectively, and must
+        NOT already exist on disk at proposal time (a learning proposing to
+        "create" something that already exists is a caller bug — reject it).
+    """
     cmd = (command or "").strip()
     lsn = (lesson or "").strip()
     ev = (evidence or "").strip()
+    tt = (target_type or "edit_existing").strip()
+    if tt not in ("edit_existing", "new_skill", "new_command"):
+        raise ValueError("target_type must be 'edit_existing', 'new_skill', or 'new_command'")
     if not cmd:
         raise ValueError("learning_append requires 'command'")
     if not lsn:
@@ -854,6 +877,28 @@ def learning_append(command: str, lesson: str, fix: str = "", evidence: str = ""
             "learning_append requires 'evidence' with a file:line citation (or concrete command "
             "output) — refusing placeholder/empty evidence"
         )
+
+    tp = (target_path or "").strip() if target_path else ""
+    if tt != "edit_existing":
+        if not tp:
+            raise ValueError(f"target_type '{tt}' requires target_path")
+        if tt == "new_skill" and not tp.startswith(SKILL_DIR):
+            raise ValueError(
+                f"new_skill target_path must be under {SKILL_DIR} (got '{tp}') — "
+                "learnings cannot target arbitrary repo paths"
+            )
+        if tt == "new_command" and not tp.startswith(COMMAND_DIR):
+            raise ValueError(
+                f"new_command target_path must be under {COMMAND_DIR} (got '{tp}') — "
+                "learnings cannot target arbitrary repo paths"
+            )
+        if os.path.exists(tp):
+            raise ValueError(
+                f"target_path '{tp}' already exists — a learning proposing to create an existing "
+                "file is a caller bug; use target_type 'edit_existing' instead"
+            )
+    else:
+        tp = None  # edit_existing keeps target_path NULL regardless of input
 
     # Dedupe: an existing open (non-stale) learning for this command with a
     # near-duplicate lesson supersedes the append.
@@ -870,9 +915,9 @@ def learning_append(command: str, lesson: str, fix: str = "", evidence: str = ""
 
     now = datetime.datetime.utcnow().isoformat()
     cur = conn.execute(
-        """INSERT INTO learnings (domain, command, lesson, fix, evidence, status, alpha, beta, confidence, created_at)
-           VALUES (?, ?, ?, ?, ?, 'proposed', 1.0, 1.0, 0.5, ?)""",
-        (AGENT_LEARNING_DOMAIN, cmd, lsn, fix, ev, now),
+        """INSERT INTO learnings (domain, command, lesson, fix, evidence, status, alpha, beta, confidence, created_at, target_type, target_path)
+           VALUES (?, ?, ?, ?, ?, 'proposed', 1.0, 1.0, 0.5, ?, ?, ?)""",
+        (AGENT_LEARNING_DOMAIN, cmd, lsn, fix, ev, now, tt, tp),
     )
     conn.commit()
     learning_id = cur.lastrowid
@@ -1211,7 +1256,7 @@ TOOLS: list[dict] = [
     },
     {
         "name": "learning_append",
-        "description": "Record a proposed agent self-improvement learning (status ALWAYS 'proposed' — Decision 4 gate; only the human-gated learning_promote can validate/reject). Requires command, lesson, and evidence (file:line citation or concrete command output; placeholder/empty evidence is rejected). Dedupes against an existing open learning with the same command and near-duplicate lesson.",
+        "description": "Record a proposed agent self-improvement learning (status ALWAYS 'proposed' — Decision 4 gate; only the human-gated learning_promote can validate/reject). Requires command, lesson, and evidence (file:line citation or concrete command output; placeholder/empty evidence is rejected). Dedupes against an existing open learning with the same command and near-duplicate lesson. target_type 'new_skill'/'new_command' requires target_path under modules/home/opencode/skills/ or .../commands/ that does not already exist on disk.",
         "inputSchema": {
             "type": "object",
             "properties": {
@@ -1219,6 +1264,8 @@ TOOLS: list[dict] = [
                 "lesson": {"type": "string", "description": "One-line lesson — what happened and why the guidance misled/wasted effort"},
                 "fix": {"type": "string", "description": "What should change to apply this lesson"},
                 "evidence": {"type": "string", "description": "file:line citation or verbatim command output backing the lesson. REQUIRED; empty/placeholder text is rejected."},
+                "target_type": {"type": "string", "enum": ["edit_existing", "new_skill", "new_command"], "description": "What a validated apply touches. Default edit_existing. new_skill/new_command require target_path (under the skills/ or commands/ dir) that does not yet exist."},
+                "target_path": {"type": "string", "description": "Repo path to create when target_type is new_skill/new_command. Must be under modules/home/opencode/skills/ or .../commands/. Required for new_skill/new_command."},
             },
             "required": ["command", "lesson", "evidence"],
         },
