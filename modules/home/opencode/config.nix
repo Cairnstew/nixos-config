@@ -290,6 +290,7 @@ in
         };
         pluginFiles = lib.mkDefault {
           copylast = ./plugins/copylast.ts;
+          triage-capture = ./plugins/triage-capture.ts;
         };
         mcp.nix-graph = {
           enabled = true;
