@@ -57,6 +57,16 @@ function ensembleDbPath(): string {
   return process.env.TRIAGE_CAPTURE_ENSEMBLE_DB ?? join(homedir(), ".config", "opencode", "ensemble.db");
 }
 
+// The reviewer's own transcript lives in opencode's session store. The SDK's
+// `client.session.messages` returns an empty list for another session in the
+// plugin runtime (observed live, opencode 1.18.13 — v1 `session.messages`
+// yields 0 messages for any session id that isn't the current one), so the
+// transcript is read straight from the `part` table instead, using the same
+// sqlite access pattern as the goals/ensemble DBs above.
+function opencodeDbPath(): string {
+  return process.env.TRIAGE_CAPTURE_OPENCODE_DB ?? join(homedir(), ".local", "share", "opencode", "opencode.db");
+}
+
 // The plugin runs inside opencode's bundled Bun runtime, which provides
 // `bun:sqlite` but NOT `node:sqlite` (verified live, opencode 1.18.13 / Bun
 // 1.3.14). Fall back to node:sqlite anyway so the same file runs on a
@@ -76,6 +86,11 @@ async function openDb(path: string, readonly = false): Promise<{ db: any; kind: 
 function queryGet(db: any, kind: string, sql: string, ...params: any[]): any | undefined {
   if (kind === "bun") return db.query(sql).get(...params);
   return db.prepare(sql).get(...params);
+}
+
+function queryAll(db: any, kind: string, sql: string, ...params: any[]): any[] {
+  if (kind === "bun") return db.query(sql).all(...params);
+  return db.prepare(sql).all(...params);
 }
 
 function queryRun(db: any, kind: string, sql: string, ...params: any[]): void {
@@ -148,7 +163,7 @@ function evidencePaths(evidence: string): string[] {
   return paths;
 }
 
-export const TriageCapturePlugin: Plugin = async ({ client }) => {
+export const TriageCapturePlugin: Plugin = async () => {
   let goalsDb: any | null = null;
   let goalsKind = "bun";
 
@@ -199,31 +214,46 @@ export const TriageCapturePlugin: Plugin = async ({ client }) => {
         const evidence = evidenceRow?.evidence ?? "";
 
         // Scan the reviewer's own transcript for qualifying re-derivation
-        // calls that came BEFORE this verdict call.
+        // calls that came BEFORE this verdict call. The transcript is read
+        // from opencode.db's `part` table (see opencodeDbPath) because the SDK
+        // session.messages API returns empty for another session in the plugin
+        // runtime. Each stored part row is `{ id, session_id, data }` where
+        // `data` is the JSON ToolPart.
         let method: string | null = null;
         let ref: string | null = null;
         let sawQualifying = false;
         let referenced = false;
 
         try {
-          const msgs = await client.session.messages({ path: { id: sessionID } });
-          const arr = Array.isArray(msgs) ? msgs : [];
-          for (const msg of arr) {
-            const parts: any[] = Array.isArray((msg as any).parts) ? (msg as any).parts : [];
-            for (const p of parts) {
-              if (p?.type !== "tool") continue;
-              const m = methodForTool(p.tool ?? "");
+          const openDb = await openDbReadonly(opencodeDbPath());
+          try {
+            const rows = queryAll(
+              openDb.db,
+              openDb.kind,
+              "SELECT id, data FROM part WHERE session_id = ?",
+              sessionID,
+            );
+            for (const row2 of rows) {
+              let data: any;
+              try {
+                data = typeof row2.data === "string" ? JSON.parse(row2.data) : row2.data;
+              } catch {
+                continue;
+              }
+              if (data?.type !== "tool") continue;
+              const m = methodForTool(data.tool ?? "");
               if (!m) continue;
-              if (p.state?.status !== "completed") continue;
-              if (p.sessionID !== sessionID) continue;
-              if (p.id === toolPart.id) continue; // the verdict call itself
+              if (data.state?.status !== "completed") continue;
+              if (String(row2.id) === String(toolPart.id)) continue; // the verdict call itself
               sawQualifying = true;
-              if (referencesEvidence(p.state.input, evidence)) {
+              if (referencesEvidence(data.state.input, evidence)) {
                 referenced = true;
-                if (!ref) ref = `session:${sessionID};call:${p.callID}`;
+                if (!ref) ref = `session:${sessionID};call:${data.callID}`;
                 if (!method) method = m;
               }
             }
+          } finally {
+            openDb.db.close();
           }
         } catch {}
 
