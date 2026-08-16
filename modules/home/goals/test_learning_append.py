@@ -180,6 +180,125 @@ def test_query_filters():
     print("PASS query_filters")
 
 
+# ── Task 0: dedupe threshold validated against real RUN LOG pairs ─────────────
+# Hand-labelled pairs extracted from the existing markdown RUN LOGs. Genuine
+# duplicates: max-containment 0.357-0.625. Distinct-but-similar-sounding:
+# 0.091-0.25. Threshold 0.30 separates the bands. See mcp_server._near_duplicate_lesson.
+
+_REAL_PAIRS = [
+    # Adversarial (Tier 0 nix-refine.md:846 vs :879): same surface topic (OOM +
+    # builder waves), genuinely DIFFERENT claims. Must NOT dedupe.
+    (
+        "nix-refine OOM cgroup kill (2026-08-05): Running this command from the opencode web "
+        "session on the server ended with blank browser sessions. systemd-oomd had killed the "
+        "entire opencode-web-nix-config.service cgroup. Added an R-pre free -h memory check and "
+        "builder spawning in waves on constrained hosts so a full parallel spawn can't spike the cgroup.",
+        "nix-refine kernel-OOM from concurrent dry-activates (2026-08-06): The R-pre memory check "
+        "used resting free -h and spawned 9-11 builders, each running a 5-host dry-activate loop. "
+        "9+ concurrent evals hit the kernel global OOM killer, dropping the SSH session twice. "
+        "Wave-of-2 + single-host-verify + a per-builder free -h guard had zero crashes after.",
+        False,
+    ),
+    # Genuine near-duplicate: plan_approval lesson recorded in nix-doc-audit and
+    # ported to nix-refine. Must dedupe.
+    (
+        "nix-doc-audit: Spawning B1-B3 with plan_approval true made each builder send its plan, "
+        "end its run-cycle, and go idle forever. The lead's approve true response was stored but "
+        "never delivered. All three builders stalled with zero edits until force-shutdown and re-spawn.",
+        "nix-refine: plan_approval true never wakes builders after approval: a builder spawned "
+        "with plan_approval sends its plan then ends its run-cycle; the lead's approve response is "
+        "stored but never wakes it. The builder idles forever with zero edits.",
+        True,
+    ),
+    # Genuine near-duplicate: team_merge silent-apply-nothing lesson, same wording
+    # family in both commands. Must dedupe.
+    (
+        "nix-doc-audit: Builders that only stashed their changes (uncommitted) produced an empty "
+        "team_merge result — the merge reported success but applied nothing, so the main repo kept "
+        "the old content. The lead had to copy files from the worktree manually.",
+        "nix-refine: team_merge silently applies nothing when a builder only stashed uncommitted "
+        "its work — the lead must copy the worktree files into the main repo directly and verify.",
+        True,
+    ),
+    # Distinct: worktree-fork-staleness vs dirty-file-refusal — both about dirty
+    # trees but different mechanisms. Must NOT dedupe.
+    (
+        "nix-doc-audit: The main repo had 14 uncommitted md changes (the actual audit target). "
+        "Builders git worktrees were created at committed HEAD, so their local copies were stale. "
+        "Editing the stale copy would have made the merge clobber real work.",
+        "nix-doc-audit: team_merge returned Cannot merge builder — you have local changes to the "
+        "same files on ALL FOUR builder merges, because every target md was dirty in the main "
+        "checkout. The preserved branch holds each file as dirty baseline plus intended edits.",
+        False,
+    ),
+    # Distinct: researcher GitLab-mod research vs packwiz-docs research. Both web
+    # research lessons, different subjects. Must NOT dedupe.
+    (
+        "researcher: researching Distant Horizons + Prominence II, the DH tracker is on GitLab not "
+        "GitHub, and its wiki HTML pages are JS shells. The GitLab REST API returned clean JSON.",
+        "researcher: researching packwiz configs, the site index pages all 404'd — only leaf pages "
+        "serve, with the nav sidebar carrying the real URLs. The packwiz-installer GitHub README "
+        "is a stub, so behavior had to be confirmed in source.",
+        False,
+    ),
+    # Distinct: Modrinth /dependencies bloat vs nixos MCP version lag. Must NOT dedupe.
+    (
+        "researcher: webfetching api.modrinth.com project dependencies returned 1.5-2.3MB of full "
+        "project objects per pack — truncated, and minified single-line JSON defeated the grep "
+        "tool. The search endpoint's latest_version plus version/id gave compact per-version "
+        "dependencies arrays.",
+        "researcher: nixos MCP info returned stale versions while nix_versions history showed the "
+        "real current releases. Package search also returned nothing for short ambiguous queries. "
+        "Cross-check info against nix_versions for current-version claims.",
+        False,
+    ),
+    # Distinct: RoadWeaver = "the trails mod" linking-whitelist vs RoadWeaver
+    # water-crossing roads. Same mod, different lessons. Must NOT dedupe.
+    (
+        "skill-mc-mod-structures: there is no mod literally named trails; the roads/trails mod is "
+        "RoadWeaver, and its structure-linking is NOT in its structure JSONs but in "
+        "structurePrediction.structureWhitelist in config/roadweaver/roadweaver.json.",
+        "skill-mc-mod-structures: user reported roads paving through ocean/water (RoadWeaver issue "
+        "68) — water in land-tagged biomes treated as land; whitelist forced roads to ocean "
+        "structures structory boat plus dragonsurvival sea. Seeding needed ignore-existing workaround.",
+        False,
+    ),
+    # Genuine near-duplicate: RoadWeaver water-crossing roads, recorded in both
+    # skill.md and skill-mc-mod-structures.md. Must dedupe.
+    (
+        "skill.md: user reported roads paving through ocean/water (RoadWeaver issue 68 — water in "
+        "land-tagged biomes treated as land; plus whitelist forced roads to ocean structures "
+        "structory:boat + dragonsurvival:*_sea). Seeding needed --ignore-existing workaround: "
+        "remove the instance copy first.",
+        "skill-mc-mod-structures: RoadWeaver issue 68 — roads pave through water in modded/untagged "
+        "water biomes; check which whitelisted structure mods spawn structures in/near ocean so "
+        "roads get forced across water.",
+        True,
+    ),
+    # Genuine near-duplicate: --ignore-existing seeding gotcha in mc-install and
+    # skill-mc-mod-config-set. Must dedupe.
+    (
+        "mc-install: shipping a changed mod default config (roadweaver whitelist) into an existing "
+        "Prism instance was skipped: instance-sync seeds config with --ignore-existing, so "
+        "mc-install reported up to date despite the stale file. Fix: delete the stale instance "
+        "config file first, then force.",
+        "skill-mc-mod-config-set: roadweaver.json seeding required --ignore-existing workaround: "
+        "remove the instance copy before re-seeding so the changed default config reaches the instance.",
+        True,
+    ),
+]
+
+
+def test_dedupe_real_runlog_pairs():
+    for i, (a, b, expect_dup) in enumerate(_REAL_PAIRS):
+        got = mcp_server._near_duplicate_lesson(a, b)
+        assert got is expect_dup, (
+            f"pair {i}: expected {'DUP' if expect_dup else 'distinct'}, got {'DUP' if got else 'distinct'}\n"
+            f"  A: {a[:100]}...\n  B: {b[:100]}..."
+        )
+    print(f"PASS dedupe_real_runlog_pairs ({len(_REAL_PAIRS)} pairs)")
+
+
 if __name__ == "__main__":
     test_reject_missing_evidence()
     test_reject_placeholder_evidence()
@@ -190,4 +309,5 @@ if __name__ == "__main__":
     test_promote_validated_sets_commit()
     test_promote_rejected()
     test_query_filters()
+    test_dedupe_real_runlog_pairs()
     print("ALL PASS")
