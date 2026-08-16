@@ -112,7 +112,12 @@ CREATE TABLE IF NOT EXISTS learnings (
     target_type TEXT NOT NULL DEFAULT 'edit_existing'
         CHECK (target_type IN ('edit_existing', 'new_skill', 'new_command')),
     target_path TEXT,
-    CHECK (target_type = 'edit_existing' OR target_path IS NOT NULL)
+    -- Tier 1 Task 3: target_path is now required for EVERY target_type
+    -- (edit_existing included). Backfilled rows use the '__unclassified__'
+    -- sentinel (never fast-path eligible). SQLite cannot add this CHECK to an
+    -- existing table via ALTER, so enforcement for pre-existing DBs lives in
+    -- learning_append code; this CHECK covers fresh installs.
+    CHECK (target_path IS NOT NULL)
 );
 
 CREATE INDEX IF NOT EXISTS idx_learnings_domain ON learnings(domain);
