@@ -442,20 +442,24 @@ guidance file(s) you relied on this session.
 - Do not let the file balloon. Fix what is true now; leave the rest for a real
   event.
 
-### 11.4 RUN LOG
+### 11.4 Self-improvement must be gated, not direct
 
-Record every applied improvement as a dated entry at the bottom of the file you
-changed:
+**Any self-improvement action anywhere in nixos-config — editing a command, editing a
+skill, creating a new skill — must be proposed via `learning_append` and gated via
+`learning_promote` before being applied. Direct unlogged edits to command/skill/tool
+files during a self-improvement pass are not permitted.**
 
-```
-## RUN LOG
-
-### <date> — <one-line title>
-- Lesson: <what happened and why the guidance misled or was missing>
-- Fix: <what changed in this file>
-```
-
-Append newest at the bottom. Entries describe real events only.
+- `learning_append` (goals MCP tool) records a learning with `status = 'proposed'`, requires
+  `file:line` evidence, and dedupes against near-duplicate open learnings. Always use it for a
+  new lesson; use `target_type = 'new_skill'`/`'new_command'` (with `target_path` under
+  `modules/home/opencode/skills/` or `.../commands/`) when proposing to create a file.
+- `learning_promote(<id>, "validated", acted_on_commit=<hash>)` is the ONLY way a learning
+  becomes actionable — it is for Sean or a human-reviewed session, never for the agent to call
+  on itself mid-run. The edit and its promotion are one reviewed action.
+- `learning_query` lists the review queue (e.g. all `proposed` learnings for one command).
+- The RUN LOG entries below are **historical record** — from before this mandate — and are not
+  migrated to the learnings tables (migrating history is a separate decision; ungated history
+  must not be falsely marked as validated).
 
 ---
 

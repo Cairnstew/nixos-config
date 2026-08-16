@@ -527,7 +527,11 @@ elsewhere.
 Follow the self-improvement protocol in `../AGENTS.md` §11: at the end of every
 session, fix anything in this file that misled you, went stale, or is missing —
 grounded in what actually happened this session or exists in the repo now, never
-aspirational. Record each applied change in the RUN LOG below.
+aspirational. **Any self-improvement action anywhere in nixos-config — editing a
+command, editing a skill, creating a new skill — must be proposed via
+`learning_append` and gated via `learning_promote` before being applied. Direct
+unlogged edits to command/skill/tool files during a self-improvement pass are not
+permitted.** The RUN LOG below is historical record, not the current mechanism.
 
 ## RUN LOG
 
