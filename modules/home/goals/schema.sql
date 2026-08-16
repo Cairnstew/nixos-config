@@ -108,7 +108,11 @@ CREATE TABLE IF NOT EXISTS learnings (
     confidence REAL NOT NULL DEFAULT 0.5,
     created_at TEXT NOT NULL DEFAULT (datetime('now')),
     acted_on_commit TEXT,
-    superseded_by INTEGER REFERENCES learnings(id)
+    superseded_by INTEGER REFERENCES learnings(id),
+    target_type TEXT NOT NULL DEFAULT 'edit_existing'
+        CHECK (target_type IN ('edit_existing', 'new_skill', 'new_command')),
+    target_path TEXT,
+    CHECK (target_type = 'edit_existing' OR target_path IS NOT NULL)
 );
 
 CREATE INDEX IF NOT EXISTS idx_learnings_domain ON learnings(domain);

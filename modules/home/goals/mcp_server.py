@@ -63,8 +63,25 @@ def init_db(db_path: str, schema_path: str = SCHEMA_PATH) -> sqlite3.Connection:
         confidence REAL NOT NULL DEFAULT 0.5,
         created_at TEXT NOT NULL DEFAULT (datetime('now')),
         acted_on_commit TEXT,
-        superseded_by INTEGER REFERENCES learnings(id)
+        superseded_by INTEGER REFERENCES learnings(id),
+        target_type TEXT NOT NULL DEFAULT 'edit_existing'
+            CHECK (target_type IN ('edit_existing', 'new_skill', 'new_command')),
+        target_path TEXT,
+        CHECK (target_type = 'edit_existing' OR target_path IS NOT NULL)
     )""")
+    # Migration: target_type/target_path on learnings (pre-DR-DB, 2026-08-16).
+    # Pilot DBs already have the table without these columns, so CREATE IF NOT
+    # EXISTS is a no-op — add the columns additively, backfilling existing rows
+    # as edit_existing (the pilot only ever wrote edit-existing learnings).
+    for _col_sql in (
+        "ALTER TABLE learnings ADD COLUMN target_type TEXT NOT NULL DEFAULT 'edit_existing' CHECK (target_type IN ('edit_existing', 'new_skill', 'new_command'))",
+        "ALTER TABLE learnings ADD COLUMN target_path TEXT",
+    ):
+        try:
+            conn.execute(_col_sql)
+        except sqlite3.OperationalError as e:
+            if "duplicate column" not in str(e):
+                raise  # re-raise unexpected schema errors
     conn.execute("""CREATE TABLE IF NOT EXISTS learning_evidence (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         learning_id INTEGER NOT NULL REFERENCES learnings(id),
