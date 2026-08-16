@@ -8,6 +8,12 @@
   any evaluation or build
   failure.**
 
+**systemd `PrivateDevices=true` hides GPU nodes from the server unit — OpenCL finds no platforms (-1001)**
+
+Symptom (2026-08-16): with c2me-ocl enabled, the server logged `CL_PLATFORM_NOT_FOUND_KHR` / `-1001` — OpenCL loaded the ICD but found zero platforms, even though `clinfo`/`nvidia-smi` on the host saw the GPU. Cause: nix-minecraft hardens every generated unit with `PrivateDevices = true` + `DevicePolicy = closed` + `DeviceAllow = [ "" ]`, which mounts a private `/dev` with **no** `/dev/nvidia*` or `/dev/dri/*` nodes inside the unit — the OpenCL ICD enumerates zero platforms because it can never open a GPU node. Testing `clinfo` outside the unit misleads; the unit is the problem. Fix (in `modules/nixos/minecraft-server/config.nix` `mkHardwareServiceConfig`): `PrivateDevices = lib.mkForce false` (share host `/dev`), keep `DevicePolicy = "closed"` but `DeviceAllow` the NVIDIA + DRM render nodes (`/dev/nvidia0`, `nvidiactl`, `nvidia-uvm`, `nvidia-modeset`, `/dev/dri/card*`, `/dev/dri/renderD*`, `char-rtc r`). Follow-up (same day): with GPU access working, the NVIDIA 595.80 OpenCL compiler then hung indefinitely on c2me-ocl's `clBuildProgram` (JNI, ~110ms CPU progress over 35+ min — a vendor driver bug, not config-fixable), so c2me-ocl was **removed** from DragonTech and the GPU wiring left dormant. Also: `-XX:+UseCompactObjectHeaders` broke JNI/FFI (`java.lang.foreign`) while chasing this — do not re-add. See `modules/nixos/minecraft-server/opencode/skill-mc-gpu-worldgen.md`.
+
+---
+
 **A packwiz pack with client-side mods crashes the headless server — filter `side = "client"` mods out of the server's `mods/`**
 
 Symptom (2026-08-15): `minecraft-server-dragentech.service` crash-looped with `java.lang.NoClassDefFoundError: org/lwjgl/Version` at boot, thrown from `net.caffeinemc.mods.sodium.client.compatibility.checks.PreLaunchChecks`. Cause: `packwizSymlinks` (`modules/nixos/minecraft-server/config.nix`) symlinked **every** mod in `checksums.json` into the server's `mods/` — including client-only render/GL mods (`side = "client"` in their `<pack>/mods/<name>.pw.toml`, e.g. Sodium, Iris, Continuity, Entity Model Features, 47 of 254 in DragonTech). Those mods' pre-launch checks require LWJGL (a client graphics library), which a headless server never ships → guaranteed boot crash. packwiz itself skips `side = "client"` mods when installing a pack to a server; our Nix path had no equivalent. Fix: filter `mods` by `side` before linking — `serverMods = lib.filterAttrs (name: _: !(fromTOML (readFile "${srv.packwiz}/mods/${name}")).side or "both" == "client") mods`, then `mkModLinks serverMods`. Mods with no `side` field default to `both` and are kept. Follow-up (same day): after clearing the client-mod stage, the next crash was Sinytra Connector/Preloading Tricks (`NoClassDefFoundError: org.apache.commons.compress.utils.Lists`, removed in commons-compress 1.27) — a Fabric→NeoForge bridge that is client-only here (the pack's single Fabric-only mod, More Enchantment Info, is `side = "client"`). Fix: mark `connector`, `connector-extras` and `preloading-tricks` as `side = "client"` in their `.pw.toml`; the same side filter drops them from the server's `mods/` while the Prism client still gets them.
@@ -910,5 +916,5 @@ When you discover a new problem and its solution:
 
 ---
 
-Last updated: 2026-08-15
+Last updated: 2026-08-16
 

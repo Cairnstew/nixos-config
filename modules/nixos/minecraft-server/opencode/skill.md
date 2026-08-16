@@ -265,9 +265,12 @@ server's `package` (loader + MC version) must match the pack's `pack.toml`.
    (`my.services.minecraftServer.servers.<name>.enable = true` in a host config).
 2. `mc-server list` → confirm the server is registered.
 3. `mc-server <name> boot` → start and wait for `Done (Ns)!`. **A large pack's
-   first boot is SLOW** — 200+ mods can take 10+ minutes (DragonTech took ~675s
-   on a fresh world; subsequent boots ~85s). The tool waits up to 20 min by
-   default. Do not assume the server is wedged just because it's still loading.
+   first boot is SLOW** — 200+ mods can take 10+ minutes (DragonTech: ~675s on a
+   fresh world before tuning; after RoadWeaver preload-radius tuning ~107s).
+   Subsequent boots ~85s. The tool waits up to 20 min by default. Do not assume
+   the server is wedged just because it's still loading — and if it clears the
+   mod-loading phase but then idles at high CPU for a long time on a fresh
+   world, suspect RoadWeaver's preload radii (see gotchas) rather than a hang.
 4. `mc-server <name> status` → players / uptime / boot progress anytime.
 5. After any pack change (add mod, mark a mod side, patch, config edit):
    rebuild the host and re-run `mc-server <name> boot` to confirm it still boots.
@@ -316,6 +319,26 @@ server's `package` (loader + MC version) must match the pack's `pack.toml`.
   `memoryMax` well above steady-state RSS or the unit gets OOM-killed. Monitor
   with `mc-server <name> perf` (cgroup memory/CPU + log TPS/overload), and load
   the `mc-server-monitor` skill for the full workflow.
+- **A post-"Done" stall on a fresh world can be RoadWeaver's preload, not a
+  hang.** RoadWeaver's OpenCL coarse-sampling **falls back to CPU** when base
+  c2me's density-function nodes are present (benign log lines: `OpenCL 粗采样暂不
+  支持主世界，回退到 CPU: unsupported density node: com.ishland.c2me.opts.df...`).
+  With the CPU fallback, the `config/roadweaver/roadweaver.json` preload radii
+  are the lever: `predictRadiusChunks 256` + plan radii `128` spun ~4 CPU cores
+  for hours after boot on DragonTech (looked like a hang). Tune them down for
+  fresh-world boots (DragonTech uses 32/16/16, `initialGenerationThreads 6`).
+- **Pack config changes do NOT reach an already-booted server's live config.**
+  `packwizStartPre` seeds `config/` and `defaultconfigs/` with
+  `rsync --ignore-existing` (config.nix:182) — a pack-side config edit only
+  lands on a *fresh* data dir. To change a live server's config, edit the file
+  directly in the data dir (`/mnt/data/minecraft/<server>/config/...`) and
+  restart, OR wipe/rename the config dir and let the next start re-seed.
+- **GPU worldgen is dormant, not wired.** c2me-ocl was removed (NVIDIA 595.80
+  OpenCL compiler hangs on `clBuildProgram`); the OpenCL/device-access wiring
+  (`PrivateDevices=false` + `DeviceAllow`, `ocl-icd`, LD_LIBRARY_PATH, the
+  `-Dorg.lwjgl.opencl.libname` jvmOpt) is left dormant and harmless. Don't
+  re-add c2me-ocl or re-investigate OpenCL issues without loading the
+  `mc-gpu-worldgen` skill first.
 
 ## RUN LOG
 
@@ -335,3 +358,8 @@ Fix: added the `mc-server` tool (status/start/stop/restart/boot with crash diagn
 ### 2026-08-15 — server performance monitoring + resource caps
 Lesson: the dedicated server (DragonTech) had no memory/CPU limits (`MemoryMax = infinity`) on a tight host (15G RAM, 5G swap used, server RSS ~5.5G vs `-Xmx6G`). First boot showed `Can't keep up! ... 313 ticks behind` during worldgen — transient, not a fault. nix-minecraft forwards no per-server systemd fields, so caps had to go through the wrapper module.
 Fix: new per-server `hardware` submodule (`memoryHigh`/`memoryMax`/`memorySwapMax`/`cpuQuota`/`nice`/`ioWeight`) wired into `systemd.services.minecraft-server-<name>.serviceConfig`; tuned the dragentech server to `-Xmx5G -Xms3G` + `memoryHigh 7G / memoryMax 10G / memorySwapMax 2G / nice 5`. Added `mc-server <name> perf` (cgroup memory/CPU + log TPS/overload/players) and the `mc-server-monitor` skill documenting monitoring + how to size caps.
+
+### 2026-08-16 — GPU worldgen saga; c2me-ocl removed; RoadWeaver preload tuning
+Lesson: tried GPU-accelerated worldgen (c2me-ocl) on DragonTech. Two hard failures after the wiring was made: (1) `CL_PLATFORM_NOT_FOUND_KHR` / -1001 because nix-minecraft hardens units with `PrivateDevices=true` + `DevicePolicy=closed`, hiding `/dev/nvidia*` and `/dev/dri/*` from the unit — fixed by `PrivateDevices=false` + `DeviceAllow` for the NVIDIA/DRM nodes (`mkHardwareServiceConfig` in config.nix); (2) with the GPU reachable, the NVIDIA 595.80 OpenCL compiler hangs indefinitely (`clBuildProgram` JNI, ~110ms CPU progress over 35+ min) on c2me's generated noise kernel — a vendor driver bug, not config-fixable. `-XX:+UseCompactObjectHeaders` tried while chasing it broke JNI/FFI — removed. Also: RoadWeaver's OpenCL coarse sampling falls back to CPU (benign log lines) and its huge default preload radii (256/128) spun 4 cores for hours after "Done" on a fresh world, looking like a hang.
+Fix: removed c2me-ocl from the pack, re-added Noisium, kept the OpenCL/device-access wiring dormant for a retry, tuned RoadWeaver preload radii (predict 256->32, plan 128->16, threads 12->6) → first boot `Done (107.467s)`, 0 restarts. Added the `mc-gpu-worldgen` skill documenting the saga + retry checklist, and this RUN LOG + the preload-stall / rsync live-config gotchas.
+
