@@ -1,8 +1,16 @@
 hash-format = "sha256"
 
 [[files]]
+file = "config/DistantHorizons.toml"
+hash = "47a63db942e4eb791cd6b6ff49872fc1221a5e556652a637eb59d5d9047b0c8e"
+
+[[files]]
+file = "config/c2me.toml"
+hash = "8a84886db070f21cb35f33963403c20051c8fb932f48d25d6363b5de33b6b035"
+
+[[files]]
 file = "config/roadweaver/roadweaver.json"
-hash = "25f5fa5d5b0f13e452d220e4c6871700e47c0abecf27df6980248e0341b24cff"
+hash = "1fafaa96b4c0b996a34b691236841083b321c7d47f46b70ce9bac84d2efb7b33"
 
 [[files]]
 file = "mods/advanced-loot-info.pw.toml"
@@ -212,6 +220,16 @@ metafile = true
 [[files]]
 file = "mods/certain-questing-additions.pw.toml"
 hash = "2da7bd36993e8f68cfe0ec67131ed3c82c4a657aaf7b0f7bb955ea56a0b1ca3f"
+metafile = true
+
+[[files]]
+file = "mods/chunky-offline.pw.toml"
+hash = "7f158107e75890807a24c3911700fd2dab08dde7d8e001c26d347f9f566c134d"
+metafile = true
+
+[[files]]
+file = "mods/chunky.pw.toml"
+hash = "1d5cc2b6dcfd1fc3adba4566b1c29b57ff1175316678c1f22e63cbc3e28a5ba0"
 metafile = true
 
 [[files]]
@@ -1027,6 +1045,11 @@ metafile = true
 [[files]]
 file = "mods/rpl.pw.toml"
 hash = "7815e5a589de0c02a62ae83590e1f75f4d0c269e48f2435ce2ac448976ddf49f"
+metafile = true
+
+[[files]]
+file = "mods/scalablelux.pw.toml"
+hash = "2b964b0915bc00d23421068b395763928311a533099e351e5f78c047e040b4f7"
 metafile = true
 
 [[files]]

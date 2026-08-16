@@ -167,6 +167,14 @@
   "url": "https://cdn.modrinth.com/data/5BPpCYUe/versions/P6og8Sjk/certain_questing_additions-neoforge-1.2.0.4%2Bmc1.21.1.jar",
   "sha256": "sha256-oWtfk89V7wlmtlmnFMgOB0D782/VKLhMA6GBOJA1AVE="
  },
+ "chunky-offline.pw.toml": {
+  "url": "https://cdn.modrinth.com/data/VfHc5JEX/versions/56xL4i2r/chunky-offline-v1.1.0.jar",
+  "sha256": "sha256-HbmlawAKPNb6wp8t46bM4x77mYvIPDPvgiYzeqiYYjo="
+ },
+ "chunky.pw.toml": {
+  "url": "https://cdn.modrinth.com/data/fALzjamp/versions/LuFhm4eU/Chunky-NeoForge-1.4.23.jar",
+  "sha256": "sha256-1y8jXPH1byw3T1LAC92lA0UksoFCMFqEz8Ejo/kq0nQ="
+ },
  "cloth-config.pw.toml": {
   "url": "https://cdn.modrinth.com/data/9s6osm5g/versions/izKINKFg/cloth-config-15.0.140-neoforge.jar",
   "sha256": "sha256-Zeci4NmEMaB8Rfi92NUpohfMjBdf3hdAJIvVwbTzwNQ="
@@ -818,6 +826,10 @@
  "rpl.pw.toml": {
   "url": "https://cdn.modrinth.com/data/B3pb093D/versions/hZ6B2Z0x/ritchiesprojectilelib-2.1.2%2Bmc.1.21.1-neoforge.jar",
   "sha256": "sha256-zFCQYIM3NvtlCqTDaxzjOn7uucpun46Ap8lRyedIeyQ="
+ },
+ "scalablelux.pw.toml": {
+  "url": "https://cdn.modrinth.com/data/Ps1zyz6x/versions/w2yQbU01/ScalableLux-neoforge-0.3.0-alpha.0.6-all.jar",
+  "sha256": "sha256-Dn9kwGaL0yXMvNNVlb+amMpan/Dr8CLsb4WZeZHUyIM="
  },
  "searchables.pw.toml": {
   "url": "https://cdn.modrinth.com/data/fuuu3xnx/versions/iEE85X0w/Searchables-neoforge-1.21.1-1.0.2.jar",

@@ -273,24 +273,51 @@ let
     };
 
   # Resource / scheduler caps from the per-server `hardware` option, applied to
-  # the generated systemd unit. nix-minecraft does NOT forward arbitrary
-  # serviceConfig, so we augment the unit directly here (the GOTCHAS-verified
-  # pattern). Returns the serviceConfig attrset (possibly empty) for one server.
+  # the generated systemd unit, plus the OpenCL library path. nix-minecraft does
+  # NOT forward arbitrary serviceConfig, so we augment the unit directly here
+  # (the GOTCHAS-verified pattern). Returns the systemd.services attrset (never
+  # empty — environment is always injected) for one server.
   mkHardwareServiceConfig = name: srv:
-    if srv.hardware == { } then { }
-    else
-      {
-        systemd.services.${"minecraft-server-${name}"} = {
-          serviceConfig = lib.filterAttrs (_: v: v != null) {
-            MemoryMax = srv.hardware.memoryMax;
-            MemoryHigh = srv.hardware.memoryHigh;
-            MemorySwapMax = srv.hardware.memorySwapMax;
-            CPUQuota = srv.hardware.cpuQuota;
-            Nice = if srv.hardware.nice != null then toString srv.hardware.nice else null;
-            IOWeight = if srv.hardware.ioWeight != null then toString srv.hardware.ioWeight else null;
-          };
+    {
+      systemd.services.${"minecraft-server-${name}"} = {
+        # /run/opengl-driver/lib (the NixOS graphics driver path, populated from
+        # hardware.graphics.extraPackages — includes ocl-icd's libOpenCL.so.1 +
+        # the NVIDIA OpenCL ICD) so c2me-ocl can reach the GPU. nix-minecraft's
+        # wrapper only prepends udev, and systemd strips the ambient environment,
+        # so the unit would never find libOpenCL without this. Each server drops
+        # its own jvm `-Djava.library.path`; this is the dlopen path the LWJGL
+        # OpenCL bindings and the ICD loader walk. Harmless on hosts without a
+        # graphics stack — a missing dir just dlopens nothing and c2me-ocl falls
+        # back to CPU gen.
+        environment.LD_LIBRARY_PATH = lib.mkDefault "/run/opengl-driver/lib";
+        serviceConfig = lib.filterAttrs (_: v: v != null) {
+          MemoryMax = srv.hardware.memoryMax;
+          MemoryHigh = srv.hardware.memoryHigh;
+          MemorySwapMax = srv.hardware.memorySwapMax;
+          CPUQuota = srv.hardware.cpuQuota;
+          Nice = if srv.hardware.nice != null then toString srv.hardware.nice else null;
+          IOWeight = if srv.hardware.ioWeight != null then toString srv.hardware.ioWeight else null;
+          # GPU access for OpenCL worldgen (c2me-ocl): nix-minecraft hardens the
+          # unit with PrivateDevices=true + DevicePolicy=closed, which mounts a
+          # private /dev with NO /dev/nvidia* or /dev/dri/* nodes. OpenCL then
+          # loads the ICD but finds zero platforms (CL_PLATFORM_NOT_FOUND_KHR,
+          # -1001) because it cannot reach the GPU. Disable the private /dev and
+          # explicitly allow the NVIDIA + DRM render nodes (harmless on hosts
+          # without a GPU — the nodes just don't exist and nothing breaks).
+          PrivateDevices = lib.mkForce false;
+          DevicePolicy = lib.mkForce "closed";
+          DeviceAllow = lib.mkForce [
+            "char-rtc r"
+            "/dev/nvidia0 rw"
+            "/dev/nvidiactl rw"
+            "/dev/nvidia-uvm rw"
+            "/dev/nvidia-modeset rw"
+            "/dev/dri/card* rw"
+            "/dev/dri/renderD* rw"
+          ];
         };
       };
+    };
 
 in
 {

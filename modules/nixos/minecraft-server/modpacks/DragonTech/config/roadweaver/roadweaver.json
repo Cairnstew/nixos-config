@@ -2,7 +2,7 @@
   "structurePrediction": {
     "enabled": true,
     "structureAvoidanceEnabled": true,
-    "predictRadiusChunks": 256,
+    "predictRadiusChunks": 32,
     "biomePrefilter": true,
     "structureWhitelist": [
       "#minecraft:village",
@@ -20,9 +20,9 @@
     "otherStructureRoadOffset": 40
   },
   "planning": {
-    "initialPlanRadiusChunks": 128,
+    "initialPlanRadiusChunks": 16,
     "dynamicPlanEnabled": true,
-    "dynamicPlanRadiusChunks": 128,
+    "dynamicPlanRadiusChunks": 16,
     "dynamicPlanStrideChunks": 64,
     "planningAlgorithm": "RNG",
     "terrainSamplingMode": "COARSE_CORRIDOR"
@@ -77,7 +77,7 @@
   },
   "performance": {
     "sharedWorkerThreads": 4,
-    "initialGenerationThreads": 12,
+    "initialGenerationThreads": 6,
     "maxConcurrentGenerations": 2,
     "threadDutyCycle": 50,
     "idleGenerationEnabled": false,

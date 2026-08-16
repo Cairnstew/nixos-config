@@ -1,0 +1,78 @@
+diff --git a/neoforge/build.gradle b/neoforge/build.gradle
+index 1e21c06..5b735b6 100644
+--- a/neoforge/build.gradle
++++ b/neoforge/build.gradle
+@@ -31,7 +31,6 @@ loom {
+ configurations {
+     common
+     shadowCommon // Don't use shadow from the shadow plugin since it conflicts with Loom.
+-    shadowLwjglOpenCl
+     compileClasspath.extendsFrom common
+     runtimeClasspath.extendsFrom common
+     developmentNeoForge.extendsFrom common
+@@ -40,7 +39,7 @@ configurations {
+ shadowJar {
+     exclude "architectury.common.json"
+     exclude "fabric.mod.json"
+-    configurations = [project.configurations.shadowCommon, project.configurations.shadowLwjglOpenCl]
++    configurations = [project.configurations.shadowCommon]
+     archiveClassifier.set("dev-shadow")
+     
+     // 排除不需要的文件
+@@ -59,32 +58,18 @@ remapJar {
+ }
+ 
+ tasks.register('verifyLwjglPackaging') {
+-    description = 'Verifies that only the OpenCL binding is embedded and the LWJGL core remains external.'
++    description = 'No-op: upstream embedded the LWJGL OpenCL binding inline, which collides with the lwjgl.opencl module when another mod (c2me-ocl) bundles it on the same server.'
+     group = 'verification'
+     dependsOn remapJar
+-
+     doLast {
+-        def artifact = remapJar.archiveFile.get().asFile
+-        def entryNames = []
+-        new java.util.zip.ZipFile(artifact).withCloseable { zip ->
+-            zip.entries().each { entryNames.add(it.name) }
+-        }
+-
+-        def embeddedOpenCl = entryNames.contains('org/lwjgl/opencl/CL.class')
+-        def embeddedLwjglCore = entryNames.any {
+-            it.startsWith('org/lwjgl/') &&
+-                    !it.startsWith('org/lwjgl/opencl/') &&
+-                    it.endsWith('.class')
+-        }
+-        def bundledLwjglModule = entryNames.any {
+-            it.startsWith('META-INF/jars/lwjgl') && it.endsWith('.jar')
+-        }
+-        if (!embeddedOpenCl || embeddedLwjglCore || bundledLwjglModule) {
+-            throw new GradleException('NeoForge artifact has an invalid LWJGL package layout')
+-        }
++        // The OpenCL binding is intentionally NOT embedded (see the compileOnly
++        // comment in dependencies{}). It is provided at runtime by the
++        // lwjgl-opencl module from c2me-ocl (server) or Minecraft's own LWJGL
++        // (client). Embedding it causes a Java module split-package conflict:
++        // roadweaver + lwjgl.opencl both export org.lwjgl.opencl, which Epic
++        // Fight also reads -> NeoForge refuses to start.
+     }
+ }
+-
+ tasks.named('check').configure {
+     dependsOn tasks.named('verifyLwjglPackaging')
+ }
+@@ -193,10 +178,13 @@ dependencies {
+ 
+     // 仅合并 OpenCL binding；客户端复用 Minecraft 的 LWJGL，专服缺少 LWJGL 时自动回退 CPU。
+     // shadowJar 会移除 binding 的 module-info，避免专服启动时强制解析 org.lwjgl 模块。
++    // OpenCL binding for GPU road pathfinding: provided at runtime by the
++    // lwjgl-opencl module from c2me-ocl (server) or Minecraft's own LWJGL
++    // (client). Bundling it here causes a Java module split-package conflict
++    // (roadweaver + lwjgl.opencl both export org.lwjgl.opencl, which Epic
++    // Fight also reads). compileOnly keeps compilation working; if no
++    // lwjgl-opencl module is present at runtime roadweaver falls back to CPU.
+     compileOnly("org.lwjgl:lwjgl-opencl:3.3.3") { transitive = false }
+-    shadowLwjglOpenCl("org.lwjgl:lwjgl-opencl:3.3.3") { transitive = false }
+-    forgeRuntimeLibrary("org.lwjgl:lwjgl-opencl:3.3.3") { transitive = false }
+-    runtimeOnly("org.lwjgl:lwjgl-opencl:3.3.3") { transitive = false }
+ 
+     forgeRuntimeLibrary("org.apache.lucene:lucene-core:8.11.2") { transitive = false }
+     forgeRuntimeLibrary("org.apache.lucene:lucene-analyzers-common:8.11.2") { transitive = false }
