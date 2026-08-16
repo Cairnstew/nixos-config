@@ -10,7 +10,7 @@ hash = "8a84886db070f21cb35f33963403c20051c8fb932f48d25d6363b5de33b6b035"
 
 [[files]]
 file = "config/roadweaver/roadweaver.json"
-hash = "25f5fa5d5b0f13e452d220e4c6871700e47c0abecf27df6980248e0341b24cff"
+hash = "1fafaa96b4c0b996a34b691236841083b321c7d47f46b70ce9bac84d2efb7b33"
 
 [[files]]
 file = "mods/advanced-loot-info.pw.toml"
@@ -210,11 +210,6 @@ metafile = true
 [[files]]
 file = "mods/c2me-neoforge.pw.toml"
 hash = "0429ac5dd6dd9170b16c0f0424435178fa85637544a7519979af3b4e4b9d959b"
-metafile = true
-
-[[files]]
-file = "mods/c2me-ocl.pw.toml"
-hash = "149ee7c9f4ffeba5488b128f82e38a33d5ab66316e0b970afc84ce6c336636ce"
 metafile = true
 
 [[files]]
@@ -950,6 +945,11 @@ metafile = true
 [[files]]
 file = "mods/netherportalfix.pw.toml"
 hash = "5dc059422613b5645cb00e32d3bfd53de428c4939113d11ce2c844cb54165da6"
+metafile = true
+
+[[files]]
+file = "mods/noisium.pw.toml"
+hash = "d424a9260ef51bc102e56f0423d91dfabb739ccca8a86eb1c450ea631b739280"
 metafile = true
 
 [[files]]

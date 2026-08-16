@@ -24,7 +24,10 @@ information from the web and project files.
   GitHub API instead of web search.
 - When webfetch truncates a large result it reports a save path under
   `~/.local/share/opencode/tool-output/`; grep/read that file locally
-  instead of re-fetching the URL.
+  instead of re-fetching the URL. Minified single-line JSON defeats grep
+  (records >64KB) but `read head=1` on the saved file shows the FIRST
+  record's key fields (~2000 chars) — enough to identify the first
+  issue/mod in a dump.
 - For Modrinth research (mods/modpacks), prefer compact endpoints: discover
   via `https://api.modrinth.com/v2/search?facets=[["project_type:modpack"],...]`
   (search hits include `latest_version` IDs + downloads) and verify pack
@@ -42,6 +45,15 @@ information from the web and project files.
   mods (Faster Random, Starlight) often carry author "don't use" notes that kill
   the recommendation. When a git-hosting path 404s, take the canonical
   `source_url`/`issues_url` from the Modrinth project object instead of guessing.
+- `https://api.modrinth.com/v2/project/{id}` returns the full `body` — for
+  capability questions it is often the REAL spec (requirements, platform
+  compat matrix, FAQ, known-incompatible mods): the c2me-ocl body documented
+  a hard Java-25 requirement, NVIDIA/Linux support, and its own "does DH work
+  with this? not recommended" answer. Also treat multi-jar families (C2ME base
+  + `opts-accel-opencl` addon) as version-matched: the version object's
+  `dependencies` array names the required companion project_ids and the jar
+  filename pattern (`c2me-neoforge-opts-accel-opencl-mc1.21.1-…`) reveals the
+  split.
 - Search/paginated tools return unsearchable minified JSON that truncates and
   defeats grep (>64KB records): scope `github_search_issues` with `in:title` and
   follow up on specific issues with the MCP `github_issue_read` (get_comments);
@@ -54,7 +66,9 @@ information from the web and project files.
   index lags the commit-accurate history (observed 2026-08: info said
   prismlauncher 10.0.5 / modrinth-app 0.12.6, history showed 11.0.3 /
   0.15.11). Also `search` misses short/ambiguous queries (e.g. `jdk` → no
-  results); use exact attrpath `info` or `nix_versions` for known names.
+  results) and exact-attr guesses fail: `info jdk25` → NOT_FOUND, but
+  `search temurin` finds `javaPackages.compiler.temurin-bin.jdk-25` /
+  `.jre-25` — JDK/JRE attrs live under `javaPackages.compiler.temurin-bin.*`.
 - Projects that moved off GitHub (e.g. Distant Horizons is on
   `gitlab.com/distant-horizons-team/distant-horizons`) are reachable via the
   GitLab REST API, which returns clean JSON from webfetch:
@@ -62,7 +76,15 @@ information from the web and project files.
   (`in=title` keeps payloads small; without it one search returned 456KB of
   minified single-line JSON). Wiki pages render via
   `…/wikis/{slug}` (slashes URL-encoded as `%2F`) — the web wiki HTML pages
-  are JS shells that return only the page title.
+  are JS shells that return only the page title. Caveats learned 2026-08-15:
+  issue `…/issues/{iid}/notes` and `/discussions` return **401 even on public
+  projects**, and the SSR issue HTML renders only the description (comments
+  are JS-loaded) — don't burn fetches on them. The unauth'd issue search
+  response carries state/closed_by/closed_at, which is the authoritative
+  closure signal (e.g. feature request #937 closed by the lead dev in 22 min).
+  An **empty search result is usable negative evidence**: `search=OpenCL` and
+  `search=CUDA&state=all` both returned `[]` across all DH issues, proving DH
+  has no OpenCL/CUDA path.
 - When the working directory is a launcher home (e.g. Prism Launcher),
   ground-truth the user's setup by reading instance files before/while doing
   web research: `instances/<name>/instance.cfg` holds ManagedPackVersionID/
@@ -192,6 +214,26 @@ self-improvement pass on `modules/home/opencode/agents/researcher.md` (this file
 Append newest at the bottom. Entries are facts about this agent's own operation.
 
 ## RUN LOG
+
+### 2026-08-15 — GPU chunk-gen research: GitLab notes 401, Modrinth project body as spec, JDK attr paths
+- Lesson: researching GPU-accelerated chunk generation (C2ME OpenCL module,
+  DH GPU story), several guidance gaps surfaced: (1) GitLab issue notes/
+  discussions API is auth-gated (401) even for public projects and the SSR
+  issue HTML omits comments — wasted fetches; the issue search response's
+  state/closed_by/closed_at is the closure signal instead; (2) the Modrinth
+  project body endpoint (`/v2/project/{id}`) carried the authoritative spec
+  for c2me-ocl (Java-25 requirement, NVIDIA/Linux compat matrix, "DH not
+  recommended" FAQ) — the file only advised search + version endpoints;
+  (3) multi-jar C2ME family needs version-matched base + `opts-accel-opencl`
+  jars, discoverable from the version object's dependencies + filename;
+  (4) `info jdk25` NOT_FOUND but `search temurin` finds
+  `javaPackages.compiler.temurin-bin.jdk-25`; (5) `read head=1` on saved
+  minified JSON revealed the first record when grep couldn't (records >64KB).
+- Fix: extended the GitLab guideline (notes 401, search-response closure
+  metadata, empty-result negative evidence), the Modrinth guideline (project
+  body as spec, version-matched multi-jar families), the nixos MCP guideline
+  (temurin-bin JDK attr path), and the saved-tool-output guideline
+  (read head=1 trick).
 
 ### 2026-08-09 — GitLab-hosted mods & launcher-instance ground truth
 - Lesson: researching Distant Horizons + Prominence II, the DH tracker is on

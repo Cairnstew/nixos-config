@@ -47,6 +47,12 @@ in
 
       services.xserver.videoDrivers = [ "nvidia" ];
 
+      # Enable OpenCL: ocl-icd is the ICD dispatch loader, built with a custom
+      # vendordir of /run/opengl-driver/etc/OpenCL/vendors (where nvidia_x11's
+      # nvidia.icd lands when hardware.graphics.enable is true). Without the
+      # loader, C2ME's OpenCL worldgen can't reach the NVIDIA driver.
+      hardware.graphics.extraPackages = [ pkgs.ocl-icd ];
+
       # Enable graphics + X server for non-headless NVIDIA
       hardware.graphics.enable = mkIf (!nvidia.headless) true;
       services.xserver.enable = mkIf (!nvidia.headless) true;
