@@ -774,19 +774,49 @@ def _normalise(s: str) -> str:
     return re.sub(r"\s+", " ", (s or "").strip().lower())
 
 
+_STOPWORDS = frozenset({
+    "the", "and", "a", "an", "in", "on", "of", "to", "for", "with", "was", "had", "have", "has",
+    "is", "are", "be", "been", "this", "that", "these", "those", "their", "they", "them", "then",
+    "there", "were", "but", "so", "it", "its", "which", "each", "only", "not", "no", "also",
+    "after", "from", "into", "before", "by", "or", "as", "at", "do", "did", "didn", "more",
+    "most", "any", "some", "would", "could", "should", "must", "may", "can", "when", "where",
+    "while", "both", "all", "one", "two", "per", "via", "etc", "you", "your", "s", "t", "re",
+    "ve", "ll", "d", "out", "up", "down", "over", "under", "again", "further", "once", "here",
+    "what", "who", "whom", "own", "same", "than", "then", "too", "very", "just", "because",
+    "until", "during", "above", "below", "between", "through", "if", "else", "yet", "still",
+    "ever", "never", "even", "well",
+})
+
+
+def _lesson_tokens(s: str) -> set:
+    """Distinctive tokens of a lesson: stopwords and single chars removed, so
+    the similarity signal comes from content words, not filler."""
+    words = re.sub(r"[^a-z0-9_\-/.]+", " ", _normalise(s)).split()
+    return {w for w in words if w not in _STOPWORDS and len(w) > 1}
+
+
 def _near_duplicate_lesson(a: str, b: str) -> bool:
-    """True when two lessons are near-duplicates (same normalised text, or
-    heavy token overlap). Used by learning_append to refuse blind appends."""
+    """True when two lessons are near-duplicates.
+
+    Uses max-containment of the stopword-filtered distinctive token sets:
+    the fraction of the SMALLER lesson's distinctive tokens that appear in the
+    LARGER one. This is the metric that separates real RUN LOG pairs (validated
+    on 9 hand-labelled pairs from nix-refine/nix-doc-audit/researcher/minecraft
+    RUN LOGs): genuine duplicates scored 0.357-0.625, distinct-but-similar
+    pairs scored 0.091-0.25. Threshold 0.30 sits between the bands. The raw
+    token-overlap metric this replaced (0.7) failed: it split every obvious
+    duplicate (scores 0.40-0.44) yet still caught nothing adversarially."""
     na, nb = _normalise(a), _normalise(b)
     if na == nb:
         return True
     if not na or not nb:
         return False
-    ta, tb = set(na.split()), set(nb.split())
+    ta, tb = _lesson_tokens(a), _lesson_tokens(b)
     if not ta or not tb:
         return False
-    overlap = len(ta & tb) / max(len(ta), len(tb))
-    return overlap >= 0.7
+    inter = len(ta & tb)
+    containment = max(inter / len(ta), inter / len(tb))
+    return containment >= 0.30
 
 
 def learning_append(command: str, lesson: str, fix: str = "", evidence: str = "") -> dict:
