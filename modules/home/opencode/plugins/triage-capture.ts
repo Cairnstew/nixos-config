@@ -16,10 +16,12 @@ import { existsSync } from "node:fs";
 //
 // Matching rules (kept deliberately strict):
 //   * Only tool parts that COMPLETED and whose `tool` is a known re-derivation
-//     method count as evidence of re-derivation. `grep` / `nix-eval` /
-//     `nix-graph_*` are the allowlist; `bash` / `read` / `edit` are NOT
-//     re-derivation in the Decision-3 sense (they are the reviewer's own
-//     exploration, not a check that the evidence's file:line still holds).
+//     method count as evidence of re-derivation. `read` / `grep` / `nix-eval` /
+//     `nix-graph_*` are the allowlist; `bash` / `edit` are NOT re-derivation in
+//     the Decision-3 sense (they are the reviewer's own exploration, not a
+//     check that the evidence's file:line still holds). A captured `read` is as
+//     server-sourced as a captured `grep` — same structured ToolPart, tool
+//     name, input path, and output content, none of it model-authored.
 //   * match_confidence is "high" when a qualifying call's INPUT arguments
 //     (command/pattern/attr) reference the learning's `evidence` text, i.e.
 //     they re-derive that exact evidence; "low" when qualifying calls happened
@@ -33,6 +35,7 @@ import { existsSync } from "node:fs";
 // prefix, e.g. `nix_graph_get_dependents` from the nix-graph MCP server).
 // Built-in/core tools are intentionally excluded.
 const REDERIVATION_TOOLS: Record<string, string> = {
+  read: "read",
   nix_eval: "nix-eval",
   grep: "grep",
   nix_graph_get_dependents: "nix-graph",
@@ -85,7 +88,7 @@ function queryRun(db: any, kind: string, sql: string, ...params: any[]): void {
 function methodForTool(tool: string): string | null {
   if (tool in REDERIVATION_TOOLS) return REDERIVATION_TOOLS[tool];
   if (tool.startsWith("nix_graph_")) return "nix-graph";
-  if (tool === "nix-graph" || tool === "nix-eval" || tool === "grep") return tool;
+  if (tool === "nix-graph" || tool === "nix-eval" || tool === "grep" || tool === "read") return tool;
   return null;
 }
 
@@ -101,13 +104,48 @@ function serializeInput(input: unknown): string {
 // Evidence is typically a `path:line (note)` string; we treat it as a
 // reference if any non-trivial token of the input appears verbatim in the
 // evidence. A pure "file exists" exploration is not a reference.
-function referencesEvidence(inputStr: string, evidence: string): boolean {
-  if (!evidence || !inputStr) return false;
+//
+// `read` matches the same shape as grep/nix-eval: its INPUT arguments are
+// `{ filePath }`, so "references the evidence" means the read path equals one
+// of the `path:line` paths cited in the evidence (matching by file, not by
+// line — the reviewer read the cited file, which re-derives that citation).
+// This lives in the same function as the generic token match so the high/low
+// decision stays a single code path for every method.
+function referencesEvidence(input: unknown, evidence: string): boolean {
+  if (!evidence || !input) return false;
+  const inputObj = typeof input === "object" ? (input as Record<string, unknown>) : {};
+
+  // read: `{ filePath }` must match a path cited in the evidence.
+  const filePath = typeof inputObj.filePath === "string" ? inputObj.filePath : "";
+  if (filePath) {
+    for (const path of evidencePaths(evidence)) {
+      // Match the cited file exactly (relative paths, or the absolute form
+      // reviewers actually pass to `read`). Boundary-matched so a read of
+      // `other-config.nix` does not count as re-deriving `config.nix`. Line
+      // range is ignored — reading the file re-derives the citation regardless
+      // of which line was opened.
+      if (filePath === path || filePath.endsWith(`/${path}`)) return true;
+    }
+  }
+
+  const inputStr = serializeInput(input);
+  if (!inputStr) return false;
   const tokens = inputStr.match(/[A-Za-z0-9_./:#@+=-]{8,}/g) ?? [];
   for (const tok of tokens) {
     if (evidence.includes(tok)) return true;
   }
   return false;
+}
+
+// Extract the `path:line` citations from an evidence string like
+// `modules/foo/bar.nix:18-26 (note); modules/foo/baz.nix:5` → the list of
+// file paths. Uses the same shape as the reviewer-facing evidence format.
+function evidencePaths(evidence: string): string[] {
+  const paths: string[] = [];
+  const re = /([A-Za-z0-9_./@-]+\.(?:nix|json|toml|py|md|sh|conf|css))\s*:/g;
+  let m: RegExpExecArray | null;
+  while ((m = re.exec(evidence)) !== null) paths.push(m[1]);
+  return paths;
 }
 
 export const TriageCapturePlugin: Plugin = async ({ client }) => {
@@ -180,7 +218,7 @@ export const TriageCapturePlugin: Plugin = async ({ client }) => {
               if (p.sessionID !== sessionID) continue;
               if (p.id === toolPart.id) continue; // the verdict call itself
               sawQualifying = true;
-              if (referencesEvidence(serializeInput(p.state.input), evidence)) {
+              if (referencesEvidence(p.state.input, evidence)) {
                 referenced = true;
                 if (!ref) ref = `session:${sessionID};call:${p.callID}`;
                 if (!method) method = m;

@@ -287,6 +287,7 @@ in
           nix-doc-audit = ./commands/nix-doc-audit.md;
           nix-net-audit = ./commands/nix-net-audit.md;
           shopping-research = ./commands/shopping-research.md;
+          triage-review = ./commands/triage-review.md;
         };
         pluginFiles = lib.mkDefault {
           copylast = ./plugins/copylast.ts;
@@ -341,6 +342,47 @@ in
             edit = "deny";
             bash = "deny";
             # Decision 1 defense-in-depth: same as scout — no learning_promote.
+            tools = { "goals_learning_promote" = "deny"; };
+          };
+        };
+        # ── Tier 1 triage roles (observe-only verdicts) ──────────────────
+        # Three independent reviewers that each call goals_learning_review on a
+        # proposed learning. All are read-only (edit/bash denied) and cannot
+        # reach learning_promote (Decision 1 defense-in-depth). They differ only
+        # in review stance: a skeptical scout, a verification-focused QA, and an
+        # adversarial critic. Verdicts land in review_verdicts via learning_review;
+        # the triage-capture plugin back-fills rederivation/confidence from the
+        # session transcript, so the roles are never asked to self-report.
+        scout-skeptical = {
+          description = "Skeptical read-only scout triage: re-derive the learning's evidence and render an agree/disagree/uncertain verdict via goals_learning_review";
+          mode = "subagent";
+          model = null;
+          temperature = 0.1;
+          permission = {
+            edit = "deny";
+            bash = "deny";
+            tools = { "goals_learning_promote" = "deny"; };
+          };
+        };
+        qa-verification = {
+          description = "Read-only QA triage: verify the learning's evidence still holds and render an agree/disagree/uncertain verdict via goals_learning_review";
+          mode = "subagent";
+          model = null;
+          temperature = 0.1;
+          permission = {
+            edit = "deny";
+            bash = "deny";
+            tools = { "goals_learning_promote" = "deny"; };
+          };
+        };
+        adversarial = {
+          description = "Read-only adversarial triage: attempt to falsify the learning's evidence and render an agree/disagree/uncertain verdict via goals_learning_review";
+          mode = "subagent";
+          model = null;
+          temperature = 0.2;
+          permission = {
+            edit = "deny";
+            bash = "deny";
             tools = { "goals_learning_promote" = "deny"; };
           };
         };
