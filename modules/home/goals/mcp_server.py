@@ -89,6 +89,21 @@ def init_db(db_path: str, schema_path: str = SCHEMA_PATH) -> sqlite3.Connection:
         note TEXT,
         observed_date TEXT NOT NULL
     )""")
+    # Migration: review_verdicts (Tier 1 Task 2, 2026-08-16). Pre-existing DBs
+    # already ran schema.sql without this table; CREATE IF NOT EXISTS is the
+    # migration-fix pattern (mirrors the learnings block above).
+    conn.execute("""CREATE TABLE IF NOT EXISTS review_verdicts (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        learning_id INTEGER NOT NULL REFERENCES learnings(id),
+        reviewer_role TEXT,
+        verdict TEXT NOT NULL CHECK (verdict IN ('agree', 'disagree', 'uncertain')),
+        rederivation_method TEXT,
+        transcript_ref TEXT,
+        match_confidence TEXT CHECK (match_confidence IN ('high', 'low') OR match_confidence IS NULL),
+        checked_at TEXT NOT NULL DEFAULT (datetime('now'))
+    )""")
+    conn.execute("CREATE INDEX IF NOT EXISTS idx_review_verdicts_learning ON review_verdicts(learning_id)")
+    conn.execute("CREATE INDEX IF NOT EXISTS idx_review_verdicts_checked ON review_verdicts(checked_at)")
     conn.execute("""CREATE TABLE IF NOT EXISTS fabrication_incidents (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         domain TEXT NOT NULL DEFAULT 'agent-learning',
