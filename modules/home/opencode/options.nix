@@ -110,6 +110,17 @@ let
         default = null;
         description = "Permission for recovery prompts when an agent appears stuck.";
       };
+      tools = mkOption {
+        type = types.nullOr (types.attrsOf actionType);
+        default = null;
+        description = ''
+          Per-tool permission overrides keyed by exact tool name, merged into the
+          agent's rendered `permission` object. Use to scope MCP tools per agent,
+          e.g. `{ "goals_learning_promote" = "deny"; }` to hide the promote tool
+          from triage roles (Tier 1, Decision 1 defense-in-depth). opencode names
+          MCP tools as `<server>_<tool>` (verified against live tool-call data).
+        '';
+      };
     };
   };
 

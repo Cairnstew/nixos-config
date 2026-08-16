@@ -112,7 +112,12 @@ CREATE TABLE IF NOT EXISTS learnings (
     target_type TEXT NOT NULL DEFAULT 'edit_existing'
         CHECK (target_type IN ('edit_existing', 'new_skill', 'new_command')),
     target_path TEXT,
-    CHECK (target_type = 'edit_existing' OR target_path IS NOT NULL)
+    -- Tier 1 Task 3: target_path is now required for EVERY target_type
+    -- (edit_existing included). Backfilled rows use the '__unclassified__'
+    -- sentinel (never fast-path eligible). SQLite cannot add this CHECK to an
+    -- existing table via ALTER, so enforcement for pre-existing DBs lives in
+    -- learning_append code; this CHECK covers fresh installs.
+    CHECK (target_path IS NOT NULL)
 );
 
 CREATE INDEX IF NOT EXISTS idx_learnings_domain ON learnings(domain);
@@ -150,3 +155,27 @@ CREATE TABLE IF NOT EXISTS fabrication_incidents (
 
 CREATE INDEX IF NOT EXISTS idx_fabrication_incidents_command ON fabrication_incidents(command);
 CREATE INDEX IF NOT EXISTS idx_fabrication_incidents_domain ON fabrication_incidents(domain);
+
+-- Triage review verdicts (Tier 1, Decision 2). One row per reviewer session per
+-- learning. `learning_review` inserts the row with learning_id + verdict only;
+-- the capture plugin (Tier 1 Task 4) fills rederivation_method / transcript_ref /
+-- match_confidence separately, keyed by the same (session_id, learning_id).
+--
+-- INVARIANT (documented here so Task 4 and any future promotion logic agree):
+-- a row with `rederivation_method IS NULL` counts as `uncertain` regardless of
+-- the `verdict` column — a verdict without harness-verified re-derivation can
+-- never contribute to unanimity (R6.1 fix). Nothing reads this yet; the schema
+-- provisions it so Task 4 can populate it.
+CREATE TABLE IF NOT EXISTS review_verdicts (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    learning_id INTEGER NOT NULL REFERENCES learnings(id),
+    reviewer_role TEXT,
+    verdict TEXT NOT NULL CHECK (verdict IN ('agree', 'disagree', 'uncertain')),
+    rederivation_method TEXT,
+    transcript_ref TEXT,
+    match_confidence TEXT CHECK (match_confidence IN ('high', 'low') OR match_confidence IS NULL),
+    checked_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
+CREATE INDEX IF NOT EXISTS idx_review_verdicts_learning ON review_verdicts(learning_id);
+CREATE INDEX IF NOT EXISTS idx_review_verdicts_checked ON review_verdicts(checked_at);

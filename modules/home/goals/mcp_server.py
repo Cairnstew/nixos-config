@@ -82,6 +82,15 @@ def init_db(db_path: str, schema_path: str = SCHEMA_PATH) -> sqlite3.Connection:
         except sqlite3.OperationalError as e:
             if "duplicate column" not in str(e):
                 raise  # re-raise unexpected schema errors
+    # Migration: backfill target_path for edit_existing rows (Tier 1 Task 3,
+    # 2026-08-16). Pre-Task-3 rows have target_path NULL because edit_existing
+    # used to force NULL. Backfill to the '__unclassified__' sentinel (never
+    # fast-path eligible) rather than guessing a real path. The sentinel is
+    # defined once below in TARGET_PATH_SENTINEL.
+    conn.execute(
+        "UPDATE learnings SET target_path = ? WHERE target_path IS NULL",
+        (TARGET_PATH_SENTINEL,),
+    )
     conn.execute("""CREATE TABLE IF NOT EXISTS learning_evidence (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         learning_id INTEGER NOT NULL REFERENCES learnings(id),
@@ -89,6 +98,21 @@ def init_db(db_path: str, schema_path: str = SCHEMA_PATH) -> sqlite3.Connection:
         note TEXT,
         observed_date TEXT NOT NULL
     )""")
+    # Migration: review_verdicts (Tier 1 Task 2, 2026-08-16). Pre-existing DBs
+    # already ran schema.sql without this table; CREATE IF NOT EXISTS is the
+    # migration-fix pattern (mirrors the learnings block above).
+    conn.execute("""CREATE TABLE IF NOT EXISTS review_verdicts (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        learning_id INTEGER NOT NULL REFERENCES learnings(id),
+        reviewer_role TEXT,
+        verdict TEXT NOT NULL CHECK (verdict IN ('agree', 'disagree', 'uncertain')),
+        rederivation_method TEXT,
+        transcript_ref TEXT,
+        match_confidence TEXT CHECK (match_confidence IN ('high', 'low') OR match_confidence IS NULL),
+        checked_at TEXT NOT NULL DEFAULT (datetime('now'))
+    )""")
+    conn.execute("CREATE INDEX IF NOT EXISTS idx_review_verdicts_learning ON review_verdicts(learning_id)")
+    conn.execute("CREATE INDEX IF NOT EXISTS idx_review_verdicts_checked ON review_verdicts(checked_at)")
     conn.execute("""CREATE TABLE IF NOT EXISTS fabrication_incidents (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         domain TEXT NOT NULL DEFAULT 'agent-learning',
@@ -777,6 +801,52 @@ _PLACEHOLDER_RE = re.compile(
     re.IGNORECASE,
 )
 
+# Tier 1 Task 3: sentinel target_path for rows backfilled before target_path
+# became required for edit_existing. Never fast-path eligible.
+TARGET_PATH_SENTINEL = "__unclassified__"
+
+# Tier 1 Task 3 (Decision 3): fast-path eligibility is computed here in code,
+# not just documented. A target_path is fast-path eligible only if it is a
+# prose file under the opencode command/skill dirs and NOT under any
+# hard-gated directory. The inverse list is the "hard-gated regardless of any
+# verdict or vote" floor from the design.
+FAST_PATH_COMMAND_GLOB = "modules/home/opencode/commands/"
+FAST_PATH_SKILL_GLOB = "modules/home/opencode/skills/"
+FAST_PATH_EXCLUDED_DIRS = (
+    "modules/nixos/secrets/",
+    "modules/nixos/proxy/",
+    "modules/nixos/disko/",
+)
+FAST_PATH_EXCLUDED_NETWORK_PREFIX = "modules/nixos/network"
+FAST_PATH_EXCLUDED_FILES = (
+    "modules/home/opencode/config.nix",
+    "modules/home/opencode/options.nix",
+)
+
+
+def _is_fast_path_eligible(target_path: str | None) -> bool:
+    """Compute whether a target_path is fast-path eligible (Decision 3).
+
+    Returns True only for prose command/skill files:
+      - under modules/home/opencode/commands/ or .../skills/
+      - not under a hard-gated dir (secrets/, proxy/, disko/, any network*
+        module dir)
+      - not config.nix / options.nix (wiring/metadata, higher blast radius)
+      - not the '__unclassified__' sentinel (backfilled rows have no real path)
+    """
+    if not target_path or target_path == TARGET_PATH_SENTINEL:
+        return False
+    if not (target_path.startswith(FAST_PATH_COMMAND_GLOB) or target_path.startswith(FAST_PATH_SKILL_GLOB)):
+        return False
+    for excluded in FAST_PATH_EXCLUDED_DIRS:
+        if target_path.startswith(excluded):
+            return False
+    if target_path.startswith(FAST_PATH_EXCLUDED_NETWORK_PREFIX):
+        return False
+    if target_path in FAST_PATH_EXCLUDED_FILES:
+        return False
+    return True
+
 
 def _evidence_valid(evidence: str) -> bool:
     ev = (evidence or "").strip()
@@ -871,8 +941,10 @@ def learning_append(
     learning with the same command + near-duplicate lesson.
 
     target_type selects what a validated apply would touch:
-      - 'edit_existing' (default): existing file, matches the pilot. No path
-        validation beyond the standard evidence check.
+      - 'edit_existing' (default): existing file, matches the pilot. target_path
+        is REQUIRED (Tier 1 Task 3) — either a real repo path or the
+        '__unclassified__' sentinel for legacy/unclassified edits. Fast-path
+        eligibility (Decision 3) is computed from it.
       - 'new_skill' / 'new_command': target_path is REQUIRED, must live under
         modules/home/opencode/skills/ or .../commands/ respectively, and must
         NOT already exist on disk at proposal time (a learning proposing to
@@ -895,7 +967,18 @@ def learning_append(
         )
 
     tp = (target_path or "").strip() if target_path else ""
-    if tt != "edit_existing":
+    if tt == "edit_existing":
+        # Tier 1 Task 3: edit_existing must carry a target_path. Allow the
+        # sentinel for rows that genuinely have no single file (backfilled
+        # legacy rows use it); anything else must be a real path. Fast-path
+        # eligibility is separate (see _is_fast_path_eligible) and is always
+        # False for the sentinel.
+        if not tp:
+            raise ValueError(
+                "learning_append 'edit_existing' requires target_path — either a real repo "
+                f"path or the '{TARGET_PATH_SENTINEL}' sentinel for unclassified edits"
+            )
+    else:
         if not tp:
             raise ValueError(f"target_type '{tt}' requires target_path")
         if tt == "new_skill" and not tp.startswith(SKILL_DIR):
@@ -913,8 +996,6 @@ def learning_append(
                 f"target_path '{tp}' already exists — a learning proposing to create an existing "
                 "file is a caller bug; use target_type 'edit_existing' instead"
             )
-    else:
-        tp = None  # edit_existing keeps target_path NULL regardless of input
 
     # Dedupe: an existing open (non-stale) learning for this command with a
     # near-duplicate lesson supersedes the append.
@@ -1005,6 +1086,45 @@ def learning_query(command: str | None = None, status: str | None = None) -> lis
         query += " WHERE " + " AND ".join(where)
     query += " ORDER BY created_at ASC"
     return [dict(r) for r in conn.execute(query, params).fetchall()]
+
+
+def learning_review(learning_id: int, verdict: str) -> dict:
+    """Record a triage reviewer's verdict on a proposed learning.
+
+    Decision 1 (Option 3) tool split: this is the ONLY tool ensemble triage
+    roles get for reviewing. It has NO parameter for evidence, output, or
+    rederivation method, and NO code path that writes to `learnings.status` or
+    `learnings.acted_on_commit` — promotion stays exclusively on the
+    human-path `learning_promote`, which triage roles are additionally scoped
+    out of via per-agent MCP permission (`"goals_learning_promote": "deny"`).
+
+    It only inserts a row into `review_verdicts` (schema: Task 2) with
+    `learning_id` and `verdict`; the capture plugin (Tier 1 Task 4) fills
+    `rederivation_method` / `transcript_ref` / `match_confidence` separately,
+    keyed by the same (session_id, learning_id).
+
+    Invariant (documented now, read by Task 4 + any future promotion logic):
+    a review_verdicts row with `rederivation_method IS NULL` counts as
+    `uncertain` regardless of the `verdict` column, so a verdict without
+    harness-verified re-derivation can never contribute to unanimity.
+    """
+    if verdict not in ("agree", "disagree", "uncertain"):
+        raise ValueError("learning_review verdict must be 'agree', 'disagree', or 'uncertain'")
+    row = conn.execute(
+        "SELECT id FROM learnings WHERE id = ?",
+        (learning_id,),
+    ).fetchone()
+    if not row:
+        raise ValueError(f"No learning with id {learning_id}")
+
+    now = datetime.datetime.utcnow().isoformat()
+    cur = conn.execute(
+        """INSERT INTO review_verdicts (learning_id, reviewer_role, verdict, checked_at)
+           VALUES (?, NULL, ?, ?)""",
+        (learning_id, verdict, now),
+    )
+    conn.commit()
+    return dict(conn.execute("SELECT * FROM review_verdicts WHERE id = ?", (cur.lastrowid,)).fetchone())
 
 
 TOOLS: list[dict] = [
@@ -1292,7 +1412,7 @@ TOOLS: list[dict] = [
                 "fix": {"type": "string", "description": "What should change to apply this lesson"},
                 "evidence": {"type": "string", "description": "file:line citation or verbatim command output backing the lesson. REQUIRED; empty/placeholder text is rejected."},
                 "target_type": {"type": "string", "enum": ["edit_existing", "new_skill", "new_command"], "description": "What a validated apply touches. Default edit_existing. new_skill/new_command require target_path (under the skills/ or commands/ dir) that does not yet exist."},
-                "target_path": {"type": "string", "description": "Repo path to create when target_type is new_skill/new_command. Must be under modules/home/opencode/skills/ or .../commands/. Required for new_skill/new_command."},
+                "target_path": {"type": "string", "description": "Repo path the apply would touch. REQUIRED for all target_types (Tier 1 Task 3): a real repo path, or the '__unclassified__' sentinel for edit_existing rows with no single file. For new_skill/new_command must be under modules/home/opencode/skills/ or .../commands/ and not yet exist."},
             },
             "required": ["command", "lesson", "evidence"],
         },
@@ -1319,6 +1439,18 @@ TOOLS: list[dict] = [
                 "command": {"type": "string", "description": "Filter by command (e.g. 'nix-refine')"},
                 "status": {"type": "string", "description": "Filter by status (proposed, validated, rejected, stale)"},
             },
+        },
+    },
+    {
+        "name": "learning_review",
+        "description": "Record a triage reviewer's verdict on a proposed learning. Accepts 'agree'/'disagree'/'uncertain' only. Decision 1 (Option 3) tool split: this is the only tool ensemble triage roles get for reviewing — it has NO evidence/output/rederivation parameters and NO path to learnings.status or acted_on_commit (promotion stays exclusively on the human-path learning_promote). Inserts a review_verdicts row with learning_id + verdict; the capture plugin fills rederivation_method/transcript_ref/match_confidence separately. Invariant: a verdict row with rederivation_method IS NULL counts as 'uncertain' regardless of the verdict column.",
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "learning_id": {"type": "integer", "description": "Learning ID under review"},
+                "verdict": {"type": "string", "enum": ["agree", "disagree", "uncertain"], "description": "Reviewer verdict on the proposed learning"},
+            },
+            "required": ["learning_id", "verdict"],
         },
     },
 ]
@@ -1349,6 +1481,7 @@ TOOL_DISPATCH = {
     "learning_append": learning_append,
     "learning_promote": learning_promote,
     "learning_query": learning_query,
+    "learning_review": learning_review,
 }
 
 

@@ -58,6 +58,7 @@ def test_status_always_proposed():
         lesson="dedupe works",
         fix="check before insert",
         evidence="modules/home/opencode/commands/nix-refine.md:897",
+        target_path="modules/home/opencode/commands/nix-refine.md",
     )
     assert row["status"] == "proposed", row
     assert row["deduped"] is False, row
@@ -74,6 +75,7 @@ def test_dedupe_near_duplicate_lesson():
         lesson="team_merge silently applies nothing on uncommitted builder work",
         fix="cp worktree files into main repo",
         evidence="modules/home/opencode/commands/nix-doc-audit.md:925",
+        target_path="modules/home/opencode/commands/nix-refine.md",
     )
     # Near-duplicate wording of the same lesson.
     row2 = mcp_server.learning_append(
@@ -81,6 +83,7 @@ def test_dedupe_near_duplicate_lesson():
         lesson="team_merge silently applies nothing when builder work is uncommitted",
         fix="cp worktree files into main repo",
         evidence="modules/home/opencode/commands/nix-refine.md:795",
+        target_path="modules/home/opencode/commands/nix-refine.md",
     )
     assert row2["deduped"] is True, row2
     assert row2["status"] == "proposed", row2
@@ -97,12 +100,14 @@ def test_distinct_lessons_not_deduped():
         lesson="OOM waves of two prevent session crashes",
         fix="spawn builders in waves of 2",
         evidence="modules/home/opencode/commands/nix-refine.md:879",
+        target_path="modules/home/opencode/commands/nix-refine.md",
     )
     mcp_server.learning_append(
         command="nix-refine",
         lesson="plan_approval true never wakes builders",
         fix="never use plan_approval",
         evidence="modules/home/opencode/commands/nix-refine.md:868",
+        target_path="modules/home/opencode/commands/nix-refine.md",
     )
     count = conn.execute("SELECT COUNT(*) FROM learnings").fetchone()[0]
     assert count == 2, f"expected 2 distinct learnings, got {count}"
@@ -117,6 +122,7 @@ def test_promote_validated_requires_commit():
         lesson="gate lesson",
         fix="apply gated",
         evidence="modules/home/opencode/commands/nix-refine.md:897",
+        target_path="modules/home/opencode/commands/nix-refine.md",
     )
     try:
         mcp_server.learning_promote(row["id"], "validated")
@@ -137,6 +143,7 @@ def test_promote_validated_sets_commit():
         lesson="validate me",
         fix="land the edit",
         evidence="modules/home/opencode/commands/nix-refine.md:879",
+        target_path="modules/home/opencode/commands/nix-refine.md",
     )
     promoted = mcp_server.learning_promote(row["id"], "validated", acted_on_commit="abc1234")
     assert promoted["status"] == "validated", promoted
@@ -152,6 +159,7 @@ def test_promote_rejected():
         lesson="reject me",
         fix="n/a",
         evidence="modules/home/opencode/commands/nix-refine.md:917",
+        target_path="modules/home/opencode/commands/nix-refine.md",
     )
     rejected = mcp_server.learning_promote(row["id"], "rejected")
     assert rejected["status"] == "rejected", rejected
@@ -166,12 +174,14 @@ def test_query_filters():
         lesson="query me one",
         fix="x",
         evidence="modules/home/opencode/commands/nix-refine.md:846",
+        target_path="modules/home/opencode/commands/nix-refine.md",
     )
     mcp_server.learning_append(
         command="nix-doc-audit",
         lesson="query me two",
         fix="y",
         evidence="modules/home/opencode/commands/nix-doc-audit.md:908",
+        target_path="modules/home/opencode/commands/nix-doc-audit.md",
     )
     refine = mcp_server.learning_query(command="nix-refine")
     assert len(refine) == 1 and refine[0]["command"] == "nix-refine", refine
@@ -391,28 +401,72 @@ def test_accept_valid_new_skill_proposal():
     print("PASS accept_valid_new_skill_proposal")
 
 
-def test_edit_existing_keeps_null_target():
+def test_edit_existing_requires_target_path():
     conn = fresh_db()
     mcp_server.conn = conn
+    # Tier 1 Task 3: edit_existing without target_path is rejected.
+    try:
+        mcp_server.learning_append(
+            command="nix-refine",
+            lesson="edit existing without path",
+            fix="x",
+            evidence="modules/home/opencode/commands/nix-refine.md:846",
+            target_type="edit_existing",
+        )
+        raise AssertionError("expected ValueError for edit_existing without target_path")
+    except ValueError as e:
+        assert "target_path" in str(e), str(e)
+    # With a real path it stores it verbatim.
     row = mcp_server.learning_append(
         command="nix-refine",
-        lesson="edit existing keeps path null",
+        lesson="edit existing with real path",
         fix="x",
         evidence="modules/home/opencode/commands/nix-refine.md:846",
+        target_type="edit_existing",
+        target_path="modules/home/opencode/commands/nix-doc-audit.md",
     )
-    assert row["target_type"] == "edit_existing", row
-    assert row["target_path"] is None, row
-    # edit_existing ignores a passed target_path
+    assert row["target_path"] == "modules/home/opencode/commands/nix-doc-audit.md", row
+    # Sentinel accepted (legacy/unclassified edits).
     row2 = mcp_server.learning_append(
         command="nix-refine",
-        lesson="edit existing ignores passed path",
+        lesson="different lesson entirely — sentinel path storage check",
         fix="y",
         evidence="modules/home/opencode/commands/nix-refine.md:879",
         target_type="edit_existing",
-        target_path="modules/nixos/tailscale/config.nix",
+        target_path=mcp_server.TARGET_PATH_SENTINEL,
     )
-    assert row2["target_path"] is None, row2
-    print("PASS edit_existing_keeps_null_target")
+    assert row2["target_path"] == mcp_server.TARGET_PATH_SENTINEL, row2
+    print("PASS edit_existing_requires_target_path")
+
+
+# ── Task 3: fast-path eligibility (Decision 3) ────────────────────────────────
+
+def test_fast_path_eligibility():
+    eligible = [
+        "modules/home/opencode/commands/nix-doc-audit.md",
+        "modules/home/opencode/commands/nix-refine.md",
+        "modules/home/opencode/skills/opencode-ensemble.md",
+    ]
+    ineligible = [
+        mcp_server.TARGET_PATH_SENTINEL,
+        None,
+        "",
+        "modules/nixos/secrets/secrets-manifest.json",
+        "modules/nixos/proxy/default.nix",
+        "modules/nixos/network/default.nix",
+        "modules/nixos/network-hardening/default.nix",
+        "modules/nixos/disko/config.nix",
+        "modules/home/opencode/config.nix",
+        "modules/home/opencode/options.nix",
+        "modules/nixos/tailscale/config.nix",
+        "modules/nixos/common.nix",
+        "configurations/nixos/desktop/default.nix",
+    ]
+    for p in eligible:
+        assert mcp_server._is_fast_path_eligible(p), f"expected eligible: {p}"
+    for p in ineligible:
+        assert not mcp_server._is_fast_path_eligible(p), f"expected ineligible: {p}"
+    print("PASS fast_path_eligibility")
 
 
 # ── Task 3: learning_promote gate NOT relaxed for new_skill ──────────────────
@@ -457,6 +511,7 @@ if __name__ == "__main__":
     test_new_skill_rejects_outside_skills_dir()
     test_new_command_rejects_existing_target()
     test_accept_valid_new_skill_proposal()
-    test_edit_existing_keeps_null_target()
+    test_edit_existing_requires_target_path()
+    test_fast_path_eligibility()
     test_promote_new_skill_still_requires_commit()
     print("ALL PASS")
