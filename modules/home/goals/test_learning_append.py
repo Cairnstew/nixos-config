@@ -415,6 +415,32 @@ def test_edit_existing_keeps_null_target():
     print("PASS edit_existing_keeps_null_target")
 
 
+# ── Task 3: learning_promote gate NOT relaxed for new_skill ──────────────────
+
+def test_promote_new_skill_still_requires_commit():
+    conn = fresh_db()
+    mcp_server.conn = conn
+    row = mcp_server.learning_append(
+        command="nix-refine",
+        lesson="new skill still needs gating",
+        fix="write a new skill file",
+        evidence="modules/home/opencode/commands/nix-refine.md:897",
+        target_type="new_skill",
+        target_path="modules/home/opencode/skills/self-improve-log.md",
+    )
+    # Same gate as edit_existing: validated without acted_on_commit is refused.
+    try:
+        mcp_server.learning_promote(row["id"], "validated")
+        raise AssertionError("expected ValueError for new_skill validated without acted_on_commit")
+    except ValueError as e:
+        assert "acted_on_commit" in str(e), str(e)
+    # With commit it validates, exactly like edit_existing.
+    promoted = mcp_server.learning_promote(row["id"], "validated", acted_on_commit="abc1234")
+    assert promoted["status"] == "validated", promoted
+    assert promoted["acted_on_commit"] == "abc1234", promoted
+    print("PASS promote_new_skill_still_requires_commit")
+
+
 if __name__ == "__main__":
     test_reject_missing_evidence()
     test_reject_placeholder_evidence()
@@ -432,4 +458,5 @@ if __name__ == "__main__":
     test_new_command_rejects_existing_target()
     test_accept_valid_new_skill_proposal()
     test_edit_existing_keeps_null_target()
+    test_promote_new_skill_still_requires_commit()
     print("ALL PASS")

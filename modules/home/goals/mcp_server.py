@@ -934,7 +934,18 @@ def learning_promote(learning_id: int, decision: str, acted_on_commit: str | Non
     whole of Decision 4 (Option 1): the agent may only propose; it may not
     validate its own learnings. Validation requires the commit hash the
     corresponding command/skill edit was made in, so edit and promotion are one
-    reviewed action and cannot drift apart."""
+    reviewed action and cannot drift apart. 'acted_on_commit' is required for
+    ANY 'validated' promotion regardless of target_type — creating a new skill
+    does not relax the gate.
+
+    REMINDER for new_skill / new_command learnings: validating a learning whose
+    target_type is 'new_skill' or 'new_command' records that the reviewed apply
+    session created the target file. A new skill also needs wiring into the
+    opencode module's skills/commands block (modules/home/opencode/config.nix
+    skills block at config.nix:270-280 plus the ensemble block at :309-312) for
+    opencode to actually load it — creating the file alone does not make
+    opencode see it. This tool cannot verify a Nix module was edited; the
+    wiring check is the reviewer's responsibility, not an enforced one."""
     if decision not in ("validated", "rejected"):
         raise ValueError("learning_promote decision must be 'validated' or 'rejected'")
     row = conn.execute(
@@ -1272,7 +1283,7 @@ TOOLS: list[dict] = [
     },
     {
         "name": "learning_promote",
-        "description": "Human-reviewed promotion of a proposed learning to 'validated' or 'rejected'. FOR SEAN OR A HUMAN-REVIEWED SESSION ONLY — must NEVER be invoked from within the same run that proposed the learning (Decision 4, Option 1 gate). 'validated' requires acted_on_commit (the hash of the edit being reviewed), so edit and promotion are one action.",
+        "description": "Human-reviewed promotion of a proposed learning to 'validated' or 'rejected'. FOR SEAN OR A HUMAN-REVIEWED SESSION ONLY — must NEVER be invoked from within the same run that proposed the learning (Decision 4, Option 1 gate). 'validated' requires acted_on_commit (the hash of the edit being reviewed), so edit and promotion are one action. For new_skill/new_command learnings: the reviewer is also responsible for wiring the new skill/command into the opencode module's config.nix skills/commands block — the tool cannot verify a Nix module edit.",
         "inputSchema": {
             "type": "object",
             "properties": {
