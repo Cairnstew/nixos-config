@@ -98,6 +98,22 @@ def init_db(db_path: str, schema_path: str = SCHEMA_PATH) -> sqlite3.Connection:
         evidence TEXT NOT NULL CHECK (length(trim(evidence)) > 0),
         description TEXT NOT NULL
     )""")
+    # Migration: correct the M11 fabrication-register citation (Tier 1 Task 0,
+    # 2026-08-16). Tier 0 found the register cited nix-doc-audit.md:967-976 —
+    # that is the team_merge REFUSES RUN LOG entry — while the actual M11
+    # faulty-grep incident is at :978-984. The seed below is idempotent on
+    # (command, pattern_type, evidence), so changing the seed string alone
+    # would insert a duplicate row; UPDATE the existing row in place BEFORE
+    # seeding so the dedupe finds the corrected citation.
+    conn.execute(
+        "UPDATE fabrication_incidents SET evidence = ? "
+        "WHERE command = 'nix-doc-audit' AND pattern_type = 'fabricated-grep-output' "
+        "AND evidence = ?",
+        (
+            "modules/home/opencode/commands/nix-doc-audit.md:978-984",
+            "modules/home/opencode/commands/nix-doc-audit.md:967-976",
+        ),
+    )
     _seed_fabrication_incidents(conn)
     conn.commit()
     return conn
@@ -117,7 +133,7 @@ def _seed_fabrication_incidents(conn: sqlite3.Connection) -> None:
             "command": "nix-doc-audit",
             "pattern_type": "fabricated-grep-output",
             "date": "2026-08-03",
-            "evidence": "modules/home/opencode/commands/nix-doc-audit.md:967-976",
+            "evidence": "modules/home/opencode/commands/nix-doc-audit.md:978-984",
             "description": (
                 "M11 faulty-grep fabrication: arbiter SKIP ruling claimed 0 matches for a pattern "
                 "that actually matched 5 times (README lines 4,10,11,28,29,131 reference non-existent "
