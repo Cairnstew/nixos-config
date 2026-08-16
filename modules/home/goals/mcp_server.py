@@ -1007,6 +1007,45 @@ def learning_query(command: str | None = None, status: str | None = None) -> lis
     return [dict(r) for r in conn.execute(query, params).fetchall()]
 
 
+def learning_review(learning_id: int, verdict: str) -> dict:
+    """Record a triage reviewer's verdict on a proposed learning.
+
+    Decision 1 (Option 3) tool split: this is the ONLY tool ensemble triage
+    roles get for reviewing. It has NO parameter for evidence, output, or
+    rederivation method, and NO code path that writes to `learnings.status` or
+    `learnings.acted_on_commit` — promotion stays exclusively on the
+    human-path `learning_promote`, which triage roles are additionally scoped
+    out of via per-agent MCP permission (`"goals_learning_promote": "deny"`).
+
+    It only inserts a row into `review_verdicts` (schema: Task 2) with
+    `learning_id` and `verdict`; the capture plugin (Tier 1 Task 4) fills
+    `rederivation_method` / `transcript_ref` / `match_confidence` separately,
+    keyed by the same (session_id, learning_id).
+
+    Invariant (documented now, read by Task 4 + any future promotion logic):
+    a review_verdicts row with `rederivation_method IS NULL` counts as
+    `uncertain` regardless of the `verdict` column, so a verdict without
+    harness-verified re-derivation can never contribute to unanimity.
+    """
+    if verdict not in ("agree", "disagree", "uncertain"):
+        raise ValueError("learning_review verdict must be 'agree', 'disagree', or 'uncertain'")
+    row = conn.execute(
+        "SELECT id FROM learnings WHERE id = ?",
+        (learning_id,),
+    ).fetchone()
+    if not row:
+        raise ValueError(f"No learning with id {learning_id}")
+
+    now = datetime.datetime.utcnow().isoformat()
+    cur = conn.execute(
+        """INSERT INTO review_verdicts (learning_id, reviewer_role, verdict, checked_at)
+           VALUES (?, NULL, ?, ?)""",
+        (learning_id, verdict, now),
+    )
+    conn.commit()
+    return dict(conn.execute("SELECT * FROM review_verdicts WHERE id = ?", (cur.lastrowid,)).fetchone())
+
+
 TOOLS: list[dict] = [
     {
         "name": "list_goals",
@@ -1321,6 +1360,18 @@ TOOLS: list[dict] = [
             },
         },
     },
+    {
+        "name": "learning_review",
+        "description": "Record a triage reviewer's verdict on a proposed learning. Accepts 'agree'/'disagree'/'uncertain' only. Decision 1 (Option 3) tool split: this is the only tool ensemble triage roles get for reviewing — it has NO evidence/output/rederivation parameters and NO path to learnings.status or acted_on_commit (promotion stays exclusively on the human-path learning_promote). Inserts a review_verdicts row with learning_id + verdict; the capture plugin fills rederivation_method/transcript_ref/match_confidence separately. Invariant: a verdict row with rederivation_method IS NULL counts as 'uncertain' regardless of the verdict column.",
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "learning_id": {"type": "integer", "description": "Learning ID under review"},
+                "verdict": {"type": "string", "enum": ["agree", "disagree", "uncertain"], "description": "Reviewer verdict on the proposed learning"},
+            },
+            "required": ["learning_id", "verdict"],
+        },
+    },
 ]
 
 TOOL_DISPATCH = {
@@ -1349,6 +1400,7 @@ TOOL_DISPATCH = {
     "learning_append": learning_append,
     "learning_promote": learning_promote,
     "learning_query": learning_query,
+    "learning_review": learning_review,
 }
 
 

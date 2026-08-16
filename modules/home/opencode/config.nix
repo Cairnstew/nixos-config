@@ -86,7 +86,8 @@ let
         inherit (agentCfg.permission)
           read edit glob grep list bash task external_directory
           lsp skill todowrite webfetch websearch question doom_loop;
-      };
+      }
+      // (lib.optionalAttrs (agentCfg.permission.tools != null) agentCfg.permission.tools);
     })
     // agentCfg.extraOptions;
 
@@ -316,7 +317,13 @@ in
           mode = "subagent";
           model = null;
           temperature = 0.1;
-          permission = { edit = "deny"; bash = "deny"; };
+          permission = {
+            edit = "deny";
+            bash = "deny";
+            # Decision 1 defense-in-depth: triage/scout roles must never reach
+            # learning_promote. MCP tools are named <server>_<tool> in opencode.
+            tools = { "goals_learning_promote" = "deny"; };
+          };
         };
         qa = {
           description = "Write tests, fixtures, and regression coverage — ensemble QA role";
@@ -329,7 +336,12 @@ in
           mode = "subagent";
           model = null;
           temperature = 0.1;
-          permission = { edit = "deny"; bash = "deny"; };
+          permission = {
+            edit = "deny";
+            bash = "deny";
+            # Decision 1 defense-in-depth: same as scout — no learning_promote.
+            tools = { "goals_learning_promote" = "deny"; };
+          };
         };
       };
     }
