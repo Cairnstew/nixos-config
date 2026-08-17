@@ -9,6 +9,26 @@ file = "config/c2me.toml"
 hash = "8a84886db070f21cb35f33963403c20051c8fb932f48d25d6363b5de33b6b035"
 
 [[files]]
+file = "config/ftbquests/quests/chapter_groups.snbt"
+hash = "87b1e2ea814e65b3645d70a743a87cbb1f1f439f330f232daa512097c0317eac"
+
+[[files]]
+file = "config/ftbquests/quests/chapters/getting_started.snbt"
+hash = "919b4076ef107c88eb6bfc06f2f9f528662dea6a7e4d4e869d0a2d3ea08e94cd"
+
+[[files]]
+file = "config/ftbquests/quests/data.snbt"
+hash = "6c574733505e53b2d2b10121d7b997da8da75538af5dd5dfa080ce299439b121"
+
+[[files]]
+file = "config/ftbquests/quests/lang/en_us.snbt"
+hash = "a7481e663978fa694933dc42b4c37e6bbd7b14522d5b2ddb03e246040950eeb9"
+
+[[files]]
+file = "config/ftbquests/quests/reward_tables/35971441C32601D7.snbt"
+hash = "e6e6f5f407ee14184d3506d08d7aafee13dfb335035df7ddcfd8887caefa9cda"
+
+[[files]]
 file = "config/roadweaver/roadweaver.json"
 hash = "1fafaa96b4c0b996a34b691236841083b321c7d47f46b70ce9bac84d2efb7b33"
 

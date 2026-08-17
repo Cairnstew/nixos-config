@@ -1,0 +1,44 @@
+{
+	chapter.158DE5FB928F40B3.subtitle: "&7New to DragonTech? Start here."
+	chapter.158DE5FB928F40B3.title: "Getting Started"
+	chapter_group.4A695DE23DC9359F.title: "&aDragonTech"
+	file.0000000000000001.title: "DragonTech"
+	quest.022CA60ED7920A5D.quest_desc: [
+		"Welcome to &bDragonTech&r!"
+		""
+		"Complete quests to learn the pack, earn rewards, and progress through tech, magic and dragon survival."
+	]
+	quest.022CA60ED7920A5D.title: "Welcome!"
+	quest.079C5EAA8ED495AD.quest_desc: [
+		"Earn 20 experience levels. Killing mobs, mining ores and completing other quests all grant XP."
+	]
+	quest.079C5EAA8ED495AD.title: "Gain Experience"
+	quest.10B0AE1B15A8517D.quest_desc: [
+		"Craft a Crafting Table. You'll need it for almost every recipe in the pack."
+	]
+	quest.10B0AE1B15A8517D.title: "Craft a Workbench"
+	quest.10F31FD617008E52.quest_desc: [
+		"Smelt some iron ore in a furnace. Iron is the foundation of most machines and tools."
+	]
+	quest.10F31FD617008E52.title: "Smelt Iron"
+	quest.17EE54C267510E85.quest_desc: [
+		"Enrich some iron with &bMekanism&r to make Enriched Iron - the building block of all Mekanism machines."
+	]
+	quest.17EE54C267510E85.title: "Mekanism: Enriched Iron"
+	quest.1EDBF38587912973.quest_desc: [
+		"Create &6Brass&r from Copper and Zinc using &bCreate&r's mechanical crafting. Brass opens up the Create tech tree."
+	]
+	quest.1EDBF38587912973.title: "Create: Brass"
+	quest.2C88D6B95C08ABF4.quest_desc: [
+		"The legendary Dragon Egg. You've conquered the basics of DragonTech!"
+	]
+	quest.2C88D6B95C08ABF4.title: "Dragon's Reward"
+	quest.6182A0CF98EB7074.quest_desc: [
+		"Chop down some trees to gather wood. Gather 16 logs."
+	]
+	quest.6182A0CF98EB7074.title: "Gather Wood"
+	quest.636F6A8540038528.quest_desc: [
+		"Grab a sword and hunt down a zombie. Watch out for the Creepers!"
+	]
+	quest.636F6A8540038528.title: "Hunt a Zombie"
+}

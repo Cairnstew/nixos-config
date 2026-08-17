@@ -166,13 +166,15 @@ in
 
           plugins = lib.mkDefault [ "@hueyexe/opencode-ensemble@0.15.0" ];
 
-          # Ensemble plugin config — agents use deepseek-v4-flash by default
+          # Ensemble plugin config — agents use OpenCode Zen free DeepSeek V4 Flash
+          # (opencode/ is the Zen provider prefix; model id format per
+          # https://opencode.ai/docs/zen — "opencode/<model-id>")
           ensemble = lib.mkDefault {
-            defaultModel = "opencode-go/deepseek-v4-flash";
+            defaultModel = "opencode/deepseek-v4-flash-free";
             modelsByAgent = {
-              build = "opencode-go/deepseek-v4-flash";
-              explore = "opencode-go/deepseek-v4-flash";
-              plan = "opencode-go/deepseek-v4-flash";
+              build = "opencode/deepseek-v4-flash-free";
+              explore = "opencode/deepseek-v4-flash-free";
+              plan = "opencode/deepseek-v4-flash-free";
             };
             dashboardPort = 4747;
             mergeOnCleanup = true;
