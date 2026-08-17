@@ -192,20 +192,29 @@ function status(repo: string, server: string, api: string | null): string {
 }
 
 // ── Boot monitor + crash diagnosis ───────────────────────────────────────────
-const SERVER_FATAL_RE = /Failed to (create mod instance|register automatic subscribers)\. ModID: (\w+)|Attempted to load class net\/minecraft\/client\/.* for invalid dist DEDICATED_SERVER|Mod loading has failed|NoClassDefFoundError|Read-only file system|AccessDeniedException/;
+// Genuine boot-abort patterns. NOTE: "Attempted to load class
+// net/minecraft/client/... for invalid dist DEDICATED_SERVER" and "@Mixin
+// target ... was not found" lines are NOT fatal — they are expected noise on a
+// NeoForge dedicated server whenever client-only mods are present (the
+// RuntimeDistCleaner/DISTXFORM phase + mixin warnings) and the server still
+// reaches Done. They were once in this regex and caused false "fatal error,
+// mod loads client-only classes (unknown)" reports mid-boot.
+const SERVER_FATAL_RE = /Failed to (create mod instance|register automatic subscribers)\. ModID: (\w+)|Mod loading has failed|NoClassDefFoundError|Read-only file system|AccessDeniedException/;
 
 function diagnose(text: string): string {
   const lines = text.split("\n").slice(-80);
   const hints: string[] = [];
 
-  if (/Attempted to load class net\/minecraft\/client\/.* for invalid dist DEDICATED_SERVER|Failed to (create mod instance|register automatic subscribers)\. ModID: (\w+)/.test(text)) {
+  if (/Failed to (create mod instance|register automatic subscribers)\. ModID: (\w+)/.test(text)) {
     const m = /Failed to (?:create mod instance|register automatic subscribers)\. ModID: (\w+)/.exec(text);
     const modid = m ? m[1] : "(unknown — search the pack's mods/ for a client-only mod)";
     hints.push(
-      `A mod loads client-only classes on the dedicated server (mod '${modid}'). ` +
-      `Find its modules/nixos/minecraft-server/modpacks/<pack>/mods/*.pw.toml and check 'side'. ` +
+      `A mod failed to load on the dedicated server (mod '${modid}'). ` +
+      `If log lines above show "invalid dist DEDICATED_SERVER" or a missing client class, ` +
+      `it likely loads client-only classes: find its modules/nixos/minecraft-server/modpacks/<pack>/mods/*.pw.toml and check 'side'. ` +
       `Client-only mods must be side = "client" (not "both") so the server's side filter drops them; the Prism client keeps them. ` +
-      `Then: packwiz refresh, rebuild the server.`
+      `Then: packwiz refresh, rebuild the server.` +
+      `\nNote: standalone "Attempted to load class ... for invalid dist DEDICATED_SERVER" / "Mixin target ... was not found" lines are benign noise — only treat this as fatal when boot actually aborts with this ModID error.`
     );
   }
   if (/NoClassDefFoundError/.test(text)) {
@@ -223,6 +232,34 @@ function diagnose(text: string): string {
   return `\n\n── diagnosis ──\n${hints.join("\n\n")}`;
 }
 
+// The crash diagnosis must only fire when the server process has ACTUALLY
+// died. A dedicated server still booting can log transient stack traces
+// (RuntimeDistCleaner/DISTXFORM + mixin warnings for client-only mods) that
+// match fatal-looking patterns; treating those as a crash is a false positive
+// (the server then reaches Done). A unit is "dead" when systemd reports the
+// service as failed/inactive, or the java process is no longer running.
+function isProcessDead(unit: string): boolean {
+  // systemd is the authoritative source: an active/activating unit is still
+  // running, a failed/inactive one is not.
+  const sctl = systemctl([`is-active`, `${unit}.service`]);
+  if (sctl.ok) {
+    const state = sctl.out.trim();
+    if (state === "failed" || state === "inactive" || state === "deactivating" || state === "dead") return true;
+    if (state === "active" || state === "activating" || state === "reloading") return false;
+  }
+  // Fallback: check the unit's MainPID is actually gone.
+  const pid = execSync(`systemctl show ${unit}.service -p MainPID --value 2>/dev/null`, { encoding: "utf-8" }).trim();
+  if (pid && pid !== "0") {
+    try {
+      process.kill(Number(pid), 0);
+      return false; // PID exists
+    } catch {
+      return true; // PID gone
+    }
+  }
+  return false;
+}
+
 async function waitForBoot(server: string, api: string | null, timeoutSec: number): Promise<string> {
   const unit = `minecraft-server-${server}`;
   const dataDir = findServerLogDir();
@@ -233,7 +270,8 @@ async function waitForBoot(server: string, api: string | null, timeoutSec: numbe
 
   while (Date.now() - start < waitMs) {
     const sctl = systemctl([`is-active`, `${unit}.service`]);
-    if (sctl.ok && sctl.out === "failed") {
+    const unitFailed = sctl.ok && (sctl.out === "failed" || sctl.out === "inactive");
+    if (unitFailed) {
       const j = systemctl([`--no-pager`, `-n`, `120`, `-u`, `${unit}.service`, `--output=cat`]);
       const logText = (logPath && existsSync(logPath)) ? readFileSync(logPath, "utf-8") : "";
       const src = j.out + "\n" + logText;
@@ -246,7 +284,12 @@ async function waitForBoot(server: string, api: string | null, timeoutSec: numbe
       const m = /Done \(([0-9.]+)s\)!/.exec(text);
       return `mc-server: '${server}' booted (Done in ${m ? m[1] + "s" : "?"}). ${Math.round((Date.now() - start) / 1000)}s elapsed.`;
     }
-    if (SERVER_FATAL_RE.test(newChunk)) {
+    // Only report a fatal error when the process has ACTUALLY died. A bare
+    // stack-trace match on a still-running unit mid-boot is usually benign
+    // DISTXFORM/mixin noise (client-only mods on a dedicated server) and the
+    // server reaches Done directly after — reporting it as fatal is a
+    // false positive.
+    if (SERVER_FATAL_RE.test(newChunk) && isProcessDead(unit)) {
       return `mc-server: '${server}' hit a fatal error:\n\n${diagnose(text)}\n\n-- log tail --\n${text.split("\n").slice(-60).join("\n")}`;
     }
     await sleep(3000);
