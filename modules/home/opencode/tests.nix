@@ -98,7 +98,7 @@ in
             denyOnlyAgents = lib.filter (n: n != "learning-promoter" && n != "build") (lib.attrNames cfg.agents);
           in
           cfg.agents ? "learning-promoter" && cfg.agents ? "build"
-          && builtins.all (a: (promoteSetting a) != "allow") denyOnlyAgents;
+            && builtins.all (a: (promoteSetting a) != "allow") denyOnlyAgents;
         message = "my.programs.opencode: the 'learning-promoter' and 'build' agents must exist — they are the promote-capable agents (full-auto, team-gated promotion). All other agents (triage/reviewer roles) must deny goals_learning_promote.";
       }
       {
