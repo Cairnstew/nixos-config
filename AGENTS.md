@@ -455,14 +455,17 @@ files during a self-improvement pass are not permitted.**
   `modules/home/opencode/skills/` or `.../commands/`) when proposing to create a file.
 - `learning_promote(<id>, "validated", acted_on_commit=<hash>)` is the ONLY way a learning
   becomes actionable — it is the sole path that flips `learnings.status`. It takes the hash of
-  the edit it validates, so edit and promotion are one reviewed action. It is NOT restricted to
-  a human: the dedicated **`learning-promoter`** agent (`modules/home/opencode/agents/learning-promoter.md`)
-  is the only agent whose runtime permissions allow calling it (`"goals_learning_promote": "allow"`
-  in `config.nix`; every other agent denies it), and it runs **headlessly / detached from the
-  proposing session**. Its hard rule mirrors the old human gate: a session must NEVER promote its
-  own learnings, and it only promotes on a unanimous, harness-re-derived triage `agree` (no
-  `disagree`/`uncertain` present, every verdict row `rederivation_method IS NOT NULL`), applying
-  each accepted learning as an isolated commit on its own branch. See `commands/learning-promote.md`.
+  the edit it validates, so edit and promotion are one reviewed action. Promotion is
+  **fully automated — no human gate**. Both the **`build`** agent and the dedicated
+  **`learning-promoter`** agent have `"goals_learning_promote": "allow"` in `config.nix` (every
+  triage role is denied it, defense-in-depth against mid-review capture). The hard rule mirrors
+  the old human gate: a session must NEVER promote its own freshly-proposed learning without
+  dispatching the independent three-role triage team, and it only promotes on a unanimous,
+  harness-re-derived triage `agree` (no `disagree`/`uncertain` present, every verdict row
+  `rederivation_method IS NOT NULL`). Accepted learnings are applied as isolated commits and
+  **auto-merged into the base branch** (`server`); git history (`git log` / `git revert`) is the
+  audit/rollback net — a bad merge is reverted like any other change. See
+  `commands/learning-promote.md`, `agents/learning-promoter.md`, and `agents/build.md`.
 - `learning_query` lists the review queue (e.g. all `proposed` learnings for one command); each
   row carries its `review_verdicts` so an automated promoter or a human can read the triage
   verdicts and their harness back-fill.

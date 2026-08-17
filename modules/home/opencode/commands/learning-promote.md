@@ -1,5 +1,5 @@
 ---
-description: "Fully-automated (no-human) promotion of proposed agent learnings. Reads the proposed queue, dispatches the three triage reviewers to re-derive each learning's evidence, and promotes only on unanimous, harness-confirmed re-derivation. Applied learnings land on dedicated revertible branches as isolated commits so a human (Sean) can audit and roll back via git if ever needed."
+description: "Fully-automated (no-human) promotion of proposed agent learnings. Reads the proposed queue, dispatches the three triage reviewers to re-derive each learning's evidence, and promotes only on unanimous, harness-confirmed re-derivation. Applied learnings are auto-merged into the base branch as isolated commits whose git history is the audit/rollback net."
 ---
 
 You are the **`learning-promoter`** agent running headlessly (detached from the
@@ -67,7 +67,7 @@ veto) regardless of its `verdict` column.
   found a contradiction, OR you hit the back-fill bound with a NULL row remaining,
   OR you cannot apply the fix confidently.
 
-### 2e. Apply → commit → promote (validate path only)
+### 2e. Apply → commit → promote → merge (validate path only)
 
 1. `git switch -c opencode/learn/<id>-<slug>` off the current branch.
 2. Apply the `fix` per repo guidance. For `new_skill`/`new_command`, also wire the
@@ -75,9 +75,15 @@ veto) regardless of its `verdict` column.
    `modules/home/opencode/config.nix`, or it won't load.
 3. Run the relevant verification (`nix fmt`, `nix lint`, module tests) before
    committing.
-4. Commit ONLY this learning's change; capture the hash.
+4. Commit ONLY this learning's change; capture the hash. Re-verify
+   `git branch --show-current` is your learning branch and the hash is on it
+   before promoting — the session can silently check back to the base branch.
 5. `goals_learning_promote(<id>, "validated", acted_on_commit=<hash>)`.
-6. Record branch + commit in your final report. Do not merge to master.
+6. **Auto-merge** the branch back into the base (working branch `server`, tracking
+   `origin/server`) with a normal `git merge` (no force-push, no rewrite). Do not
+   wait for a human to merge — the loop is fully automated; git log/revert is the
+   rollback net.
+7. Record branch + commit in your final report.
 
 ### 2f. Reject path
 
@@ -86,7 +92,7 @@ veto) regardless of its `verdict` column.
 ## 3. Final report
 
 For each learning id processed: command, lesson, decision (validated/rejected), the
-three verdicts with rederivation/confidence, and — if validated — the branch and
-commit hash. Close with a summary line saying `learnings.status` WAS changed this
-run (unlike triage-review, which is observe-only) and list the branches awaiting
-Sean's merge.
+three verdicts with rederivation/confidence, and — if validated — the commit hash
+and the merge performed. Close with a summary line saying `learnings.status` WAS
+changed this run (unlike triage-review, which is observe-only) and confirm every
+validated learning's commit was merged into the base branch.
