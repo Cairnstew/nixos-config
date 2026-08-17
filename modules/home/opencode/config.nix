@@ -240,11 +240,23 @@ in
             description = "Standard development agent with full tool access";
             model = "opencode-go/deepseek-v4-flash";
             mode = "primary";
-            permission = { edit = "allow"; bash = "allow"; };
-            # Optional post-task self-improvement pass (SELF_IMPROVE=true in
-            # ./agents/build.md) — proposal-only via learning_append, never
-            # learning_promote. Kept out of the core description so the default
-            # agent stays autonomy-preserving; the prompt only appends the pass.
+            permission = {
+              edit = "allow";
+              bash = "allow";
+              # No-human auto-improvement: build may call learning_promote to
+              # validate/reject learnings (never over a fresh proposal it just
+              # recorded itself) — dispatch the
+              # three-role triage team to re-derive verdicts first, then promote
+              # only on their unanimous, harness-confirmed agreement. Auto-merge
+              # applied learnings into the base branch; git history is the
+              # rollback net.
+              tools = { "goals_learning_promote" = "allow"; };
+            };
+            # Required pre-final-summary self-improvement checkpoint
+            # (SELF_IMPROVE=true in ./agents/build.md) — proposal via
+            # learning_append, promotion only after team-approved triage.
+            # Kept out of the core description so the default agent stays
+            # autonomy-preserving; the prompt only appends the pass.
             prompt = builtins.readFile ./agents/build.md;
           };
           researcher = {
@@ -394,17 +406,17 @@ in
             tools = { "goals_learning_promote" = "deny"; };
           };
         };
-        # ── Full-auto promoter (the ONLY promote-capable agent) ──────────
-        # Sole exception to the per-agent `goals_learning_promote = "deny"`
-        # rule. Every other agent (build, scout, reviewer, and the three triage
-        # roles) is scoped out of promote — intentionally inverted here. Must be
-        # run headlessly / detached from the proposing session: it closes the
-        # loop that a human used to own by hand, using a unanimous, harness-
-        # re-derived triage gate so a learning never validates itself. It has
-        # edit/bash because it applies+commits each accepted learning to its own
-        # revertible branch; it never auto-merges to master.
+        # ── Full-auto promoter (promote-capable) ───────────────────────────
+        # Runs the promotion loop headlessly: dispatch the three triage reviewers
+        # to re-derive evidence, then learning_promote only on unanimous,
+        # harness-re-derived agreement, applying each accepted learning with an
+        # isolated commit and auto-merging it into the base branch. Successful
+        # review triage teams may also approve learnings whose proposals came
+        # from other sessions (a session must never promote its OWN new
+        # proposal). It has edit/bash because it applies+commits+merges each
+        # accepted learning; git history is the audit/rollback net.
         learning-promoter = {
-          description = "Headless automated promotion of proposed agent learnings: dispatch the three triage reviewers to re-derive evidence, then learning_promote only on unanimous re-derivation-gated agreement, applying each accepted learning as an isolated commit on its own branch";
+          description = "Headless automated promotion of proposed agent learnings: dispatch the three triage reviewers to re-derive evidence, then learning_promote only on unanimous re-derivation-gated agreement, applying each accepted learning as an isolated commit, auto-merging into the base branch";
           mode = "primary";
           model = "opencode-go/deepseek-v4-flash";
           temperature = 0.1;

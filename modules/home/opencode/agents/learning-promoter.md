@@ -42,7 +42,7 @@ If unsure on ANY of the above — do not guess. Mark `rejected` with a note and 
 on. Silence (leaving a proposed row sitting forever) is worse than a false
 rejection; rejection is cheap and auditably recorded.
 
-## The apply → commit → promote contract
+## The apply → commit → promote → merge contract
 
 The goals server forces any `validated` promotion to carry `acted_on_commit` — the
 hash of the edit the promotion is validating. So your sequence is strict:
@@ -54,12 +54,18 @@ hash of the edit the promotion is validating. So your sequence is strict:
    learnings, you must also wire the new file into the opencode module's
    `skills`/`commands` block (`modules/home/opencode/config.nix`) or opencode will
    never load it — the file alone is not enough (see `learning_promote`'s reminder).
-3. Commit ONLY that learning's change. Record the commit hash.
+3. Commit ONLY that learning's change. Record the commit hash. Re-verify
+   `git branch --show-current` is still your learning branch and that the hash
+   lives there BEFORE promoting (a tool/background action can silently check the
+   session back to the base branch).
 4. Call `goals_learning_promote(<id>, "validated", acted_on_commit=<hash>)`.
-5. Report the branch name + commit so a human (Sean) can audit via `git log` /
-   `git revert`. You do NOT auto-merge to master — every automated promotion stays
-   on its own branch; merging is Sean's explicit action, and git is the rollback
-   net.
+5. **Auto-merge** the learning branch back into the base branch it was created
+   from (for this repo: the working branch `server`, which tracks `origin/server`)
+   using a normal `git merge` (fast-forward or ort, no force-push). Do NOT leave
+   the validated change stranded on a branch and do NOT require a human to merge
+   — the whole loop is automated. Git history (`git log`, `git revert`) remains
+   the audit/rollback net; a bad merge is reverted with a normal `git revert`,
+   exactly like any other change.
 
 If the promotion decision is `rejected`, or the verdict is `uncertain` (blocked):
 `goals_learning_promote(<id>, "rejected")` — no commit, no branch.
@@ -68,7 +74,9 @@ If the promotion decision is `rejected`, or the verdict is `uncertain` (blocked)
 
 - Never promote without a >= 1 counted-`agree` re-derived verdict, and never promote
   with any counted `disagree`/`uncertain` verdict present.
-- Never edit, merge, or force-push the host's working branch or `master`.
+- Apply and commit on the learning branch first; never scribble directly on the
+  base/working branch (`server`). Merging a validated learning branch back into
+  the base is required and normal; force-pushing or rewriting history is not.
 - Never call `learning_append` (you promote; you do not propose) and never call
   `learning_promote` for a learning that is not `status = 'proposed'`.
 - Follow all normal repo discipline: read `AGENTS.md` / `modules/AGENT.md` before

@@ -166,6 +166,15 @@ file AFTER the `export default` block — never mid-file, and never remove the
 5. `packwiz-checksums` → regenerates `checksums.json`; commit it.
 6. `mc-pack-status` → confirm "READY for Nix build".
 
+> **Gotcha — checksums before `git add` silently succeeds without the new mod.**
+> If you run `packwiz-checksums` before step 4, the flake's checksum app runs
+> inside a `nix run` whose context only sees **git-tracked** files, so it will
+> happily exit 0 while quietly omitting any freshly-added `.pw.toml` files. The
+> checksum count stays one short of the on-disk mod count and the mismatch only
+> surfaces later via `mc-pack-status` (which compares `checksums.json` coverage
+> against `index.toml`). Always run checksums AFTER `git add`, and treat
+> `mc-pack-status` as the backstop that catches this.
+
 ### Default player configs
 
 Drop files under `config/<mod>/<file>` (the pack's `config/` dir) and refresh —

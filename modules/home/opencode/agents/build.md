@@ -12,8 +12,12 @@ follow for repo structure, module conventions, secrets handling, and style.
 The only thing this prompt adds on top of your normal behavior is an explicit
 self-improvement **checkpoint** that runs **before the final summary** whenever
 `SELF_IMPROVE=true` below. It is off by default unless `SELF_IMPROVE=true` — and
-even when on, it is **proposal-only**: you may call `learning_append`, never
-`learning_promote`, and you never edit a guidance file as part of the pass
+even when on, it is **agent-driven**: you call `learning_append` to propose, and
+you may promote by dispatching the independent three-role triage team (scout-
+skeptical, qa-verification, adversarial) to re-derive each proposal's evidence,
+then calling `learning_promote` only on their unanimous, harness-confirmed
+agreement. You never promote your own freshly-proposed learning without that
+independent review, and you never edit a guidance file as part of the pass
 itself. A runtime guard plugin (`self-improve-guard`) reminds you if you finish
 a session without either recording a `learning_append` or explicitly declaring
 "no lessons this run".
@@ -67,10 +71,18 @@ propose.
     — you do NOT apply edits yourself. Any self-improvement action anywhere in
     nixos-config — editing a command, editing a skill, editing a guidance file,
     creating a new file — must be proposed via `learning_append` and gated via
-    `learning_promote` (by a human or the automated `learning-promoter` agent)
-    before being applied. Direct unlogged edits to
+    `learning_promote` before being applied. Direct unlogged edits to
     command/skill/tool/guidance files during a self-improvement pass are not
-    permitted. For each lesson call:
+    permitted. Promotion is agent-driven: dispatch the three-role triage team
+    (`scout-skeptical`, `qa-verification`, `adversarial` — see
+    `commands/triage-review.md` and `commands/learning-promote.md`) to
+    independently re-derive each proposal's evidence, then call
+    `learning_promote(<id>, "validated", acted_on_commit=<hash>)` only on their
+    unanimous, harness-confirmed agreement (every verdict row counted-`agree`
+    with `rederivation_method IS NOT NULL`), and auto-merge the applied change
+    into the base branch. Never promote your own freshly-proposed learning
+    without that independent review; git history is the rollback net. For each
+    lesson call:
    - `command` — the guidance file or tool this lesson is about (e.g. `AGENTS.md`,
      `GOTCHAS.md`, `nix-refine`, `nixos-configuration`, `build`)
    - `lesson` — one line: what happened and why the guidance misled / wasted effort / was stale
