@@ -198,12 +198,14 @@ self-improvement pass on `modules/home/opencode/agents/researcher.md` (this file
 2. **Audit this file** against the run and the current repo state: are the tools
    and paths it names real? is the guidance accurate? is anything missing? Check
    the `nix-doc-audit` / `nix-refine` commands for shared conventions if relevant.
-3. **Propose** every lesson via the goals MCP tool **`learning_append`** — you do
-   NOT apply edits to this file yourself. Any self-improvement action anywhere in
-   nixos-config — editing a command, editing a skill, creating a new skill — must
-   be proposed via `learning_append` and gated via `learning_promote` before
-   being applied. Direct unlogged edits to command/skill/tool files during a
-   self-improvement pass are not permitted. Call:
+ 3. **Propose** every lesson via the goals MCP tool **`learning_append`** — you do
+    NOT apply edits to this file yourself. Any self-improvement action anywhere in
+    nixos-config — editing a command, editing a skill, creating a new skill — must
+    be proposed via `learning_append` and gated via `learning_promote` before
+    being applied. Direct unlogged edits to command/skill/tool files during a
+    self-improvement pass are not permitted. Promotion is a separate step run by a
+    human or the dedicated automated `learning-promoter` agent — never by the
+    proposing session. Call:
    - `command` = `"researcher"` (this agent's own name)
    - `lesson` — one line: what happened and why the guidance misled/wasted effort
    - `fix` — what this file should change to apply the lesson
@@ -214,12 +216,13 @@ self-improvement pass on `modules/home/opencode/agents/researcher.md` (this file
    Every lesson must be grounded in something that actually happened this run or
    exists in the repo now — never aspirational. If a change requires guessing,
    skip it and note it instead. Do not let the pass balloon the file.
-4. **Do not append a RUN LOG entry or edit this file in this run.** `learning_append`
-   writes rows with `status = 'proposed'` and dedupes on near-duplicate lessons. The
-   actual edit happens later, in a separate human-reviewed step, after
-   `learning_promote(<id>, "validated", acted_on_commit=<commit>)` has been called
-   with the hash of the edit. Do not call `learning_promote` yourself. A review
-   session reads the queue with `learning_query`.
+ 4. **Do not append a RUN LOG entry or edit this file in this run.** `learning_append`
+    writes rows with `status = 'proposed'` and dedupes on near-duplicate lessons. The
+    actual edit happens later, in a separate reviewed step (a human, or the automated
+    `learning-promoter` agent), after
+    `learning_promote(<id>, "validated", acted_on_commit=<commit>)` has been called
+    with the hash of the edit. Do not call `learning_promote` yourself. A review
+    session reads the queue with `learning_query`.
 
 **Historical record:** the RUN LOG entries below (from before this mandate)
 remain as history and are **not** migrated to the learnings tables — migrating

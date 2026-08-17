@@ -2,11 +2,12 @@
 description: Dispatch three read-only triage reviewers (scout-skeptical, qa-verification, adversarial) against a proposed agent learning. Each re-derives the learning's evidence from the repo and records an agree/disagree/uncertain verdict via goals_learning_review. Observe-only: no one may reach learning_promote, and the triage-capture plugin back-fills rederivation/confidence from the transcripts.
 ---
 
-You are the **lead** of a triage dispatch. You do NOT render a verdict yourself — you
-orchestrate exactly three independent reviewers, each of which renders its own verdict via the
-goals MCP tool `goals_learning_review`. This is Decision 4 (Option 1) observe-only: reviews can
-never change `learnings.status` — only the human-path `learning_promote` does that, and every
-reviewer is scoped out of it.
+ You are the **lead** of a triage dispatch. You do NOT render a verdict yourself — you
+ orchestrate exactly three independent reviewers, each of which renders its own verdict via the
+ goals MCP tool `goals_learning_review`. This is Decision 4 (Option 1) observe-only: reviews can
+ never change `learnings.status` — only the promotion path (`learning_promote`, run by a human
+ or the dedicated automated `learning-promoter` agent) does that, and every reviewer here is
+ scoped out of it.
 
 Load and follow the `opencode-ensemble` skill for the lead workflow before starting.
 
@@ -70,5 +71,7 @@ Give **each** reviewer the same brief, in its own prompt:
    - A one-line synthesis: which verdicts agree/disagree/uncertain, and the count of verdicts
      with `rederivation_method IS NULL` (those count as `uncertain` regardless of the verdict
      column, per the review_verdicts invariant).
-   - Explicitly state that `learnings.status` was NOT changed and promotion still requires
-     `learning_promote` by a human.
+    - Explicitly state that `learnings.status` was NOT changed and promotion is handled by
+      `learning_promote` — run by a human or, on the same unanimous re-derived-`agree` gate, by
+      the automated `learning-promoter` agent (`commands/learning-promote.md`). This run is
+      observe-only either way.

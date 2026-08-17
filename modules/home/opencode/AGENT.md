@@ -120,6 +120,22 @@ Skills should follow the [OpenCode skills documentation](https://opencode.ai/doc
 
 ---
 
+## Learning Promotion (self-improvement pipeline)
+
+Proposed agent learnings (`learning_append`) are reviewed and promoted via
+`learning_promote`, the ONLY path that flips `learnings.status`. Promotion is
+**not** human-only: the dedicated **`learning-promoter`** agent
+(`agents/learning-promoter.md`, `commands/learning-promote.md`) is the single
+agent whose runtime permissions allow `goals_learning_promote` (`config.nix`),
+and it runs headlessly / detached from the proposing session. It only promotes on
+a **unanimous, harness-re-derived triage `agree`** (no `disagree`/`uncertain`
+present; every `review_verdicts` row has `rederivation_method IS NOT NULL`),
+applying each accepted learning as an isolated commit on its own branch — never
+auto-merging to master. This is enforced by assertions in `tests.nix` (exactly
+one agent may allow `goals_learning_promote`). All other agents — including the
+three triage roles (`scout-skeptical`, `qa-verification`, `adversarial`) and the
+proposing build agent — must deny it, so a learning never self-certifies.
+
 ## Self-Improvement
 
 Follow the self-improvement protocol in `../../../AGENTS.md` §11: at the end of
@@ -128,6 +144,21 @@ missing — grounded in what actually happened this session or exists in the rep
 now, never aspirational. Record each applied change in the RUN LOG below.
 
 ## RUN LOG
+
+### 2026-08-16 — added automated full-auto learning promotion (learning-promoter)
+- Lesson: promotion of proposed agent learnings was documented as human-only,
+  but the `learning_promote` server guard is config-level, not server-enforced —
+  no identity check. There was also no tool that read `review_verdicts` back, so
+  neither triage-review nor a promoter could see verdicts.
+- Fix: added the `learning-promoter` agent (`agents/learning-promoter.md` + the
+  `learning-promote` command) as the single promote-capable agent, kept the
+  three-role re-derivation triage gate, applied each accepted learning to an
+  isolated revertible branch, and extended `learning_query` to return each
+  learning's `review_verdicts`. Added `tests.nix` assertions enforcing that
+  exactly one agent may allow `goals_learning_promote`. Documented the pipeline
+  in this file and updated the human-only claims in `AGENTS.md`, `modules/AGENT.md`,
+  `researcher.md`, `build.md`, `nix-refine.md`, `nix-doc-audit.md`,
+  `triage-review.md`, and `mcp_server.py`.
 
 ### 2026-08-07 — moved researcher agent into the module as a self-improving prompt
 - Lesson: the `researcher` subagent lived only in the project-level

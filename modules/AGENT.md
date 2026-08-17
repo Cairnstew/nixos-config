@@ -531,9 +531,22 @@ aspirational. **Any self-improvement action anywhere in nixos-config — editing
 command, editing a skill, creating a new skill — must be proposed via
 `learning_append` and gated via `learning_promote` before being applied. Direct
 unlogged edits to command/skill/tool files during a self-improvement pass are not
-permitted.** The RUN LOG below is historical record, not the current mechanism.
+permitted.** Promotion is not limited to a human: the dedicated `learning-promoter`
+agent (see `modules/home/opencode/agents/learning-promoter.md`) auto-promotes a
+learning only on a unanimous, harness-re-derived triage `agree`, each applied as an
+isolated commit on its own branch. The proposing session still never self-certifies.
+The RUN LOG below is historical record, not the current mechanism.
 
 ## RUN LOG
+
+### 2026-08-16 — §13: promotion is not human-only
+- Lesson: §13 said self-improvement edits are "gated via `learning_promote`",
+  which older text elsewhere framed as human-only. Promotion is now automated by
+  the dedicated `learning-promoter` agent; the proposing session still never
+  self-certifies.
+- Fix: updated §13 to state promotion is handled by a human OR the automated
+  `learning-promoter` agent (unanimous re-derived triage `agree`, isolated
+  revertible branch), matching `AGENTS.md` §11.4.
 
 ### 2026-08-05 — added self-improvement protocol
 - Lesson: this file had no mechanism for sessions to record guidance fixes, so

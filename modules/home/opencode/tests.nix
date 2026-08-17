@@ -83,6 +83,40 @@ in
         assertion = cfg.plugins != [ ] -> builtins.length (builtins.filter (p: builtins.isString p) cfg.plugins) == builtins.length cfg.plugins;
         message = "my.programs.opencode.plugins: all entries must be strings (npm package names).";
       }
+      # ── Decision 1 invariant: exactly ONE agent may reach learning_promote ─
+      # The learning-promoter agent is the sole promote-capable agent; every
+      # other agent (build, scout, reviewer, and the three triage roles) must
+      # explicitly deny goals_learning_promote. Enforce it so a future edit
+      # can't silently make a non-promoter agent promote-capable (or remove the
+      # promoter's access), which would break the full-auto loop's trust model.
+      {
+        assertion =
+          let
+            promoteSetting = agent:
+              (cfg.agents.${agent}.permission.tools.goals_learning_promote or "deny");
+            nonPromoterAgents = lib.filter (n: n != "learning-promoter") (lib.attrNames cfg.agents);
+          in
+          cfg.agents ? "learning-promoter" && builtins.all (a: (promoteSetting a) != "allow") nonPromoterAgents;
+        message = "my.programs.opencode: the 'learning-promoter' agent must exist — it is the only agent allowed to call goals_learning_promote (full-auto promotion).";
+      }
+      {
+        assertion =
+          let
+            promoterSetting = cfg.agents."learning-promoter".permission.tools.goals_learning_promote or null;
+          in
+          cfg.agents ? "learning-promoter" -> promoterSetting == "allow";
+        message = "my.programs.opencode: agent 'learning-promoter' must have goals_learning_promote = \"allow\" (it is the headless promoter).";
+      }
+      {
+        assertion =
+          let
+            promoteSetting = agent:
+              (cfg.agents.${agent}.permission.tools.goals_learning_promote or "deny");
+            nonPromoterAgents = lib.filter (n: n != "learning-promoter") (lib.attrNames cfg.agents);
+          in
+          builtins.all (a: (promoteSetting a) != "allow") nonPromoterAgents;
+        message = "my.programs.opencode: only 'learning-promoter' may allow goals_learning_promote; all other agents must deny it (Decision 1 defense-in-depth).";
+      }
     ] ++ (lib.concatLists (lib.mapAttrsToList
       (alias: ref: [
         {

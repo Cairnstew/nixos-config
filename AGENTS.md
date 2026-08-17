@@ -454,9 +454,18 @@ files during a self-improvement pass are not permitted.**
   new lesson; use `target_type = 'new_skill'`/`'new_command'` (with `target_path` under
   `modules/home/opencode/skills/` or `.../commands/`) when proposing to create a file.
 - `learning_promote(<id>, "validated", acted_on_commit=<hash>)` is the ONLY way a learning
-  becomes actionable — it is for Sean or a human-reviewed session, never for the agent to call
-  on itself mid-run. The edit and its promotion are one reviewed action.
-- `learning_query` lists the review queue (e.g. all `proposed` learnings for one command).
+  becomes actionable — it is the sole path that flips `learnings.status`. It takes the hash of
+  the edit it validates, so edit and promotion are one reviewed action. It is NOT restricted to
+  a human: the dedicated **`learning-promoter`** agent (`modules/home/opencode/agents/learning-promoter.md`)
+  is the only agent whose runtime permissions allow calling it (`"goals_learning_promote": "allow"`
+  in `config.nix`; every other agent denies it), and it runs **headlessly / detached from the
+  proposing session**. Its hard rule mirrors the old human gate: a session must NEVER promote its
+  own learnings, and it only promotes on a unanimous, harness-re-derived triage `agree` (no
+  `disagree`/`uncertain` present, every verdict row `rederivation_method IS NOT NULL`), applying
+  each accepted learning as an isolated commit on its own branch. See `commands/learning-promote.md`.
+- `learning_query` lists the review queue (e.g. all `proposed` learnings for one command); each
+  row carries its `review_verdicts` so an automated promoter or a human can read the triage
+  verdicts and their harness back-fill.
 - The RUN LOG entries below are **historical record** — from before this mandate — and are not
   migrated to the learnings tables (migrating history is a separate decision; ungated history
   must not be falsely marked as validated).
@@ -477,6 +486,18 @@ files during a self-improvement pass are not permitted.**
 ---
 
 ## RUN LOG
+
+### 2026-08-16 — §11.4: promote is no longer human-only
+- Lesson: §11.4 said `learning_promote` "is for Sean or a human-reviewed session,
+  never for the agent to call on itself mid-run", but the server guard is
+  config-level and the repo has no human-only enforcement — and full-auto
+  promotion was the requested direction.
+- Fix: added the dedicated `learning-promoter` agent
+  (`modules/home/opencode/agents/learning-promoter.md`) as the sole promote-
+  capable agent, running headlessly/detached and only on a unanimous harness-
+  re-derived triage `agree`, each apply as an isolated commit on its own branch.
+  Updated §11.4, `modules/AGENT.md` §13, and all agent/command/skill docs that
+  claimed a human was required.
 
 ### 2026-08-05 — added self-improvement protocol to the guidance files
 - Lesson: `nix-refine` and `nix-doc-audit` improve their own command files after
