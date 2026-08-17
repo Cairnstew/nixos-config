@@ -299,6 +299,7 @@ in
         pluginFiles = lib.mkDefault {
           copylast = ./plugins/copylast.ts;
           triage-capture = ./plugins/triage-capture.ts;
+          self-improve-guard = ./plugins/self-improve-guard.ts;
         };
         mcp.nix-graph = {
           enabled = true;
