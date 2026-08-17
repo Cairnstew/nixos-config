@@ -1,0 +1,183 @@
+{
+	default_hide_dependency_lines: false
+	default_quest_shape: ""
+	filename: "getting_started"
+	group: "4A695DE23DC9359F"
+	icon: {
+		id: "minecraft:diamond"
+	}
+	id: "158DE5FB928F40B3"
+	images: [ ]
+	order_index: 1
+	quest_links: [ ]
+	quests: [
+		{
+			id: "022CA60ED7920A5D"
+			rewards: [{
+				id: "19F59D25529813B4"
+				type: "xp"
+				xp: 50
+			}]
+			tasks: [{
+				id: "4EAA55B427DE1751"
+				type: "checkmark"
+			}]
+			x: 0.0d
+			y: 0.0d
+		}
+		{
+			dependencies: ["022CA60ED7920A5D"]
+			id: "6182A0CF98EB7074"
+			rewards: [{
+				count: 8
+				id: "3933BA6E59B8FC27"
+				item: {
+					count: 1
+					id: "minecraft:oak_planks"
+				}
+				type: "item"
+			}]
+			tasks: [{
+				count: 16
+				id: "4C3E6E66A13597B0"
+				item: {
+					count: 1
+					id: "minecraft:oak_log"
+				}
+				type: "item"
+			}]
+			x: 1.0d
+			y: 0.0d
+		}
+		{
+			dependencies: ["6182A0CF98EB7074"]
+			id: "10B0AE1B15A8517D"
+			rewards: [{
+				id: "2F0466787A2F61FC"
+				type: "xp"
+				xp: 50
+			}]
+			tasks: [{
+				id: "7CC3A068B8F11285"
+				item: {
+					count: 1
+					id: "minecraft:crafting_table"
+				}
+				type: "item"
+			}]
+			x: 2.0d
+			y: 0.0d
+		}
+		{
+			dependencies: ["10B0AE1B15A8517D"]
+			id: "10F31FD617008E52"
+			rewards: [{
+				id: "7601F444766AE705"
+				type: "xp"
+				xp: 100
+			}]
+			tasks: [{
+				id: "75F859CF40A764F1"
+				item: {
+					count: 1
+					id: "minecraft:iron_ingot"
+				}
+				type: "item"
+			}]
+			x: 3.0d
+			y: 0.0d
+		}
+		{
+			dependencies: ["10F31FD617008E52"]
+			id: "1EDBF38587912973"
+			rewards: [{
+				id: "09E518EBAD1E9F38"
+				type: "xp"
+				xp: 150
+			}]
+			tasks: [{
+				id: "430172EFC5055E97"
+				item: {
+					count: 1
+					id: "create:brass_ingot"
+				}
+				type: "item"
+			}]
+			x: 4.0d
+			y: 0.0d
+		}
+		{
+			dependencies: ["10F31FD617008E52"]
+			id: "17EE54C267510E85"
+			rewards: [{
+				id: "473B7D55BF137D16"
+				type: "xp"
+				xp: 150
+			}]
+			tasks: [{
+				id: "179B534FA25D4D64"
+				item: {
+					count: 1
+					id: "mekanism:enriched_iron"
+				}
+				type: "item"
+			}]
+			x: 4.0d
+			y: 1.0d
+		}
+		{
+			dependencies: ["10B0AE1B15A8517D"]
+			id: "636F6A8540038528"
+			rewards: [{
+				id: "77C56DC3FF156A4C"
+				table_id: 3861577478172967383L
+				type: "random"
+			}]
+			tasks: [{
+				entity: "minecraft:zombie"
+				id: "72058B97EF9608AD"
+				type: "kill"
+				value: 1
+			}]
+			x: 3.0d
+			y: 1.0d
+		}
+		{
+			dependencies: ["1EDBF38587912973"]
+			id: "079C5EAA8ED495AD"
+			rewards: [{
+				id: "4FCE7D2F6837CC04"
+				type: "xp"
+				xp: 200
+			}]
+			tasks: [{
+				id: "484DB8E647770509"
+				points: false
+				type: "xp"
+				value: 20
+			}]
+			x: 5.0d
+			y: 0.0d
+		}
+		{
+			dependencies: ["079C5EAA8ED495AD"]
+			id: "2C88D6B95C08ABF4"
+			rewards: [{
+				exclude_from_claim_all: true
+				count: 1
+				id: "557D63445076E786"
+				item: {
+					count: 1
+					id: "minecraft:dragon_egg"
+				}
+				type: "item"
+			}]
+			tasks: [{
+				id: "5C9541923E0D9C5C"
+				type: "checkmark"
+			}]
+			x: 6.0d
+			y: 0.0d
+		}
+	]
+}

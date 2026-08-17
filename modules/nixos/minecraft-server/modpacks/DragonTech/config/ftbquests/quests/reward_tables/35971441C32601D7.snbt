@@ -1,0 +1,49 @@
+{
+	hide_tooltip: true
+	id: "35971441C32601D7"
+	loot_size: 3
+	order_index: 1
+	rewards: [
+		{
+			count: 8
+			id: "580AC9004C008B3B"
+			item: {
+				count: 1
+				id: "minecraft:bread"
+			}
+		}
+		{
+			count: 4
+			id: "5A6153DBB82357E7"
+			item: {
+				count: 1
+				id: "minecraft:cooked_beef"
+			}
+		}
+		{
+			count: 1
+			id: "4FB589D647EF15FB"
+			item: {
+				count: 1
+				id: "minecraft:golden_apple"
+			}
+		}
+		{
+			count: 16
+			id: "67A282E6A67E330A"
+			item: {
+				count: 1
+				id: "minecraft:torch"
+			}
+		}
+		{
+			count: 4
+			id: "14A228E71D39CBE1"
+			item: {
+				count: 1
+				id: "minecraft:emerald"
+			}
+		}
+	]
+	use_title: true
+}
