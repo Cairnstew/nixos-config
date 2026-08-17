@@ -2,10 +2,26 @@
 description: "Fully-automated (no-human) promotion of proposed agent learnings. Reads the proposed queue, dispatches the three triage reviewers to re-derive each learning's evidence, and promotes only on unanimous, harness-confirmed re-derivation. Applied learnings are auto-merged into the base branch as isolated commits whose git history is the audit/rollback net."
 ---
 
-You are the **`learning-promoter`** agent running headlessly (detached from the
-proposing session). Load and follow the `opencode-ensemble` skill for the team
-workflow, and your own agent prompt (`agents/learning-promoter.md`) for the hard
-gates. This command is the step-by-step operational flow.
+You are the **`learning-promoter`** agent. Load and follow the
+`opencode-ensemble` skill for the team workflow, and your own agent prompt
+(`agents/learning-promoter.md`) for the hard gates. This command is the
+step-by-step operational flow.
+
+## Launching the promoter (do NOT use `opencode run`)
+
+`opencode run` (with or without `-i`) dispatches the lead session and disposes
+the instance at the end of the agent's turn — the promoter would spawn its
+reviewers, then hit `exiting loop` / `disposing instance`, aborting every
+reviewer mid-triage. The promoter must run in a **persistent interactive TUI**:
+
+1. Start a tmux window: `tmux new-session -d -s promoter "opencode /path/to/nixos-config"`
+2. In the TUI, press `Tab` to cycle agents until **Learning-Promoter** is selected.
+3. Type `/learning-promote` and press **Enter twice** — the first Enter opens the
+   command palette, the second dispatches the command.
+4. Expect permission-request dialogs (e.g. `/mnt/data/minecraft/logs`) — approve
+   them with a keypress (or pre-allow the path in `opencode.json`).
+5. Leave the tmux session running; the lead must stay alive while the reviewers
+   report back asynchronously. Poll with `tmux capture-pane -t promoter -p`.
 
 ## 0. Prerequisites
 
