@@ -83,21 +83,23 @@ in
         assertion = cfg.plugins != [ ] -> builtins.length (builtins.filter (p: builtins.isString p) cfg.plugins) == builtins.length cfg.plugins;
         message = "my.programs.opencode.plugins: all entries must be strings (npm package names).";
       }
-      # ── Decision 1 invariant: exactly ONE agent may reach learning_promote ─
-      # The learning-promoter agent is the sole promote-capable agent; every
-      # other agent (build, scout, reviewer, and the three triage roles) must
-      # explicitly deny goals_learning_promote. Enforce it so a future edit
-      # can't silently make a non-promoter agent promote-capable (or remove the
-      # promoter's access), which would break the full-auto loop's trust model.
+      # ── Decision 1 invariant (revised): promote-capable agents ─────────
+      # build + learning-promoter may reach goals_learning_promote (no-human,
+      # team-gated auto-improvement); every triage/reviewer role (scout,
+      # reviewer, scout-skeptical, qa-verification, adversarial) must explicitly
+      # deny it (defense-in-depth against mid-review capture). Enforce it so a
+      # future edit can't silently make a triage role promote-capable or strip
+      # the promoter's access, which would break the auto loop's trust model.
       {
         assertion =
           let
             promoteSetting = agent:
               (cfg.agents.${agent}.permission.tools.goals_learning_promote or "deny");
-            nonPromoterAgents = lib.filter (n: n != "learning-promoter") (lib.attrNames cfg.agents);
+            denyOnlyAgents = lib.filter (n: n != "learning-promoter" && n != "build") (lib.attrNames cfg.agents);
           in
-          cfg.agents ? "learning-promoter" && builtins.all (a: (promoteSetting a) != "allow") nonPromoterAgents;
-        message = "my.programs.opencode: the 'learning-promoter' agent must exist — it is the only agent allowed to call goals_learning_promote (full-auto promotion).";
+          cfg.agents ? "learning-promoter" && cfg.agents ? "build"
+          && builtins.all (a: (promoteSetting a) != "allow") denyOnlyAgents;
+        message = "my.programs.opencode: the 'learning-promoter' and 'build' agents must exist — they are the promote-capable agents (full-auto, team-gated promotion). All other agents (triage/reviewer roles) must deny goals_learning_promote.";
       }
       {
         assertion =
@@ -106,16 +108,6 @@ in
           in
           cfg.agents ? "learning-promoter" -> promoterSetting == "allow";
         message = "my.programs.opencode: agent 'learning-promoter' must have goals_learning_promote = \"allow\" (it is the headless promoter).";
-      }
-      {
-        assertion =
-          let
-            promoteSetting = agent:
-              (cfg.agents.${agent}.permission.tools.goals_learning_promote or "deny");
-            nonPromoterAgents = lib.filter (n: n != "learning-promoter") (lib.attrNames cfg.agents);
-          in
-          builtins.all (a: (promoteSetting a) != "allow") nonPromoterAgents;
-        message = "my.programs.opencode: only 'learning-promoter' may allow goals_learning_promote; all other agents must deny it (Decision 1 defense-in-depth).";
       }
     ] ++ (lib.concatLists (lib.mapAttrsToList
       (alias: ref: [
