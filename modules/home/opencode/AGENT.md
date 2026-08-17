@@ -124,17 +124,20 @@ Skills should follow the [OpenCode skills documentation](https://opencode.ai/doc
 
 Proposed agent learnings (`learning_append`) are reviewed and promoted via
 `learning_promote`, the ONLY path that flips `learnings.status`. Promotion is
-**not** human-only: the dedicated **`learning-promoter`** agent
-(`agents/learning-promoter.md`, `commands/learning-promote.md`) is the single
-agent whose runtime permissions allow `goals_learning_promote` (`config.nix`),
-and it runs headlessly / detached from the proposing session. It only promotes on
-a **unanimous, harness-re-derived triage `agree`** (no `disagree`/`uncertain`
-present; every `review_verdicts` row has `rederivation_method IS NOT NULL`),
-applying each accepted learning as an isolated commit on its own branch — never
-auto-merging to master. This is enforced by assertions in `tests.nix` (exactly
-one agent may allow `goals_learning_promote`). All other agents — including the
-three triage roles (`scout-skeptical`, `qa-verification`, `adversarial`) and the
-proposing build agent — must deny it, so a learning never self-certifies.
+**fully automated — no human gate**: both the **`build`** agent and the
+dedicated **`learning-promoter`** agent
+(`agents/learning-promoter.md`, `commands/learning-promote.md`) have runtime
+permission to call `goals_learning_promote` (`config.nix`), and the promoter
+runs from a persistent tmux TUI (NOT `opencode run`, which disposes the lead
+instance mid-triage). A session promotes only on a **unanimous,
+harness-re-derived triage `agree`** (no `disagree`/`uncertain` present; every
+`review_verdicts` row has `rederivation_method IS NOT NULL`), applying each
+accepted learning as an isolated commit and **auto-merging it into the base
+branch** (`server`); git history is the audit/rollback net. This is enforced by
+assertions in `tests.nix` (Decision 1: `build` + `learning-promoter` may allow
+`goals_learning_promote`; every triage/reviewer role must deny it). The three
+triage roles (`scout-skeptical`, `qa-verification`, `adversarial`) must deny it,
+so a learning never self-certifies.
 
 ## Self-Improvement
 
@@ -144,6 +147,19 @@ missing — grounded in what actually happened this session or exists in the rep
 now, never aspirational. Record each applied change in the RUN LOG below.
 
 ## RUN LOG
+
+### 2026-08-17 — two-agent promote model + auto-merge + tmux-TUI launch (revised above)
+- Lesson: the "single promote-capable agent, detached/headless, no auto-merge"
+  model above went stale after the owner asked for a fully no-human loop: build
+  was granted `goals_learning_promote`, the promoter started auto-merging, and
+  `opencode run` proved unable to host the promoter (disposes the lead instance
+  at turn end, aborting async reviewers).
+- Fix: `build` + `learning-promoter` are both promote-capable; the `tests.nix`
+  Decision-1 assertions were revised to allow both and deny every triage role;
+  accepted learnings auto-merge into `server`; the promoter now runs from a
+  persistent tmux TUI (see `agents/learning-promoter.md` and
+  `commands/learning-promote.md` for the launch steps). Rewrote the promotion
+  section above to match.
 
 ### 2026-08-16 — added automated full-auto learning promotion (learning-promoter)
 - Lesson: promotion of proposed agent learnings was documented as human-only,

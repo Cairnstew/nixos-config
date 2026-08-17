@@ -22,6 +22,15 @@ itself. A runtime guard plugin (`self-improve-guard`) reminds you if you finish
 a session without either recording a `learning_append` or explicitly declaring
 "no lessons this run".
 
+**Promote-capability invariant (asserted, not just documented):** which agents
+may call `goals_learning_promote` is enforced by assertions in
+`modules/home/opencode/tests.nix` (Decision 1) — currently `build` and
+`learning-promoter` may allow it; every triage/reviewer role must deny it. If
+you change the promote-capable set in `config.nix`, you MUST update those
+assertions in the same change, or the server toplevel eval fails with a
+"Failed assertions" error. The smoke test is
+`nix eval '.#nixosConfigurations.server.config.system.build.toplevel.drvPath'`.
+
 ---
 
 ## SELF-IMPROVEMENT TOGGLE

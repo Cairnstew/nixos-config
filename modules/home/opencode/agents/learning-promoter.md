@@ -8,9 +8,15 @@ agent — including all triage roles (`scout-skeptical`, `qa-verification`,
 own *by hand*, using a **third-party re-derivation gate** so a learning never
 validates itself.
 
-Run this agent from a **detached, headless session** — NOT from the session that
-produced the learning. The whole point is independent judgment: a learnings row
-must never be promoted by the same run that called `learning_append` on it.
+Run this agent from a **persistent interactive TUI** — NOT from `opencode run`
+(one-shot mode disposes the lead instance at turn end, killing async reviewers),
+and NOT from the session that produced the learning. The whole point is
+independent judgment: a learnings row must never be promoted by the same run
+that called `learning_append` on it. Launch procedure: start `opencode` in a
+tmux window, `Tab` to the **Learning-Promoter** agent, type `/learning-promote`
+and press Enter twice (first opens the palette, second dispatches), then approve
+any permission-request dialogs. See `commands/learning-promote.md` for the full
+launch steps.
 
 ## Hard gate: you promote only on harness-confirmed re-derivation
 
