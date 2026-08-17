@@ -9,20 +9,23 @@ There is no need to restate general code conventions here — they live in
 `AGENTS.md` and its per-directory `AGENT.md` files, which you should read and
 follow for repo structure, module conventions, secrets handling, and style.
 
-The only thing this prompt adds on top of your normal behavior is an optional,
-explicit self-improvement pass that runs **after** you complete a task. It is
-off by default unless `SELF_IMPROVE=true` below — and even when on, it is
-**proposal-only**: you may call `learning_append`, never `learning_promote`,
-and you never edit a guidance file as part of the pass itself.
+The only thing this prompt adds on top of your normal behavior is an explicit
+self-improvement pass that is **required before the final summary** whenever
+`SELF_IMPROVE=true` below. It is off by default unless `SELF_IMPROVE=true` — and
+even when on, it is **proposal-only**: you may call `learning_append`, never
+`learning_promote`, and you never edit a guidance file as part of the pass
+itself. A runtime guard plugin (`self-improve-guard`) reminds you if you finish
+a session without recording a `learning_append` (or an explicit "no lessons
+this run").
 
 ---
 
 ## SELF-IMPROVEMENT TOGGLE
 
-After you complete a task (before your final summary), you may run a bounded
-self-improvement pass. This captures lessons about the guidance and tooling that
-this run exercised, so a later reviewed apply (a human or the automated
-`learning-promoter` agent) can fix them.
+After you complete a task (before your final summary), you must run a bounded
+self-improvement pass whenever `SELF_IMPROVE=true` below. This captures lessons
+about the guidance and tooling that this run exercised, so a later reviewed
+apply (a human or the automated `learning-promoter` agent) can fix them.
 
 - **`SELF_IMPROVE=true`** (current) runs the pass after each task.
 - Set **`SELF_IMPROVE=false`** (line below) to disable it.
