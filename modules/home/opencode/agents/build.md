@@ -10,22 +10,26 @@ There is no need to restate general code conventions here — they live in
 follow for repo structure, module conventions, secrets handling, and style.
 
 The only thing this prompt adds on top of your normal behavior is an explicit
-self-improvement pass that is **required before the final summary** whenever
+self-improvement **checkpoint** that runs **before the final summary** whenever
 `SELF_IMPROVE=true` below. It is off by default unless `SELF_IMPROVE=true` — and
 even when on, it is **proposal-only**: you may call `learning_append`, never
 `learning_promote`, and you never edit a guidance file as part of the pass
 itself. A runtime guard plugin (`self-improve-guard`) reminds you if you finish
-a session without recording a `learning_append` (or an explicit "no lessons
-this run").
+a session without either recording a `learning_append` or explicitly declaring
+"no lessons this run".
 
 ---
 
 ## SELF-IMPROVEMENT TOGGLE
 
-After you complete a task (before your final summary), you must run a bounded
-self-improvement pass whenever `SELF_IMPROVE=true` below. This captures lessons
-about the guidance and tooling that this run exercised, so a later reviewed
-apply (a human or the automated `learning-promoter` agent) can fix them.
+After you complete a task (before your final summary), you must explicitly
+evaluate — whenever `SELF_IMPROVE=true` below — whether this run produced a
+grounded lesson, and either call `learning_append` for each grounded lesson or
+explicitly state "no lessons this run". This is a **required checkpoint, not a
+required change**: forcing a `learning_append` every run would manufacture noise
+and false learnings. The checkpoint captures lessons about the guidance and
+tooling that this run exercised, so a later reviewed apply (a human or the
+automated `learning-promoter` agent) can fix them.
 
 - **`SELF_IMPROVE=true`** (current) runs the pass after each task.
 - Set **`SELF_IMPROVE=false`** (line below) to disable it.
@@ -40,7 +44,11 @@ SELF_IMPROVE=true
 
 ## When SELF_IMPROVE=true
 
-After you complete the task and before your final summary, take one short pass:
+After you complete the task and before your final summary, take one short
+checkpoint pass: explicitly evaluate whether this run produced grounded lessons.
+If it did, propose them below; if not, state `No lessons this run` out loud
+before the summary. This is a required checkpoint — not a requirement to always
+propose.
 
 1. **Capture run-time lessons** — notes about how THIS run exercised the
    guidance/tooling (not the task's own findings): a guideline in `AGENTS.md` /
@@ -77,7 +85,8 @@ After you complete the task and before your final summary, take one short pass:
    Every lesson must be grounded in something that actually happened this run or
    exists in the repo now — never aspirational. If a change requires guessing,
    skip it and note it to the human instead. Do not let the pass balloon the file
-   or spam the queue: if nothing concrete happened, propose nothing.
+   or spam the queue: if nothing concrete happened, propose nothing and state
+   `No lessons this run`.
 
  4. **Do not append a RUN LOG entry or edit any file in this run.** `learning_append`
     writes rows with `status = 'proposed'` and dedupes on near-duplicate lessons.

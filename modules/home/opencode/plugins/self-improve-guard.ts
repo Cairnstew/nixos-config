@@ -6,10 +6,14 @@ import { existsSync, readFileSync } from "node:fs";
 // Self-improvement guard for the build agent.
 //
 // The build agent's prompt (modules/home/opencode/agents/build.md) bakes a
-// SELF_IMPROVE=true toggle that is meant to require a post-task
-// self-improvement pass through the goals MCP tool `goals_learning_append`.
-// The prompt alone is soft: nothing at runtime enforces that the pass
-// actually happened. This sibling plugin closes that loop:
+// SELF_IMPROVE=true toggle that makes a post-task self-improvement CHECKPOINT
+// mandatory: the agent must explicitly evaluate — before the final summary —
+// whether this run produced a grounded lesson and either call
+// `goals_learning_append` or explicitly state "no lessons this run". The
+// checkpoint is required to be CONSIDERED, never to force a proposal (forcing
+// an append every run would manufacture noise). The prompt alone is soft:
+// nothing at runtime enforces that the checkpoint actually happened. This
+// sibling plugin closes that loop:
 //
 //   * When a session goes idle, look the session up in opencode.db's `session`
 //     table. If its `agent` is `build` (the primary development agent whose
@@ -17,10 +21,11 @@ import { existsSync, readFileSync } from "node:fs";
 //   * ...and the repo's live `agents/build.md` still says SELF_IMPROVE=true
 //     (the prompt itself tells agents to read the current value rather than
 //     trust a stale baked copy)...
-//   * ...and the session NEVER recorded a completed `goals_learning_append` /
-//     `learning_append` tool call (scan the `part` table for that session)...
-//   * ...inject one reminder message into the session asking it to run the
-//     self-improvement pass before the final summary.
+//   * ...and the session NEVER satisfied the checkpoint (no completed
+//     `goals_learning_append` / `learning_append` tool call AND no explicit
+//     "no lessons this run" statement — scan the `part` table)...
+//   * ...inject one reminder message into the session asking it to complete
+//     the checkpoint before the final summary (propose or declare no lessons).
 //
 // It is deliberately a *reminder*, not a blocker: it never edits the session,
 // never changes agent config, and never calls any goals tool. It mirrors the
@@ -81,10 +86,13 @@ function selfImproveEnabled(directory: string): boolean {
   }
 }
 
-// Did this session record a completed goals_learning_append call (or the
-// unprefixed `learning_append`)? The append tool is the only goal-side action
-// the build agent is permitted to take; a completed call means the pass ran.
-function recordedAppend(db: any, kind: string, sessionID: string): boolean {
+// Did this session satisfy the self-improvement checkpoint? That is: it either
+// recorded a completed `goals_learning_append` / `learning_append` tool call,
+// OR it explicitly declared "no lessons this run" (the build prompt's
+// checkpoint semantics: required to CONSIDER, never forced to propose). A
+// completed append call or an explicit no-lessons statement both mean the
+// checkpoint ran; only when NEITHER appears should the guard remind.
+function checkpointSatisfied(db: any, kind: string, sessionID: string): boolean {
   const rows = queryAll(
     db,
     kind,
@@ -98,10 +106,16 @@ function recordedAppend(db: any, kind: string, sessionID: string): boolean {
     } catch {
       continue;
     }
-    if (data?.type !== "tool") continue;
-    const tool = data.tool ?? "";
-    if (tool !== "learning_append" && tool !== "goals_learning_append") continue;
-    if (data.state?.status === "completed") return true;
+    if (data?.type === "tool") {
+      const tool = data.tool ?? "";
+      if (tool === "learning_append" || tool === "goals_learning_append") {
+        if (data.state?.status === "completed") return true;
+      }
+    }
+    if (data?.type === "text") {
+      const text = typeof data.text === "string" ? data.text : "";
+      if (/no lessons this run/i.test(text) || /no lessons\.?$/im.test(text.trim())) return true;
+    }
   }
   return false;
 }
@@ -137,12 +151,13 @@ export const SelfImproveGuardPlugin: Plugin = async ({ client, directory }) => {
       // agent to do).
       if (!selfImproveEnabled(directory)) return;
 
-      // If the pass already ran (a completed append call exists), nothing to do.
+      // If the checkpoint already ran (a completed append call, or an explicit
+      // "no lessons this run" statement), nothing to do.
       let alreadyRan = false;
       try {
         const open = await openDb(opencodeDbPath());
         try {
-          alreadyRan = recordedAppend(open.db, open.kind, sessionID);
+          alreadyRan = checkpointSatisfied(open.db, open.kind, sessionID);
         } finally {
           open.db.close();
         }
@@ -159,10 +174,11 @@ export const SelfImproveGuardPlugin: Plugin = async ({ client, directory }) => {
               type: "text",
               text:
                 "Reminder (self-improve-guard): this session's agent has SELF_IMPROVE=true " +
-                "but no goals_learning_append call was recorded. Before your final summary, " +
-                "run the required self-improvement pass: capture any grounded lesson via " +
-                "`goals_learning_append`, or explicitly state 'no lessons this run' if the " +
-                "pass produced nothing concrete.",
+                "but neither a goals_learning_append call nor an explicit 'no lessons this run' " +
+                "statement was recorded. Before your final summary, complete the self-improvement " +
+                "checkpoint: either capture any grounded lesson via `goals_learning_append` or " +
+                "explicitly state 'no lessons this run' if the checkpoint produced nothing " +
+                "concrete.",
               synthetic: true,
             },
           ],
