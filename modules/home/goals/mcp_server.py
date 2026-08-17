@@ -1024,16 +1024,20 @@ def learning_append(
 
 
 def learning_promote(learning_id: int, decision: str, acted_on_commit: str | None = None) -> dict:
-    """Human-reviewed promotion of a learning.
+    """Promotion of a learning (human or the automated learning-promoter agent).
 
-    THIS TOOL IS FOR SEAN OR A HUMAN-REVIEWED SESSION ONLY. It must NEVER be
-    invoked from within the same run that proposed the learning — that is the
-    whole of Decision 4 (Option 1): the agent may only propose; it may not
-    validate its own learnings. Validation requires the commit hash the
-    corresponding command/skill edit was made in, so edit and promotion are one
-    reviewed action and cannot drift apart. 'acted_on_commit' is required for
-    ANY 'validated' promotion regardless of target_type — creating a new skill
-    does not relax the gate.
+    This is the ONLY path that flips `learnings.status` from 'proposed'. It is
+    for a reviewed session — a human, OR the dedicated automated
+    `learning-promoter` agent — and must NEVER be invoked from within the same
+    run that proposed the learning, which is the whole of Decision 4 (Option 1):
+    the proposing agent may only propose; it may not validate its own learnings.
+    (The automated promoter is a separate, headless run and only acts on a
+    unanimous, harness-re-derived triage 'agree' — see
+    modules/home/opencode/agents/learning-promoter.md.) Validation requires the
+    commit hash the corresponding command/skill edit was made in, so edit and
+    promotion are one reviewed action and cannot drift apart. 'acted_on_commit'
+    is required for ANY 'validated' promotion regardless of target_type —
+    creating a new skill does not relax the gate.
 
     REMINDER for new_skill / new_command learnings: validating a learning whose
     target_type is 'new_skill' or 'new_command' records that the reviewed apply
@@ -1070,9 +1074,16 @@ def learning_promote(learning_id: int, decision: str, acted_on_commit: str | Non
 
 
 def learning_query(command: str | None = None, status: str | None = None) -> list[dict]:
-    """List learnings, filtered by command and/or status. This is the queue a
-    human review session works from (e.g. all 'proposed' learnings for
-    'nix-refine' awaiting a decision)."""
+    """List learnings, filtered by command and/or status.
+
+    This is the queue a review/promotion session works from (e.g. all
+    'proposed' learnings for 'nix-refine' awaiting a decision). Each returned
+    learning row carries its `review_verdicts` list (ordered by id) so a caller
+    — human or the automated promoter — can read the triage verdicts and their
+    harness back-fill (`rederivation_method` / `match_confidence`) without a
+    separate tool. The review_verdicts invariant applies at the caller: a
+    verdict row with `rederivation_method IS NULL` counts as 'uncertain'
+    regardless of its `verdict` column."""
     query = "SELECT * FROM learnings"
     params: list = []
     where: list[str] = []
@@ -1085,7 +1096,19 @@ def learning_query(command: str | None = None, status: str | None = None) -> lis
     if where:
         query += " WHERE " + " AND ".join(where)
     query += " ORDER BY created_at ASC"
-    return [dict(r) for r in conn.execute(query, params).fetchall()]
+    rows = conn.execute(query, params).fetchall()
+    result = []
+    for r in rows:
+        item = dict(r)
+        item["review_verdicts"] = [
+            dict(v)
+            for v in conn.execute(
+                "SELECT * FROM review_verdicts WHERE learning_id = ? ORDER BY id ASC",
+                (r["id"],),
+            ).fetchall()
+        ]
+        result.append(item)
+    return result
 
 
 def learning_review(learning_id: int, verdict: str) -> dict:
@@ -1095,8 +1118,9 @@ def learning_review(learning_id: int, verdict: str) -> dict:
     roles get for reviewing. It has NO parameter for evidence, output, or
     rederivation method, and NO code path that writes to `learnings.status` or
     `learnings.acted_on_commit` — promotion stays exclusively on the
-    human-path `learning_promote`, which triage roles are additionally scoped
-    out of via per-agent MCP permission (`"goals_learning_promote": "deny"`).
+    `learning_promote` path (a human, or the automated `learning-promoter`
+    agent), which triage roles are additionally scoped out of via per-agent MCP
+    permission (`"goals_learning_promote": "deny"`).
 
     It only inserts a row into `review_verdicts` (schema: Task 2) with
     `learning_id` and `verdict`; the capture plugin (Tier 1 Task 4) fills
@@ -1419,7 +1443,7 @@ TOOLS: list[dict] = [
     },
     {
         "name": "learning_promote",
-        "description": "Human-reviewed promotion of a proposed learning to 'validated' or 'rejected'. FOR SEAN OR A HUMAN-REVIEWED SESSION ONLY — must NEVER be invoked from within the same run that proposed the learning (Decision 4, Option 1 gate). 'validated' requires acted_on_commit (the hash of the edit being reviewed), so edit and promotion are one action. For new_skill/new_command learnings: the reviewer is also responsible for wiring the new skill/command into the opencode module's config.nix skills/commands block — the tool cannot verify a Nix module edit.",
+        "description": "Promotion of a proposed learning to 'validated' or 'rejected' — the ONLY path that changes learnings.status. For a reviewed session (a human, or the automated learning-promoter agent) — must NEVER be invoked from within the same run that proposed the learning (Decision 4, Option 1 gate). 'validated' requires acted_on_commit (the hash of the edit being reviewed), so edit and promotion are one action. For new_skill/new_command learnings: the reviewer is also responsible for wiring the new skill/command into the opencode module's config.nix skills/commands block — the tool cannot verify a Nix module edit.",
         "inputSchema": {
             "type": "object",
             "properties": {
@@ -1432,7 +1456,7 @@ TOOLS: list[dict] = [
     },
     {
         "name": "learning_query",
-        "description": "List agent learnings, filtered by command and/or status. The review queue a human session works from (e.g. all 'proposed' learnings for 'nix-refine' awaiting a decision).",
+        "description": "List agent learnings, filtered by command and/or status. The review/promotion queue (e.g. all 'proposed' learnings for 'nix-refine' awaiting a decision). Each returned learning row includes its `review_verdicts` list (triage verdicts + the harness back-fill fields rederivation_method / match_confidence). Invariant for callers: a verdict row with rederivation_method IS NULL counts as 'uncertain' regardless of its verdict column.",
         "inputSchema": {
             "type": "object",
             "properties": {
@@ -1443,7 +1467,7 @@ TOOLS: list[dict] = [
     },
     {
         "name": "learning_review",
-        "description": "Record a triage reviewer's verdict on a proposed learning. Accepts 'agree'/'disagree'/'uncertain' only. Decision 1 (Option 3) tool split: this is the only tool ensemble triage roles get for reviewing — it has NO evidence/output/rederivation parameters and NO path to learnings.status or acted_on_commit (promotion stays exclusively on the human-path learning_promote). Inserts a review_verdicts row with learning_id + verdict; the capture plugin fills rederivation_method/transcript_ref/match_confidence separately. Invariant: a verdict row with rederivation_method IS NULL counts as 'uncertain' regardless of the verdict column.",
+        "description": "Record a triage reviewer's verdict on a proposed learning. Accepts 'agree'/'disagree'/'uncertain' only. Decision 1 (Option 3) tool split: this is the only tool ensemble triage roles get for reviewing — it has NO evidence/output/rederivation parameters and NO path to learnings.status or acted_on_commit (promotion stays exclusively on learning_promote, run by a human or the automated learning-promoter agent). Inserts a review_verdicts row with learning_id + verdict; the capture plugin fills rederivation_method/transcript_ref/match_confidence separately. Invariant: a verdict row with rederivation_method IS NULL counts as 'uncertain' regardless of the verdict column.",
         "inputSchema": {
             "type": "object",
             "properties": {

@@ -82,11 +82,12 @@ let
     // (lib.optionalAttrs agentCfg.hidden { hidden = true; })
     // (lib.optionalAttrs (agentCfg.color != null) { color = agentCfg.color; })
     // (lib.optionalAttrs (agentCfg.permission != null) {
-      permission = filterAttrs (_: v: v != null) {
-        inherit (agentCfg.permission)
-          read edit glob grep list bash task external_directory
-          lsp skill todowrite webfetch websearch question doom_loop;
-      }
+      permission = filterAttrs (_: v: v != null)
+        {
+          inherit (agentCfg.permission)
+            read edit glob grep list bash task external_directory
+            lsp skill todowrite webfetch websearch question doom_loop;
+        }
       // (lib.optionalAttrs (agentCfg.permission.tools != null) agentCfg.permission.tools);
     })
     // agentCfg.extraOptions;
@@ -240,6 +241,11 @@ in
             model = "opencode-go/deepseek-v4-flash";
             mode = "primary";
             permission = { edit = "allow"; bash = "allow"; };
+            # Optional post-task self-improvement pass (SELF_IMPROVE=true in
+            # ./agents/build.md) — proposal-only via learning_append, never
+            # learning_promote. Kept out of the core description so the default
+            # agent stays autonomy-preserving; the prompt only appends the pass.
+            prompt = builtins.readFile ./agents/build.md;
           };
           researcher = {
             description = "In-depth web researcher — fetches and cross-references online docs, articles, and specifications";
@@ -288,6 +294,7 @@ in
           nix-net-audit = ./commands/nix-net-audit.md;
           shopping-research = ./commands/shopping-research.md;
           triage-review = ./commands/triage-review.md;
+          learning-promote = ./commands/learning-promote.md;
         };
         pluginFiles = lib.mkDefault {
           copylast = ./plugins/copylast.ts;
@@ -384,6 +391,27 @@ in
             edit = "deny";
             bash = "deny";
             tools = { "goals_learning_promote" = "deny"; };
+          };
+        };
+        # ── Full-auto promoter (the ONLY promote-capable agent) ──────────
+        # Sole exception to the per-agent `goals_learning_promote = "deny"`
+        # rule. Every other agent (build, scout, reviewer, and the three triage
+        # roles) is scoped out of promote — intentionally inverted here. Must be
+        # run headlessly / detached from the proposing session: it closes the
+        # loop that a human used to own by hand, using a unanimous, harness-
+        # re-derived triage gate so a learning never validates itself. It has
+        # edit/bash because it applies+commits each accepted learning to its own
+        # revertible branch; it never auto-merges to master.
+        learning-promoter = {
+          description = "Headless automated promotion of proposed agent learnings: dispatch the three triage reviewers to re-derive evidence, then learning_promote only on unanimous re-derivation-gated agreement, applying each accepted learning as an isolated commit on its own branch";
+          mode = "primary";
+          model = "opencode-go/deepseek-v4-flash";
+          temperature = 0.1;
+          prompt = builtins.readFile ./agents/learning-promoter.md;
+          permission = {
+            edit = "allow";
+            bash = "allow";
+            tools = { "goals_learning_promote" = "allow"; };
           };
         };
       };

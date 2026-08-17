@@ -905,10 +905,11 @@ each operational lesson captured in 6.1, call the goals MCP tool **`learning_app
 
 `learning_append` writes the row with `status = 'proposed'` and dedupes against an existing open
 learning with the same command + near-duplicate lesson. The actual command-file edit the learning
-describes is **not** applied in this run: it happens in a separate, human-reviewed step after
+describes is **not** applied in this run: it happens in a separate reviewed step (a human, or the
+automated `learning-promoter` agent) after
 `learning_promote(<id>, "validated", acted_on_commit=<commit>)` has been called with the hash of
 the edit. Do not call `learning_promote` yourself, and do not apply the learning's edit silently.
-If a review session needs the queue, it uses `learning_query`.
+A review/promotion session reads the queue with `learning_query`.
 
 **Historical record:** the RUN LOG entries below (from before this mandate) remain in this file
 as history and are **not** migrated to the learnings tables — migrating history is a separate
