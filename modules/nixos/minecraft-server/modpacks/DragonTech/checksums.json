@@ -219,6 +219,10 @@
   "url": "https://cdn.modrinth.com/data/UT2M39wf/versions/kecZ0sl7/copycats-3.0.4%2Bmc.1.21.1-neoforge.jar",
   "sha256": "sha256-hIDipi6qYl91d2gxwdip7z130tgW+i5nVmxuwlunRdE="
  },
+ "corail-tombstone.pw.toml": {
+  "url": "https://cdn.modrinth.com/data/YT5K34AB/versions/qgDfK2mp/tombstone-neoforge-1.21.1-9.5.5.jar",
+  "sha256": "sha256-RQr/32NI2Lv4n7TllIS322z13RnVgVVTpAR9fW1Y/so="
+ },
  "cosy-critters-creepy-crawlies-neo.pw.toml": {
   "url": "https://cdn.modrinth.com/data/lOKz1gkH/versions/HmcDuDsO/cosycritters-1.21.1-NeoForge-0.0.6.jar",
   "sha256": "sha256-D5w/YZpUnBPFOOna9h5VC19mskVOXrF6SyFWSIBNDPE="

@@ -288,6 +288,11 @@ hash = "e002fab16a9b9ef0a35844030339612a38d3c58b0b93e97a34eb43ddc9108be7"
 metafile = true
 
 [[files]]
+file = "mods/corail-tombstone.pw.toml"
+hash = "3614e17416c93d1f6d86c32cbb587fe3c8a784cee7cb6afc26d9e25a1816aa19"
+metafile = true
+
+[[files]]
 file = "mods/cosy-critters-creepy-crawlies-neo.pw.toml"
 hash = "d27c2fa8ef019731d657683f2813914a21fe4c3e4da5175012d208bb7b6dc7c9"
 metafile = true
