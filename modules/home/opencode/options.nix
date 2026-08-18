@@ -357,6 +357,10 @@ in
         Credentials are written to ~/.local/share/opencode/auth.json.
         OpenCode Zen is a first-class provider and must NOT appear in
         opencode.json's provider block.
+
+        NOTE: the auth.json key name is 'opencode-zen', but Zen model IDs in
+        config use the 'opencode/' prefix (e.g. opencode/deepseek-v4-flash-free),
+        per https://opencode.ai/docs/zen — do not guess 'opencode-zen/model'.
       '';
     };
 
