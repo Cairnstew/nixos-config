@@ -83,6 +83,31 @@ openrouter → https://openrouter.ai/api/v1
 
 ---
 
+## OpenCode Zen — Special Notes
+
+OpenCode Zen is a **first-class provider**, not a custom provider.
+
+> https://opencode.ai/docs/zen
+
+- **Model IDs use the `opencode/` prefix, NOT `opencode-zen/`** — the config
+  model id format is `opencode/<model-id>`, e.g. `opencode/deepseek-v4-flash-free`.
+  Do not guess `opencode-zen/model`; it will not resolve.
+- The auth.json key name is **`opencode-zen`** (matching the module option
+  `opencode-zen.keyFile`), while the model-ID prefix in config is **`opencode`**
+  — the two do not match, which is the common source of confusion.
+- Auth goes in `auth.json` only — no `provider` block in `opencode.json`
+
+**Known models (as of Aug 2026):**
+
+| Model ID                          | Notes                        |
+|-----------------------------------|------------------------------|
+| `opencode/deepseek-v4-flash-free` | Free tier, used by the ensemble |
+| `opencode/deepseek-v4-flash`      | Cheap flash model            |
+
+> Full model list: https://opencode.ai/docs/zen
+
+---
+
 ## OpenCode Go — Special Notes
 
 OpenCode Go is a **first-class provider** (like Zen), not a custom provider.
