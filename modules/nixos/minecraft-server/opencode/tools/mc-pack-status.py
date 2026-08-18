@@ -50,10 +50,11 @@ if os.path.exists(index_path):
     import tomllib
 
     with open(index_path, "rb") as fh:
-        indexed = {os.path.basename(e["file"]) for e in tomllib.load(fh).get("files", [])}
-    # Only .pw.toml entries participate in the mod sync check; pack-root internal
-    # files (e.g. options.txt → game root) are legitimately indexed but not mods.
-    indexed_mods = {f for f in indexed if f.endswith(".pw.toml")}
+        indexed = {e["file"] for e in tomllib.load(fh).get("files", [])}
+    # Only mods/*.pw.toml entries participate in the mod sync check; shaderpacks/
+    # and resourcepacks/ metafiles plus pack-root internal files (e.g. options.txt
+    # → game root) are legitimately indexed but are not mods.
+    indexed_mods = {os.path.basename(f) for f in indexed if f.startswith("mods/") and f.endswith(".pw.toml")}
     sync = indexed_mods == set(mods)
     report.append(f"index.toml entries: {len(indexed)} ({'in sync' if sync else 'MISMATCH'})")
 else:

@@ -85,6 +85,7 @@ let
   # module's minecraft-instance-<name> service):
   #   .minecraft/mods/           every mod jar (fixed-output, from checksums.json)
   #   .minecraft/config/         pack internal content (default player configs)
+  #   .minecraft/shaderpacks/    client-side shaderpacks (fixed-output fetches)
   #   .minecraft/<kubejs/scripts/datapacks/defaultconfigs>/
   #   meta.json                  { name, minecraft, loaderUid, loaderVersion }
   #                              (from pack.toml; drives instance.cfg/mmc-pack.json)
@@ -155,6 +156,41 @@ let
         fi
       '';
 
+      # Client-side shaderpacks (shaderpacks/*.pw.toml in the pack). Each is a
+      # packwiz-tracked file with a pinned [download] URL+hash (usually sha512)
+      # and side = "client"; fetch it as a fixed-output derivation — no binary
+      # blobs in git — and symlink the zip into .minecraft/shaderpacks/ so Iris
+      # lists it in the Shader Packs menu. The server never sees them:
+      # checksums.json only covers mods/, and the server's content dirs
+      # (packSubdirs in minecraft-server/config.nix) don't include shaderpacks.
+      shaderpacksDir = "${pack}/shaderpacks";
+      shaderpackMetas = lib.optionalAttrs (builtins.pathExists shaderpacksDir)
+        (builtins.listToAttrs
+          (map
+            (f:
+              let
+                meta = builtins.fromTOML (builtins.readFile "${shaderpacksDir}/${f}");
+              in
+              lib.nameValuePair meta.filename meta)
+            (builtins.filter (f: lib.hasSuffix ".pw.toml" f)
+              (builtins.attrNames (builtins.readDir shaderpacksDir)))));
+      shaderpackFetch = meta:
+        let
+          dl = meta.download;
+          hashAttr =
+            if dl."hash-format" or "sha512" == "sha512" then { sha512 = dl.hash; }
+            else if dl."hash-format" == "sha256" then { sha256 = dl.hash; }
+            else if dl."hash-format" == "sha1" then { sha1 = dl.hash; }
+            else lib.throw "minecraft-modpack-${name}: unsupported hash-format '${dl."hash-format"}' in ${shaderpacksDir}";
+        in
+        pkgs.fetchurl ({ url = dl.url; } // hashAttr);
+      shaderpackLinksScript = concatStringsSep "\n" (builtins.map
+        (filename: ''
+          mkdir -p "$out/.minecraft/shaderpacks"
+          ln -s '${shaderpackFetch shaderpackMetas.${filename}}' "$out/.minecraft/shaderpacks/${filename}"
+        '')
+        (builtins.attrNames shaderpackMetas));
+
       # mods/<fixup>.jar → store path, one symlink per mod.
       modLinksScript = concatStringsSep "\n" (lib.mapAttrsToList
         (target: src: ''
@@ -172,6 +208,7 @@ let
       mkdir -p $out/.minecraft
       ${modLinksScript}
       ${internalLinks}
+      ${shaderpackLinksScript}
       ${rootLinks}
       cp ${meta} $out/meta.json
     '';
