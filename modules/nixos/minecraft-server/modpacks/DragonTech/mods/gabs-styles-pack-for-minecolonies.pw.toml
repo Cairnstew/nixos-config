@@ -1,0 +1,12 @@
+name = "GAB's Styles Pack for Minecolonies"
+filename = "gabstylespack-0.4.0.jar"
+side = "both"
+
+[download]
+hash-format = "sha512"
+url = "https://mediafilez.forgecdn.net/files/8075/264/gabstylespack-0.4.0.jar"
+
+[update]
+[update.curseforge]
+file-id = 8075264
+project-id = 1535750

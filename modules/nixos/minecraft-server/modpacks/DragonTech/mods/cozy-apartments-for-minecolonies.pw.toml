@@ -1,0 +1,12 @@
+name = "Cozy Apartments for Minecolonies"
+filename = "cozyapartments%201.21.1%20v1.3.01%20snapshot.jar"
+side = "both"
+
+[download]
+hash-format = "sha512"
+url = "https://mediafilez.forgecdn.net/files/8587/677/cozyapartments%201.21.1%20v1.3.01%20snapshot.jar"
+
+[update]
+[update.curseforge]
+file-id = 8587677
+project-id = 1491072

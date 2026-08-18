@@ -1,0 +1,12 @@
+name = "Modular Hub Style Pack"
+filename = "ModularHubStylePack-1-21-1-v1.1.jar"
+side = "both"
+
+[download]
+hash-format = "sha512"
+url = "https://mediafilez.forgecdn.net/files/7756/701/ModularHubStylePack-1-21-1-v1.1.jar"
+
+[update]
+[update.curseforge]
+file-id = 7756701
+project-id = 1469650

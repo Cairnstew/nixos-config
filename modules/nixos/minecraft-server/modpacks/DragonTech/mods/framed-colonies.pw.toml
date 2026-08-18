@@ -1,0 +1,12 @@
+name = "Framed Colonies"
+filename = "framedcolonies-1.0.3.jar"
+side = "both"
+
+[download]
+hash-format = "sha512"
+url = "https://mediafilez.forgecdn.net/files/6954/794/framedcolonies-1.0.3.jar"
+
+[update]
+[update.curseforge]
+file-id = 6954794
+project-id = 1337509

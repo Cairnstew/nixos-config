@@ -1,0 +1,12 @@
+name = "Likely_a_pack"
+filename = "Likely_a_Pack_1.20.1_1.8.jar"
+side = "both"
+
+[download]
+hash-format = "sha512"
+url = "https://mediafilez.forgecdn.net/files/7701/78/Likely_a_Pack_1.20.1_1.8.jar"
+
+[update]
+[update.curseforge]
+file-id = 7701078
+project-id = 1363735

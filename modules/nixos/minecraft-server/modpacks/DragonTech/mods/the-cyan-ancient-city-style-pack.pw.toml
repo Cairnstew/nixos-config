@@ -1,0 +1,12 @@
+name = "The ‌Cyan Ancient City Style Pack"
+filename = "Cyan_ancient_city-4.8.1.jar"
+side = "both"
+
+[download]
+hash-format = "sha512"
+url = "https://mediafilez.forgecdn.net/files/7429/649/Cyan_ancient_city-4.8.1.jar"
+
+[update]
+[update.curseforge]
+file-id = 7429649
+project-id = 1335051
