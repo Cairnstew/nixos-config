@@ -784,6 +784,108 @@ in
       '';
     };
 
+    # ── Learning-promoter watcher (v2 — opencode serve) ──────────────────────
+
+    learningPromoterWatcher = {
+      enable = mkEnableOption ''
+        Learning-promoter watcher: polls the goals DB for proposed learnings
+        and dispatches the promoter agent via `opencode run --attach` to a
+        persistent `opencode serve` instance. Runs under a systemd user timer
+        (default: 1min).
+
+        Features:
+        - API-based communication (no tmux, no send-keys fragility)
+        - Post-crash verdict reconciliation (force-rejects partial learnings)
+        - Stale learning reconciliation (force-rejects never-triaged learnings)
+        - Promotion timeout (configurable, default 30min)
+        - Fast crash recovery (1min timer interval)
+        - Overlap prevention via state file (prevents concurrent promotions)
+
+        Requires the `opencode-serve` systemd service to be running (auto-started
+        when this watcher is enabled). The watcher checks server health before
+        dispatching and skips if the server is unreachable.
+      '';
+
+      repoDir = mkOption {
+        type = types.str;
+        default = "${config.home.homeDirectory}/nixos-config";
+        defaultText = literalExpression ''"''${config.home.homeDirectory}/nixos-config"'';
+        description = "Path to the nixos-config repo for the promoter session.";
+      };
+
+      goalsDb = mkOption {
+        type = types.str;
+        default = "${config.home.homeDirectory}/.local/share/goals/goals.db";
+        defaultText = literalExpression ''"''${config.home.homeDirectory}/.local/share/goals/goals.db"'';
+        description = "Path to the goals SQLite database.";
+      };
+
+      checkInterval = mkOption {
+        type = types.str;
+        default = "1min";
+        example = "5min";
+        description = ''
+          Interval between watcher checks (systemd OnCalendar format).
+          Set to "1min" to check every minute (recommended for fast crash
+          recovery). The check is a single SQLite query — cheap enough for
+          sub-minute intervals.
+        '';
+      };
+
+      servePort = mkOption {
+        type = types.ints.positive;
+        default = 4096;
+        description = ''
+          Port for the persistent `opencode serve` instance. The watcher
+          connects to this port via `opencode run --attach`. Must not conflict
+          with other services.
+        '';
+      };
+
+      serverPassword = mkOption {
+        type = types.str;
+        default = "";
+        description = ''
+          Optional basic auth password for the opencode serve instance.
+          Set to "" (default) for unauthenticated local connections.
+        '';
+      };
+
+      promotionTimeout = mkOption {
+        type = types.ints.positive;
+        default = 1800;
+        description = ''
+          Maximum seconds for a single promotion cycle. If the promoter agent
+          takes longer than this (e.g. model API hanging, stuck reviewer), the
+          watcher cleans up the state and retries on the next cycle. Default:
+          1800 (30 minutes).
+        '';
+      };
+
+      stalenessThreshold = mkOption {
+        type = types.ints.positive;
+        default = 1800;
+        description = ''
+          Seconds after which a proposed learning with zero verdicts is
+          considered stale (never triaged) and force-rejected. This catches
+          learnings that were proposed but the promoter never got to them
+          (crashed before triage, server was down, etc.). Default: 1800
+          (30 minutes). Should be >= promotionTimeout to avoid killing
+          learnings that are queued but not yet reached in a sequential batch.
+        '';
+      };
+
+      commandTimeout = mkOption {
+        type = types.ints.positive;
+        default = 600;
+        description = ''
+          Timeout in seconds for the `opencode run --attach` command. If the
+          promoter agent doesn't complete within this window, the command is
+          killed and retried on the next cycle. Default: 600 (10 minutes).
+        '';
+      };
+    };
+
     # ── Policies ──────────────────────────────────────────────────────────────
 
     policies = {

@@ -528,5 +528,77 @@ in
       '';
     })
 
+    # ── Learning-promoter watcher (v2 — opencode serve, no tmux) ──────────────
+    (mkIf cfg.learningPromoterWatcher.enable {
+      home.packages = [
+        pkgs.python3
+        pkgs.curl
+      ];
+
+      home.file.".local/share/opencode/learning-promoter-launcher.py".source =
+        pkgs.runCommand "learning-promoter-launcher.py" { } ''
+          cp ${./tools/learning-promoter-launcher.py} "$out"
+          chmod +x "$out"
+        '';
+
+      # Persistent headless opencode server for the promoter agent.
+      # The watcher sends commands via `opencode run --attach` — no tmux needed.
+      systemd.user.services.opencode-serve = {
+        Unit = {
+          Description = "Headless opencode server for automated agent workflows";
+          After = [ "graphical-session.target" ];
+        };
+        Service = {
+          Type = "simple";
+          ExecStart = "${cfg.package}/bin/opencode serve --port ${toString cfg.learningPromoterWatcher.servePort} --hostname 127.0.0.1";
+          Restart = "on-failure";
+          RestartSec = 5;
+          Environment = [
+            "OPENCODE_SERVER_PASSWORD=${cfg.learningPromoterWatcher.serverPassword}"
+          ];
+          # Resource limits to prevent memory leak from crashing the host (#20695)
+          MemoryMax = "2G";
+          MemoryHigh = "1536M";
+          CPUQuota = "200%";
+          TasksMax = 256;
+        };
+      };
+
+      systemd.user.services.learning-promoter-watcher = {
+        Unit = {
+          Description = "Learning-promoter watcher — dispatches promoter when proposed learnings exist";
+          After = [ "opencode-serve.service" ];
+          Requires = [ "opencode-serve.service" ];
+        };
+        Service = {
+          Type = "oneshot";
+          ExecStart = "${pkgs.python3}/bin/python3 ${config.home.homeDirectory}/.local/share/opencode/learning-promoter-launcher.py";
+          Environment = [
+            "GOALS_DB=${cfg.learningPromoterWatcher.goalsDb}"
+            "REPO_DIR=${cfg.learningPromoterWatcher.repoDir}"
+            "OPENCODE_SERVER_URL=http://127.0.0.1:${toString cfg.learningPromoterWatcher.servePort}"
+            "PROMOTION_TIMEOUT=${toString cfg.learningPromoterWatcher.promotionTimeout}"
+            "STALENESS_THRESHOLD=${toString cfg.learningPromoterWatcher.stalenessThreshold}"
+            "COMMAND_TIMEOUT=${toString cfg.learningPromoterWatcher.commandTimeout}"
+            "STATE_DIR=${config.home.homeDirectory}/.local/share/opencode"
+          ];
+        };
+      };
+
+      systemd.user.timers.learning-promoter-watcher = {
+        Unit = {
+          Description = "Periodically check for proposed learnings and dispatch promoter";
+        };
+        Timer = {
+          OnCalendar = cfg.learningPromoterWatcher.checkInterval;
+          Persistent = true;
+          RandomizedDelaySec = "1min";
+        };
+        Install = {
+          WantedBy = [ "timers.target" ];
+        };
+      };
+    })
+
   ]);
 }

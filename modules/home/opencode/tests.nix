@@ -61,6 +61,11 @@ in
         assertion = cfg.share != null -> (cfg.share == "manual" || cfg.share == "auto" || cfg.share == "disabled");
         message = "my.programs.opencode: share must be one of: manual, auto, or disabled.";
       }
+      # learning-promoter-watcher requires opencode itself to be enabled
+      {
+        assertion = cfg.learningPromoterWatcher.enable -> cfg.enable;
+        message = "my.programs.opencode: learningPromoterWatcher.enable requires my.programs.opencode.enable to be true.";
+      }
       # Verify shorthand options are passed through correctly
       {
         assertion = cfg.smallModel != null -> opencodeCfg.settings.small_model == cfg.smallModel;
