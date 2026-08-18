@@ -14,8 +14,8 @@ Usage: packwiz-instance-sync.py <instance-dir> <meta.json> <built-content> [serv
   components file via instanceRoot()/mmc-pack.json, NOT .minecraft/),
 - refreshes .minecraft/mods/ wholesale (pack owns mods/), dereferencing the
   store symlinks so the instance is self-contained,
-- seeds .minecraft/{config,kubejs,scripts,datapacks,defaultconfigs} only when
-  absent (player edits win).
+- seeds .minecraft/{config,kubejs,scripts,datapacks,defaultconfigs,shaderpacks}
+  only when absent (player edits win).
 """
 import json
 import os
@@ -80,7 +80,7 @@ if os.path.isdir(mods_src):
     run(["rsync", "-a", "--delete", "-L", mods_src + "/", mods_dst + "/"])
     run(["chmod", "-R", "a-w,u+w", mods_dst])
 
-for d in ["config", "kubejs", "scripts", "datapacks", "defaultconfigs"]:
+for d in ["config", "kubejs", "scripts", "datapacks", "defaultconfigs", "shaderpacks"]:
     d_src = os.path.join(src, d)
     if os.path.isdir(d_src):
         d_dst = os.path.join(inst, ".minecraft", d)
