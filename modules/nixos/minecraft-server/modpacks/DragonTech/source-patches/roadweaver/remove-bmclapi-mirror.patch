@@ -1,0 +1,27 @@
+diff --git a/neoforge/build.gradle b/neoforge/build.gradle
+index 5b735b6..ed64156 100644
+--- a/neoforge/build.gradle
++++ b/neoforge/build.gradle
+@@ -102,10 +102,6 @@ repositories {
+         url = "https://api.modrinth.com/maven"
+         name = "Modrinth Maven"
+     }
+-    maven {
+-        url "https://bmclapi2.bangbang93.com/maven/"
+-        name "NeoForge Mirror"
+-    }
+     maven {
+         url "https://maven.neoforged.net/releases/"
+         name "NeoForge"
+diff --git a/settings.gradle b/settings.gradle
+index fef9d19..f553f6e 100644
+--- a/settings.gradle
++++ b/settings.gradle
+@@ -36,7 +36,6 @@ dependencyResolutionManagement {
+ 		maven { url = 'https://api.modrinth.com/maven' }
+ 		maven { url = 'https://maven.minecraftforge.net/' }
+ 		maven { url = 'https://maven.neoforged.net/releases/' }
+-		maven { url = 'https://bmclapi2.bangbang93.com/maven/' }
+ 
+ 		exclusiveContent {
+ 			forRepository {

@@ -25,6 +25,18 @@
 #    pathing already falls back to CPU. This patch keeps the dependency as
 #    compileOnly and removes it from the shadow jar + runtime layer.
 #
+# 3. remove-bmclapi-mirror.patch — drop the bmclapi "NeoForge Mirror" repo.
+#
+#    RoadWeaver's neoforge/build.gradle and settings.gradle list
+#    bmclapi2.bangbang93.com/maven (a Chinese mirror of the NeoForge maven)
+#    BEFORE the official maven.neoforged.net/releases. When Gradle resolves
+#    NeoForge toolchain artifacts (e.g. net.neoforged:mergetool:2.0.3) it hits
+#    the mirror first; bmclapi 302-redirects to mirrors.cernet.edu.cn (USTC),
+#    which refuses connections on some networks — so the whole build fails with
+#    "Could not download mergetool-2.0.3-fatjar.jar" even though the official
+#    repo is reachable. Removing the mirror makes all resolutions use the
+#    official maven.neoforged.net directly.
+#
 # The jar is built from source via the shared build-mod-source.nix helper
 # (fixed-output derivation — Gradle needs network at build time). Registered in
 # patches.nix as "mods/roadweaver.jar", consumed by both the client flake-part
@@ -43,6 +55,7 @@ buildModSource {
   patches = [
     ./elevated-water.patch
     ./remove-opencl-shadow.patch
+    ./remove-bmclapi-mirror.patch
   ];
   # outputHash filled in below: the sha256 of the built playable jar, computed
   # on first build (`nix build --impure .#... --print-out-paths` → "got:" hash).
