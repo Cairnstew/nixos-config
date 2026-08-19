@@ -13,6 +13,7 @@ Architecture (v2 — no tmux):
   - No tmux, no send-keys, no pipe-pane, no zombie detection.
   - Completion is detected by the command exiting successfully.
   - A state file tracks active promotions for overlap prevention.
+  - CPU health monitoring uses a non-blocking two-cycle approach (no sleep()).
 
 Improvements over v1 (tmux-based):
   - Eliminates tmux dependency and all tmux-related fragility.
@@ -20,6 +21,7 @@ Improvements over v1 (tmux-based):
   - Proper promotion timeout (configurable, default 30min).
   - No-verdicts reconciliation (force-rejects stale never-triaged learnings).
   - Structured JSON output parsing for completion detection.
+  - Non-blocking CPU hung detection (state persisted across timer cycles).
 
 Environment variables (set by the Nix derivation):
   GOALS_DB            — path to the goals SQLite database
@@ -264,26 +266,64 @@ def _read_cpu_ticks(pid: int) -> int | None:
         return None
 
 
-def _is_cpu_hung(pid: int, threshold: float = 90, window: int = 60) -> bool:
-    """Check if a process has been using >threshold% CPU for >window seconds.
+# Persistent state for non-blocking CPU monitoring across cycles.
+# Stores {pid, ticks, timestamp} so we can compute delta on the NEXT
+# timer tick without sleeping in this one.
+CPU_STATE_FILE = os.path.join(STATE_DIR, "cpu-monitor.state")
 
-    Uses /proc/{pid}/stat to read cumulative CPU time, compared across
-    two samples taken `window` seconds apart.
+
+def _save_cpu_state(pid: int, ticks: int) -> None:
+    """Save CPU sample for comparison on the next watcher cycle."""
+    os.makedirs(STATE_DIR, exist_ok=True)
+    with open(CPU_STATE_FILE, "w") as f:
+        json.dump({"pid": pid, "ticks": ticks, "ts": time.time()}, f)
+
+
+def _load_cpu_state() -> dict | None:
+    """Load the previous CPU sample, or None if not available."""
+    try:
+        with open(CPU_STATE_FILE, "r") as f:
+            return json.load(f)
+    except (json.JSONDecodeError, OSError):
+        return None
+
+
+def _is_cpu_hung(pid: int, threshold: float = 90) -> bool:
+    """Non-blocking CPU-hung detection across two watcher cycles.
+
+    Reads the current CPU ticks and timestamp. If a previous sample exists
+    for the same PID, computes CPU usage over the elapsed wall time. Saves
+    the current sample for the next cycle. Returns True only if CPU usage
+    exceeds `threshold` percent sustained.
+
+    Zero blocking — no sleep(). The check spans one timer interval (~1 min).
     """
-    ticks1 = _read_cpu_ticks(pid)
-    if ticks1 is None:
+    ticks_now = _read_cpu_ticks(pid)
+    if ticks_now is None:
         return False
 
-    time.sleep(window)
+    prev = _load_cpu_state()
 
-    ticks2 = _read_cpu_ticks(pid)
-    if ticks2 is None:
+    # Save current sample for next cycle
+    _save_cpu_state(pid, ticks_now)
+
+    if prev is None or prev.get("pid") != pid:
+        # First sample or PID changed — can't compute delta yet
+        return False
+
+    elapsed = time.time() - prev.get("ts", 0)
+    if elapsed < 10:
+        # Too short a window to be meaningful (timer misfire, rapid restart)
+        return False
+
+    delta_ticks = ticks_now - prev["ticks"]
+    if delta_ticks < 0:
+        # PID recycled — reset state
         return False
 
     cpu_count = os.cpu_count() or 1
-    delta_ticks = ticks2 - ticks1
-    delta_seconds = window
-    cpu_pct = (delta_ticks / (delta_seconds * 100)) * 100  # ticks are in 1/100s
+    # ticks are in 1/100s (USER_HZ), convert to percentage of total capacity
+    cpu_pct = (delta_ticks / (elapsed * 100)) * 100
 
     return cpu_pct > (threshold * cpu_count)
 
@@ -306,11 +346,12 @@ def server_is_healthy(url: str) -> bool:
     except (FileNotFoundError, subprocess.TimeoutExpired):
         return False
 
-    # CPU check: detect hung server (CPU spin, infinite loop)
+    # CPU check: detect hung server (CPU spin, infinite loop).
+    # Non-blocking — compares ticks across two timer cycles via state file.
     try:
         pid = _find_opencode_serve_pid()
-        if pid and _is_cpu_hung(pid, threshold=90, window=60):
-            log(f"opencode-serve (PID {pid}) CPU usage >90% for >60s — likely hung")
+        if pid and _is_cpu_hung(pid, threshold=90):
+            log(f"opencode-serve (PID {pid}) CPU usage >90% sustained — likely hung")
             return False
     except Exception as e:
         log(f"CPU check failed (non-fatal): {e}")
@@ -369,11 +410,12 @@ def save_state(pid: int) -> None:
 
 
 def remove_state() -> None:
-    """Clear the promotion state file."""
-    try:
-        os.unlink(STATE_FILE)
-    except FileNotFoundError:
-        pass
+    """Clear the promotion state file and CPU monitor state."""
+    for path in (STATE_FILE, CPU_STATE_FILE):
+        try:
+            os.unlink(path)
+        except FileNotFoundError:
+            pass
 
 
 # ── Command dispatch ─────────────────────────────────────────────────────────
@@ -421,13 +463,20 @@ def send_learning_promote(server_url: str) -> bool:
             return False
 
         if proc.returncode == 0:
-            # Parse JSON output for structured completion info
+            # Parse JSON output for structured completion info.
+            # opencode run --format json emits event types: tool_use,
+            # step_start, step_finish, text, reasoning, error.
+            # The "text" event carries the agent's visible output.
             try:
                 for line in stdout.strip().split("\n"):
                     if line.strip():
                         event = json.loads(line)
-                        if event.get("type") == "message":
-                            log(f"promoter response: {event.get('content', '')[:200]}")
+                        if event.get("type") == "text":
+                            text = event.get("part", {}).get("text", "")
+                            if text:
+                                log(f"promoter response: {text[:200]}")
+                        elif event.get("type") == "error":
+                            log(f"promoter error: {event}")
             except (json.JSONDecodeError, ValueError):
                 # Non-JSON output is fine — command succeeded
                 if stdout.strip():
@@ -465,6 +514,11 @@ def main() -> int:
     if not server_is_healthy(OPENCODE_SERVER_URL):
         log(f"opencode serve not healthy at {OPENCODE_SERVER_URL} — skipping")
         log("ensure the opencode-serve systemd service is running")
+        # Clean up CPU state so stale data doesn't persist across server restarts
+        try:
+            os.unlink(CPU_STATE_FILE)
+        except FileNotFoundError:
+            pass
         return 0
 
     # Step 2: Check if a promotion is already running (BEFORE reconciliation)

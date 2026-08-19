@@ -825,7 +825,8 @@ in
         default = "1min";
         example = "5min";
         description = ''
-          Interval between watcher checks (systemd OnCalendar format).
+          Interval between watcher checks (systemd time span format, e.g.
+          "1min", "5min"). Uses OnBootSec + OnUnitActiveSec under the hood.
           Set to "1min" to check every minute (recommended for fast crash
           recovery). The check is a single SQLite query — cheap enough for
           sub-minute intervals.
