@@ -1,0 +1,637 @@
+{
+	default_hide_dependency_lines: false
+	default_quest_shape: ""
+	filename: "digital_age"
+	group: "4A695DE23DC9359F"
+	icon: {
+		id: "ae2:controller"
+	}
+	id: "E5F6071829404001"
+	images: [ ]
+	order_index: 5
+	quest_links: [ ]
+	quests: [
+		{
+			id: "E5F6071829404002"
+			rewards: [{
+				id: "E5F6071829404020"
+				type: "xp"
+				xp: 100
+			}]
+			tasks: [{
+				id: "E5F6071829404021"
+				item: {
+					count: 4
+					id: "ae2:controller"
+				}
+				type: "item"
+			}]
+			x: 0.0d
+			y: 0.0d
+		}
+		{
+			dependencies: ["E5F6071829404002"]
+			id: "E5F6071829404003"
+			rewards: [{
+				id: "E5F6071829404022"
+				type: "xp"
+				xp: 150
+			}]
+			tasks: [{
+				id: "E5F6071829404023"
+				item: {
+					count: 4
+					id: "ae2:drive"
+				}
+				type: "item"
+			}]
+			x: 1.0d
+			y: 0.0d
+		}
+		{
+			dependencies: ["E5F6071829404003"]
+			id: "E5F6071829404004"
+			rewards: [{
+				id: "E5F6071829404024"
+				type: "xp"
+				xp: 200
+			}]
+			tasks: [{
+				id: "E5F6071829404025"
+				item: {
+					count: 1
+					id: "ae2:storage_cell_1k"
+				}
+				type: "item"
+			}]
+			x: 2.0d
+			y: -1.0d
+		}
+		{
+			dependencies: ["E5F6071829404004"]
+			id: "E5F6071829404005"
+			rewards: [{
+				id: "E5F6071829404026"
+				type: "xp"
+				xp: 250
+			}]
+			tasks: [{
+				id: "E5F6071829404027"
+				item: {
+					count: 1
+					id: "ae2:storage_cell_4k"
+				}
+				type: "item"
+			}]
+			x: 3.0d
+			y: -1.0d
+		}
+		{
+			dependencies: ["E5F6071829404005"]
+			id: "E5F6071829404006"
+			rewards: [{
+				id: "E5F6071829404028"
+				type: "xp"
+				xp: 300
+			}]
+			tasks: [{
+				id: "E5F6071829404029"
+				item: {
+					count: 1
+					id: "ae2:storage_cell_16k"
+				}
+				type: "item"
+			}]
+			x: 4.0d
+			y: -1.0d
+		}
+		{
+			dependencies: ["E5F6071829404006"]
+			id: "E5F6071829404007"
+			rewards: [{
+				id: "E5F607182940402A"
+				type: "xp"
+				xp: 400
+			}]
+			tasks: [{
+				id: "E5F607182940402B"
+				item: {
+					count: 1
+					id: "ae2:storage_cell_64k"
+				}
+				type: "item"
+			}]
+			x: 5.0d
+			y: -1.0d
+		}
+		{
+			dependencies: ["E5F6071829404002"]
+			id: "E5F6071829404008"
+			rewards: [{
+				id: "E5F607182940402C"
+				type: "xp"
+				xp: 200
+			}]
+			tasks: [{
+				id: "E5F607182940402D"
+				item: {
+					count: 1
+					id: "ae2:crafting_terminal"
+				}
+				type: "item"
+			}]
+			x: 2.0d
+			y: 0.0d
+		}
+		{
+			dependencies: ["E5F6071829404008"]
+			id: "E5F6071829404009"
+			rewards: [{
+				id: "E5F607182940402E"
+				type: "xp"
+				xp: 300
+			}]
+			tasks: [{
+				id: "E5F607182940402F"
+				item: {
+					count: 1
+					id: "ae2:pattern_provider"
+				}
+				type: "item"
+			}]
+			x: 3.0d
+			y: 0.0d
+		}
+		{
+			dependencies: ["E5F6071829404009"]
+			id: "E5F607182940400A"
+			rewards: [{
+				id: "E5F6071829404030"
+				type: "xp"
+				xp: 350
+			}]
+			tasks: [{
+				id: "E5F6071829404031"
+				item: {
+					count: 1
+					id: "ae2:interface"
+				}
+				type: "item"
+			}]
+			x: 4.0d
+			y: 0.0d
+		}
+		{
+			dependencies: ["E5F607182940400A"]
+			id: "E5F607182940400B"
+			rewards: [{
+				id: "E5F6071829404032"
+				type: "xp"
+				xp: 400
+			}]
+			tasks: [{
+				id: "E5F6071829404033"
+				item: {
+					count: 1
+					id: "ae2:molecular_assembler"
+				}
+				type: "item"
+			}]
+			x: 5.0d
+			y: 0.0d
+		}
+		{
+			dependencies: ["E5F607182940400B"]
+			id: "E5F607182940400C"
+			rewards: [{
+				id: "E5F6071829404034"
+				type: "xp"
+				xp: 500
+			}]
+			tasks: [{
+				id: "E5F6071829404035"
+				item: {
+					count: 8
+					id: "ae2:acceleration_card"
+				}
+				type: "item"
+			}]
+			x: 6.0d
+			y: 0.0d
+		}
+		{
+			dependencies: ["E5F607182940400C"]
+			id: "E5F607182940400D"
+			rewards: [{
+				id: "E5F6071829404036"
+				type: "xp"
+				xp: 600
+			}]
+			tasks: [{
+				id: "E5F6071829404037"
+				item: {
+					count: 1
+					id: "ae2:wireless_terminal"
+				}
+				type: "item"
+			}]
+			x: 7.0d
+			y: 0.0d
+		}
+		{
+			dependencies: ["E5F6071829404002"]
+			id: "E5F607182940400E"
+			rewards: [{
+				id: "E5F6071829404038"
+				type: "xp"
+				xp: 200
+			}]
+			tasks: [{
+				id: "E5F6071829404039"
+				item: {
+					count: 1
+					id: "ae2:energy_acceptor"
+				}
+				type: "item"
+			}]
+			x: 2.0d
+			y: 2.0d
+		}
+		{
+			dependencies: ["E5F607182940400E"]
+			id: "E5F607182940400F"
+			rewards: [{
+				id: "E5F607182940403A"
+				type: "xp"
+				xp: 300
+			}]
+			tasks: [{
+				id: "E5F607182940403B"
+				item: {
+					count: 1
+					id: "ae2:dense_energy_cell"
+				}
+				type: "item"
+			}]
+			x: 3.0d
+			y: 2.0d
+		}
+		{
+			dependencies: ["E5F607182940400F"]
+			id: "E5F6071829404010"
+			rewards: [{
+				id: "E5F607182940403C"
+				type: "xp"
+				xp: 400
+			}]
+			tasks: [{
+				id: "E5F607182940403D"
+				item: {
+					count: 1
+					id: "mekanism:energy_cube"
+				}
+				type: "item"
+			}]
+			x: 4.0d
+			y: 2.0d
+		}
+		{
+			dependencies: ["E5F6071829404010"]
+			id: "E5F6071829404011"
+			rewards: [{
+				id: "E5F607182940403E"
+				type: "xp"
+				xp: 500
+			}]
+			tasks: [{
+				id: "E5F607182940403F"
+				item: {
+					count: 1
+					id: "mekanism:quantum_entangloporter"
+				}
+				type: "item"
+			}]
+			x: 5.0d
+			y: 2.0d
+		}
+		{
+			dependencies: ["E5F6071829404008"]
+			id: "E5F6071829404012"
+			rewards: [{
+				id: "E5F6071829404040"
+				type: "xp"
+				xp: 300
+			}]
+			tasks: [{
+				id: "E5F6071829404041"
+				item: {
+					count: 1
+					id: "create:precision_mechanism"
+				}
+				type: "item"
+			}]
+			x: 3.0d
+			y: -2.0d
+		}
+		{
+			dependencies: ["E5F6071829404012"]
+			id: "E5F6071829404013"
+			rewards: [{
+				id: "E5F6071829404042"
+				type: "xp"
+				xp: 400
+			}]
+			tasks: [{
+				id: "E5F6071829404043"
+				item: {
+					count: 1
+					id: "create:electronic_circuit"
+				}
+				type: "item"
+			}]
+			x: 4.0d
+			y: -2.0d
+		}
+		{
+			dependencies: ["E5F6071829404013"]
+			id: "E5F6071829404014"
+			rewards: [{
+				id: "E5F6071829404044"
+				type: "xp"
+				xp: 500
+			}]
+			tasks: [{
+				id: "E5F6071829404045"
+				item: {
+					count: 1
+					id: "create:brass_casing"
+				}
+				type: "item"
+			}]
+			x: 5.0d
+			y: -2.0d
+		}
+		{
+			dependencies: ["E5F607182940400C"]
+			id: "E5F6071829404015"
+			rewards: [{
+				id: "E5F6071829404046"
+				type: "xp"
+				xp: 600
+			}]
+			tasks: [{
+				id: "E5F6071829404047"
+				item: {
+					count: 1
+					id: "mekanism:assemblicator"
+				}
+				type: "item"
+			}]
+			x: 6.0d
+			y: 2.0d
+		}
+		{
+			dependencies: ["E5F6071829404015"]
+			id: "E5F6071829404016"
+			rewards: [{
+				id: "E5F6071829404048"
+				type: "xp"
+				xp: 700
+			}]
+			tasks: [{
+				id: "E5F6071829404049"
+				item: {
+					count: 1
+					id: "mekanism:metallurgic_infuser"
+				}
+				type: "item"
+			}]
+			x: 7.0d
+			y: 2.0d
+		}
+		{
+			dependencies: ["E5F6071829404002"]
+			id: "E5F607182940401A"
+			rewards: [{
+				id: "E5F6071829404050"
+				type: "xp"
+				xp: 200
+			}]
+			tasks: [{
+				id: "E5F6071829404051"
+				item: {
+					count: 1
+					id: "immersiveengineering:alu_ingot"
+				}
+				type: "item"
+			}]
+			x: 2.0d
+			y: 4.0d
+		}
+		{
+			dependencies: ["E5F607182940401A"]
+			id: "E5F607182940401B"
+			rewards: [{
+				id: "E5F6071829404052"
+				type: "xp"
+				xp: 300
+			}]
+			tasks: [{
+				id: "E5F6071829404053"
+				item: {
+					count: 1
+					id: "immersiveengineering:electronic_circuit"
+				}
+				type: "item"
+			}]
+			x: 3.0d
+			y: 4.0d
+		}
+		{
+			dependencies: ["E5F607182940401B"]
+			id: "E5F607182940401C"
+			rewards: [{
+				id: "E5F6071829404054"
+				type: "xp"
+				xp: 400
+			}]
+			tasks: [{
+				id: "E5F6071829404055"
+				item: {
+					count: 1
+					id: "immersiveengineering:component_electronic"
+				}
+				type: "item"
+			}]
+			x: 4.0d
+			y: 4.0d
+		}
+		{
+			dependencies: ["E5F6071829404002"]
+			id: "E5F607182940401D"
+			rewards: [{
+				id: "E5F6071829404056"
+				type: "xp"
+				xp: 200
+			}]
+			tasks: [{
+				id: "E5F6071829404057"
+				item: {
+					count: 1
+					id: "pneumaticcraft:plastic"
+				}
+				type: "item"
+			}]
+			x: 2.0d
+			y: 5.0d
+		}
+		{
+			dependencies: ["E5F607182940401D"]
+			id: "E5F607182940401E"
+			rewards: [{
+				id: "E5F6071829404058"
+				type: "xp"
+				xp: 300
+			}]
+			tasks: [{
+				id: "E5F6071829404059"
+				item: {
+					count: 1
+					id: "pneumaticcraft:printed_circuit_board"
+				}
+				type: "item"
+			}]
+			x: 3.0d
+			y: 5.0d
+		}
+		{
+			dependencies: ["E5F607182940401E"]
+			id: "E5F607182940401F"
+			rewards: [{
+				id: "E5F607182940405A"
+				type: "xp"
+				xp: 400
+			}]
+			tasks: [{
+				id: "E5F607182940405B"
+				item: {
+					count: 1
+					id: "pneumaticcraft:assembly_program"
+				}
+				type: "item"
+			}]
+			x: 4.0d
+			y: 5.0d
+		}
+		{
+			dependencies: ["E5F6071829404002"]
+			id: "E5F6071829404020"
+			rewards: [{
+				id: "E5F607182940405C"
+				type: "xp"
+				xp: 200
+			}]
+			tasks: [{
+				id: "E5F607182940405D"
+				item: {
+					count: 1
+					id: "powah:energizing_rod"
+				}
+				type: "item"
+			}]
+			x: 2.0d
+			y: 6.0d
+		}
+		{
+			dependencies: ["E5F6071829404020"]
+			id: "E5F6071829404021"
+			rewards: [{
+				id: "E5F607182940405E"
+				type: "xp"
+				xp: 300
+			}]
+			tasks: [{
+				id: "E5F607182940405F"
+				item: {
+					count: 1
+					id: "powah:energizing_orb"
+				}
+				type: "item"
+			}]
+			x: 3.0d
+			y: 6.0d
+		}
+		{
+			dependencies: ["E5F6071829404021"]
+			id: "E5F6071829404022"
+			rewards: [{
+				id: "E5F6071829404060"
+				type: "xp"
+				xp: 400
+			}]
+			tasks: [{
+				id: "E5F6071829404061"
+				item: {
+					count: 1
+					id: "powah:basic_energy_cell"
+				}
+				type: "item"
+			}]
+			x: 4.0d
+			y: 6.0d
+		}
+		{
+			dependencies: ["E5F607182940400D", "E5F6071829404011", "E5F6071829404016", "E5F607182940401C", "E5F607182940401F", "E5F6071829404022"]
+			id: "E5F6071829404017"
+			rewards: [{
+				id: "E5F607182940404A"
+				type: "xp"
+				xp: 1000
+			}]
+			tasks: [{
+				id: "E5F607182940404B"
+				type: "checkmark"
+			}]
+			x: 8.0d
+			y: 0.0d
+		}
+		{
+			dependencies: ["E5F6071829404017"]
+			id: "E5F6071829404018"
+			rewards: [{
+				id: "E5F607182940404C"
+				type: "xp"
+				xp: 1200
+			}]
+			tasks: [{
+				id: "E5F607182940404D"
+				item: {
+					count: 1
+					id: "ae2:creative_storage_cell"
+				}
+				type: "item"
+			}]
+			x: 9.0d
+			y: -1.0d
+		}
+		{
+			dependencies: ["E5F6071829404018"]
+			id: "E5F6071829404019"
+			rewards: [{
+				id: "E5F607182940404E"
+				type: "xp"
+				xp: 1500
+			}]
+			tasks: [{
+				id: "E5F607182940404F"
+				item: {
+					count: 1
+					id: "ae2:creative_energy_cell"
+				}
+				type: "item"
+			}]
+			x: 10.0d
+			y: -1.0d
+		}
+	]
+}

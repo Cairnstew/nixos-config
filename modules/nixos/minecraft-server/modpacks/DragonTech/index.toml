@@ -10,19 +10,43 @@ hash = "8a84886db070f21cb35f33963403c20051c8fb932f48d25d6363b5de33b6b035"
 
 [[files]]
 file = "config/ftbquests/quests/chapter_groups.snbt"
-hash = "87b1e2ea814e65b3645d70a743a87cbb1f1f439f330f232daa512097c0317eac"
+hash = "37fd31c72d22bdb090271d99ca1eafee75fbb59173b616984bc59ee1afb22dfa"
+
+[[files]]
+file = "config/ftbquests/quests/chapters/create_automation.snbt"
+hash = "4520320dd362019f6b23e914e0b1eb25af779084a204c9823de9b81512e38611"
+
+[[files]]
+file = "config/ftbquests/quests/chapters/digital_age.snbt"
+hash = "5561e383a51c0bff875517390aec2ab721cd1984e23f1293eae772226b0165b5"
+
+[[files]]
+file = "config/ftbquests/quests/chapters/dragon_growth.snbt"
+hash = "224a5deda73ce6c9005fa378e9eed0727083c924cdd59a31c64ac5e4341e6eea"
+
+[[files]]
+file = "config/ftbquests/quests/chapters/dragons_dominion.snbt"
+hash = "a31c1c203ae012111ff756090f575c4e2477ae99d8c110e3b42e56b76d179c03"
 
 [[files]]
 file = "config/ftbquests/quests/chapters/getting_started.snbt"
-hash = "919b4076ef107c88eb6bfc06f2f9f528662dea6a7e4d4e869d0a2d3ea08e94cd"
+hash = "e5bdea5d2891c87641a67fead060116513d1c6694792586d2ec63fe99a9cefaf"
+
+[[files]]
+file = "config/ftbquests/quests/chapters/mekanism_power.snbt"
+hash = "32ed9ca939475bc55e067ae4b7ecc7380110eeadcb538eb2e49f96614763afb8"
+
+[[files]]
+file = "config/ftbquests/quests/chapters/tech_foundations.snbt"
+hash = "3632127867ba5e1eb3c9ad2a674de847cf9c9f5ff2dbf18b0bf64185bf1b2302"
 
 [[files]]
 file = "config/ftbquests/quests/data.snbt"
-hash = "6c574733505e53b2d2b10121d7b997da8da75538af5dd5dfa080ce299439b121"
+hash = "95d715a87b03dd0e234d0ab6862aa154f5a0afe513c32e6bf270958f646dbe07"
 
 [[files]]
 file = "config/ftbquests/quests/lang/en_us.snbt"
-hash = "a7481e663978fa694933dc42b4c37e6bbd7b14522d5b2ddb03e246040950eeb9"
+hash = "3110bbad4a95b6a5e9469afc9224362cb4d1d156aecb628f986d7c8756d7a32d"
 
 [[files]]
 file = "config/ftbquests/quests/reward_tables/35971441C32601D7.snbt"
@@ -1048,8 +1072,18 @@ hash = "365cad6cde66295b8576108637bde81aae628db4c7288b6c81b84fbfbeb58175"
 metafile = true
 
 [[files]]
+file = "mods/pneumaticcraft-repressurized.pw.toml"
+hash = "382d3478ca5fb06dba118a62137ee8f2380b23696124b772a3a3b1fe11ec7618"
+metafile = true
+
+[[files]]
 file = "mods/polymorph.pw.toml"
 hash = "152769b5dfbb92a836634e315898b23b6a555c60b6f05ddf38c00085f2b784f6"
+metafile = true
+
+[[files]]
+file = "mods/powah.pw.toml"
+hash = "dc9fec9f7c8410ed73c1d9dec65df90b83af5a62a86e6a33b55dec5641f49f17"
 metafile = true
 
 [[files]]

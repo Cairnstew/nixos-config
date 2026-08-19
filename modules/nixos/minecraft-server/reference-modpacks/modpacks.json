@@ -1,0 +1,203 @@
+{
+  "generated": "2026-08-18",
+  "note": "Popular tech modpacks for reference. Modrinth slugs can be used with: packwiz modrinth add <slug>",
+  "modpacks": [
+    {
+      "name": "All The Mods 10",
+      "short": "ATM10",
+      "mc_version": "1.21.1",
+      "loader": "NeoForge",
+      "style": "Kitchen-sink",
+      "modrinth_slug": null,
+      "curseforge_slug": "all-the-mods-10",
+      "curseforge_url": "https://www.curseforge.com/minecraft/modpacks/all-the-mods-10",
+      "github": "https://github.com/AllTheMods/ATM-10",
+      "mod_count": 500,
+      "key_tech_mods": ["Create", "AE2", "Mekanism", "Oritech", "Thermal Series"]
+    },
+    {
+      "name": "FTB Skies 2",
+      "short": "ftb-skies-2",
+      "mc_version": "1.21.1",
+      "loader": "NeoForge",
+      "style": "Skyblock/Quest",
+      "modrinth_slug": null,
+      "curseforge_slug": null,
+      "ftb_url": "https://www.feed-the-beast.com/modpacks/129-ftb-skies-2",
+      "mod_count": 100,
+      "key_tech_mods": ["Create", "AE2", "storage networks"]
+    },
+    {
+      "name": "GregTech: New Horizons",
+      "short": "GT:NH",
+      "mc_version": "1.7.10",
+      "loader": "Forge",
+      "style": "Hardcore tech",
+      "modrinth_slug": null,
+      "curseforge_slug": "gt-new-horizons",
+      "curseforge_url": "https://www.curseforge.com/minecraft/modpacks/gt-new-horizons",
+      "website": "https://www.gtnewhorizons.com/",
+      "mod_count": 250,
+      "key_tech_mods": ["GregTech", "IC2", "Forestry"]
+    },
+    {
+      "name": "GregTech CEu Modern Community Pack",
+      "short": "gt-community-modern",
+      "mc_version": "1.20.1",
+      "loader": "Forge",
+      "style": "Expert intro",
+      "modrinth_slug": null,
+      "curseforge_slug": "gregtech-community-pack-modern",
+      "curseforge_url": "https://www.curseforge.com/minecraft/modpacks/gregtech-community-pack-modern",
+      "github": "https://github.com/GregTechCEu/GregTech-Modern-Community-Pack",
+      "mod_count": 65,
+      "key_tech_mods": ["GregTech CEu Modern", "AE2"]
+    },
+    {
+      "name": "Create: Above and Beyond",
+      "short": "create-above-and-beyond",
+      "mc_version": "1.18.2",
+      "loader": "Forge",
+      "style": "Create-expert",
+      "modrinth_slug": null,
+      "curseforge_slug": "create-above-and-beyond",
+      "curseforge_url": "https://www.curseforge.com/minecraft/modpacks/create-above-and-beyond",
+      "mod_count": 125,
+      "key_tech_mods": ["Create"]
+    },
+    {
+      "name": "Create: Astral",
+      "short": "create-astral",
+      "mc_version": "1.18.2",
+      "loader": "Fabric",
+      "style": "Create-expert",
+      "modrinth_slug": "create-astral",
+      "modrinth_url": "https://modrinth.com/modpack/create-astral",
+      "curseforge_slug": "create-astral",
+      "curseforge_url": "https://www.curseforge.com/minecraft/modpacks/create-astral",
+      "mod_count": 150,
+      "key_tech_mods": ["Create", "Tech Reborn", "Tinkers' Construct"]
+    },
+    {
+      "name": "Create+",
+      "short": "create_plus",
+      "mc_version": "1.21.1",
+      "loader": "NeoForge",
+      "style": "Lightweight",
+      "modrinth_slug": "create_plus",
+      "modrinth_url": "https://modrinth.com/modpack/create_plus",
+      "mod_count": 65,
+      "key_tech_mods": ["Create"]
+    },
+    {
+      "name": "Technical Electrical",
+      "short": "technical-electrical",
+      "mc_version": "1.21.1",
+      "loader": "NeoForge",
+      "style": "Kitchen-sink",
+      "modrinth_slug": "technical-electrical",
+      "modrinth_url": "https://modrinth.com/modpack/technical-electrical",
+      "mod_count": 100,
+      "key_tech_mods": ["Tech + magic mix"]
+    },
+    {
+      "name": "StaTech Industry",
+      "short": "statech-industry",
+      "mc_version": "1.20.x",
+      "loader": "Forge",
+      "style": "Automation",
+      "modrinth_slug": null,
+      "curseforge_slug": null,
+      "mod_count": 50,
+      "key_tech_mods": ["Tech Reborn"]
+    },
+    {
+      "name": "FactoryCraft: Create Expanded",
+      "short": "factorycraft-create-expanded",
+      "mc_version": "1.20.1",
+      "loader": "Forge",
+      "style": "Create + kitchen-sink",
+      "modrinth_slug": null,
+      "modpackindex_url": "https://www.modpackindex.com/modpack/122701/factorycraft-create-expanded",
+      "mod_count": 249,
+      "key_tech_mods": ["Create 6.0", "AE2", "Mekanism", "Immersive Engineering", "Refined Storage", "Thermal Series"]
+    },
+    {
+      "name": "Techmania",
+      "short": "techmania",
+      "mc_version": "1.20.1",
+      "loader": "Fabric",
+      "style": "Multi-tech",
+      "modrinth_slug": "techmaia",
+      "modrinth_url": "https://modrinth.com/modpack/techmaia",
+      "mod_count": 90,
+      "key_tech_mods": ["GregTech CEu Modern", "Modern Industrialization", "Tech Reborn", "AE2", "CC: Tweaked"]
+    },
+    {
+      "name": "TECH!",
+      "short": "tech",
+      "mc_version": "1.21.1",
+      "loader": "NeoForge",
+      "style": "Mega tech",
+      "modrinth_slug": null,
+      "modpackindex_url": "https://www.modpackindex.com/modpack/130726/tech",
+      "mod_count": 300,
+      "key_tech_mods": ["40 tech mods", "18 Create addons", "18 storage mods"]
+    },
+    {
+      "name": "Chumbucket",
+      "short": "chumbucket",
+      "mc_version": "1.21.1",
+      "loader": "NeoForge",
+      "style": "Engineering",
+      "modrinth_slug": null,
+      "modpackindex_url": "https://www.modpackindex.com/modpack/158186/chumbucket",
+      "mod_count": 317,
+      "key_tech_mods": ["Create", "AE2", "Mekanism", "Immersive Engineering", "PneumaticCraft", "Draconic Evolution"]
+    },
+    {
+      "name": "ATTM - All The Tech Mods",
+      "short": "attm",
+      "mc_version": "1.20.1",
+      "loader": "Forge",
+      "style": "Tech sandbox",
+      "modrinth_slug": "attm",
+      "modrinth_url": "https://modrinth.com/modpack/attm",
+      "mod_count": 100,
+      "key_tech_mods": ["Create + 100 tech mods"]
+    },
+    {
+      "name": "Create: Industry",
+      "short": "create-industry",
+      "mc_version": "1.20.1",
+      "loader": "Forge",
+      "style": "Create-focused",
+      "modrinth_slug": "create-industry",
+      "modrinth_url": "https://modrinth.com/modpack/create-industry",
+      "mod_count": 80,
+      "key_tech_mods": ["Create"]
+    },
+    {
+      "name": "Create: Homestead & Industry",
+      "short": "create-homestead-industry",
+      "mc_version": "1.21.1",
+      "loader": "NeoForge",
+      "style": "Create + industry",
+      "modrinth_slug": null,
+      "modpackindex_url": "https://www.modpackindex.com/modpack/154157/create-homestead-industry",
+      "mod_count": 100,
+      "key_tech_mods": ["Create", "AE2", "Refined Storage"]
+    },
+    {
+      "name": "FTB Skies 2: Aero",
+      "short": "ftb-skies-2-aero",
+      "mc_version": "1.21.1",
+      "loader": "NeoForge",
+      "style": "Skyblock/Flight",
+      "modrinth_slug": null,
+      "ftb_url": "https://www.feed-the-beast.com/modpacks",
+      "mod_count": 100,
+      "key_tech_mods": ["Create", "aeronautics"]
+    }
+  ]
+}

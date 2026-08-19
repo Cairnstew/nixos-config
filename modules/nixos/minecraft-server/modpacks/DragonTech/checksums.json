@@ -811,9 +811,17 @@
   "url": "https://edge.forgecdn.net/files/8570/392/Pu_Dragon-1.21.1-v0.0.4-03.08.2026.jar",
   "sha256": "sha256-Hzw9avcUOT/e/nwZ7t1M+GwZLWfa74q29hamt/2EtVw="
  },
+ "pneumaticcraft-repressurized.pw.toml": {
+  "url": "https://cdn.modrinth.com/data/ncAcdgk7/versions/TNzeuLH3/pneumaticcraft-repressurized-8.2.23%2Bmc1.21.1.jar",
+  "sha256": "sha256-ZHziDVLPE587aTubTEdTlmqVptr8gtnlOK5K5bAkn5w="
+ },
  "polymorph.pw.toml": {
   "url": "https://cdn.modrinth.com/data/tagwiZkJ/versions/VEburL70/polymorph-neoforge-1.1.0%2B1.21.1.jar",
   "sha256": "sha256-vsgRiXit6wUt6cTq+aWVgwYh2CUVp2TzL5yKTdUquUs="
+ },
+ "powah.pw.toml": {
+  "url": "https://cdn.modrinth.com/data/KZO4S4DO/versions/1prWLuga/Powah-6.2.10.jar",
+  "sha256": "sha256-DmBKc1YRHB3USgDqQvwaqWDZ+uuXgmE0nfETj87k0LQ="
  },
  "preloading-tricks.pw.toml": {
   "url": "https://cdn.modrinth.com/data/FFeAJNCx/versions/2XxN0NBv/preloading-tricks-3.7.3.jar",
