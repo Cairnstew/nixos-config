@@ -60,6 +60,12 @@
   # both share ~/.config/opencode and the ensemble DB. Gate both directions.
   my.homeManager.extraConfig.my.programs.opencode.sessionGate.enable = true;
 
+  # ── Learning-promoter watcher ──────────────────────────────────────────────
+  # Auto-dispatch the promoter agent via opencode serve when proposed learnings
+  # exist. Checks every 1min; reconciles partial/stale verdicts; uses API-based
+  # communication (no tmux). Requires opencode-serve.service (auto-started).
+  my.homeManager.extraConfig.my.programs.opencode.learningPromoterWatcher.enable = true;
+
   # ── Location ─────────────────────────────────────────────────────────────
   my.system.location = {
     # enable = true — redundant: profile already sets via mkIf cfg.location.enable (M3)

@@ -1,0 +1,12 @@
+name = "sword and kingdom schematic"
+filename = "sword_and_kingdom_schematic-1.6.jar"
+side = "both"
+
+[download]
+hash-format = "sha512"
+url = "https://mediafilez.forgecdn.net/files/7274/682/sword_and_kingdom_schematic-1.6.jar"
+
+[update]
+[update.curseforge]
+file-id = 7274682
+project-id = 1361850

@@ -23,8 +23,29 @@ Each modpack is a directory under
 ├── checksums.json     # { "<file>.pw.toml": {url, sha256} } — built by Nix
 ├── .packwizignore     # files packwiz must NOT index (e.g. checksums.json)
 ├── mods/*.pw.toml     # one metadata file per mod (name, filename, [download] url/hash)
+├── shaderpacks/*.pw.toml  # client-side shaderpacks (side=client, fetched as FODs)
 └── config/            # internal files copied to players: default configs, Paxi datapacks
 ```
+
+### Shaderpacks (client-side)
+
+Shaderpacks live in `shaderpacks/*.pw.toml` with `side = "client"`. They are
+**indexed by packwiz but never counted as mods** — mc-pack-status compares only
+`mods/*.pw.toml` for the index-sync check, so shaderpacks appearing in
+`index.toml` are expected and not a mismatch.
+
+- **Add**: `packwiz modrinth add <slug>` inside the pack directory places the
+  shaderpack at `shaderpacks/<slug>.pw.toml`.
+- **Fetch**: `packwiz.nix` fetches each shaderpack via `shaderpackFetch`
+  (fetchurl FOD, flat output) and symlinks the zip into `.minecraft/shaderpacks/`
+  in the client instance.
+- **Instance sync**: `packwiz-instance-sync.py` seeds
+  `.minecraft/shaderpacks/` once on install; subsequent syncs leave it alone.
+- **Server**: the server never sees shaderpacks — `packSubdirs` and side
+  filtering exclude `shaderpacks/` from the server package.
+
+> Example: `DragonTech/shaderpacks/` contains complementary-reimagined,
+> complementary-unbound, bsl-shaders, bliss-shader — all `side = "client"`.
 
 ## Available tools / commands
 

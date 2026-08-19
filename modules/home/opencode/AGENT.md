@@ -128,8 +128,9 @@ Proposed agent learnings (`learning_append`) are reviewed and promoted via
 dedicated **`learning-promoter`** agent
 (`agents/learning-promoter.md`, `commands/learning-promote.md`) have runtime
 permission to call `goals_learning_promote` (`config.nix`), and the promoter
-runs from a persistent tmux TUI (NOT `opencode run`, which disposes the lead
-instance mid-triage). A session promotes only on a **unanimous,
+runs from a persistent `opencode serve` headless server (NOT `opencode run`,
+which disposes the lead instance mid-triage, and NOT tmux, which was replaced
+in v2 for reliability). A session promotes only on a **unanimous,
 harness-re-derived triage `agree`** (no `disagree`/`uncertain` present; every
 `review_verdicts` row has `rederivation_method IS NOT NULL`), applying each
 accepted learning as an isolated commit and **auto-merging it into the base
@@ -148,6 +149,23 @@ now, never aspirational. Record each applied change in the RUN LOG below.
 
 ## RUN LOG
 
+### 2026-08-18 — replaced tmux with opencode serve for promoter watcher (v2)
+- Lesson: the tmux-based watcher was fragile: send-keys timing was race-prone,
+  zombie detection relied on heuristics (shell prompt detection), completion
+  detection regex-matched log output, and the 10s PROMPT_DELAY was a guess.
+  The `opencode serve` command provides a persistent headless server that the
+  watcher can talk to via `opencode run --attach` — eliminating all tmux
+  fragility while preserving the ensemble workflow.
+- Fix: rewrote `learning-promoter-launcher.py` to use `opencode serve` +
+  `opencode run --attach --auto --format json` instead of tmux send-keys.
+  Added `opencode-serve` systemd user service (persistent headless server).
+  Replaced tmux-specific options (`promptDelay`, `promptRetries`, `logDir`)
+  with serve-based options (`servePort`, `serverPassword`, `promotionTimeout`,
+  `stalenessThreshold`, `commandTimeout`). Added stale-learning reconciliation
+  (force-rejects never-triaged learnings beyond threshold). Added promotion
+  timeout tracking via state file. Updated `learning-promote.md` and
+  `learning-promoter.md` docs. Removed tmux from home.packages.
+
 ### 2026-08-17 — two-agent promote model + auto-merge + tmux-TUI launch (revised above)
 - Lesson: the "single promote-capable agent, detached/headless, no auto-merge"
   model above went stale after the owner asked for a fully no-human loop: build
@@ -160,6 +178,17 @@ now, never aspirational. Record each applied change in the RUN LOG below.
   persistent tmux TUI (see `agents/learning-promoter.md` and
   `commands/learning-promote.md` for the launch steps). Rewrote the promotion
   section above to match.
+
+### 2026-08-18 — learning-promoter watcher improvements
+- Lesson: the watcher had several gaps: 5min timer interval meant slow crash
+  recovery, tmux send-keys was fire-and-forget with no completion detection,
+  zombie sessions weren't cleaned up, and crashed sessions left partial verdicts
+  that blocked the queue.
+- Fix: reduced timer to 1min default; added tmux pipe-pane structured output
+  logging with completion signal detection; added post-crash verdict
+  reconciliation (force-rejects partial learnings); improved zombie detection
+  to also check for 'crush' in pane output; added LOG_DIR option for log
+  location; updated learning-promote.md docs.
 
 ### 2026-08-16 — added automated full-auto learning promotion (learning-promoter)
 - Lesson: promotion of proposed agent learnings was documented as human-only,

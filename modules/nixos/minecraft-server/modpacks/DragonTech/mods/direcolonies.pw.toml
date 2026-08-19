@@ -1,0 +1,12 @@
+name = "DireColonies"
+filename = "DireColonies-3.2.0.jar"
+side = "both"
+
+[download]
+hash-format = "sha512"
+url = "https://mediafilez.forgecdn.net/files/6373/645/DireColonies-3.2.0.jar"
+
+[update]
+[update.curseforge]
+file-id = 6373645
+project-id = 906255
