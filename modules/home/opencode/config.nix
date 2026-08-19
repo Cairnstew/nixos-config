@@ -531,7 +531,7 @@ in
     # ── Learning-promoter watcher (v2 — opencode serve, no tmux) ──────────────
     (mkIf cfg.learningPromoterWatcher.enable {
       home.packages = [
-        pkgs.python3
+        (pkgs.python3.withPackages (_: [ ]))
         pkgs.curl
       ];
 
@@ -550,6 +550,7 @@ in
         };
         Service = {
           Type = "simple";
+          WorkingDirectory = cfg.learningPromoterWatcher.repoDir;
           ExecStart = "${cfg.package}/bin/opencode serve --port ${toString cfg.learningPromoterWatcher.servePort} --hostname 127.0.0.1";
           Restart = "on-failure";
           RestartSec = 5;
@@ -590,7 +591,8 @@ in
           Description = "Periodically check for proposed learnings and dispatch promoter";
         };
         Timer = {
-          OnCalendar = cfg.learningPromoterWatcher.checkInterval;
+          OnBootSec = cfg.learningPromoterWatcher.checkInterval;
+          OnUnitActiveSec = cfg.learningPromoterWatcher.checkInterval;
           Persistent = true;
           RandomizedDelaySec = "1min";
         };

@@ -26,6 +26,18 @@ Symptom (2026-08-15): `minecraft-server-dragentech.service` crash-looped with `j
 
 ---
 
+**`python3` vs `python3.withPackages` both ship `bin/pydoc` — `buildEnv` rejects the conflict**
+
+Symptom (2026-08-18): `nix run` fails with `pkgs.buildEnv error: two given paths contain a conflicting subpath: .../python3-3.13.13-env/bin/pydoc and .../python3-3.13.13/bin/pydoc`. Cause: two home-manager modules each add Python to `home.packages` — one using `pkgs.python3` (plain derivation) and one using `pkgs.python3.withPackages (ps: [ ])` (env wrapper). Both provide `bin/pydoc` but are different store paths, so `buildEnv` rejects the duplicate. Fix: always use `pkgs.python3.withPackages (_: [ ])` consistently so both paths resolve to the same derivation. In this case, `opencode/config.nix` used `pkgs.python3` while `goals/config.nix` used `pkgs.python3.withPackages`.
+
+---
+
+**systemd `OnCalendar` rejects time spans like `"1min"` — use `OnBootSec`/`OnUnitActiveSec` instead**
+
+Symptom (2026-08-18): `learning-promoter-watcher.timer` fails to start with `Timer unit lacks value setting` and journal shows `Failed to parse calendar specification, ignoring: 1min`. Cause: `OnCalendar` expects systemd calendar expressions (`*-*-* *:00:00`, not `1min`). The option default was `"1min"`, which is a valid time span but not a calendar expression. Fix: use `OnBootSec` + `OnUnitActiveSec` (which accept time spans) instead of `OnCalendar`. Changed in `opencode/config.nix` timer definition and updated the option description in `options.nix`.
+
+---
+
 **The minecraft-server smoke test always failed for neoforge servers — the server jar lives under `libraries/`, not the package root**
 
 Symptom (2026-08-15): `systemctl start minecraft-server-smoke-test.service` exited 1 with `FAIL: <server> — no server jar found in /nix/store/...-neoforge-1.21.1-21.1.238`, even though the server was booted and serving. Cause: `tests.nix` `checkServer` ran `find ${srv.package} -name "*.jar" -not -path "*/libraries/*"`, which was written for vanilla/fabric layouts where the server jar sits at the package root. nix-minecraft's neoforge packages keep the server jar under `libraries/net/minecraft/server/<ver>/server-<ver>.jar`, so the `-not -path "*/libraries/*"` filter excluded it and the check always failed (a silent red herring during server bring-up). Fix: look for the actual server jar name first — `find ${srv.package} \( -name "server-*.jar" -o -name "*server.jar" \) | grep -v sources`, falling back to the old root-level search. Verify: run the smoke-test service after a rebuild; it should now print `PASS: <server> server jar found: .../server-<ver>.jar`.
@@ -922,5 +934,5 @@ When you discover a new problem and its solution:
 
 ---
 
-Last updated: 2026-08-16
+Last updated: 2026-08-18
 

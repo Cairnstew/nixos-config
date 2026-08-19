@@ -1,0 +1,770 @@
+{
+	default_hide_dependency_lines: false
+	default_quest_shape: ""
+	filename: "mekanism_power"
+	group: "4A695DE23DC9359F"
+	icon: {
+		id: "mekanism:steel_casing"
+	}
+	id: "D4E5F60718293001"
+	images: [ ]
+	order_index: 4
+	quest_links: [ ]
+	quests: [
+		{
+			id: "D4E5F60718293002"
+			rewards: [{
+				id: "D4E5F60718293020"
+				type: "xp"
+				xp: 100
+			}]
+			tasks: [{
+				id: "D4E5F60718293021"
+				item: {
+					count: 4
+					id: "mekanism:ingot_bronze"
+				}
+				type: "item"
+			}]
+			x: 0.0d
+			y: 0.0d
+		}
+		{
+			dependencies: ["D4E5F60718293002"]
+			id: "D4E5F60718293003"
+			rewards: [{
+				id: "D4E5F60718293022"
+				type: "xp"
+				xp: 150
+			}]
+			tasks: [{
+				id: "D4E5F60718293023"
+				item: {
+					count: 1
+					id: "mekanism:steel_casing"
+				}
+				type: "item"
+			}]
+			x: 1.0d
+			y: 0.0d
+		}
+		{
+			dependencies: ["D4E5F60718293003"]
+			id: "D4E5F60718293004"
+			rewards: [{
+				id: "D4E5F60718293024"
+				type: "xp"
+				xp: 200
+			}]
+			tasks: [{
+				id: "D4E5F60718293025"
+				item: {
+					count: 1
+					id: "mekanism:enrichment_chamber"
+				}
+				type: "item"
+			}]
+			x: 2.0d
+			y: 0.0d
+		}
+		{
+			dependencies: ["D4E5F60718293004"]
+			id: "D4E5F60718293005"
+			rewards: [{
+				id: "D4E5F60718293026"
+				type: "xp"
+				xp: 250
+			}]
+			tasks: [{
+				id: "D4E5F60718293027"
+				item: {
+					count: 1
+					id: "mekanism:crusher"
+				}
+				type: "item"
+			}]
+			x: 3.0d
+			y: 0.0d
+		}
+		{
+			dependencies: ["D4E5F60718293005"]
+			id: "D4E5F60718293006"
+			rewards: [{
+				id: "D4E5F60718293028"
+				type: "xp"
+				xp: 300
+			}]
+			tasks: [{
+				id: "D4E5F60718293029"
+				item: {
+					count: 1
+					id: "mekanism:metallurgic_infuser"
+				}
+				type: "item"
+			}]
+			x: 4.0d
+			y: 0.0d
+		}
+		{
+			dependencies: ["D4E5F60718293006"]
+			id: "D4E5F60718293007"
+			rewards: [{
+				id: "D4E5F6071829302A"
+				type: "xp"
+				xp: 350
+			}]
+			tasks: [{
+				id: "D4E5F6071829302B"
+				item: {
+					count: 1
+					id: "mekanism:purification_chamber"
+				}
+				type: "item"
+			}]
+			x: 5.0d
+			y: 0.0d
+		}
+		{
+			dependencies: ["D4E5F60718293007"]
+			id: "D4E5F60718293008"
+			rewards: [{
+				id: "D4E5F6071829302C"
+				type: "xp"
+				xp: 400
+			}]
+			tasks: [{
+				id: "D4E5F6071829302D"
+				item: {
+					count: 1
+					id: "mekanism:energized_smelter"
+				}
+				type: "item"
+			}]
+			x: 6.0d
+			y: 0.0d
+		}
+		{
+			dependencies: ["D4E5F60718293008"]
+			id: "D4E5F60718293009"
+			rewards: [{
+				id: "D4E5F6071829302E"
+				type: "xp"
+				xp: 500
+			}]
+			tasks: [{
+				id: "D4E5F6071829302F"
+				item: {
+					count: 1
+					id: "mekanism:osmium_compressor"
+				}
+				type: "item"
+			}]
+			x: 7.0d
+			y: 0.0d
+		}
+		{
+			dependencies: ["D4E5F60718293009"]
+			id: "D4E5F6071829300A"
+			rewards: [{
+				id: "D4E5F60718293030"
+				type: "xp"
+				xp: 600
+			}]
+			tasks: [{
+				id: "D4E5F60718293031"
+				item: {
+					count: 1
+					id: "mekanism:assemblicator"
+				}
+				type: "item"
+			}]
+			x: 8.0d
+			y: 0.0d
+		}
+		{
+			dependencies: ["D4E5F6071829300A"]
+			id: "D4E5F6071829300B"
+			rewards: [{
+				id: "D4E5F60718293032"
+				type: "xp"
+				xp: 700
+			}]
+			tasks: [{
+				id: "D4E5F60718293033"
+				item: {
+					count: 1
+					id: "mekanism:rotary_condensentrator"
+				}
+				type: "item"
+			}]
+			x: 9.0d
+			y: 0.0d
+		}
+		{
+			dependencies: ["D4E5F60718293002"]
+			id: "D4E5F6071829300C"
+			rewards: [{
+				id: "D4E5F60718293034"
+				type: "xp"
+				xp: 200
+			}]
+			tasks: [{
+				id: "D4E5F60718293035"
+				item: {
+					count: 1
+					id: "mekanism:heat_generator"
+				}
+				type: "item"
+			}]
+			x: 2.0d
+			y: 2.0d
+		}
+		{
+			dependencies: ["D4E5F6071829300C"]
+			id: "D4E5F6071829300D"
+			rewards: [{
+				id: "D4E5F60718293036"
+				type: "xp"
+				xp: 300
+			}]
+			tasks: [{
+				id: "D4E5F60718293037"
+				item: {
+					count: 1
+					id: "mekanism:solar_generator"
+				}
+				type: "item"
+			}]
+			x: 3.0d
+			y: 2.0d
+		}
+		{
+			dependencies: ["D4E5F6071829300D"]
+			id: "D4E5F6071829300E"
+			rewards: [{
+				id: "D4E5F60718293038"
+				type: "xp"
+				xp: 400
+			}]
+			tasks: [{
+				id: "D4E5F60718293039"
+				item: {
+					count: 1
+					id: "mekanism:gas_generator"
+				}
+				type: "item"
+			}]
+			x: 4.0d
+			y: 2.0d
+		}
+		{
+			dependencies: ["D4E5F6071829300E"]
+			id: "D4E5F6071829300F"
+			rewards: [{
+				id: "D4E5F6071829303A"
+				type: "xp"
+				xp: 500
+			}]
+			tasks: [{
+				id: "D4E5F6071829303B"
+				item: {
+					count: 1
+					id: "mekanism:wind_generator"
+				}
+				type: "item"
+			}]
+			x: 5.0d
+			y: 2.0d
+		}
+		{
+			dependencies: ["D4E5F6071829300F"]
+			id: "D4E5F60718293010"
+			rewards: [{
+				id: "D4E5F6071829303C"
+				type: "xp"
+				xp: 800
+			}]
+			tasks: [{
+				id: "D4E5F6071829303D"
+				item: {
+					count: 1
+					id: "mekanism:energy_cube"
+				}
+				type: "item"
+			}]
+			x: 6.0d
+			y: 2.0d
+		}
+		{
+			dependencies: ["D4E5F6071829300B"]
+			id: "D4E5F60718293011"
+			rewards: [{
+				id: "D4E5F6071829303E"
+				type: "xp"
+				xp: 1000
+			}]
+			tasks: [{
+				id: "D4E5F6071829303F"
+				item: {
+					count: 1
+					id: "mekanism:fission_reactor_controller"
+				}
+				type: "item"
+			}]
+			x: 10.0d
+			y: 0.0d
+		}
+		{
+			dependencies: ["D4E5F60718293011"]
+			id: "D4E5F60718293012"
+			rewards: [{
+				id: "D4E5F60718293040"
+				type: "xp"
+				xp: 1500
+			}]
+			tasks: [{
+				id: "D4E5F60718293041"
+				item: {
+					count: 1
+					id: "mekanism:fusion_reactor_controller"
+				}
+				type: "item"
+			}]
+			x: 11.0d
+			y: 0.0d
+		}
+		{
+			dependencies: ["D4E5F60718293010"]
+			id: "D4E5F60718293013"
+			rewards: [{
+				id: "D4E5F60718293042"
+				type: "xp"
+				xp: 800
+			}]
+			tasks: [{
+				id: "D4E5F60718293043"
+				item: {
+					count: 1
+					id: "mekanism:teleporter"
+				}
+				type: "item"
+			}]
+			x: 7.0d
+			y: 2.0d
+		}
+		{
+			dependencies: ["D4E5F60718293013"]
+			id: "D4E5F60718293014"
+			rewards: [{
+				id: "D4E5F60718293044"
+				type: "xp"
+				xp: 900
+			}]
+			tasks: [{
+				id: "D4E5F60718293045"
+				item: {
+					count: 1
+					id: "mekanism:quantum_entangloporter"
+				}
+				type: "item"
+			}]
+			x: 8.0d
+			y: 2.0d
+		}
+		{
+			dependencies: ["D4E5F60718293012"]
+			id: "D4E5F60718293015"
+			rewards: [{
+				id: "D4E5F60718293046"
+				type: "xp"
+				xp: 1000
+			}]
+			tasks: [{
+				id: "D4E5F60718293047"
+				item: {
+					count: 1
+					id: "mekanism:mekasuit_helmet"
+				}
+				type: "item"
+			}]
+			x: 12.0d
+			y: -1.0d
+		}
+		{
+			dependencies: ["D4E5F60718293015"]
+			id: "D4E5F60718293016"
+			rewards: [{
+				id: "D4E5F60718293048"
+				type: "xp"
+				xp: 1000
+			}]
+			tasks: [{
+				id: "D4E5F60718293049"
+				item: {
+					count: 1
+					id: "mekanism:mekasuit_bodyarmor"
+				}
+				type: "item"
+			}]
+			x: 13.0d
+			y: -1.0d
+		}
+		{
+			dependencies: ["D4E5F60718293016"]
+			id: "D4E5F60718293017"
+			rewards: [{
+				id: "D4E5F6071829304A"
+				type: "xp"
+				xp: 1000
+			}]
+			tasks: [{
+				id: "D4E5F6071829304B"
+				item: {
+					count: 1
+					id: "mekanism:mekasuit_pants"
+				}
+				type: "item"
+			}]
+			x: 14.0d
+			y: -1.0d
+		}
+		{
+			dependencies: ["D4E5F60718293017"]
+			id: "D4E5F60718293018"
+			rewards: [{
+				id: "D4E5F6071829304C"
+				type: "xp"
+				xp: 1000
+			}]
+			tasks: [{
+				id: "D4E5F6071829304D"
+				item: {
+					count: 1
+					id: "mekanism:mekasuit_boots"
+				}
+				type: "item"
+			}]
+			x: 15.0d
+			y: -1.0d
+		}
+		{
+			dependencies: ["D4E5F60718293006"]
+			id: "D4E5F60718293019"
+			rewards: [{
+				id: "D4E5F6071829304E"
+				type: "xp"
+				xp: 400
+			}]
+			tasks: [{
+				id: "D4E5F6071829304F"
+				item: {
+					count: 1
+					id: "create:mechanical_press"
+				}
+				type: "item"
+			}]
+			x: 4.0d
+			y: -2.0d
+		}
+		{
+			dependencies: ["D4E5F60718293019"]
+			id: "D4E5F6071829301A"
+			rewards: [{
+				id: "D4E5F60718293050"
+				type: "xp"
+				xp: 500
+			}]
+			tasks: [{
+				id: "D4E5F60718293051"
+				item: {
+					count: 1
+					id: "create:mechanical_saw"
+				}
+				type: "item"
+			}]
+			x: 5.0d
+			y: -2.0d
+		}
+		{
+			dependencies: ["D4E5F6071829301A"]
+			id: "D4E5F6071829301B"
+			rewards: [{
+				id: "D4E5F60718293052"
+				type: "xp"
+				xp: 600
+			}]
+			tasks: [{
+				id: "D4E5F60718293053"
+				item: {
+					count: 1
+					id: "create:deployer"
+				}
+				type: "item"
+			}]
+			x: 6.0d
+			y: -2.0d
+		}
+		{
+			dependencies: ["D4E5F6071829300B"]
+			id: "D4E5F6071829301C"
+			rewards: [{
+				id: "D4E5F60718293054"
+				type: "xp"
+				xp: 600
+			}]
+			tasks: [{
+				id: "D4E5F60718293055"
+				item: {
+					count: 1
+					id: "ae2:energy_acceptor"
+				}
+				type: "item"
+			}]
+			x: 9.0d
+			y: -2.0d
+		}
+		{
+			dependencies: ["D4E5F6071829301C"]
+			id: "D4E5F6071829301D"
+			rewards: [{
+				id: "D4E5F60718293056"
+				type: "xp"
+				xp: 700
+			}]
+			tasks: [{
+				id: "D4E5F60718293057"
+				item: {
+					count: 1
+					id: "ae2:dense_energy_cell"
+				}
+				type: "item"
+			}]
+			x: 10.0d
+			y: -2.0d
+		}
+		{
+			dependencies: ["D4E5F6071829301D"]
+			id: "D4E5F6071829301E"
+			rewards: [{
+				id: "D4E5F60718293058"
+				type: "xp"
+				xp: 800
+			}]
+			tasks: [{
+				id: "D4E5F60718293059"
+				item: {
+					count: 1
+					id: "ae2:creative_energy_cell"
+				}
+				type: "item"
+			}]
+			x: 11.0d
+			y: -2.0d
+		}
+		{
+			dependencies: ["D4E5F60718293002"]
+			id: "D4E5F60718293020"
+			rewards: [{
+				id: "D4E5F6071829305C"
+				type: "xp"
+				xp: 200
+			}]
+			tasks: [{
+				id: "D4E5F6071829305D"
+				item: {
+					count: 1
+					id: "powah:photoelectric_pane"
+				}
+				type: "item"
+			}]
+			x: 2.0d
+			y: 4.0d
+		}
+		{
+			dependencies: ["D4E5F60718293020"]
+			id: "D4E5F60718293021"
+			rewards: [{
+				id: "D4E5F6071829305E"
+				type: "xp"
+				xp: 300
+			}]
+			tasks: [{
+				id: "D4E5F6071829305F"
+				item: {
+					count: 1
+					id: "powah:basic_solar_panel"
+				}
+				type: "item"
+			}]
+			x: 3.0d
+			y: 4.0d
+		}
+		{
+			dependencies: ["D4E5F60718293021"]
+			id: "D4E5F60718293022"
+			rewards: [{
+				id: "D4E5F60718293060"
+				type: "xp"
+				xp: 400
+			}]
+			tasks: [{
+				id: "D4E5F60718293061"
+				item: {
+					count: 1
+					id: "powah:advanced_solar_panel"
+				}
+				type: "item"
+			}]
+			x: 4.0d
+			y: 4.0d
+		}
+		{
+			dependencies: ["D4E5F60718293022"]
+			id: "D4E5F60718293023"
+			rewards: [{
+				id: "D4E5F60718293062"
+				type: "xp"
+				xp: 500
+			}]
+			tasks: [{
+				id: "D4E5F60718293063"
+				item: {
+					count: 1
+					id: "powah:nitro_solar_panel"
+				}
+				type: "item"
+			}]
+			x: 5.0d
+			y: 4.0d
+		}
+		{
+			dependencies: ["D4E5F60718293002"]
+			id: "D4E5F60718293024"
+			rewards: [{
+				id: "D4E5F60718293064"
+				type: "xp"
+				xp: 200
+			}]
+			tasks: [{
+				id: "D4E5F60718293065"
+				item: {
+					count: 1
+					id: "powah:basic_energy_cell"
+				}
+				type: "item"
+			}]
+			x: 2.0d
+			y: 5.0d
+		}
+		{
+			dependencies: ["D4E5F60718293024"]
+			id: "D4E5F60718293025"
+			rewards: [{
+				id: "D4E5F60718293066"
+				type: "xp"
+				xp: 300
+			}]
+			tasks: [{
+				id: "D4E5F60718293067"
+				item: {
+					count: 1
+					id: "powah:advanced_energy_cell"
+				}
+				type: "item"
+			}]
+			x: 3.0d
+			y: 5.0d
+		}
+		{
+			dependencies: ["D4E5F60718293025"]
+			id: "D4E5F60718293026"
+			rewards: [{
+				id: "D4E5F60718293068"
+				type: "xp"
+				xp: 400
+			}]
+			tasks: [{
+				id: "D4E5F60718293069"
+				item: {
+					count: 1
+					id: "powah:hardened_energy_cell"
+				}
+				type: "item"
+			}]
+			x: 4.0d
+			y: 5.0d
+		}
+		{
+			dependencies: ["D4E5F60718293026"]
+			id: "D4E5F60718293027"
+			rewards: [{
+				id: "D4E5F6071829306A"
+				type: "xp"
+				xp: 500
+			}]
+			tasks: [{
+				id: "D4E5F6071829306B"
+				item: {
+					count: 1
+					id: "powah:nitro_energy_cell"
+				}
+				type: "item"
+			}]
+			x: 5.0d
+			y: 5.0d
+		}
+		{
+			dependencies: ["D4E5F60718293027"]
+			id: "D4E5F60718293028"
+			rewards: [{
+				id: "D4E5F6071829306C"
+				type: "xp"
+				xp: 600
+			}]
+			tasks: [{
+				id: "D4E5F6071829306D"
+				item: {
+					count: 1
+					id: "powah:energizing_rod"
+				}
+				type: "item"
+			}]
+			x: 6.0d
+			y: 5.0d
+		}
+		{
+			dependencies: ["D4E5F60718293028"]
+			id: "D4E5F60718293029"
+			rewards: [{
+				id: "D4E5F6071829306E"
+				type: "xp"
+				xp: 700
+			}]
+			tasks: [{
+				id: "D4E5F6071829306F"
+				item: {
+					count: 1
+					id: "powah:energizing_orb"
+				}
+				type: "item"
+			}]
+			x: 7.0d
+			y: 5.0d
+		}
+		{
+			dependencies: ["D4E5F60718293018", "D4E5F60718293014", "D4E5F6071829301E", "D4E5F60718293029"]
+			id: "D4E5F6071829301F"
+			rewards: [{
+				id: "D4E5F6071829305A"
+				type: "xp"
+				xp: 1500
+			}]
+			tasks: [{
+				id: "D4E5F6071829305B"
+				type: "checkmark"
+			}]
+			x: 16.0d
+			y: 0.0d
+		}
+	]
+}

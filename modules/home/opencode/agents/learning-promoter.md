@@ -105,7 +105,10 @@ crash or processing a batch of multiple proposed learnings. Handle these:
 3. **Reviewer timeout** — if the three triage reviewers don't all report within
    a reasonable bound (e.g. 5 minutes per reviewer), shut down the team and
    reject the learning with a timeout note. Do not let a stuck reviewer block
-   the entire queue.
+   the entire queue. This per-reviewer timeout is independent of the launcher's
+   `COMMAND_TIMEOUT` (default 600s / 10min) which is a hard ceiling for the
+   entire command — if the launcher timeout fires first, the subprocess is
+   killed and the watcher cleans up on the next cycle.
 
 4. **Session identity** — when started by the watcher, you may not know who
    started you. Always check `git branch --show-current` before any branch
