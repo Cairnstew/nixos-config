@@ -298,6 +298,7 @@ in
           docker-management = builtins.readFile ./skills/docker-management.md;
           network-security = builtins.readFile ./skills/network-security.md;
           model-selection = builtins.readFile ./skills/model-selection.md;
+          music-playlists = builtins.readFile ./skills/music-playlists.md;
         };
         commands = {
           copy-last = ./commands/copylast.md;
