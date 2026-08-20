@@ -285,6 +285,7 @@ in
           nix-eval = ./tools/nix-eval.ts;
           nix-flake-check = ./tools/nix-flake-check.ts;
           just = ./tools/just.ts;
+          opencode-models = ./tools/opencode-models.ts;
         };
         skills = lib.mkDefault {
           git-repo-management = builtins.readFile ./skills/git-repo-management.md;
@@ -296,6 +297,7 @@ in
           windows-integration = builtins.readFile ./skills/windows-integration.md;
           docker-management = builtins.readFile ./skills/docker-management.md;
           network-security = builtins.readFile ./skills/network-security.md;
+          model-selection = builtins.readFile ./skills/model-selection.md;
         };
         commands = {
           copy-last = ./commands/copylast.md;
