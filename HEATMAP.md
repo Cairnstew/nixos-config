@@ -141,6 +141,20 @@ Quick reference for common maintenance tasks.Lists files to read and edit in ord
 
 ---
 
+## Add or update a music playlist (hash-pinned downloads)
+
+**Read:**
+1. `modules/nixos/music/README.md` (options + adding/updating walkthrough)
+2. `modules/nixos/music/playlist-builder.nix` (the shared "hashify" builder)
+3. `modules/flake-parts/music.nix` (auto-wired packages/apps)
+
+**Edit:**
+1. `modules/nixos/music/playlists/<name>/songs.toml` (declaration: `name`, `source` = `direct`/`yt-dlp`, `[[songs]]`)
+2. `git add` songs.toml first (flake snapshots only see tracked files), then `nix run .#music-checksums-<name>` → commit `checksums.json`
+3. Host config: `my.services.music.enable = true; my.services.music.playlists.<name>.enable = true;`
+
+---
+
 # Option Registry
 
 All `my.*` options declared across module files.
