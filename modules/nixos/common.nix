@@ -113,6 +113,7 @@ in
     ./neko
     ./minecraft-server
     ./game-servers
+    ./music
 
     # ── TV & EPG ─────────────────────────────────────────────────────────
     ./xmltv

@@ -953,6 +953,14 @@
   # server is run on this host — see minecraft-server/config.nix opencode block).
   my.services.minecraftServer.opencode.enable = true;
 
+  # Hash-pinned music playlists (modules/nixos/music/playlists/) installed
+  # into the media drive — songs declared in git, byte-pinned via
+  # checksums.json, built as fixed-output derivations (same pattern as
+  # modpacks). dataDir defaults to /mnt/media/Music; the example playlist is a
+  # live smoke test (two tiny public-domain files from archive.org).
+  my.services.music.enable = true;
+  my.services.music.playlists.example.enable = true;
+
   # ── Home Manager Extra ───────────────────────────────────────────────────
   my.homeManager.extraConfig = {
     my.programs = {
