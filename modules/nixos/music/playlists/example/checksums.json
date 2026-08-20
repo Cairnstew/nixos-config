@@ -1,0 +1,10 @@
+{
+ "mpthreetest": {
+  "url": "https://archive.org/download/testmp3testfile/mpthreetest.mp3",
+  "sha256": "sha256-B9ERcP4wWWyhcwdoLSdF4JhiqNzfkMdvqQtw04HrSXM="
+ },
+ "mpthreetest-ogg": {
+  "url": "https://archive.org/download/testmp3testfile/mpthreetest.ogg",
+  "sha256": "sha256-9mdUCmYb2Vdqee5FlRWyfPDptF9VIkoSQTB7wfOIZ9w="
+ }
+}

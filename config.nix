@@ -382,6 +382,19 @@
   };
 
   # ============================================================================
+  # Music playlists (music.*)
+  # ============================================================================
+  # Shared default base directory for hash-pinned music playlists
+  # (my.services.music / .#music-install-<name>). Keep songs on the media drive
+  # so the system SSD never fills up.
+  # Consumed by: .#music-install-<name> apps (modules/flake-parts/music.nix),
+  #              and as the fallback for my.services.music.dataDir when unset.
+  # ============================================================================
+  music = {
+    dataDir = "/mnt/media/Music";
+  };
+
+  # ============================================================================
   # Mail Organization (mail.*)
   # ============================================================================
   # Canonical tag/folder taxonomy for email organization in Gmail/Thunderbird.

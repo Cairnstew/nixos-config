@@ -406,6 +406,27 @@ in
       description = "Minecraft / Prism Launcher shared defaults.";
     };
 
+    music = lib.mkOption {
+      type = lib.types.submodule {
+        options = {
+          dataDir = lib.mkOption {
+            type = lib.types.nullOr lib.types.path;
+            default = null;
+            description = ''
+              Music playlist base directory (playlists are installed into
+              <literal>''${dataDir}/&lt;name&gt;</literal>). Keep it on a
+              large/secondary drive (e.g. <literal>/mnt/media/Music</literal>)
+              so songs never fill the system disk. Used as the default target
+              for the <literal>.#music-install-&lt;name&gt;</literal> app and
+              <literal>my.services.music.dataDir</literal> when unset.
+            '';
+          };
+        };
+      };
+      default = { };
+      description = "Music playlist shared defaults.";
+    };
+
     mail = lib.mkOption {
       type = lib.types.submodule {
         options = {
