@@ -11,10 +11,14 @@
 #   - apps."music-checksums-<name>"    → regenerates <playlist>/checksums.json
 #   - apps."music-install-<name>"      → build + install into a target dir
 #                                        WITHOUT a full system rebuild
+#   - apps."music-spotify-sync"        → generic: create/update a playlist's
+#                                        songs.toml from a PUBLIC Spotify URL
+#                                        (no user OAuth; client-credentials)
 #
 # Usage:
 #   cd modules/nixos/music/playlists/<name>
-#   # 1. write songs.toml (declaration)
+#   # 1. write songs.toml (declaration, by hand) — OR generate it from Spotify:
+#   nix run .#music-spotify-sync -- <name> https://open.spotify.com/playlist/...
 #   # 2. git add songs.toml  (flakes only snapshot tracked files)
 #   nix run .#music-checksums-<name>   # download + hash → checksums.json
 #   git add checksums.json
@@ -43,6 +47,7 @@ let
       [ ];
 
   checksumsScript = ./music-checksums.py;
+  spotifySyncScript = ./music-spotify-sync.py;
 
   # Shared "hashify" builder wired to a specific playlist dir.
   buildPlaylist = pkgs: name:
@@ -102,6 +107,44 @@ let
       type = "app";
       program = "${script}/bin/music-install-${name}";
     };
+
+  # Generic app that boots a playlist from a PUBLIC Spotify playlist (no user
+  # OAuth — client-credentials flow reads public playlists) and then
+  # regenerates checksums.json. Usage (from the repo root):
+  #   nix run .#music-spotify-sync -- <name> <spotify-url> [--prune]
+  # Requires: the Spotify playlist is PUBLIC. Spotify's API lets any
+  # client-credentials token read public playlists; spotdl's bundled public
+  # credentials are the default — pass SPOTIFY_CLIENT_ID/SECRET env vars (or
+  # --client-id/--client-secret) to use your own API app.
+  mkSpotifySyncApp = pkgs:
+    let
+      script = pkgs.writeShellScriptBin "music-spotify-sync" ''
+        set -euo pipefail
+        if [ ! -f flake.nix ]; then
+          echo "music-spotify-sync: run this from the repo root" >&2
+          exit 1
+        fi
+        NAME=''${1:?usage: nix run .#music-spotify-sync -- <name> <spotify-url> [--prune]}
+        URL=''${2:?usage: nix run .#music-spotify-sync -- <name> <spotify-url> [--prune]}
+        shift 2 || true
+        P="$PWD/modules/nixos/music/playlists/$NAME"
+        mkdir -p "$P"
+        export PATH=${pkgs.yt-dlp}/bin:$PATH
+        export SPOTIFY_CLIENT_ID=''${SPOTIFY_CLIENT_ID:-}
+        export SPOTIFY_CLIENT_SECRET=''${SPOTIFY_CLIENT_SECRET:-}
+        ${pkgs.python3}/bin/python3 ${spotifySyncScript} "$P" "$URL" "$@"
+        # Regenerate the committed pin file immediately after the declaration
+        # changes, so the two are always consistent.
+        echo "music-spotify-sync: regenerating checksums.json ..."
+        ${pkgs.python3}/bin/python3 ${checksumsScript} "$P"
+        git add "$P/songs.toml" "$P/checksums.json" 2>/dev/null || true
+        echo "music-spotify-sync: done — audit songs.toml + checksums.json, then commit"
+      '';
+    in
+    {
+      type = "app";
+      program = "${script}/bin/music-spotify-sync";
+    };
 in
 {
   perSystem = { pkgs, ... }: {
@@ -114,6 +157,8 @@ in
         (lib.nameValuePair "music-checksums-${name}" (mkChecksumsApp pkgs name))
         (lib.nameValuePair "music-install-${name}" (mkInstallApp pkgs name))
       ])
-      playlistNames);
+      playlistNames) // {
+      "music-spotify-sync" = mkSpotifySyncApp pkgs;
+    };
   };
 }

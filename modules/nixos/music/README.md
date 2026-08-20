@@ -25,7 +25,25 @@ my.services.music = {
 };
 ```
 
-## Adding / updating a playlist
+## Creating a playlist from a PUBLIC Spotify playlist
+
+Make the Spotify playlist **public once** (temporarily is fine — the committed
+`songs.toml`/`checksums.json` stay the truth after), then from the repo root:
+
+```sh
+nix run .#music-spotify-sync -- <name> https://open.spotify.com/playlist/<id>
+#   fetch tracks (no user OAuth — client-credentials reads public playlists)
+#   → each track resolved to a YouTube URL via yt-dlp (ISRC first)
+#   → writes songs.toml (keys = Spotify track ids) → regenerates checksums.json
+git commit -m "music: sync <name> from Spotify"
+```
+
+Re-sync is incremental: existing songs (matched by Spotify key) keep their
+URL + hash byte-identical; only new tracks are resolved. `--prune` drops songs
+no longer upstream. No server-side OAuth needed — only private playlists /
+Liked Songs would require one (and then a Spotify API app secret).
+
+## Adding / updating a playlist by hand
 
 1. Create `modules/nixos/music/playlists/<name>/songs.toml`:
 
@@ -60,3 +78,7 @@ my.services.music = {
   `git add` songs.toml changes before regenerating checksums.json.
 - Playlist keys must be enabled per-host (`playlists.<name>.enable`) — the
   declared dirs in the repo are inert until a host opts in.
+- **Spotify sync credentials.** `music-spotify-sync` defaults to spotdl's
+  bundled public client credentials (enough for public playlists, but shared,
+  so rate-limited). For reliable syncsing set `SPOTIFY_CLIENT_ID` /
+  `SPOTIFY_CLIENT_SECRET` from your own free Spotify API app.
