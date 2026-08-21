@@ -36,7 +36,7 @@
 }:
 
 let
-  inherit (lib) concatMapStringsSep optionalString mapAttrsToList;
+  inherit (lib) concatMapStringsSep;
   inherit (pkgs) runCommand fetchurl writeText;
 
   songsToml = builtins.fromTOML (builtins.readFile "${playlistDir}/songs.toml");
@@ -79,9 +79,9 @@ let
         nativeBuildInputs = [ pkgs.yt-dlp ];
       } ''
         export HOME="$TMPDIR"
-        yt-dlp --no-playlist --no-mtime --ignore-config \
+        yt-dlp --no-playlist --no-mtime --ignore-config --no-update \
           -f '${song.format or "ba[ext=m4a]"}' \
-          ${optionalString (song ? extractorArgs) "--extractor-args '${song.extractorArgs}'"} \
+          --extractor-args '${song.extractorArgs or "youtube:player_client=web_embedded"}' \
           -o $out '${song.url}'
       '';
 

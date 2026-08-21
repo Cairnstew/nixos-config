@@ -147,7 +147,8 @@ def resolve_youtube_url(track: dict) -> str | None:
     for q in queries:
         try:
             out = subprocess.run(
-                ["yt-dlp", "--get-id", "--no-warnings", "--skip-download", q],
+                ["yt-dlp", "--get-id", "--no-warnings", "--skip-download", "--no-update",
+                 "--extractor-args", "youtube:player_client=web_embedded", q],
                 capture_output=True, text=True, timeout=90,
             )
             vid = out.stdout.strip()
@@ -210,10 +211,38 @@ def load_existing(dir_path: str) -> dict:
     return {s.get("key"): s for s in data.get("songs", [])}
 
 
+def load_csv_tracks(csv_path: str) -> list[dict]:
+    """Parse a Spotify "Your Library" CSV export into {id, name, artists, isrc}.
+
+    Expects columns 'Spotify - id', 'Track name', 'Artist name', 'ISRC'
+    (the first-column header may carry a UTF-8 BOM, which we strip). Tracks
+    without a Spotify id are skipped.
+    """
+    import csv
+
+    with open(csv_path, encoding="utf-8-sig") as fh:
+        reader = csv.DictReader(fh)
+        tracks = []
+        for r in reader:
+            sid = (r.get("Spotify - id") or "").strip()
+            if not sid:
+                continue
+            tracks.append({
+                "id": sid,
+                "name": (r.get("Track name") or r.get("\ufeffTrack name") or "").strip(),
+                "artists": [a.strip() for a in (r.get("Artist name") or "").split(",") if a.strip()],
+                "isrc": (r.get("ISRC") or "").strip() or None,
+            })
+        return tracks
+
+
 def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("playlist_dir")
-    ap.add_argument("spotify_url")
+    ap.add_argument("spotify_url", nargs="?", default=None,
+                    help="public Spotify playlist URL (mutually exclusive with --csv)")
+    ap.add_argument("--csv", default=None,
+                    help="path to a Spotify 'Your Library' CSV export to bootstrap from")
     ap.add_argument("--client-id", default=None)
     ap.add_argument("--client-secret", default=None)
     ap.add_argument("--prune", action="store_true", help="drop songs no longer in the playlist")
@@ -221,27 +250,40 @@ def main() -> None:
 
     if not os.path.isdir(args.playlist_dir):
         raise SystemExit(f"no playlist dir: {args.playlist_dir}")
+    if bool(args.spotify_url) == bool(args.csv):
+        raise SystemExit("provide exactly one of a Spotify playlist URL or --csv FILE")
 
     os.environ.setdefault("SPOTIFY_CLIENT_ID", args.client_id or "")
     os.environ.setdefault("SPOTIFY_CLIENT_SECRET", args.client_secret or "")
 
-    print(f"Fetching {args.spotify_url} ...")
-    pid = parse_spotify_url(args.spotify_url)
-    tracks = fetch_playlist_tracks(pid, get_token_from_env_or_bundled())
-    if not tracks:
-        raise SystemExit("playlist returned no tracks — is it PUBLIC? (client-credentials only sees public playlists)")
-    print(f"  {len(tracks)} tracks in upstream playlist")
+    if args.csv:
+        if not os.path.isfile(args.csv):
+            raise SystemExit(f"no CSV file: {args.csv}")
+        print(f"Loading {args.csv} ...")
+        tracks = load_csv_tracks(args.csv)
+        if not tracks:
+            raise SystemExit("CSV produced no tracks (no 'Spotify - id' rows?)")
+        print(f"  {len(tracks)} tracks from CSV")
+    else:
+        print(f"Fetching {args.spotify_url} ...")
+        pid = parse_spotify_url(args.spotify_url)
+        tracks = fetch_playlist_tracks(pid, get_token_from_env_or_bundled())
+        if not tracks:
+            raise SystemExit("playlist returned no tracks — is it PUBLIC? (client-credentials only sees public playlists)")
+        print(f"  {len(tracks)} tracks in upstream playlist")
+        if not args.client_id:
+            print("  (using spotdl's bundled public client credentials — enough for public playlists)")
 
     existing = load_existing(args.playlist_dir)
-    if not args.client_id:
-        print("  (using spotdl's bundled public client credentials — enough for public playlists)")
 
     # Merge: keep existing entries by spotify key, resolve only new tracks.
+    # Also re-verify existing entries still resolve (a CSV re-run refreshes the
+    # source-of-truth list); --prune drops what's no longer listed.
     new_songs = []
     kept = dropped = resolved = 0
     for t in tracks:
         key = t["id"]
-        if key in existing:
+        if key in existing and existing[key].get("url"):
             keep = dict(existing[key])
             keep["key"] = key
             new_songs.append(keep)
@@ -258,7 +300,7 @@ def main() -> None:
             "title": f"{' '.join(t['artists'])} - {t['name']}",
         })
         resolved += 1
-        time.sleep(0.5)  # gentle rate limit for the shared client credentials
+        time.sleep(0.5)  # gentle rate limit for youtube resolution
 
     if args.prune:
         upstream = {t["id"] for t in tracks}
