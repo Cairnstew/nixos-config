@@ -52,11 +52,18 @@ def download_direct(url: str, timeout: int = 180) -> bytes:
 
 
 def download_ytdlp(url: str, fmt: str = "ba[ext=m4a]", extractor_args: str | None = None) -> bytes:
-    """Run yt-dlp exactly the way playlist-builder.nix will, return the bytes."""
+    """Run yt-dlp exactly the way playlist-builder.nix will, return the bytes.
+
+    Defaults the YouTube player client to `web_embedded`: the default
+    `android_vr` client 403s on actual stream download in this environment
+    (yt-dlp 2026.03.17, YouTube's Aug-2026 android_vr 403); web_embedded is the
+    client verified to download. A per-song extractorArgs overrides this.
+    """
+    extractor_args = extractor_args or "youtube:player_client=web_embedded"
     with tempfile.TemporaryDirectory() as tmp:
         out = os.path.join(tmp, "song.%(ext)s")
         cmd = [
-            "yt-dlp", "--no-playlist", "--no-mtime", "--ignore-config",
+            "yt-dlp", "--no-playlist", "--no-mtime", "--ignore-config", "--no-update",
             "-f", fmt,
         ]
         if extractor_args:

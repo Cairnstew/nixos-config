@@ -59,6 +59,14 @@ def log(msg: str) -> None:
     print(f"[learning-promoter-watcher] {msg}", flush=True)
 
 
+# The PATH `opencode` is the session-gated wrapper (modules/home/opencode/config.nix
+# opencodeGated): it refuses to start while an opencode-web-*.service is active,
+# unless OPENCODE_ALLOW_CONCURRENT=1 is set. This watcher is a sanctioned headless
+# path — it only probes the binary and attaches `opencode run` to the dedicated
+# serve instance — so every invocation it spawns must carry the designed bypass.
+OPENCODE_ENV = {**os.environ, "OPENCODE_ALLOW_CONCURRENT": "1"}
+
+
 # ── Database helpers ─────────────────────────────────────────────────────────
 
 
@@ -449,6 +457,7 @@ def send_learning_promote(server_url: str) -> bool:
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
             text=True,
+            env=OPENCODE_ENV,
         )
 
         # Track subprocess PID (not watcher PID) for overlap prevention
@@ -500,15 +509,21 @@ def send_learning_promote(server_url: str) -> bool:
 
 
 def main() -> int:
-    # Check opencode is available
+    # Check opencode is available. The PATH `opencode` is the session-gated
+    # wrapper; a busy/refused probe must never abort this cycle — serve health
+    # below is the real readiness gate, and dispatch failures are retried.
     try:
         subprocess.run(
             ["opencode", "--version"],
             capture_output=True, check=True, timeout=5,
+            env=OPENCODE_ENV,
         )
     except (FileNotFoundError, subprocess.TimeoutExpired):
         log("opencode not found — skipping")
         return 0
+    except subprocess.CalledProcessError as e:
+        log(f"opencode version probe failed (exit {e.returncode}) — continuing")
+        # Do NOT return: the serve health check below is authoritative.
 
     # Step 1: Check server health
     if not server_is_healthy(OPENCODE_SERVER_URL):

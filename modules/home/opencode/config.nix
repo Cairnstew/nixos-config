@@ -421,7 +421,7 @@ in
         learning-promoter = {
           description = "Headless automated promotion of proposed agent learnings: dispatch the three triage reviewers to re-derive evidence, then learning_promote only on unanimous re-derivation-gated agreement, applying each accepted learning as an isolated commit, auto-merging into the base branch";
           mode = "primary";
-          model = "opencode-go/deepseek-v4-flash";
+          model = "opencode-go/mimo-v2.5";
           temperature = 0.1;
           prompt = builtins.readFile ./agents/learning-promoter.md;
           permission = {
@@ -585,6 +585,11 @@ in
             "STALENESS_THRESHOLD=${toString cfg.learningPromoterWatcher.stalenessThreshold}"
             "COMMAND_TIMEOUT=${toString cfg.learningPromoterWatcher.commandTimeout}"
             "STATE_DIR=${config.home.homeDirectory}/.local/share/opencode"
+            # The PATH `opencode` is the session-gated wrapper (opencodeGated),
+            # which refuses while the web service runs. The watcher is a
+            # sanctioned headless path — it only probes + attaches to the
+            # dedicated serve instance — so it uses the gate's designed bypass.
+            "OPENCODE_ALLOW_CONCURRENT=1"
           ];
         };
       };

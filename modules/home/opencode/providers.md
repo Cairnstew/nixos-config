@@ -101,7 +101,7 @@ OpenCode Zen is a **first-class provider**, not a custom provider.
 
 | Model ID                          | Notes                        |
 |-----------------------------------|------------------------------|
-| `opencode/deepseek-v4-flash-free` | Free tier, used by the ensemble |
+| `opencode/deepseek-v4-flash-free` | Free tier (ensemble previously used this; now uses `opencode-go/deepseek-v4-flash`) |
 | `opencode/deepseek-v4-flash`      | Cheap flash model            |
 
 > Full model list: https://opencode.ai/docs/zen

@@ -109,13 +109,16 @@ let
     };
 
   # Generic app that boots a playlist from a PUBLIC Spotify playlist (no user
-  # OAuth — client-credentials flow reads public playlists) and then
-  # regenerates checksums.json. Usage (from the repo root):
+  # OAuth — client-credentials flow reads public playlists) OR from a Spotify
+  # "Your Library" CSV export, then regenerates checksums.json. Usage (from the
+  # repo root):
   #   nix run .#music-spotify-sync -- <name> <spotify-url> [--prune]
-  # Requires: the Spotify playlist is PUBLIC. Spotify's API lets any
+  #   nix run .#music-spotify-sync -- <name> --csv /path/to/Library.csv [--prune]
+  # Requires (URL path): the Spotify playlist is PUBLIC. Spotify's API lets any
   # client-credentials token read public playlists; spotdl's bundled public
   # credentials are the default — pass SPOTIFY_CLIENT_ID/SECRET env vars (or
-  # --client-id/--client-secret) to use your own API app.
+  # --client-id/--client-secret) to use your own API app. The CSV path needs no
+  # Spotify credentials at all (tracks carry their Spotify id + ISRC inline).
   mkSpotifySyncApp = pkgs:
     let
       script = pkgs.writeShellScriptBin "music-spotify-sync" ''
@@ -124,15 +127,14 @@ let
           echo "music-spotify-sync: run this from the repo root" >&2
           exit 1
         fi
-        NAME=''${1:?usage: nix run .#music-spotify-sync -- <name> <spotify-url> [--prune]}
-        URL=''${2:?usage: nix run .#music-spotify-sync -- <name> <spotify-url> [--prune]}
-        shift 2 || true
+        NAME=''${1:?usage: nix run .#music-spotify-sync -- <name> (<spotify-url> | --csv <file>)}
+        shift || true
         P="$PWD/modules/nixos/music/playlists/$NAME"
         mkdir -p "$P"
         export PATH=${pkgs.yt-dlp}/bin:$PATH
         export SPOTIFY_CLIENT_ID=''${SPOTIFY_CLIENT_ID:-}
         export SPOTIFY_CLIENT_SECRET=''${SPOTIFY_CLIENT_SECRET:-}
-        ${pkgs.python3}/bin/python3 ${spotifySyncScript} "$P" "$URL" "$@"
+        ${pkgs.python3}/bin/python3 ${spotifySyncScript} "$P" "$@"
         # Regenerate the committed pin file immediately after the declaration
         # changes, so the two are always consistent.
         echo "music-spotify-sync: regenerating checksums.json ..."

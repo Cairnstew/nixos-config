@@ -1090,5 +1090,9 @@
  "yungs-better-nether-fortresses.pw.toml": {
   "url": "https://cdn.modrinth.com/data/Z2mXHnxP/versions/iopJiJQp/YungsBetterNetherFortresses-1.21.1-NeoForge-3.1.5.jar",
   "sha256": "sha256-VFCmSnA2I39ElJaDfgjz5bOqHXl0oQ30OUQXLe912P8="
+ },
+ "zeta.pw.toml": {
+  "url": "https://cdn.modrinth.com/data/MVARlG2f/versions/9GjNW2Gf/Zeta-1.1-40.jar",
+  "sha256": "sha256-TxfRorn9bRjdt2l6pFHbf7FUBTuGSPed4nmuDX5oovo="
  }
 }
