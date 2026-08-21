@@ -167,6 +167,10 @@
   "url": "https://cdn.modrinth.com/data/5BPpCYUe/versions/P6og8Sjk/certain_questing_additions-neoforge-1.2.0.4%2Bmc1.21.1.jar",
   "sha256": "sha256-oWtfk89V7wlmtlmnFMgOB0D782/VKLhMA6GBOJA1AVE="
  },
+ "christmascolonies.pw.toml": {
+  "url": "https://mediafilez.forgecdn.net/files/7290/892/christmascolonies-1.21.1-1.9.jar",
+  "sha256": "sha256-BkkMMeXn3in+GkVIpbvrqReGef3shgm8Wcua+PYGCwk="
+ },
  "chunky-offline.pw.toml": {
   "url": "https://cdn.modrinth.com/data/VfHc5JEX/versions/56xL4i2r/chunky-offline-v1.1.0.jar",
   "sha256": "sha256-HbmlawAKPNb6wp8t46bM4x77mYvIPDPvgiYzeqiYYjo="
@@ -226,6 +230,10 @@
  "cosy-critters-creepy-crawlies-neo.pw.toml": {
   "url": "https://cdn.modrinth.com/data/lOKz1gkH/versions/HmcDuDsO/cosycritters-1.21.1-NeoForge-0.0.6.jar",
   "sha256": "sha256-D5w/YZpUnBPFOOna9h5VC19mskVOXrF6SyFWSIBNDPE="
+ },
+ "cozy-apartments-for-minecolonies.pw.toml": {
+  "url": "https://mediafilez.forgecdn.net/files/8587/677/cozyapartments%201.21.1%20v1.3.01%20snapshot.jar",
+  "sha256": "sha256-WYHA8LpTaaF3uekqzPA8DzFCYDfcD/XIkQ0kNVs/JDA="
  },
  "crafttweaker.pw.toml": {
   "url": "https://cdn.modrinth.com/data/Xg35A4rS/versions/BVOSHJwc/CraftTweaker-neoforge-1.21.1-21.0.38.jar",
@@ -346,6 +354,10 @@
  "curios.pw.toml": {
   "url": "https://cdn.modrinth.com/data/vvuO3ImH/versions/yohfFbgD/curios-neoforge-9.5.1%2B1.21.1.jar",
   "sha256": "sha256-pF3yElwmIZl0q6dQf/ya/nuDrMlBo4avP6rLHMAFb94="
+ },
+ "direcolonies.pw.toml": {
+  "url": "https://mediafilez.forgecdn.net/files/6373/645/DireColonies-3.2.0.jar",
+  "sha256": "sha256-7Vvt/KNuwSv4g6OQCPc8grffq1UmJXMBzqi3reZsi7s="
  },
  "distanthorizons.pw.toml": {
   "url": "https://cdn.modrinth.com/data/uCdwusMi/versions/ZpKb4kZp/DistantHorizons-3.2.0-b-1.21.1-fabric-neoforge.jar",
@@ -495,6 +507,10 @@
   "url": "https://cdn.modrinth.com/data/tPe4xnPd/versions/ybUmDE8h/formations-1.0.4-neoforge-mc1.21.jar",
   "sha256": "sha256-LZtQV1/fQuWdXazaI85dAfxcsZ2wKhJ4Mp461AiThI4="
  },
+ "framed-colonies.pw.toml": {
+  "url": "https://mediafilez.forgecdn.net/files/6954/794/framedcolonies-1.0.3.jar",
+  "sha256": "sha256-ysrEYYCMpV/nA/DsJfdOmgNaYUpNk2EXUi+xEo+Jg3A="
+ },
  "ftb-library.pw.toml": {
   "url": "https://edge.forgecdn.net/files/8569/579/ftb-library-neoforge-2101.1.35.jar",
   "sha256": "sha256-vnsr0LU3CplRYkodhP2ALv7K6I1aDNJFUnMfiHQwWZ0="
@@ -546,6 +562,10 @@
  "fzzy-config.pw.toml": {
   "url": "https://cdn.modrinth.com/data/hYykXjDp/versions/MAPG6cXE/fzzy_config-0.7.6%2B1.21%2Bneoforge.jar",
   "sha256": "sha256-TlzBQ4CHsLwCdpaeiLmtC98rzGDWyvX+eeGJR9eikFA="
+ },
+ "gabs-styles-pack-for-minecolonies.pw.toml": {
+  "url": "https://mediafilez.forgecdn.net/files/8075/264/gabstylespack-0.4.0.jar",
+  "sha256": "sha256-XQ+0kThUwsQWWkgr8jlbMWJiEiBOoky0/HcpR1MftN0="
  },
  "geckolib.pw.toml": {
   "url": "https://cdn.modrinth.com/data/8BmcQJ2H/versions/tPkJmim6/geckolib-neoforge-1.21.1-4.9.2.jar",
@@ -651,6 +671,10 @@
   "url": "https://cdn.modrinth.com/data/umyGl7zF/versions/F2nzeC19/kubejs-neoforge-2101.7.2-build.368.jar",
   "sha256": "sha256-AXZ7tnepxKjzGHF8TCG8p+fvgJlWA0A6VRBooOBk50A="
  },
+ "likely-a-pack.pw.toml": {
+  "url": "https://mediafilez.forgecdn.net/files/7701/78/Likely_a_Pack_1.20.1_1.8.jar",
+  "sha256": "sha256-fveVppnfpYZIneKpWwwggNOyC1OqB2Irc17WoDzfK1I="
+ },
  "lithium.pw.toml": {
   "url": "https://cdn.modrinth.com/data/gvQqBUqZ/versions/DDUrRVCA/lithium-neoforge-0.15.4%2Bmc1.21.1.jar",
   "sha256": "sha256-SI8zIWAwwcsLqjPlnePWV9CNV5WmwggMjIu7wTP8h1c="
@@ -719,6 +743,10 @@
   "url": "https://cdn.modrinth.com/data/SYrakyVL/versions/VlvXeRGz/modopedia-neoforge-1.21.1-1.1.11.jar",
   "sha256": "sha256-rTrLY6WfxdgFu2LK67pN0QdtzZcIqwhsAYTrguytBYE="
  },
+ "modular-hub.pw.toml": {
+  "url": "https://mediafilez.forgecdn.net/files/7756/701/ModularHubStylePack-1-21-1-v1.1.jar",
+  "sha256": "sha256-tk/3/M0f62BpoEQyhKejXOWiTDUvRp9iI44SMXa0tUo="
+ },
  "more-enchantment-info.pw.toml": {
   "url": "https://cdn.modrinth.com/data/TIo1UXXV/versions/JaJl8XSj/more-enchantment-info-0.4.2.jar",
   "sha256": "sha256-wBsSczbKJ78X3dvWRXFMt38r5LGkIfQe+lga4kWOZkk="
@@ -783,9 +811,17 @@
   "url": "https://edge.forgecdn.net/files/8570/392/Pu_Dragon-1.21.1-v0.0.4-03.08.2026.jar",
   "sha256": "sha256-Hzw9avcUOT/e/nwZ7t1M+GwZLWfa74q29hamt/2EtVw="
  },
+ "pneumaticcraft-repressurized.pw.toml": {
+  "url": "https://cdn.modrinth.com/data/ncAcdgk7/versions/TNzeuLH3/pneumaticcraft-repressurized-8.2.23%2Bmc1.21.1.jar",
+  "sha256": "sha256-ZHziDVLPE587aTubTEdTlmqVptr8gtnlOK5K5bAkn5w="
+ },
  "polymorph.pw.toml": {
   "url": "https://cdn.modrinth.com/data/tagwiZkJ/versions/VEburL70/polymorph-neoforge-1.1.0%2B1.21.1.jar",
   "sha256": "sha256-vsgRiXit6wUt6cTq+aWVgwYh2CUVp2TzL5yKTdUquUs="
+ },
+ "powah.pw.toml": {
+  "url": "https://cdn.modrinth.com/data/KZO4S4DO/versions/1prWLuga/Powah-6.2.10.jar",
+  "sha256": "sha256-DmBKc1YRHB3USgDqQvwaqWDZ+uuXgmE0nfETj87k0LQ="
  },
  "preloading-tricks.pw.toml": {
   "url": "https://cdn.modrinth.com/data/FFeAJNCx/versions/2XxN0NBv/preloading-tricks-3.7.3.jar",
@@ -802,6 +838,10 @@
  "puddles-floods.pw.toml": {
   "url": "https://cdn.modrinth.com/data/xeRVd78z/versions/E6TfZDKF/puddleflood-1.1.5%2B1.21.1-neoforge.jar",
   "sha256": "sha256-gCu1x3F+EQeUFwpggKAJz8wN2fn/TZJuDKVAyUexHwI="
+ },
+ "quark.pw.toml": {
+  "url": "https://mediafilez.forgecdn.net/files/8420/966/Quark-4.1-482.jar",
+  "sha256": "sha256-D2nODTHKpPMeH6SVlUESASHifGUs0tlUg5r2tRYvDHA="
  },
  "rainboows.pw.toml": {
   "url": "https://cdn.modrinth.com/data/MdWygI5q/versions/8TqxNXTn/Rainbows-1.21-1.5.jar",
@@ -854,6 +894,14 @@
  "slime-dragon.pw.toml": {
   "url": "https://edge.forgecdn.net/files/8302/470/slime_dragon_addon-1.0.0-neoforge-1.21.1.jar",
   "sha256": "sha256-oQ6knUHRUBE3GTZJhqL/0mSCajZL6gHXXRZTzG/rn2w="
+ },
+ "smallcolonies-me.pw.toml": {
+  "url": "https://mediafilez.forgecdn.net/files/8045/900/smallcoloniesme%201.21.1%20v1.9.jar",
+  "sha256": "sha256-y8R/nT4mpOaH9OZJFHp4coPS1FOhzLr6+PzQewUz7TA="
+ },
+ "smallcolonies.pw.toml": {
+  "url": "https://mediafilez.forgecdn.net/files/7881/682/smallcolonies%201.21.1%20v1.8.jar",
+  "sha256": "sha256-H9NjKa8OW2UZrbqlNrH65tzi+LmCyY7IIUebRgPyw+M="
  },
  "snow-imprints.pw.toml": {
   "url": "https://cdn.modrinth.com/data/UhxJgB1o/versions/cOfawGEr/softimprints-neoforge-1.21.1-2.8.0.jar",
@@ -939,6 +987,10 @@
   "url": "https://edge.forgecdn.net/files/8610/535/structurize-1.0.832-1.21.1.jar",
   "sha256": "sha256-tu3nY1xjqAvT0DTBrT50xki4R480H4g9fSnD3PkLec4="
  },
+ "stylecolonies.pw.toml": {
+  "url": "https://mediafilez.forgecdn.net/files/8422/813/stylecolonies-1.15.56-1.21.1.jar",
+  "sha256": "sha256-YRkxV/VsUuWNzR/7u7wjF5ZNZMk5HVU9rPdnd6VdgAs="
+ },
  "supermartijn642s-config-lib.pw.toml": {
   "url": "https://cdn.modrinth.com/data/LN9BxssP/versions/qKL9jM75/supermartijn642configlib-1.1.8-neoforge-mc1.21.jar",
   "sha256": "sha256-0rp7g5oiaOTiI0V+gT0RqiR2w79winu6aR2PyFF3iks="
@@ -946,6 +998,14 @@
  "supermartijn642s-core-lib.pw.toml": {
   "url": "https://cdn.modrinth.com/data/rOUBggPv/versions/81s25oaA/supermartijn642corelib-1.1.24-neoforge-mc1.21.jar",
   "sha256": "sha256-IohOfGt8SEfnu5f7+mG1+Da3kJu0aOdjf2eIvlblnwA="
+ },
+ "sword-and-kingdom-schematic.pw.toml": {
+  "url": "https://mediafilez.forgecdn.net/files/7274/682/sword_and_kingdom_schematic-1.6.jar",
+  "sha256": "sha256-nMJlMfaM/EHW27eM6M8Dt9fhQ3rtMo25F5CrZTb8w0s="
+ },
+ "the-cyan-ancient-city-style-pack.pw.toml": {
+  "url": "https://mediafilez.forgecdn.net/files/7429/649/Cyan_ancient_city-4.8.1.jar",
+  "sha256": "sha256-toVuwuWL/jHSbcD/61LxYOEkl8GLLNYhQpjOW7N0pH0="
  },
  "tinted-dyes.pw.toml": {
   "url": "https://cdn.modrinth.com/data/77VVvOOe/versions/DuFm9fdR/tinted_dyes-2.1.1-neoforge-1.21.1.jar",
@@ -1030,5 +1090,9 @@
  "yungs-better-nether-fortresses.pw.toml": {
   "url": "https://cdn.modrinth.com/data/Z2mXHnxP/versions/iopJiJQp/YungsBetterNetherFortresses-1.21.1-NeoForge-3.1.5.jar",
   "sha256": "sha256-VFCmSnA2I39ElJaDfgjz5bOqHXl0oQ30OUQXLe912P8="
+ },
+ "zeta.pw.toml": {
+  "url": "https://cdn.modrinth.com/data/MVARlG2f/versions/9GjNW2Gf/Zeta-1.1-40.jar",
+  "sha256": "sha256-TxfRorn9bRjdt2l6pFHbf7FUBTuGSPed4nmuDX5oovo="
  }
 }

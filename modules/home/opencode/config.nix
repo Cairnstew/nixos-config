@@ -285,6 +285,7 @@ in
           nix-eval = ./tools/nix-eval.ts;
           nix-flake-check = ./tools/nix-flake-check.ts;
           just = ./tools/just.ts;
+          opencode-models = ./tools/opencode-models.ts;
         };
         skills = lib.mkDefault {
           git-repo-management = builtins.readFile ./skills/git-repo-management.md;
@@ -296,6 +297,8 @@ in
           windows-integration = builtins.readFile ./skills/windows-integration.md;
           docker-management = builtins.readFile ./skills/docker-management.md;
           network-security = builtins.readFile ./skills/network-security.md;
+          model-selection = builtins.readFile ./skills/model-selection.md;
+          music-playlists = builtins.readFile ./skills/music-playlists.md;
         };
         commands = {
           copy-last = ./commands/copylast.md;
@@ -418,7 +421,7 @@ in
         learning-promoter = {
           description = "Headless automated promotion of proposed agent learnings: dispatch the three triage reviewers to re-derive evidence, then learning_promote only on unanimous re-derivation-gated agreement, applying each accepted learning as an isolated commit, auto-merging into the base branch";
           mode = "primary";
-          model = "opencode-go/deepseek-v4-flash";
+          model = "opencode-go/mimo-v2.5";
           temperature = 0.1;
           prompt = builtins.readFile ./agents/learning-promoter.md;
           permission = {
@@ -526,6 +529,85 @@ in
         verboseEcho "Setting up OpenCode auth.json for providers..."
         ${writeAuthJsonScript}
       '';
+    })
+
+    # ── Learning-promoter watcher (v2 — opencode serve, no tmux) ──────────────
+    (mkIf cfg.learningPromoterWatcher.enable {
+      home.packages = [
+        (pkgs.python3.withPackages (_: [ ]))
+        pkgs.curl
+      ];
+
+      home.file.".local/share/opencode/learning-promoter-launcher.py".source =
+        pkgs.runCommand "learning-promoter-launcher.py" { } ''
+          cp ${./tools/learning-promoter-launcher.py} "$out"
+          chmod +x "$out"
+        '';
+
+      # Persistent headless opencode server for the promoter agent.
+      # The watcher sends commands via `opencode run --attach` — no tmux needed.
+      systemd.user.services.opencode-serve = {
+        Unit = {
+          Description = "Headless opencode server for automated agent workflows";
+          After = [ "graphical-session.target" ];
+        };
+        Service = {
+          Type = "simple";
+          WorkingDirectory = cfg.learningPromoterWatcher.repoDir;
+          ExecStart = "${cfg.package}/bin/opencode serve --port ${toString cfg.learningPromoterWatcher.servePort} --hostname 127.0.0.1";
+          Restart = "on-failure";
+          RestartSec = 5;
+          Environment = [
+            "OPENCODE_SERVER_PASSWORD=${cfg.learningPromoterWatcher.serverPassword}"
+          ];
+          # Resource limits to prevent memory leak from crashing the host (#20695)
+          MemoryMax = "2G";
+          MemoryHigh = "1536M";
+          CPUQuota = "200%";
+          TasksMax = 256;
+        };
+      };
+
+      systemd.user.services.learning-promoter-watcher = {
+        Unit = {
+          Description = "Learning-promoter watcher — dispatches promoter when proposed learnings exist";
+          After = [ "opencode-serve.service" ];
+          Requires = [ "opencode-serve.service" ];
+        };
+        Service = {
+          Type = "oneshot";
+          ExecStart = "${pkgs.python3}/bin/python3 ${config.home.homeDirectory}/.local/share/opencode/learning-promoter-launcher.py";
+          Environment = [
+            "GOALS_DB=${cfg.learningPromoterWatcher.goalsDb}"
+            "REPO_DIR=${cfg.learningPromoterWatcher.repoDir}"
+            "OPENCODE_SERVER_URL=http://127.0.0.1:${toString cfg.learningPromoterWatcher.servePort}"
+            "PROMOTION_TIMEOUT=${toString cfg.learningPromoterWatcher.promotionTimeout}"
+            "STALENESS_THRESHOLD=${toString cfg.learningPromoterWatcher.stalenessThreshold}"
+            "COMMAND_TIMEOUT=${toString cfg.learningPromoterWatcher.commandTimeout}"
+            "STATE_DIR=${config.home.homeDirectory}/.local/share/opencode"
+            # The PATH `opencode` is the session-gated wrapper (opencodeGated),
+            # which refuses while the web service runs. The watcher is a
+            # sanctioned headless path — it only probes + attaches to the
+            # dedicated serve instance — so it uses the gate's designed bypass.
+            "OPENCODE_ALLOW_CONCURRENT=1"
+          ];
+        };
+      };
+
+      systemd.user.timers.learning-promoter-watcher = {
+        Unit = {
+          Description = "Periodically check for proposed learnings and dispatch promoter";
+        };
+        Timer = {
+          OnBootSec = cfg.learningPromoterWatcher.checkInterval;
+          OnUnitActiveSec = cfg.learningPromoterWatcher.checkInterval;
+          Persistent = true;
+          RandomizedDelaySec = "1min";
+        };
+        Install = {
+          WantedBy = [ "timers.target" ];
+        };
+      };
     })
 
   ]);

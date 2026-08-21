@@ -208,14 +208,30 @@ function diagnose(text: string): string {
   if (/Failed to (create mod instance|register automatic subscribers)\. ModID: (\w+)/.test(text)) {
     const m = /Failed to (?:create mod instance|register automatic subscribers)\. ModID: (\w+)/.exec(text);
     const modid = m ? m[1] : "(unknown — search the pack's mods/ for a client-only mod)";
-    hints.push(
-      `A mod failed to load on the dedicated server (mod '${modid}'). ` +
-      `If log lines above show "invalid dist DEDICATED_SERVER" or a missing client class, ` +
-      `it likely loads client-only classes: find its modules/nixos/minecraft-server/modpacks/<pack>/mods/*.pw.toml and check 'side'. ` +
-      `Client-only mods must be side = "client" (not "both") so the server's side filter drops them; the Prism client keeps them. ` +
-      `Then: packwiz refresh, rebuild the server.` +
-      `\nNote: standalone "Attempted to load class ... for invalid dist DEDICATED_SERVER" / "Mixin target ... was not found" lines are benign noise — only treat this as fatal when boot actually aborts with this ModID error.`
-    );
+    const registrationBug =
+      /no @SubscribeEvent methods, but register was called anyway|NoSuchMethodError/.test(text);
+    if (registrationBug) {
+      // A mod bug, NOT a client-class problem. NeoForge throws this when a mod
+      // calls NeoForge.EVENT_BUS.register(this) but the class has no
+      // @SubscribeEvent methods (see mc-mod-patch for a real case). Marking it
+      // side = "client" would be wrong — it aborts on the server too and the
+      // fix is a jar/source patch, not a side flag.
+      hints.push(
+        `A mod failed to load on the dedicated server (mod '${modid}'): the boot abort is a COMPILED-LOGIC mod bug, not a client-class issue. ` +
+        `The log shows a @SubscribeEvent/NoSuchMethodError failure (e.g. "no @SubscribeEvent methods, but register was called anyway"), which a mod raises when it registers an event listener on a class with no @SubscribeEvent methods. ` +
+        `Do NOT mark it side = "client" — that only drops client-only mods from the server's side filter and would wrongly remove its required server-side content (e.g. Minecolonies blueprints). ` +
+        `Fix it with a jar patch (modules/nixos/minecraft-server/modpacks/<pack>/patches/, see the mc-mod-patch skill) or a source patch, then packwiz refresh and rebuild the server.`
+      );
+    } else {
+      hints.push(
+        `A mod failed to load on the dedicated server (mod '${modid}'). ` +
+        `If log lines above show "invalid dist DEDICATED_SERVER" or a missing client class, ` +
+        `it likely loads client-only classes: find its modules/nixos/minecraft-server/modpacks/<pack>/mods/*.pw.toml and check 'side'. ` +
+        `Client-only mods must be side = "client" (not "both") so the server's side filter drops them; the Prism client keeps them. ` +
+        `Then: packwiz refresh, rebuild the server.` +
+        `\nNote: standalone "Attempted to load class ... for invalid dist DEDICATED_SERVER" / "Mixin target ... was not found" lines are benign noise — only treat this as fatal when boot actually aborts with this ModID error.`
+      );
+    }
   }
   if (/NoClassDefFoundError/.test(text)) {
     hints.push(`NoClassDefFoundError — a mod expects a library/class not present on the server classpath (e.g. LWJGL, commons-compress). Usually a client-only mod. Same fix: mark it side = "client".`);

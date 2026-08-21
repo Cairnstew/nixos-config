@@ -10,19 +10,43 @@ hash = "8a84886db070f21cb35f33963403c20051c8fb932f48d25d6363b5de33b6b035"
 
 [[files]]
 file = "config/ftbquests/quests/chapter_groups.snbt"
-hash = "87b1e2ea814e65b3645d70a743a87cbb1f1f439f330f232daa512097c0317eac"
+hash = "37fd31c72d22bdb090271d99ca1eafee75fbb59173b616984bc59ee1afb22dfa"
+
+[[files]]
+file = "config/ftbquests/quests/chapters/create_automation.snbt"
+hash = "4520320dd362019f6b23e914e0b1eb25af779084a204c9823de9b81512e38611"
+
+[[files]]
+file = "config/ftbquests/quests/chapters/digital_age.snbt"
+hash = "5561e383a51c0bff875517390aec2ab721cd1984e23f1293eae772226b0165b5"
+
+[[files]]
+file = "config/ftbquests/quests/chapters/dragon_growth.snbt"
+hash = "224a5deda73ce6c9005fa378e9eed0727083c924cdd59a31c64ac5e4341e6eea"
+
+[[files]]
+file = "config/ftbquests/quests/chapters/dragons_dominion.snbt"
+hash = "a31c1c203ae012111ff756090f575c4e2477ae99d8c110e3b42e56b76d179c03"
 
 [[files]]
 file = "config/ftbquests/quests/chapters/getting_started.snbt"
-hash = "919b4076ef107c88eb6bfc06f2f9f528662dea6a7e4d4e869d0a2d3ea08e94cd"
+hash = "e5bdea5d2891c87641a67fead060116513d1c6694792586d2ec63fe99a9cefaf"
+
+[[files]]
+file = "config/ftbquests/quests/chapters/mekanism_power.snbt"
+hash = "32ed9ca939475bc55e067ae4b7ecc7380110eeadcb538eb2e49f96614763afb8"
+
+[[files]]
+file = "config/ftbquests/quests/chapters/tech_foundations.snbt"
+hash = "3632127867ba5e1eb3c9ad2a674de847cf9c9f5ff2dbf18b0bf64185bf1b2302"
 
 [[files]]
 file = "config/ftbquests/quests/data.snbt"
-hash = "6c574733505e53b2d2b10121d7b997da8da75538af5dd5dfa080ce299439b121"
+hash = "95d715a87b03dd0e234d0ab6862aa154f5a0afe513c32e6bf270958f646dbe07"
 
 [[files]]
 file = "config/ftbquests/quests/lang/en_us.snbt"
-hash = "a7481e663978fa694933dc42b4c37e6bbd7b14522d5b2ddb03e246040950eeb9"
+hash = "3110bbad4a95b6a5e9469afc9224362cb4d1d156aecb628f986d7c8756d7a32d"
 
 [[files]]
 file = "config/ftbquests/quests/reward_tables/35971441C32601D7.snbt"
@@ -243,6 +267,11 @@ hash = "2da7bd36993e8f68cfe0ec67131ed3c82c4a657aaf7b0f7bb955ea56a0b1ca3f"
 metafile = true
 
 [[files]]
+file = "mods/christmascolonies.pw.toml"
+hash = "60ad0e7ae7834127924a97420533c97626d693d465cb8d6240d7b783c7078478"
+metafile = true
+
+[[files]]
 file = "mods/chunky-offline.pw.toml"
 hash = "7f158107e75890807a24c3911700fd2dab08dde7d8e001c26d347f9f566c134d"
 metafile = true
@@ -315,6 +344,11 @@ metafile = true
 [[files]]
 file = "mods/cosy-critters-creepy-crawlies-neo.pw.toml"
 hash = "d27c2fa8ef019731d657683f2813914a21fe4c3e4da5175012d208bb7b6dc7c9"
+metafile = true
+
+[[files]]
+file = "mods/cozy-apartments-for-minecolonies.pw.toml"
+hash = "f5a748558c37c6f0956d6ea8f71a39de476e16618174303a126d260f15ba69f2"
 metafile = true
 
 [[files]]
@@ -465,6 +499,11 @@ metafile = true
 [[files]]
 file = "mods/curios.pw.toml"
 hash = "36debf7653e95a855b4fedacc19027cf2e01960fc0b6d55ef2ffbffbcb455690"
+metafile = true
+
+[[files]]
+file = "mods/direcolonies.pw.toml"
+hash = "ed2bf114fc0e244c15b9cca962ab59092bce2d8b0ffba0672bf14cba8a54bf28"
 metafile = true
 
 [[files]]
@@ -653,6 +692,11 @@ hash = "41ea41c71242b710df4768bdd0f3f2433c64600d2d1405472c01993bd7f5da25"
 metafile = true
 
 [[files]]
+file = "mods/framed-colonies.pw.toml"
+hash = "4d00365629e5ef749b8be05c759d79696a35659b412f623b15eaa6e8c7a472e3"
+metafile = true
+
+[[files]]
 file = "mods/ftb-library.pw.toml"
 hash = "869521f1e972dab12b8eefebc8f3456d00c9396b770714135599e99ec59592be"
 metafile = true
@@ -715,6 +759,11 @@ metafile = true
 [[files]]
 file = "mods/fzzy-config.pw.toml"
 hash = "f9c118b7a66238a7f9e052705e82402e57c7a5b753d62d679b94701ede479752"
+metafile = true
+
+[[files]]
+file = "mods/gabs-styles-pack-for-minecolonies.pw.toml"
+hash = "ac65615280272a9f71de24f0f13c4cef06ee47804b8322358b1f9383de59c0c0"
 metafile = true
 
 [[files]]
@@ -848,6 +897,11 @@ hash = "99bea71046529d65463fc12acb505ab363c91133ebbcc1d976e49a5d33150702"
 metafile = true
 
 [[files]]
+file = "mods/likely-a-pack.pw.toml"
+hash = "72cb969a5baf4cdcab353d55d616a01aa14b5162137a4d1bb3d74a24b9ecf9be"
+metafile = true
+
+[[files]]
 file = "mods/lithium.pw.toml"
 hash = "51e129832b04acd57da470fc41725bad5e101b6a6b1d4901fd8ea7a92b14e13d"
 metafile = true
@@ -933,6 +987,11 @@ hash = "e2c7bb4803def8211db5d07c3adca4d0e8877e1a9590174e972cbd0f05fc116b"
 metafile = true
 
 [[files]]
+file = "mods/modular-hub.pw.toml"
+hash = "fdb975cdb757dbc0c96b8ee5d817b16e475c7967ffb6c78e6f2e37d0129ab162"
+metafile = true
+
+[[files]]
 file = "mods/more-enchantment-info.pw.toml"
 hash = "c220c7a69906e84e1d8837d8e7c0eca69ce7326108362879303ada55b1496a8b"
 metafile = true
@@ -1013,8 +1072,18 @@ hash = "365cad6cde66295b8576108637bde81aae628db4c7288b6c81b84fbfbeb58175"
 metafile = true
 
 [[files]]
+file = "mods/pneumaticcraft-repressurized.pw.toml"
+hash = "382d3478ca5fb06dba118a62137ee8f2380b23696124b772a3a3b1fe11ec7618"
+metafile = true
+
+[[files]]
 file = "mods/polymorph.pw.toml"
 hash = "152769b5dfbb92a836634e315898b23b6a555c60b6f05ddf38c00085f2b784f6"
+metafile = true
+
+[[files]]
+file = "mods/powah.pw.toml"
+hash = "dc9fec9f7c8410ed73c1d9dec65df90b83af5a62a86e6a33b55dec5641f49f17"
 metafile = true
 
 [[files]]
@@ -1035,6 +1104,11 @@ metafile = true
 [[files]]
 file = "mods/puddles-floods.pw.toml"
 hash = "372b8bb3e51ad790797b150c6800600a8a3e516a74694c3e7fa7d12489d529d5"
+metafile = true
+
+[[files]]
+file = "mods/quark.pw.toml"
+hash = "e636c8bbb99e7dad5755e4f2fbc06b9079a841c78ea01ff62e1ed1d6d2f3ae18"
 metafile = true
 
 [[files]]
@@ -1100,6 +1174,16 @@ metafile = true
 [[files]]
 file = "mods/slime-dragon.pw.toml"
 hash = "0ecd60efbe01d0f3609aab1bd422e5210e525635deb5f5d226fab2a4bb05ff05"
+metafile = true
+
+[[files]]
+file = "mods/smallcolonies-me.pw.toml"
+hash = "f9513978d3a81e1bb7a783276259393972bce40db193855617fe2b8ebec22359"
+metafile = true
+
+[[files]]
+file = "mods/smallcolonies.pw.toml"
+hash = "a0fbc6a5f2fa6938aaa3e0af6cf2e44533a7ecb7436d53c44f41a7ba64d4b6f4"
 metafile = true
 
 [[files]]
@@ -1208,6 +1292,11 @@ hash = "9f6e054752c7c3b089f471c73fbeb29be487a0d0a17fba88b702b285dee417f1"
 metafile = true
 
 [[files]]
+file = "mods/stylecolonies.pw.toml"
+hash = "de1228c549652c4fcbfa5342a261f5022dcaae5a59da9ad4f6ffbe84b8c000dc"
+metafile = true
+
+[[files]]
 file = "mods/supermartijn642s-config-lib.pw.toml"
 hash = "62bd7012826fdcccf17a089055be67f87fb7335c88e73efc52bc9e51a1bf3188"
 metafile = true
@@ -1215,6 +1304,16 @@ metafile = true
 [[files]]
 file = "mods/supermartijn642s-core-lib.pw.toml"
 hash = "51c911d05e42b074fea01a74cb05050fa15164eed8a5d137cf0f64ecc16ed861"
+metafile = true
+
+[[files]]
+file = "mods/sword-and-kingdom-schematic.pw.toml"
+hash = "0d0b8efeefc68eb2be60a66b7d54dec8f610f18457d0c6bf3d9d03c89a59113f"
+metafile = true
+
+[[files]]
+file = "mods/the-cyan-ancient-city-style-pack.pw.toml"
+hash = "bd1dc01018c85b9aed1666f933cdb02d3e1ad21b4dc2cb1293729d4286adf251"
 metafile = true
 
 [[files]]
@@ -1323,5 +1422,30 @@ hash = "c0e40691651465b4eb1037749148c2078123604195e19b582dbef3cd5914e3b1"
 metafile = true
 
 [[files]]
+file = "mods/zeta.pw.toml"
+hash = "cb474b6c0dde741836ed4f796f3b6ab0b9d3cdc0453e651122cd002d5d1f8df8"
+metafile = true
+
+[[files]]
 file = "options.txt"
 hash = "858bbdb47dcfb5073256531397c4d0179c95ab376568256aaebf83f8712dc4c9"
+
+[[files]]
+file = "shaderpacks/bliss-shader.pw.toml"
+hash = "8ffd81a5e0b4c3bc2daf0d86714ef56df4beb1ed87a5c41c4e9bbb94a7006bc1"
+metafile = true
+
+[[files]]
+file = "shaderpacks/bsl-shaders.pw.toml"
+hash = "f91c2ec79366b4607d93928a07c223cbaa4a2e18fe0c110e68a3fc064e69b65a"
+metafile = true
+
+[[files]]
+file = "shaderpacks/complementary-reimagined.pw.toml"
+hash = "ea258ed5bf495d9017eeadc3cbf9bd67b1e672d843826bc077135548b5bc699e"
+metafile = true
+
+[[files]]
+file = "shaderpacks/complementary-unbound.pw.toml"
+hash = "608b87f75b2387a9fbd340cb18a8238bbbe5a0afc54202634b34f3000246b6e7"
+metafile = true

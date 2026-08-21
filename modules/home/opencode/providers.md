@@ -83,6 +83,31 @@ openrouter → https://openrouter.ai/api/v1
 
 ---
 
+## OpenCode Zen — Special Notes
+
+OpenCode Zen is a **first-class provider**, not a custom provider.
+
+> https://opencode.ai/docs/zen
+
+- **Model IDs use the `opencode/` prefix, NOT `opencode-zen/`** — the config
+  model id format is `opencode/<model-id>`, e.g. `opencode/deepseek-v4-flash-free`.
+  Do not guess `opencode-zen/model`; it will not resolve.
+- The auth.json key name is **`opencode-zen`** (matching the module option
+  `opencode-zen.keyFile`), while the model-ID prefix in config is **`opencode`**
+  — the two do not match, which is the common source of confusion.
+- Auth goes in `auth.json` only — no `provider` block in `opencode.json`
+
+**Known models (as of Aug 2026):**
+
+| Model ID                          | Notes                        |
+|-----------------------------------|------------------------------|
+| `opencode/deepseek-v4-flash-free` | Free tier (ensemble previously used this; now uses `opencode-go/deepseek-v4-flash`) |
+| `opencode/deepseek-v4-flash`      | Cheap flash model            |
+
+> Full model list: https://opencode.ai/docs/zen
+
+---
+
 ## OpenCode Go — Special Notes
 
 OpenCode Go is a **first-class provider** (like Zen), not a custom provider.
@@ -94,24 +119,24 @@ OpenCode Go is a **first-class provider** (like Zen), not a custom provider.
 - The module writes the key from `config.age.secrets."opencode-token".path`
   to `~/.local/share/opencode/auth.json` under the `opencode-go` key
 
-**Available models (as of May 2026):**
+**Available models & pricing (live):**
 
-| Model ID                        | Notes                        |
-|--------------------------------|------------------------------|
-| `opencode-go/kimi-k2.5`        | Primary coding/agentic model |
-| `opencode-go/kimi-k2.6`        | Harder tasks                 |
-| `opencode-go/qwen3.5-plus`     | Cheap planner / cheap tasks  |
-| `opencode-go/qwen3.6-plus`     | —                            |
-| `opencode-go/deepseek-v4-flash`| Very cheap, high quota       |
-| `opencode-go/deepseek-v4-pro`  | —                            |
-| `opencode-go/mimo-v2.5`        | —                            |
-| `opencode-go/mimo-v2.5-pro`    | —                            |
-| `opencode-go/minimax-m2.5`     | —                            |
-| `opencode-go/minimax-m2.7`     | —                            |
-| `opencode-go/glm-5`            | —                            |
-| `opencode-go/glm-5.1`          | —                            |
+The model list, per-token prices, context windows, and capability flags rotate
+as OpenCode adds/removes models — **do not hardcode them** (a static table here
+went stale within weeks). Look them up live from `models.dev`, the same catalog
+that powers OpenCode's `/models` browser and https://opencode.ai/go:
 
-> Full model list: https://opencode.ai/docs/go
+- **In opencode:** the `opencode-models` tool (see the `model-selection` skill).
+- **In a terminal:**
+  ```bash
+  nix run .#opencode-models                 # opencode-go, cheapest first
+  nix run .#opencode-models -- --info mimo-v2.5
+  nix run .#opencode-models -- --provider all --top 20
+  ```
+
+Raw endpoints: `https://models.dev/api.json` (pricing/caps) and
+`https://opencode.ai/zen/go/v1/models` (model-id list only). Subscription
+limits and the request-count table live at https://opencode.ai/docs/go.
 
 ---
 

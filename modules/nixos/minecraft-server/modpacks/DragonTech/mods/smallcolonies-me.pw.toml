@@ -1,0 +1,12 @@
+name = "SmallColonies ME for Minecolonies"
+filename = "smallcoloniesme%201.21.1%20v1.9.jar"
+side = "both"
+
+[download]
+hash-format = "sha512"
+url = "https://mediafilez.forgecdn.net/files/8045/900/smallcoloniesme%201.21.1%20v1.9.jar"
+
+[update]
+[update.curseforge]
+file-id = 8045900
+project-id = 1247027

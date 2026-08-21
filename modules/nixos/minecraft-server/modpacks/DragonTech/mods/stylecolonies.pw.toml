@@ -1,0 +1,12 @@
+name = "Stylecolonies"
+filename = "stylecolonies-1.15.56-1.21.1.jar"
+side = "both"
+
+[download]
+hash-format = "sha512"
+url = "https://mediafilez.forgecdn.net/files/8422/813/stylecolonies-1.15.56-1.21.1.jar"
+
+[update]
+[update.curseforge]
+file-id = 8422813
+project-id = 827507

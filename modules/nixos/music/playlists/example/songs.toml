@@ -1,0 +1,18 @@
+# Example playlist — proves the "hashify songs" pipeline end-to-end.
+# Two tiny public-domain files on Internet Archive (byte-stable direct URLs).
+# Enable it on a host with:
+#   my.services.music.playlists.example.enable = true;
+# Add songs: append [[songs]] blocks, `git add`, then
+#   nix run .#music-checksums-example
+
+name = "Example Playlist"
+# source = "direct"  (byte-stable URL — archive.org originals are immutable)
+source = "direct"
+
+[[songs]]
+key = "mpthreetest"
+url = "https://archive.org/download/testmp3testfile/mpthreetest.mp3"
+
+[[songs]]
+key = "mpthreetest-ogg"
+url = "https://archive.org/download/testmp3testfile/mpthreetest.ogg"

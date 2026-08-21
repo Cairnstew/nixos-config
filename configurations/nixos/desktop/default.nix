@@ -953,6 +953,15 @@
   # server is run on this host — see minecraft-server/config.nix opencode block).
   my.services.minecraftServer.opencode.enable = true;
 
+  # Hash-pinned music playlists (modules/nixos/music/playlists/) installed
+  # into the media drive — songs declared in git, byte-pinned via
+  # checksums.json. The `example` playlist is a `direct` source (built as a Nix
+  # FOD); `funky` is a yt-dlp source from a Spotify-CSV sync (installed by a
+  # runtime downloader outside the build sandbox — see config.nix).
+  my.services.music.enable = true;
+  my.services.music.playlists.example.enable = true;
+  my.services.music.playlists.funky.enable = true;
+
   # ── Home Manager Extra ───────────────────────────────────────────────────
   my.homeManager.extraConfig = {
     my.programs = {

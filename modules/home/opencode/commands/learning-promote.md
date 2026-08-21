@@ -7,19 +7,73 @@ You are the **`learning-promoter`** agent. Load and follow the
 (`agents/learning-promoter.md`) for the hard gates. This command is the
 step-by-step operational flow.
 
-## Launching the promoter (do NOT use `opencode run`)
+## Launching the promoter
 
-`opencode run` (with or without `-i`) dispatches the lead session and disposes
-the instance at the end of the agent's turn — the promoter would spawn its
-reviewers, then hit `exiting loop` / `disposing instance`, aborting every
-reviewer mid-triage. The promoter must run in a **persistent interactive TUI**:
+### Auto-launch (systemd watcher — recommended)
 
+When `my.programs.opencode.learningPromoterWatcher.enable = true` (set in
+your host config), the system is fully automated:
+
+1. A **persistent `opencode serve`** headless server runs as a systemd user
+   service (`opencode-serve.service`). It hosts the opencode runtime without
+   a TUI — no tmux, no browser, just an API.
+
+2. A systemd user timer polls the goals DB every ~1 minute:
+
+   a. **Reconcile partial verdicts** — if a previous promotion session crashed
+      mid-triage, some learnings may have 1-2 verdicts but not all 3. The watcher
+      force-rejects these so they can be re-triaged fresh.
+   b. **Reconcile stale learnings** — proposed learnings with zero verdicts
+      older than the staleness threshold (default 10min) are force-rejected.
+      These were never triaged (server was down, promoter crashed before
+      triage, etc.).
+   c. If `learnings` has any `status = 'proposed'` rows and no promotion is
+      already running, the watcher sends `/learning-promote` via
+      `opencode run --attach http://127.0.0.1:<port> --auto --format json`.
+   d. The `--auto` flag bypasses permission dialogs. The `--format json`
+      flag gives structured output for logging.
+   e. **Promotion timeout** — if the promoter takes longer than
+      `promotionTimeout` (default 30min), the watcher cleans up and retries
+      on the next cycle.
+
+3. Once the queue is empty, the watcher exits and waits for the next timer tick.
+
+The watcher's service and timer are managed by systemd user services:
+```bash
+systemctl --user status opencode-serve.service      # headless server
+systemctl --user status learning-promoter-watcher.timer   # watcher timer
+systemctl --user status learning-promoter-watcher.service # latest run
+```
+
+Configuration options:
+- `learningPromoterWatcher.repoDir` — repo path (default: `~/nixos-config`)
+- `learningPromoterWatcher.goalsDb` — goals DB path (default: `~/.local/share/goals/goals.db`)
+- `learningPromoterWatcher.checkInterval` — timer interval (default: `1min`)
+- `learningPromoterWatcher.servePort` — opencode serve port (default: `4096`)
+- `learningPromoterWatcher.promotionTimeout` — max seconds per cycle (default: `1800`)
+- `learningPromoterWatcher.stalenessThreshold` — seconds before never-triaged learnings are rejected (default: `1800`)
+- `learningPromoterWatcher.commandTimeout` — max seconds for `opencode run --attach` (default: `600`)
+
+### Manual launch
+
+If the watcher is not enabled, launch manually:
+
+**Option A: Via the headless server (recommended)**
+```bash
+# Start the headless server
+opencode serve --port 4096 &
+
+# Send the command
+opencode run --attach http://127.0.0.1:4096 --auto /learning-promote
+```
+
+**Option B: Via the interactive TUI (for debugging)**
 1. Start a tmux window: `tmux new-session -d -s promoter "opencode /path/to/nixos-config"`
 2. In the TUI, press `Tab` to cycle agents until **Learning-Promoter** is selected.
 3. Type `/learning-promote` and press **Enter twice** — the first Enter opens the
    command palette, the second dispatches the command.
 4. Expect permission-request dialogs (e.g. `/mnt/data/minecraft/logs`) — approve
-   them with a keypress (or pre-allow the path in `opencode.json`).
+   them with a keypress (or use `--auto` flag).
 5. Leave the tmux session running; the lead must stay alive while the reviewers
    report back asynchronously. Poll with `tmux capture-pane -t promoter -p`.
 
@@ -42,10 +96,22 @@ learning awaiting a decision. If empty, report "queue empty" and stop.
 ## 2. For each proposed learning (loop)
 
 Pick the oldest `created_at` first. Do NOT process two learnings in parallel on the
-same team — verdicts and applies stay isolated per learning.
+same team — verdicts and applies stay isolated per learning. After each learning
+completes (validated or rejected), re-query the queue with `goals_learning_query`
+before moving to the next — new learnings may have arrived during triage.
 
 For each learning id `<id>`, collect from its row: `command`, `lesson`, `fix`,
 `evidence`, `target_type`, `target_path`.
+
+**Merge conflict guard**: before creating the learning branch, check that the
+base branch hasn't moved since you started:
+```bash
+git fetch origin server
+git log --oneline HEAD..origin/server
+```
+If there are new commits (e.g. from a previous learning in this batch that was
+just merged), rebase your starting point. If the learning's `fix` touches files
+already modified by a prior learning in this batch, reject with a conflict note.
 
 ### 2a. Spot-check evidence independently
 

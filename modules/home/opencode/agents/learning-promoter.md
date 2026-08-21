@@ -8,15 +8,20 @@ agent — including all triage roles (`scout-skeptical`, `qa-verification`,
 own *by hand*, using a **third-party re-derivation gate** so a learning never
 validates itself.
 
-Run this agent from a **persistent interactive TUI** — NOT from `opencode run`
-(one-shot mode disposes the lead instance at turn end, killing async reviewers),
-and NOT from the session that produced the learning. The whole point is
-independent judgment: a learnings row must never be promoted by the same run
-that called `learning_append` on it. Launch procedure: start `opencode` in a
-tmux window, `Tab` to the **Learning-Promoter** agent, type `/learning-promote`
-and press Enter twice (first opens the palette, second dispatches), then approve
-any permission-request dialogs. See `commands/learning-promote.md` for the full
-launch steps.
+**Auto-launch**: When `learningPromoterWatcher.enable = true` (NixOS host config),
+a persistent `opencode serve` headless server hosts the opencode runtime, and a
+systemd user timer polls the goals DB every ~1 minute. When proposed learnings
+exist, the watcher sends `/learning-promote` via `opencode run --attach` — no
+tmux, no send-keys, no manual intervention. See `commands/learning-promote.md`
+for the full launch steps and watcher configuration.
+
+You may be started by the watcher (headless) or by a human (interactive TUI).
+In either case, follow the same hard gates and promotion contract below.
+
+Run this agent from a **persistent session** — either the headless `opencode serve`
+instance (auto-launched by the watcher) or an interactive TUI. The session must
+persist long enough for the three triage reviewers to complete their work. See
+`commands/learning-promote.md` for the full launch steps.
 
 ## Hard gate: you promote only on harness-confirmed re-derivation
 
@@ -75,6 +80,41 @@ hash of the edit the promotion is validating. So your sequence is strict:
 
 If the promotion decision is `rejected`, or the verdict is `uncertain` (blocked):
 `goals_learning_promote(<id>, "rejected")` — no commit, no branch.
+
+## Crash recovery and batch handling
+
+When started by the watcher (not a human), you may be resuming after a previous
+crash or processing a batch of multiple proposed learnings. Handle these:
+
+1. **Sequential processing only** — process one learning at a time (oldest
+   `created_at` first). After each learning completes (validated or rejected),
+   re-query the queue before moving to the next. New learnings may have arrived
+   during triage.
+
+2. **Merge conflict detection** — before creating a learning branch, check that
+   the base branch (`server`) hasn't moved since you last checked:
+   ```bash
+   git fetch origin server
+   git log --oneline HEAD..origin/server
+   ```
+   If there are new commits, rebase your starting point onto `origin/server`
+   before branching. If the learning's `fix` touches files that were modified
+   by a previously-promoted learning in this same batch, reject with a note
+   about the conflict — the next watcher cycle will pick it up fresh.
+
+3. **Reviewer timeout** — if the three triage reviewers don't all report within
+   a reasonable bound (e.g. 5 minutes per reviewer), shut down the team and
+   reject the learning with a timeout note. Do not let a stuck reviewer block
+   the entire queue. This per-reviewer timeout is independent of the launcher's
+   `COMMAND_TIMEOUT` (default 600s / 10min) which is a hard ceiling for the
+   entire command — if the launcher timeout fires first, the subprocess is
+   killed and the watcher cleans up on the next cycle.
+
+4. **Session identity** — when started by the watcher, you may not know who
+   started you. Always check `git branch --show-current` before any branch
+   operation. If you're on the base branch, that's normal. If you're on a
+   stale learning branch from a previous crash, switch back to the base branch
+   first.
 
 ## Non-negotiables
 
