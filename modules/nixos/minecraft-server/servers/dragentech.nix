@@ -23,7 +23,18 @@
     # and this override together if the driver is ever fixed/upgraded.
     # Note: -XX:+UseCompactObjectHeaders was tried while chasing the hang but
     # broke JNI/FFI (java.lang.foreign) — do not re-add.
-    jvmOpts = "-Xmx6G -Xms3G -Dorg.lwjgl.opencl.libname=/run/opengl-driver/lib/libOpenCL.so.1 -XX:+UseG1GC -XX:G1HeapRegionSize=16M";
+    #
+    # GC tuning for smoother gameplay during Chunky pregen:
+    #   - ParallelRefProcEnabled — faster reference processing (common under
+    #     heavy allocation like worldgen)
+    #   - MaxGCPauseMillis=200 — target pause time; balances throughput vs lag
+    #   - G1NewSizePercent=40 — more young gen for allocation bursts (worldgen)
+    #   - AlwaysPreTouch — pre-touch heap pages; more consistent latency
+    #   - G1HeapWastePercent=5 — less aggressive mixed GC promotion
+    #   - UseStringDeduplication — dedupe identical strings (worldgen chunks)
+    #   - G1MixedGCCountTarget=8 — spread mixed GCs over more cycles
+    #   - DisableExplicitGC — prevent System.gc() calls from mods
+    jvmOpts = "-Xmx6G -Xms3G -Dorg.lwjgl.opencl.libname=/run/opengl-driver/lib/libOpenCL.so.1 -XX:+UseG1GC -XX:G1HeapRegionSize=16M -XX:+ParallelRefProcEnabled -XX:MaxGCPauseMillis=200 -XX:+UnlockExperimentalVMOptions -XX:G1NewSizePercent=40 -XX:+AlwaysPreTouch -XX:G1HeapWastePercent=5 -XX:+UseStringDeduplication -XX:G1MixedGCCountTarget=8 -XX:+DisableExplicitGC";
     port = 25565;
     autoStart = true;
 
@@ -38,10 +49,23 @@
       nice = 5;
     };
 
+    # Performance-tuned server properties derived from log analysis:
+    #   - view-distance=8  (was 10): 36% fewer chunks loaded per player
+    #   - simulation-distance=6 (was 10): 64% fewer entities processed
+    #   - max-tick-time=-1: disable built-in watchdog (C2ME has its own)
+    #   - network-compression-threshold=512 (was 256): less CPU on compression
+    #   - entity-broadcast-range-percentage=75 (was 100): less entity network
+    #   - max-chained-neighbor-updates=1000 (was 1000000!): redstone spam limiter
     serverProperties = {
       motd = "A DragonTech Server";
       max-players = 4;
       white-list = false;
+      view-distance = 8;
+      simulation-distance = 6;
+      max-tick-time = -1;
+      network-compression-threshold = 512;
+      entity-broadcast-range-percentage = 75;
+      max-chained-neighbor-updates = 1000;
     };
     whitelist = { };
     operators = { };
