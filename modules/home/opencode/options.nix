@@ -856,6 +856,39 @@ in
               default = null;
               description = "Like maxRollingPercent, for the monthly window.";
             };
+            pacing = {
+              enable = mkOption {
+                type = types.bool;
+                default = false;
+                description = ''
+                  Pace-based cap for this entry on the WEEKLY and MONTHLY
+                  windows: the allowed usage ceiling scales with how much of
+                  the window's period has elapsed,
+                  `cap = min(100, elapsedFraction*100 + buffer)`, and is inert
+                  entirely while `elapsedFraction*100 < floor`. The effective
+                  cap is always `min(staticCap, paceCap)` — pacing can only
+                  tighten, never loosen. Rolling is EXCLUDED by design (Tier 0:
+                  it is a trailing 5h sliding window with no fixed anchor).
+                  Ships disabled by default; weekly needs its first observed
+                  rollover confirmed (Mon 2026-08-31T00:00Z expected), monthly
+                  needs the 2026-09-19 reset to verify period length.
+                '';
+              };
+              floor = mkOption {
+                type = types.ints.between 0 100;
+                default = 5;
+                description =
+                  "Pacing applies only once elapsed percent of the period reaches this value (%). Below it pacing is inert.";
+              };
+              buffer = mkOption {
+                type = types.ints.between 0 100;
+                default = 10;
+                description = ''
+                  Additive slack in percentage points:
+                  paceCap = min(100, elapsedPercent + buffer).
+                '';
+              };
+            };
           };
         }));
         default = { };
