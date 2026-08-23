@@ -839,7 +839,7 @@ in
               description = "Model id in provider/model format.";
             };
             maxRollingPercent = mkOption {
-              type = types.nullOr types.ints.u0_100;
+              type = types.nullOr (types.ints.between 0 100);
               default = null;
               description = ''
                 Entry is eligible only while rolling-window usage percent is
@@ -847,12 +847,12 @@ in
               '';
             };
             maxWeeklyPercent = mkOption {
-              type = types.nullOr types.ints.u0_100;
+              type = types.nullOr (types.ints.between 0 100);
               default = null;
               description = "Like maxRollingPercent, for the weekly window.";
             };
             maxMonthlyPercent = mkOption {
-              type = types.nullOr types.ints.u0_100;
+              type = types.nullOr (types.ints.between 0 100);
               default = null;
               description = "Like maxRollingPercent, for the monthly window.";
             };
