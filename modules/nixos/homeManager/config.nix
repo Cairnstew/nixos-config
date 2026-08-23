@@ -175,6 +175,37 @@ in
           # https://opencode.ai/docs/go — "opencode-go/<model-id>"). Moved off the
           # free Zen tier (opencode-deepseek-v4-flash-free) to the normal flash for
           # better reliability/limits under the paid Go subscription.
+          # Usage-aware model fallback (my.programs.opencode.modelFallback).
+          # Chains resolve against ~/.cache/opencode/go-usage.json percent data:
+          # first entry whose caps all pass wins; the LAST entry is the
+          # cap-free safety net. Self-improvement/triage agents get tighter
+          # caps than the default chain because they run unattended and in
+          # bursts (ensemble triage). Thresholds are PERCENT-based — the Go
+          # usage API exposes no dollar amounts, so USD budgets are not
+          # enforceable here by construction.
+          modelFallback.enable = lib.mkDefault true;
+          modelFallback.syncEnsembleProjectFile = lib.mkDefault true;
+          modelFallback.chains = lib.mkDefault {
+            default = [
+              { model = "opencode-go/deepseek-v4-flash"; maxRollingPercent = 70; maxWeeklyPercent = 80; }
+              { model = "opencode-go/mimo-v2.5"; maxRollingPercent = 85; maxWeeklyPercent = 95; }
+              { model = "opencode-go/ox-alpha-free"; }
+            ];
+            # Triage roles: tighter rolling cap — they fire in bursts of three.
+            scout-skeptical = [
+              { model = "opencode-go/deepseek-v4-flash"; maxRollingPercent = 40; maxWeeklyPercent = 60; }
+              { model = "opencode-go/mimo-v2.5"; }
+            ];
+            qa-verification = [
+              { model = "opencode-go/deepseek-v4-flash"; maxRollingPercent = 40; maxWeeklyPercent = 60; }
+              { model = "opencode-go/mimo-v2.5"; }
+            ];
+            adversarial = [
+              { model = "opencode-go/deepseek-v4-flash"; maxRollingPercent = 40; maxWeeklyPercent = 60; }
+              { model = "opencode-go/mimo-v2.5"; }
+            ];
+          };
+
           ensemble = lib.mkDefault {
             defaultModel = "opencode-go/deepseek-v4-flash";
             modelsByAgent = {
