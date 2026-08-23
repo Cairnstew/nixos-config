@@ -349,6 +349,14 @@ in
           - opencode-go/qwen3.5-plus
           - opencode-go/deepseek-v4-flash
       '';
+
+      usage = {
+        enable = lib.mkEnableOption ''
+          the opencode-go-usage CLI and its 5-minute cache refresher
+          (queries https://opencode.ai/zen/go/v1/usage and writes a JSON
+          snapshot to ~/.cache/opencode/go-usage.json for the dashboard)
+        '';
+      };
     };
 
     opencode-zen = {
@@ -782,6 +790,108 @@ in
         dashboard port, and auto-merge behavior for parallel agent teams.
         See https://github.com/hueyexe/opencode-ensemble for full reference.
       '';
+    };
+
+    # ── Usage-aware model fallback ────────────────────────────────────────────
+
+    modelFallback = {
+      enable = mkEnableOption ''
+        Usage-aware model fallback for opencode agents.
+
+        Ships the `opencode-model-select` selector, which reads the cached
+        OpenCode Go usage snapshot (~/.cache/opencode/go-usage.json, refreshed
+        by my.programs.opencode.opencode-go.usage) and resolves an ordered
+        fallback chain per agent: the first chain entry whose percent caps are
+        not exceeded wins. Requires usage data to be present; without it the
+        selector falls back to the chain's LAST entry (the safe default).
+
+        Two consumption paths:
+        - The `opencode` wrapper injects --model for top-level CLI invocations.
+        - A project-level .opencode/ensemble.json is rewritten so ensemble
+          plugin spawns resolve modelsByAgent from the same chains.
+
+        NOTE: thresholds are PERCENT-based. The OpenCode Go usage API exposes
+        only status/percent/resetsAt per window — no dollar amounts — so USD
+        budgets cannot be enforced here by design.
+
+        NOTE: the ensemble override only applies when opencode runs with its
+        working directory inside ${config.home.homeDirectory}/nixos-config
+        (the plugin reads <projectDir>/.opencode/ensemble.json), and only for
+        processes started AFTER the selector last wrote it (the plugin loads
+        config once at process start). Long-running `opencode serve` sessions
+        need a restart to pick up new selections; in-session overrides can
+        still be passed as an explicit team_spawn model argument.
+      '';
+
+      cacheFile = mkOption {
+        type = types.str;
+        default = "${config.home.homeDirectory}/.cache/opencode/go-usage.json";
+        defaultText = literalExpression ''"''${config.home.homeDirectory}/.cache/opencode/go-usage.json"'';
+        description = "Path to the usage snapshot consumed by the selector.";
+      };
+
+      chains = mkOption {
+        type = types.attrsOf (types.listOf (types.submodule {
+          options = {
+            model = mkOption {
+              type = types.str;
+              example = "opencode-go/ox-alpha-free";
+              description = "Model id in provider/model format.";
+            };
+            maxRollingPercent = mkOption {
+              type = types.nullOr types.ints.u0_100;
+              default = null;
+              description = ''
+                Entry is eligible only while rolling-window usage percent is
+                at or below this value. null = no constraint on this window.
+              '';
+            };
+            maxWeeklyPercent = mkOption {
+              type = types.nullOr types.ints.u0_100;
+              default = null;
+              description = "Like maxRollingPercent, for the weekly window.";
+            };
+            maxMonthlyPercent = mkOption {
+              type = types.nullOr types.ints.u0_100;
+              default = null;
+              description = "Like maxRollingPercent, for the monthly window.";
+            };
+          };
+        }));
+        default = { };
+        example = {
+          default = [
+            { model = "opencode-go/deepseek-v4-flash"; maxWeeklyPercent = 80; }
+            { model = "opencode-go/mimo-v2.5"; maxWeeklyPercent = 95; }
+            { model = "opencode-go/ox-alpha-free"; }
+          ];
+          scout-skeptical = [
+            { model = "opencode-go/deepseek-v4-flash"; maxRollingPercent = 50; maxWeeklyPercent = 60; }
+            { model = "opencode-go/mimo-v2.5"; }
+          ];
+        };
+        description = ''
+          Ordered fallback chains keyed by agent name. The special key
+          `default` applies to every agent without an explicit entry.
+          The FIRST eligible entry wins; eligibility means every specified
+          percent cap is >= current usage for that window. Make the last
+          entry cap-free (always eligible) or the chain can exhaust.
+        '';
+      };
+
+      syncEnsembleProjectFile = mkEnableOption ''
+        rewriting <repo>/.opencode/ensemble.json before each dispatch so
+        ensemble plugin spawns pick up chain-resolved modelsByAgent entries.
+        The file is gitignored by design (intentional imperative exception,
+        see GOTCHAS.md).
+      '';
+
+      repoDir = mkOption {
+        type = types.str;
+        default = "${config.home.homeDirectory}/nixos-config";
+        defaultText = literalExpression ''"''${config.home.homeDirectory}/nixos-config"'';
+        description = "Repo whose .opencode/ensemble.json receives the resolved modelsByAgent.";
+      };
     };
 
     # ── Learning-promoter watcher (v2 — opencode serve) ──────────────────────
