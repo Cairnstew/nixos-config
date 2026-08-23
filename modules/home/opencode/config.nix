@@ -60,6 +60,27 @@ let
       fi
     ''}
 
+    ${optionalString (cfg.modelFallback.chains != { }) ''
+      # ── Usage-aware model fallback (my.programs.opencode.modelFallback) ──
+      # PRECONDITION: the ensemble plugin reads .opencode/ensemble.json ONCE
+      # at process start, so the sync must complete BEFORE the exec below —
+      # never run it concurrently with a dispatch.
+      if command -v opencode-model-select >/dev/null 2>&1; then
+        opencode-model-select --sync-ensemble || true
+      fi
+
+      # Inject the chain-resolved model for this invocation unless the user
+      # already chose one explicitly (-m/--model), or opted out entirely via
+      # OPENCODE_MODEL_SELECT_OFF=1.
+      if [ -z "''${OPENCODE_MODEL_SELECT_OFF:-}" ] \
+         && ! printf '%s\n' "$@" | grep -q -- '-m\|--model'; then
+        if m=$(opencode-model-select 2>/dev/null); then
+          set -- "$@" --model "$m"
+          echo "opencode: model-fallback selected $m" >&2
+        fi
+      fi
+    ''}
+
     exec ${opencodeWrapped}/bin/opencode "$@"
   '';
 
