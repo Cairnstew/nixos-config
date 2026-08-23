@@ -40,7 +40,8 @@ let
 in
 {
   # ── Chains config → ~/.config/opencode/model-fallback.json ────────────────
-  home.file.".${fallbackConfigFile}" = mkIf (cfg.modelFallback.chains != { }) {
+  # NOTE: fallbackConfigFile already begins with ".config/", so no extra dot.
+  home.file."${fallbackConfigFile}" = mkIf (cfg.modelFallback.chains != { }) {
     text = builtins.toJSON { inherit (cfg.modelFallback) chains; };
   };
 
