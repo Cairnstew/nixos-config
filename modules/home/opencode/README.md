@@ -61,6 +61,9 @@ the terminal, with support for 15+ LLM providers, custom skills, agents, and MCP
 | `my.programs.opencode.modelFallback.syncEnsembleProjectFile` | `false` | Rewrite `<repoDir>/.opencode/ensemble.json` before dispatch so ensemble spawns use chain-resolved models |
 | `my.programs.opencode.modelFallback.repoDir` | `~/nixos-config` | Repo whose project-level ensemble override receives resolved models |
 
+Chain entries additionally accept a `pacing` block — see
+[Pace-based caps](#pace-based-caps-weeklymonthly-only) below.
+
 ## Usage-Aware Model Fallback
 
 `my.programs.opencode.modelFallback` ships the `opencode-model-select`
@@ -74,6 +77,58 @@ chain must be cap-free — it is the always-eligible safety net (asserted in
 Thresholds are **percent-based**: the Go usage API exposes only
 status/percent/resetsAt per window (rolling ~5h, weekly, monthly) and no
 dollar amounts, so USD budgets cannot be enforced here by construction.
+Note that opencode's own docs (https://opencode.ai/docs/go) state the intent
+that you can "continue using free models past the limit" — which is exactly
+why every chain's tail is a cap-free free model: when paid entries exhaust,
+dispatch degrades to free instead of erroring.
+
+### Pace-based caps (weekly/monthly ONLY)
+
+Chain entries can opt into **pace-based** weekly/monthly caps: the allowed
+usage ceiling scales with how much of the window's period has elapsed
+(`cap = min(100, elapsedPercent + buffer)`, inert while
+`elapsedPercent < floor`), so front-loading early in a week tightens the cap
+automatically instead of waiting for a fixed threshold.
+
+```nix
+chains.default = [
+  { model = "opencode-go/deepseek-v4-flash";
+    maxWeeklyPercent = 80;              # static hard ceiling — pacing can
+                                        # never exceed this even with buffer
+    pacing = { enable = true; }; }      # floor = 5, buffer = 10 defaults
+  { model = "opencode-go/ox-alpha-free"; }
+];
+```
+
+Semantics (`modules/home/opencode/fallback.nix`, `resolveJq`):
+
+- Effective window cap = `min(staticCap, paceCap)`; pacing can only tighten.
+- `paceCap = min(100, elapsedPercent + buffer)`, where
+  `elapsedPercent = clamp((now − periodStart) / periodLength × 100, 0, 100)`.
+- Below `floor` percent elapsed, pacing is entirely inert for that entry.
+- `periodStart` derives from the snapshot's `resetsAt` alone — no new state:
+  weekly = `resetsAt − 7d` (**exact**, anchored Monday 00:00 UTC);
+  monthly = `resetsAt − 30d` (**approximate** ±1 day ≈ ±3 pp of cap — the
+  provider does not expose a period-start field, adjacent endpoints are 404,
+  and the true monthly period length is unverified until its first observed
+  reset on 2026-09-19).
+- Rolling is **excluded**: it is a trailing 5-hour *sliding* window
+  (`resetsAt = now + 5h` on every poll — nine samples across two days), so it
+  has no anchor to pace against. Entries setting `pacing.enable` must
+  constrain `maxWeeklyPercent` or `maxMonthlyPercent`; this is asserted in
+  `tests.nix` and throws at eval otherwise.
+
+**Why pacing ships disabled:** both production chains currently run with
+static caps only. Weekly pacing should be flipped to `enable = true` only
+after tonight-style rollover is observed once (next `weekly.resetsAt` must
+read `2026-08-31T00:00:00Z` verbatim from the API); monthly only after the
+2026-09-19 reset confirms its true period length. The two evidence gates are
+independent.
+
+Boundary behavior is validated against synthetic snapshots at controlled
+times (elapsed 0%, just-under/just-over floor, stale cache past `resetsAt`,
+static-ceiling precedence) — see the boundary harness transcript referenced
+in `/tmp/opencode/model-fallback-pacing/`.
 
 Two consumption paths:
 
