@@ -4,5 +4,6 @@
     ./options.nix
     ./config.nix
     ./tests.nix
+    ./usage.nix
   ];
 }

@@ -122,6 +122,10 @@ in
           clarifai.patFile = config.age.secrets.clarifai-pat.path;
           deepinfra.keyFile = config.age.secrets.deepinfra-key.path;
           opencode-go.keyFile = config.age.secrets.opencode-token.path;
+          # CLI + 5-min cache refresher for OpenCode Go usage (dashboard feeds
+          # off ~/.cache/opencode/go-usage.json). Guarded on the secret existing.
+          opencode-go.usage.enable =
+            lib.mkDefault (config.age.secrets ? "opencode-token");
           groq.keyFile = config.age.secrets.groq-token.path;
 
           model = lib.mkDefault "opencode-go/deepseek-v4-flash";

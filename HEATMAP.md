@@ -495,6 +495,7 @@ All `my.*` options declared across module files.
 | `my.services.opencodeWeb.dashboard.enable` | bool | `true` | Add an OpenCode section to the proxy dashboard |
 | `my.services.opencodeWeb.dashboard.baseUrl` | str | `"http://localhost"` | Base URL for dashboard instance links |
 | `my.services.proxy.dashboard.opencode` | list | `[]` | OpenCode instances shown in the dashboard (populated by opencode-web) |
+| `my.services.proxy.systemMetrics.opencodeGo.usageJsonFile` | null/path | `null` | OpenCode Go usage snapshot merged into dashboard metrics.json and rendered as usage bars |
 | `my.services.xmltv.enable` | bool | `false` | XMLTV EPG grabber service for UK Freeview TV listings |
 | `my.services.xmltv.package` | package | `null` | XMLTV package to use |
 | `my.services.xmltv.grabber` | str | `"tv_grab_uk_freeview"` | XMLTV grabber script |
@@ -638,6 +639,7 @@ All `my.*` options declared across module files.
 | `my.programs.opencode.cerebras.keyFile` | null/path | `null` | Cerebras key |
 | `my.programs.opencode.clarifai.patFile` | null/path | `null` | Clarifai PAT |
 | `my.programs.opencode.opencode-go.keyFile` | null/path | `null` | OpenCode Go key |
+| `my.programs.opencode.opencode-go.usage.enable` | bool | `false` | `opencode-go-usage` CLI + 5-min cache refresher (writes `~/.cache/opencode/go-usage.json`) |
 | `my.programs.opencode.opencode-zen.keyFile` | null/path | `null` | OpenCode Zen key |
 | `my.programs.opencode.azure.keyFile` | null/path | `null` | Azure OpenAI key |
 | `my.programs.opencode.azure.endpoint` | null/str | `null` | Azure endpoint |

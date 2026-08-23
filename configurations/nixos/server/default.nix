@@ -64,7 +64,8 @@
   # Auto-dispatch the promoter agent via opencode serve when proposed learnings
   # exist. Checks every 1min; reconciles partial/stale verdicts; uses API-based
   # communication (no tmux). Requires opencode-serve.service (auto-started).
-  my.homeManager.extraConfig.my.programs.opencode.learningPromoterWatcher.enable = true;
+  # TEMPORARILY DISABLED (2026-08-22): set to true to re-enable the auto loop.
+  my.homeManager.extraConfig.my.programs.opencode.learningPromoterWatcher.enable = false;
 
   # ── Location ─────────────────────────────────────────────────────────────
   my.system.location = {
@@ -86,6 +87,11 @@
     # F4: proxy.enable is common.nix mkDefault true — redundant here (recon F4)
     # F5: listenAddresses [ "127.0.0.1" ] is the proxy/options.nix default — redundant here (recon F5)
     tailscaleServe.enable = true;
+
+    # OpenCode Go usage bars on the dashboard — reads the snapshot written by
+    # seanc's opencode-go-usage systemd user timer (every 5 min).
+    systemMetrics.opencodeGo.usageJsonFile =
+      "/home/seanc/.cache/opencode/go-usage.json";
   };
 
   # ── Monitoring ─────────────────────────────────────────────────────────
