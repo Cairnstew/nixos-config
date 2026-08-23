@@ -19,5 +19,5 @@
   ];
   expects = [ ];
   complexity = "medium";
-  tested = true;
+  tested = false; # modelFallback (2026-08-23) not yet validated on a live host
 }

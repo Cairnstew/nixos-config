@@ -8,6 +8,12 @@
   any evaluation or build
   failure.**
 
+**Runtime-mutated `.opencode/ensemble.json` inside a git-tracked directory is intentional, not drift (2026-08-23)**
+
+Symptom: a future audit (or `nix-doc-audit`) will see `.opencode/ensemble.json` in the otherwise-committed `.opencode/` tree, untracked via `.gitignore`, rewritten by a script at dispatch time — and flag it as imperative drift violating the "declarative wins" principle. Cause: the usage-aware model fallback (`modules/home/opencode/fallback.nix`) needs a mutable `modelsByAgent` lever that reaches ensemble plugin spawns, and every declarative path is closed: `~/.config/opencode/{opencode,ensemble}.json` are HM store symlinks (read-only), opencode's config schema has no native fallback, and the plugin `config` hook is effectively read-only at 1.18.13 (mutations of `agent.*` crash dispatch; global `model` mutation is silently ignored — verified live). The ensemble plugin merges `<projectDir>/.opencode/ensemble.json` OVER the global file (`src/config.ts` merge order), and that project path is a normal working-tree file — the only mutable injection point. Fix: none needed; this is a **named exception**. The selector (`opencode-model-select --sync-ensemble`) writes resolved winners there before dispatch (the plugin reads it once per process start — write must complete BEFORE `opencode run` launches), the file is gitignored with an explanatory comment in `.opencode/.gitignore`, and freshness limits are documented in `modules/home/opencode/README.md`. If you see this file dirty or absent, that is its healthy state.
+
+---
+
 **opencode v1 SDK `session.messages()` doesn't read cross-session — triage-capture reads the `part` table directly**
 
 Symptom (2026-08-16): the ensemble triage-capture plugin (`modules/home/opencode/plugins/triage-capture.ts`) must read a *reviewer* session's tool-call transcript from the *lead's* process — a cross-session read, not reading your own session's history. The v1 SDK's `client.session.messages(sessionID)` returned 0 results for any session other than the one active in that client (confirmed live on opencode 1.18.13). This was NOT caught by the original feasibility investigation (`/tmp/opencode/self-improvement/transcript-capture-tier0-findings.md`), which verified the SDK call's *shape* against docs/types but didn't probe cross-session behavior before recommending it as the stable path (Decision 2a, Option 2). Cause: the SDK messages endpoint is scoped to the caller's active session. Fix in place: `triage-capture.ts` reads `~/.local/share/opencode/opencode.db`'s `part` table directly via `bun:sqlite` (same open pattern as the ensemble plugin), keyed by `session_id`, instead of going through the SDK. **Risk, not just a note:** `opencode.db`'s internal schema is NOT a public/stable API — it can change shape across opencode versions with no deprecation, unlike the SDK surface. A future upgrade can silently break triage-capture's transcript reads with no error at the call site — verdicts would just stop getting `rederivation_method`/`transcript_ref` populated and fall back to `uncertain` (safe, but silent). Mitigation: before any `opencode` version bump, re-run the Task-5 dispatch against a known learning and confirm `review_verdicts` still populates `rederivation_method`/`transcript_ref` — treat this as a required smoke test on upgrade, not implicit. If the SDK's `session.messages()` cross-session behavior is ever fixed upstream, prefer switching back to it (the original schema-stability reasoning still holds; this workaround is a concession to a current SDK limitation, not a preference).
@@ -934,5 +940,5 @@ When you discover a new problem and its solution:
 
 ---
 
-Last updated: 2026-08-18
+Last updated: 2026-08-23
 

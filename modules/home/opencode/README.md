@@ -56,6 +56,66 @@ the terminal, with support for 15+ LLM providers, custom skills, agents, and MCP
 | `my.programs.opencode.azure.endpoint` | `null` | Azure OpenAI endpoint |
 | `my.programs.opencode.azure.deployment` | `null` | Azure deployment name |
 | `my.programs.opencode.mcp` | `{}` | MCP server configurations |
+| `my.programs.opencode.modelFallback.enable` | `false` | Usage-aware model fallback |
+| `my.programs.opencode.modelFallback.chains` | `{}` | Ordered fallback chains per agent (`model` + optional `maxRollingPercent` / `maxWeeklyPercent` / `maxMonthlyPercent`) |
+| `my.programs.opencode.modelFallback.syncEnsembleProjectFile` | `false` | Rewrite `<repoDir>/.opencode/ensemble.json` before dispatch so ensemble spawns use chain-resolved models |
+| `my.programs.opencode.modelFallback.repoDir` | `~/nixos-config` | Repo whose project-level ensemble override receives resolved models |
+
+## Usage-Aware Model Fallback
+
+`my.programs.opencode.modelFallback` ships the `opencode-model-select`
+selector. It reads the cached OpenCode Go usage snapshot
+(`~/.cache/opencode/go-usage.json`, refreshed every 5 minutes by
+`opencode-go-usage.timer`) and resolves an ordered chain per agent: **the
+first entry whose percent caps are all satisfied wins**. The last entry of a
+chain must be cap-free — it is the always-eligible safety net (asserted in
+`tests.nix`).
+
+Thresholds are **percent-based**: the Go usage API exposes only
+status/percent/resetsAt per window (rolling ~5h, weekly, monthly) and no
+dollar amounts, so USD budgets cannot be enforced here by construction.
+
+Two consumption paths:
+
+1. **Top-level invocations** — the `opencode` wrapper injects
+   `--model <resolved>` unless you already passed `-m/--model`, or set
+   `OPENCODE_MODEL_SELECT_OFF=1`.
+2. **Ensemble spawns** — with `syncEnsembleProjectFile = true`, the selector
+   rewrites `<repoDir>/.opencode/ensemble.json` (gitignored) with
+   chain-resolved `modelsByAgent`. The ensemble plugin merges project config
+   over the HM-managed global one.
+
+### Scope caveats (documented deliberately)
+
+- The project-level override only applies when opencode's working directory
+  resolves inside `<repoDir>`; dispatches from other trees silently keep the
+  static global model.
+- The ensemble plugin reads its config **once at process start**
+  (`loadConfig` in `src/index.ts`), so a synced override reaches only
+  processes started afterwards. Long-running `opencode serve --attach`
+  sessions need a restart to pick up new selections; within a live session,
+  pass an explicit `model=` argument to `team_spawn` instead (it outranks
+  `modelsByAgent` in the plugin's resolution order).
+- `.opencode/ensemble.json` being runtime-mutated inside a git-tracked
+  directory is an intentional imperative exception — see GOTCHAS.md.
+
+### Example
+
+```nix
+my.programs.opencode.modelFallback = {
+  enable = true;
+  chains.default = [
+    { model = "opencode-go/deepseek-v4-flash"; maxWeeklyPercent = 80; }
+    { model = "opencode-go/mimo-v2.5"; maxWeeklyPercent = 95; }
+    { model = "opencode-go/ox-alpha-free"; }          # safety net, no caps
+  ];
+  # High-usage-risk agents get tighter caps:
+  chains."scout-skeptical" = [
+    { model = "opencode-go/deepseek-v4-flash"; maxRollingPercent = 40; maxWeeklyPercent = 60; }
+    { model = "opencode-go/mimo-v2.5"; }
+  ];
+};
+```
 
 ## Shopping MCP Servers
 
