@@ -94,6 +94,18 @@ let
         tailscale: { mtu: $tailscaleMtu, up: $tailscaleUp, expectedMtu: ${tailscaleExpectedMtuJson} },
         ssh: { listening: $sshUp }
       }' > /run/metrics/metrics.json
+    ${lib.optionalString (cfg.systemMetrics.opencodeGo.usageJsonFile != null) ''
+    # Merge the OpenCode Go usage snapshot (written by the user-level
+    # opencode-go-usage refresher) into the dashboard payload. Best-effort:
+    # a stale/missing snapshot must not take down system metrics.
+    if ${lib.getExe pkgs.jq} -e . ${cfg.systemMetrics.opencodeGo.usageJsonFile} >/dev/null 2>&1; then
+      ${lib.getExe pkgs.jq} -s '.[0] + { opencodeGo: .[1].usage }' \
+        /run/metrics/metrics.json \
+        ${cfg.systemMetrics.opencodeGo.usageJsonFile} \
+        > /run/metrics/metrics.json.tmp \
+        && mv /run/metrics/metrics.json.tmp /run/metrics/metrics.json
+    fi
+    ''}
   '';
 in
 {
@@ -110,7 +122,12 @@ in
       IOSchedulingClass = "idle";
       PrivateTmp = true;
       ProtectSystem = "strict";
-      ProtectHome = true;
+      # read-only (instead of true) so the collector can read the OpenCode Go
+      # usage snapshot from the user's home directory when configured.
+      ProtectHome =
+        if cfg.systemMetrics.opencodeGo.usageJsonFile != null
+        then "read-only"
+        else true;
       ReadWritePaths = [ "/run/metrics" ];
     };
   };
