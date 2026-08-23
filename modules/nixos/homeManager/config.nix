@@ -192,17 +192,36 @@ in
               { model = "opencode-go/ox-alpha-free"; }
             ];
             # Triage roles: tighter rolling cap — they fire in bursts of three.
+            # Self-improvement pipeline (learning-promoter + triage roles).
+            # MiMo-V2.5 is the LEAD entry (D4 steady-state default); DeepSeek
+            # V4 Flash is demoted to an escalation rung. NO free-tier
+            # terminal (D3): these agents make promotion decisions that
+            # auto-merge to the repo — exhaustion must surface as selector
+            # exit 5 (BLOCKED) so the watcher pauses instead of degrading.
+            # HONESTY NOTE (D4): mimo-as-lead is a reasoned default, not a
+            # validated-in-isolation one — the evidence that "mimo already ran
+            # this role successfully" was gathered largely while the old
+            # default chain was already degraded to mimo via cap exhaustion,
+            # not under light-usage steady state. Watch, don't assume.
+            learning-promoter = [
+              { model = "opencode-go/mimo-v2.5"; maxRollingPercent = 85; maxWeeklyPercent = 95; }
+              { model = "opencode-go/deepseek-v4-flash"; maxRollingPercent = 70; maxWeeklyPercent = 80; }
+              { blockedTerminal = true; }
+            ];
             scout-skeptical = [
-              { model = "opencode-go/deepseek-v4-flash"; maxRollingPercent = 40; maxWeeklyPercent = 60; }
-              { model = "opencode-go/mimo-v2.5"; }
+              { model = "opencode-go/mimo-v2.5"; maxRollingPercent = 40; maxWeeklyPercent = 60; }
+              { model = "opencode-go/deepseek-v4-flash"; maxRollingPercent = 70; maxWeeklyPercent = 80; }
+              { blockedTerminal = true; }
             ];
             qa-verification = [
-              { model = "opencode-go/deepseek-v4-flash"; maxRollingPercent = 40; maxWeeklyPercent = 60; }
-              { model = "opencode-go/mimo-v2.5"; }
+              { model = "opencode-go/mimo-v2.5"; maxRollingPercent = 40; maxWeeklyPercent = 60; }
+              { model = "opencode-go/deepseek-v4-flash"; maxRollingPercent = 70; maxWeeklyPercent = 80; }
+              { blockedTerminal = true; }
             ];
             adversarial = [
-              { model = "opencode-go/deepseek-v4-flash"; maxRollingPercent = 40; maxWeeklyPercent = 60; }
-              { model = "opencode-go/mimo-v2.5"; }
+              { model = "opencode-go/mimo-v2.5"; maxRollingPercent = 40; maxWeeklyPercent = 60; }
+              { model = "opencode-go/deepseek-v4-flash"; maxRollingPercent = 70; maxWeeklyPercent = 80; }
+              { blockedTerminal = true; }
             ];
           };
 
