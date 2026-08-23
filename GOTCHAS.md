@@ -925,6 +925,18 @@ Symptom: ISO boots via Ventoy but fails with `fsconfig() failed: unable to read 
 
 ---
 
+**Slash-command frontmatter without `agent:` runs as the default primary agent — permission-carrying agent definitions are bypassed**
+
+Symptom: `/learning-promote` dispatched by the watcher (`opencode run --attach ... /learning-promote`) executed as `build` (banner: `> build · <model>`), not the promote-permission-carrying `learning-promoter` agent with its dedicated hard gates. Cause: command frontmatter had only `description:` — opencode binds an agent to a command ONLY via an explicit `agent:` frontmatter key (pattern: `commands/godot-refine.md`). Fix: added `agent: learning-promoter`; verified live both directions (bound probe shows `> learning-promoter · <model>`). Audit note: this was functional mis-routing, not a privilege hole — `build` also holds `goals_learning_promote = allow` by design (Decision 1), so pre-fix dispatches could still promote under build's own gates. Rule of thumb: any command whose semantics depend on a specific agent's prompt/permissions MUST set `agent:` in frontmatter.
+
+---
+
+**Weekly Go usage limit gates ALL opencode-go models, including ox-alpha-free**
+
+Symptom (observed 2026-08-23, ~2h before Monday 00:00Z reset): every dispatch — flash, mimo, AND `ox-alpha-free` — failed with `AI_APICallError: Weekly usage limit reached`, contradicting the docs' "continue using free models past the limit". Cause: at 100% weekly the account-level gate rejects even free-tier requests (or at least did in this state). Consequence: near a weekly reset, NO model on the provider is callable, and any "just use the free tier" fallback assumption breaks. This is the concrete scenario the `blockedTerminal` chains + watcher timer-pause exist for (`modules/home/opencode/fallback.nix`). Don't schedule critical automated dispatches inside the last hours of a weekly window.
+
+---
+
 ## Format
 
 Each entry: **symptom → cause → fix**. One paragraph max. Newest at the top.

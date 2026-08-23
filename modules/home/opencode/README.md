@@ -154,6 +154,40 @@ Two consumption paths:
 - `.opencode/ensemble.json` being runtime-mutated inside a git-tracked
   directory is an intentional imperative exception — see GOTCHAS.md.
 
+### Blocked chains — no free-tier terminal (`blockedTerminal`)
+
+Some pipelines must NOT degrade when their chain exhausts. A chain whose LAST
+entry is `{ blockedTerminal = true; }` (no `model`) resolves to a
+distinguishable **BLOCKED** outcome — the selector prints a stderr reason and
+exits **5** — instead of silently falling to an always-eligible free model.
+Use this for decision-making pipelines (e.g. the learning-promoter, which
+auto-merges to the repo), not for build/explore agents where free-tier
+fallback is fine.
+
+The learning-promoter watcher consumes this: before dispatching it resolves
+the chain, and on exit 5 it **stops its own systemd timer**
+(`learning-promoter-watcher.timer`) rather than dispatching. Resume is
+**manual by design**:
+
+```
+systemctl --user start learning-promoter-watcher.timer   # after usage resets
+```
+
+A stopped timer runs nothing at all — including the staleness reconciliation,
+which would otherwise force-reject queued learnings during a long rate-limit
+wait. Distinguishing "stopped because usage-blocked" from "stopped for any
+other reason" would need extra state and re-create exactly that class of bug,
+so automated resume was rejected deliberately.
+
+### `/learning-promote` agent binding
+
+`commands/learning-promote.md` binds `agent: learning-promoter` in its
+frontmatter. Before this, watcher dispatches executed as the default `build`
+agent (which also holds `goals_learning_promote = allow` by design) — a
+functional mis-routing, not a capability gap. When auditing the
+defense-in-depth property: triage roles are `deny` on that tool; only `build`
+and `learning-promoter` are `allow`, enforced by assertions in `tests.nix`.
+
 ### Example
 
 ```nix
@@ -164,13 +198,26 @@ my.programs.opencode.modelFallback = {
     { model = "opencode-go/mimo-v2.5"; maxWeeklyPercent = 95; }
     { model = "opencode-go/ox-alpha-free"; }          # safety net, no caps
   ];
-  # High-usage-risk agents get tighter caps:
-  chains."scout-skeptical" = [
-    { model = "opencode-go/deepseek-v4-flash"; maxRollingPercent = 40; maxWeeklyPercent = 60; }
-    { model = "opencode-go/mimo-v2.5"; }
+  # Decision-making pipeline: no free tier — exhaustion => BLOCKED (exit 5).
+  chains.learning-promoter = [
+    { model = "opencode-go/mimo-v2.5"; maxRollingPercent = 85; maxWeeklyPercent = 95; }
+    { model = "opencode-go/deepseek-v4-flash"; maxRollingPercent = 70; maxWeeklyPercent = 80; }
+    { blockedTerminal = true; }
   ];
 };
 ```
+
+### Evidence basis for MiMo-V2.5 as the pipeline default (read before changing)
+
+MiMo-V2.5 leads the self-improvement chains as a **reasoned default, not a
+validated-in-isolation one**: the production evidence that "mimo already ran
+triage/promotion successfully" was gathered largely while the old default
+chain was *already degraded to mimo via cap exhaustion* (weekly sat at/near
+100% throughout that period) — i.e., under degraded conditions, not light-
+usage steady state. Capability facts (tool-call + structured output Yes,
+1M context, models.dev) are solid; steady-state quality is something to
+watch, not something already proven.
+
 
 ## Shopping MCP Servers
 
