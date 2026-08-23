@@ -25,24 +25,69 @@ let
   # pure Nix config; only the RESOLVED winners go into mutable files.
   fallbackConfigFile = ".config/opencode/model-fallback.json";
 
+  # Guard (Tier 1, decision D1): pacing applies ONLY to weekly/monthly — the
+  # rolling window is a trailing 5h sliding window with no fixed anchor
+  # (/tmp/opencode/model-fallback-pacing/tier0-findings.md §1), so enabling
+  # pacing on an entry that constrains only rolling would silently do nothing.
+  # Fail evaluation instead.
+  pacingWithoutPacedWindow = lib.filter (e:
+    (e.pacing.enable or false)
+    && e.maxWeeklyPercent == null
+    && e.maxMonthlyPercent == null
+  ) (lib.flatten (lib.attrValues cfg.modelFallback.chains));
+
   # jq filter: input is the cache file { usage: {...} }; $chain is the ordered
-  # chain array. NOTE: `. as $doc` is required because inside select() the
-  # current input is the chain ENTRY — a bare `.usage` there would be null,
-  # and jq treats any number >= null as true, silently disabling every cap.
+  # chain array; $now is unix seconds from the selector's clock. NOTE:
+  # `. as $doc` is required because inside select() the current input is the
+  # chain ENTRY — a bare `.usage` there would be null, and jq treats any
+  # number >= null as true, silently disabling every cap (bug #4 class).
+  #
+  # Pacing (D1–D4): for entries with pacing.enable on the weekly/monthly
+  # windows, periodStart derives from resetsAt alone (weekly −7d exact,
+  # monthly −30d APPROXIMATE — see README), paceCap = min(100, elapsed% +
+  # buffer), inert while elapsed% < floor, and the entry stays subject to its
+  # static caps as hard ceilings: eligible iff percent <= min(static, pace).
+  # Rolling never consults pacing fields.
   resolveJq = ''
     . as $doc
-    | def eligible(entry):
-        ((entry.maxRollingPercent == null) or (entry.maxRollingPercent >= $doc.usage.rolling.percent))
-        and ((entry.maxWeeklyPercent == null) or (entry.maxWeeklyPercent >= $doc.usage.weekly.percent))
-        and ((entry.maxMonthlyPercent == null) or (entry.maxMonthlyPercent >= $doc.usage.monthly.percent));
-    [$chain[] | select(eligible(.))] | (.[0].model) // empty
+    | $now as $__now
+    | ($doc.usage.weekly.resetsAt | sub("[.][0-9]+Z$"; "Z") | fromdateiso8601) as $wEnd
+    | ($doc.usage.monthly.resetsAt | sub("[.][0-9]+Z$"; "Z") | fromdateiso8601) as $mEnd
+    | def paceCap(entry; winEnd; periodSecs):
+        ((((($__now - (winEnd - periodSecs)) / periodSecs) * 100)
+           | (if . < 0 then 0 elif . > 100 then 100 else . end)) as $elPct
+        | if $elPct < (entry.pacing.floor // 5) then null
+          else ([($elPct + (entry.pacing.buffer // 10)), 100] | min)
+          end);
+    | def windowOk(e; staticField; usagePct; winEnd; periodSecs):
+        (e[staticField]) as $staticCap
+        | ($staticCap == null)
+          or (($staticCap >= usagePct)
+              and ((paceCap(e; winEnd; periodSecs)) as $pc
+                   | ($pc == null) or (usagePct <= $pc)));
+    | [$chain[]
+       | select((windowOk(.; "maxWeeklyPercent"; $doc.usage.weekly.percent; $wEnd; 604800))
+                and (windowOk(.; "maxMonthlyPercent"; $doc.usage.monthly.percent; $mEnd; 2592000))
+                and ((.maxRollingPercent == null)
+                     or (.maxRollingPercent >= $doc.usage.rolling.percent)))]
+      | (.[0].model) // empty
   '';
 in
 {
   # ── Chains config → ~/.config/opencode/model-fallback.json ────────────────
   # NOTE: fallbackConfigFile already begins with ".config/", so no extra dot.
   home.file."${fallbackConfigFile}" = mkIf (cfg.modelFallback.chains != { }) {
-    text = builtins.toJSON { inherit (cfg.modelFallback) chains; };
+    text = builtins.toJSON {
+      chains = if pacingWithoutPacedWindow != [ ] then
+        throw ''
+          my.programs.opencode.modelFallback: pacing.enable is set on a chain
+          entry that has neither maxWeeklyPercent nor maxMonthlyPercent.
+          Pacing applies ONLY to the weekly/monthly windows (the rolling
+          window is a trailing 5h sliding window with no fixed anchor and
+          cannot be paced). Either set a weekly/monthly cap or drop pacing.enable.''
+      else
+        cfg.modelFallback.chains;
+    };
   };
 
   # ── The selector CLI ───────────────────────────────────────────────────────
@@ -83,9 +128,12 @@ USAGE
 
       # Resolve one chain (JSON array in $1) against the usage snapshot.
       # NOTE: the program is single-quoted so bash never expands $doc/$chain;
-      # it contains no apostrophes by construction.
+      # it contains no apostrophes by construction. NOW supplies the selector's
+      # own clock for pace-based caps.
       resolve_chain() {
-        jq -re '${resolveJq}' --argjson chain "$1" "$CACHE_FILE" 2>/dev/null || true
+        local now
+        now=$(date +%s)
+        jq -re '${resolveJq}' --argjson chain "$1" --argjson now "$now" "$CACHE_FILE" 2>/dev/null || true
       }
 
       # Last entry of a chain is the always-eligible safety net by convention;
