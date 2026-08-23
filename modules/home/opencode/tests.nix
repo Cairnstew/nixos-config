@@ -35,6 +35,28 @@ in
         message = "my.programs.opencode: model is set but no providers are configured. "
           + "Enable at least one provider by setting its keyFile.";
       }
+      # ── modelFallback chain sanity ────────────────────────────────────────
+      {
+        assertion = lib.all (chain: chain != [ ])
+          (lib.attrValues cfg.modelFallback.chains);
+        message = "my.programs.opencode.modelFallback: every chain must be non-empty — "
+          + "an empty chain would make the selector fail with no fallback at all.";
+      }
+      {
+        assertion = lib.all (chain:
+          let last = lib.last chain;
+          in last.maxRollingPercent == null
+          && last.maxWeeklyPercent == null
+          && last.maxMonthlyPercent == null)
+          (lib.attrValues cfg.modelFallback.chains);
+        message = "my.programs.opencode.modelFallback: the LAST entry of every chain must be "
+          + "cap-free (all max*Percent = null). It is the always-eligible safety net; a capped "
+          + "last entry lets the whole chain exhaust under heavy usage.";
+      }
+      {
+        assertion = !(cfg.modelFallback.syncEnsembleProjectFile && cfg.modelFallback.repoDir == "");
+        message = "my.programs.opencode.modelFallback: syncEnsembleProjectFile is enabled but repoDir is empty.";
+      }
       {
         assertion = cfg.ollamaModels != { } -> cfg.ollamaBaseURL != "";
         message = "my.programs.opencode: ollamaModels is non-empty but ollamaBaseURL is empty.";
