@@ -834,9 +834,27 @@ in
         type = types.attrsOf (types.listOf (types.submodule {
           options = {
             model = mkOption {
-              type = types.str;
+              type = types.nullOr types.str;
+              default = null;
               example = "opencode-go/ox-alpha-free";
-              description = "Model id in provider/model format.";
+              description = ''
+                Model id in provider/model format. Mutually exclusive with
+                blockedTerminal: an entry is either a model rung (model set)
+                or the blocked terminal marker (blockedTerminal = true, model
+                null).
+              '';
+            };
+            blockedTerminal = mkOption {
+              type = types.bool;
+              default = false;
+              description = ''
+                Mark this (last) entry as a BLOCKED terminal instead of a
+                model rung: when every capped entry above it is exhausted,
+                the selector exits 5 ("chain blocked") rather than degrading
+                to a free-tier or always-eligible fallback. Use for chains —
+                like decision-making pipelines that auto-merge to the repo —
+                where running on a degraded model is worse than not running.
+              '';
             };
             maxRollingPercent = mkOption {
               type = types.nullOr (types.ints.between 0 100);

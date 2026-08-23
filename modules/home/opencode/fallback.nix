@@ -65,7 +65,8 @@ let
               and ((paceCap(e; winEnd; periodSecs)) as $pc
                    | ($pc == null) or (usagePct <= $pc)));
       [$chain[]
-       | select((windowOk(.; "maxWeeklyPercent"; $doc.usage.weekly.percent; $wEnd; 604800))
+       | select((.model != null)
+                and (windowOk(.; "maxWeeklyPercent"; $doc.usage.weekly.percent; $wEnd; 604800))
                 and (windowOk(.; "maxMonthlyPercent"; $doc.usage.monthly.percent; $mEnd; 2592000))
                 and ((.maxRollingPercent == null)
                      or (.maxRollingPercent >= $doc.usage.rolling.percent)))]
@@ -108,6 +109,10 @@ usage: opencode-model-select [--agent NAME] [--sync-ensemble]
   --sync-ensemble     additionally rewrite ${cfg.modelFallback.repoDir}/.opencode/ensemble.json
                       with modelsByAgent resolved for EVERY configured agent
                       (must run BEFORE the opencode process starts)
+
+Exit codes: 0 resolved (model id on stdout); 3 missing config/cache;
+4 no chain configured for the agent; 5 chain exhausted with a blockedTerminal
+last entry — callers must treat this as "do not dispatch", not an error to retry.
 USAGE
       }
 
@@ -136,9 +141,12 @@ USAGE
       }
 
       # Last entry of a chain is the always-eligible safety net by convention;
-      # an exhausted chain degrades to it instead of failing hard.
+      # an exhausted chain degrades to it instead of failing hard. A chain
+      # whose last entry is a blockedTerminal marker (no model) has NO safety
+      # net by design: exhaustion must surface as BLOCKED (exit 5), never as
+      # a degraded model choice.
       last_model_of_chain() {
-        jq -rn '. | last | .model' <<< "$1"
+        jq -rn '. | last | (.model // empty)' <<< "$1"
       }
 
       resolve_for_agent() { # $1 = agent name; empty means default chain
@@ -152,6 +160,10 @@ USAGE
         winner=$(resolve_chain "$chain")
         if [ -z "$winner" ]; then
           winner=$(last_model_of_chain "$chain")
+          if [ -z "$winner" ]; then
+            echo "opencode-model-select: chain for agent=''${agent:-default} exhausted; no free-tier terminal — BLOCKED" >&2
+            exit 5
+          fi
         fi
         [ -n "$winner" ] && printf '%s' "$winner"
       }

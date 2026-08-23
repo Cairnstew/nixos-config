@@ -54,6 +54,26 @@ in
           + "last entry lets the whole chain exhaust under heavy usage.";
       }
       {
+        # blockedTerminal entries (self-improve-limits Tier 1, D3): a chain
+        # entry is either a model rung (model set, no marker) or the blocked
+        # terminal marker — and the marker is only meaningful as the LAST
+        # entry, where "no eligible model above it" must resolve to BLOCKED
+        # (selector exit 5) instead of silently skipping past it.
+        assertion = lib.all (entry:
+          (entry.model != null) != entry.blockedTerminal)
+          (lib.flatten (lib.attrValues cfg.modelFallback.chains));
+        message = "my.programs.opencode.modelFallback: each chain entry must be exactly one of "
+          + "a model rung (model set, blockedTerminal = false) or a blocked terminal "
+          + "(blockedTerminal = true, model null).";
+      }
+      {
+        assertion = lib.all (chain:
+          lib.all (e: !e.blockedTerminal) (lib.init chain))
+          (lib.attrValues cfg.modelFallback.chains);
+        message = "my.programs.opencode.modelFallback: blockedTerminal is only valid as the "
+          + "LAST entry of a chain — an earlier marker would short-circuit the chain.";
+      }
+      {
         assertion = !(cfg.modelFallback.syncEnsembleProjectFile && cfg.modelFallback.repoDir == "");
         message = "my.programs.opencode.modelFallback: syncEnsembleProjectFile is enabled but repoDir is empty.";
       }
