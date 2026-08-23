@@ -40,13 +40,19 @@ let
         : # no output; used by the refresh timer
       else
         echo "$JSON" | jq -r '
-          def fmt($w):
-            ($w.resetsAt | sub("\\.[0-9]+Z$"; "Z") | fromdate | strftime("%a %Y-%m-%d %H:%M UTC")) as $reset |
-            "\($w.status)\t\($w.percent)%\t\($reset)";
-          "window\tstatus\tused\tresets",
-          ("rolling\t" + fmt(.usage.rolling)),
-          ("weekly \t" + fmt(.usage.weekly)),
-          ("monthly\t" + fmt(.usage.monthly))
+          # DISPLAY-ONLY dollar estimate: percent * published limit
+          # ($12/5h, $30/wk, $60/mo per https://opencode.ai/docs/go).
+          # opencode may change these limits without API notice — this is a
+          # display estimate ONLY; never feed it into selection logic (the
+          # fallback selector consumes raw percents exclusively).
+          def fmt($w; $limit):
+            ($w.resetsAt | sub("\\.[0-9]+Z$"; "Z") | fromdate | strftime("%a %Y-%m-%d %H:%M UTC")) as $reset
+            | (($w.percent / 100 * $limit * 100 | round) / 100) as $usd
+            | "\($w.status)\t\($w.percent)%\t~$\($usd)\t\($reset)";
+          "window\tstatus\tused\test.spend\tresets",
+          ("rolling\t" + fmt(.usage.rolling; 12)),
+          ("weekly \t" + fmt(.usage.weekly; 30)),
+          ("monthly\t" + fmt(.usage.monthly; 60))
         ' | column -t -s $'\t'
       fi
 
