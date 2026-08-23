@@ -58,6 +58,21 @@ in
         message = "my.programs.opencode.modelFallback: syncEnsembleProjectFile is enabled but repoDir is empty.";
       }
       {
+        # Pacing applies ONLY to weekly/monthly (rolling is a trailing 5h
+        # sliding window with no fixed anchor — pacing tier0 findings §1).
+        # Mirrors the eval-time throw in fallback.nix so this fails at the
+        # assertions stage with a clearer location.
+        assertion = lib.all (entry:
+          !(entry.pacing.enable or false)
+          || entry.maxWeeklyPercent != null
+          || entry.maxMonthlyPercent != null)
+          (lib.flatten (lib.attrValues cfg.modelFallback.chains));
+        message = "my.programs.opencode.modelFallback: a chain entry sets pacing.enable "
+          + "but constrains neither maxWeeklyPercent nor maxMonthlyPercent. The rolling "
+          + "window cannot be paced (sliding, no anchor) — set a weekly/monthly cap or "
+          + "drop pacing.enable.";
+      }
+      {
         assertion = cfg.ollamaModels != { } -> cfg.ollamaBaseURL != "";
         message = "my.programs.opencode: ollamaModels is non-empty but ollamaBaseURL is empty.";
       }
