@@ -6,5 +6,6 @@
 {
   imports = [
     ./dragentech.nix
+    ./prominence.nix
   ];
 }

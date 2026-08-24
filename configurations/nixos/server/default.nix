@@ -256,7 +256,7 @@
     dataDir = "/mnt/data/minecraft";
     packDir = "/mnt/data/minecraft/packs"; # scp modpack zips here
 
-    # Web console: https://server.tail685690.ts.net/mc/dragentech/
+    # Web console: https://server.tail685690.ts.net/mc/prominence/
     web = {
       enable = true;
       portBase = 7781; # avoid colliding with my.services.ttyd (7681)
@@ -264,7 +264,10 @@
     };
     api.enable = true; # dashboard management (status + start/stop/restart)
 
-    servers.dragentech.enable = true;
+    # Currently running the premade Prominence II Fabric pack. DragonTech is
+    # disabled (kept for reference); flip the booleans to switch servers.
+    servers.prominence.enable = true;
+    servers.dragentech.enable = false;
   };
 
   # ── Ollama (LLM Serving) ───────────────────────────────────────────────
