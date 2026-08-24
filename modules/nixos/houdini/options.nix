@@ -1,6 +1,7 @@
-{ lib, pkgs, ... }:
+{ config, lib, pkgs, ... }:
 let
   inherit (lib) mkEnableOption mkOption types;
+  cfg = config.my.programs.houdini;
 in
 {
   options.my.programs.houdini = {
@@ -22,7 +23,60 @@ in
         When set, configures the `sesi_license` environment and
         license client files to point to a remote license server
         instead of requiring a local `sesinetd` daemon.
+        Mutually exclusive with `localLicenseServer.enable`.
       '';
+    };
+
+    localLicenseServer = {
+      enable = mkEnableOption "SideFX's sesinetd local license server daemon (listens on port 1715)";
+    };
+
+    redeemNonCommercial = {
+      enable = mkEnableOption "automatic 30-day renewal of Houdini Apprentice (NC) licenses via the SideFX License API (enables localLicenseServer automatically)";
+
+      serverCode = mkOption {
+        type = types.str;
+        description = ''
+          Server code from `sesictrl print-server`. Run this once after the
+          first `sesinetd` start and paste the value here — it is your
+          sesinetd instance's unique identifier and only changes on reinstall.
+
+          Obtain it with:
+
+          ```bash
+          sudo sesictrl print-server
+          ```
+
+          or from the License Administrator GUI (Help → Diagnostics).
+        '';
+      };
+
+      serverName = mkOption {
+        type = types.str;
+        default = config.networking.hostName;
+        defaultText = lib.literalExpression "config.networking.hostName";
+        description = "Server name sent to the SideFX License API. Defaults to the system hostname.";
+      };
+
+      version = mkOption {
+        type = types.str;
+        default = lib.versions.majorMinor cfg.package.passthru.unwrapped.version;
+        defaultText = lib.literalExpression ''
+          lib.versions.majorMinor cfg.package.passthru.unwrapped.version
+        '';
+        example = "22.0";
+        description = "Houdini major.minor version to request licenses for.";
+      };
+
+      products = mkOption {
+        type = types.listOf types.str;
+        default = [ "HOUDINI-NC" "RENDER-NC" ];
+        example = [ "HOUDINI-NC" ];
+        description = ''
+          Non-commercial products to license. Defaults to both Houdini-NC
+          and Render-NC so each Apprentice install gets the full toolset.
+        '';
+      };
     };
 
     extraEnv = mkOption {

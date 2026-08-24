@@ -325,6 +325,16 @@
   # types.listOf concatenation → [ me.sshKey "desktop-key" ].
   my.services.ssh.authorizedKeys = lib.mkDefault [ "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIGEp55lp8743MYUsvmZ4XXnhvJ7c5GQDQzIg9GQzWPbg sean.cairnsst@gmail.com" ]; # desktop
 
+  # ── Music Playlists (moved from desktop 2026-08-21) ─────────────────────
+  # Hash-pinned music playlists (modules/nixos/music/playlists/) installed
+  # into the media drive — songs declared in git, byte-pinned via
+  # checksums.json. `example` is a `direct` source (Nix FOD); `funky` is a
+  # yt-dlp source from a Spotify-CSV sync (runtime downloader outside the
+  # build sandbox — see config.nix).
+  my.services.music.enable = true;
+  my.services.music.playlists.example.enable = true;
+  my.services.music.playlists.funky.enable = true;
+
   # ── Unfree Software (allowUnfree set globally in flake.nix) ────────────
   nixpkgs.config = {
     # allowUnfree removed — globally set in flake.nix perSystem (M4d)

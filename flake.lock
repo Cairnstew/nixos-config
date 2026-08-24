@@ -605,6 +605,26 @@
         "type": "github"
       }
     },
+    "houdini-nix": {
+      "inputs": {
+        "nixpkgs": [
+          "nixpkgs"
+        ]
+      },
+      "locked": {
+        "lastModified": 1785363706,
+        "narHash": "sha256-vbQ5JMLdnM9CptG/3mplYFm92sZ6bUhAC4F7qbVUn88=",
+        "owner": "permahorse",
+        "repo": "houdini-nix",
+        "rev": "cf11307f164fb40589dfae1961e2f7668418ec12",
+        "type": "github"
+      },
+      "original": {
+        "owner": "permahorse",
+        "repo": "houdini-nix",
+        "type": "github"
+      }
+    },
     "maccel": {
       "locked": {
         "lastModified": 1771614512,
@@ -1238,6 +1258,7 @@
         "gparted-iso": "gparted-iso",
         "hearthstone-linux-gui": "hearthstone-linux-gui",
         "home-manager": "home-manager_2",
+        "houdini-nix": "houdini-nix",
         "maccel": "maccel",
         "mcp-servers-nix": "mcp-servers-nix",
         "moku": "moku",

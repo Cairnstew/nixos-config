@@ -217,6 +217,23 @@
 
   my.programs.proton.ge.enable = true;
 
+  # ── Houdini (SideFX 3D/VFX) ─────────────────────────────────────────────
+  # DISABLED on all hosts (2026-08-24): the module remains wired in
+  # (modules/nixos/common.nix imports ./houdini) but nothing enables it.
+  # To re-enable, flip `enable = true` below — but the module's package is
+  # `false` by default and, when enabled, needs the matching SideFX installer
+  # tarball in the store:
+  #   nix-store --add-fixed sha256 houdini-22.0.368-linux_x86_64_gcc11.2.tar.gz
+  my.programs.houdini.enable = false;
+  # Package from the houdini-nix flake (newer builds than nixpkgs' 21.0.559).
+  my.programs.houdini.package =
+    flake.inputs.houdini-nix.packages.x86_64-linux.houdini-22_0_368;
+  # Auto-renew Apprentice (NC) license via SideFX License API.
+  my.programs.houdini.redeemNonCommercial = {
+    enable = true;
+    serverCode = "2c4769a8";
+  };
+
   my.programs.steam = {
     shaderPreCaching.enable = true;
     gamemode.enable = true;
@@ -953,14 +970,8 @@
   # server is run on this host — see minecraft-server/config.nix opencode block).
   my.services.minecraftServer.opencode.enable = true;
 
-  # Hash-pinned music playlists (modules/nixos/music/playlists/) installed
-  # into the media drive — songs declared in git, byte-pinned via
-  # checksums.json. The `example` playlist is a `direct` source (built as a Nix
-  # FOD); `funky` is a yt-dlp source from a Spotify-CSV sync (installed by a
-  # runtime downloader outside the build sandbox — see config.nix).
-  my.services.music.enable = true;
-  my.services.music.playlists.example.enable = true;
-  my.services.music.playlists.funky.enable = true;
+  # Music playlists live on the server host (configurations/nixos/server) —
+  # not here; desktop previously enabled them and music-install-funky failed.
 
   # ── Home Manager Extra ───────────────────────────────────────────────────
   my.homeManager.extraConfig = {
