@@ -183,10 +183,41 @@ so automated resume was rejected deliberately.
 
 `commands/learning-promote.md` binds `agent: learning-promoter` in its
 frontmatter. Before this, watcher dispatches executed as the default `build`
-agent (which also holds `goals_learning_promote = allow` by design) — a
-functional mis-routing, not a capability gap. When auditing the
-defense-in-depth property: triage roles are `deny` on that tool; only `build`
-and `learning-promoter` are `allow`, enforced by assertions in `tests.nix`.
+agent — and a live negative-direction test proved build's
+`goals_learning_promote` call passes opencode's permission layer (the goals
+server rejected it only on application-level grounds). So the pre-fix window
+was a REAL capability gap in the agent-layer isolation model, unexploited
+only because the watcher was disabled the whole time. When auditing the
+defense-in-depth property: exactly two agents are promote-capable by design
+(commit `9733f8b`, enforced by `tests.nix`) — `build` and
+`learning-promoter`; every triage/reviewer role denies the tool.
+
+### Known limits — what usage protection does NOT cover
+
+The self-improvement chains (`learning-promoter` + triage roles) protect
+**automated** promotion paths. They deliberately do NOT cover the `build`
+agent, which can also reach `goals_learning_promote`:
+
+- Why not chain-coverage: `build` is the general-purpose primary agent for
+  all coding work; gating its model on pipeline exhaustion would halt normal
+  work near every rate-limit window.
+- What enforces safety on the automated path: the watcher's
+  `/learning-promote` dispatch binds `agent: learning-promoter`
+  (live-verified both directions, 2026-08-24), so the watcher never
+  exercises build's access. THIS is enforced.
+- What is NOT enforced, only observed: build's promote access being
+  exercised solely under human supervision (interactive TUI sessions, or
+  manually launched commands like `triage-review`, which currently has no
+  `agent:` binding and therefore runs as build). Nothing technical prevents
+  a FUTURE unbound command or skill from routing a headless dispatch through
+  build into promotion territory — that would silently recreate the pre-fix
+  exposure. Mitigation is the GOTCHAS rule ("any command whose semantics
+  depend on a specific agent MUST set `agent:`"), which is documentation,
+  not enforcement.
+
+Scope statement: "usage-aware protections for the self-improvement pipeline"
+means the watcher-dispatched promotion loop and the triage subagents — not
+build-agent sessions generally, and not manually launched workflows.
 
 ### Example
 
