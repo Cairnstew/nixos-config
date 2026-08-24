@@ -75,20 +75,21 @@ let
           RemainAfterExit = true;
         };
         path = [ pkgs.rsync pkgs.coreutils pkgs.python3 pkgs.yt-dlp ];
-        script = if isYtdlp then ''
-          set -euo pipefail
-          export PATH='${pkgs.yt-dlp}/bin':$PATH
-          export HOME="$TMPDIR"
-          TARGET='${target}'
-          mkdir -p "$TARGET"
-          ${pkgs.python3}/bin/python3 ${runtimeInstaller} '${playlistsDir}/${name}' "$TARGET"
-        '' else ''
-          set -euo pipefail
-          SRC=${fod}
-          TARGET='${target}'
-          mkdir -p "$TARGET"
-          rsync -a --delete "$SRC/" "$TARGET/"
-        '';
+        script =
+          if isYtdlp then ''
+            set -euo pipefail
+            export PATH='${pkgs.yt-dlp}/bin':$PATH
+            export HOME="$TMPDIR"
+            TARGET='${target}'
+            mkdir -p "$TARGET"
+            ${pkgs.python3}/bin/python3 ${runtimeInstaller} '${playlistsDir}/${name}' "$TARGET"
+          '' else ''
+            set -euo pipefail
+            SRC=${fod}
+            TARGET='${target}'
+            mkdir -p "$TARGET"
+            rsync -a --delete "$SRC/" "$TARGET/"
+          '';
       }))
     enabledPlaylists;
 in

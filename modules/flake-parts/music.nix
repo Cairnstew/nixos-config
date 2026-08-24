@@ -154,12 +154,13 @@ in
       (name: lib.nameValuePair "music-playlist-${name}" (buildPlaylist pkgs name))
       playlistNames);
 
-    apps = lib.listToAttrs (concatMap
-      (name: [
-        (lib.nameValuePair "music-checksums-${name}" (mkChecksumsApp pkgs name))
-        (lib.nameValuePair "music-install-${name}" (mkInstallApp pkgs name))
-      ])
-      playlistNames) // {
+    apps = lib.listToAttrs
+      (concatMap
+        (name: [
+          (lib.nameValuePair "music-checksums-${name}" (mkChecksumsApp pkgs name))
+          (lib.nameValuePair "music-install-${name}" (mkInstallApp pkgs name))
+        ])
+        playlistNames) // {
       "music-spotify-sync" = mkSpotifySyncApp pkgs;
     };
   };
