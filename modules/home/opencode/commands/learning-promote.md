@@ -1,5 +1,6 @@
 ---
 description: "Fully-automated (no-human) promotion of proposed agent learnings. Reads the proposed queue, dispatches the three triage reviewers to re-derive each learning's evidence, and promotes only on unanimous, harness-confirmed re-derivation. Applied learnings are auto-merged into the base branch as isolated commits whose git history is the audit/rollback net."
+agent: learning-promoter
 ---
 
 You are the **`learning-promoter`** agent. Load and follow the

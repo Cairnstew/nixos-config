@@ -429,11 +429,18 @@ def remove_state() -> None:
 # ── Command dispatch ─────────────────────────────────────────────────────────
 
 
-def send_learning_promote(server_url: str) -> bool:
+def send_learning_promote(server_url: str, model: "str | None" = None) -> bool:
     """Send /learning-promote to the opencode server via `opencode run --attach`.
 
     Uses --attach to connect to the persistent serve instance, --auto to
     bypass permission dialogs, and --format json for structured output.
+
+    `model`, when given, is passed as an explicit `-m` so the dispatched
+    session uses the usage-aware chain resolution for THIS cycle. Explicit is
+    deliberate over the wrapper's implicit injection (self-improve-limits
+    Tier 1, point 4): this is a headless/unattended path, and per-request -m
+    is proven to work over --attach while config-file model state is frozen
+    at serve start.
 
     Tracks the subprocess PID (not the watcher PID) so that overlap
     prevention correctly detects hung subprocesses.
@@ -445,8 +452,10 @@ def send_learning_promote(server_url: str) -> bool:
         "--attach", server_url,
         "--auto",
         "--format", "json",
-        "--", "/learning-promote",
     ]
+    if model:
+        cmd += ["-m", model]
+    cmd += ["--", "/learning-promote"]
 
     log(f"dispatching: {' '.join(cmd)}")
 
@@ -506,6 +515,63 @@ def send_learning_promote(server_url: str) -> bool:
 
 
 # ── Main ─────────────────────────────────────────────────────────────────────
+
+
+def resolve_promoter_model() -> "tuple[str, str | None]":
+    """Resolve the learning-promoter chain via opencode-model-select.
+
+    Returns (status, model): status is "resolved" (model set), "blocked"
+    (selector exit 5 — chain exhausted, no free-tier terminal), or "error"
+    (any other failure). Blocked and error both mean DO NOT DISPATCH, but
+    only blocked stops the timer (self-improve-limits D1/D2).
+    """
+    try:
+        proc = subprocess.run(
+            ["opencode-model-select", "--agent", "learning-promoter"],
+            capture_output=True, text=True, timeout=30, env=OPENCODE_ENV,
+        )
+    except (OSError, subprocess.TimeoutExpired) as exc:
+        log(f"model selector failed to run: {exc}")
+        return ("error", None)
+    if proc.returncode == 0 and proc.stdout.strip():
+        return ("resolved", proc.stdout.strip())
+    if proc.returncode == 5:
+        return ("blocked", None)
+    log(f"model selector failed rc={proc.returncode}: {proc.stderr.strip()[:200]}")
+    return ("error", None)
+
+
+def stop_watcher_timer_usage_blocked() -> bool:
+    """Stop the watcher's own systemd user timer (D2 pause mechanism).
+
+    Stopping the TIMER (not skipping a cycle) is deliberate: the staleness
+    reconciliation runs every cycle when no promotion is active, so a soft
+    skip would keep force-rejecting queued learnings during a multi-hour
+    rate-limit wait. A stopped timer runs nothing — no reconciliation, no
+    staleness-clock exposure; queued learnings simply wait (Tier 0 §3).
+
+    Resume is MANUAL by design (D2 option b): distinguishing 'stopped because
+    usage-blocked' from 'stopped for any other reason' would need its own
+    state file and is exactly the implicit-signal problem that created the
+    staleness conflict. The operator resumes with:
+      systemctl --user start learning-promoter-watcher.timer
+    """
+    try:
+        proc = subprocess.run(
+            ["systemctl", "--user", "stop", "learning-promoter-watcher.timer"],
+            capture_output=True, text=True, timeout=30,
+        )
+        if proc.returncode != 0:
+            log(f"failed to stop timer: {proc.stderr.strip()[:200]}")
+            return False
+        log("USAGE-BLOCKED: learning-promoter chain exhausted (no free tier). "
+            "Timer STOPPED — learnings will queue until manual resume: "
+            "systemctl --user start learning-promoter-watcher.timer "
+            "(after usage resets). This is a deliberate pause, not a crash.")
+        return True
+    except OSError as exc:
+        log(f"failed to stop timer: {exc}")
+        return False
 
 
 def main() -> int:
@@ -584,9 +650,21 @@ def main() -> int:
     # the subprocess PID — this initial save is a race-prevention guard.
     save_state(os.getpid())
 
-    # Step 9: Send the promotion command
-    log("sending /learning-promote to opencode serve")
-    success = send_learning_promote(OPENCODE_SERVER_URL)
+    # Step 9: Resolve the pipeline chain BEFORE dispatching. On BLOCKED
+    # (chain exhausted, no free-tier terminal) stop the timer instead of
+    # dispatching — promotion decisions must never run on a degraded model.
+    status, model = resolve_promoter_model()
+    if status == "blocked":
+        remove_state()
+        stop_watcher_timer_usage_blocked()
+        return 0
+    if status == "error":
+        log("model resolution failed, will retry on next cycle (timer NOT stopped)")
+        remove_state()
+        return 1
+
+    log(f"sending /learning-promote to opencode serve (model={model})")
+    success = send_learning_promote(OPENCODE_SERVER_URL, model=model)
 
     if not success:
         log("promotion dispatch failed, will retry on next cycle")

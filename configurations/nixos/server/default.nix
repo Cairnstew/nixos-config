@@ -64,7 +64,8 @@
   # Auto-dispatch the promoter agent via opencode serve when proposed learnings
   # exist. Checks every 1min; reconciles partial/stale verdicts; uses API-based
   # communication (no tmux). Requires opencode-serve.service (auto-started).
-  my.homeManager.extraConfig.my.programs.opencode.learningPromoterWatcher.enable = true;
+  # TEMPORARILY DISABLED (2026-08-22): set to true to re-enable the auto loop.
+  my.homeManager.extraConfig.my.programs.opencode.learningPromoterWatcher.enable = false;
 
   # ── Location ─────────────────────────────────────────────────────────────
   my.system.location = {
@@ -86,6 +87,11 @@
     # F4: proxy.enable is common.nix mkDefault true — redundant here (recon F4)
     # F5: listenAddresses [ "127.0.0.1" ] is the proxy/options.nix default — redundant here (recon F5)
     tailscaleServe.enable = true;
+
+    # OpenCode Go usage bars on the dashboard — reads the snapshot written by
+    # seanc's opencode-go-usage systemd user timer (every 5 min).
+    systemMetrics.opencodeGo.usageJsonFile =
+      "/home/seanc/.cache/opencode/go-usage.json";
   };
 
   # ── Monitoring ─────────────────────────────────────────────────────────
@@ -149,10 +155,14 @@
     manager.enable = true;
   };
 
-  # ZeroTier is a tailscale fallback — the watchdog starts/stops it automatically.
-  # The service is configured but won't auto-start at boot.
+  # ZeroTier is a Tailscale-independent fallback mesh — always-on at boot
+  # (wantedBy = multi-user.target, see modules/nixos/zerotier/config.nix).
+  # The tailscale-watchdog does NOT start/stop it anymore; it only alerts.
   my.services.zerotier = {
     enable = true;
+    # HomeServer (mesh fallback) + Gaming (LAN-style game sessions).
+    # These are joined by zerotierone-joinNetworks on service start.
+    networks = [ "1c33c1ced07e2ece" "363c67c55ab5da47" ];
   };
 
   # Email alerts: provides send-alert command for system notifications
@@ -250,7 +260,7 @@
     dataDir = "/mnt/data/minecraft";
     packDir = "/mnt/data/minecraft/packs"; # scp modpack zips here
 
-    # Web console: https://server.tail685690.ts.net/mc/dragentech/
+    # Web console: https://server.tail685690.ts.net/mc/prominence/
     web = {
       enable = true;
       portBase = 7781; # avoid colliding with my.services.ttyd (7681)
@@ -258,7 +268,10 @@
     };
     api.enable = true; # dashboard management (status + start/stop/restart)
 
-    servers.dragentech.enable = true;
+    # Currently running the premade Prominence II Fabric pack. DragonTech is
+    # disabled (kept for reference); flip the booleans to switch servers.
+    servers.prominence.enable = true;
+    servers.dragentech.enable = false;
   };
 
   # ── Ollama (LLM Serving) ───────────────────────────────────────────────

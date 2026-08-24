@@ -244,6 +244,24 @@ in
         default = 30;
         description = "Collection interval in seconds.";
       };
+
+      # OpenCode Go subscription usage, merged into /api/metrics/metrics.json
+      # as `opencodeGo`. Point this at the JSON snapshot written by the
+      # opencode-go-usage refresher
+      # (~/.cache/opencode/go-usage.json; enable with
+      # my.programs.opencode.opencode-go.usage.enable).
+      opencodeGo = {
+        usageJsonFile = lib.mkOption {
+          type = lib.types.nullOr lib.types.path;
+          default = null;
+          example = "/home/seanc/.cache/opencode/go-usage.json";
+          description = ''
+            Path to an OpenCode Go usage snapshot (as returned by
+            https://opencode.ai/zen/go/v1/usage) to merge into the
+            dashboard's metrics.json and render as usage bars.
+          '';
+        };
+      };
     };
 
     tailscaleServe = {

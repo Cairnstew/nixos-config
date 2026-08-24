@@ -19,5 +19,5 @@
   ];
   expects = [ ];
   complexity = "medium";
-  tested = true;
+  tested = true; # validated live 2026-08-23: wrapper dispatch selected ox-alpha-free under weekly=100%, sync wrote triage modelsByAgent
 }

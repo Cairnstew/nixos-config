@@ -158,6 +158,50 @@ let
         </script>
         ''}
 
+        ${lib.optionalString (cfg.systemMetrics.enable && cfg.systemMetrics.opencodeGo.usageJsonFile != null) ''
+        <h2 class="section-title">OpenCode Go Usage</h2>
+        <div class="metrics-grid">
+          ${lib.concatStringsSep "\n" (map (w: ''
+          <div class="metric-card">
+            <div class="metric-label">${w}</div>
+            <div class="metric-bar-bg"><div id="oc-${w}-bar" class="metric-bar-fill"></div></div>
+            <div class="metric-value" id="oc-${w}-value">--</div>
+            <div style="font-size:0.75rem;color:#777;margin-top:0.3rem" id="oc-${w}-reset"></div>
+          </div>
+          '') [ "rolling" "weekly" "monthly" ])}
+        </div>
+        <script>
+        function ocUsageUpdate(d) {
+          var oc = d.opencodeGo;
+          if (!oc) return;
+          ['rolling', 'weekly', 'monthly'].forEach(function (w) {
+            var win = oc[w];
+            if (!win) return;
+            var bar = document.getElementById('oc-' + w + '-bar');
+            var val = document.getElementById('oc-' + w + '-value');
+            var reset = document.getElementById('oc-' + w + '-reset');
+            if (!bar || !val) return;
+            bar.style.width = Math.min(win.percent, 100) + '%';
+            bar.style.background = win.percent >= 90 ? '#ef4444'
+              : win.percent >= 70 ? '#f59e0b' : 'linear-gradient(90deg, #5a8aff, #7c6aff)';
+            val.textContent = win.percent + '%';
+            if (reset && win.resetsAt) {
+              var mins = Math.max(0, Math.round((new Date(win.resetsAt) - Date.now()) / 60000));
+              var hrs = Math.floor(mins / 60);
+              reset.textContent = 'resets in ' + (hrs > 0 ? hrs + 'h ' : String()) + (mins % 60) + 'm';
+            }
+          });
+        }
+        // own poll — the system-metrics setInterval captured the original
+        // fetchMetrics reference, so wrapping/reassigning it here would never run.
+        function ocUsageFetch() {
+          fetch('/api/metrics/metrics.json').then(function (r) { return r.json(); }).then(ocUsageUpdate).catch(function () {});
+        }
+        ocUsageFetch();
+        setInterval(ocUsageFetch, 10000);
+        </script>
+        ''}
+
         ${lib.optionalString (cfg.dashboard.opencode != []) ''
         <h2 class="section-title">OpenCode</h2>
         <div class="grid">

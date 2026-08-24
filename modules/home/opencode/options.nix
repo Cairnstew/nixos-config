@@ -349,6 +349,14 @@ in
           - opencode-go/qwen3.5-plus
           - opencode-go/deepseek-v4-flash
       '';
+
+      usage = {
+        enable = lib.mkEnableOption ''
+          the opencode-go-usage CLI and its 5-minute cache refresher
+          (queries https://opencode.ai/zen/go/v1/usage and writes a JSON
+          snapshot to ~/.cache/opencode/go-usage.json for the dashboard)
+        '';
+      };
     };
 
     opencode-zen = {
@@ -782,6 +790,159 @@ in
         dashboard port, and auto-merge behavior for parallel agent teams.
         See https://github.com/hueyexe/opencode-ensemble for full reference.
       '';
+    };
+
+    # ── Usage-aware model fallback ────────────────────────────────────────────
+
+    modelFallback = {
+      enable = mkEnableOption ''
+        Usage-aware model fallback for opencode agents.
+
+        Ships the `opencode-model-select` selector, which reads the cached
+        OpenCode Go usage snapshot (~/.cache/opencode/go-usage.json, refreshed
+        by my.programs.opencode.opencode-go.usage) and resolves an ordered
+        fallback chain per agent: the first chain entry whose percent caps are
+        not exceeded wins. Requires usage data to be present; without it the
+        selector falls back to the chain's LAST entry (the safe default).
+
+        Two consumption paths:
+        - The `opencode` wrapper injects --model for top-level CLI invocations.
+        - A project-level .opencode/ensemble.json is rewritten so ensemble
+          plugin spawns resolve modelsByAgent from the same chains.
+
+        NOTE: thresholds are PERCENT-based. The OpenCode Go usage API exposes
+        only status/percent/resetsAt per window — no dollar amounts — so USD
+        budgets cannot be enforced here by design.
+
+        NOTE: the ensemble override only applies when opencode runs with its
+        working directory inside ${config.home.homeDirectory}/nixos-config
+        (the plugin reads <projectDir>/.opencode/ensemble.json), and only for
+        processes started AFTER the selector last wrote it (the plugin loads
+        config once at process start). Long-running `opencode serve` sessions
+        need a restart to pick up new selections; in-session overrides can
+        still be passed as an explicit team_spawn model argument.
+      '';
+
+      cacheFile = mkOption {
+        type = types.str;
+        default = "${config.home.homeDirectory}/.cache/opencode/go-usage.json";
+        defaultText = literalExpression ''"''${config.home.homeDirectory}/.cache/opencode/go-usage.json"'';
+        description = "Path to the usage snapshot consumed by the selector.";
+      };
+
+      chains = mkOption {
+        type = types.attrsOf (types.listOf (types.submodule {
+          options = {
+            model = mkOption {
+              type = types.nullOr types.str;
+              default = null;
+              example = "opencode-go/ox-alpha-free";
+              description = ''
+                Model id in provider/model format. Mutually exclusive with
+                blockedTerminal: an entry is either a model rung (model set)
+                or the blocked terminal marker (blockedTerminal = true, model
+                null).
+              '';
+            };
+            blockedTerminal = mkOption {
+              type = types.bool;
+              default = false;
+              description = ''
+                Mark this (last) entry as a BLOCKED terminal instead of a
+                model rung: when every capped entry above it is exhausted,
+                the selector exits 5 ("chain blocked") rather than degrading
+                to a free-tier or always-eligible fallback. Use for chains —
+                like decision-making pipelines that auto-merge to the repo —
+                where running on a degraded model is worse than not running.
+              '';
+            };
+            maxRollingPercent = mkOption {
+              type = types.nullOr (types.ints.between 0 100);
+              default = null;
+              description = ''
+                Entry is eligible only while rolling-window usage percent is
+                at or below this value. null = no constraint on this window.
+              '';
+            };
+            maxWeeklyPercent = mkOption {
+              type = types.nullOr (types.ints.between 0 100);
+              default = null;
+              description = "Like maxRollingPercent, for the weekly window.";
+            };
+            maxMonthlyPercent = mkOption {
+              type = types.nullOr (types.ints.between 0 100);
+              default = null;
+              description = "Like maxRollingPercent, for the monthly window.";
+            };
+            pacing = {
+              enable = mkOption {
+                type = types.bool;
+                default = false;
+                description = ''
+                  Pace-based cap for this entry on the WEEKLY and MONTHLY
+                  windows: the allowed usage ceiling scales with how much of
+                  the window's period has elapsed,
+                  `cap = min(100, elapsedFraction*100 + buffer)`, and is inert
+                  entirely while `elapsedFraction*100 < floor`. The effective
+                  cap is always `min(staticCap, paceCap)` — pacing can only
+                  tighten, never loosen. Rolling is EXCLUDED by design (Tier 0:
+                  it is a trailing 5h sliding window with no fixed anchor).
+                  Ships disabled by default; weekly needs its first observed
+                  rollover confirmed (Mon 2026-08-31T00:00Z expected), monthly
+                  needs the 2026-09-19 reset to verify period length.
+                '';
+              };
+              floor = mkOption {
+                type = types.ints.between 0 100;
+                default = 5;
+                description =
+                  "Pacing applies only once elapsed percent of the period reaches this value (%). Below it pacing is inert.";
+              };
+              buffer = mkOption {
+                type = types.ints.between 0 100;
+                default = 10;
+                description = ''
+                  Additive slack in percentage points:
+                  paceCap = min(100, elapsedPercent + buffer).
+                '';
+              };
+            };
+          };
+        }));
+        default = { };
+        example = {
+          default = [
+            { model = "opencode-go/deepseek-v4-flash"; maxWeeklyPercent = 80; }
+            { model = "opencode-go/mimo-v2.5"; maxWeeklyPercent = 95; }
+            { model = "opencode-go/ox-alpha-free"; }
+          ];
+          scout-skeptical = [
+            { model = "opencode-go/deepseek-v4-flash"; maxRollingPercent = 50; maxWeeklyPercent = 60; }
+            { model = "opencode-go/mimo-v2.5"; }
+          ];
+        };
+        description = ''
+          Ordered fallback chains keyed by agent name. The special key
+          `default` applies to every agent without an explicit entry.
+          The FIRST eligible entry wins; eligibility means every specified
+          percent cap is >= current usage for that window. Make the last
+          entry cap-free (always eligible) or the chain can exhaust.
+        '';
+      };
+
+      syncEnsembleProjectFile = mkEnableOption ''
+        rewriting <repo>/.opencode/ensemble.json before each dispatch so
+        ensemble plugin spawns pick up chain-resolved modelsByAgent entries.
+        The file is gitignored by design (intentional imperative exception,
+        see GOTCHAS.md).
+      '';
+
+      repoDir = mkOption {
+        type = types.str;
+        default = "${config.home.homeDirectory}/nixos-config";
+        defaultText = literalExpression ''"''${config.home.homeDirectory}/nixos-config"'';
+        description = "Repo whose .opencode/ensemble.json receives the resolved modelsByAgent.";
+      };
     };
 
     # ── Learning-promoter watcher (v2 — opencode serve) ──────────────────────

@@ -8,6 +8,16 @@
   any evaluation or build
   failure.**
 
+**jq pacing caps: three silent-wrong-answer traps in time-based selection logic (2026-08-23)**
+
+Symptom: while adding pace-based weekly/monthly caps to the model-fallback selector (`modules/home/opencode/fallback.nix` `resolveJq`), the boundary harness initially returned a winner for every input — including cases that should have fallen through. Three distinct issues, each of which would have shipped as a silently-wrong cap rather than an error. (1) **`| def` after a def**: jq does not allow `def f: ...; | def g: ...;` — the pipe between consecutive defs is a syntax error, but when the program is embedded in a Nix string inside a shell script and its stderr is discarded (`2>/dev/null || true`), the only symptom is "resolve always returns empty -> chain degrades to last entry". Consecutive defs must be separated by `;` alone, not `; |`. (2) **Elapsed-percent arithmetic in the test harness, not the code**: seconds-vs-percent conversions were done by hand (`5% of 604800s = 30240s`, not `+510s`) and got it wrong twice — boundary tests that "pass" with mislabeled expectations validate nothing. Compute offsets programmatically from the period length. (3) **Harness arg-order drift**: reusing a helper across runs with a changed signature silently fed an epoch timestamp into a percent field (weekly `percent: 1787529600`), making every paced check fail for a reason unrelated to the code under test — always assert on the fixture itself (`jq . cache.json`) before blaming the filter. Fix in place: defs de-piped; boundary matrix rerun against the real built selector with computed offsets (elapsed 0%, floor crossing at +30100s/+30400s of a week, stale-cache clamp past `resetsAt`, static-ceiling precedence) — see `/tmp/opencode/model-fallback-pacing/boundary/`. General rule: any time-math selection logic must be validated at MORE than one point in the period, never just "current live snapshot passes".
+
+---
+
+**Runtime-mutated `.opencode/ensemble.json` inside a git-tracked directory is intentional, not drift (2026-08-23)**Symptom: a future audit (or `nix-doc-audit`) will see `.opencode/ensemble.json` in the otherwise-committed `.opencode/` tree, untracked via `.gitignore`, rewritten by a script at dispatch time — and flag it as imperative drift violating the "declarative wins" principle. Cause: the usage-aware model fallback (`modules/home/opencode/fallback.nix`) needs a mutable `modelsByAgent` lever that reaches ensemble plugin spawns, and every declarative path is closed: `~/.config/opencode/{opencode,ensemble}.json` are HM store symlinks (read-only), opencode's config schema has no native fallback, and the plugin `config` hook is effectively read-only at 1.18.13 (mutations of `agent.*` crash dispatch; global `model` mutation is silently ignored — verified live). The ensemble plugin merges `<projectDir>/.opencode/ensemble.json` OVER the global file (`src/config.ts` merge order), and that project path is a normal working-tree file — the only mutable injection point. Fix: none needed; this is a **named exception**. The selector (`opencode-model-select --sync-ensemble`) writes resolved winners there before dispatch (the plugin reads it once per process start — write must complete BEFORE `opencode run` launches), the file is gitignored with an explanatory comment in `.opencode/.gitignore`, and freshness limits are documented in `modules/home/opencode/README.md`. If you see this file dirty or absent, that is its healthy state.
+
+---
+
 **opencode v1 SDK `session.messages()` doesn't read cross-session — triage-capture reads the `part` table directly**
 
 Symptom (2026-08-16): the ensemble triage-capture plugin (`modules/home/opencode/plugins/triage-capture.ts`) must read a *reviewer* session's tool-call transcript from the *lead's* process — a cross-session read, not reading your own session's history. The v1 SDK's `client.session.messages(sessionID)` returned 0 results for any session other than the one active in that client (confirmed live on opencode 1.18.13). This was NOT caught by the original feasibility investigation (`/tmp/opencode/self-improvement/transcript-capture-tier0-findings.md`), which verified the SDK call's *shape* against docs/types but didn't probe cross-session behavior before recommending it as the stable path (Decision 2a, Option 2). Cause: the SDK messages endpoint is scoped to the caller's active session. Fix in place: `triage-capture.ts` reads `~/.local/share/opencode/opencode.db`'s `part` table directly via `bun:sqlite` (same open pattern as the ensemble plugin), keyed by `session_id`, instead of going through the SDK. **Risk, not just a note:** `opencode.db`'s internal schema is NOT a public/stable API — it can change shape across opencode versions with no deprecation, unlike the SDK surface. A future upgrade can silently break triage-capture's transcript reads with no error at the call site — verdicts would just stop getting `rederivation_method`/`transcript_ref` populated and fall back to `uncertain` (safe, but silent). Mitigation: before any `opencode` version bump, re-run the Task-5 dispatch against a known learning and confirm `review_verdicts` still populates `rederivation_method`/`transcript_ref` — treat this as a required smoke test on upgrade, not implicit. If the SDK's `session.messages()` cross-session behavior is ever fixed upstream, prefer switching back to it (the original schema-stability reasoning still holds; this workaround is a concession to a current SDK limitation, not a preference).
@@ -915,6 +925,18 @@ Symptom: ISO boots via Ventoy but fails with `fsconfig() failed: unable to read 
 
 ---
 
+**Slash-command frontmatter without `agent:` runs as the default primary agent — permission-carrying agent definitions are bypassed**
+
+Symptom: `/learning-promote` dispatched by the watcher (`opencode run --attach ... /learning-promote`) executed as `build` (banner: `> build · <model>`), not the promote-permission-carrying `learning-promoter` agent with its dedicated hard gates. Cause: command frontmatter had only `description:` — opencode binds an agent to a command ONLY via an explicit `agent:` frontmatter key (pattern: `commands/godot-refine.md`). Fix: added `agent: learning-promoter`; verified live both directions (bound probe shows `> learning-promoter · <model>`). Audit note: this was functional mis-routing, not a privilege hole — `build` also holds `goals_learning_promote = allow` by design (Decision 1), so pre-fix dispatches could still promote under build's own gates. Rule of thumb: any command whose semantics depend on a specific agent's prompt/permissions MUST set `agent:` in frontmatter.
+
+---
+
+**Weekly Go usage limit gates ALL opencode-go models, including ox-alpha-free**
+
+Symptom (observed 2026-08-23, ~2h before Monday 00:00Z reset): every dispatch — flash, mimo, AND `ox-alpha-free` — failed with `AI_APICallError: Weekly usage limit reached`, contradicting the docs' "continue using free models past the limit". Cause: at 100% weekly the account-level gate rejects even free-tier requests (or at least did in this state). Consequence: near a weekly reset, NO model on the provider is callable, and any "just use the free tier" fallback assumption breaks. This is the concrete scenario the `blockedTerminal` chains + watcher timer-pause exist for (`modules/home/opencode/fallback.nix`). Don't schedule critical automated dispatches inside the last hours of a weekly window.
+
+---
+
 ## Format
 
 Each entry: **symptom → cause → fix**. One paragraph max. Newest at the top.
@@ -934,5 +956,5 @@ When you discover a new problem and its solution:
 
 ---
 
-Last updated: 2026-08-18
+Last updated: 2026-08-23
 

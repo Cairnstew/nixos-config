@@ -35,6 +35,67 @@ in
         message = "my.programs.opencode: model is set but no providers are configured. "
           + "Enable at least one provider by setting its keyFile.";
       }
+      # ── modelFallback chain sanity ────────────────────────────────────────
+      {
+        assertion = lib.all (chain: chain != [ ])
+          (lib.attrValues cfg.modelFallback.chains);
+        message = "my.programs.opencode.modelFallback: every chain must be non-empty — "
+          + "an empty chain would make the selector fail with no fallback at all.";
+      }
+      {
+        assertion = lib.all
+          (chain:
+            let last = lib.last chain;
+            in last.maxRollingPercent == null
+              && last.maxWeeklyPercent == null
+              && last.maxMonthlyPercent == null)
+          (lib.attrValues cfg.modelFallback.chains);
+        message = "my.programs.opencode.modelFallback: the LAST entry of every chain must be "
+          + "cap-free (all max*Percent = null). It is the always-eligible safety net; a capped "
+          + "last entry lets the whole chain exhaust under heavy usage.";
+      }
+      {
+        # blockedTerminal entries (self-improve-limits Tier 1, D3): a chain
+        # entry is either a model rung (model set, no marker) or the blocked
+        # terminal marker — and the marker is only meaningful as the LAST
+        # entry, where "no eligible model above it" must resolve to BLOCKED
+        # (selector exit 5) instead of silently skipping past it.
+        assertion = lib.all
+          (entry:
+            (entry.model != null) != entry.blockedTerminal)
+          (lib.flatten (lib.attrValues cfg.modelFallback.chains));
+        message = "my.programs.opencode.modelFallback: each chain entry must be exactly one of "
+          + "a model rung (model set, blockedTerminal = false) or a blocked terminal "
+          + "(blockedTerminal = true, model null).";
+      }
+      {
+        assertion = lib.all
+          (chain:
+            lib.all (e: !e.blockedTerminal) (lib.init chain))
+          (lib.attrValues cfg.modelFallback.chains);
+        message = "my.programs.opencode.modelFallback: blockedTerminal is only valid as the "
+          + "LAST entry of a chain — an earlier marker would short-circuit the chain.";
+      }
+      {
+        assertion = !(cfg.modelFallback.syncEnsembleProjectFile && cfg.modelFallback.repoDir == "");
+        message = "my.programs.opencode.modelFallback: syncEnsembleProjectFile is enabled but repoDir is empty.";
+      }
+      {
+        # Pacing applies ONLY to weekly/monthly (rolling is a trailing 5h
+        # sliding window with no fixed anchor — pacing tier0 findings §1).
+        # Mirrors the eval-time throw in fallback.nix so this fails at the
+        # assertions stage with a clearer location.
+        assertion = lib.all
+          (entry:
+            !(entry.pacing.enable or false)
+              || entry.maxWeeklyPercent != null
+              || entry.maxMonthlyPercent != null)
+          (lib.flatten (lib.attrValues cfg.modelFallback.chains));
+        message = "my.programs.opencode.modelFallback: a chain entry sets pacing.enable "
+          + "but constrains neither maxWeeklyPercent nor maxMonthlyPercent. The rolling "
+          + "window cannot be paced (sliding, no anchor) — set a weekly/monthly cap or "
+          + "drop pacing.enable.";
+      }
       {
         assertion = cfg.ollamaModels != { } -> cfg.ollamaBaseURL != "";
         message = "my.programs.opencode: ollamaModels is non-empty but ollamaBaseURL is empty.";

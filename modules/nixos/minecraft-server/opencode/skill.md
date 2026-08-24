@@ -393,3 +393,21 @@ Fix: new per-server `hardware` submodule (`memoryHigh`/`memoryMax`/`memorySwapMa
 Lesson: tried GPU-accelerated worldgen (c2me-ocl) on DragonTech. Two hard failures after the wiring was made: (1) `CL_PLATFORM_NOT_FOUND_KHR` / -1001 because nix-minecraft hardens units with `PrivateDevices=true` + `DevicePolicy=closed`, hiding `/dev/nvidia*` and `/dev/dri/*` from the unit — fixed by `PrivateDevices=false` + `DeviceAllow` for the NVIDIA/DRM nodes (`mkHardwareServiceConfig` in config.nix); (2) with the GPU reachable, the NVIDIA 595.80 OpenCL compiler hangs indefinitely (`clBuildProgram` JNI, ~110ms CPU progress over 35+ min) on c2me's generated noise kernel — a vendor driver bug, not config-fixable. `-XX:+UseCompactObjectHeaders` tried while chasing it broke JNI/FFI — removed. Also: RoadWeaver's OpenCL coarse sampling falls back to CPU (benign log lines) and its huge default preload radii (256/128) spun 4 cores for hours after "Done" on a fresh world, looking like a hang.
 Fix: removed c2me-ocl from the pack, re-added Noisium, kept the OpenCL/device-access wiring dormant for a retry, tuned RoadWeaver preload radii (predict 256->32, plan 128->16, threads 12->6) → first boot `Done (107.467s)`, 0 restarts. Added the `mc-gpu-worldgen` skill documenting the saga + retry checklist, and this RUN LOG + the preload-stall / rsync live-config gotchas.
 
+
+### 2026-08-21
+Checking available servers before optimization
+
+### 2026-08-21
+list servers
+
+### 2026-08-21
+Checking server status before optimization
+
+### 2026-08-21
+Checking server performance metrics
+
+### 2026-08-21
+Reading latest server log for performance analysis
+
+### 2026-08-21
+Verifying server optimizations are applied
