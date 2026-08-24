@@ -107,6 +107,7 @@ in
     ./proton
     ./hearthstone
     ./godot
+    ./houdini
     ./sillytavern
     ./risuai
     ./suwayomi

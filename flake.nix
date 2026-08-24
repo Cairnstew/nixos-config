@@ -44,6 +44,14 @@
     nixos-vscode-server.flake = false;
     nixos-vscode-server.url = "github:nix-community/nixos-vscode-server";
 
+    # SideFX Houdini (fork of the nixpkgs package with newer version builds).
+    # Requires a manually downloaded installer tarball in the store — see
+    # modules/nixos/houdini/ and https://github.com/permahorse/houdini-nix
+    houdini-nix = {
+      url = "github:permahorse/houdini-nix";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+
     # ISOS
 
     # Pre-built Windows ISOs from GitHub releases
