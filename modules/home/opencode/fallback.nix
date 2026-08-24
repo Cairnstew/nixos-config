@@ -30,11 +30,13 @@ let
   # (/tmp/opencode/model-fallback-pacing/tier0-findings.md §1), so enabling
   # pacing on an entry that constrains only rolling would silently do nothing.
   # Fail evaluation instead.
-  pacingWithoutPacedWindow = lib.filter (e:
-    (e.pacing.enable or false)
-    && e.maxWeeklyPercent == null
-    && e.maxMonthlyPercent == null
-  ) (lib.flatten (lib.attrValues cfg.modelFallback.chains));
+  pacingWithoutPacedWindow = lib.filter
+    (e:
+      (e.pacing.enable or false)
+      && e.maxWeeklyPercent == null
+      && e.maxMonthlyPercent == null
+    )
+    (lib.flatten (lib.attrValues cfg.modelFallback.chains));
 
   # jq filter: input is the cache file { usage: {...} }; $chain is the ordered
   # chain array; $now is unix seconds from the selector's clock. NOTE:
@@ -78,127 +80,128 @@ in
   # NOTE: fallbackConfigFile already begins with ".config/", so no extra dot.
   home.file."${fallbackConfigFile}" = mkIf (cfg.modelFallback.chains != { }) {
     text = builtins.toJSON {
-      chains = if pacingWithoutPacedWindow != [ ] then
-        throw ''
-          my.programs.opencode.modelFallback: pacing.enable is set on a chain
-          entry that has neither maxWeeklyPercent nor maxMonthlyPercent.
-          Pacing applies ONLY to the weekly/monthly windows (the rolling
-          window is a trailing 5h sliding window with no fixed anchor and
-          cannot be paced). Either set a weekly/monthly cap or drop pacing.enable.''
-      else
-        cfg.modelFallback.chains;
+      chains =
+        if pacingWithoutPacedWindow != [ ] then
+          throw ''
+            my.programs.opencode.modelFallback: pacing.enable is set on a chain
+            entry that has neither maxWeeklyPercent nor maxMonthlyPercent.
+            Pacing applies ONLY to the weekly/monthly windows (the rolling
+            window is a trailing 5h sliding window with no fixed anchor and
+            cannot be paced). Either set a weekly/monthly cap or drop pacing.enable.''
+        else
+          cfg.modelFallback.chains;
     };
   };
 
   # ── The selector CLI ───────────────────────────────────────────────────────
   home.packages = mkIf (cfg.modelFallback.chains != { }) [
     (pkgs.writeShellScriptBin "opencode-model-select" ''
-      set -euo pipefail
-      export PATH="${pkgs.jq}/bin:${pkgs.coreutils}/bin:$PATH"
+            set -euo pipefail
+            export PATH="${pkgs.jq}/bin:${pkgs.coreutils}/bin:$PATH"
 
-      FALLBACK_CONFIG="''${XDG_CONFIG_HOME:-$HOME/.config}/opencode/model-fallback.json"
-      CACHE_FILE="${cfg.modelFallback.cacheFile}"
-      ENSEMBLE_PROJECT="${cfg.modelFallback.repoDir}/.opencode/ensemble.json"
+            FALLBACK_CONFIG="''${XDG_CONFIG_HOME:-$HOME/.config}/opencode/model-fallback.json"
+            CACHE_FILE="${cfg.modelFallback.cacheFile}"
+            ENSEMBLE_PROJECT="${cfg.modelFallback.repoDir}/.opencode/ensemble.json"
 
-      usage() {
-        cat <<'USAGE'
-usage: opencode-model-select [--agent NAME] [--sync-ensemble]
-  Resolves the winning model for an agent from the cached Go usage snapshot
-  and the configured modelFallback chains. Prints the model id on stdout.
-  --agent NAME        use chains[NAME], falling back to chains.default
-  --sync-ensemble     additionally rewrite ${cfg.modelFallback.repoDir}/.opencode/ensemble.json
-                      with modelsByAgent resolved for EVERY configured agent
-                      (must run BEFORE the opencode process starts)
+            usage() {
+              cat <<'USAGE'
+      usage: opencode-model-select [--agent NAME] [--sync-ensemble]
+        Resolves the winning model for an agent from the cached Go usage snapshot
+        and the configured modelFallback chains. Prints the model id on stdout.
+        --agent NAME        use chains[NAME], falling back to chains.default
+        --sync-ensemble     additionally rewrite ${cfg.modelFallback.repoDir}/.opencode/ensemble.json
+                            with modelsByAgent resolved for EVERY configured agent
+                            (must run BEFORE the opencode process starts)
 
-Exit codes: 0 resolved (model id on stdout); 3 missing config/cache;
-4 no chain configured for the agent; 5 chain exhausted with a blockedTerminal
-last entry — callers must treat this as "do not dispatch", not an error to retry.
-USAGE
-      }
+      Exit codes: 0 resolved (model id on stdout); 3 missing config/cache;
+      4 no chain configured for the agent; 5 chain exhausted with a blockedTerminal
+      last entry — callers must treat this as "do not dispatch", not an error to retry.
+      USAGE
+            }
 
-      agent=""
-      sync=0
-      while [ $# -gt 0 ]; do
-        case "$1" in
-          --agent) agent="''$2"; shift 2 ;;
-          --sync-ensemble) sync=1; shift ;;
-          -h|--help) usage; exit 0 ;;
-          *) echo "opencode-model-select: unknown arg $1" >&2; usage >&2; exit 2 ;;
-        esac
-      done
+            agent=""
+            sync=0
+            while [ $# -gt 0 ]; do
+              case "$1" in
+                --agent) agent="''$2"; shift 2 ;;
+                --sync-ensemble) sync=1; shift ;;
+                -h|--help) usage; exit 0 ;;
+                *) echo "opencode-model-select: unknown arg $1" >&2; usage >&2; exit 2 ;;
+              esac
+            done
 
-      [ -r "$FALLBACK_CONFIG" ] || { echo "opencode-model-select: missing $FALLBACK_CONFIG" >&2; exit 3; }
-      [ -r "$CACHE_FILE" ] || { echo "opencode-model-select: missing usage cache $CACHE_FILE" >&2; exit 3; }
+            [ -r "$FALLBACK_CONFIG" ] || { echo "opencode-model-select: missing $FALLBACK_CONFIG" >&2; exit 3; }
+            [ -r "$CACHE_FILE" ] || { echo "opencode-model-select: missing usage cache $CACHE_FILE" >&2; exit 3; }
 
-      # Resolve one chain (JSON array in $1) against the usage snapshot.
-      # NOTE: the program is single-quoted so bash never expands $doc/$chain;
-      # it contains no apostrophes by construction. NOW supplies the selector's
-      # own clock for pace-based caps.
-      resolve_chain() {
-        local now
-        now=$(date +%s)
-        jq -re '${resolveJq}' --argjson chain "$1" --argjson now "$now" "$CACHE_FILE" 2>/dev/null || true
-      }
+            # Resolve one chain (JSON array in $1) against the usage snapshot.
+            # NOTE: the program is single-quoted so bash never expands $doc/$chain;
+            # it contains no apostrophes by construction. NOW supplies the selector's
+            # own clock for pace-based caps.
+            resolve_chain() {
+              local now
+              now=$(date +%s)
+              jq -re '${resolveJq}' --argjson chain "$1" --argjson now "$now" "$CACHE_FILE" 2>/dev/null || true
+            }
 
-      # Last entry of a chain is the always-eligible safety net by convention;
-      # an exhausted chain degrades to it instead of failing hard. A chain
-      # whose last entry is a blockedTerminal marker (no model) has NO safety
-      # net by design: exhaustion must surface as BLOCKED (exit 5), never as
-      # a degraded model choice.
-      last_model_of_chain() {
-        jq -rn '. | last | (.model // empty)' <<< "$1"
-      }
+            # Last entry of a chain is the always-eligible safety net by convention;
+            # an exhausted chain degrades to it instead of failing hard. A chain
+            # whose last entry is a blockedTerminal marker (no model) has NO safety
+            # net by design: exhaustion must surface as BLOCKED (exit 5), never as
+            # a degraded model choice.
+            last_model_of_chain() {
+              jq -rn '. | last | (.model // empty)' <<< "$1"
+            }
 
-      resolve_for_agent() { # $1 = agent name; empty means default chain
-        local key="$1" chain winner
-        if [ -n "$key" ]; then
-          chain=$(jq -c --arg k "$key" '.chains[$k] // .chains.default // empty' "$FALLBACK_CONFIG")
-        else
-          chain=$(jq -c '.chains.default // empty' "$FALLBACK_CONFIG")
-        fi
-        [ -n "$chain" ] || return 1
-        winner=$(resolve_chain "$chain")
-        if [ -z "$winner" ]; then
-          winner=$(last_model_of_chain "$chain")
-          if [ -z "$winner" ]; then
-            echo "opencode-model-select: chain for agent=''${agent:-default} exhausted; no free-tier terminal — BLOCKED" >&2
-            exit 5
-          fi
-        fi
-        [ -n "$winner" ] && printf '%s' "$winner"
-      }
+            resolve_for_agent() { # $1 = agent name; empty means default chain
+              local key="$1" chain winner
+              if [ -n "$key" ]; then
+                chain=$(jq -c --arg k "$key" '.chains[$k] // .chains.default // empty' "$FALLBACK_CONFIG")
+              else
+                chain=$(jq -c '.chains.default // empty' "$FALLBACK_CONFIG")
+              fi
+              [ -n "$chain" ] || return 1
+              winner=$(resolve_chain "$chain")
+              if [ -z "$winner" ]; then
+                winner=$(last_model_of_chain "$chain")
+                if [ -z "$winner" ]; then
+                  echo "opencode-model-select: chain for agent=''${agent:-default} exhausted; no free-tier terminal — BLOCKED" >&2
+                  exit 5
+                fi
+              fi
+              [ -n "$winner" ] && printf '%s' "$winner"
+            }
 
-      if [ "$sync" -eq 0 ]; then
-        m=$(resolve_for_agent "$agent")
-        if [ -z "$m" ]; then
-          echo "opencode-model-select: no resolvable chain for agent=''${agent:-default}" >&2
-          exit 4
-        fi
-        printf '%s\n' "$m"
-        exit 0
-      fi
+            if [ "$sync" -eq 0 ]; then
+              m=$(resolve_for_agent "$agent")
+              if [ -z "$m" ]; then
+                echo "opencode-model-select: no resolvable chain for agent=''${agent:-default}" >&2
+                exit 4
+              fi
+              printf '%s\n' "$m"
+              exit 0
+            fi
 
-      # --sync-ensemble: resolve every configured agent and write the project
-      # override atomically, preserving unrelated keys already in the file.
-      models_by_agent='{}'
-      while IFS= read -r key; do
-        [ "$key" = "default" ] && continue
-        if m=$(resolve_for_agent "$key"); then
-          models_by_agent=$(jq -cn --argjson acc "$models_by_agent" --arg k "$key" --arg m "$m" '$acc + { ($k): $m }')
-        fi
-      done < <(jq -r '.chains | keys[]' "$FALLBACK_CONFIG")
+            # --sync-ensemble: resolve every configured agent and write the project
+            # override atomically, preserving unrelated keys already in the file.
+            models_by_agent='{}'
+            while IFS= read -r key; do
+              [ "$key" = "default" ] && continue
+              if m=$(resolve_for_agent "$key"); then
+                models_by_agent=$(jq -cn --argjson acc "$models_by_agent" --arg k "$key" --arg m "$m" '$acc + { ($k): $m }')
+              fi
+            done < <(jq -r '.chains | keys[]' "$FALLBACK_CONFIG")
 
-      mkdir -p "$(dirname "$ENSEMBLE_PROJECT")"
-      tmp=$(mktemp "$(dirname "$ENSEMBLE_PROJECT")/.ensemble.json.tmp.XXXXXX")
-      trap 'rm -f "$tmp"' EXIT
+            mkdir -p "$(dirname "$ENSEMBLE_PROJECT")"
+            tmp=$(mktemp "$(dirname "$ENSEMBLE_PROJECT")/.ensemble.json.tmp.XXXXXX")
+            trap 'rm -f "$tmp"' EXIT
 
-      if [ -r "$ENSEMBLE_PROJECT" ]; then base=$(cat "$ENSEMBLE_PROJECT"); else base='{}'; fi
-      jq -s '.[0] * { modelsByAgent: ((.[0].modelsByAgent // {}) * $mba) }' \
-        --argjson mba "$models_by_agent" \
-        <(echo "$base") <(printf '{"modelsByAgent":%s}' "$models_by_agent") > "$tmp"
-      mv "$tmp" "$ENSEMBLE_PROJECT"
-      trap - EXIT
-      echo "opencode-model-select: synced $ENSEMBLE_PROJECT ($(jq -r '.modelsByAgent | length' "$ENSEMBLE_PROJECT") agents)" >&2
+            if [ -r "$ENSEMBLE_PROJECT" ]; then base=$(cat "$ENSEMBLE_PROJECT"); else base='{}'; fi
+            jq -s '.[0] * { modelsByAgent: ((.[0].modelsByAgent // {}) * $mba) }' \
+              --argjson mba "$models_by_agent" \
+              <(echo "$base") <(printf '{"modelsByAgent":%s}' "$models_by_agent") > "$tmp"
+            mv "$tmp" "$ENSEMBLE_PROJECT"
+            trap - EXIT
+            echo "opencode-model-select: synced $ENSEMBLE_PROJECT ($(jq -r '.modelsByAgent | length' "$ENSEMBLE_PROJECT") agents)" >&2
     '')
   ];
 }

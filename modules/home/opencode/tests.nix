@@ -43,11 +43,12 @@ in
           + "an empty chain would make the selector fail with no fallback at all.";
       }
       {
-        assertion = lib.all (chain:
-          let last = lib.last chain;
-          in last.maxRollingPercent == null
-          && last.maxWeeklyPercent == null
-          && last.maxMonthlyPercent == null)
+        assertion = lib.all
+          (chain:
+            let last = lib.last chain;
+            in last.maxRollingPercent == null
+              && last.maxWeeklyPercent == null
+              && last.maxMonthlyPercent == null)
           (lib.attrValues cfg.modelFallback.chains);
         message = "my.programs.opencode.modelFallback: the LAST entry of every chain must be "
           + "cap-free (all max*Percent = null). It is the always-eligible safety net; a capped "
@@ -59,16 +60,18 @@ in
         # terminal marker — and the marker is only meaningful as the LAST
         # entry, where "no eligible model above it" must resolve to BLOCKED
         # (selector exit 5) instead of silently skipping past it.
-        assertion = lib.all (entry:
-          (entry.model != null) != entry.blockedTerminal)
+        assertion = lib.all
+          (entry:
+            (entry.model != null) != entry.blockedTerminal)
           (lib.flatten (lib.attrValues cfg.modelFallback.chains));
         message = "my.programs.opencode.modelFallback: each chain entry must be exactly one of "
           + "a model rung (model set, blockedTerminal = false) or a blocked terminal "
           + "(blockedTerminal = true, model null).";
       }
       {
-        assertion = lib.all (chain:
-          lib.all (e: !e.blockedTerminal) (lib.init chain))
+        assertion = lib.all
+          (chain:
+            lib.all (e: !e.blockedTerminal) (lib.init chain))
           (lib.attrValues cfg.modelFallback.chains);
         message = "my.programs.opencode.modelFallback: blockedTerminal is only valid as the "
           + "LAST entry of a chain — an earlier marker would short-circuit the chain.";
@@ -82,10 +85,11 @@ in
         # sliding window with no fixed anchor — pacing tier0 findings §1).
         # Mirrors the eval-time throw in fallback.nix so this fails at the
         # assertions stage with a clearer location.
-        assertion = lib.all (entry:
-          !(entry.pacing.enable or false)
-          || entry.maxWeeklyPercent != null
-          || entry.maxMonthlyPercent != null)
+        assertion = lib.all
+          (entry:
+            !(entry.pacing.enable or false)
+              || entry.maxWeeklyPercent != null
+              || entry.maxMonthlyPercent != null)
           (lib.flatten (lib.attrValues cfg.modelFallback.chains));
         message = "my.programs.opencode.modelFallback: a chain entry sets pacing.enable "
           + "but constrains neither maxWeeklyPercent nor maxMonthlyPercent. The rolling "

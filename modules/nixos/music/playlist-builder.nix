@@ -68,16 +68,18 @@ let
       '');
     in
     if source == "direct" then
-      fetchurl {
-        inherit (cs) url sha256;
-      }
+      fetchurl
+        {
+          inherit (cs) url sha256;
+        }
     else
-      runCommand "song-${name}-${song.key}" {
-        inherit (cs) sha256;
-        outputHashMode = "flat";
-        outputHashAlgo = "sha256";
-        nativeBuildInputs = [ pkgs.yt-dlp ];
-      } ''
+      runCommand "song-${name}-${song.key}"
+        {
+          inherit (cs) sha256;
+          outputHashMode = "flat";
+          outputHashAlgo = "sha256";
+          nativeBuildInputs = [ pkgs.yt-dlp ];
+        } ''
         export HOME="$TMPDIR"
         yt-dlp --no-playlist --no-mtime --ignore-config --no-update \
           -f '${song.format or "ba[ext=m4a]"}' \
@@ -85,22 +87,26 @@ let
           -o $out '${song.url}'
       '';
 
-  songLinks = concatMapStringsSep "\n" (song:
-    let
-      built = buildSong song;
-    in
-    "ln -s '${built}' \"$out/${song.key}.${songExt song}\""
-  ) songsToml.songs;
+  songLinks = concatMapStringsSep "\n"
+    (song:
+      let
+        built = buildSong song;
+      in
+      "ln -s '${built}' \"$out/${song.key}.${songExt song}\""
+    )
+    songsToml.songs;
 
   manifest = writeText "manifest.json" (builtins.toJSON {
     inherit name source;
-    songs = map (s: {
-      key = s.key;
-      file = "${s.key}.${songExt s}";
-      title = s.title or null;
-      inherit (s) url;
-      inherit source;
-    }) songsToml.songs;
+    songs = map
+      (s: {
+        key = s.key;
+        file = "${s.key}.${songExt s}";
+        title = s.title or null;
+        inherit (s) url;
+        inherit source;
+      })
+      songsToml.songs;
   });
 in
 runCommand "music-playlist-${name}" { passthru = { inherit manifest source; }; } ''

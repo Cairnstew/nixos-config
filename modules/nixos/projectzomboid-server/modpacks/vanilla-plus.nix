@@ -34,10 +34,10 @@
 
     # Default sandbox vars (a server's own `sandbox` override these).
     defaultSandbox = {
-      Zombies = 3;            # High
-      DayLength = 4;          # 1 Hour, 30 Minutes
-      Helicopter = 3;         # Sometimes
-      ZombieRespawn = 3;      # Low
+      Zombies = 3; # High
+      DayLength = 4; # 1 Hour, 30 Minutes
+      Helicopter = 3; # Sometimes
+      ZombieRespawn = 3; # Low
       FoodLootNew = 0.8;
       RangedWeaponLootNew = 1.2;
     };

@@ -14,7 +14,7 @@ let
   enabledServers = lib.filterAttrs (_: srv: srv.enable) cfg.servers;
   resolved = lib.mapAttrs (name: srv: pz.resolveServer cfg.modpacks name srv) enabledServers;
 
-  serverDir = "${cfg.dataDir}/server";  # shared app-380870 install
+  serverDir = "${cfg.dataDir}/server"; # shared app-380870 install
   controlFifo = name: "${cfg.dataDir}/${name}/control.fifo";
 
   # ── steamcmd update of the shared install (app 380870) ─────────────────────

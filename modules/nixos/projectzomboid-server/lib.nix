@@ -73,14 +73,17 @@ in
   # admins, settings, sandbox, ...) that the .ini/lua renderers and units need.
   resolveServer = modpacks: name: srv:
     let
-      pack = if srv.modpack != null then
-        (modpacks.${srv.modpack} or (throw ''
-          my.services.projectZomboid: server ${name} references modpack
-          '${srv.modpack}' which does not exist. Define it in
-          modules/nixos/projectzomboid-server/modpacks/ or pick a different name.
-        ''))
-      else
-        { workshopMods = [ ]; mods = [ ]; defaultSettings = { }; defaultSandbox = { }; };
+      pack =
+        if srv.modpack != null then
+          (
+            modpacks.${srv.modpack} or (throw ''
+              my.services.projectZomboid: server ${name} references modpack
+              '${srv.modpack}' which does not exist. Define it in
+              modules/nixos/projectzomboid-server/modpacks/ or pick a different name.
+            '')
+          )
+        else
+          { workshopMods = [ ]; mods = [ ]; defaultSettings = { }; defaultSandbox = { }; };
     in
     {
       name = if srv.name != "" then srv.name else name;

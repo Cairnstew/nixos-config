@@ -10,7 +10,7 @@ let
   enabledServers = lib.filterAttrs (_: srv: srv.enable) cfg.servers;
   resolved = lib.mapAttrs (name: srv: pz.resolveServer cfg.modpacks name srv) enabledServers;
 
-  serverDir = "${cfg.dataDir}/server";  # shared app-380870 install
+  serverDir = "${cfg.dataDir}/server"; # shared app-380870 install
   fifoPath = name: "${cfg.dataDir}/${name}/control.fifo";
   mergeIni = ./scripts/merge_ini.py;
 
