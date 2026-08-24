@@ -155,10 +155,14 @@
     manager.enable = true;
   };
 
-  # ZeroTier is a tailscale fallback — the watchdog starts/stops it automatically.
-  # The service is configured but won't auto-start at boot.
+  # ZeroTier is a Tailscale-independent fallback mesh — always-on at boot
+  # (wantedBy = multi-user.target, see modules/nixos/zerotier/config.nix).
+  # The tailscale-watchdog does NOT start/stop it anymore; it only alerts.
   my.services.zerotier = {
     enable = true;
+    # HomeServer (mesh fallback) + Gaming (LAN-style game sessions).
+    # These are joined by zerotierone-joinNetworks on service start.
+    networks = [ "1c33c1ced07e2ece" "363c67c55ab5da47" ];
   };
 
   # Email alerts: provides send-alert command for system notifications
