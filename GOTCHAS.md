@@ -526,6 +526,12 @@ Zerotier starts unconditionally at boot via `wantedBy = [ "multi-user.target" ]`
 
 ---
 
+**Non-root `zerotier-cli status` reports "missing port and zerotier-one.port not found" even when the daemon is healthy**
+
+Symptom: Running `zerotier-cli status` as a regular user fails with `zerotier-cli: missing port and zerotier-one.port not found in /var/lib/zerotier-one`, which looks like a broken install. Cause: the daemon's state dir `/var/lib/zerotier-one/` is `0700` root, so a non-root CLI cannot read `zerotier-one.port` / the authtoken to reach the local daemon — the CLI prints the same message for "daemon down" and "no read access", an ambiguous trap. Fix: check with `sudo zerotier-cli status` (and `sudo zerotier-cli listnetworks`) before diagnosing a broken install — the daemon can be fully ONLINE and joined to a network while the non-root command fails.
+
+---
+
 **Generations built from an uncommitted (dirty) working tree are hard to diagnose retroactively**
 
 Symptom: After a bad generation breaks Tailscale + login, `nix store diff-closures` returns empty (identical closures), and `git log` shows no commits in the range. The generation was built from uncommitted changes, so there's no commit to point at. The only clue is that the `-source` derivation's store path changed between generations. Fix: Commit before `nixos-rebuild switch`/`boot`, not just before `dry-activate` or `flake check`. A dirty tree makes post-hoc diagnosis depend entirely on `nix derivation show` and manual source-tree comparison — `git diff` at build time is the only record, and it's gone after the tree changes again.
