@@ -231,10 +231,6 @@
   "url": "https://cdn.modrinth.com/data/mYGTCuZY/versions/Sk7TlTkT/createappliedkinetics-1.5.4-1.21.1.jar",
   "sha256": "sha256-LEpwl1uGcetCsnIjsU2bzuwOpPNua4hA/HXymX/woos="
  },
- "create-central-kitchen.pw.toml": {
-  "url": "https://cdn.modrinth.com/data/btq68HMO/versions/1mQSm4Yb/create-central-kitchen-2.6.0.jar",
-  "sha256": "sha256-Nt+XScqKmUw7UihFVDB7R7mQoY5D3jR1J3JhZ2FJlMs="
- },
  "create-connected.pw.toml": {
   "url": "https://cdn.modrinth.com/data/Vg5TIO6d/versions/klOWKza5/create_connected-1.3.2-mc1.21.1.jar",
   "sha256": "sha256-kL3OrGPLDr1eUTUeIhNhgrmWUS7e+TfQY10oV7Cj8ks="
@@ -262,10 +258,6 @@
  "create-enchantable-machinery.pw.toml": {
   "url": "https://cdn.modrinth.com/data/eqrvp4NK/versions/Cw5k6c0a/createenchantablemachinery-3.6.0%2Bmc1.21.1-neoforge.jar",
   "sha256": "sha256-kzrTewZNjGAF8fbrCbMnT+n1lhpoQfuee7Zae/9m9lM="
- },
- "create-enchantment-industry.pw.toml": {
-  "url": "https://cdn.modrinth.com/data/JWGBpFUP/versions/wYGhrJPO/create-enchantment-industry-2.5.1b.jar",
-  "sha256": "sha256-WBGCGa+X0nyl8SkzoyZwNJISMbOwgTfBJ5YwYRif23Q="
  },
  "create-ender-transmission.pw.toml": {
   "url": "https://cdn.modrinth.com/data/wtW8g4TG/versions/eI9pk5JC/createendertransmission-2.1.1-1.21.1.jar",

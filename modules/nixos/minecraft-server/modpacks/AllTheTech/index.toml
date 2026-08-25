@@ -347,11 +347,6 @@ hash = "b3b2c990023501cc95e4061ef73e541bcd6e54db6e392a8694147b6da75eee71"
 metafile = true
 
 [[files]]
-file = "mods/create-central-kitchen.pw.toml"
-hash = "7a7eeb96f8cf82768269855ff837c07fa75daf32a6f560d85f2bf901402d70d3"
-metafile = true
-
-[[files]]
 file = "mods/create-connected.pw.toml"
 hash = "61afa588fd3156a29418aef463c527308b014e72d86b5ca7c03f2f28973ca27a"
 metafile = true
@@ -384,11 +379,6 @@ metafile = true
 [[files]]
 file = "mods/create-enchantable-machinery.pw.toml"
 hash = "ff95732644994b3b955de5b0c927b3caccce9d22c19e53b95da96b887cff2525"
-metafile = true
-
-[[files]]
-file = "mods/create-enchantment-industry.pw.toml"
-hash = "2f964519fc28e290ba5e99609c67393c4aacda1a665f33bb913d847b137683b9"
 metafile = true
 
 [[files]]
