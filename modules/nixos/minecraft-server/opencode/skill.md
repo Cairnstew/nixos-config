@@ -289,6 +289,27 @@ the server's `mods/` at start. The pack's `config/` (default player configs) and
 Paxi datapacks, `kubejs/` and `scripts/` are symlinked into the data dir too. The
 server's `package` (loader + MC version) must match the pack's `pack.toml`.
 
+### Premade Modrinth modpacks (declarative)
+
+A packaged `.mrpack` from Modrinth (e.g. **Prominence 2 Fabric**) does **not** go
+through the packwiz CLI. Declare it directly on the server via
+`pack = pkgs.fetchModrinthModpack { ... }` instead of `packwiz`:
+
+```nix
+pack = pkgs.fetchModrinthModpack {
+  url = "https://cdn.modrinth.com/data/<id>/versions/<v>/<p>.mrpack"; # or src = <repo path>
+  packHash = "sha256-…";
+  side = "server";   # filters client-only mods (OptiFine, shaders, …) out of the build
+};
+```
+
+`fetchModrinthModpack` accepts `src` (a committed `.mrpack` or extracted dir) or
+`url`, and `side = "server"` auto-drops client-only mods. To get `packHash`, build
+the FOD with a placeholder (`packHash = lib.fakeHash;`) and read the `got:
+sha256-...` value from the resulting hash-mismatch error, then paste it in (see
+`modules/nixos/minecraft-server/servers/prominence.nix:21-25` for a working
+example).
+
 ### Server-side workflow (use `mc-server`)
 
 1. Wire the pack (`servers.<name>.packwiz = ../modpacks/<pack>`) and enable it
