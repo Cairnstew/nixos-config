@@ -2,7 +2,7 @@ hash-format = "sha256"
 
 [[files]]
 file = "PROGRESSION.md"
-hash = "da8603ee9d0c02579531626f8d4087a06168846f3ace2b7a57fa68b57f43f634"
+hash = "fa65ce9dcb3982427ff7de367f1ec9b76b4c01679b8f83eb80b3a6d3b94251f0"
 
 [[files]]
 file = "config/DistantHorizons.toml"
@@ -18,7 +18,7 @@ hash = "37fd31c72d22bdb090271d99ca1eafee75fbb59173b616984bc59ee1afb22dfa"
 
 [[files]]
 file = "config/ftbquests/quests/chapters/create_automation.snbt"
-hash = "2a9140013f0d9c348b05a6fdc43f4695962201e06627a46e6149fec89c9f2d82"
+hash = "1ef2f2dc215d626c722e6d88ecb0d1d8730017cb0b05053db6326563812ecd10"
 
 [[files]]
 file = "config/ftbquests/quests/chapters/digital_age.snbt"
@@ -46,7 +46,7 @@ hash = "95d715a87b03dd0e234d0ab6862aa154f5a0afe513c32e6bf270958f646dbe07"
 
 [[files]]
 file = "config/ftbquests/quests/lang/en_us.snbt"
-hash = "3f3aeb09846d8f02af2ab9a1691e2fb89908848a3e6fc08db4c4deace500b2b6"
+hash = "31ce3e3e5a848d6d4b3463431d83c900fd3bea935a939e0a3bdb9cd28268c3eb"
 
 [[files]]
 file = "config/ftbquests/quests/reward_tables/35971441C32601D7.snbt"
@@ -392,8 +392,18 @@ hash = "2f964519fc28e290ba5e99609c67393c4aacda1a665f33bb913d847b137683b9"
 metafile = true
 
 [[files]]
+file = "mods/create-ender-transmission.pw.toml"
+hash = "dba1cec5505db9aa2a65d9cc14f017a956a6e2044c006db1d48ff92c59871992"
+metafile = true
+
+[[files]]
 file = "mods/create-goggles.pw.toml"
 hash = "5de2bbab0826b5241e16746b0b739ca5169b0a9df38181d58e8519e6ea7f535f"
+metafile = true
+
+[[files]]
+file = "mods/create-horse-power.pw.toml"
+hash = "a12996b593450756ebe5b374f8d7ce8969d5460d5141a4ed956c44b3387c584d"
 metafile = true
 
 [[files]]
@@ -407,13 +417,53 @@ hash = "157b009cd9b2a7f55f2b7d0abdc2f9f7d49eade208a786c71cc6d2f8430bba4a"
 metafile = true
 
 [[files]]
+file = "mods/create-mechanical-extruder.pw.toml"
+hash = "6e064a3988937e06dfa307c8c395c73461819f9135197bc30563c6f13d1f1da4"
+metafile = true
+
+[[files]]
+file = "mods/create-metallurgy.pw.toml"
+hash = "12a90beeb5a46b46dfdc7ba2a5510107fbc60915e6cf1af129d365e20b99ce2d"
+metafile = true
+
+[[files]]
+file = "mods/create-more-drill-heads.pw.toml"
+hash = "a522f41e504e542f39df2950d516b630912ad9e7b9d1025586f564365ecd6a4a"
+metafile = true
+
+[[files]]
 file = "mods/create-new-age.pw.toml"
 hash = "39499039e11a6e0f50542d80af94c172342fdb686f3a59d5ee4457d978a54e75"
 metafile = true
 
 [[files]]
+file = "mods/create-optical.pw.toml"
+hash = "c42f5f98141fa759c4da854b0f11562d0907ccf130a7e522b04d5b574d191087"
+metafile = true
+
+[[files]]
 file = "mods/create-ore-excavation.pw.toml"
 hash = "10d3389f72e8e8f78518f5b6786ccec4e62dbad117491d2970e8e1f75e390251"
+metafile = true
+
+[[files]]
+file = "mods/create-renewable-brass.pw.toml"
+hash = "9f19af5ab4dd3fa7a3e76884b6c6c81b626c4de6b9f9e5873a4f49e0e5e43b20"
+metafile = true
+
+[[files]]
+file = "mods/create-renewable-diamonds.pw.toml"
+hash = "9977a974f7769c4e3179f466b394111196a495912133ece3f30110a3d37f97be"
+metafile = true
+
+[[files]]
+file = "mods/create-renewable-netherite.pw.toml"
+hash = "600867292a31bba408ee4cfdf69bcbbc2b9f57af4a2f7eb75467619bcfc86db5"
+metafile = true
+
+[[files]]
+file = "mods/create-sifting.pw.toml"
+hash = "464baff9adb918c7eb8fbfdb2efedeba5f1d3f6eebe87fc3fad5649e8e4ee18e"
 metafile = true
 
 [[files]]
@@ -437,6 +487,11 @@ hash = "dd46758c8eb82deb6dcd56a9879dc5e583ff812245ebb357fd79053a60c58871"
 metafile = true
 
 [[files]]
+file = "mods/create-ultimate-factory.pw.toml"
+hash = "34d808989e71221b8e01a44bc8031f20af1c94981acb0cba4669e0e58be69629"
+metafile = true
+
+[[files]]
 file = "mods/create.pw.toml"
 hash = "dcaf5f2e28db0b9a127d0167456832341045ddc9aec058c3d9fcf53f618d2404"
 metafile = true
@@ -449,6 +504,11 @@ metafile = true
 [[files]]
 file = "mods/createbetterfps.pw.toml"
 hash = "28e720db43464fe32b9ce591fb02b824ebf691c578fb694f87a98421d3207022"
+metafile = true
+
+[[files]]
+file = "mods/createnuclear.pw.toml"
+hash = "e7a6cda82ddd91e08e2fbadff97d4590861f0ca78d9fa12a8693de25f48a58ac"
 metafile = true
 
 [[files]]
@@ -757,6 +817,11 @@ hash = "230f978f3027a04d101bf5434708bcf671c5249b893febab82f7351eb1fb2dfa"
 metafile = true
 
 [[files]]
+file = "mods/hypertube.pw.toml"
+hash = "672fe2518a1795814efc943c3e3cf8dc1b993bc7d838cc62950acfaba348c2c7"
+metafile = true
+
+[[files]]
 file = "mods/immediatelyfast.pw.toml"
 hash = "94af73eec28b59b314b2c6ef9dfb98f37d7bbcbcb482c278570cc15e44b6a559"
 metafile = true
@@ -884,6 +949,11 @@ metafile = true
 [[files]]
 file = "mods/lootr.pw.toml"
 hash = "2d8016aab6d4b3410b7a35003aa9d778dad45379c89dc9490cd6c3f3bcec9f6f"
+metafile = true
+
+[[files]]
+file = "mods/mechanicals-lib.pw.toml"
+hash = "c9e181185e3177d43fc9bd8d919288ac1bc0ce6b85e7049890f3eb231f5be10d"
 metafile = true
 
 [[files]]

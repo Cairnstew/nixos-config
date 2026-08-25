@@ -4,7 +4,7 @@
 
 ## Overview
 
-AllTheTech follows a **6-chapter progression system** inspired by the most successful tech modpacks. Each chapter focuses on one mod, but cross-mod references encourage exploration.
+AllTheTech follows a **6-chapter progression system** inspired by the most successful tech modpacks. Each chapter focuses on one mod, but cross-mod references encourage exploration. The four tech branches are **Create** (Chapter 3), **Mekanism/Powah!** (Chapter 4), **AE2** (Chapter 5) and **IE/PneumaticCraft** (bridges in Chapter 3 + 4).
 
 ### Progression Philosophy
 
@@ -12,6 +12,7 @@ AllTheTech follows a **6-chapter progression system** inspired by the most succe
 - **Gated progression** — Later stages require mastery of earlier ones
 - **Cross-mod synergy** — Items from one mod enhance another (e.g., Create's press speeds up IE's coke oven)
 - **Automation is the endgame** — Every tree funnels into a single, fully automated mega-factory
+- **Create is a full ladder, not a side mod** — Horsepower → sifting → metallurgy → endless materials → logistics → optical → nuclear → ultimate factory
 
 ---
 
@@ -75,41 +76,53 @@ AllTheTech follows a **6-chapter progression system** inspired by the most succe
 
 ---
 
-## Chapter 3: Create Automation (Create Machines + IE Integration)
+## Chapter 3: Create Automation (Create branch + addon ladder)
 
-**Reference:** Create Brassline's automation focus
+**Reference:** All of Create 2.1's mod ladder, Create Brassline's automation focus
 
-### Goals
-- Automate Create's mechanical components
-- Integrate Immersive Engineering for heavy processing
-- Set up PneumaticCraft's pressurized machinery
+Create is one of the pack's **four full tech branches** (Create, Mekanism, AE2,
+IE/PneumaticCraft). Its addon ladder — inspired by All of Create — carries a
+single Create world from first horse-powered motion to a nuclear-powered mega
+factory:
 
-### Key Quests
-1. **Create Mastery**
-   - Craft mechanical saw, deployer, and mechanical crafter
-   - Build precision mechanisms and electronic circuits
-   - Set up clockwork bearings and tracks
+### Stage 3.1 — Early Create (pre-brass)
+1. **Horse Power** — ride a horse into a Horse Crank for primitive rotational
+   power before water wheels exist (`create-horse-power`).
+2. **Sifting** — sift gravel/sand/dirt with the Create Sifter for stray ores
+   (`create-sifting`); upgrade meshes String → Andesite → Sturdy → Brass.
+3. **Create core** — shafts, water wheel, press, mixer, millstone + crushing
+   wheels for ore doubling.
 
-2. **Immersive Engineering**
-   - Build coke oven for coal processing
-   - Construct blast furnace for steel production
-   - Set up crusher for ore processing
-   - Build squeezer for crop automation
-   - Create conveyor systems for item transport
+### Stage 3.2 — Brass Age (Metallurgy)
+4. **Create: Metallurgy** — casting basins, foundry basins, industrial
+   crucibles: melt and cast copper, zinc, brass, steel and more
+   (`create-metallurgy`).
+5. **Mechanical Extruder** — infinite cobblestone/stone/obsidian generation
+   (`create-mechanical-extruder`).
+6. **More Drill Heads** — diamond/netherite drill heads for faster ore
+   excavation (`create-more-drill-heads`).
 
-3. **PneumaticCraft**
-   - Build pressure tubes for air transport
-   - Set up air compressor for pressurized air
-   - Create assembly line for advanced crafting
-   - Build UV light box for plastic production
-   - Set up programmable controller for automation
-   - Deploy drones for farming and mining
+### Stage 3.3 — Logistics & Transport
+7. **Ender Transmission** — wireless item/fluid/energy transmitters that skip
+   belts entirely (`create-ender-transmission`).
+8. **Hypertubes** — hyper-fast player-scale transport tubes
+   (`hypertube`).
 
-### Unlock Conditions for Chapter 4
-- [ ] Create mechanical crafter operational
-- [ ] IE coke oven operational
-- [ ] IE blast furnace producing steel
-- [ ] PneumaticCraft air compressor running
+### Stage 3.4 — Power & Endgame
+9. **Optical** — beam rotational energy through light for wireless power
+   distribution (`create-optical`).
+10. **Create Nuclear** — nuclear reactors with uranium rods (the Create-side
+    rival to Mekanism's fission reactor) (`createnuclear`).
+11. **Ultimate Factory** — 30+ advanced automation recipes that tie every
+    Create line together (`create-ultimate-factory`).
+12. **Renewable Resources** — renewable brass, diamonds and netherite recipes
+    (`create-renewable-*`).
+
+### Cross-mod integration (shared with the other branches)
+- IE + PneumaticCraft machines sit alongside Create's (same chapter).
+- Mekanism's energy cubes power Create's electrical addons
+  (Create: New Age, Create Additions, Diesel Generators).
+- AE2 autocrafting consumes Create materials (precision mechanisms, brass).
 
 ---
 
@@ -244,8 +257,9 @@ AllTheTech follows a **6-chapter progression system** inspired by the most succe
 - Mekanism basics (8 quests)
 - Cross-mod bridges (6 quests)
 
-### Chapter 3: Create Automation (Create + IE + PneumaticCraft)
-- Create machines (12 quests)
+### Chapter 3: Create Automation (Create + addons + IE/PneumaticCraft)
+- Create core machines + addon ladder (horsepower, sifting, metallurgy,
+  extruder, drill heads, transmission, hypertubes, optical, nuclear, factory)
 - IE integration (8 quests)
 - PneumaticCraft integration (8 quests)
 
@@ -283,10 +297,11 @@ AllTheTech follows a **6-chapter progression system** inspired by the most succe
 ## Balance Notes
 
 - **Ore processing:** Create (2x) → Mekanism (3x) → IE (2x + byproducts)
-- **Power generation:** Water wheel → Solar → Nuclear → Fusion → Nitro solar
+- **Power generation:** Water wheel → Horse power → Solar → Nuclear (Mekanism fission **or** Create Nuclear) → Fusion → Nitro solar
 - **Storage:** Chests → Iron chests → AE2 cells → Creative cells
 - **Automation:** Redstone → Create deployers → PneumaticCraft drones → AE2 autocrafting
-- **Endgame:** Fusion reactor → Mekasuit → Creative cells → Completely automated base
+- **Materials:** Sift → crush → smelt → cast (Metallurgy) → renewable brass/diamonds/netherite
+- **Endgame:** Fusion or Create Nuclear reactor → Mekasuit → Creative cells → Completely automated base
 
 ---
 

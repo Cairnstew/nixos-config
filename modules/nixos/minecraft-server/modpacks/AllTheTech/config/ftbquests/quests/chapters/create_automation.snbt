@@ -762,7 +762,284 @@
 			y: 3.0d
 		}
 		{
-			dependencies: ["C3D4E5F607182010", "C3D4E5F607182015", "C3D4E5F607182019", "C3D4E5F607182022", "C3D4E5F607182029"]
+			dependencies: ["C3D4E5F607182002"]
+			id: "C3D4E5F607182071"
+			rewards: [{
+				id: "C3D4E5F607182080"
+				type: "xp"
+				xp: 150
+			}]
+tasks: [{
+				id: "C3D4E5F607182090"
+				item: {
+					count: 1
+					id: "createhorsepower:horse_crank"
+				}
+				type: "item"
+			}]
+			x: 1.0d
+			y: -2.0d
+		}
+		{
+			dependencies: ["C3D4E5F607182071"]
+			id: "C3D4E5F607182072"
+			rewards: [{
+				id: "C3D4E5F607182081"
+				type: "xp"
+				xp: 150
+			}]
+tasks: [{
+				id: "C3D4E5F607182091"
+				item: {
+					count: 1
+					id: "createsifter:sifter"
+				}
+				type: "item"
+			}]
+			x: 2.0d
+			y: -2.0d
+		}
+		{
+			dependencies: ["C3D4E5F607182072"]
+			id: "C3D4E5F607182073"
+			rewards: [{
+				id: "C3D4E5F607182082"
+				type: "xp"
+				xp: 150
+			}]
+tasks: [{
+				id: "C3D4E5F607182092"
+				item: {
+					count: 1
+					id: "createsifter:brass_mesh"
+				}
+				type: "item"
+			}]
+			x: 3.0d
+			y: -2.0d
+		}
+		{
+			dependencies: ["C3D4E5F60718200D"]
+			id: "C3D4E5F607182074"
+			rewards: [{
+				id: "C3D4E5F607182083"
+				type: "xp"
+				xp: 150
+			}]
+tasks: [{
+				id: "C3D4E5F607182093"
+				item: {
+					count: 1
+					id: "createmetallurgy:casting_basin"
+				}
+				type: "item"
+			}]
+			x: 4.0d
+			y: -2.0d
+		}
+		{
+			dependencies: ["C3D4E5F607182074"]
+			id: "C3D4E5F607182075"
+			rewards: [{
+				id: "C3D4E5F607182084"
+				type: "xp"
+				xp: 150
+			}]
+tasks: [{
+				id: "C3D4E5F607182094"
+				item: {
+					count: 1
+					id: "createmetallurgy:foundry_basin"
+				}
+				type: "item"
+			}]
+			x: 5.0d
+			y: -2.0d
+		}
+		{
+			dependencies: ["C3D4E5F607182075"]
+			id: "C3D4E5F607182076"
+			rewards: [{
+				id: "C3D4E5F607182085"
+				type: "xp"
+				xp: 150
+			}]
+tasks: [{
+				id: "C3D4E5F607182095"
+				item: {
+					count: 4
+					id: "createmetallurgy:steel_ingot"
+				}
+				type: "item"
+			}]
+			x: 6.0d
+			y: -2.0d
+		}
+		{
+			dependencies: ["C3D4E5F607182076"]
+			id: "C3D4E5F607182077"
+			rewards: [{
+				id: "C3D4E5F607182086"
+				type: "xp"
+				xp: 150
+			}]
+tasks: [{
+				id: "C3D4E5F607182096"
+				item: {
+					count: 1
+					id: "create_mechanical_extruder:mechanical_extruder"
+				}
+				type: "item"
+			}]
+			x: 7.0d
+			y: -2.0d
+		}
+		{
+			dependencies: ["C3D4E5F607182077"]
+			id: "C3D4E5F607182078"
+			rewards: [{
+				id: "C3D4E5F607182087"
+				type: "xp"
+				xp: 150
+			}]
+tasks: [{
+				id: "C3D4E5F607182097"
+				item: {
+					count: 1
+					id: "createmoredrillheads:diamond_drill"
+				}
+				type: "item"
+			}]
+			x: 8.0d
+			y: -2.0d
+		}
+		{
+			dependencies: ["C3D4E5F607182078"]
+			id: "C3D4E5F607182079"
+			rewards: [{
+				id: "C3D4E5F607182088"
+				type: "xp"
+				xp: 150
+			}]
+tasks: [{
+				id: "C3D4E5F607182098"
+				item: {
+					count: 1
+					id: "createendertransmission:item_transmitter"
+				}
+				type: "item"
+			}]
+			x: 9.0d
+			y: -2.0d
+		}
+		{
+			dependencies: ["C3D4E5F607182079"]
+			id: "C3D4E5F60718207A"
+			rewards: [{
+				id: "C3D4E5F607182089"
+				type: "xp"
+				xp: 150
+			}]
+tasks: [{
+				id: "C3D4E5F607182099"
+				item: {
+					count: 1
+					id: "create_hypertube:hypertube_entrance"
+				}
+				type: "item"
+			}]
+			x: 10.0d
+			y: -2.0d
+		}
+		{
+			dependencies: ["C3D4E5F60718207A"]
+			id: "C3D4E5F60718207B"
+			rewards: [{
+				id: "C3D4E5F60718208A"
+				type: "xp"
+				xp: 150
+			}]
+tasks: [{
+				id: "C3D4E5F60718209A"
+				item: {
+					count: 1
+					id: "create_optical:optical_source"
+				}
+				type: "item"
+			}]
+			x: 11.0d
+			y: -2.0d
+		}
+		{
+			dependencies: ["C3D4E5F60718207B"]
+			id: "C3D4E5F60718207C"
+			rewards: [{
+				id: "C3D4E5F60718208B"
+				type: "xp"
+				xp: 150
+			}]
+tasks: [{
+				id: "C3D4E5F60718209B"
+				item: {
+					count: 1
+					id: "createnuclear:reactor_controller"
+				}
+				type: "item"
+			}]
+			x: 12.0d
+			y: -2.0d
+		}
+		{
+			dependencies: ["C3D4E5F60718207C"]
+			id: "C3D4E5F60718207D"
+			rewards: [{
+				id: "C3D4E5F60718208C"
+				type: "xp"
+				xp: 150
+			}]
+tasks: [{
+				id: "C3D4E5F60718209C"
+				item: {
+					count: 8
+					id: "createnuclear:uranium_rod"
+				}
+				type: "item"
+			}]
+			x: 13.0d
+			y: -2.0d
+		}
+		{
+			dependencies: ["C3D4E5F60718207C"]
+			id: "C3D4E5F60718207E"
+			rewards: [{
+				id: "C3D4E5F60718208D"
+				type: "xp"
+				xp: 150
+			}]
+tasks: [{
+				id: "C3D4E5F60718209D"
+				type: "checkmark"
+			}]
+			x: 13.0d
+			y: -3.0d
+		}
+		{
+			dependencies: ["C3D4E5F60718207C"]
+			id: "C3D4E5F60718207F"
+			rewards: [{
+				id: "C3D4E5F60718208E"
+				type: "xp"
+				xp: 150
+			}]
+tasks: [{
+				id: "C3D4E5F60718209E"
+				type: "checkmark"
+			}]
+			x: 14.0d
+			y: -3.0d
+		}
+		{
+			dependencies: ["C3D4E5F607182010", "C3D4E5F607182015", "C3D4E5F607182019", "C3D4E5F607182022", "C3D4E5F607182029", "C3D4E5F60718207C"]
 			id: "C3D4E5F60718201A"
 			rewards: [{
 				id: "C3D4E5F607182051"

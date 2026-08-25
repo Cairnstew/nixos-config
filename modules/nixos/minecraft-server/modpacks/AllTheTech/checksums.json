@@ -267,9 +267,17 @@
   "url": "https://cdn.modrinth.com/data/JWGBpFUP/versions/wYGhrJPO/create-enchantment-industry-2.5.1b.jar",
   "sha256": "sha256-WBGCGa+X0nyl8SkzoyZwNJISMbOwgTfBJ5YwYRif23Q="
  },
+ "create-ender-transmission.pw.toml": {
+  "url": "https://cdn.modrinth.com/data/wtW8g4TG/versions/eI9pk5JC/createendertransmission-2.1.1-1.21.1.jar",
+  "sha256": "sha256-E/I3eWulExKjhevVWyUsVVmNSbz2d+po8L+5vYjCO2M="
+ },
  "create-goggles.pw.toml": {
   "url": "https://cdn.modrinth.com/data/L1RT5SJc/versions/Co24W2FL/creategoggles-1.21.1-6.1.1-%5BNEOFORGE%5D.jar",
   "sha256": "sha256-8I/xTHL/Fd6bPIcgCtBhFf9IxzrCFFjgONbhN+FiqQc="
+ },
+ "create-horse-power.pw.toml": {
+  "url": "https://cdn.modrinth.com/data/9Qm19XSM/versions/yj7NF0iZ/createhorsepower-1.21.1-1.1.0.jar",
+  "sha256": "sha256-tUoQC7Qo5tqJezc3YHXw1z6eRUpDcT/yl5Pyxm3GmhU="
  },
  "create-jei-compat.pw.toml": {
   "url": "https://cdn.modrinth.com/data/1fkSpqmV/versions/H8zVoq1O/createjeicompat-1.0.3.jar",
@@ -279,13 +287,45 @@
   "url": "https://cdn.modrinth.com/data/UbFnAd4l/versions/sCwiqLqq/create_jetpack-forge-5.2.1.jar",
   "sha256": "sha256-z5nBxJQyMMax2IUn2nLDqduQjXa8r04/7+NFrIo8kIE="
  },
+ "create-mechanical-extruder.pw.toml": {
+  "url": "https://cdn.modrinth.com/data/hGAlcCDJ/versions/fFDOEXAA/create_mechanical_extruder-1.21.1-2.2.2-6.0.10.jar",
+  "sha256": "sha256-0ZLQ5mXfCvOgb2X/4KutSb7tgC/a/r/Nj06c87a1wTk="
+ },
+ "create-metallurgy.pw.toml": {
+  "url": "https://cdn.modrinth.com/data/Soft45xC/versions/4RhIMmaJ/createmetallurgy-1.0.3-1.21.1.jar",
+  "sha256": "sha256-jxwwyfgAw2ekBxXo5mYvc29FR3N5h9/DDBAXK4m12T8="
+ },
+ "create-more-drill-heads.pw.toml": {
+  "url": "https://cdn.modrinth.com/data/9MEmQKkF/versions/CSXCxG3F/createmoredrillheads-1.2.0-1.21.1.jar",
+  "sha256": "sha256-YMhblGxHvDoSCr2CMcpiAYl6/uUxT+c1ub0xKm6kOfc="
+ },
  "create-new-age.pw.toml": {
   "url": "https://cdn.modrinth.com/data/FTeXqI9v/versions/IwtuwMZy/create-new-age-1.2.0%2Bneoforge-mc1.21.1.jar",
   "sha256": "sha256-ohfqIczINk6Z2Gd35RlDa8fJRRbflzetAQMEfkikRxc="
  },
+ "create-optical.pw.toml": {
+  "url": "https://cdn.modrinth.com/data/kcZ7kwxx/versions/emVIaw53/create_optical-0.4.2.jar",
+  "sha256": "sha256-UtMsU2JhfHt5bvvBpYjk2EQQclL+MMVkXrEHQdXAkL0="
+ },
  "create-ore-excavation.pw.toml": {
   "url": "https://cdn.modrinth.com/data/ResbpANg/versions/tivxiPTo/createoreexcavation-1.21-1.6.8.jar",
   "sha256": "sha256-06LhpuZd5+UK6eJ53jmbZTXaQHq8jmtGiKVvLkYaq5k="
+ },
+ "create-renewable-brass.pw.toml": {
+  "url": "https://cdn.modrinth.com/data/AqQzrKJo/versions/Nlbe2Hef/create-renewable-brass-1.0.2.jar",
+  "sha256": "sha256-FQO/FTJU8HY7YKJFjEHWxy/rMqNsjmPGr6zjyA3kjBs="
+ },
+ "create-renewable-diamonds.pw.toml": {
+  "url": "https://cdn.modrinth.com/data/IxTis4hc/versions/YbXuduVa/create-renewable-diamonds-1.0.1.jar",
+  "sha256": "sha256-kkL7IvPp1ooaRMh00P2dLpOfzINC6tSzIAeAHjPZKnQ="
+ },
+ "create-renewable-netherite.pw.toml": {
+  "url": "https://cdn.modrinth.com/data/nGq1sdd2/versions/qhKlkgfZ/create-renewable-netherite-2.0.1.jar",
+  "sha256": "sha256-JTm07ghqxEjgAhfraT3KNWNdbF8OWH95sWvyTqahotA="
+ },
+ "create-sifting.pw.toml": {
+  "url": "https://cdn.modrinth.com/data/r018adCw/versions/Z5bTlA6P/createsifter-1.21.1-2.3.0.jar",
+  "sha256": "sha256-eYaJlcq44AAu4nJFRQsk8i7YTYcpa7k/2rMS0CwXjLw="
  },
  "create-sophisticated-backpacks-compat.pw.toml": {
   "url": "https://cdn.modrinth.com/data/BAEkFrvn/versions/MGpIgh9e/create_sophback_compat-1.0.jar",
@@ -303,6 +343,10 @@
   "url": "https://cdn.modrinth.com/data/WROfLLvn/versions/K3nIvcWT/trading_floor-3.0.16.jar",
   "sha256": "sha256-8KrN2x+PGR8Tt5xgPlK9SabRy5GAeNijvcsmIciLjUA="
  },
+ "create-ultimate-factory.pw.toml": {
+  "url": "https://cdn.modrinth.com/data/N9QToVpw/versions/AEMRNsNS/create_ultimate_factory-2.2.4-neoforge-1.21.1.jar",
+  "sha256": "sha256-uV3N1DyFnq8YJfM7K0xCImGHoeh102iwsk7Qvh4PobA="
+ },
  "create.pw.toml": {
   "url": "https://cdn.modrinth.com/data/LNytGWDc/versions/UjX6dr61/create-1.21.1-6.0.10.jar",
   "sha256": "sha256-74f+Vwnxuh9bi7IKKSW1r7RmnheP1ti/EMFndZ7v43o="
@@ -314,6 +358,10 @@
  "createbetterfps.pw.toml": {
   "url": "https://cdn.modrinth.com/data/lMYIHZNH/versions/QWqEdWHy/createbetterfps-1.21.1-1.1.4.jar",
   "sha256": "sha256-8AgPXLGGv594XcVRC6urlNl63HkYlSz/eA0sX63yrJo="
+ },
+ "createnuclear.pw.toml": {
+  "url": "https://cdn.modrinth.com/data/z611fdf7/versions/waO2BSHO/createnuclear-1.3.2-beta.3-neoforge.jar",
+  "sha256": "sha256-DTPGCMdW714pPxc0QDBQ1kyWUTMqMR56rwE3D0DZseM="
  },
  "creativecore.pw.toml": {
   "url": "https://cdn.modrinth.com/data/OsZiaDHq/versions/cv1iRM3A/CreativeCore_NEOFORGE_v2.13.42_mc1.21.1.jar",
@@ -559,6 +607,10 @@
   "url": "https://cdn.modrinth.com/data/bkz5C0dQ/versions/dp9cjoQC/hexalia-neoforge-1.3.5.jar",
   "sha256": "sha256-Fn6AQMbQb5E9PGUbN4oacFmi6nrbtUuAUQDiZLwII5U="
  },
+ "hypertube.pw.toml": {
+  "url": "https://cdn.modrinth.com/data/ATDdrG1y/versions/qYjOyvgW/create_hypertube-0.6.0-NEOFORGE.jar",
+  "sha256": "sha256-e9uJecf/fTsp96I3cbauSHCm3LfOLkoyFP3WBZqsrOg="
+ },
  "immediatelyfast.pw.toml": {
   "url": "https://cdn.modrinth.com/data/5ZwdcRci/versions/zxT50PTW/ImmediatelyFast-NeoForge-1.6.11%2B1.21.1.jar",
   "sha256": "sha256-M23xLwmdGkQaPgaFC+qG6cLQyLwCLT2aIBhwogFWKgQ="
@@ -662,6 +714,10 @@
  "lootr.pw.toml": {
   "url": "https://cdn.modrinth.com/data/EltpO5cN/versions/rxFmYTxd/lootr-neoforge-1.21.1-1.11.38.123.jar",
   "sha256": "sha256-LvjumYpcIkwgN8v+SIwtZqqVIvHwwyCDxpJ0FoKrWNk="
+ },
+ "mechanicals-lib.pw.toml": {
+  "url": "https://cdn.modrinth.com/data/ProvjTA7/versions/GBSlpwLT/mechanicals-1.21.1-1.1.6.jar",
+  "sha256": "sha256-DOm7l6aKL8c0BpXqzVuYmPLcSB3GOE32K/sQySyd5Uk="
  },
  "mekanism-additions.pw.toml": {
   "url": "https://cdn.modrinth.com/data/a6F3uASn/versions/6mkdykZa/MekanismAdditions-1.21.1-10.7.19.85.jar",

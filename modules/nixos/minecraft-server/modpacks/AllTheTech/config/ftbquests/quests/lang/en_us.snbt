@@ -480,6 +480,66 @@
 			description: "Craft a Powah! Basic Energy Cell. This stores RF — use with AE2's energy acceptor for digital power management."
 			name: "Basic Energy Cell"
 		}
+		"C3D4E5F607182071": {
+			description: "Ride a horse into a Horse Crank for primitive rotational power — the medieval way to spin your first machines before water wheels."
+			name: "Horse Power"
+		}
+		"C3D4E5F607182072": {
+			description: "Build a Create Sifter and sift gravel/sand/dirt for stray ores. A slow-but-automatable early source of iron, zinc and friends."
+			name: "Sifting for Ores"
+		}
+		"C3D4E5F607182073": {
+			description: "Craft a Brass Mesh — the sifter upgrade that unlocks better yields and rarer ore pieces from the Create Sifting system."
+			name: "Brass Sifter Mesh"
+		}
+		"C3D4E5F607182074": {
+			description: "Build a Casting Basin. Now that you have brass, melt metals down and cast them into alloys — the heart of Create: Metallurgy."
+			name: "Casting Basin"
+		}
+		"C3D4E5F607182075": {
+			description: "Assemble the Foundry Basin + Foundry Lid. Scale molten metal production into an automated casting line for any alloy."
+			name: "Foundry Basin"
+		}
+		"C3D4E5F607182076": {
+			description: "Produce steel through the metallurgy casting chain. Steel feeds Create's tanks, mixers and the endgame machines."
+			name: "Metallurgical Steel"
+		}
+		"C3D4E5F607182077": {
+			description: "Build a Mechanical Extruder — infinite cobblestone/stone/obsidian from adjacent blocks and fluids. Your quarry's best friend."
+			name: "Mechanical Extruder"
+		}
+		"C3D4E5F607182078": {
+			description: "Craft a Diamond Drill head. Faster mining machines for your ore excavation rig — or push further to netherite drill heads."
+			name: "Diamond Drill Head"
+		}
+		"C3D4E5F607182079": {
+			description: "Craft an Item Transmitter. Skip the belts entirely: wirelessly beam items (and fluids/energy with the other transmitters) across your base."
+			name: "Ender Transmission"
+		}
+		"C3D4E5F60718207A": {
+			description: "Build a Hypertube Entrance. Player-scale hyper-fast transport tubes — zip between your factories at breakneck speed."
+			name: "Hypertubes"
+		}
+		"C3D4E5F60718207B": {
+			description: "Craft an Optical Source. Beam rotational energy through light for truly wireless power distribution across long distances."
+			name: "Optical Power"
+		}
+		"C3D4E5F60718207C": {
+			description: "Assemble a Create Nuclear Reactor Controller — melt uranium rods in a reactor to generate massive mechanical power. Wear radiation protection!"
+			name: "Create Nuclear Reactor"
+		}
+		"C3D4E5F60718207D": {
+			description: "Fuel the reactor: craft and insert uranium rods (plus graphite) into the reactor input to keep the mechanical power flowing."
+			name: "Uranium Fuel Rods"
+		}
+		"C3D4E5F60718207E": {
+			description: "Set up renewable production of brass, diamonds and netherite through Create's renewable recipes — endgame resources without endless strip-mining."
+			name: "Renewable Resources"
+		}
+		"C3D4E5F60718207F": {
+			description: "Automate Create: Ultimate Factory's advanced recipes — 30+ balanced automation recipes that turn every production line into a mega-factory."
+			name: "Ultimate Factory"
+		}
 	}
 	chapter: {
 		"AA00000000000001": {
