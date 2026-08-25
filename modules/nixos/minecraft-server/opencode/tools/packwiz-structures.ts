@@ -56,7 +56,7 @@ export default {
   description:
     "Review every worldgen structure + structure set a packwiz modpack will generate — from the pack's PINNED mod jars (checksums.json, exactly what players get) and its own datapacks (config/paxi/datapacks/ + any pack-level data/). Lists structures with their type and biome tag, structure sets with the structures they spawn, flags structures referenced-but-missing, and flags 'minecraft:'-namespace structures the pack/mods redefine (vanilla overrides). Full-pack scans cache downloaded jars by checksum so re-runs are instant.",
   args: {
-    modpack: { type: "string", description: "Modpack directory name (e.g. 'DragonTech')." },
+    modpack: { type: "string", description: "Modpack directory name (e.g. 'AllTheTech')." },
     mods: { type: "string", description: "Comma-separated mod slugs to restrict the scan to (e.g. 'ae2,still-life'). Omit to scan the whole pack." },
     noDatapacks: { type: "boolean", description: "Skip scanning the pack's own datapacks (Paxi + data/)." },
     note: { type: "string", description: "Self-improvement: append this note as a RUN LOG entry to the tool's source file AND its paired skill (modules/nixos/minecraft-server/opencode/skill-mc-mod-structures.md)." },

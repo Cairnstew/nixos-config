@@ -1,4 +1,4 @@
-name = "DragonTech"
+name = "AllTheTech"
 author = "Cairnstew"
 version = "1.0.0"
 pack-format = "packwiz:1.1.0"
@@ -6,7 +6,7 @@ pack-format = "packwiz:1.1.0"
 [index]
 file = "index.toml"
 hash-format = "sha256"
-hash = "ee6bff4194980f03b75addb60d7f12a717b62c6303cbdb8983650592ab2afb2b"
+hash = "8438672c46ef78581ba2f08d41069b6b4380a1838d4698bdc7bd7fcbe324274a"
 
 [versions]
 minecraft = "1.21.1"

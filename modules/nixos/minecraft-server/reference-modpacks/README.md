@@ -324,7 +324,7 @@
 
 ## Notes for This Repo
 
-- The existing **DragonTech** modpack (`modpacks/DragonTech/`) uses packwiz and is the reference for how new modpacks are structured.
+- The existing **AllTheTech** modpack (`modpacks/AllTheTech/`) uses packwiz and is the reference for how new modpacks are structured.
 - All modpacks should be added via `packwiz` (Modrinth preferred over CurseForge for URL-based fetching).
 - CurseForge mods must be converted to Modrinth or direct URLs before use.
 - Use `just packwiz <Pack> init` → `just packwiz <Pack> modrinth add <slug>` → `just packwiz-checksums <Pack>` workflow.

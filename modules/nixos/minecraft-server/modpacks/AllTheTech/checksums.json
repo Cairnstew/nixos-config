@@ -15,10 +15,6 @@
   "url": "https://cdn.modrinth.com/data/XxWD5pD3/versions/kfyIqgJ6/appliedenergistics2-19.2.17.jar",
   "sha256": "sha256-Rg13mgYJuBQJkH2ZVt6Pb3ChsJEiV+Plw8fnWsljDpU="
  },
- "aether-dragon.pw.toml": {
-  "url": "https://edge.forgecdn.net/files/6447/148/ds_aether_addon-1.1.0-neoforge-1.21.1.jar",
-  "sha256": "sha256-gyON27a8ieBtTbuy8crAC7o6m/1KzbwOsQ4+bSvbR3Y="
- },
  "ambientsounds.pw.toml": {
   "url": "https://cdn.modrinth.com/data/fM515JnW/versions/RZyxhsqY/AmbientSounds_NEOFORGE_v6.3.8_mc1.21.1.jar",
   "sha256": "sha256-B+5v0k2EJ+4Hni43YJWwrJJFCwFTMx8VdfgZXiyc+Qs="
@@ -83,10 +79,6 @@
   "url": "https://cdn.modrinth.com/data/ft2cYBpB/versions/e3AdhSXi/atmospherics-2.6.5-mc-1.21.1.jar",
   "sha256": "sha256-YNQg2979gYlNUJJw11d+hltJqpF+q1rQpIBsgMIV/ic="
  },
- "aures-dragon-survival.pw.toml": {
-  "url": "https://cdn.modrinth.com/data/9v90aG1X/versions/AO5xRbec/DragonSurvival-1.21.1-v2.0.54-29.04.2026-all.jar",
-  "sha256": "sha256-jBREW3EpOuQ4EyMTkkSLfV5cKBU5722Mbh0Nbb4AdCI="
- },
  "auroras.pw.toml": {
   "url": "https://cdn.modrinth.com/data/Q7VPWopC/versions/L0KPECkM/Auroras-1.21-1.6.2.jar",
   "sha256": "sha256-/aXDlw+3b4BxClkXENUbo6jhKJQnqWm23Tl7CaNXAXY="
@@ -106,10 +98,6 @@
  "bclib-neoforge.pw.toml": {
   "url": "https://cdn.modrinth.com/data/7bdKEtKC/versions/QkXw8Fsl/bclib-21.0.26.jar",
   "sha256": "sha256-c7p5V9YViBies1QV8s6bBj59ShAsakdXWCuo+tMQ8uA="
- },
- "be-bee-queen.pw.toml": {
-  "url": "https://edge.forgecdn.net/files/8542/869/bee_queen_ds-30.07.2026_1.05-neoforge-1.21.1.jar",
-  "sha256": "sha256-UBEDL6avCcviViemFjXLPlzqckzhFyqMHRrateCOYoY="
  },
  "bellsandwhistles.pw.toml": {
   "url": "https://cdn.modrinth.com/data/gJ5afkVv/versions/w0mifib8/bellsandwhistles-0.4.7-1.21.1.jar",
@@ -263,10 +251,6 @@
   "url": "https://cdn.modrinth.com/data/ZM3tt6p1/versions/UoPH8lO1/createdieselgenerators-1.21.1-1.3.15.jar",
   "sha256": "sha256-Vu8dV0J4/DEfH/oiPb1hMHe4mTVKGNAa6NyiV4pOKZA="
  },
- "create-dragons-plus.pw.toml": {
-  "url": "https://cdn.modrinth.com/data/dzb1a5WV/versions/K9JHrhSG/CreateDragonsPlus-1.11.7b.jar",
-  "sha256": "sha256-va2PrkGIjRYbfvWd7TLV788/gN2fGf3arTjCSxOebuc="
- },
  "create-dreams-and-desires.pw.toml": {
   "url": "https://cdn.modrinth.com/data/JmybsfWs/versions/bqMxf6Ua/DnDesires-1.21.1-2.3a-BETA.jar",
   "sha256": "sha256-0/fyOE6DJ8gWcfLUjfFaC7qY7wS3J6QwB5z8kUWno3k="
@@ -339,10 +323,6 @@
   "url": "https://cdn.modrinth.com/data/cl223EMc/versions/Sduz0AWP/cristellib-neoforge-1.21.1-3.1.7.jar",
   "sha256": "sha256-EeBdvJe9P+F5C9Y2F0ckDjFMHb9AtZDqIMxpHcg5bDg="
  },
- "crystcursed-dragon.pw.toml": {
-  "url": "https://edge.forgecdn.net/files/8424/194/crystcursed_dragon-1.4.0.jar",
-  "sha256": "sha256-FTMdWBXcdtNyKLVI0tvz1VuB45PiQ9laSJY5SeXVh0M="
- },
  "cucumber.pw.toml": {
   "url": "https://cdn.modrinth.com/data/Rw1NrDzF/versions/8421rqFF/Cucumber-1.21.1-8.0.16.jar",
   "sha256": "sha256-Nx+VUcZ2t2o51VgL4o9c/v82ThMa0Tj79xCK6ycS9D8="
@@ -370,14 +350,6 @@
  "domum-ornamentum.pw.toml": {
   "url": "https://edge.forgecdn.net/files/8311/478/domum-ornamentum-1.0.234-snapshot-main.jar",
   "sha256": "sha256-U4+DZCmdBqnnUlK05vY9iztSDDjevXLQ/5e6FObMNyw="
- },
- "dragon-spider-queen.pw.toml": {
-  "url": "https://edge.forgecdn.net/files/8521/202/ds_realistic_spider-1.05_27.07.2026-neoforge-1.21.1.jar",
-  "sha256": "sha256-NsW53B+OOPH4k8tHds+7NNfG5J0rm0DrtyqdlTAOzVE="
- },
- "dragon-survival.pw.toml": {
-  "url": "https://edge.forgecdn.net/files/8564/714/DragonSurvival-1.21.1-v2.0.63-02.08.2026-all.jar",
-  "sha256": "sha256-XyuIpXec4FsJEPLTDAODsz131TYq8OIWs9NmWW1+mt0="
  },
  "dungeons-and-taverns-ancient-city-overhaul.pw.toml": {
   "url": "https://cdn.modrinth.com/data/DNuNq5bb/versions/sI52k2jg/dungeons-and-taverns-ancient-city-overhaul-v2.jar",
@@ -691,10 +663,6 @@
   "url": "https://cdn.modrinth.com/data/EltpO5cN/versions/rxFmYTxd/lootr-neoforge-1.21.1-1.11.38.123.jar",
   "sha256": "sha256-LvjumYpcIkwgN8v+SIwtZqqVIvHwwyCDxpJ0FoKrWNk="
  },
- "megarrian-typhus-dragons.pw.toml": {
-  "url": "https://edge.forgecdn.net/files/8264/480/Megarria_Dragons_Addon_1.1.4_17.06.2026_1.21.1_neoforge.jar",
-  "sha256": "sha256-ClVBV8K+w5EnMb6yflof37oj1kKfgK7pIRYsWpYlXd8="
- },
  "mekanism-additions.pw.toml": {
   "url": "https://cdn.modrinth.com/data/a6F3uASn/versions/6mkdykZa/MekanismAdditions-1.21.1-10.7.19.85.jar",
   "sha256": "sha256-PYpu1n9czzeXrZ1SNuxOIrdEgaqc1FY2/rFvieHVYxE="
@@ -807,10 +775,6 @@
   "url": "https://cdn.modrinth.com/data/i6fiqm5y/versions/v7P0nBi2/Platform-neoforge-1.21.1-1.3.3.jar",
   "sha256": "sha256-LXF15DlD0iy7T41FM/CtYg+Ho6wSx3pPFcOjXZZcTxg="
  },
- "plutonium-dragon.pw.toml": {
-  "url": "https://edge.forgecdn.net/files/8570/392/Pu_Dragon-1.21.1-v0.0.4-03.08.2026.jar",
-  "sha256": "sha256-Hzw9avcUOT/e/nwZ7t1M+GwZLWfa74q29hamt/2EtVw="
- },
  "pneumaticcraft-repressurized.pw.toml": {
   "url": "https://cdn.modrinth.com/data/ncAcdgk7/versions/TNzeuLH3/pneumaticcraft-repressurized-8.2.23%2Bmc1.21.1.jar",
   "sha256": "sha256-ZHziDVLPE587aTubTEdTlmqVptr8gtnlOK5K5bAkn5w="
@@ -891,10 +855,6 @@
   "url": "https://cdn.modrinth.com/data/GmjmRQ0A/versions/N67LJgrN/sliceanddice-4.3.3-neoforge.jar",
   "sha256": "sha256-+If3DYpYksDP+0/KxZ3Ricdq72Ti8tR3F0PKhyHW7kg="
  },
- "slime-dragon.pw.toml": {
-  "url": "https://edge.forgecdn.net/files/8302/470/slime_dragon_addon-1.0.0-neoforge-1.21.1.jar",
-  "sha256": "sha256-oQ6knUHRUBE3GTZJhqL/0mSCajZL6gHXXRZTzG/rn2w="
- },
  "smallcolonies-me.pw.toml": {
   "url": "https://mediafilez.forgecdn.net/files/8045/900/smallcoloniesme%201.21.1%20v1.9.jar",
   "sha256": "sha256-y8R/nT4mpOaH9OZJFHp4coPS1FOhzLr6+PzQewUz7TA="
@@ -959,10 +919,6 @@
   "url": "https://cdn.modrinth.com/data/qyVF9oeo/versions/Dd2tmpsk/sound-physics-remastered-neoforge-1.21.1-1.5.1.jar",
   "sha256": "sha256-vdxx7NTwdKEB6zeFWZ0Txp5kAl4QKaoP0KKPz5vM8uo="
  },
- "star-dragon.pw.toml": {
-  "url": "https://cdn.modrinth.com/data/vGncK2EZ/versions/PiFOdC0O/star_dragon-2.0.1.jar",
-  "sha256": "sha256-+/BsH7tT76ynjSkNboc87rkGz9hyHLQ5RZjya+LUQFg="
- },
  "stateobserver.pw.toml": {
   "url": "https://cdn.modrinth.com/data/D1lhcTKz/versions/UBLIkKTR/stateobserver-neoforge-1.21.1-1.6.4.jar",
   "sha256": "sha256-sKUIsYtLOFYXlTtI7lL594bHcDKlOlT4DGJkWGcKO/c="
@@ -1023,10 +979,6 @@
   "url": "https://cdn.modrinth.com/data/XDyDSNLP/versions/HRwr7zWu/tumbleweeds-1.1.0%2Bmc1.21-1.21.1.jar",
   "sha256": "sha256-MfXLvQaJuFhoY5Qsq9D7Jy6IXT36olL1Ci0Tyh89bgc="
  },
- "tundra-dragon.pw.toml": {
-  "url": "https://edge.forgecdn.net/files/7678/234/tundradragon-1.5.0-neoforge-1.21.1.jar",
-  "sha256": "sha256-5F3m2Kl4yCM6KfgQ81NXWwSLR9f3ya6ByBJrkaR157I="
- },
  "tweaks-addon-for-minecolonies.pw.toml": {
   "url": "https://edge.forgecdn.net/files/8600/87/MineColonies_Tweaks-1.21.1-3.33.jar",
   "sha256": "sha256-MIlH+oTNVV1AnlOb+zY2RKIhmcWbJnPEuWpKe/VtShc="
@@ -1058,10 +1010,6 @@
  "windy.pw.toml": {
   "url": "https://cdn.modrinth.com/data/EwYg6C78/versions/xcBfBf8H/windy-1.1.1%2B1.21-neoforge.jar",
   "sha256": "sha256-W+XVtjWdvsdvJaRGIQqre9sxp3HpxL+xUNIAGz4AViA="
- },
- "wing-kirin-dragon-survival-addon.pw.toml": {
-  "url": "https://cdn.modrinth.com/data/lyUi6A20/versions/VMtYdEs4/wing_kirin-3.0.1.jar",
-  "sha256": "sha256-dVYfI91lQmnFT0lXvTB8aNjd2YWU/4/3ypkrIlhkQSc="
  },
  "worldweaver-neoforge.pw.toml": {
   "url": "https://cdn.modrinth.com/data/R8uGDQpB/versions/TrReu8cF/worldweaver-21.0.25.jar",

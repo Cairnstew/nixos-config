@@ -499,8 +499,8 @@
 			name: "Digital Age"
 		}
 		"F607182940515001": {
-			description: "The ultimate endgame. Master all three tech trees AND dragon survival to face the final challenge."
-			name: "Dragon's Dominion"
+			description: "The ultimate endgame. Master all three tech trees and combine them into one mega-factory."
+			name: "Endgame"
 		}
 	}
 }

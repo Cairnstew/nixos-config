@@ -944,6 +944,22 @@
     canaryPeers = [ "100.78.102.28" "100.70.43.44" ]; # server, pikvm
   };
 
+  # ── ZeroTier (Tailscale-independent fallback mesh) ─────────────────────
+  # Same networks as the server: HomeServer (mesh fallback) + Gaming
+  # (LAN-style game sessions). Always-on at boot (wantedBy = multi-user.target,
+  # see modules/nixos/zerotier/config.nix). The tailscale-watchdog only alerts,
+  # it does not start/stop this service.
+  my.services.zerotier = {
+    enable = true;
+    networks = [ "1c33c1ced07e2ece" "363c67c55ab5da47" ];
+  };
+
+  # Trust the ZeroTier interface so LAN-style gaming sessions (e.g. the
+  # Prism Launcher Minecraft server on :25565) are reachable from other mesh
+  # peers without listing each port. Same pattern the tailscale module uses
+  # for tailscale0 (modules/nixos/tailscale/config.nix).
+  networking.firewall.trustedInterfaces = [ "zt6ntnehy5" ];
+
   my.services.ollama = {
     enable = true;
     gpu.enable = true;
@@ -993,7 +1009,7 @@
       # server runs). Each key is a modpack name (matches the modpacks/ dir); a
       # systemd timer rebuilds the instance from its pack definition and
       # installs it into Prism.
-      minecraft.instances.DragonTech = {
+      minecraft.instances.AllTheTech = {
         enable = true;
         server = "server.tail685690.ts.net:25565";
       };

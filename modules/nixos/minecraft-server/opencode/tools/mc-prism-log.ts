@@ -203,7 +203,7 @@ export default {
   args: {
     modpack: {
       type: "string",
-      description: "Modpack name (maps to the Prism Launcher instance and/or the minecraft-server unit, e.g. 'DragonTech').",
+      description: "Modpack name (maps to the Prism Launcher instance and/or the minecraft-server unit, e.g. 'AllTheTech').",
     },
     log: {
       type: "string",
@@ -235,7 +235,7 @@ export default {
       return appendRunLog(args.note);
     }
     if (!args.modpack) {
-      return "mc-prism-log: provide a modpack name (e.g. 'DragonTech').";
+      return "mc-prism-log: provide a modpack name (e.g. 'AllTheTech').";
     }
     const tail = args.tail ?? 100;
     const dataDir = args.dataDir || findDataDir() || "";
@@ -307,3 +307,7 @@ export default {
 // ## RUN LOG
 // ### 2026-08-21
 // Reading latest server log for performance analysis
+
+// ## RUN LOG
+// ### 2026-08-25
+// checking Better Minecraft instance logs for errors on user request

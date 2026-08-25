@@ -423,7 +423,7 @@ export default {
   args: {
     server: {
       type: "string",
-      description: "Server name (e.g. 'dragentech'). 'list' shows configured servers.",
+      description: "Server name (e.g. 'allthetech'). 'list' shows configured servers.",
     },
     action: {
       type: "string",

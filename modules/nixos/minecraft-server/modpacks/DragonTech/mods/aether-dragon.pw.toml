@@ -1,8 +1,0 @@
-name = "Aether Dragon - Dragon Survival addon"
-filename = "ds_aether_addon-1.1.0-neoforge-1.21.1.jar"
-side = "both"
-
-[download]
-url = "https://edge.forgecdn.net/files/6447/148/ds_aether_addon-1.1.0-neoforge-1.21.1.jar"
-hash-format = "sha256"
-hash = "83238ddbb6bc89e06d4dbbb2f1cac00bba3a9bfd4acdbc0eb10e3e6d2bdb4776"

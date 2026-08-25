@@ -15,7 +15,7 @@ export default {
   description:
     "Safely update all mods in a packwiz modpack: `packwiz update --all` (pinned mods auto-skip) → regenerate checksums.json → verify with mc-pack-status → stage the pack. One-shot, verified update pipeline. Aborts on any failure before checksums change.",
   args: {
-    modpack: { type: "string", description: "Modpack directory name (e.g. 'DragonTech')." },
+    modpack: { type: "string", description: "Modpack directory name (e.g. 'AllTheTech')." },
   },
   async execute(args: { modpack?: string }) {
     const repo = repoRoot();

@@ -151,7 +151,7 @@ with open(path, "w", encoding="utf-8") as f:
 ## Example (from this repo)
 
 `Dynamic Trees - Still Life 1.0.3` pinned `mr_still_life` to `[1,)`, but Still
-Life's 1.21.1 release is 0.1.1. `packwiz-jar-meta DragonTech
+Life's 1.21.1 release is 0.1.1. `packwiz-jar-meta AllTheTech
 dynamic-trees-still-life` showed the exact line; the patch widened it to
 `[0.1,)`; registered in `patches.nix` as
 `"mods/dynamic-trees-still-life.jar"` with

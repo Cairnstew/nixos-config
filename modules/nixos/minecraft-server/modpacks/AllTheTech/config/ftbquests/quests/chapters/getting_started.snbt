@@ -4,7 +4,7 @@
 	filename: "getting_started"
 	group: "4A695DE23DC9359F"
 	icon: {
-		id: "minecraft:dragon_egg"
+		id: "minecraft:crafting_table"
 	}
 	id: "158DE5FB928F40B3"
 	images: [ ]

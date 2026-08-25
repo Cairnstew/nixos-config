@@ -15,7 +15,7 @@ export default {
   description:
     "Inventory the internal files shipped by a packwiz modpack (config/, kubejs/, scripts/, datapacks/, defaultconfigs/) and their index/preserve state. Use before editing configs or patches to see what's already shipped.",
   args: {
-    modpack: { type: "string", description: "Modpack directory name (e.g. 'DragonTech')." },
+    modpack: { type: "string", description: "Modpack directory name (e.g. 'AllTheTech')." },
     all: { type: "string", description: "'true' to list every internal dir (config/ is the default)." },
   },
   async execute(args: { modpack?: string; all?: string }) {

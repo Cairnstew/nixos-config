@@ -119,14 +119,14 @@ those are throwaway artifacts; your change vanishes on the next rebuild.
 ```
 user: make the pack's default sneak key X and iris reload L, keep player remaps.
 
-1. packwiz-controls DragonTech  → pack ships nothing; ids key_key.sneak,
+1. packwiz-controls AllTheTech  → pack ships nothing; ids key_key.sneak,
    iris.keybind.reload confirmed; R also bound to epicfight.switch_mode (conflict)
-2. packwiz-controls-set DragonTech \
+2. packwiz-controls-set AllTheTech \
      keys='key_key.sneak=key.keyboard.x iris.keybind.reload=key.keyboard.l' \
      preserve=true
-3. packwiz-controls DragonTech → header "pack ships options.txt (preserve)",
+3. packwiz-controls AllTheTech → header "pack ships options.txt (preserve)",
    key.sneak = X, iris.keybind.reload = L
-4. git add modules/nixos/minecraft-server/modpacks/DragonTech
+4. git add modules/nixos/minecraft-server/modpacks/AllTheTech
    report: options.txt written at pack root, preserve=on (existing players keep
    their remaps; fresh installs get the new defaults), index refreshed, no
    checksums regen needed.

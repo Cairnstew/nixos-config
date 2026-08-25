@@ -1,6 +1,10 @@
 hash-format = "sha256"
 
 [[files]]
+file = "PROGRESSION.md"
+hash = "da8603ee9d0c02579531626f8d4087a06168846f3ace2b7a57fa68b57f43f634"
+
+[[files]]
 file = "config/DistantHorizons.toml"
 hash = "47a63db942e4eb791cd6b6ff49872fc1221a5e556652a637eb59d5d9047b0c8e"
 
@@ -14,27 +18,23 @@ hash = "37fd31c72d22bdb090271d99ca1eafee75fbb59173b616984bc59ee1afb22dfa"
 
 [[files]]
 file = "config/ftbquests/quests/chapters/create_automation.snbt"
-hash = "4520320dd362019f6b23e914e0b1eb25af779084a204c9823de9b81512e38611"
+hash = "2a9140013f0d9c348b05a6fdc43f4695962201e06627a46e6149fec89c9f2d82"
 
 [[files]]
 file = "config/ftbquests/quests/chapters/digital_age.snbt"
-hash = "5561e383a51c0bff875517390aec2ab721cd1984e23f1293eae772226b0165b5"
+hash = "f1fd122b6ac42f467149337206b32856b4d130f38ae78612d3501c7753dc5812"
 
 [[files]]
-file = "config/ftbquests/quests/chapters/dragon_growth.snbt"
-hash = "224a5deda73ce6c9005fa378e9eed0727083c924cdd59a31c64ac5e4341e6eea"
-
-[[files]]
-file = "config/ftbquests/quests/chapters/dragons_dominion.snbt"
-hash = "a31c1c203ae012111ff756090f575c4e2477ae99d8c110e3b42e56b76d179c03"
+file = "config/ftbquests/quests/chapters/endgame.snbt"
+hash = "066c1b15e9835a027d6f935c26578d964162c6b30de6782f2212c3ad0a435391"
 
 [[files]]
 file = "config/ftbquests/quests/chapters/getting_started.snbt"
-hash = "e5bdea5d2891c87641a67fead060116513d1c6694792586d2ec63fe99a9cefaf"
+hash = "f1a7c8954ff91ff6fe0031ce4d68814c3476c58933ecdd4c59d943500e37b66a"
 
 [[files]]
 file = "config/ftbquests/quests/chapters/mekanism_power.snbt"
-hash = "32ed9ca939475bc55e067ae4b7ecc7380110eeadcb538eb2e49f96614763afb8"
+hash = "1cd1de16d1fbbf972750ba0f8286928b082b6fe7e4584fdfc7c8c0426a76ed92"
 
 [[files]]
 file = "config/ftbquests/quests/chapters/tech_foundations.snbt"
@@ -46,7 +46,7 @@ hash = "95d715a87b03dd0e234d0ab6862aa154f5a0afe513c32e6bf270958f646dbe07"
 
 [[files]]
 file = "config/ftbquests/quests/lang/en_us.snbt"
-hash = "3110bbad4a95b6a5e9469afc9224362cb4d1d156aecb628f986d7c8756d7a32d"
+hash = "3f3aeb09846d8f02af2ab9a1691e2fb89908848a3e6fc08db4c4deace500b2b6"
 
 [[files]]
 file = "config/ftbquests/quests/reward_tables/35971441C32601D7.snbt"
@@ -54,7 +54,7 @@ hash = "e6e6f5f407ee14184d3506d08d7aafee13dfb335035df7ddcfd8887caefa9cda"
 
 [[files]]
 file = "config/roadweaver/roadweaver.json"
-hash = "1fafaa96b4c0b996a34b691236841083b321c7d47f46b70ce9bac84d2efb7b33"
+hash = "2a55b3b35267e76f7db00c77fdf6fe195399d130ff1d3476894ae0148d3718f9"
 
 [[files]]
 file = "mods/advanced-loot-info.pw.toml"
@@ -74,11 +74,6 @@ metafile = true
 [[files]]
 file = "mods/ae2.pw.toml"
 hash = "ed45c352a49b65c7221e57d979d0c6935522dfef4968aa5b7421f4d3e670ce40"
-metafile = true
-
-[[files]]
-file = "mods/aether-dragon.pw.toml"
-hash = "296c7bdf4fd928d993803db595b1ed1199eaa823aa3ff1f5bac963e16f838ceb"
 metafile = true
 
 [[files]]
@@ -162,11 +157,6 @@ hash = "8cbbcc790cdba5be4717c1cfa330babe9f50f3397b828c0b5f082aaea3c8e935"
 metafile = true
 
 [[files]]
-file = "mods/aures-dragon-survival.pw.toml"
-hash = "26efe415f944ee4c840f911db51572ba99b27c4124c8ff5d57b48a5baf0a7e2b"
-metafile = true
-
-[[files]]
 file = "mods/auroras.pw.toml"
 hash = "ed60e047a5a85492c3d761238524888dca729e923b6753e060fd3dc986a8e54c"
 metafile = true
@@ -189,11 +179,6 @@ metafile = true
 [[files]]
 file = "mods/bclib-neoforge.pw.toml"
 hash = "561ad31048950924972bdf9f0c156ca9bc11ebbb5928c76e00e58f5b1afb12c3"
-metafile = true
-
-[[files]]
-file = "mods/be-bee-queen.pw.toml"
-hash = "cfd7e3adae766744b0b1dc4d425889003ac1a43419c4b0bddd20f8e66fd9bbb8"
 metafile = true
 
 [[files]]
@@ -387,11 +372,6 @@ hash = "456f66abd180b3f5765473cda5e8acb1a6ea8b15b7ee34442be9a7af414cfc63"
 metafile = true
 
 [[files]]
-file = "mods/create-dragons-plus.pw.toml"
-hash = "4773ff19187020e8e4484a17c426775309f8dfc34af5ff453fa5ffc662afa530"
-metafile = true
-
-[[files]]
 file = "mods/create-dreams-and-desires.pw.toml"
 hash = "c308b557b01b6e6cc25ee8d6a1a7c78bca2b71be3ae645e40d10cf25259fabcd"
 metafile = true
@@ -482,11 +462,6 @@ hash = "08a334ae5565e122d26b819cba16ce784776a10fe100ab2b22de72a5a2bac653"
 metafile = true
 
 [[files]]
-file = "mods/crystcursed-dragon.pw.toml"
-hash = "523944832f4fb2c8a136dc5e915d2cf37583a8fdaf660cae2264e83a4ba8a582"
-metafile = true
-
-[[files]]
 file = "mods/cucumber.pw.toml"
 hash = "b2059d79bf6e41281a26b5b75a8f0cb20804079fe49a22042a26aa5ce28ba7f5"
 metafile = true
@@ -519,16 +494,6 @@ metafile = true
 [[files]]
 file = "mods/domum-ornamentum.pw.toml"
 hash = "d2fd3cdb41980fb2758d5b9fc6f25e923560dc52f628c6c75891a90d285e437b"
-metafile = true
-
-[[files]]
-file = "mods/dragon-spider-queen.pw.toml"
-hash = "e61df22f29d6f4f803b36225a2218dae5b318f64a4aecfbde42d2c0aebb02868"
-metafile = true
-
-[[files]]
-file = "mods/dragon-survival.pw.toml"
-hash = "c6c575483996f50b918918dd166e35e829cd00f490222ca1626925430ddea0e0"
 metafile = true
 
 [[files]]
@@ -922,11 +887,6 @@ hash = "2d8016aab6d4b3410b7a35003aa9d778dad45379c89dc9490cd6c3f3bcec9f6f"
 metafile = true
 
 [[files]]
-file = "mods/megarrian-typhus-dragons.pw.toml"
-hash = "546b5dc09008e0d65ec4961cccc6a94e9fd278f7c89c0fdd33f0528037d42b24"
-metafile = true
-
-[[files]]
 file = "mods/mekanism-additions.pw.toml"
 hash = "086e5173f9d4dd76196a67e6604b5787b5f17312a6c3db49b1651fe2d972fe16"
 metafile = true
@@ -1067,11 +1027,6 @@ hash = "00887452f4c902a5f98fc42875d522e59948b60c20d887855a183c0f7235c641"
 metafile = true
 
 [[files]]
-file = "mods/plutonium-dragon.pw.toml"
-hash = "365cad6cde66295b8576108637bde81aae628db4c7288b6c81b84fbfbeb58175"
-metafile = true
-
-[[files]]
 file = "mods/pneumaticcraft-repressurized.pw.toml"
 hash = "382d3478ca5fb06dba118a62137ee8f2380b23696124b772a3a3b1fe11ec7618"
 metafile = true
@@ -1172,11 +1127,6 @@ hash = "83a7b840686a417dfe1161ee5cd918989dd2d901c9013bf85e93a30f597260f7"
 metafile = true
 
 [[files]]
-file = "mods/slime-dragon.pw.toml"
-hash = "0ecd60efbe01d0f3609aab1bd422e5210e525635deb5f5d226fab2a4bb05ff05"
-metafile = true
-
-[[files]]
 file = "mods/smallcolonies-me.pw.toml"
 hash = "f9513978d3a81e1bb7a783276259393972bce40db193855617fe2b8ebec22359"
 metafile = true
@@ -1257,11 +1207,6 @@ hash = "258a77de0a6db4c9ab045cbb240bcf4eac0dbbca3f6bc981fb461e55c247f23f"
 metafile = true
 
 [[files]]
-file = "mods/star-dragon.pw.toml"
-hash = "7f3c5eb7568d6a5e17fa03cc238528ad548ebf20e323eb38922767cf5803a273"
-metafile = true
-
-[[files]]
 file = "mods/stateobserver.pw.toml"
 hash = "85e4848f535d49b98475c359edfc799ce88ae343985088326cc4a5e91b66ef6c"
 metafile = true
@@ -1337,11 +1282,6 @@ hash = "0594f15a418aed0e71abbf0fcf09d8fe5154a047f99fadf9357ebb61331413e6"
 metafile = true
 
 [[files]]
-file = "mods/tundra-dragon.pw.toml"
-hash = "a3b00966fdf73c75035aaac4c74960a2ad9f63b2431f64208a1efd9972c32ff0"
-metafile = true
-
-[[files]]
 file = "mods/tweaks-addon-for-minecolonies.pw.toml"
 hash = "2ae07cc1bdc68df13cc7639022453c0dd8ff989e699f9816d8eba986c128309e"
 metafile = true
@@ -1379,11 +1319,6 @@ metafile = true
 [[files]]
 file = "mods/windy.pw.toml"
 hash = "487e2b84df68ee58c6ed681a709454dc518af310c143565e496d796c9300769b"
-metafile = true
-
-[[files]]
-file = "mods/wing-kirin-dragon-survival-addon.pw.toml"
-hash = "b5b57728301fd6357d5f86b4457d0cb36633319c0c9afd169af65bfed3356454"
 metafile = true
 
 [[files]]

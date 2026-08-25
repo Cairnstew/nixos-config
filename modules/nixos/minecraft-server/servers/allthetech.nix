@@ -1,15 +1,15 @@
-# modules/nixos/minecraft-server/servers/dragentech.nix
-# DragonTech NeoForge server (DragonTech packwiz pack). Every server in this
+# modules/nixos/minecraft-server/servers/allthetech.nix
+# AllTheTech NeoForge server (AllTheTech packwiz pack). Every server in this
 # folder is disabled by default — opt in from a host config or a profile, e.g.:
-#   my.services.minecraftServer.servers.dragentech.enable = true;
-#   my.profiles.gaming.minecraftServers = [ "dragentech" ];
+#   my.services.minecraftServer.servers.allthetech.enable = true;
+#   my.profiles.gaming.minecraftServers = [ "allthetech" ];
 { lib, pkgs, ... }:
 {
-  my.services.minecraftServer.servers.dragentech = {
+  my.services.minecraftServer.servers.allthetech = {
     enable = lib.mkDefault false;
 
-    package = pkgs.neoforgeServers.neoforge-1_21_1-21_1_238; # matches DragonTech pack.toml
-    packwiz = ../modpacks/DragonTech;
+    package = pkgs.neoforgeServers.neoforge-1_21_1-21_1_238; # matches AllTheTech pack.toml
+    packwiz = ../modpacks/AllTheTech;
     # Heap sized for the server host (15Gi RAM total, shared with other
     # services — see hardware caps below). Modded NeoForge wants a big heap but
     # the OS + other units need headroom; 6G heap + 3G start is the balance.
@@ -57,7 +57,7 @@
     #   - entity-broadcast-range-percentage=75 (was 100): less entity network
     #   - max-chained-neighbor-updates=1000 (was 1000000!): redstone spam limiter
     serverProperties = {
-      motd = "A DragonTech Server";
+      motd = "An AllTheTech Server";
       max-players = 4;
       white-list = false;
       view-distance = 8;

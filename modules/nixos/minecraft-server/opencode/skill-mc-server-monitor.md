@@ -5,7 +5,7 @@ description: Use when monitoring a dedicated Minecraft server's performance — 
 
 # Minecraft Server Performance Monitoring
 
-The DragonTech NeoForge server runs as a systemd unit
+The AllTheTech NeoForge server runs as a systemd unit
 (`minecraft-server-<name>.service`) on the server host. Its resource use and
 health are observable WITHOUT any client-side monitoring mod (spark etc.) — the
 signals come from three places:
@@ -24,7 +24,7 @@ signals come from three places:
 Use **`mc-server <name> perf`** for a one-shot performance snapshot:
 
 ```
-mc-server dragentech perf
+mc-server allthetech perf
 # memory: 5.5G used / 10G cap
 # cpu: 200% quota of 8 cores
 # overload (last 2): 313 ticks behind (15.7s); 53 ticks behind (2.7s)
@@ -49,7 +49,7 @@ view, poll `perf` every few seconds or watch the Grafana dashboard
   TPS. Repeated/frequent warnings = the server thread is saturated — the usual
   culprits on a modded pack are first-boot chunk generation (transient), heavy
   redstone/entities, or a data pack scanning huge regions (RoadWeaver's
-  `predictRadiusChunks` was the DragonTech case).
+  `predictRadiusChunks` was the AllTheTech case).
 - **CPU quota** (`hardware.cpuQuota`): only useful if set; without it the server
   can use all cores during generation. A `100%` quota = one core, `200%` = two.
 - **Swap**: watch `host:` line. If swap climbs while the server idles, either
@@ -96,7 +96,7 @@ then `mc-server <name> perf` to confirm the cgroup caps took effect.
   mod-loading phase (`Done`) but then idles at ~4 full cores for a long time,
   it's likely RoadWeaver's `preloadBeforePrepareLevels` running with its OpenCL
   coarse-sampling fallen back to CPU (benign log lines). The fix is the preload
-  radii/threads in `config/roadweaver/roadweaver.json` (DragonTech:
+  radii/threads in `config/roadweaver/roadweaver.json` (AllTheTech:
   `predictRadiusChunks 32`, plan radii `16`, `initialGenerationThreads 6`) —
   see the `mc-modpack` skill's gotchas. `perf` will show the CPU pinned with a
   normal memory profile; that signature distinguishes preload from an OOM

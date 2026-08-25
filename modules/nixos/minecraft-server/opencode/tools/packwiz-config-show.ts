@@ -15,7 +15,7 @@ export default {
   description:
     "Review/get the config a specific mod in a packwiz modpack ships: resolve the mod to its pinned jar (from checksums.json — the exact jar players get), list the config/ files it bundles with sizes and whether the pack overrides each, and print the contents of a chosen file. Pairs with packwiz-config-diff to review pack overrides against the mod's stock defaults.",
   args: {
-    modpack: { type: "string", description: "Modpack directory name (e.g. 'DragonTech')." },
+    modpack: { type: "string", description: "Modpack directory name (e.g. 'AllTheTech')." },
     mod: { type: "string", description: "Mod name, slug, or .pw.toml filename (e.g. 'jei', 'Just Enough Items', 'jei.pw.toml')." },
     path: { type: "string", description: "Optional config file inside the jar to print, e.g. 'config/jei/jei.toml' (omit to list all shipped configs)." },
     contents: { type: "string", description: "'true' to print the contents of every shipped config file (not just the listing)." },

@@ -15,7 +15,7 @@ export default {
   description:
     "Remove a custom datapack from a packwiz modpack's Paxi loader folder (config/paxi/datapacks/) and refresh the index.",
   args: {
-    modpack: { type: "string", description: "Modpack directory name (e.g. 'DragonTech')." },
+    modpack: { type: "string", description: "Modpack directory name (e.g. 'AllTheTech')." },
     name: { type: "string", description: "Datapack name to remove (zip or directory)." },
   },
   async execute(args: { modpack?: string; name?: string }) {

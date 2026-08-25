@@ -107,9 +107,9 @@ foo → foo.pw.toml  (foo-1.0.jar)                      # resolved identity + pi
 ## Example
 
 ```
-user: what config does sodium-dynamic-lights ship in DragonTech, and does the pack change it?
+user: what config does sodium-dynamic-lights ship in AllTheTech, and does the pack change it?
 
-1. packwiz-config-show DragonTech sodium-dynamic-lights
+1. packwiz-config-show AllTheTech sodium-dynamic-lights
    → sodium-dynamic-lights → sodium-dynamic-lights.pw.toml (sodiumdynamiclights-neoforge-1.0.10-1.21.1.jar)
      ships no config/ files
    → report: ships no config; defaults are generated at first launch; the pack

@@ -7,14 +7,10 @@
     "structureWhitelist": [
       "#minecraft:village",
       "structory:*",
-      "dragonsurvival:*",
       "witchery:*"
     ],
     "structureBlacklist": [
-      "structory:boat",
-      "dragonsurvival:dragon_skeleton_sea",
-      "dragonsurvival:treasure_angry_sea",
-      "dragonsurvival:treasure_friendly_sea"
+      "structory:boat"
     ],
     "villageRoadOffset": 80,
     "otherStructureRoadOffset": 40

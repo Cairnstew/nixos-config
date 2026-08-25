@@ -1,7 +1,7 @@
 {
 	default_hide_dependency_lines: false
 	default_quest_shape: ""
-	filename: "dragons_dominion"
+	filename: "endgame"
 	group: "4A695DE23DC9359F"
 	icon: {
 		id: "minecraft:nether_star"
