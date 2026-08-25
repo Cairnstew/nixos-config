@@ -55,23 +55,5 @@ in
     member = "com/gablabit/gabstylespack/GabStylesPack.class";
     patchScript = ./patches/gabstylespack.py;
   };
-
-  # Create: Enchantment Industry (2.5.1b) and Create: Central Kitchen (2.6.0)
-  # hard-require create_dragons_plus (range [1.11.3,) / [1.11.4,)). AllTheTech
-  # removed Dragon Survival and its addons (Create Dragons Plus is a Create x
-  # Dragon Survival cross-mod addon), so these mods fail ModSorter at boot with
-  # "Missing or unsupported mandatory dependencies". Their dragons-plus
-  # integration is optional recipe compat (dyes, dragon breath, blaze upgrade
-  # templates) — demote the dep to optional so they load normally.
-  "mods/create-enchantment-industry.jar" = patchJar {
-    name = "create-enchantment-industry-2.5.1b-opt-dragonsplus";
-    src = mods."create-enchantment-industry.pw.toml";
-    patchScript = ./patches/create-enchantment-industry.py;
-  };
-  "mods/create-central-kitchen.jar" = patchJar {
-    name = "create-central-kitchen-2.6.0-opt-dragonsplus";
-    src = mods."create-central-kitchen.pw.toml";
-    patchScript = ./patches/create-central-kitchen.py;
-  };
 }
 
