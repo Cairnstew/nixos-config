@@ -8,6 +8,12 @@
   any evaluation or build
   failure.**
 
+**Home-manager-managed live files are read-only `/nix/store` symlinks — hotfix by `rm` + real file, durable fix in the repo**
+
+Symptom: editing a deployed opencode watcher file live on the host fails with `cp: cannot create regular file '...': Read-only file system` (for `home.file` paths like `~/.local/share/opencode/learning-promoter-launcher.py`) or `zsh:1: permission denied` (for `systemd.user` units like `~/.config/systemd/user/learning-promoter-watcher.service`). Cause: home-manager deploys both kinds via symlinks into `/nix/store/...-home-manager-files/` (the `home.file` default and all `systemd.user.*` units), so the target is a read-only store path. Fix: to hotfix one live, `rm <symlink>` then write a real file in its place — but the **durable fix must be made in the repo** (`modules/home/opencode/config.nix` + the `tools/` source), because the next home-manager/nixos rebuild recreates the store symlink from the repo and overwrites any live file. Same applies to `~/.config/opencode/{opencode,ensemble}.json` (see the ensemble.json entry above — those are the same HM store symlinks).
+
+---
+
 **systemd does not set `$TMPDIR` for service scripts — `set -u` crashes on unbound variable**
 
 Symptom: a oneshot service running `set -euo pipefail` then `export HOME="$TMPDIR"` crashes with `line N: TMPDIR: unbound variable`, making `nix run` / nixos-unified activation return exit code 4. The service never runs its actual payload. Cause: systemd does not set the `TMPDIR` environment variable for service processes (unlike Nix build phases where `TMPDIR` is always set). A script that reads `$TMPDIR` under `set -u` (nounset) hits an unbound variable error. Fix: use `${TMPDIR:-/tmp}` (with a default) and set `HOME` explicitly: `export HOME="${TMPDIR:-/tmp}"`. Example: `modules/nixos/music/config.nix:84` — the yt-dlp install service originally used `export HOME="$TMPDIR"` which crashed; fixed to `export HOME="''${TMPDIR:-/tmp}"`.
