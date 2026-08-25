@@ -8,6 +8,12 @@
   any evaluation or build
   failure.**
 
+**systemd does not set `$TMPDIR` for service scripts — `set -u` crashes on unbound variable**
+
+Symptom: a oneshot service running `set -euo pipefail` then `export HOME="$TMPDIR"` crashes with `line N: TMPDIR: unbound variable`, making `nix run` / nixos-unified activation return exit code 4. The service never runs its actual payload. Cause: systemd does not set the `TMPDIR` environment variable for service processes (unlike Nix build phases where `TMPDIR` is always set). A script that reads `$TMPDIR` under `set -u` (nounset) hits an unbound variable error. Fix: use `${TMPDIR:-/tmp}` (with a default) and set `HOME` explicitly: `export HOME="${TMPDIR:-/tmp}"`. Example: `modules/nixos/music/config.nix:84` — the yt-dlp install service originally used `export HOME="$TMPDIR"` which crashed; fixed to `export HOME="''${TMPDIR:-/tmp}"`.
+
+---
+
 **jq pacing caps: three silent-wrong-answer traps in time-based selection logic (2026-08-23)**
 
 Symptom: while adding pace-based weekly/monthly caps to the model-fallback selector (`modules/home/opencode/fallback.nix` `resolveJq`), the boundary harness initially returned a winner for every input — including cases that should have fallen through. Three distinct issues, each of which would have shipped as a silently-wrong cap rather than an error. (1) **`| def` after a def**: jq does not allow `def f: ...; | def g: ...;` — the pipe between consecutive defs is a syntax error, but when the program is embedded in a Nix string inside a shell script and its stderr is discarded (`2>/dev/null || true`), the only symptom is "resolve always returns empty -> chain degrades to last entry". Consecutive defs must be separated by `;` alone, not `; |`. (2) **Elapsed-percent arithmetic in the test harness, not the code**: seconds-vs-percent conversions were done by hand (`5% of 604800s = 30240s`, not `+510s`) and got it wrong twice — boundary tests that "pass" with mislabeled expectations validate nothing. Compute offsets programmatically from the period length. (3) **Harness arg-order drift**: reusing a helper across runs with a changed signature silently fed an epoch timestamp into a percent field (weekly `percent: 1787529600`), making every paced check fail for a reason unrelated to the code under test — always assert on the fixture itself (`jq . cache.json`) before blaming the filter. Fix in place: defs de-piped; boundary matrix rerun against the real built selector with computed offsets (elapsed 0%, floor crossing at +30100s/+30400s of a week, stale-cache clamp past `resetsAt`, static-ceiling precedence) — see `/tmp/opencode/model-fallback-pacing/boundary/`. General rule: any time-math selection logic must be validated at MORE than one point in the period, never just "current live snapshot passes".
@@ -956,5 +962,5 @@ When you discover a new problem and its solution:
 
 ---
 
-Last updated: 2026-08-23
+Last updated: 2026-08-25
 
