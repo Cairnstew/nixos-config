@@ -6,7 +6,7 @@ description: Use when investigating or re-enabling GPU-accelerated chunk/world g
 # GPU-Accelerated Worldgen (c2me-ocl / OpenCL)
 
 GPU worldgen on this repo's dedicated minecraft servers is currently **off by
-design**: c2me-ocl was tried on DragonTech, hit two hard walls (both diagnosed),
+design**: c2me-ocl was tried on AllTheTech, hit two hard walls (both diagnosed),
 and was removed. The GPU/OpenCL *wiring* was deliberately left **dormant** in
 the module so a retry is cheap once the blocker is gone. This skill records the
 whole saga so a future session doesn't re-litigate it.
@@ -24,7 +24,7 @@ whole saga so a future session doesn't re-litigate it.
     `/dev/dri/card*`, `/dev/dri/renderD*`, `char-rtc`).
   - `modules/nixos/graphics/config.nix` → NVIDIA branch adds `pkgs.ocl-icd` to
     `hardware.graphics.extraPackages`.
-  - `servers/dragentech.nix` jvmOpts still carries
+  - `servers/allthetech.nix` jvmOpts still carries
     `-Dorg.lwjgl.opencl.libname=/run/opengl-driver/lib/libOpenCL.so.1`.
   - `config/c2me.toml` `[openclAccel]` keeps retry-doc values
     (`allowIncompatibilityFallback`, `enableNvidiaFastCompilation`,
@@ -70,7 +70,7 @@ fixed/upgraded (or the vendor compiler handles the kernel).
 
 While chasing the hang, `-XX:+UseCompactObjectHeaders` was tried. It **breaks
 JNI/FFI** (`java.lang.foreign`), which made the OpenCL path even more broken.
-**Do not re-add it.** (Noted in `servers/dragentech.nix`.)
+**Do not re-add it.** (Noted in `servers/allthetech.nix`.)
 
 ## Heap guidance for GPU worldgen
 
@@ -102,7 +102,7 @@ With the CPU fallback active, RoadWeaver's `preloadBeforePrepareLevels` uses the
 values in `config/roadweaver/roadweaver.json`, and huge radii are fatal on a
 fresh world: `predictRadiusChunks 256` + `initialPlanRadiusChunks/dynamicPlan
 128` spun ~4 CPU cores for **hours** after "Done" (looked like a hang). Tuned
-values (DragonTech): `predictRadiusChunks 32`, plan radii `16`, stride `64`,
+values (AllTheTech): `predictRadiusChunks 32`, plan radii `16`, stride `64`,
 `initialGenerationThreads 6`. Any future GPU enablement should re-check these
 with OpenCL active — GPU coarse sampling changes the CPU cost profile.
 

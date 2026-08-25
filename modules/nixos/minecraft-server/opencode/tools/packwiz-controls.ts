@@ -56,7 +56,7 @@ export default {
   description:
     "Review the default hotkeys and controls for a whole packwiz modpack — every keybinding (vanilla + mods) with its bound key, decoded to human-readable, grouped into vanilla/mod, plus a conflict report for keys bound more than once. Reads the effective bindings from the pack's shipped options.txt (if it ships one) or a generated one from the pack's Prism instance (or an explicit --options path), and resolves each keybind id to a label + owning mod via the pinned jars' lang files. Use to see what controls players get before shipping a default.",
   args: {
-    modpack: { type: "string", description: "Modpack directory name (e.g. 'DragonTech')." },
+    modpack: { type: "string", description: "Modpack directory name (e.g. 'AllTheTech')." },
     options: { type: "string", description: "Explicit path to an options.txt to review instead of auto-detecting." },
     dataDir: { type: "string", description: "Prism Launcher data dir override for instance auto-detection (default: auto-detect from known locations)." },
     mod: { type: "string", description: "Only show keybindings for this mod (slug/modid substring, e.g. 'iris')." },

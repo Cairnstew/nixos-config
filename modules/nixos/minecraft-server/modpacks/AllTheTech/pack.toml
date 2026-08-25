@@ -1,0 +1,16 @@
+name = "AllTheTech"
+author = "Cairnstew"
+version = "1.0.0"
+pack-format = "packwiz:1.1.0"
+
+[index]
+file = "index.toml"
+hash-format = "sha256"
+hash = "9f75759b59cb55422d688316ae9f7da775b4454675a4f5d52d535aed3749ad79"
+
+[versions]
+minecraft = "1.21.1"
+neoforge = "21.1.238"
+
+[options]
+datapack-folder = "config/paxi/datapacks"

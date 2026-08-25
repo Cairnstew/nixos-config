@@ -1,0 +1,566 @@
+{
+	quest: {
+		"019105FA82C64A8E": {
+			description: "Gather redstone to power Create shafts, copper for wiring, and zinc for andesite alloy. These three resources are the foundation of ALL tech trees."
+			name: "Redstone Gathering"
+		}
+		"019105FA82C64A8F": {
+			description: "Craft andesite alloy — the first Create component. Mekanism will use it for enriched iron, and AE2 needs it for processors."
+			name: "Andesite Alloy"
+		}
+		"019105FA82C64A90": {
+			description: "Craft brass ingots using Create's mixing. Brass is essential for Create's precision mechanisms AND Mekanism's advanced circuits."
+			name: "Brass Ingots"
+		}
+		"019105FA82C64A91": {
+			description: "Create enriched iron for Mekanism. This same ore doubling process feeds both Mekanism machines AND Create's kinetic processing."
+			name: "Enriched Iron"
+		}
+		"019105FA82C64A92": {
+			description: "Craft a shaft — Create's rotational transfer component. This same shaft powers Mekanism's wind turbines and AE2's energy acceptors."
+			name: "Create Shaft"
+		}
+		"019105FA82C64A93": {
+			description: "Craft a brass casing — Create's housing component. This casing is used in BOTH Create machines AND Mekanism's energy cubes."
+			name: "Brass Casing"
+		}
+		"019105FA82C64A94": {
+			description: "Craft a steel casing — Mekanism's machine housing. This casing is used in BOTH Mekanism machines AND Create's precision mechanisms."
+			name: "Steel Casing"
+		}
+		"019105FA82C64A95": {
+			description: "You now have access to all three tech trees! Create for kinetic power, Mekanism for machines, and AE2 for digital storage."
+			name: "Tech Foundations"
+		}
+		"C3D4E5F607182002": {
+			description: "Craft 4 shafts. Create shafts transfer rotational power AND serve as components in Mekanism's wind turbines and AE2's energy cables."
+			name: "Create Shafts"
+		}
+		"C3D4E5F607182003": {
+			description: "Build a water wheel for passive kinetic power. This same rotational force powers Create factories AND can feed energy into Mekanism's energy cubes."
+			name: "Water Wheel"
+		}
+		"C3D4E5F607182004": {
+			description: "Craft a mechanical press. This press doubles as a Mekanism enrichment chamber alternative for ore processing."
+			name: "Mechanical Press"
+		}
+		"C3D4E5F607182005": {
+			description: "Craft a mechanical mixer. This mixer creates alloys for BOTH Create's precision mechanisms AND Mekanism's advanced circuits."
+			name: "Mechanical Mixer"
+		}
+		"C3D4E5F607182006": {
+			description: "Build a crushing wheel. This doubles ore output for BOTH Create's crafting AND Mekanism's enrichment process."
+			name: "Crushing Wheels"
+		}
+		"C3D4E5F607182007": {
+			description: "Collect raw iron. Create's crushing wheel gives 2x output, Mekanism's enrichment chamber gives 3x output. Use both!"
+			name: "Raw Iron Collection"
+		}
+		"C3D4E5F607182008": {
+			description: "Process iron into nuggets using Create's crushing wheel. This gives 2x output for Create crafts and feeds Mekanism's steel production."
+			name: "Iron Processing"
+		}
+		"C3D4E5F607182009": {
+			description: "Craft a mechanical saw. This saw cuts materials for BOTH Create's deployers AND Mekanism's energy production."
+			name: "Mechanical Saw"
+		}
+		"C3D4E5F60718200A": {
+			description: "Craft a deployer. This deployer automates BOTH Create's crafting AND Mekanism's energy production."
+			name: "Deployer"
+		}
+		"C3D4E5F60718200B": {
+			description: "Craft a mechanical crafter. This crafter creates BOTH Create's precision mechanisms AND AE2's processors."
+			name: "Mechanical Crafter"
+		}
+		"C3D4E5F60718200C": {
+			description: "Craft an electronic circuit using Create. This circuit is used in BOTH Create's precision mechanisms AND AE2's processors."
+			name: "Electronic Circuit"
+		}
+		"C3D4E5F60718200D": {
+			description: "Craft a precision mechanism. This mechanism is used in BOTH Create's machines AND Mekanism's energy production."
+			name: "Precision Mechanism"
+		}
+		"C3D4E5F60718200E": {
+			description: "Craft a clockwork bearing. This bearing transfers rotational power for BOTH Create's machines AND Mekanism's generators."
+			name: "Clockwork Bearing"
+		}
+		"C3D4E5F60718200F": {
+			description: "Craft Create tracks. This tracks transfer rotational power for BOTH Create's trains AND Mekanism's energy production."
+			name: "Create Tracks"
+		}
+		"C3D4E5F607182010": {
+			description: "Craft a minecart coupling. This coupling is used in BOTH Create's trains AND Mekanism's energy production."
+			name: "Minecart Coupling"
+		}
+		"C3D4E5F607182011": {
+			description: "Collect enriched iron. Create's crushing wheel gives 2x output, Mekanism's enrichment chamber gives 3x output. Use both!"
+			name: "Enriched Iron Collection"
+		}
+		"C3D4E5F607182012": {
+			description: "Craft bronze ingots using Create. Bronze is used in BOTH Create's machines AND Mekanism's energy production."
+			name: "Bronze Ingots"
+		}
+		"C3D4E5F607182013": {
+			description: "Craft a metallurgic infuser. This infuser processes BOTH Create's materials AND Mekanism's energy production."
+			name: "Metallurgic Infuser"
+		}
+		"C3D4E5F607182014": {
+			description: "Craft an energized smelter. This smelter processes BOTH Create's materials AND Mekanism's energy production."
+			name: "Energized Smelter"
+		}
+		"C3D4E5F607182015": {
+			description: "Craft an energy cube. This cube stores energy for BOTH Create's machines AND Mekanism's energy production."
+			name: "Energy Cube"
+		}
+		"C3D4E5F607182016": {
+			description: "Craft a calc processor. This processor is used in BOTH AE2's crafting AND Create's precision mechanisms."
+			name: "Calc Processor"
+		}
+		"C3D4E5F607182017": {
+			description: "Craft a logic processor. This processor is used in BOTH AE2's crafting AND Mekanism's energy production."
+			name: "Logic Processor"
+		}
+		"C3D4E5F607182018": {
+			description: "Craft an engineering processor. This processor is used in BOTH AE2's crafting AND Mekanism's energy production."
+			name: "Engineering Processor"
+		}
+		"C3D4E5F607182019": {
+			description: "Craft a capacity card. This card expands storage for BOTH AE2's drives AND Create's precision mechanisms."
+			name: "Capacity Card"
+		}
+		"C3D4E5F60718201A": {
+			description: "You've mastered Create automation AND started your Mekanism and AE2 journey. All three tech trees are now in harmony."
+			name: "Create Mastery"
+		}
+		"D4E5F60718293002": {
+			description: "Craft bronze ingots. Bronze is used in BOTH Mekanism's steel casing AND Create's precision mechanisms."
+			name: "Bronze Ingots"
+		}
+		"D4E5F60718293003": {
+			description: "Craft a steel casing. This casing is used in BOTH Mekanism's machines AND Create's precision mechanisms."
+			name: "Steel Casing"
+		}
+		"D4E5F60718293004": {
+			description: "Craft an enrichment chamber. This chamber doubles ore output for BOTH Mekanism's processing AND Create's crushing wheel."
+			name: "Enrichment Chamber"
+		}
+		"D4E5F60718293005": {
+			description: "Craft a crusher. This crusher processes materials for BOTH Mekanism's machines AND Create's kinetic processing."
+			name: "Crusher"
+		}
+		"D4E5F60718293006": {
+			description: "Craft a metallurgic infuser. This infuser processes materials for BOTH Mekanism's machines AND Create's kinetic processing."
+			name: "Metallurgic Infuser"
+		}
+		"D4E5F60718293007": {
+			description: "Craft a purification chamber. This chamber processes materials for BOTH Mekanism's machines AND Create's kinetic processing."
+			name: "Purification Chamber"
+		}
+		"D4E5F60718293008": {
+			description: "Craft an energized smelter. This smelter processes materials for BOTH Mekanism's machines AND Create's kinetic processing."
+			name: "Energized Smelter"
+		}
+		"D4E5F60718293009": {
+			description: "Craft an osmium compressor. This compressor processes materials for BOTH Mekanism's machines AND Create's kinetic processing."
+			name: "Osmium Compressor"
+		}
+		"D4E5F6071829300A": {
+			description: "Craft an assemblicator. This assemblicator processes materials for BOTH Mekanism's machines AND AE2's autocrafting."
+			name: "Assemblicator"
+		}
+		"D4E5F6071829300B": {
+			description: "Craft a rotary condensentrator. This condensentrator processes materials for BOTH Mekanism's machines AND Create's kinetic processing."
+			name: "Rotary Condensentrator"
+		}
+		"D4E5F6071829300C": {
+			description: "Craft a heat generator. This generator produces energy for BOTH Mekanism's machines AND Create's kinetic processing."
+			name: "Heat Generator"
+		}
+		"D4E5F6071829300D": {
+			description: "Craft a solar generator. This generator produces energy for BOTH Mekanism's machines AND Create's kinetic processing."
+			name: "Solar Generator"
+		}
+		"D4E5F6071829300E": {
+			description: "Craft a gas generator. This generator produces energy for BOTH Mekanism's machines AND Create's kinetic processing."
+			name: "Gas Generator"
+		}
+		"D4E5F6071829300F": {
+			description: "Craft a wind generator. This generator produces energy for BOTH Mekanism's machines AND Create's kinetic processing."
+			name: "Wind Generator"
+		}
+		"D4E5F60718293010": {
+			description: "Craft an energy cube. This cube stores energy for BOTH Mekanism's machines AND Create's kinetic processing."
+			name: "Energy Cube"
+		}
+		"D4E5F60718293011": {
+			description: "Craft a fission reactor controller. This controller produces energy for BOTH Mekanism's machines AND Create's kinetic processing."
+			name: "Fission Reactor"
+		}
+		"D4E5F60718293012": {
+			description: "Craft a fusion reactor controller. This controller produces energy for BOTH Mekanism's machines AND Create's kinetic processing."
+			name: "Fusion Reactor"
+		}
+		"D4E5F60718293013": {
+			description: "Craft a teleporter. This teleporter transfers energy for BOTH Mekanism's machines AND Create's kinetic processing."
+			name: "Teleporter"
+		}
+		"D4E5F60718293014": {
+			description: "Craft a quantum entangloporter. This entangloporter transfers energy for BOTH Mekanism's machines AND Create's kinetic processing."
+			name: "Quantum Entangloporter"
+		}
+		"D4E5F60718293015": {
+			description: "Craft a mekasuit helmet. This helmet protects you for BOTH Mekanism's machines AND Create's kinetic processing."
+			name: "Mekasuit Helmet"
+		}
+		"D4E5F60718293016": {
+			description: "Craft a mekasuit bodyarmor. This bodyarmor protects you for BOTH Mekanism's machines AND Create's kinetic processing."
+			name: "Mekasuit Bodyarmor"
+		}
+		"D4E5F60718293017": {
+			description: "Craft mekasuit pants. These pants protect you for BOTH Mekanism's machines AND Create's kinetic processing."
+			name: "Mekasuit Pants"
+		}
+		"D4E5F60718293018": {
+			description: "Craft mekasuit boots. These boots protect you for BOTH Mekanism's machines AND Create's kinetic processing."
+			name: "Mekasuit Boots"
+		}
+		"D4E5F60718293019": {
+			description: "Craft a mechanical press. This press doubles as a Mekanism enrichment chamber alternative for ore processing."
+			name: "Mechanical Press"
+		}
+		"D4E5F6071829301A": {
+			description: "Craft a mechanical saw. This saw cuts materials for BOTH Create's deployers AND Mekanism's energy production."
+			name: "Mechanical Saw"
+		}
+		"D4E5F6071829301B": {
+			description: "Craft a deployer. This deployer automates BOTH Create's crafting AND Mekanism's energy production."
+			name: "Deployer"
+		}
+		"D4E5F6071829301C": {
+			description: "Craft an energy acceptor. This acceptor transfers energy for BOTH AE2's storage AND Mekanism's energy production."
+			name: "Energy Acceptor"
+		}
+		"D4E5F6071829301D": {
+			description: "Craft a dense energy cell. This cell stores energy for BOTH AE2's storage AND Mekanism's energy production."
+			name: "Dense Energy Cell"
+		}
+		"D4E5F6071829301E": {
+			description: "Craft a creative energy cell. This cell stores energy for BOTH AE2's storage AND Mekanism's energy production."
+			name: "Creative Energy Cell"
+		}
+		"D4E5F6071829301F": {
+			description: "You've mastered Mekanism machines AND started your Create and AE2 journey. All three tech trees are now in harmony."
+			name: "Mekanism Mastery"
+		}
+		"E5F6071829404002": {
+			description: "Craft 4 controllers. AE2 controllers store items for BOTH AE2's storage AND Create's precision mechanisms."
+			name: "AE2 Controllers"
+		}
+		"E5F6071829404003": {
+			description: "Craft 4 drives. AE2 drives store items for BOTH AE2's storage AND Mekanism's energy production."
+			name: "AE2 Drives"
+		}
+		"E5F6071829404004": {
+			description: "Craft a 1k storage cell. This cell stores items for BOTH AE2's storage AND Create's precision mechanisms."
+			name: "1k Storage Cell"
+		}
+		"E5F6071829404005": {
+			description: "Craft a 4k storage cell. This cell stores items for BOTH AE2's storage AND Mekanism's energy production."
+			name: "4k Storage Cell"
+		}
+		"E5F6071829404006": {
+			description: "Craft a 16k storage cell. This cell stores items for BOTH AE2's storage AND Create's precision mechanisms."
+			name: "16k Storage Cell"
+		}
+		"E5F6071829404007": {
+			description: "Craft a 64k storage cell. This cell stores items for BOTH AE2's storage AND Mekanism's energy production."
+			name: "64k Storage Cell"
+		}
+		"E5F6071829404008": {
+			description: "Craft a crafting terminal. This terminal crafts items for BOTH AE2's storage AND Create's precision mechanisms."
+			name: "Crafting Terminal"
+		}
+		"E5F6071829404009": {
+			description: "Craft a pattern provider. This provider automates crafting for BOTH AE2's storage AND Mekanism's energy production."
+			name: "Pattern Provider"
+		}
+		"E5F607182940400A": {
+			description: "Craft an interface. This interface transfers items for BOTH AE2's storage AND Create's precision mechanisms."
+			name: "Interface"
+		}
+		"E5F607182940400B": {
+			description: "Craft a molecular assembler. This assembler automates crafting for BOTH AE2's storage AND Mekanism's energy production."
+			name: "Molecular Assembler"
+		}
+		"E5F607182940400C": {
+			description: "Craft 8 acceleration cards. These cards speed up crafting for BOTH AE2's storage AND Create's precision mechanisms."
+			name: "Acceleration Cards"
+		}
+		"E5F607182940400D": {
+			description: "Craft a wireless terminal. This terminal provides mobile access for BOTH AE2's storage AND Mekanism's energy production."
+			name: "Wireless Terminal"
+		}
+		"E5F607182940400E": {
+			description: "Craft an energy acceptor. This acceptor transfers energy for BOTH AE2's storage AND Mekanism's energy production."
+			name: "Energy Acceptor"
+		}
+		"E5F607182940400F": {
+			description: "Craft a dense energy cell. This cell stores energy for BOTH AE2's storage AND Create's precision mechanisms."
+			name: "Dense Energy Cell"
+		}
+		"E5F6071829404010": {
+			description: "Craft an energy cube. This cube stores energy for BOTH Mekanism's machines AND Create's kinetic processing."
+			name: "Energy Cube"
+		}
+		"E5F6071829404011": {
+			description: "Craft a quantum entangloporter. This entangloporter transfers energy for BOTH Mekanism's machines AND Create's kinetic processing."
+			name: "Quantum Entangloporter"
+		}
+		"E5F6071829404012": {
+			description: "Craft a precision mechanism using Create. This mechanism is used in BOTH AE2's storage AND Mekanism's energy production."
+			name: "Precision Mechanism"
+		}
+		"E5F6071829404013": {
+			description: "Craft an electronic circuit using Create. This circuit is used in BOTH AE2's storage AND Mekanism's energy production."
+			name: "Electronic Circuit"
+		}
+		"E5F6071829404014": {
+			description: "Craft a brass casing using Create. This casing is used in BOTH AE2's storage AND Mekanism's energy production."
+			name: "Brass Casing"
+		}
+		"E5F6071829404015": {
+			description: "Craft an assemblicator. This assemblicator processes materials for BOTH Mekanism's machines AND AE2's autocrafting."
+			name: "Assemblicator"
+		}
+		"E5F6071829404016": {
+			description: "Craft a metallurgic infuser. This infuser processes materials for BOTH Mekanism's machines AND Create's kinetic processing."
+			name: "Metallurgic Infuser"
+		}
+		"E5F6071829404017": {
+			description: "You've mastered AE2 digital storage AND started your Create and Mekanism journey. All three tech trees are now in harmony."
+			name: "Digital Age Mastery"
+		}
+		"E5F6071829404018": {
+			description: "Craft a creative storage cell. This cell provides infinite storage for BOTH AE2's storage AND Mekanism's energy production."
+			name: "Creative Storage Cell"
+		}
+		"E5F6071829404019": {
+			description: "Craft a creative energy cell. This cell provides infinite energy for BOTH AE2's storage AND Create's kinetic processing."
+			name: "Creative Energy Cell"
+		}
+		"C3D4E5F60718201B": {
+			description: "Craft aluminum ingots from Immersive Engineering. Use IE's squeezer or crusher for ore processing — gives more output than vanilla smelting."
+			name: "Aluminum Ingots"
+		}
+		"C3D4E5F60718201C": {
+			description: "Build a Coke Brick from IE. This starts the coke oven → blast furnace chain for steel production. Use Create's mechanical press for faster processing."
+			name: "Coke Brick"
+		}
+		"C3D4E5F60718201D": {
+			description: "Build a Blast Furnace Brick from IE. This produces steel — used in BOTH Mekanism's steel casing AND IE's heavy machinery."
+			name: "Blast Furnace Brick"
+		}
+		"C3D4E5F60718201E": {
+			description: "Craft an IE Crusher. This crusher processes ores and produces byproducts — feed its output to Mekanism's enrichment chamber for maximum yield."
+			name: "IE Crusher"
+		}
+		"C3D4E5F60718201F": {
+			description: "Craft an IE Squeezer. This machine processes crops and materials — combine with Create's deployer for automated farming."
+			name: "IE Squeezer"
+		}
+		"C3D4E5F607182020": {
+			description: "Craft IE Conveyors. These transport items — pair with Create's mechanical belt for fully automated sorting systems."
+			name: "IE Conveyors"
+		}
+		"C3D4E5F607182021": {
+			description: "Craft IE Connectors and Relays. These transfer energy — use with Mekanism's energy cubes for cross-mod power networks."
+			name: "IE Connectors"
+		}
+		"C3D4E5F607182022": {
+			description: "Craft a PneumaticCraft Pressure Tube. These transport pressurized air — use with Mekanism's energy cubes for pneumatic power systems."
+			name: "Pressure Tube"
+		}
+		"C3D4E5F607182023": {
+			description: "Craft a PneumaticCraft Air Compressor. This generates pressurized air — pair with Create's kinetic input for automated pressure systems."
+			name: "Air Compressor"
+		}
+		"C3D4E5F607182024": {
+			description: "Craft a PneumaticCraft Assembly. This machine crafts advanced components — use with AE2's pattern provider for automated assembly lines."
+			name: "Assembly Line"
+		}
+		"C3D4E5F607182025": {
+			description: "Craft a PneumaticCraft UV Light Box. This processes plastics and electronics — combine with Create's precision mechanisms for advanced circuits."
+			name: "UV Light Box"
+		}
+		"C3D4E5F607182026": {
+			description: "Craft a PneumaticCraft Programmable Controller. This automates complex processes — pair with Mekanism's energy cubes for self-powered factories."
+			name: "Programmable Controller"
+		}
+		"C3D4E5F607182027": {
+			description: "Craft a PneumaticCraft Drone. This drone automates farming, mining, and combat — use with AE2's wireless terminal for remote control."
+			name: "PneumaticCraft Drone"
+		}
+		"C3D4E5F607182028": {
+			description: "You've mastered Create, IE, and PneumaticCraft automation. All three tech trees are now in harmony!"
+			name: "Create + IE + PneumaticCraft Mastery"
+		}
+		"D4E5F60718293020": {
+			description: "Craft a Powah! Photoelectric Pane. This converts sunlight to RF — use with Mekanism's energy cubes for hybrid solar systems."
+			name: "Photoelectric Pane"
+		}
+		"D4E5F60718293021": {
+			description: "Craft a Powah! Basic Solar Panel. This generates RF power — pair with Create's kinetic input for dual-source energy systems."
+			name: "Basic Solar Panel"
+		}
+		"D4E5F60718293022": {
+			description: "Craft a Powah! Advanced Solar Panel. This generates more RF — combine with Mekanism's energy cubes for high-capacity storage."
+			name: "Advanced Solar Panel"
+		}
+		"D4E5F60718293023": {
+			description: "Craft a Powah! Nitro Solar Panel. This generates massive RF — use with AE2's energy acceptor for digital power management."
+			name: "Nitro Solar Panel"
+		}
+		"D4E5F60718293024": {
+			description: "Craft a Powah! Basic Energy Cell. This stores RF — use with Mekanism's energy cubes for cross-mod power storage."
+			name: "Basic Energy Cell"
+		}
+		"D4E5F60718293025": {
+			description: "Craft a Powah! Advanced Energy Cell. This stores more RF — combine with Create's precision mechanisms for automated power distribution."
+			name: "Advanced Energy Cell"
+		}
+		"D4E5F60718293026": {
+			description: "Craft a Powah! Hardened Energy Cell. This stores even more RF — use with AE2's dense energy cells for massive power reserves."
+			name: "Hardened Energy Cell"
+		}
+		"D4E5F60718293027": {
+			description: "Craft a Powah! Nitro Energy Cell. This stores massive RF — the ultimate power storage for your tech empire."
+			name: "Nitro Energy Cell"
+		}
+		"D4E5F60718293028": {
+			description: "Craft a Powah! Energizing Rod. This converts items to energized versions — use with Mekanism's infuser for cross-mod material processing."
+			name: "Energizing Rod"
+		}
+		"D4E5F60718293029": {
+			description: "Craft a Powah! Energizing Orb. This is the core of Powah!'s processing — combine with Create's deployer for automated energizing."
+			name: "Energizing Orb"
+		}
+		"E5F607182940401A": {
+			description: "Craft aluminum ingots from Immersive Engineering. Use IE's squeezer or crusher for ore processing — gives more output than vanilla smelting."
+			name: "Aluminum Ingots"
+		}
+		"E5F607182940401B": {
+			description: "Craft an IE electronic circuit. This circuit is used in BOTH IE's machines AND AE2's processors — cross-mod crafting synergy."
+			name: "IE Electronic Circuit"
+		}
+		"E5F607182940401C": {
+			description: "Craft an IE electronic component. This component is used in BOTH IE's advanced machines AND AE2's crafting — essential for digital automation."
+			name: "IE Electronic Component"
+		}
+		"E5F607182940401D": {
+			description: "Craft PneumaticCraft plastic. This plastic is used in BOTH PneumaticCraft's circuits AND AE2's processors — cross-mod material synergy."
+			name: "PneumaticCraft Plastic"
+		}
+		"E5F607182940401E": {
+			description: "Craft a PneumaticCraft printed circuit board. This PCB is used in BOTH PneumaticCraft's machines AND AE2's advanced crafting."
+			name: "Printed Circuit Board"
+		}
+		"E5F607182940401F": {
+			description: "Craft a PneumaticCraft assembly program. This program automates assembly — use with AE2's pattern provider for fully automated production."
+			name: "Assembly Program"
+		}
+		"E5F6071829404020": {
+			description: "Craft a Powah! Energizing Rod. This converts items to energized versions — use with Mekanism's infuser for cross-mod material processing."
+			name: "Energizing Rod"
+		}
+		"E5F6071829404021": {
+			description: "Craft a Powah! Energizing Orb. This is the core of Powah!'s processing — combine with Create's deployer for automated energizing."
+			name: "Energizing Orb"
+		}
+		"E5F6071829404022": {
+			description: "Craft a Powah! Basic Energy Cell. This stores RF — use with AE2's energy acceptor for digital power management."
+			name: "Basic Energy Cell"
+		}
+		"C3D4E5F607182071": {
+			description: "Ride a horse into a Horse Crank for primitive rotational power — the medieval way to spin your first machines before water wheels."
+			name: "Horse Power"
+		}
+		"C3D4E5F607182072": {
+			description: "Build a Create Sifter and sift gravel/sand/dirt for stray ores. A slow-but-automatable early source of iron, zinc and friends."
+			name: "Sifting for Ores"
+		}
+		"C3D4E5F607182073": {
+			description: "Craft a Brass Mesh — the sifter upgrade that unlocks better yields and rarer ore pieces from the Create Sifting system."
+			name: "Brass Sifter Mesh"
+		}
+		"C3D4E5F607182074": {
+			description: "Build a Casting Basin. Now that you have brass, melt metals down and cast them into alloys — the heart of Create: Metallurgy."
+			name: "Casting Basin"
+		}
+		"C3D4E5F607182075": {
+			description: "Assemble the Foundry Basin + Foundry Lid. Scale molten metal production into an automated casting line for any alloy."
+			name: "Foundry Basin"
+		}
+		"C3D4E5F607182076": {
+			description: "Produce steel through the metallurgy casting chain. Steel feeds Create's tanks, mixers and the endgame machines."
+			name: "Metallurgical Steel"
+		}
+		"C3D4E5F607182077": {
+			description: "Build a Mechanical Extruder — infinite cobblestone/stone/obsidian from adjacent blocks and fluids. Your quarry's best friend."
+			name: "Mechanical Extruder"
+		}
+		"C3D4E5F607182078": {
+			description: "Craft a Diamond Drill head. Faster mining machines for your ore excavation rig — or push further to netherite drill heads."
+			name: "Diamond Drill Head"
+		}
+		"C3D4E5F607182079": {
+			description: "Craft an Item Transmitter. Skip the belts entirely: wirelessly beam items (and fluids/energy with the other transmitters) across your base."
+			name: "Ender Transmission"
+		}
+		"C3D4E5F60718207A": {
+			description: "Build a Hypertube Entrance. Player-scale hyper-fast transport tubes — zip between your factories at breakneck speed."
+			name: "Hypertubes"
+		}
+		"C3D4E5F60718207B": {
+			description: "Craft an Optical Source. Beam rotational energy through light for truly wireless power distribution across long distances."
+			name: "Optical Power"
+		}
+		"C3D4E5F60718207C": {
+			description: "Assemble a Create Nuclear Reactor Controller — melt uranium rods in a reactor to generate massive mechanical power. Wear radiation protection!"
+			name: "Create Nuclear Reactor"
+		}
+		"C3D4E5F60718207D": {
+			description: "Fuel the reactor: craft and insert uranium rods (plus graphite) into the reactor input to keep the mechanical power flowing."
+			name: "Uranium Fuel Rods"
+		}
+		"C3D4E5F60718207E": {
+			description: "Set up renewable production of brass, diamonds and netherite through Create's renewable recipes — endgame resources without endless strip-mining."
+			name: "Renewable Resources"
+		}
+		"C3D4E5F60718207F": {
+			description: "Automate Create: Ultimate Factory's advanced recipes — 30+ balanced automation recipes that turn every production line into a mega-factory."
+			name: "Ultimate Factory"
+		}
+	}
+	chapter: {
+		"AA00000000000001": {
+			description: "All three tech trees start here. Learn Create, Mekanism, and AE2 basics while building your first machines."
+			name: "Tech Foundations"
+		}
+		"C3D4E5F607182001": {
+			description: "Kinetic power, mechanical automation, and train systems. Cross-references Mekanism for energy, AE2 for digital control, IE for heavy machinery, and PneumaticCraft for pressurized automation."
+			name: "Create Automation"
+		}
+		"D4E5F60718293001": {
+			description: "Machines, energy production, and nuclear power. Cross-references Create for kinetic input, AE2 for digital storage, and Powah! for RF power systems."
+			name: "Mekanism & Power"
+		}
+		"E5F6071829404001": {
+			description: "Digital storage, autocrafting, and network management. Cross-references Create for precision mechanisms, Mekanism for energy, IE for heavy machinery, PneumaticCraft for pressurized systems, and Powah! for RF power."
+			name: "Digital Age"
+		}
+		"F607182940515001": {
+			description: "The ultimate endgame. Master all three tech trees and combine them into one mega-factory."
+			name: "Endgame"
+		}
+	}
+}

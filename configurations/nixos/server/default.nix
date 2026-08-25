@@ -270,10 +270,10 @@
     };
     api.enable = true; # dashboard management (status + start/stop/restart)
 
-    # Currently running the premade Prominence II Fabric pack. DragonTech is
+    # Currently running the premade Prominence II Fabric pack. AllTheTech is
     # disabled (kept for reference); flip the booleans to switch servers.
     servers.prominence.enable = true;
-    servers.dragentech.enable = false;
+    servers.allthetech.enable = false;
   };
 
   # ── Ollama (LLM Serving) ───────────────────────────────────────────────

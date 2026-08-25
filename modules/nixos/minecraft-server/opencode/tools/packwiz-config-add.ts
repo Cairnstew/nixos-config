@@ -49,7 +49,7 @@ export default {
   description:
     "Create or overwrite a default mod config file in a packwiz modpack's config/ dir and refresh the pack index. Use for goal #1: shipping sensible player defaults. Optionally mark it preserve so players' existing copies are never overwritten.",
   args: {
-    modpack: { type: "string", description: "Modpack directory name (e.g. 'DragonTech')." },
+    modpack: { type: "string", description: "Modpack directory name (e.g. 'AllTheTech')." },
     relPath: { type: "string", description: "Path under config/, e.g. 'jei/jei.toml' or 'minecraft/options.txt'." },
     content: { type: "string", description: "File content to write. Omit to use sourceFile instead." },
     sourceFile: { type: "string", description: "Absolute path to a file to copy into the pack (alternative to content)." },

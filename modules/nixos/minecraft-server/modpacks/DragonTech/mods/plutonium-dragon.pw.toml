@@ -1,8 +1,0 @@
-name = "Plutonium Dragon (Dragon Survival Mod)"
-filename = "Pu_Dragon-1.21.1-v0.0.4-03.08.2026.jar"
-side = "both"
-
-[download]
-url = "https://edge.forgecdn.net/files/8570/392/Pu_Dragon-1.21.1-v0.0.4-03.08.2026.jar"
-hash-format = "sha256"
-hash = "1f3c3d6af714393fdefe7c19eedd4cf86c192d67daef8ab6f616a6b7fd84b55c"

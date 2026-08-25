@@ -1,0 +1,240 @@
+{
+	default_hide_dependency_lines: false
+	default_quest_shape: ""
+	filename: "endgame"
+	group: "4A695DE23DC9359F"
+	icon: {
+		id: "minecraft:nether_star"
+	}
+	id: "F60718293A4B5001"
+	images: [ ]
+	order_index: 5
+	quest_links: [ ]
+	quests: [
+		{
+			id: "F60718293A4B5002"
+			rewards: [{
+				id: "F60718293A4B5020"
+				type: "xp"
+				xp: 500
+			}]
+			tasks: [{
+				id: "F60718293A4B5021"
+				item: {
+					count: 1
+					id: "minecraft:nether_star"
+				}
+				type: "item"
+			}]
+			x: 0.0d
+			y: 0.0d
+		}
+		{
+			dependencies: ["F60718293A4B5002"]
+			id: "F60718293A4B5003"
+			rewards: [{
+				id: "F60718293A4B5022"
+				type: "xp"
+				xp: 600
+			}]
+			tasks: [{
+				id: "F60718293A4B5023"
+				item: {
+					count: 1
+					id: "minecraft:elytra"
+				}
+				type: "item"
+			}]
+			x: 1.0d
+			y: 0.0d
+		}
+		{
+			dependencies: ["F60718293A4B5003"]
+			id: "F60718293A4B5004"
+			rewards: [{
+				id: "F60718293A4B5024"
+				type: "xp"
+				xp: 700
+			}]
+			tasks: [{
+				id: "F60718293A4B5025"
+				item: {
+					count: 1
+					id: "create:brass_rocket"
+				}
+				type: "item"
+			}]
+			x: 2.0d
+			y: 0.0d
+		}
+		{
+			dependencies: ["F60718293A4B5004"]
+			id: "F60718293A4B5005"
+			rewards: [{
+				id: "F60718293A4B5026"
+				type: "xp"
+				xp: 800
+			}]
+			tasks: [{
+				id: "F60718293A4B5027"
+				item: {
+					count: 1
+					id: "mekanism:mekasuit_helmet"
+				}
+				type: "item"
+			}, {
+				id: "F60718293A4B5028"
+				item: {
+					count: 1
+					id: "mekanism:mekasuit_bodyarmor"
+				}
+				type: "item"
+			}, {
+				id: "F60718293A4B5029"
+				item: {
+					count: 1
+					id: "mekanism:mekasuit_pants"
+				}
+				type: "item"
+			}, {
+				id: "F60718293A4B502A"
+				item: {
+					count: 1
+					id: "mekanism:mekasuit_boots"
+				}
+				type: "item"
+			}]
+			x: 3.0d
+			y: 0.0d
+		}
+		{
+			dependencies: ["F60718293A4B5005"]
+			id: "F60718293A4B5006"
+			rewards: [{
+				id: "F60718293A4B502B"
+				type: "xp"
+				xp: 1000
+			}]
+			tasks: [{
+				id: "F60718293A4B502C"
+				item: {
+					count: 1
+					id: "mekanism:mekajeletrodyne_rocket"
+				}
+				type: "item"
+			}]
+			x: 4.0d
+			y: 0.0d
+		}
+		{
+			dependencies: ["F60718293A4B5006"]
+			id: "F60718293A4B5007"
+			rewards: [{
+				id: "F60718293A4B502D"
+				type: "xp"
+				xp: 1200
+			}]
+			tasks: [{
+				id: "F60718293A4B502E"
+				item: {
+					count: 1
+					id: "mekanism:teleporter_frame"
+				}
+				type: "item"
+			}]
+			x: 5.0d
+			y: 0.0d
+		}
+		{
+			dependencies: ["F60718293A4B5007"]
+			id: "F60718293A4B5008"
+			rewards: [{
+				id: "F60718293A4B502F"
+				type: "xp"
+				xp: 1500
+			}]
+			tasks: [{
+				id: "F60718293A4B5030"
+				item: {
+					count: 1
+					id: "mekanism:jetpack"
+				}
+				type: "item"
+			}]
+			x: 6.0d
+			y: 0.0d
+		}
+		{
+			dependencies: ["F60718293A4B5008"]
+			id: "F60718293A4B5009"
+			rewards: [{
+				id: "F60718293A4B5031"
+				type: "xp"
+				xp: 2000
+			}]
+			tasks: [{
+				id: "F60718293A4B5032"
+				item: {
+					count: 1
+					id: "mekanism:hdpe_elytra"
+				}
+				type: "item"
+			}]
+			x: 7.0d
+			y: 0.0d
+		}
+		{
+			dependencies: ["F60718293A4B5009"]
+			id: "F60718293A4B500A"
+			rewards: [{
+				id: "F60718293A4B5033"
+				type: "xp"
+				xp: 2500
+			}]
+			tasks: [{
+				id: "F60718293A4B5034"
+				item: {
+					count: 1
+					id: "mekanismgenerators:fusion_reactor_controller"
+				}
+				type: "item"
+			}]
+			x: 8.0d
+			y: 0.0d
+		}
+		{
+			dependencies: ["F60718293A4B500A"]
+			id: "F60718293A4B500B"
+			rewards: [{
+				id: "F60718293A4B5035"
+				type: "xp"
+				xp: 3000
+			}]
+			tasks: [{
+				id: "F60718293A4B5036"
+				item: {
+					count: 1
+					id: "mekanismgenerators:fusion_reactor_controller"
+				}
+				type: "item"
+			}]
+			x: 9.0d
+			y: 0.0d
+		}
+		{
+			dependencies: ["F60718293A4B500B"]
+			id: "F60718293A4B500C"
+			rewards: [{
+				id: "F60718293A4B5037"
+				type: "xp"
+				xp: 5000
+			}]
+			tasks: [{
+				id: "F60718293A4B5038"
+				type: "checkmark"
+			}]
+			x: 10.0d
+			y: 0.0d
+		}
+	]
+}

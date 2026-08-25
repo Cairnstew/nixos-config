@@ -1,8 +1,0 @@
-name = "Slime Dragon - Dragon Survival Addon"
-filename = "slime_dragon_addon-1.0.0-neoforge-1.21.1.jar"
-side = "both"
-
-[download]
-url = "https://edge.forgecdn.net/files/8302/470/slime_dragon_addon-1.0.0-neoforge-1.21.1.jar"
-hash-format = "sha256"
-hash = "a10ea49d41d150113719364986a2ffd264826a364bea01d75d1653cc6feb9f6c"

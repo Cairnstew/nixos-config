@@ -44,7 +44,7 @@ Shaderpacks live in `shaderpacks/*.pw.toml` with `side = "client"`. They are
 - **Server**: the server never sees shaderpacks — `packSubdirs` and side
   filtering exclude `shaderpacks/` from the server package.
 
-> Example: `DragonTech/shaderpacks/` contains complementary-reimagined,
+> Example: `AllTheTech/shaderpacks/` contains complementary-reimagined,
 > complementary-unbound, bsl-shaders, bliss-shader — all `side = "client"`.
 
 ## Available tools / commands
@@ -316,7 +316,7 @@ example).
    (`my.services.minecraftServer.servers.<name>.enable = true` in a host config).
 2. `mc-server list` → confirm the server is registered.
 3. `mc-server <name> boot` → start and wait for `Done (Ns)!`. **A large pack's
-   first boot is SLOW** — 200+ mods can take 10+ minutes (DragonTech: ~675s on a
+   first boot is SLOW** — 200+ mods can take 10+ minutes (AllTheTech: ~675s on a
    fresh world before tuning; after RoadWeaver preload-radius tuning ~107s).
    Subsequent boots ~85s. The tool waits up to 20 min by default. Do not assume
    the server is wedged just because it's still loading — and if it clears the
@@ -376,8 +376,8 @@ example).
   支持主世界，回退到 CPU: unsupported density node: com.ishland.c2me.opts.df...`).
   With the CPU fallback, the `config/roadweaver/roadweaver.json` preload radii
   are the lever: `predictRadiusChunks 256` + plan radii `128` spun ~4 CPU cores
-  for hours after boot on DragonTech (looked like a hang). Tune them down for
-  fresh-world boots (DragonTech uses 32/16/16, `initialGenerationThreads 6`).
+  for hours after boot on AllTheTech (looked like a hang). Tune them down for
+  fresh-world boots (AllTheTech uses 32/16/16, `initialGenerationThreads 6`).
 - **Pack config changes do NOT reach an already-booted server's live config.**
   `packwizStartPre` seeds `config/` and `defaultconfigs/` with
   `rsync --ignore-existing` (config.nix:182) — a pack-side config edit only

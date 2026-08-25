@@ -252,7 +252,7 @@ async function monitorLoop(
   const logPath = launched.logDir ? join(launched.logDir, "latest.log") : "";
   const start = Date.now();
   let lastLen = 0;
-  // Dedicated-server first boot of a large pack (200+ mods) is SLOW: DragonTech
+  // Dedicated-server first boot of a large pack (200+ mods) is SLOW: AllTheTech
   // took ~675s on a fresh world. Default wait is 20 min for a server, 5 min for
   // a client instance.
   const waitMs = timeout > 0 ? timeout * 1000 : launched.kind === "server" ? 1_200_000 : 300_000;
@@ -382,7 +382,7 @@ export default {
   args: {
     modpack: {
       type: "string",
-      description: "Modpack name (e.g. 'DragonTech'). Maps to the Prism instance and/or the minecraft-server unit.",
+      description: "Modpack name (e.g. 'AllTheTech'). Maps to the Prism instance and/or the minecraft-server unit.",
     },
     server: {
       type: "string",
@@ -414,7 +414,7 @@ export default {
       return appendRunLog(args.note);
     }
     if (!args.modpack) {
-      return "mc-run: provide a modpack name (e.g. 'DragonTech').";
+      return "mc-run: provide a modpack name (e.g. 'AllTheTech').";
     }
     return run(repoRoot(), args.modpack, args.server, args.dataDir, args.forceNative, args.timeout || 0, args.monitor || "");
   },

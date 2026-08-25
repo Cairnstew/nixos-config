@@ -147,13 +147,13 @@ add, and are they sound" review step.
 ## Example
 
 ```
-user: what structures does DragonTech add, and does anything override vanilla?
+user: what structures does AllTheTech add, and does anything override vanilla?
 
-1. packwiz-structures DragonTech
+1. packwiz-structures AllTheTech
    → per-mod + per-datapack inventory (365 structures, 104 sets across the pack)
    → summary flags 14 vanilla-overlapping structures (minecraft:stronghold,
      minecraft:village_taiga, …) and 29 set-less structures
-2. Drill into the vanilla overrides: packwiz-structures DragonTech
+2. Drill into the vanilla overrides: packwiz-structures AllTheTech
    → identify the owning mod/datapack for each overlap
 3. report: pack-wide inventory summary, the vanilla redefinitions and their
    sources, missing references (none), and that set-less structures are

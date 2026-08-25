@@ -1,0 +1,13 @@
+name = "Create: More Drill Heads"
+filename = "createmoredrillheads-1.2.0-1.21.1.jar"
+side = "both"
+
+[download]
+url = "https://cdn.modrinth.com/data/9MEmQKkF/versions/CSXCxG3F/createmoredrillheads-1.2.0-1.21.1.jar"
+hash-format = "sha512"
+hash = "862e78a4ac9a93b3e4174b106dfd52f6be840abb78dc689947a65c530276b9d58cc6745d958bbff61543009855f5f64d57a1e7b0180f2ec7d2d4963a3d185fce"
+
+[update]
+[update.modrinth]
+mod-id = "9MEmQKkF"
+version = "CSXCxG3F"

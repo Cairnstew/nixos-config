@@ -5,7 +5,7 @@
 { ... }:
 {
   imports = [
-    ./dragentech.nix
+    ./allthetech.nix
     ./prominence.nix
   ];
 }

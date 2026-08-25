@@ -15,7 +15,7 @@ export default {
   description:
     "Pin or unpin a mod in a packwiz modpack. Pin = the mod is NEVER auto-updated (even `update <mod>` fails until unpinned). Use to freeze a version that a config override or datapack depends on.",
   args: {
-    modpack: { type: "string", description: "Modpack directory name (e.g. 'DragonTech')." },
+    modpack: { type: "string", description: "Modpack directory name (e.g. 'AllTheTech')." },
     mod: { type: "string", description: "Mod name or .pw.toml filename to pin/unpin (list first to get exact names)." },
     action: { type: "string", description: "'pin', 'unpin', or 'status' (default pin)." },
   },

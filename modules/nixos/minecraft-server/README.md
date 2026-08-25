@@ -65,23 +65,23 @@ never starts it. Enable the servers you want from a host config or a profile:
 
 ```nix
 # host or profile
-my.services.minecraftServer.servers.dragentech.enable = true;
+my.services.minecraftServer.servers.allthetech.enable = true;
 # or, from a profile (e.g. my.profiles.gaming.minecraftServers):
-my.profiles.gaming.minecraftServers = [ "dragentech" ];
+my.profiles.gaming.minecraftServers = [ "allthetech" ];
 ```
 
-Example definition (`servers/dragentech.nix`):
+Example definition (`servers/allthetech.nix`):
 
 ```nix
 { lib, pkgs, ... }:
 {
-  my.services.minecraftServer.servers.dragentech = {
+  my.services.minecraftServer.servers.allthetech = {
     enable = lib.mkDefault false;
     package = pkgs.vanillaServers.vanilla-1_21_1;
     jvmOpts = "-Xmx2G -Xms1G";
     port = 25565;
     serverProperties = {
-      motd = "A DragonTech Server";
+      motd = "An AllTheTech Server";
       max-players = 4;
     };
   };
@@ -104,9 +104,9 @@ exposes the packwiz CLI as `.#packwiz` and one checksum app per pack; the
 `just` recipes wrap them so you don't have to chase paths:
 
 ```bash
-just packwiz DragonTech init                 # create pack.toml + index.toml
-just packwiz DragonTech modrinth add <mod>   # add mods from Modrinth
-just packwiz DragonTech update --all         # bump mods
+just packwiz AllTheTech init                 # create pack.toml + index.toml
+just packwiz AllTheTech modrinth add <mod>   # add mods from Modrinth
+just packwiz AllTheTech update --all         # bump mods
 ```
 
 (`just packwiz <pack> ...` cd's into the modpack dir and runs
@@ -122,7 +122,7 @@ packwiz verifies mods with SHA-1, which Nix fetchers can't use, so packwiz2nix
 needs a SHA-256 `checksums.json`. Regenerate it whenever the pack changes:
 
 ```bash
-just packwiz-checksums DragonTech            # writes checksums.json (commit it!)
+just packwiz-checksums AllTheTech            # writes checksums.json (commit it!)
 ```
 
 This downloads every mod jar (at runtime, when the app runs) and records its
@@ -134,7 +134,7 @@ SHA-256 — no `--impure` needed, and `nix flake check` stays green. Commit
 > fails. Convert them to Modrinth (`packwiz modrinth add <slug>`) or to a direct
 > URL (`packwiz url add <url>` — the CurseForge CDN URL is derivable from the
 > mod's file-id: `https://edge.forgecdn.net/files/<id//1000>/<id%1000>/<filename>`).
-> The DragonTech was fully converted this way (255/255 have URLs).
+> The AllTheTech pack was fully converted this way (every mod has a URL).
 
 > **Gotcha:** Nix flakes only snapshot **git-tracked** files, so a modpack's
 > `packwiz-checksums-<pack>` app only appears once its files are `git add`ed
@@ -147,8 +147,8 @@ SHA-256 — no `--impure` needed, and `nix flake check` stays green. Commit
 my.services.minecraftServer.servers.my-server = {
   enable = true;
   package = pkgs.fabricServers.fabric-1_21_1;  # must match the pack's loader
-  packwiz = ../modpacks/DragonTech;           # relative to the server def
-  # packwiz = (flake inputs self) + "/modules/nixos/minecraft-server/modpacks/DragonTech";
+  packwiz = ../modpacks/AllTheTech;         # relative to the server def
+  # packwiz = (flake inputs self) + "/modules/nixos/minecraft-server/modpacks/AllTheTech";
 };
 ```
 
@@ -190,12 +190,12 @@ but you can also do it by hand, without touching the rest of the system:
 # Build + install client content into a Prism instance dir. Default dataDir is
 # config.minecraft.dataDir (external media drive, see config.nix) or
 # ~/.local/share/PrismLauncher if unset. Optional 2nd arg = server to auto-join.
-nix run .#modpack-build-DragonTech
-nix run .#modpack-build-DragonTech /mnt/media/Modding/PrismLauncher server.tail685690.ts.net:25565
+nix run .#modpack-build-AllTheTech
+nix run .#modpack-build-AllTheTech /mnt/media/Modding/PrismLauncher server.tail685690.ts.net:25565
 
 # Full manual update: regenerate checksums.json, rebuild, reinstall.
 # Run from the repo root (it stages checksums.json, so commit after).
-nix run .#modpack-update-DragonTech [dataDir] [server]
+nix run .#modpack-update-AllTheTech [dataDir] [server]
 ```
 
 Shortcuts: `just modpack-build <pack> [dataDir]`, `just modpack-update <pack> [dataDir]`.
