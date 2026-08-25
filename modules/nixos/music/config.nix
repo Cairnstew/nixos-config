@@ -79,7 +79,9 @@ let
           if isYtdlp then ''
             set -euo pipefail
             export PATH='${pkgs.yt-dlp}/bin':$PATH
-            export HOME="$TMPDIR"
+            # systemd does not set TMPDIR for services, so fall back to /tmp
+            # (the Nix-build copy in playlist-builder.nix can keep $TMPDIR).
+            export HOME="''${TMPDIR:-/tmp}"
             TARGET='${target}'
             mkdir -p "$TARGET"
             ${pkgs.python3}/bin/python3 ${runtimeInstaller} '${playlistsDir}/${name}' "$TARGET"
