@@ -141,6 +141,19 @@ assertions in `tests.nix` (Decision 1: `build` + `learning-promoter` may allow
 triage roles (`scout-skeptical`, `qa-verification`, `adversarial`) must deny it,
 so a learning never self-certifies.
 
+### Hotfixing the watcher/launcher live
+
+The deployed watcher lives are **read-only `/nix/store` symlinks**: the launcher
+(`~/.local/share/opencode/learning-promoter-launcher.py`, a `home.file` entry)
+and the systemd user units (`learning-promoter-watcher.service`/`.timer`,
+`opencode-serve.service`) are symlinks into
+`/nix/store/...-home-manager-files/`. Editing them in place fails with
+`Read-only file system` / `permission denied`. To hotfix one live, `rm` the
+symlink and write a real file in its place; the **durable fix goes in the repo**
+(`config.nix` + `tools/learning-promoter-launcher.py`) because the next rebuild
+recreates the store symlink from the repo. See the GOTCHAS.md entry for the full
+pattern.
+
 ## Self-Improvement
 
 Follow the self-improvement protocol in `../../../AGENTS.md` §11: at the end of
