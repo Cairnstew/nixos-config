@@ -2,7 +2,8 @@
 	default_hide_dependency_lines: false
 	default_quest_shape: ""
 	filename: "digital_age"
-	group: "4A695DE23DC9359F"
+	title: "Digital Age"
+	hide_quest_until_deps_complete: true
 	icon: {
 		id: "ae2:controller"
 	}
@@ -12,6 +13,7 @@
 	quest_links: [ ]
 	quests: [
 		{
+			dependencies: ["D4E5F6071829301F"]
 			id: "E5F6071829404002"
 			rewards: [{
 				id: "E5F6071829404020"

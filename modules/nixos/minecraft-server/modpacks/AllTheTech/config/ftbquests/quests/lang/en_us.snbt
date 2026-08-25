@@ -1,37 +1,5 @@
 {
 	quest: {
-		"019105FA82C64A8E": {
-			description: "Gather redstone to power Create shafts, copper for wiring, and zinc for andesite alloy. These three resources are the foundation of ALL tech trees."
-			name: "Redstone Gathering"
-		}
-		"019105FA82C64A8F": {
-			description: "Craft andesite alloy — the first Create component. Mekanism will use it for enriched iron, and AE2 needs it for processors."
-			name: "Andesite Alloy"
-		}
-		"019105FA82C64A90": {
-			description: "Craft brass ingots using Create's mixing. Brass is essential for Create's precision mechanisms AND Mekanism's advanced circuits."
-			name: "Brass Ingots"
-		}
-		"019105FA82C64A91": {
-			description: "Create enriched iron for Mekanism. This same ore doubling process feeds both Mekanism machines AND Create's kinetic processing."
-			name: "Enriched Iron"
-		}
-		"019105FA82C64A92": {
-			description: "Craft a shaft — Create's rotational transfer component. This same shaft powers Mekanism's wind turbines and AE2's energy acceptors."
-			name: "Create Shaft"
-		}
-		"019105FA82C64A93": {
-			description: "Craft a brass casing — Create's housing component. This casing is used in BOTH Create machines AND Mekanism's energy cubes."
-			name: "Brass Casing"
-		}
-		"019105FA82C64A94": {
-			description: "Craft a steel casing — Mekanism's machine housing. This casing is used in BOTH Mekanism machines AND Create's precision mechanisms."
-			name: "Steel Casing"
-		}
-		"019105FA82C64A95": {
-			description: "You now have access to all three tech trees! Create for kinetic power, Mekanism for machines, and AE2 for digital storage."
-			name: "Tech Foundations"
-		}
 		"C3D4E5F607182002": {
 			description: "Craft 4 shafts. Create shafts transfer rotational power AND serve as components in Mekanism's wind turbines and AE2's energy cables."
 			name: "Create Shafts"
@@ -539,28 +507,6 @@
 		"C3D4E5F60718207F": {
 			description: "Automate Create: Ultimate Factory's advanced recipes — 30+ balanced automation recipes that turn every production line into a mega-factory."
 			name: "Ultimate Factory"
-		}
-	}
-	chapter: {
-		"AA00000000000001": {
-			description: "All three tech trees start here. Learn Create, Mekanism, and AE2 basics while building your first machines."
-			name: "Tech Foundations"
-		}
-		"C3D4E5F607182001": {
-			description: "Kinetic power, mechanical automation, and train systems. Cross-references Mekanism for energy, AE2 for digital control, IE for heavy machinery, and PneumaticCraft for pressurized automation."
-			name: "Create Automation"
-		}
-		"D4E5F60718293001": {
-			description: "Machines, energy production, and nuclear power. Cross-references Create for kinetic input, AE2 for digital storage, and Powah! for RF power systems."
-			name: "Mekanism & Power"
-		}
-		"E5F6071829404001": {
-			description: "Digital storage, autocrafting, and network management. Cross-references Create for precision mechanisms, Mekanism for energy, IE for heavy machinery, PneumaticCraft for pressurized systems, and Powah! for RF power."
-			name: "Digital Age"
-		}
-		"F607182940515001": {
-			description: "The ultimate endgame. Master all three tech trees and combine them into one mega-factory."
-			name: "Endgame"
 		}
 	}
 }

@@ -2,7 +2,8 @@
 	default_hide_dependency_lines: false
 	default_quest_shape: ""
 	filename: "mekanism_power"
-	group: "4A695DE23DC9359F"
+	title: "Mekanism Power"
+	hide_quest_until_deps_complete: true
 	icon: {
 		id: "mekanism:steel_casing"
 	}
@@ -12,6 +13,7 @@
 	quest_links: [ ]
 	quests: [
 		{
+			dependencies: ["C3D4E5F60718201A"]
 			id: "D4E5F60718293002"
 			rewards: [{
 				id: "D4E5F60718293020"

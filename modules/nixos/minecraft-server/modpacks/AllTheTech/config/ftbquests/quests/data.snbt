@@ -1,4 +1,5 @@
 {
+	title: "AllTheTech"
 	default_quest_shape: "circle"
 	hide_dependency_lines_until: 0
 	optimize_for_multiple_scripts: false
