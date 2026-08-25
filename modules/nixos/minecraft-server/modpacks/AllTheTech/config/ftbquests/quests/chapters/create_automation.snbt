@@ -3,7 +3,6 @@
 	default_quest_shape: ""
 	filename: "create_automation"
 	title: "Create Automation"
-	hide_quest_until_deps_complete: true
 	icon: {
 		id: "create:andesite_alloy"
 	}
@@ -223,7 +222,7 @@
 				id: "C3D4E5F607182036"
 				item: {
 					count: 1
-					id: "create:electronic_circuit"
+					id: "create:brass_sheet"
 				}
 				type: "item"
 			}]
@@ -490,7 +489,7 @@
 				id: "C3D4E5F607182054"
 				item: {
 					count: 8
-					id: "immersiveengineering:alu_ingot"
+					id: "immersiveengineering:ingot_aluminum"
 				}
 				type: "item"
 			}]
@@ -528,7 +527,7 @@
 				id: "C3D4E5F607182058"
 				item: {
 					count: 1
-					id: "immersiveengineering:blastfurnacebrick"
+					id: "immersiveengineering:blastbrick"
 				}
 				type: "item"
 			}]
@@ -585,7 +584,7 @@
 				id: "C3D4E5F60718205E"
 				item: {
 					count: 8
-					id: "immersiveengineering:conveyor"
+					id: "immersiveengineering:conveyor_basic"
 				}
 				type: "item"
 			}]
@@ -604,7 +603,7 @@
 				id: "C3D4E5F607182060"
 				item: {
 					count: 4
-					id: "immersiveengineering:connector"
+					id: "immersiveengineering:connector_mv"
 				}
 				type: "item"
 			}]
@@ -623,7 +622,7 @@
 				id: "C3D4E5F607182062"
 				item: {
 					count: 1
-					id: "immersiveengineering:relay"
+					id: "immersiveengineering:connector_mv_mv_relay"
 				}
 				type: "item"
 			}]

@@ -3,7 +3,6 @@
 	default_quest_shape: ""
 	filename: "endgame"
 	title: "Endgame"
-	hide_quest_until_deps_complete: true
 	icon: {
 		id: "minecraft:nether_star"
 	}
@@ -62,7 +61,7 @@
 				id: "F60718293A4B5025"
 				item: {
 					count: 1
-					id: "create:brass_rocket"
+					id: "create:cart_assembler"
 				}
 				type: "item"
 			}]
@@ -121,7 +120,7 @@
 				id: "F60718293A4B502C"
 				item: {
 					count: 1
-					id: "mekanism:mekajeletrodyne_rocket"
+					id: "mekanism:meka_tool"
 				}
 				type: "item"
 			}]

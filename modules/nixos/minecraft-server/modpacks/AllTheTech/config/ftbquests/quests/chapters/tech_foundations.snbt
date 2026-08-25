@@ -3,7 +3,6 @@
 	default_quest_shape: ""
 	filename: "tech_foundations"
 	title: "Tech Foundations"
-	hide_quest_until_deps_complete: true
 	icon: {
 		id: "minecraft:redstone"
 	}
@@ -77,7 +76,7 @@
 				id: "AA00000000000017"
 				item: {
 					count: 4
-					id: "minecraft:zinc_ingot"
+					id: "create:zinc_ingot"
 				}
 				type: "item"
 			}]

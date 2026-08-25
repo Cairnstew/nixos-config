@@ -3,7 +3,6 @@
 	default_quest_shape: ""
 	filename: "mekanism_power"
 	title: "Mekanism Power"
-	hide_quest_until_deps_complete: true
 	icon: {
 		id: "mekanism:steel_casing"
 	}
@@ -176,7 +175,7 @@
 				id: "D4E5F60718293031"
 				item: {
 					count: 1
-					id: "mekanism:assemblicator"
+					id: "mekanism:formulaic_assemblicator"
 				}
 				type: "item"
 			}]
@@ -214,7 +213,7 @@
 				id: "D4E5F60718293035"
 				item: {
 					count: 1
-					id: "mekanism:heat_generator"
+					id: "mekanismgenerators:heat_generator"
 				}
 				type: "item"
 			}]
@@ -233,7 +232,7 @@
 				id: "D4E5F60718293037"
 				item: {
 					count: 1
-					id: "mekanism:solar_generator"
+					id: "mekanismgenerators:solar_generator"
 				}
 				type: "item"
 			}]
@@ -252,7 +251,7 @@
 				id: "D4E5F60718293039"
 				item: {
 					count: 1
-					id: "mekanism:gas_generator"
+					id: "mekanismgenerators:gas_burning_generator"
 				}
 				type: "item"
 			}]
@@ -271,7 +270,7 @@
 				id: "D4E5F6071829303B"
 				item: {
 					count: 1
-					id: "mekanism:wind_generator"
+					id: "mekanismgenerators:wind_generator"
 				}
 				type: "item"
 			}]
@@ -309,7 +308,7 @@
 				id: "D4E5F6071829303F"
 				item: {
 					count: 1
-					id: "mekanism:fission_reactor_controller"
+					id: "mekanismgenerators:fission_reactor_controller"
 				}
 				type: "item"
 			}]
@@ -328,7 +327,7 @@
 				id: "D4E5F60718293041"
 				item: {
 					count: 1
-					id: "mekanism:fusion_reactor_controller"
+					id: "mekanismgenerators:fusion_reactor_controller"
 				}
 				type: "item"
 			}]

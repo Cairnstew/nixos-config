@@ -3,7 +3,6 @@
 	default_quest_shape: ""
 	filename: "digital_age"
 	title: "Digital Age"
-	hide_quest_until_deps_complete: true
 	icon: {
 		id: "ae2:controller"
 	}
@@ -347,7 +346,7 @@
 				id: "E5F6071829404043"
 				item: {
 					count: 1
-					id: "create:electronic_circuit"
+					id: "create:brass_sheet"
 				}
 				type: "item"
 			}]
@@ -385,7 +384,7 @@
 				id: "E5F6071829404047"
 				item: {
 					count: 1
-					id: "mekanism:assemblicator"
+					id: "mekanism:formulaic_assemblicator"
 				}
 				type: "item"
 			}]
@@ -423,7 +422,7 @@
 				id: "E5F6071829404051"
 				item: {
 					count: 1
-					id: "immersiveengineering:alu_ingot"
+					id: "immersiveengineering:ingot_aluminum"
 				}
 				type: "item"
 			}]
@@ -442,7 +441,7 @@
 				id: "E5F6071829404053"
 				item: {
 					count: 1
-					id: "immersiveengineering:electronic_circuit"
+					id: "immersiveengineering:circuit_board"
 				}
 				type: "item"
 			}]
@@ -518,7 +517,7 @@
 				id: "E5F607182940405B"
 				item: {
 					count: 1
-					id: "pneumaticcraft:assembly_program"
+					id: "pneumaticcraft:assembly_program_drill"
 				}
 				type: "item"
 			}]
