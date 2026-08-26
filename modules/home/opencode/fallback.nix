@@ -39,10 +39,17 @@ let
     (lib.flatten (lib.attrValues cfg.modelFallback.chains));
 
   # jq filter: input is the cache file { usage: {...} }; $chain is the ordered
-  # chain array; $now is unix seconds from the selector's clock. NOTE:
-  # `. as $doc` is required because inside select() the current input is the
-  # chain ENTRY — a bare `.usage` there would be null, and jq treats any
-  # number >= null as true, silently disabling every cap (bug #4 class).
+  # chain array; $now is unix seconds from the selector's clock.
+  #
+  # The program lives in model-select.jq and is loaded at RUNTIME via
+  # `jq -f <store-path>` (not interpolated into the generated shell script).
+  # This is deliberate: interpolating the program text inside a single-quoted
+  # bash argument silently broke the moment the program contained an
+  # apostrophe ("entry's" — caught live 2026-08-26, self-improve-usage
+  # Tier 1 Task 2), and the old inline form required a "no apostrophes by
+  # construction" invariant nobody could enforce. A store path needs no
+  # quoting, and the nixtest suite (tests/opencode-model-fallback_test.nix)
+  # runs the exact same file.
   #
   # Pacing (D1–D4): for entries with pacing.enable on the weekly/monthly
   # windows, periodStart derives from resetsAt alone (weekly −7d exact,
@@ -50,30 +57,7 @@ let
   # buffer), inert while elapsed% < floor, and the entry stays subject to its
   # static caps as hard ceilings: eligible iff percent <= min(static, pace).
   # Rolling never consults pacing fields.
-  resolveJq = ''
-    . as $doc
-    | ($doc.usage.weekly.resetsAt | sub("[.][0-9]+Z$"; "Z") | fromdateiso8601) as $wEnd
-    | ($doc.usage.monthly.resetsAt | sub("[.][0-9]+Z$"; "Z") | fromdateiso8601) as $mEnd
-    | def paceCap(entry; winEnd; periodSecs):
-        ((((($now - (winEnd - periodSecs)) / periodSecs) * 100)
-           | (if . < 0 then 0 elif . > 100 then 100 else . end)) as $elPct
-        | if $elPct < (entry.pacing.floor // 5) then null
-          else ([($elPct + (entry.pacing.buffer // 10)), 100] | min)
-          end);
-      def windowOk(e; staticField; usagePct; winEnd; periodSecs):
-        (e[staticField]) as $staticCap
-        | ($staticCap == null)
-          or (($staticCap >= usagePct)
-              and ((paceCap(e; winEnd; periodSecs)) as $pc
-                   | ($pc == null) or (usagePct <= $pc)));
-      [$chain[]
-       | select((.model != null)
-                and (windowOk(.; "maxWeeklyPercent"; $doc.usage.weekly.percent; $wEnd; 604800))
-                and (windowOk(.; "maxMonthlyPercent"; $doc.usage.monthly.percent; $mEnd; 2592000))
-                and ((.maxRollingPercent == null)
-                     or (.maxRollingPercent >= $doc.usage.rolling.percent)))]
-      | (.[0].model) // empty
-  '';
+  resolveJqFile = ./model-select.jq;
 in
 {
   # ── Chains config → ~/.config/opencode/model-fallback.json ────────────────
@@ -134,13 +118,13 @@ in
             [ -r "$CACHE_FILE" ] || { echo "opencode-model-select: missing usage cache $CACHE_FILE" >&2; exit 3; }
 
             # Resolve one chain (JSON array in $1) against the usage snapshot.
-            # NOTE: the program is single-quoted so bash never expands $doc/$chain;
-            # it contains no apostrophes by construction. NOW supplies the selector's
-            # own clock for pace-based caps.
+            # The program is loaded with -f from its store path (see
+            # resolveJqFile above for why it is not interpolated into this
+            # script). NOW supplies the selector's own clock for pace caps.
             resolve_chain() {
               local now
               now=$(date +%s)
-              jq -re '${resolveJq}' --argjson chain "$1" --argjson now "$now" "$CACHE_FILE" 2>/dev/null || true
+              jq -re -f ${resolveJqFile} --argjson chain "$1" --argjson now "$now" "$CACHE_FILE" 2>/dev/null || true
             }
 
             # Last entry of a chain is the always-eligible safety net by convention;
