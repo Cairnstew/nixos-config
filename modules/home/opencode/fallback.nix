@@ -39,41 +39,26 @@ let
     (lib.flatten (lib.attrValues cfg.modelFallback.chains));
 
   # jq filter: input is the cache file { usage: {...} }; $chain is the ordered
-  # chain array; $now is unix seconds from the selector's clock. NOTE:
-  # `. as $doc` is required because inside select() the current input is the
-  # chain ENTRY — a bare `.usage` there would be null, and jq treats any
-  # number >= null as true, silently disabling every cap (bug #4 class).
+  # chain array; $now is unix seconds from the selector's clock.
   #
-  # Pacing (D1–D4): for entries with pacing.enable on the weekly/monthly
-  # windows, periodStart derives from resetsAt alone (weekly −7d exact,
-  # monthly −30d APPROXIMATE — see README), paceCap = min(100, elapsed% +
-  # buffer), inert while elapsed% < floor, and the entry stays subject to its
-  # static caps as hard ceilings: eligible iff percent <= min(static, pace).
-  # Rolling never consults pacing fields.
-  resolveJq = ''
-    . as $doc
-    | ($doc.usage.weekly.resetsAt | sub("[.][0-9]+Z$"; "Z") | fromdateiso8601) as $wEnd
-    | ($doc.usage.monthly.resetsAt | sub("[.][0-9]+Z$"; "Z") | fromdateiso8601) as $mEnd
-    | def paceCap(entry; winEnd; periodSecs):
-        ((((($now - (winEnd - periodSecs)) / periodSecs) * 100)
-           | (if . < 0 then 0 elif . > 100 then 100 else . end)) as $elPct
-        | if $elPct < (entry.pacing.floor // 5) then null
-          else ([($elPct + (entry.pacing.buffer // 10)), 100] | min)
-          end);
-      def windowOk(e; staticField; usagePct; winEnd; periodSecs):
-        (e[staticField]) as $staticCap
-        | ($staticCap == null)
-          or (($staticCap >= usagePct)
-              and ((paceCap(e; winEnd; periodSecs)) as $pc
-                   | ($pc == null) or (usagePct <= $pc)));
-      [$chain[]
-       | select((.model != null)
-                and (windowOk(.; "maxWeeklyPercent"; $doc.usage.weekly.percent; $wEnd; 604800))
-                and (windowOk(.; "maxMonthlyPercent"; $doc.usage.monthly.percent; $mEnd; 2592000))
-                and ((.maxRollingPercent == null)
-                     or (.maxRollingPercent >= $doc.usage.rolling.percent)))]
-      | (.[0].model) // empty
-  '';
+  # The program lives in model-select.jq and is loaded at RUNTIME via
+  # `jq -f <store-path>` (not interpolated into the generated shell script).
+  # This is deliberate: interpolating the program text inside a single-quoted
+  # bash argument silently broke the moment the program contained an
+  # apostrophe ("entry's" — caught live 2026-08-26, self-improve-usage
+  # Tier 1 Task 2), and the old inline form required a "no apostrophes by
+  # construction" invariant nobody could enforce. A store path needs no
+  # quoting, and the nixtest suite (tests/opencode-model-fallback_test.nix)
+  # runs the exact same file.
+  #
+  # Pacing (D1–D4): ONLY for entries with pacing.enable = true on the
+  # weekly/monthly windows; periodStart derives from resetsAt alone (weekly
+  # −7d exact, monthly −30d APPROXIMATE — see README), paceCap =
+  # min(100, elapsed% + buffer), inert while elapsed% < floor, and the entry
+  # stays subject to its static caps as hard ceilings: eligible iff
+  # percent <= min(static, pace). Entries without the flag are judged on
+  # static caps alone. Rolling never consults pacing fields.
+  resolveJqFile = ./model-select.jq;
 in
 {
   # ── Chains config → ~/.config/opencode/model-fallback.json ────────────────
@@ -134,13 +119,13 @@ in
             [ -r "$CACHE_FILE" ] || { echo "opencode-model-select: missing usage cache $CACHE_FILE" >&2; exit 3; }
 
             # Resolve one chain (JSON array in $1) against the usage snapshot.
-            # NOTE: the program is single-quoted so bash never expands $doc/$chain;
-            # it contains no apostrophes by construction. NOW supplies the selector's
-            # own clock for pace-based caps.
+            # The program is loaded with -f from its store path (see
+            # resolveJqFile above for why it is not interpolated into this
+            # script). NOW supplies the selector's own clock for pace caps.
             resolve_chain() {
               local now
               now=$(date +%s)
-              jq -re '${resolveJq}' --argjson chain "$1" --argjson now "$now" "$CACHE_FILE" 2>/dev/null || true
+              jq -re -f ${resolveJqFile} --argjson chain "$1" --argjson now "$now" "$CACHE_FILE" 2>/dev/null || true
             }
 
             # Last entry of a chain is the always-eligible safety net by convention;
@@ -164,7 +149,11 @@ in
               if [ -z "$winner" ]; then
                 winner=$(last_model_of_chain "$chain")
                 if [ -z "$winner" ]; then
-                  echo "opencode-model-select: chain for agent=''${agent:-default} exhausted; no free-tier terminal — BLOCKED" >&2
+                  # NOTE: report $key (this function's argument), not the
+                  # CLI-level $agent — during --sync-ensemble the CLI var is
+                  # empty and every per-agent BLOCKED used to mislabel itself
+                  # as "agent=default" (caught 2026-08-26, Tier 1 Task 2).
+                  echo "opencode-model-select: chain for agent=''${key:-default} exhausted; no free-tier terminal — BLOCKED" >&2
                   exit 5
                 fi
               fi
@@ -183,11 +172,17 @@ in
 
             # --sync-ensemble: resolve every configured agent and write the project
             # override atomically, preserving unrelated keys already in the file.
+            # NOTE: a BLOCKED/unresolvable agent is skipped and its PREVIOUS
+            # modelsByAgent entry is left in place — the file cannot distinguish
+            # fresh-resolved from carried-over entries. The stderr line below
+            # makes that visible (self-improve-usage Tier 0 §2c secondary wrinkle).
             models_by_agent='{}'
             while IFS= read -r key; do
               [ "$key" = "default" ] && continue
               if m=$(resolve_for_agent "$key"); then
                 models_by_agent=$(jq -cn --argjson acc "$models_by_agent" --arg k "$key" --arg m "$m" '$acc + { ($k): $m }')
+              else
+                echo "opencode-model-select: agent '$key' has no eligible model (rc=$?) — keeping its existing modelsByAgent entry unchanged" >&2
               fi
             done < <(jq -r '.chains | keys[]' "$FALLBACK_CONFIG")
 

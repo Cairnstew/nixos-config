@@ -100,8 +100,17 @@ chains.default = [
 ];
 ```
 
-Semantics (`modules/home/opencode/fallback.nix`, `resolveJq`):
+Semantics (`modules/home/opencode/fallback.nix`, program in
+`modules/home/opencode/model-select.jq`):
 
+- **`pacing.enable = false` (the default) means static caps only** — the
+  flag gates the pace term. BUG FIX 2026-08-26 (self-improve-usage Tier 0
+  §2c / Tier 1 Task 2): the pace term previously applied even when the flag
+  was false, so "shipped disabled" pacing was de-facto always-on and whole
+  chains resolved BLOCKED at moderate usage. Regression test:
+  `tests/opencode-model-fallback_test.nix` (`nix run .#nixtests-run`).
+  Diagnostic signature if a flag-is-not-read bug recurs elsewhere: a chain
+  resolves BLOCKED while ROLLING sits near 0% and every static cap passes.
 - Effective window cap = `min(staticCap, paceCap)`; pacing can only tighten.
 - `paceCap = min(100, elapsedPercent + buffer)`, where
   `elapsedPercent = clamp((now − periodStart) / periodLength × 100, 0, 100)`.
@@ -123,7 +132,8 @@ static caps only. Weekly pacing should be flipped to `enable = true` only
 after tonight-style rollover is observed once (next `weekly.resetsAt` must
 read `2026-08-31T00:00:00Z` verbatim from the API); monthly only after the
 2026-09-19 reset confirms its true period length. The two evidence gates are
-independent.
+independent. (Until 2026-08-26 this paragraph was aspirational — the dead
+flag above meant pacing ran regardless; with the fix it is literally true.)
 
 Boundary behavior is validated against synthetic snapshots at controlled
 times (elapsed 0%, just-under/just-over floor, stale cache past `resetsAt`,

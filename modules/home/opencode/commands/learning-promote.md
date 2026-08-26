@@ -59,6 +59,16 @@ Configuration options:
 
 If the watcher is not enabled, launch manually:
 
+> **ALWAYS pass `-m <model>` explicitly when dispatching `/learning-promote`
+> manually.** The watcher resolves the pipeline's dedicated chain and injects
+> `-m` itself; a bare manual dispatch gets the wrapper's DEFAULT-chain model
+> instead (currently `opencode-go/ox-alpha-free` — a free-tier terminal), which
+> violates the D3 rule that promotion decisions never run on the free tier.
+> Resolve the intended lead first with
+> `opencode-model-select --agent learning-promoter` (exit 5 = chain BLOCKED —
+> do not dispatch) and pass that model:
+> `opencode run --attach http://127.0.0.1:4096 --auto -m "$(opencode-model-select --agent learning-promoter)" /learning-promote`
+
 **Option A: Via the headless server (recommended)**
 ```bash
 # Start the headless server
