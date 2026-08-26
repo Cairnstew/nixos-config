@@ -64,10 +64,11 @@
   # Auto-dispatch the promoter agent via opencode serve when proposed learnings
   # exist. Checks every 1min; reconciles partial/stale verdicts; uses API-based
   # communication (no tmux). Requires opencode-serve.service (auto-started).
-  # Re-enabled 2026-08-24 — was temporarily disabled 2026-08-22 during the
-  # self-improve-limits work; the model-fallback pace caps + blockedTerminal
-  # chain (watcher timer pauses on BLOCKED) now bound runaway spend.
-  my.homeManager.extraConfig.my.programs.opencode.learningPromoterWatcher.enable = true;
+  # DISABLED 2026-08-25 (user decision): learnings accumulate in the queue and
+  # are processed only on demand via a manual `/learning-promote` dispatch.
+  # Re-enable by flipping this to true and rebuilding — see
+  # modules/home/opencode/options.nix learningPromoterWatcher.* for tuning.
+  my.homeManager.extraConfig.my.programs.opencode.learningPromoterWatcher.enable = false;
 
   # ── Location ─────────────────────────────────────────────────────────────
   my.system.location = {
