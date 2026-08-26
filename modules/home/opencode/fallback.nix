@@ -51,12 +51,13 @@ let
   # quoting, and the nixtest suite (tests/opencode-model-fallback_test.nix)
   # runs the exact same file.
   #
-  # Pacing (D1–D4): for entries with pacing.enable on the weekly/monthly
-  # windows, periodStart derives from resetsAt alone (weekly −7d exact,
-  # monthly −30d APPROXIMATE — see README), paceCap = min(100, elapsed% +
-  # buffer), inert while elapsed% < floor, and the entry stays subject to its
-  # static caps as hard ceilings: eligible iff percent <= min(static, pace).
-  # Rolling never consults pacing fields.
+  # Pacing (D1–D4): ONLY for entries with pacing.enable = true on the
+  # weekly/monthly windows; periodStart derives from resetsAt alone (weekly
+  # −7d exact, monthly −30d APPROXIMATE — see README), paceCap =
+  # min(100, elapsed% + buffer), inert while elapsed% < floor, and the entry
+  # stays subject to its static caps as hard ceilings: eligible iff
+  # percent <= min(static, pace). Entries without the flag are judged on
+  # static caps alone. Rolling never consults pacing fields.
   resolveJqFile = ./model-select.jq;
 in
 {
