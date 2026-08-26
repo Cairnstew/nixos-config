@@ -149,7 +149,11 @@ in
               if [ -z "$winner" ]; then
                 winner=$(last_model_of_chain "$chain")
                 if [ -z "$winner" ]; then
-                  echo "opencode-model-select: chain for agent=''${agent:-default} exhausted; no free-tier terminal — BLOCKED" >&2
+                  # NOTE: report $key (this function's argument), not the
+                  # CLI-level $agent — during --sync-ensemble the CLI var is
+                  # empty and every per-agent BLOCKED used to mislabel itself
+                  # as "agent=default" (caught 2026-08-26, Tier 1 Task 2).
+                  echo "opencode-model-select: chain for agent=''${key:-default} exhausted; no free-tier terminal — BLOCKED" >&2
                   exit 5
                 fi
               fi
