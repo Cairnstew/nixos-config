@@ -168,11 +168,17 @@ in
 
             # --sync-ensemble: resolve every configured agent and write the project
             # override atomically, preserving unrelated keys already in the file.
+            # NOTE: a BLOCKED/unresolvable agent is skipped and its PREVIOUS
+            # modelsByAgent entry is left in place — the file cannot distinguish
+            # fresh-resolved from carried-over entries. The stderr line below
+            # makes that visible (self-improve-usage Tier 0 §2c secondary wrinkle).
             models_by_agent='{}'
             while IFS= read -r key; do
               [ "$key" = "default" ] && continue
               if m=$(resolve_for_agent "$key"); then
                 models_by_agent=$(jq -cn --argjson acc "$models_by_agent" --arg k "$key" --arg m "$m" '$acc + { ($k): $m }')
+              else
+                echo "opencode-model-select: agent '$key' has no eligible model (rc=$?) — keeping its existing modelsByAgent entry unchanged" >&2
               fi
             done < <(jq -r '.chains | keys[]' "$FALLBACK_CONFIG")
 
