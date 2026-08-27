@@ -168,7 +168,13 @@ in
           # references config key (open ≥ 1.16 / check release notes)
           # path = "/home/${username}/SillyTavern";
 
-          plugins = lib.mkDefault [ "@hueyexe/opencode-ensemble@0.15.0" ];
+          # Ensemble plugin: NOT installed as an npm package. A vendored,
+          # build-time-patched fork of @hueyexe/opencode-ensemble 0.16.1 is
+          # installed as a local plugin (pluginFiles.opencode-ensemble →
+          # ~/.config/opencode/plugins/opencode-ensemble.js, auto-discovered).
+          # Keep this array free of any ensemble npm spec — a similar-named
+          # local file and an npm spec would BOTH load. See FORK.md.
+          plugins = lib.mkDefault [ ];
 
           # Ensemble plugin config — agents use the paid OpenCode Go DeepSeek V4
           # Flash (opencode-go/ is the Go provider prefix; model id format per

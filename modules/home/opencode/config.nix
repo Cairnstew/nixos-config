@@ -336,6 +336,12 @@ in
           copylast = ./plugins/copylast.ts;
           triage-capture = ./plugins/triage-capture.ts;
           self-improve-guard = ./plugins/self-improve-guard.ts;
+          # Vendored fork of @hueyexe/opencode-ensemble 0.16.1 — replaces the
+          # npm spec (which would double-load with a similar-named local file).
+          # See fork.nix + FORK.md. Loads from the plugins dir as
+          # opencode-ensemble.js (auto-discovered); the npm `plugins` entry in
+          # modules/nixos/homeManager/config.nix must stay empty.
+          opencode-ensemble = import ./fork.nix { inherit pkgs; };
         };
         mcp.nix-graph = {
           enabled = true;
@@ -494,20 +500,28 @@ in
     # ── Local plugin files ──────────────────────────────────────────────────
     # Render each plugin into ~/.config/opencode/plugins/. Source paths ending
     # in `.ts` keep a `.ts` extension so opencode loads them as TypeScript;
-    # everything else (and inline text) renders as `.js`.
+    # everything else (and inline text) renders as `.js`. Derivation sources
+    # (e.g. the vendored ensemble fork, fork.nix) render as `source` too —
+    # builtins.isPath is false for derivations, so test for them explicitly.
     (mkIf (cfg.pluginFiles != { }) {
       home.file = builtins.listToAttrs (mapAttrsToList
         (name: src:
           let
+            isPathLike =
+              builtins.isPath src
+              # Derivations are attrset-valued (builtins.typeOf == "set");
+              # detect them by their outPath attribute rather than isPath,
+              # which is false for them.
+              || (src ? outPath);
             ext =
-              if builtins.isPath src && lib.hasSuffix ".ts" (builtins.baseNameOf src)
+              if isPathLike && lib.hasSuffix ".ts" (builtins.baseNameOf (builtins.toString src))
               then ".ts"
               else ".js";
           in
           {
             name = ".config/opencode/plugins/${name}${ext}";
             value =
-              if builtins.isPath src
+              if isPathLike
               then { source = src; }
               else { text = src; };
           })
