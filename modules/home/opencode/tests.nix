@@ -149,6 +149,16 @@ in
         assertion = cfg.plugins != [ ] -> builtins.length (builtins.filter (p: builtins.isString p) cfg.plugins) == builtins.length cfg.plugins;
         message = "my.programs.opencode.plugins: all entries must be strings (npm package names).";
       }
+      # ── Ensemble fork invariant ──────────────────────────────────────────
+      # opencode-ensemble is vendored as a local plugin fork (pluginFiles,
+      # fork.nix + FORK.md) so the wake-path fix can be built in. An npm spec
+      # for it would load a SECOND copy alongside the local fork (docs: npm +
+      # local similar names both load) — double-loading tools and re-enabling
+      # the unfixed upstream. Enforce the `plugins` array stays free of it.
+      {
+        assertion = !(builtins.elem "@hueyexe/opencode-ensemble" cfg.plugins);
+        message = "my.programs.opencode.plugins: remove '@hueyexe/opencode-ensemble' from the npm plugins array — the ensemble is vendored as a local fork (pluginFiles.opencode-ensemble). A similar-named npm spec and local file BOTH load and would double-register tools. See FORK.md.";
+      }
       # ── Decision 1 invariant (revised): promote-capable agents ─────────
       # build + learning-promoter may reach goals_learning_promote (no-human,
       # team-gated auto-improvement); every triage/reviewer role (scout,

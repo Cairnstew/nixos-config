@@ -14,7 +14,7 @@
 { config, lib, pkgs, flake, ... }:
 
 let
-  inherit (lib) mkIf optionalAttrs;
+  inherit (lib) mkIf;
   cfg = config.my.services.music;
 
   # Playlist declaration dir shipped with this module (the flake source in
@@ -57,43 +57,74 @@ let
         inherit pkgs lib name playlistDir;
       };
 
-  # One oneshot service per enabled playlist.
-  installServices = lib.mapAttrs'
+  # One oneshot service per enabled playlist. yt-dlp installs are LONG (a
+  # first-run download can take hours), so they must NOT be pulled into the
+  # multi-user.target transaction: `start multi-user.target` during any
+  # nixos-rebuild switch would wait on the download and make the activation
+  # unit appear hung. The installer runs detached (not wanted by the target)
+  # and an instant `music-install-<name>-kick` unit starts it with
+  # `systemctl start --no-block`, so boot still installs but never blocks.
+  # `direct` tier installs are seconds (FOD rsync), so they stay inline.
+  installServices = builtins.listToAttrs (lib.flatten (lib.mapAttrsToList
     (name: pl:
       let
         target = if pl.target != null then pl.target else "${cfg.dataDir}/${name}";
         source = playlistSource name;
         isYtdlp = source == "yt-dlp";
         fod = if isYtdlp then null else buildPlaylistFod name;
-      in
-      lib.nameValuePair "music-install-${name}" (optionalAttrs (isYtdlp || fod != null) {
-        description = "Install music playlist ${name} into ${target}";
-        wantedBy = [ "multi-user.target" ];
-        after = [ "local-fs.target" ];
-        serviceConfig = {
-          Type = "oneshot";
-          RemainAfterExit = true;
+        base = {
+          description = "Install music playlist ${name} into ${target}";
+          serviceConfig = {
+            Type = "oneshot";
+            RemainAfterExit = true;
+          };
+          path = [ pkgs.rsync pkgs.coreutils pkgs.python3 pkgs.yt-dlp ];
         };
-        path = [ pkgs.rsync pkgs.coreutils pkgs.python3 pkgs.yt-dlp ];
-        script =
-          if isYtdlp then ''
-            set -euo pipefail
-            export PATH='${pkgs.yt-dlp}/bin':$PATH
-            # systemd does not set TMPDIR for services, so fall back to /tmp
-            # (the Nix-build copy in playlist-builder.nix can keep $TMPDIR).
-            export HOME="''${TMPDIR:-/tmp}"
-            TARGET='${target}'
-            mkdir -p "$TARGET"
-            ${pkgs.python3}/bin/python3 ${runtimeInstaller} '${playlistsDir}/${name}' "$TARGET"
-          '' else ''
-            set -euo pipefail
-            SRC=${fod}
-            TARGET='${target}'
-            mkdir -p "$TARGET"
-            rsync -a --delete "$SRC/" "$TARGET/"
-          '';
-      }))
-    enabledPlaylists;
+      in
+      lib.optionals (isYtdlp || fod != null) (
+        if isYtdlp then [
+          (lib.nameValuePair "music-install-${name}" (base // {
+            script = ''
+              set -euo pipefail
+              export PATH='${pkgs.yt-dlp}/bin':$PATH
+              # systemd does not set TMPDIR for services, so fall back to /tmp
+              # (the Nix-build copy in playlist-builder.nix can keep $TMPDIR).
+              export HOME="''${TMPDIR:-/tmp}"
+              TARGET='${target}'
+              mkdir -p "$TARGET"
+              ${pkgs.python3}/bin/python3 ${runtimeInstaller} '${playlistsDir}/${name}' "$TARGET"
+            '';
+          }))
+          (lib.nameValuePair "music-install-${name}-kick" {
+            description = "Kick detached music install ${name}";
+            wantedBy = [ "multi-user.target" ];
+            after = [ "local-fs.target" ];
+            serviceConfig = {
+              Type = "oneshot";
+              RemainAfterExit = true;
+            };
+            script = ''
+              set -euo pipefail
+              # Detached: the install runs in the background and never blocks
+              # multi-user.target (a switch must not wait on a download).
+              systemctl start --no-block 'music-install-${name}.service' || true
+            '';
+          })
+        ] else [
+          (lib.nameValuePair "music-install-${name}" (base // {
+            wantedBy = [ "multi-user.target" ];
+            after = [ "local-fs.target" ];
+            script = ''
+              set -euo pipefail
+              SRC=${fod}
+              TARGET='${target}'
+              mkdir -p "$TARGET"
+              rsync -a --delete "$SRC/" "$TARGET/"
+            '';
+          }))
+        ]
+      ))
+    enabledPlaylists));
 in
 mkIf cfg.enable {
   systemd.services = installServices;
