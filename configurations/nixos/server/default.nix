@@ -36,6 +36,9 @@
 
   # ── Home Manager Extra ───────────────────────────────────────────────────
   my.homeManager.extraConfig.my.programs.goals.enable = true;
+  # CV content MCP server — thin CRUD over the Cairnstew/CV sqlite store
+  # (same host as goals; the always-on headless box with opencode-web).
+  my.homeManager.extraConfig.my.programs.cv.enable = true;
   # Prism Launcher (Minecraft client) — launcher defaults to prismlauncher,
   # data dir on the large SATA drive to keep NVMe free.
   my.homeManager.extraConfig.my.programs.minecraft = {
