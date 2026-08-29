@@ -23,8 +23,8 @@
 # The patch script is fail-loud (patch-jar.nix convention): if any anchor in
 # the pinned dist is missing, the Nix build fails instead of shipping a
 # silently-wrong patch. See FORK.md for the fork policy + rollback.
-{
-  pkgs,
+{ pkgs
+,
 }:
 let
   upstream = pkgs.fetchurl {
@@ -36,13 +36,13 @@ let
   patchScript = ./patches/opencode-ensemble.py;
 in
 pkgs.runCommand "opencode-ensemble-0.16.1-fork"
-  {
-    nativeBuildInputs = [
-      pkgs.gnutar
-      pkgs.python3
-      pkgs.nodejs
-    ];
-  } ''
+{
+  nativeBuildInputs = [
+    pkgs.gnutar
+    pkgs.python3
+    pkgs.nodejs
+  ];
+} ''
   set -euo pipefail
   tar xzf '${upstream}'
   python3 '${patchScript}' package/dist/index.js patched.js
