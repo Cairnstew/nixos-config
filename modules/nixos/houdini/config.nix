@@ -65,26 +65,128 @@ let
   # additional FHS wrapping needed.
   houdiniWrapped = cfg.package;
 
-  # Launcher that scopes QT_QPA_PLATFORM=xcb to Houdini only. The Hyprland
-  # module sets the session-wide default to wayland, and Houdini's bundled
-  # Qt has no working Wayland platform plugin ("no Qt platform plugin could
-  # be initialized"). A global sessionVariables override would force every
-  # Qt app to XWayland, so wrap at the entry point instead; users can still
-  # export their own QT_QPA_PLATFORM to win.
-  houdiniLauncher = pkgs.runCommand "houdini-launcher" { nativeBuildInputs = [ pkgs.makeWrapper ]; } ''
+  # Launcher that bypasses bwrap entirely.  The buildFHSEnv (bubblewrap)
+  # wrapper and the direct ld-linux path both hit the same deterministic
+  # SIGSEGV in UI_Color::unref() during GUI init when the FHS rootfs's
+  # libraries shadow Houdini's bundled copies via LD_LIBRARY_PATH.  See
+  # the CRITICAL block below for the full explanation.
+  #
+  # Running houdini-bin directly via the FHS rootfs's ld-linux with dsolib/
+  # prepended to LD_LIBRARY_PATH avoids the crash while preserving the FHS
+  # library resolution (libstdc++, libgcc_s, Qt, etc. via /usr/lib64
+  # symlinks).
+  #
+  # CRITICAL: Houdini's dsolib libraries use DT_RUNPATH (not DT_RPATH),
+  # which means LD_LIBRARY_PATH takes precedence over RUNPATH per the ELF
+  # spec.  The FHS rootfs contains different versions of 9 libraries that
+  # Houdini also bundles in dsolib/ (TBB, zlib, zstd, png, bzip2, lzma,
+  # OpenCL).  If the FHS rootfs versions load first via LD_LIBRARY_PATH,
+  # the interface/version mismatch causes heap corruption — specifically
+  # the UI_Color::unref() SIGSEGV.  The fix: put dsolib/ FIRST in
+  # LD_LIBRARY_PATH so Houdini's bundled versions always win.
+  #
+  # The bwrap script (houdini-<ver>) embeds the fhsenv-rootfs store path.
+  # We extract it at build time and use it to locate the FHS ld-linux and
+  # the library symlinks.  LD_LIBRARY_PATH adds the ncurses5 compat lib
+  # (needed by the OCL backend) on top.
+  houdiniLauncher = pkgs.runCommand "houdini-launcher"
+    {
+      nativeBuildInputs = [ pkgs.makeWrapper pkgs.gnused pkgs.coreutils ];
+    } ''
     mkdir -p $out/bin
+
+    # Symlink non-houdini executables (hkey, hython, etc.) from the bwrap
+    # package as-is — CLI tools work fine through bwrap.
     for exe in ${cfg.package}/bin/*; do
-      ln -s "$exe" $out/bin/$(basename "$exe")
+      name=$(basename "$exe")
+      if [[ "$name" != "houdini" ]]; then
+        ln -s "$exe" $out/bin/"$name"
+      fi
     done
-    rm $out/bin/houdini
-    # --unset first: the desktop session exports QT_QPA_PLATFORM=wayland via
-    # /etc/set-environment, which would defeat --set-default's "only if unset".
-    # NOTE: this also drops any caller-exported override — to run Houdini on
-    # another QPA platform, use `env QT_QPA_PLATFORM=... houdini` won't work;
-    # change cfg.extraEnv or this wrapper instead.
-    makeWrapper ${cfg.package}/bin/houdini $out/bin/houdini \
-      --unset QT_QPA_PLATFORM \
-      --set-default QT_QPA_PLATFORM xcb
+
+    # Extract the fhsenv-rootfs path from the bwrap script.
+    BWRAP_SCRIPT=$(readlink -f ${cfg.package}/bin/houdini-22.0.368)
+    FHS_ROOTFS=$(${pkgs.gnugrep}/bin/grep -oP '/nix/store/[a-z0-9]+-houdini-[^/]+-fhsenv-rootfs' "$BWRAP_SCRIPT" | head -1)
+    HOUDINI_HFS="${unwrapped}"
+    HOUDINI_BIN="$HOUDINI_HFS/bin/houdini-bin"
+    NCURSES5="${pkgs.ncurses5}/lib"
+
+    # Build the wrapper script with Nix paths baked in at build time.
+    # Shell variables ($QT_QPA_PLATFORM etc.) are escaped so they expand
+    # at runtime, not during the Nix build.
+    cat > $out/bin/houdini <<EOF
+    #!${pkgs.bash}/bin/bash
+    set -euo pipefail
+
+    # FHS ld-linux resolves libraries via /usr/lib64 symlinks (glibc, gcc,
+    # libX11, etc.) and LD_LIBRARY_PATH.  This gives us the same library
+    # set as bwrap without the PID/mount namespace.
+    #
+    # dsolib/ MUST come first — Houdini's libraries use DT_RUNPATH (not
+    # DT_RPATH), so LD_LIBRARY_PATH overrides RUNPATH resolution.  The
+    # FHS rootfs has different versions of TBB, zlib, zstd, png, bzip2,
+    # lzma, and OpenCL; loading those instead of Houdini's bundled copies
+    # causes the UI_Color::unref() SIGSEGV.  By putting dsolib/ first,
+    # conflicting SONAMEs resolve to Houdini's versions.  Non-conflicting
+    # libs (libX11, libEGL, libfontconfig, etc.) still resolve from the
+    # FHS rootfs because dsolib/ doesn't contain them.
+    export LD_LIBRARY_PATH="$HOUDINI_HFS/dsolib:$FHS_ROOTFS/usr/lib64:$NCURSES5:/run/opengl-driver/lib''${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
+
+    # Vulkan: Houdini bundles SwiftShader (software) in dsolib/ but rejects it
+    # at startup — it needs the real GPU driver.  Point the Vulkan loader at
+    # the system RADV ICD (via /run/opengl-driver) so it can dlopen()
+    # libvulkan_radeon.so.  Keep SwiftShader as fallback.
+    export VK_ICD_FILENAMES="/run/opengl-driver/share/vulkan/icd.d/radeon_icd.x86_64.json:$HOUDINI_HFS/dsolib/vk_swiftshader_icd.json"
+
+    # Sanitize Qt environment:
+    #  - QT_QPA_PLATFORM: Hyprland sets 'wayland'; Houdini's bundled Qt has
+    #    no working Wayland plugin, so force xcb (XWayland).
+    #  - QT_PLUGIN_PATH: session exports system Qt5/Qt6 plugin dirs; loading
+    #    system plugins into Houdini's bundled Qt6 → SIGSEGV during UI init.
+    #  - QT_QPA_PLATFORMTHEME: qt5ct is Qt5-only; leaks into Qt6.
+    #  - QT_STYLE_OVERRIDE: Kvantum incompatible with UI_Color layout.
+    unset QT_QPA_PLATFORM QT_PLUGIN_PATH QT_QPA_PLATFORMTHEME QT_STYLE_OVERRIDE
+    export QT_QPA_PLATFORM="''${QT_QPA_PLATFORM:-xcb}"
+
+    # Python tries to write .pyc bytecode caches next to the .py source files,
+    # but the Nix store is read-only → hundreds of EROFS errors during startup.
+    # Suppress .pyc writes (Python falls back to reading .py sources directly).
+    export PYTHONDONTWRITEBYTECODE=1
+
+    # lxml's etree.so has undefined symbols: libiconv, libiconv_open,
+    # libiconv_close (GNU libiconv API).  Houdini bundles libiconv.so.2 in
+    # dsolib/, but lxml has no DT_NEEDED for it, so the dynamic linker
+    # never loads it → "undefined symbol: libiconv" ImportError at startup.
+    # Preload it so the symbols are available when lxml loads.
+    export LD_PRELOAD="$HOUDINI_HFS/dsolib/libiconv.so.2''${LD_PRELOAD:+:$LD_PRELOAD}"
+
+    # Houdini's $HFS/qt/qml/ contains all Qt6 QML modules (QtQuick,
+    # QtQuick.Layouts, houdini.pluto, houdini.ui, etc.).  Normally Qt
+    # discovers these via the qt.conf "Prefix = ../qt" relative to the
+    # binary, but we run houdini-bin via the FHS rootfs's ld-linux instead
+    # of the normal wrapper — the different argv[0] path means Qt can't
+    # locate qt.conf, so the QML import path never gets set.
+    # Without this, StartupRoot.qml fails with "module not installed" for
+    # every import (houdini.pluto, houdini.ui, QtQuick.Layouts) and the
+    # StartupWindow throws a non-fatal error dialog on launch.
+    export QML_IMPORT_PATH="$HOUDINI_HFS/qt/qml"
+
+    # SUPPRESSION (not a root fix): Houdini's StartupWindow QML page
+    # (StartupRoot.qml) hits a non-fatal Python error dialog during
+    # initialization.  The traceback is truncated in the dialog — the
+    # actual exception type/message is never shown.  Root cause: the
+    # SharedState/Config/Theme/Prefs C++ singletons aren't registered
+    # at the point QML tries to reference them via context properties;
+    # they get set up fine later during normal GUI init.  The error is
+    # harmless (Houdini opens and works after clicking OK), but the
+    # dialog is annoying.  This env var suppresses the "Start Here"
+    # splash/startup page, which is the only thing affected — it does
+    # NOT suppress any other Python errors, dialogs, or functionality.
+    export HOUDINI_NO_START_PAGE_SPLASH=1
+
+    exec "$FHS_ROOTFS/usr/lib64/ld-linux-x86-64.so.2" "$HOUDINI_BIN" "$@"
+    EOF
+    chmod +x $out/bin/houdini
   '';
 in
 {
@@ -95,6 +197,22 @@ in
     ];
 
     environment.systemPackages = [ houdiniLauncher ];
+
+    # Houdini's icon system creates temp SVG files in /tmp/houdini_temp/.
+    # If this directory is owned by root (from a previous root-owned hserver
+    # or sesinetd run), the user-level GUI process gets EACCES when trying
+    # to create temp files — which cascades into the UI_Icon constructor
+    # crash (SIGSEGV in UI_Color::unref()).  Ensure the directory exists
+    # with 1777 permissions at boot so any user can write to it.
+    systemd.services.houdini-temp-dir = {
+      description = "Ensure /tmp/houdini_temp is writable by Houdini users";
+      wantedBy = [ "multi-user.target" ];
+      serviceConfig = {
+        Type = "oneshot";
+        RemainAfterExit = true;
+        ExecStart = "${pkgs.coreutils}/bin/install -d -m 1777 /tmp/houdini_temp";
+      };
+    };
 
     environment.sessionVariables = {
       # HFS points to the unwrapped runtime root (not the FHS wrapper).
