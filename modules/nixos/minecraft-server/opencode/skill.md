@@ -432,3 +432,21 @@ Reading latest server log for performance analysis
 
 ### 2026-08-21
 Verifying server optimizations are applied
+
+### 2026-08-27
+Test Houdini launch after fixing /tmp/houdini_temp permissions (1777). Root cause was EACCES on temp SVG file creation during icon processing.
+
+### 2026-08-27
+Checking current running Minecraft instances
+
+### 2026-08-27
+Checking current running Minecraft instances
+
+### 2026-08-27
+Checking current running Minecraft instances
+
+### 2026-08-27
+Checking ATM11 instance status
+
+### 2026-08-27
+Getting ATM11 log to check FTB Quests status
