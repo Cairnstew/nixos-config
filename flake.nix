@@ -160,14 +160,11 @@
     };
 
     # ── CV / portfolio site (content-driven Zola site + thin MCP server) ──────
-    # TEMPORARY local-path input (Tier 1 B2): the CV repo is local-only right
-    # now. Replace with `github:Cairnstew/CV` once the repo is pushed to
-    # GitHub and the Pages gate is approved separately. NOTE: while this stays
-    # a path input, CI/remote eval cannot fetch /home/seanc/Documents/CV — do
-    # not push nixos-config with this line in place unless the flake input
-    # flip has happened first (see tier1-findings decision points).
+    # GitHub repo pushed at the Tier 1 gate (2026-08-29); Pages deployed from
+    # its deploy.yml (user page: https://Cairnstew.github.io). The CV repo
+    # carries its own flake.lock pinning the same nixpkgs rev as this flake.
     cv = {
-      url = "path:/home/seanc/Documents/CV";
+      url = "github:Cairnstew/Cairnstew.github.io";
     };
 
   };

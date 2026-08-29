@@ -122,14 +122,17 @@
         "nixpkgs": "nixpkgs"
       },
       "locked": {
-        "lastModified": 1788029049,
-        "narHash": "sha256-R/9YCU3j8IShKVCTk1DBmY4OVndELewKLoivg3p7tbA=",
-        "path": "/home/seanc/Documents/CV",
-        "type": "path"
+        "lastModified": 1788029514,
+        "narHash": "sha256-HvW7JgC+eLuW2b1RbKwTYHxRttzW4OfvGjxJ0rfqESs=",
+        "owner": "Cairnstew",
+        "repo": "Cairnstew.github.io",
+        "rev": "0d0bd57c2160b621588360fc7abb9f052cd978dc",
+        "type": "github"
       },
       "original": {
-        "path": "/home/seanc/Documents/CV",
-        "type": "path"
+        "owner": "Cairnstew",
+        "repo": "Cairnstew.github.io",
+        "type": "github"
       }
     },
     "darwin": {
