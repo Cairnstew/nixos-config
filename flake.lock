@@ -122,13 +122,13 @@
         "nixpkgs": "nixpkgs"
       },
       "locked": {
-        "lastModified": 1788028131,
-        "narHash": "sha256-kfzSr2aRPioIHyp4CVX6TkGSJsoXwW5uUFS9MI23nrg=",
-        "path": "/home/seanc/CV",
+        "lastModified": 1788029049,
+        "narHash": "sha256-R/9YCU3j8IShKVCTk1DBmY4OVndELewKLoivg3p7tbA=",
+        "path": "/home/seanc/Documents/CV",
         "type": "path"
       },
       "original": {
-        "path": "/home/seanc/CV",
+        "path": "/home/seanc/Documents/CV",
         "type": "path"
       }
     },

@@ -163,11 +163,11 @@
     # TEMPORARY local-path input (Tier 1 B2): the CV repo is local-only right
     # now. Replace with `github:Cairnstew/CV` once the repo is pushed to
     # GitHub and the Pages gate is approved separately. NOTE: while this stays
-    # a path input, CI/remote eval cannot fetch /home/seanc/CV — do not push
-    # nixos-config with this line in place unless the flake input flip has
-    # happened first (see tier1-findings decision points).
+    # a path input, CI/remote eval cannot fetch /home/seanc/Documents/CV — do
+    # not push nixos-config with this line in place unless the flake input
+    # flip has happened first (see tier1-findings decision points).
     cv = {
-      url = "path:/home/seanc/CV";
+      url = "path:/home/seanc/Documents/CV";
     };
 
   };
