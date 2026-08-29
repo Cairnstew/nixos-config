@@ -2,7 +2,7 @@
 	default_hide_dependency_lines: false
 	default_quest_shape: ""
 	filename: "digital_age"
-	group: "4A695DE23DC9359F"
+	title: "Digital Age"
 	icon: {
 		id: "ae2:controller"
 	}
@@ -12,6 +12,7 @@
 	quest_links: [ ]
 	quests: [
 		{
+			dependencies: ["D4E5F6071829301F"]
 			id: "E5F6071829404002"
 			rewards: [{
 				id: "E5F6071829404020"
@@ -345,7 +346,7 @@
 				id: "E5F6071829404043"
 				item: {
 					count: 1
-					id: "create:electronic_circuit"
+					id: "create:brass_sheet"
 				}
 				type: "item"
 			}]
@@ -383,7 +384,7 @@
 				id: "E5F6071829404047"
 				item: {
 					count: 1
-					id: "mekanism:assemblicator"
+					id: "mekanism:formulaic_assemblicator"
 				}
 				type: "item"
 			}]
@@ -421,7 +422,7 @@
 				id: "E5F6071829404051"
 				item: {
 					count: 1
-					id: "immersiveengineering:alu_ingot"
+					id: "immersiveengineering:ingot_aluminum"
 				}
 				type: "item"
 			}]
@@ -440,7 +441,7 @@
 				id: "E5F6071829404053"
 				item: {
 					count: 1
-					id: "immersiveengineering:electronic_circuit"
+					id: "immersiveengineering:circuit_board"
 				}
 				type: "item"
 			}]
@@ -516,7 +517,7 @@
 				id: "E5F607182940405B"
 				item: {
 					count: 1
-					id: "pneumaticcraft:assembly_program"
+					id: "pneumaticcraft:assembly_program_drill"
 				}
 				type: "item"
 			}]

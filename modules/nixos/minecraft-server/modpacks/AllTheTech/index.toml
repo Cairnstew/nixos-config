@@ -13,40 +13,36 @@ file = "config/c2me.toml"
 hash = "8a84886db070f21cb35f33963403c20051c8fb932f48d25d6363b5de33b6b035"
 
 [[files]]
-file = "config/ftbquests/quests/chapter_groups.snbt"
-hash = "37fd31c72d22bdb090271d99ca1eafee75fbb59173b616984bc59ee1afb22dfa"
-
-[[files]]
 file = "config/ftbquests/quests/chapters/create_automation.snbt"
-hash = "1ef2f2dc215d626c722e6d88ecb0d1d8730017cb0b05053db6326563812ecd10"
+hash = "fbe8b6c0963380afd915691b4cd4010839a9740068f2921b38a696dc83f353c3"
 
 [[files]]
 file = "config/ftbquests/quests/chapters/digital_age.snbt"
-hash = "f1fd122b6ac42f467149337206b32856b4d130f38ae78612d3501c7753dc5812"
+hash = "3db2aab40e1a799abfe43bcd743c945ab0262ad7defd1a7e748dfc30018105f1"
 
 [[files]]
 file = "config/ftbquests/quests/chapters/endgame.snbt"
-hash = "066c1b15e9835a027d6f935c26578d964162c6b30de6782f2212c3ad0a435391"
+hash = "1e26e9ee8a5cddba3d2cbaa1f78710c43f50c6cc92fba8cded86172da597a692"
 
 [[files]]
 file = "config/ftbquests/quests/chapters/getting_started.snbt"
-hash = "f1a7c8954ff91ff6fe0031ce4d68814c3476c58933ecdd4c59d943500e37b66a"
+hash = "fee87f4cd395fe78f8d44dc4e7de69ed0cb88ce9407202380cfa523dd56ac1ae"
 
 [[files]]
 file = "config/ftbquests/quests/chapters/mekanism_power.snbt"
-hash = "1cd1de16d1fbbf972750ba0f8286928b082b6fe7e4584fdfc7c8c0426a76ed92"
+hash = "e0c9691597b75d037d525268e7655ccff875ccf42d90c663940b3d936f8ca3ac"
 
 [[files]]
 file = "config/ftbquests/quests/chapters/tech_foundations.snbt"
-hash = "3632127867ba5e1eb3c9ad2a674de847cf9c9f5ff2dbf18b0bf64185bf1b2302"
+hash = "4fe040a564654abcfae137ff5559097da5d41a0cf8acaa2a4ab8f363537eb328"
 
 [[files]]
 file = "config/ftbquests/quests/data.snbt"
-hash = "95d715a87b03dd0e234d0ab6862aa154f5a0afe513c32e6bf270958f646dbe07"
+hash = "1e25a2368505dbb2a1b9b1f40e379826698013b2577389e07864b0e8e55c2ad8"
 
 [[files]]
 file = "config/ftbquests/quests/lang/en_us.snbt"
-hash = "31ce3e3e5a848d6d4b3463431d83c900fd3bea935a939e0a3bdb9cd28268c3eb"
+hash = "1158eec95e28847e612e25dc6e5997b4e378a859b248544a4f9acaf75ec010f6"
 
 [[files]]
 file = "config/ftbquests/quests/reward_tables/35971441C32601D7.snbt"
@@ -64,6 +60,11 @@ metafile = true
 [[files]]
 file = "mods/ae2-dynamic-trees-fix.pw.toml"
 hash = "cfd5af82806b817a3fa0a2dde4ce7b3cabb2a3741f97dfa19e08a0dc4ca351b5"
+metafile = true
+
+[[files]]
+file = "mods/ae2-jei-integration.pw.toml"
+hash = "b80ffa7fbb1ccedcf5a78fc55320d06c670bc1fd2463f21ed0562a616ced8fb3"
 metafile = true
 
 [[files]]

@@ -218,13 +218,10 @@
   my.programs.proton.ge.enable = true;
 
   # ── Houdini (SideFX 3D/VFX) ─────────────────────────────────────────────
-  # DISABLED on all hosts (2026-08-24): the module remains wired in
-  # (modules/nixos/common.nix imports ./houdini) but nothing enables it.
-  # To re-enable, flip `enable = true` below — but the module's package is
-  # `false` by default and, when enabled, needs the matching SideFX installer
-  # tarball in the store:
-  #   nix-store --add-fixed sha256 houdini-22.0.368-linux_x86_64_gcc11.2.tar.gz
-  my.programs.houdini.enable = false;
+  # Requires the SideFX installer tarball in the store (already present /
+  # build cached). If it's ever GC'd, re-add it with:
+  #   nix-store --add-fixed sha256 houdini-22.0.368-linux_x86_64_gcc14.2.tar.gz
+  my.programs.houdini.enable = true;
   # Package from the houdini-nix flake (newer builds than nixpkgs' 21.0.559).
   my.programs.houdini.package =
     flake.inputs.houdini-nix.packages.x86_64-linux.houdini-22_0_368;
@@ -959,6 +956,16 @@
   # peers without listing each port. Same pattern the tailscale module uses
   # for tailscale0 (modules/nixos/tailscale/config.nix).
   networking.firewall.trustedInterfaces = [ "zt6ntnehy5" ];
+
+  # Clamp TCP MSS on both mesh tunnels (tailscale0 + zt6ntnehy5). The desktop
+  # hosts the LAN-style Minecraft session; ZeroTier peers behind small-MTU /
+  # lossy paths (e.g. the ~1200B blackhole measured to 172.23.98.176) stall and
+  # time out during the game's configuration phase unless MSS is clamped.
+  # Default mss (1140) fits the measured path. Same module as the server host.
+  my.services.mssClamp = {
+    enable = true;
+    interfaces = [ "tailscale0" "zt6ntnehy5" ];
+  };
 
   my.services.ollama = {
     enable = true;

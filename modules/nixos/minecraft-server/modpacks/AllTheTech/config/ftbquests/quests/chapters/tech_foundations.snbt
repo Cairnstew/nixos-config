@@ -2,7 +2,7 @@
 	default_hide_dependency_lines: false
 	default_quest_shape: ""
 	filename: "tech_foundations"
-	group: "4A695DE23DC9359F"
+	title: "Tech Foundations"
 	icon: {
 		id: "minecraft:redstone"
 	}
@@ -12,6 +12,7 @@
 	quest_links: [ ]
 	quests: [
 		{
+			dependencies: ["A1B2C3D4E5F6000E"]
 			id: "AA00000000000002"
 			rewards: [{
 				id: "AA00000000000010"
@@ -75,7 +76,7 @@
 				id: "AA00000000000017"
 				item: {
 					count: 4
-					id: "minecraft:zinc_ingot"
+					id: "create:zinc_ingot"
 				}
 				type: "item"
 			}]

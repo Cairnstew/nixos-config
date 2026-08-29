@@ -1,37 +1,5 @@
 {
 	quest: {
-		"019105FA82C64A8E": {
-			description: "Gather redstone to power Create shafts, copper for wiring, and zinc for andesite alloy. These three resources are the foundation of ALL tech trees."
-			name: "Redstone Gathering"
-		}
-		"019105FA82C64A8F": {
-			description: "Craft andesite alloy — the first Create component. Mekanism will use it for enriched iron, and AE2 needs it for processors."
-			name: "Andesite Alloy"
-		}
-		"019105FA82C64A90": {
-			description: "Craft brass ingots using Create's mixing. Brass is essential for Create's precision mechanisms AND Mekanism's advanced circuits."
-			name: "Brass Ingots"
-		}
-		"019105FA82C64A91": {
-			description: "Create enriched iron for Mekanism. This same ore doubling process feeds both Mekanism machines AND Create's kinetic processing."
-			name: "Enriched Iron"
-		}
-		"019105FA82C64A92": {
-			description: "Craft a shaft — Create's rotational transfer component. This same shaft powers Mekanism's wind turbines and AE2's energy acceptors."
-			name: "Create Shaft"
-		}
-		"019105FA82C64A93": {
-			description: "Craft a brass casing — Create's housing component. This casing is used in BOTH Create machines AND Mekanism's energy cubes."
-			name: "Brass Casing"
-		}
-		"019105FA82C64A94": {
-			description: "Craft a steel casing — Mekanism's machine housing. This casing is used in BOTH Mekanism machines AND Create's precision mechanisms."
-			name: "Steel Casing"
-		}
-		"019105FA82C64A95": {
-			description: "You now have access to all three tech trees! Create for kinetic power, Mekanism for machines, and AE2 for digital storage."
-			name: "Tech Foundations"
-		}
 		"C3D4E5F607182002": {
 			description: "Craft 4 shafts. Create shafts transfer rotational power AND serve as components in Mekanism's wind turbines and AE2's energy cables."
 			name: "Create Shafts"
@@ -540,27 +508,157 @@
 			description: "Automate Create: Ultimate Factory's advanced recipes — 30+ balanced automation recipes that turn every production line into a mega-factory."
 			name: "Ultimate Factory"
 		}
-	}
-	chapter: {
-		"AA00000000000001": {
-			description: "All three tech trees start here. Learn Create, Mekanism, and AE2 basics while building your first machines."
-			name: "Tech Foundations"
+		"022CA60ED7920A5D": {
+			description: "Follow the quest book from left to right — every quest unlocks the next. Complete Getting Started to open the tech chapters."
+			name: "Welcome to AllTheTech"
 		}
-		"C3D4E5F607182001": {
-			description: "Kinetic power, mechanical automation, and train systems. Cross-references Mekanism for energy, AE2 for digital control, IE for heavy machinery, and PneumaticCraft for pressurized automation."
-			name: "Create Automation"
+		"A1B2C3D4E5F60001": {
+			description: "Progress the AllTheTech questline — craft Oak Planks."
+			name: "Craft Oak Planks"
 		}
-		"D4E5F60718293001": {
-			description: "Machines, energy production, and nuclear power. Cross-references Create for kinetic input, AE2 for digital storage, and Powah! for RF power systems."
-			name: "Mekanism & Power"
+		"A1B2C3D4E5F60002": {
+			description: "Progress the AllTheTech questline — craft Crafting Table."
+			name: "Craft Crafting Table"
 		}
-		"E5F6071829404001": {
-			description: "Digital storage, autocrafting, and network management. Cross-references Create for precision mechanisms, Mekanism for energy, IE for heavy machinery, PneumaticCraft for pressurized systems, and Powah! for RF power."
-			name: "Digital Age"
+		"A1B2C3D4E5F60003": {
+			description: "Progress the AllTheTech questline — craft Torch."
+			name: "Craft Torch"
 		}
-		"F607182940515001": {
-			description: "The ultimate endgame. Master all three tech trees and combine them into one mega-factory."
-			name: "Endgame"
+		"A1B2C3D4E5F60004": {
+			description: "Progress the AllTheTech questline — craft Iron Ingot."
+			name: "Craft Iron Ingot"
+		}
+		"A1B2C3D4E5F60005": {
+			description: "Progress the AllTheTech questline — craft Iron Sword."
+			name: "Craft Iron Sword"
+		}
+		"A1B2C3D4E5F60006": {
+			description: "Progress the AllTheTech questline — craft Iron Pickaxe."
+			name: "Craft Iron Pickaxe"
+		}
+		"A1B2C3D4E5F60007": {
+			description: "Progress the Getting Started path by defeating Zombies."
+			name: "Conquer Zombies"
+		}
+		"A1B2C3D4E5F60008": {
+			description: "Progress the AllTheTech questline — craft Diamond."
+			name: "Craft Diamond"
+		}
+		"A1B2C3D4E5F60009": {
+			description: "Progress the AllTheTech questline — craft Diamond Pickaxe."
+			name: "Craft Diamond Pickaxe"
+		}
+		"A1B2C3D4E5F6000A": {
+			description: "Progress the Getting Started path by defeating Skeletons."
+			name: "Conquer Skeletons"
+		}
+		"A1B2C3D4E5F6000B": {
+			description: "Progress the AllTheTech questline — craft Ender Pearl."
+			name: "Craft Ender Pearl"
+		}
+		"A1B2C3D4E5F6000C": {
+			description: "Progress the AllTheTech questline — craft Enchanting Table."
+			name: "Craft Enchanting Table"
+		}
+		"A1B2C3D4E5F6000D": {
+			description: "Progress the AllTheTech questline — craft Ender Chest."
+			name: "Craft Ender Chest"
+		}
+		"A1B2C3D4E5F6000E": {
+			description: "Getting Started is complete! Tech Foundations — the redstone quest line — is now unlocked."
+			name: "Getting Started Complete"
+		}
+		"AA00000000000002": {
+			description: "Complete this milestone to unlock the next step of Tech Foundations."
+			name: "Chapter Milestone"
+		}
+		"AA00000000000003": {
+			description: "Progress the AllTheTech questline — craft Redstone."
+			name: "Craft Redstone"
+		}
+		"AA00000000000004": {
+			description: "Progress the AllTheTech questline — craft Copper Ingot."
+			name: "Craft Copper Ingot"
+		}
+		"AA00000000000005": {
+			description: "Progress the AllTheTech questline — craft Zinc Ingot."
+			name: "Craft Zinc Ingot"
+		}
+		"AA00000000000006": {
+			description: "Progress the AllTheTech questline — craft Andesite Alloy."
+			name: "Craft Andesite Alloy"
+		}
+		"AA00000000000007": {
+			description: "Progress the AllTheTech questline — craft Brass Ingot."
+			name: "Craft Brass Ingot"
+		}
+		"AA00000000000008": {
+			description: "Progress the AllTheTech questline — craft Enriched Iron."
+			name: "Craft Enriched Iron"
+		}
+		"AA00000000000009": {
+			description: "Progress the AllTheTech questline — craft Shaft."
+			name: "Craft Shaft"
+		}
+		"AA0000000000000A": {
+			description: "Progress the AllTheTech questline — craft Brass Casing."
+			name: "Craft Brass Casing"
+		}
+		"AA0000000000000B": {
+			description: "Progress the AllTheTech questline — craft Steel Casing."
+			name: "Craft Steel Casing"
+		}
+		"AA0000000000000C": {
+			description: "Tech Foundations done — Create Automation is now unlocked."
+			name: "Tech Foundations Complete"
+		}
+		"C3D4E5F607182029": {
+			description: "Progress the AllTheTech questline — craft Drone."
+			name: "Craft Drone"
+		}
+		"F60718293A4B5002": {
+			description: "Progress the AllTheTech questline — craft Nether Star."
+			name: "Craft Nether Star"
+		}
+		"F60718293A4B5003": {
+			description: "Progress the AllTheTech questline — craft Elytra."
+			name: "Craft Elytra"
+		}
+		"F60718293A4B5004": {
+			description: "Progress the AllTheTech questline — craft Cart Assembler."
+			name: "Craft Cart Assembler"
+		}
+		"F60718293A4B5005": {
+			description: "Progress the AllTheTech questline — craft MekaSuit Helmet."
+			name: "Craft MekaSuit Helmet"
+		}
+		"F60718293A4B5006": {
+			description: "Progress the AllTheTech questline — craft Meka-Tool."
+			name: "Craft Meka-Tool"
+		}
+		"F60718293A4B5007": {
+			description: "Progress the AllTheTech questline — craft Teleporter Frame."
+			name: "Craft Teleporter Frame"
+		}
+		"F60718293A4B5008": {
+			description: "Progress the AllTheTech questline — craft Jetpack."
+			name: "Craft Jetpack"
+		}
+		"F60718293A4B5009": {
+			description: "Progress the AllTheTech questline — craft HDPE Reinforced Elytra."
+			name: "Craft HDPE Reinforced Elytra"
+		}
+		"F60718293A4B500A": {
+			description: "Progress the AllTheTech questline — craft Fusion Reactor Controller."
+			name: "Craft Fusion Reactor Controller"
+		}
+		"F60718293A4B500B": {
+			description: "Progress the AllTheTech questline — craft Fusion Reactor Controller."
+			name: "Craft Fusion Reactor Controller"
+		}
+		"F60718293A4B500C": {
+			description: "The ultimate endgame — you have mastered every tech tree in AllTheTech."
+			name: "AllTheTech Complete"
 		}
 	}
 }

@@ -1,0 +1,8 @@
+name = "AE2 JEI Integration"
+filename = "ae2jeiintegration-1.2.1.jar"
+side = "both"
+
+[download]
+url = "https://edge.forgecdn.net/files/7727/898/ae2jeiintegration-1.2.1.jar"
+hash-format = "sha512"
+hash = "5aa19cdf7c97c2d2a24d74f8b84379222aa34b5ce86b86c7fb799526e8f268dfa080a4f587c9c96704b40430c7c728aa1b5391ae67346d702e2fe31e691b8c48"

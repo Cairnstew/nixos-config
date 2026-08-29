@@ -419,3 +419,7 @@ export default {
     return run(repoRoot(), args.modpack, args.server, args.dataDir, args.forceNative, args.timeout || 0, args.monitor || "");
   },
 };
+
+// ## RUN LOG
+// ### 2026-08-27
+// Test Houdini launch after fixing /tmp/houdini_temp permissions (1777). Root cause was EACCES on temp SVG file creation during icon processing.

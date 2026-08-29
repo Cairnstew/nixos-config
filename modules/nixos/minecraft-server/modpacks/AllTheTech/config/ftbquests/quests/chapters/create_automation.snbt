@@ -2,7 +2,7 @@
 	default_hide_dependency_lines: false
 	default_quest_shape: ""
 	filename: "create_automation"
-	group: "4A695DE23DC9359F"
+	title: "Create Automation"
 	icon: {
 		id: "create:andesite_alloy"
 	}
@@ -12,6 +12,7 @@
 	quest_links: [ ]
 	quests: [
 		{
+			dependencies: ["AA0000000000000C"]
 			id: "C3D4E5F607182002"
 			rewards: [{
 				id: "C3D4E5F607182020"
@@ -221,7 +222,7 @@
 				id: "C3D4E5F607182036"
 				item: {
 					count: 1
-					id: "create:electronic_circuit"
+					id: "create:brass_sheet"
 				}
 				type: "item"
 			}]
@@ -488,7 +489,7 @@
 				id: "C3D4E5F607182054"
 				item: {
 					count: 8
-					id: "immersiveengineering:alu_ingot"
+					id: "immersiveengineering:ingot_aluminum"
 				}
 				type: "item"
 			}]
@@ -526,7 +527,7 @@
 				id: "C3D4E5F607182058"
 				item: {
 					count: 1
-					id: "immersiveengineering:blastfurnacebrick"
+					id: "immersiveengineering:blastbrick"
 				}
 				type: "item"
 			}]
@@ -583,7 +584,7 @@
 				id: "C3D4E5F60718205E"
 				item: {
 					count: 8
-					id: "immersiveengineering:conveyor"
+					id: "immersiveengineering:conveyor_basic"
 				}
 				type: "item"
 			}]
@@ -602,7 +603,7 @@
 				id: "C3D4E5F607182060"
 				item: {
 					count: 4
-					id: "immersiveengineering:connector"
+					id: "immersiveengineering:connector_mv"
 				}
 				type: "item"
 			}]
@@ -621,7 +622,7 @@
 				id: "C3D4E5F607182062"
 				item: {
 					count: 1
-					id: "immersiveengineering:relay"
+					id: "immersiveengineering:connector_mv_mv_relay"
 				}
 				type: "item"
 			}]
