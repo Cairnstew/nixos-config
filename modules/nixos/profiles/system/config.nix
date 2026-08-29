@@ -5,12 +5,15 @@ let
 in
 {
   config = lib.mkMerge [
-    # Desktop choice (convenience toggle — only flips the enable flag; the
-    # hyprland/gnome profile blocks below provide the full attrset bodies)
+    # Desktop choice (convenience toggle — sets both the profile flag and the
+    # module enable; the hyprland/gnome profile blocks below provide the full
+    # attrset bodies)
     (lib.mkIf (cfg.desktop.choice == "hyprland") {
+      my.profiles.desktop.hyprland.enable = lib.mkDefault true;
       my.desktop.hyprland.enable = true;
     })
     (lib.mkIf (cfg.desktop.choice == "gnome") {
+      my.profiles.desktop.gnome.enable = lib.mkDefault true;
       my.desktop.gnome.enable = true;
     })
 
