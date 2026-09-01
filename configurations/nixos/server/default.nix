@@ -242,21 +242,18 @@
   # ComfyUI has the GPU to itself. Accessible at
   # https://server.tail685690.ts.net/comfyui/ (proxy upstream registered by
   # the module) and directly on LAN :8188.
+  #
+  # NOTE: comfyui.enableManager + customNodes are NOT used here — the module
+  # fetches custom-node repos with builtins.fetchGit at eval time, which
+  # breaks the pure `nix run .#activate` (nixos-rebuild switch without
+  # --impure). Install custom nodes at runtime into /mnt/data/comfyui/
+  # custom_nodes/ instead until the module uses a locked fetch.
   my.services.comfyui = {
     # enable is explicit now that profiles/system/ai.nix no longer supplies it
     enable = true;
     listenHost = "0.0.0.0"; # tailscale-serve + LAN access
     port = 8188;
     dataDir = "/mnt/data/comfyui";
-
-    # ComfyUI-Manager: install models / custom nodes from the web UI.
-    enableManager = true;
-    customNodes = {
-      ComfyUI-Manager = {
-        url = "https://github.com/ltdrdata/ComfyUI-Manager";
-        ref = "main";
-      };
-    };
   };
 
   # ── Manga Reader (sync library to config repo) ───────────────────────────
