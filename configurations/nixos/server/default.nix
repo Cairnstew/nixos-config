@@ -18,7 +18,11 @@
   # ── System Profiles ──────────────────────────────────────────────────────
   my.profiles = {
     server.enable = true;
-    ai.enable = true;
+    # ai.enable disabled 2026-09-01 (ComfyUI priority): the AI LLM stack
+    # (Ollama, RisuAI, Open WebUI, Letta) is paused so ComfyUI gets the whole
+    # GPU for image generation. Re-enable with `ai.enable = true` plus
+    # `my.services.ollama.enable = true` (the ai profile asserts Ollama).
+    ai.enable = false;
     gpu.nvidia-headless.enable = true;
     location.enable = true;
   };
@@ -233,9 +237,26 @@
   };
 
   # ── ComfyUI (AI Image Generation) ───────────────────────────────────────
+  # Primary GPU workload on this box (RTX 3060 12GB): node-based diffusion /
+  # image generation. Ollama + the AI LLM frontends are disabled above so
+  # ComfyUI has the GPU to itself. Accessible at
+  # https://server.tail685690.ts.net/comfyui/ (proxy upstream registered by
+  # the module) and directly on LAN :8188.
   my.services.comfyui = {
-    # F7: comfyui.enable is mkDefault true via profiles/system/ai.nix — redundant here (recon F7)
+    # enable is explicit now that profiles/system/ai.nix no longer supplies it
+    enable = true;
+    listenHost = "0.0.0.0"; # tailscale-serve + LAN access
+    port = 8188;
     dataDir = "/mnt/data/comfyui";
+
+    # ComfyUI-Manager: install models / custom nodes from the web UI.
+    enableManager = true;
+    customNodes = {
+      ComfyUI-Manager = {
+        url = "https://github.com/ltdrdata/ComfyUI-Manager";
+        ref = "main";
+      };
+    };
   };
 
   # ── Manga Reader (sync library to config repo) ───────────────────────────
@@ -260,8 +281,11 @@
   # Server definitions live in modules/nixos/minecraft-server/servers/ — each
   # file defines one complete server. They are disabled by default; enable the
   # ones you want here or from a profile (e.g. my.profiles.gaming.minecraftServers).
+  # DISABLED 2026-09-01 (ComfyUI priority): the Prominence II JVM (~5.5G RSS,
+  # CPU-heavy) is paused to free CPU/RAM/IO for image gen. Flip `enable` back
+  # to true to resume; all server definitions below are kept intact.
   my.services.minecraftServer = {
-    enable = true;
+    enable = false;
     eula = true; # Mojang EULA — required
     dataDir = "/mnt/data/minecraft";
     packDir = "/mnt/data/minecraft/packs"; # scp modpack zips here
@@ -274,15 +298,19 @@
     };
     api.enable = true; # dashboard management (status + start/stop/restart)
 
-    # Currently running the premade Prominence II Fabric pack. AllTheTech is
-    # disabled (kept for reference); flip the booleans to switch servers.
+    # Prominence II Fabric pack is kept defined for when the module is
+    # re-enabled. AllTheTech is disabled (kept for reference); flip the
+    # booleans to switch servers.
     servers.prominence.enable = true;
     servers.allthetech.enable = false;
   };
 
-  # ── Ollama (LLM Serving) ───────────────────────────────────────────────
+  # ── Ollama (LLM Serving) — disabled 2026-09-01 ─────────────────────────
+  # Competed with ComfyUI for the GPU (12GB RTX 3060). dataDir/model kept so
+  # re-enabling is a one-flag flip back to true — pair with
+  # my.profiles.ai.enable = true above.
   my.services.ollama = {
-    enable = true;
+    enable = false;
     dataDir = "/mnt/data/ollama";
     gpu.enable = true;
     models = {
@@ -297,9 +325,10 @@
     };
   };
 
-  # ── RisuAI (LLM Roleplay Frontend) ────────────────────────────────────
+  # ── RisuAI (LLM Roleplay Frontend) — dormant 2026-09-01 ────────────────
+  # Disabled together with my.profiles.ai (Ollama paused for ComfyUI). Config
+  # kept for re-enabling; values are inert while the profile is off.
   my.services.risuai = {
-    # F7: risuai.enable is mkDefault true via profiles/system/ai.nix — redundant here (recon F7)
     dataDir = "/mnt/data/risuai";
     ollama.enable = true;
     # H12: attach risuai to ollama-net (so it resolves ollama:11434) via the module's
