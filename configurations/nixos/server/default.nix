@@ -27,6 +27,17 @@
     location.enable = true;
   };
 
+  # ── Hardening CPU quotas — only list units that actually exist ─────────
+  # The hardened default cpuQuota references docker-ollama/podman-ollama/
+  # jellyfin; hardening mapAttrs' CREATES a unit definition for every name in
+  # the list, so with the AI stack paused it shipped a docker-ollama unit with
+  # no ExecStart — systemd refused it and `nix run .#activate` exited 4
+  # ("Service has no ExecStart="). comfy-ui is kept: it is the live heavy
+  # service and the 400% cap keeps SSH responsive during image generation.
+  my.system.hardening.cpuQuota = {
+    "comfy-ui" = "400%";
+  };
+
   # ── VS Code Server ──────────────────────────────────────────────────────
   # Enables Remote-SSH on NixOS (patches dynamically linked Node binaries)
   my.programs.vscode.server.enable = true;
