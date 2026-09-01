@@ -1,4 +1,4 @@
-{ config, lib, pkgs, ... }:
+{ config, lib, pkgs, flake, ... }:
 let
   cfg = config.my.services.comfyui;
 
@@ -111,10 +111,42 @@ in
     systemd.services.comfy-ui.serviceConfig = {
       ProtectHome = lib.mkForce "tmpfs";
       PrivateMounts = lib.mkForce false;
+      # UMask 0007: dirs/files created by the service get group access so the
+      # primary user (in the comfy-ui group below) can read outputs/workflows
+      # and drop files into models/input without sudo.
+      UMask = "0007";
     };
 
-    # Ensure dataDir exists when it's not the default /var/lib/comfy-ui
-    systemd.tmpfiles.rules = lib.optional (cfg.dataDir != "/var/lib/comfy-ui")
-      "d ${cfg.dataDir} 0700 comfy-ui comfy-ui -";
+    # dataDir + user-touch subdirs are created by a ROOT oneshot, NOT tmpfiles:
+    # systemd-tmpfiles refuses to descend a path whose parent is owned by a
+    # non-root user ("Detected unsafe path transition /mnt/data (owned by
+    # seanc)") and silently skips the rule — same failure mode documented for
+    # minecraft-server. Mode 0770 comfy-ui:comfy-ui + primary-user group
+    # membership (below) gives the user browse + drop access to the whole tree.
+    # models/ is pre-created 0770 but its contents are NOT chmod -R'd (they can
+    # be GBs; the service only needs to read them — the user drops files in).
+    systemd.services.comfy-ui-prepare-dirs = {
+      description = "Create ComfyUI data directories";
+      wantedBy = [ "multi-user.target" ];
+      before = [ "comfy-ui.service" ];
+      serviceConfig = {
+        Type = "oneshot";
+        RemainAfterExit = true;
+      };
+      script = ''
+        ${pkgs.coreutils}/bin/install -d -o comfy-ui -g comfy-ui -m 0770 ${cfg.dataDir}
+        ${lib.concatStringsSep "\n" (map (d: ''
+          ${pkgs.coreutils}/bin/install -d -o comfy-ui -g comfy-ui -m 0770 ${cfg.dataDir}/${d}
+        '') [ "input" "temp" "user" "custom_nodes" "models" "models/checkpoints" "models/loras" "models/vae" "models/clip" "output" ])}
+        # Self-heal group access on user-data files (workflows, settings, inputs);
+        # models/ is excluded — could be GBs and the service only needs to read it.
+        ${pkgs.coreutils}/bin/chmod -R g+rwX \
+          ${cfg.dataDir}/user ${cfg.dataDir}/input ${cfg.dataDir}/temp ${cfg.dataDir}/custom_nodes 2>/dev/null || true
+      '';
+    };
+
+    # Primary user in the comfy-ui group: dataDir is 0770 comfy-ui:comfy-ui,
+    # so group membership gives the user read/write access without sudo.
+    users.groups.comfy-ui.members = [ flake.config.me.username ];
   };
 }
