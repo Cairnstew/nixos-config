@@ -60,4 +60,27 @@ my.services.comfyui = {
 - `extraModelPaths` generates an `extra_model_paths.yaml` injected via `--extra-model-paths-config`
 - Accessible at `https://server.tailscale.ts.net/comfyui/` via the proxy dashboard
 - The module adds the primary user (`me.username`) to the `comfy-ui` group and creates `dataDir` (`0770 comfy-ui:comfy-ui`) + user-touch subdirs (`input/`, `output/`, `user/`, `custom_nodes/`, `models/…`) via a root `comfy-ui-prepare-dirs` oneshot, so the user can browse/drop files without sudo. The service runs with `UMask=0007` so new outputs/workflows stay group-accessible. `models/` contents are intentionally not chmod -R'd (they can be GBs).
+
+## OpenCode integration (project-local)
+
+When opencode is enabled for the primary user, the module renders a project-local
+config into `<dataDir>/.opencode/` — **only visible to opencode sessions started
+inside the data dir** (e.g. `cd /mnt/data/comfyui && opencode`), never to other
+projects (cleanliness, not permission):
+
+| Path | Contents |
+|------|----------|
+| `.opencode/opencode.json` | local `comfyui` MCP server (`comfyui-mcp`, runtime-fetched via `npx -y comfyui-mcp@0.52.167`, `COMFYUI_URL`/`COMFYUI_PATH` wired) |
+| `.opencode/skills/comfyui-development/SKILL.md` | instance/API/data-dir/VRAM guidance |
+| `.opencode/commands/comfyui-status.md` | `/comfyui-status` health & GPU/queue report |
+| `.opencode/commands/comfyui-workflow.md` | `/comfyui-workflow` inspect/convert/validate workflows |
+| `.opencode/tools/comfyui-api.ts` | read-only API tool (stats/queue/history/models) |
+
+Tune with `my.services.comfyui.opencode.*`:
+- `opencode.enable` (default `true`) — render the `.opencode/` config at all
+- `opencode.mcp.enable` (default `true`) — include the MCP `comfyui` server
+- `opencode.mcp.command` (default `[]` = artokun `comfyui-mcp` via npx) — swap
+  the server, e.g. `[ "uvx" "comfy-mcp" ]` for the Comfy-Org official server
+- `opencode.mcp.environment` — extra env vars for the MCP process
+
 - Powered by the [Janrupf/stable-diffusion-webui-nix](https://github.com/Janrupf/stable-diffusion-webui-nix) flake

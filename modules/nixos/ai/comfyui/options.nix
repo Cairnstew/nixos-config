@@ -179,5 +179,47 @@ in
         description = "Preview method for image generation.";
       };
     };
+
+    opencode = {
+      enable = mkOption {
+        type = types.bool;
+        default = true;
+        description = ''
+          Write a project-local opencode config (`.opencode/`) into the ComfyUI
+          data dir with ComfyUI skills/commands/tools and an MCP server. Only
+          loaded when opencode runs from the data dir — the tools never appear
+          in other projects (e.g. nixos-config) for cleanliness. Wired only
+          when opencode is enabled for the primary user.
+        '';
+      };
+      mcp = {
+        enable = mkOption {
+          type = types.bool;
+          default = true;
+          description = "Add a local MCP server entry to the project opencode.json.";
+        };
+        name = mkOption {
+          type = types.str;
+          default = "comfyui";
+          description = "MCP server name in the opencode config.";
+        };
+        command = mkOption {
+          type = types.listOf types.str;
+          default = [ ];
+          description = ''
+            Command (+ args) that starts the MCP server. Empty (default) =
+            `npx -y comfyui-mcp@0.52.167` (artokun/comfyui-mcp, local-first,
+            drives this instance; biggest tool surface). Set your own to use
+            e.g. `[ "uvx" "comfy-mcp" ]` (Comfy-Org official server) or an
+            absolute path to a venv/script.
+          '';
+        };
+        environment = mkOption {
+          type = types.attrsOf types.str;
+          default = { };
+          description = "Extra environment variables for the MCP server process.";
+        };
+      };
+    };
   };
 }
