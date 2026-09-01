@@ -71,6 +71,53 @@ let
       fi
     '')
     customNodeSrcs);
+
+  # ── Project-local opencode config (.opencode/ in the data dir) ───────────
+  # Only visible to opencode sessions run FROM this directory, never other
+  # projects (e.g. nixos-config) — for cleanliness, not permission.
+  # Wired only when opencode is enabled for the primary user.
+  me = flake.config.me.username;
+  opencodeEnabled =
+    cfg.opencode.enable
+    && (if builtins.hasAttr "home-manager" config
+      then config.home-manager.users.${me}.my.programs.opencode.enable or false
+      else false);
+
+  opencodeDir = "${cfg.dataDir}/.opencode";
+  # Default MCP command: artokun/comfyui-mcp (local-first, drives this
+  # instance; runtime-fetched via npx like the repo's uvx-based MCP servers).
+  mcpCommand = if cfg.opencode.mcp.command != [ ]
+    then cfg.opencode.mcp.command
+    else [ "${pkgs.nodejs_22}/bin/npx" "-y" "comfyui-mcp@0.52.167" ];
+
+  opencodeJson = pkgs.writeText "comfyui-opencode.json" (builtins.toJSON {
+    mcp = lib.optionalAttrs cfg.opencode.mcp.enable {
+      ${cfg.opencode.mcp.name} = {
+        type = "local";
+        command = mcpCommand;
+        environment = {
+          COMFYUI_URL = "http://127.0.0.1:${toString cfg.port}";
+          COMFYUI_PATH = cfg.dataDir;
+        } // cfg.opencode.mcp.environment;
+        enabled = true;
+      };
+    };
+  });
+
+  opencodeSkill = pkgs.writeText "SKILL.md" (builtins.readFile ./opencode/skill.md);
+  opencodeStatusCmd = pkgs.writeText "comfyui-status.md" (builtins.readFile ./opencode/commands/status.md);
+  opencodeWorkflowCmd = pkgs.writeText "comfyui-workflow.md" (builtins.readFile ./opencode/commands/workflow.md);
+  opencodeApiTool = pkgs.writeText "comfyui-api.ts" (builtins.readFile ./opencode/tools/comfyui-api.ts);
+
+  opencodeLinks = lib.optionalString opencodeEnabled ''
+    ${pkgs.coreutils}/bin/install -d -o comfy-ui -g comfy-ui -m 0770 \
+      ${opencodeDir} ${opencodeDir}/skills/comfyui-development ${opencodeDir}/commands ${opencodeDir}/tools
+    ln -sfn ${opencodeJson} ${opencodeDir}/opencode.json
+    ln -sfn ${opencodeSkill} ${opencodeDir}/skills/comfyui-development/SKILL.md
+    ln -sfn ${opencodeStatusCmd} ${opencodeDir}/commands/comfyui-status.md
+    ln -sfn ${opencodeWorkflowCmd} ${opencodeDir}/commands/comfyui-workflow.md
+    ln -sfn ${opencodeApiTool} ${opencodeDir}/tools/comfyui-api.ts
+  '';
 in
 {
   config = lib.mkIf cfg.enable {
@@ -142,6 +189,9 @@ in
         # models/ is excluded — could be GBs and the service only needs to read it.
         ${pkgs.coreutils}/bin/chmod -R g+rwX \
           ${cfg.dataDir}/user ${cfg.dataDir}/input ${cfg.dataDir}/temp ${cfg.dataDir}/custom_nodes 2>/dev/null || true
+        # Project-local opencode config (.opencode/) — store-rendered files,
+        # symlinked so updates propagate on rebuild; only when opencode is on.
+        ${opencodeLinks}
       '';
     };
 
