@@ -65,6 +65,21 @@ the ComfyUI control plane as tools, including: `enqueue_workflow`,
 `download_model`, `upload_image`, `get_image`, `clear_vram`, `restart_comfyui`.
 Prefer these over raw API calls for anything non-trivial.
 
+## Current workspace (active workflow)
+
+Every agent session started from this directory is told which saved workflow is
+the **current workspace** via the `comfyui-workspace` plugin (injected into the
+system prompt, plus `OPENCODE_COMFYUI_WORKSPACE` env var). The source of truth
+is `<dataDir>/.opencode/workspace.json`, seeded to the most recently saved
+workflow.
+
+- To see the current workspace: run the `comfyui-workspace` command or tool
+  (action `get`).
+- To switch it: `comfyui-workspace set user/default/workflows/<name>.json`
+  (or the tool `action=set`), or run the `comfyui-workspace` command.
+- Always respect the injected workspace: work on that workflow unless the user
+  explicitly names a different one.
+
 ## Workflow authoring rules of thumb
 
 - Validate before running: `create_workflow` `validate` or ComfyUI's

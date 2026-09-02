@@ -2,18 +2,122 @@
 let
   cfg = config.my.services.comfyui;
 
-  enabledNodes = lib.filterAttrs (_: n: n.enable) cfg.customNodes;
+  # Curated, pre-pinned node catalog (url + rev + sha256, fetchSubmodules=true
+  # to match the prefetch). `presets` selects names from it; an explicit
+  # `customNodes` entry with the same attr name overrides the catalog pin.
+  catalog = import ./catalog.nix;
 
-  # Fetch custom node git repos at build time using builtins.fetchGit.
-  # Pinned by ref (branch/tag/commit). No hash needed — evaluation-time fetch
-  # is cached in the Nix store.
+  presetNodes = lib.listToAttrs (map (name: {
+    inherit name;
+    value = {
+      enable = true;
+      url = catalog.${name}.url;
+      rev = catalog.${name}.rev;
+      sha256 = catalog.${name}.sha256;
+      fetchSubmodules = true;
+    };
+  }) cfg.presets);
+
+  # customNodes wins per-name over presets.
+  allCustomNodes = presetNodes // cfg.customNodes;
+
+  enabledNodes = lib.filterAttrs (_: n: n.enable) allCustomNodes;
+
+  # ComfyUI-Manager is NOT a legacy custom-nodes git clone anymore — ComfyUI
+  # 0.25.x (main.py) checks `importlib.util.find_spec("comfyui_manager")` when
+  # `--enable-manager` is set and SILENTLY disables the manager if the python
+  # package is absent (warning + args.enable_manager = False). So the Manager
+  # is built as a python package (comfyui_manager) and injected via PYTHONPATH.
+  # Only the small missing deps are propagated (GitPython/PyGithub/etc load
+  # lazily); transformers/huggingface-hub are already in the service env and
+  # deliberately NOT re-added, so the env's versions are never shadowed.
+  managerPkg =
+    let
+      src =
+        if cfg.manager.rev != null && cfg.manager.sha256 != null
+        then
+          pkgs.fetchgit
+            {
+              url = cfg.manager.url;
+              rev = cfg.manager.rev;
+              sha256 = cfg.manager.sha256;
+            }
+        else builtins.fetchGit { url = cfg.manager.url; };
+    in
+    pkgs.python3.pkgs.buildPythonPackage {
+      pname = "comfyui-manager";
+      version = cfg.manager.version;
+      inherit src;
+      format = "pyproject";
+      nativeBuildInputs = [ pkgs.python3.pkgs.setuptools pkgs.python3.pkgs.wheel ];
+      propagatedBuildInputs = with pkgs.python3.pkgs; [
+        gitpython
+        pygithub
+        toml
+        chardet
+        typing-extensions
+      ];
+      doCheck = false;
+      pythonImportsCheck = [ ];
+      # Skip the wheel's Requires-Dist verification (dontCheckRuntimeDeps):
+      # transformers/hf-hub/typer/rich/uv are already in the service env (or
+      # standalone tools) and are deliberately NOT propagated — re-adding them
+      # would shadow the env's versions. The Manager imports lazily; boot needs
+      # only aiohttp.
+      dontCheckRuntimeDeps = true;
+    };
+
+  managerEnv =
+    if cfg.enableManager
+    then pkgs.python3.withPackages (ps: [ managerPkg ps.pip ])
+    else null;
+
+  # PYTHONPATH fragment pointing at the manager package + its propagated deps.
+  managerPythonPath =
+    if cfg.enableManager
+    then "${managerEnv}/${pkgs.python3.sitePackages}"
+    else "";
+
+  # Writable site-packages for RUNTIME pip installs (custom-node requirements).
+  # The Nix python envs are store/read-only, so the Manager's `pip install`
+  # (driven by PIP_TARGET) writes here; the dir is prepended to PYTHONPATH so
+  # installed packages are importable. Created by comfy-ui-prepare-dirs.
+  managerPipTarget = "${cfg.dataDir}/python-site-packages";
+
+  managerPipEnv =
+    if cfg.enableManager
+    then ''
+      export PYTHONPATH="${managerPipTarget}:${managerPythonPath}:$PYTHONPATH"
+      export PIP_TARGET="${managerPipTarget}"
+      # pip env (site-packages target) skips the store so any runtime
+      # installs go to the writable target and the security scan passes.
+      export PIP_DISABLE_PIP_VERSION_CHECK=1
+    ''
+    else "";
+
+  # Fetch custom node git repos. Two modes:
+  #   rev + hash  → pkgs.fetchgit: a locked, pure derivation fetch. No
+  #                 eval-time network, reproducible — works with a plain
+  #                 `nixos-rebuild switch` / `nix run .#activate` (no --impure).
+  #   url (+ref)  → builtins.fetchGit at eval time: convenient (no hashes to
+  #                 compute) but impure — needs network during eval and breaks
+  #                 pure activation (use only with --impure).
   customNodeSrcs = lib.mapAttrs
     (name: node:
-      builtins.fetchGit ({
-        url = node.url;
-        submodules = node.fetchSubmodules;
-        allRefs = true;
-      } // lib.optionalAttrs (node.ref != null) { ref = node.ref; })
+      if node.rev != null && node.sha256 != null then
+        pkgs.fetchgit
+          {
+            url = node.url;
+            rev = node.rev;
+            sha256 = node.sha256;
+            fetchSubmodules = node.fetchSubmodules;
+          }
+      else
+        builtins.fetchGit ({
+          url = node.url;
+          submodules = node.fetchSubmodules;
+          allRefs = true;
+        } // lib.optionalAttrs (node.ref != null) { ref = node.ref; })
     )
     enabledNodes;
 
@@ -61,15 +165,27 @@ let
       )
       cfg.extraModelPaths));
 
-  # Symlink commands for custom nodes
+  # Symlink commands for custom nodes. The `[ ! -e ]` guard leaves any existing
+  # node alone (so runtime-managed nodes installed by ComfyUI-Manager — real git
+  # clones — are never clobbered), but a symlink pointing at an OLD store path
+  # (stale declarative pin) is re-linked to the new one so pin bumps take effect.
   customNodeLinks = lib.concatStringsSep "\n" (lib.mapAttrsToList
-    (name: src: ''
-      target="${cfg.dataDir}/custom_nodes/${lib.escapeShellArg name}"
-      if [ ! -e "$target" ]; then
-        ln -sfn ${lib.escapeShellArg (builtins.toString src)} "$target"
-        echo "custom_nodes: linked ${name}"
-      fi
-    '')
+    (name: src:
+      let
+        srcPath = builtins.toString src;
+        srcArg = lib.escapeShellArg srcPath;
+        target = "${cfg.dataDir}/custom_nodes/${lib.escapeShellArg name}";
+      in
+      ''
+        target="${target}"
+        if [ ! -e "$target" ]; then
+          ln -sfn ${srcArg} "$target"
+          echo "custom_nodes: linked ${name}"
+        elif [ -L "$target" ] && [ "$(readlink "$target")" != "${srcPath}" ]; then
+          ln -sfn ${srcArg} "$target"
+          echo "custom_nodes: refreshed ${name}"
+        fi
+      '')
     customNodeSrcs);
 
   # ── Project-local opencode config (.opencode/ in the data dir) ───────────
@@ -80,15 +196,25 @@ let
   opencodeEnabled =
     cfg.opencode.enable
     && (if builtins.hasAttr "home-manager" config
-      then config.home-manager.users.${me}.my.programs.opencode.enable or false
-      else false);
+    then config.home-manager.users.${me}.my.programs.opencode.enable or false
+    else false);
 
   opencodeDir = "${cfg.dataDir}/.opencode";
   # Default MCP command: artokun/comfyui-mcp (local-first, drives this
   # instance; runtime-fetched via npx like the repo's uvx-based MCP servers).
-  mcpCommand = if cfg.opencode.mcp.command != [ ]
+  # The command is wrapped in a script that puts nodejs on PATH: the Nix `npx`
+  # wrapper itself runs via an absolute shebang, but the npx-downloaded
+  # comfyui-mcp binary is `#!/usr/bin/env node` — without node on PATH the MCP
+  # server fails to spawn with `env: 'node': No such file or directory`.
+  mcpCommand =
+    if cfg.opencode.mcp.command != [ ]
     then cfg.opencode.mcp.command
-    else [ "${pkgs.nodejs_22}/bin/npx" "-y" "comfyui-mcp@0.52.167" ];
+    else [
+      (pkgs.writeShellScriptBin "comfyui-mcp" ''
+        export PATH="${pkgs.nodejs_22}/bin:$PATH"
+        exec "${pkgs.nodejs_22}/bin/npx" -y comfyui-mcp@0.52.167
+      '')
+    ];
 
   opencodeJson = pkgs.writeText "comfyui-opencode.json" (builtins.toJSON {
     mcp = lib.optionalAttrs cfg.opencode.mcp.enable {
@@ -122,27 +248,27 @@ let
   };
 
   opencodeLinks = lib.optionalString opencodeEnabled ''
-    ${pkgs.coreutils}/bin/install -d -o comfy-ui -g comfy-ui -m 0770 \
-      ${opencodeDir} ${opencodeDir}/skills/comfyui-development ${opencodeDir}/commands ${opencodeDir}/tools ${opencodeDir}/plugin
-    ln -sfn ${opencodeJson} ${opencodeDir}/opencode.json
-    ln -sfn ${opencodeSkill} ${opencodeDir}/skills/comfyui-development/SKILL.md
-    ln -sfn ${opencodeStatusCmd} ${opencodeDir}/commands/comfyui-status.md
-    ln -sfn ${opencodeWorkflowCmd} ${opencodeDir}/commands/comfyui-workflow.md
-    ln -sfn ${opencodeWorkspaceCmd} ${opencodeDir}/commands/comfyui-workspace.md
-    ln -sfn ${opencodeApiTool} ${opencodeDir}/tools/comfyui-api.ts
-    ln -sfn ${opencodeWorkspaceTool} ${opencodeDir}/tools/comfyui-workspace.ts
-    ln -sfn ${opencodeWorkspacePlugin} ${opencodeDir}/plugin/comfyui-workspace.ts
-    # Writable workspace state (seeded to the named workflow; plugin/agents can
-    # update it). Created as a real file owned by the primary user so agents can
-    # write it without root. Seeded to the current Test Workflow initially.
-    if [ ! -f ${opencodeDir}/workspace.json ]; then
-      ${pkgs.coreutils}/bin/install -o comfy-ui -g comfy-ui -m 0660 /dev/stdin ${opencodeDir}/workspace.json <<'SEED'
-${opencodeWorkspaceSeed}
-SEED
-      echo "workspace: seeded ${opencodeDir}/workspace.json"
-    else
-      echo "workspace: keeping existing ${opencodeDir}/workspace.json"
-    fi
+        ${pkgs.coreutils}/bin/install -d -o comfy-ui -g comfy-ui -m 0770 \
+          ${opencodeDir} ${opencodeDir}/skills/comfyui-development ${opencodeDir}/commands ${opencodeDir}/tools ${opencodeDir}/plugin
+        ln -sfn ${opencodeJson} ${opencodeDir}/opencode.json
+        ln -sfn ${opencodeSkill} ${opencodeDir}/skills/comfyui-development/SKILL.md
+        ln -sfn ${opencodeStatusCmd} ${opencodeDir}/commands/comfyui-status.md
+        ln -sfn ${opencodeWorkflowCmd} ${opencodeDir}/commands/comfyui-workflow.md
+        ln -sfn ${opencodeWorkspaceCmd} ${opencodeDir}/commands/comfyui-workspace.md
+        ln -sfn ${opencodeApiTool} ${opencodeDir}/tools/comfyui-api.ts
+        ln -sfn ${opencodeWorkspaceTool} ${opencodeDir}/tools/comfyui-workspace.ts
+        ln -sfn ${opencodeWorkspacePlugin} ${opencodeDir}/plugin/comfyui-workspace.ts
+        # Writable workspace state (seeded to the named workflow; plugin/agents can
+        # update it). Created as a real file owned by the primary user so agents can
+        # write it without root. Seeded to the current Test Workflow initially.
+        if [ ! -f ${opencodeDir}/workspace.json ]; then
+          ${pkgs.coreutils}/bin/install -o comfy-ui -g comfy-ui -m 0660 /dev/stdin ${opencodeDir}/workspace.json <<'SEED'
+    ${opencodeWorkspaceSeed}
+    SEED
+          echo "workspace: seeded ${opencodeDir}/workspace.json"
+        else
+          echo "workspace: keeping existing ${opencodeDir}/workspace.json"
+        fi
   '';
 in
 {
@@ -168,6 +294,7 @@ in
       in
       ''
         export HF_HOME="$CACHE_DIRECTORY/huggingface/hub"
+        ${managerPipEnv}
 
         mkdir -p ${cfg.dataDir}/custom_nodes
         ${customNodeLinks}
@@ -210,11 +337,11 @@ in
         ${pkgs.coreutils}/bin/install -d -o comfy-ui -g comfy-ui -m 0770 ${cfg.dataDir}
         ${lib.concatStringsSep "\n" (map (d: ''
           ${pkgs.coreutils}/bin/install -d -o comfy-ui -g comfy-ui -m 0770 ${cfg.dataDir}/${d}
-        '') [ "input" "temp" "user" "custom_nodes" "models" "models/checkpoints" "models/loras" "models/vae" "models/clip" "output" ])}
+        '') ([ "input" "temp" "user" "custom_nodes" "models" "models/checkpoints" "models/loras" "models/vae" "models/clip" "output" ] ++ lib.optional cfg.enableManager "python-site-packages"))}
         # Self-heal group access on user-data files (workflows, settings, inputs);
         # models/ is excluded — could be GBs and the service only needs to read it.
         ${pkgs.coreutils}/bin/chmod -R g+rwX \
-          ${cfg.dataDir}/user ${cfg.dataDir}/input ${cfg.dataDir}/temp ${cfg.dataDir}/custom_nodes 2>/dev/null || true
+          ${cfg.dataDir}/user ${cfg.dataDir}/input ${cfg.dataDir}/temp ${cfg.dataDir}/custom_nodes ${lib.optionalString cfg.enableManager (cfg.dataDir + "/python-site-packages")} 2>/dev/null || true
         # Project-local opencode config (.opencode/) — store-rendered files,
         # symlinked so updates propagate on rebuild; only when opencode is on.
         ${opencodeLinks}

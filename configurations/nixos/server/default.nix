@@ -254,17 +254,61 @@
   # https://server.tail685690.ts.net/comfyui/ (proxy upstream registered by
   # the module) and directly on LAN :8188.
   #
-  # NOTE: comfyui.enableManager + customNodes are NOT used here — the module
-  # fetches custom-node repos with builtins.fetchGit at eval time, which
-  # breaks the pure `nix run .#activate` (nixos-rebuild switch without
-  # --impure). Install custom nodes at runtime into /mnt/data/comfyui/
-  # custom_nodes/ instead until the module uses a locked fetch.
+  # ComfyUI-Manager is enabled as the `comfyui_manager` PYTHON PACKAGE (the
+  # only install method ComfyUI 0.25.x accepts — it checks find_spec and
+  # silently disables --enable-manager when the package is absent). The module
+  # builds it from the pinned 4.2.2 release tag (main lags at 3.41 and fails
+  # the frontend's >= 4.2.1 check) and injects it via PYTHONPATH. Do NOT list
+  # the Manager under `customNodes` — that path is legacy and fails to import
+  # on 4.x.
   my.services.comfyui = {
     # enable is explicit now that profiles/system/ai.nix no longer supplies it
     enable = true;
     listenHost = "0.0.0.0"; # tailscale-serve + LAN access
     port = 8188;
     dataDir = "/mnt/data/comfyui";
+
+    enableManager = true; # --enable-manager + comfyui_manager python package
+
+    # Curated custom nodes from the module's pinned catalog (see
+    # modules/nixos/ai/comfyui/catalog.nix). Every entry is a locked
+    # url+rev+sha256 fetch — pure `nix run .#activate` safe.
+    # - workflow/QoL: Comfyroll, pythongosssss, cubiq essentials, WAS suite,
+    #   rgthree, Image-Saver (Civitai-metadata), Lora trigger words
+    # - detailers: Impact Pack + Subpack + Inspire
+    # - upscale/layers/photo: Ultimate SD Upscale, LayerStyle
+    # - conditioning: ControlNet aux preprocessors, Advanced ControlNet,
+    #   IPAdapter plus
+    # - video: AnimateDiff Evolved, VideoHelperSuite, KJNodes
+    # - captioning: Florence2, WD14 Tagger
+    # - quantized loading: GGUF
+    # - CivitAI: legacy AIR loader (no API key) + official orchestration pack
+    #   (needs CIVITAI_API_TOKEN for the cloud nodes; harmless to have loaded)
+    presets = [
+      "ComfyUI_Comfyroll_CustomNodes"
+      "ComfyUI-Custom-Scripts"
+      "ComfyUI_essentials"
+      "was-node-suite-comfyui"
+      "rgthree-comfy"
+      "ComfyUI-Image-Saver"
+      "ComfyUI-Lora-Auto-Trigger-Words"
+      "ComfyUI-Impact-Pack"
+      "ComfyUI-Impact-Subpack"
+      "ComfyUI-Inspire-Pack"
+      "ComfyUI_UltimateSDUpscale"
+      "ComfyUI_LayerStyle"
+      "comfyui_controlnet_aux"
+      "ComfyUI-Advanced-ControlNet"
+      "ComfyUI_IPAdapter_plus"
+      "ComfyUI-AnimateDiff-Evolved"
+      "ComfyUI-VideoHelperSuite"
+      "ComfyUI-KJNodes"
+      "ComfyUI-Florence2"
+      "ComfyUI-WD14-Tagger"
+      "ComfyUI-GGUF"
+      "civitai_comfy_nodes"
+      "civitai-comfy-nodes"
+    ];
   };
 
   # ── Manga Reader (sync library to config repo) ───────────────────────────
