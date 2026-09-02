@@ -39,9 +39,43 @@ in
       type = types.bool;
       default = false;
       description = ''
-        Enable ComfyUI-Manager (`--enable-manager`). Requires the Manager to be
-        listed in `customNodes` as `https://github.com/ltdrdata/ComfyUI-Manager`.
+        Enable ComfyUI-Manager (`--enable-manager`). ComfyUI 0.25.x loads the
+        Manager as the `comfyui_manager` PYTHON PACKAGE (it checks
+        `find_spec("comfyui_manager")` and silently disables the flag if the
+        package isn't importable) — NOT as a git clone in `customNodes` (a
+        checkout there fails to import; a legacy <4.x clone that loads shows
+        "ComfyUI-Manager upgrade required" because the frontend demands >= 4.2.1
+        while the repo's `main` branch still carries 3.41). This module builds
+        the package from `manager.*` and injects it via PYTHONPATH with only the
+        small missing deps — the env's own transformers/huggingface-hub are kept.
       '';
+    };
+
+    manager = {
+      version = mkOption {
+        type = types.str;
+        default = "4.2.2";
+        description = "comfyui_manager package version (pyproject.toml).";
+      };
+      url = mkOption {
+        type = types.str;
+        default = "https://github.com/comfy-org/ComfyUI-Manager";
+        description = "Git URL of the ComfyUI-Manager source.";
+      };
+      rev = mkOption {
+        type = types.nullOr types.str;
+        default = "bd4ede2237c97b3a71569a0301a0be9db226c7e9";
+        description = ''
+          Commit to pin (release TAG, not `main` — main lags at 3.41 and fails
+          the frontend's >= 4.2.1 check). null = builtins.fetchGit (impure).
+        '';
+        example = "bd4ede2237c97b3a71569a0301a0be9db226c7e9"; # tag 4.2.2
+      };
+      sha256 = mkOption {
+        type = types.nullOr types.str;
+        default = "025x656cdg1izjabm93cgxxzzll95lzgdwk82m809p33wd382xbj";
+        description = "sha256 from `nix-prefetch-git <url> <rev>` (locked fetch).";
+      };
     };
 
     extraArgs = mkOption {
@@ -55,7 +89,19 @@ in
       description = ''
         Declarative custom nodes for ComfyUI. Each attribute name becomes the
         directory name under `custom_nodes/`. Repos are fetched at build time
-        via `builtins.fetchGit` and symlinked into place by the service.
+        and symlinked into place by the service.
+
+        Two fetch modes:
+        - **Locked (recommended):** set both `rev` and `sha256` → `pkgs.fetchgit`
+          (a pure derivation fetch, no eval-time network). Required for hosts
+          deployed with a plain `nixos-rebuild switch` / `nix run .#activate`.
+          Get the values with `nix-prefetch-git <url> <rev>`.
+        - **Convenience:** only `url` (and optionally `ref`) → `builtins.fetchGit`
+          at eval time (no hashes to compute, but impure: needs network during
+          eval, breaks pure activation — only usable with `--impure`).
+
+        NOTE: do NOT list ComfyUI-Manager here — since v4.x it must be installed
+        as the `comfyui_manager` python package (see `enableManager` / `manager`).
       '';
       type = types.attrsOf (types.submodule {
         options = {
@@ -67,16 +113,37 @@ in
           url = mkOption {
             type = types.str;
             description = "Git URL of the custom node repository.";
-            example = "https://github.com/ltdrdata/ComfyUI-Impact-Pack";
+            example = "https://github.com/comfy-org/ComfyUI-Manager";
           };
           ref = mkOption {
             type = types.nullOr types.str;
             default = null;
             description = ''
-              Git ref to checkout: branch name, tag, or commit hash.
+              Git ref to checkout: branch name or tag. Only used in the
+              convenience (`builtins.fetchGit`) mode.
               null = fetch default branch HEAD.
             '';
             example = "v1.0";
+          };
+          rev = mkOption {
+            type = types.nullOr types.str;
+            default = null;
+            description = ''
+              Exact commit to pin (full or short hash). Must be set together
+              with `sha256` — together they switch the fetch to `pkgs.fetchgit`
+              (pure, locked, reproducible). Obtain from `nix-prefetch-git`.
+            '';
+            example = "bd4ede2237c97b3a71569a0301a0be9db226c7e9";
+          };
+          sha256 = mkOption {
+            type = types.nullOr types.str;
+            default = null;
+            description = ''
+              `"sha256"` (base32) printed by `nix-prefetch-git <url> <rev>`.
+              Must be set together with `rev`. null = builtins.fetchGit
+              (impure) mode.
+            '';
+            example = "025x656cdg1izjabm93cgxxzzll95lzgdwk82m809p33wd382xbj";
           };
           fetchSubmodules = mkOption {
             type = types.bool;
@@ -89,8 +156,9 @@ in
       example = lib.literalExpression ''
         {
           ComfyUI-Manager = {
-            url = "https://github.com/ltdrdata/ComfyUI-Manager";
-            ref = "main";
+            url = "https://github.com/comfy-org/ComfyUI-Manager";
+            rev = "bd4ede2237c97b3a71569a0301a0be9db226c7e9"; # tag 4.2.2
+            sha256 = "025x656cdg1izjabm93cgxxzzll95lzgdwk82m809p33wd382xbj";
           };
           ComfyUI-Impact-Pack = {
             url = "https://github.com/ltdrdata/ComfyUI-Impact-Pack";
@@ -98,6 +166,26 @@ in
           };
         }
       '';
+    };
+
+    presets = mkOption {
+      description = ''
+        Enable curated custom nodes from the built-in catalog
+        (`modules/nixos/ai/comfyui/catalog.nix`) by name. Each catalog entry is
+        a pure, locked fetch (`url` + `rev` + `sha256`, prefetched with
+        `nix-prefetch-git --url <url> --fetch-submodules`), so presets work with
+        a plain `nixos-rebuild switch` / `nix run .#activate`.
+
+        Valid names (see catalog.nix for descriptions):
+        ${lib.concatStringsSep ", " (map (n: "`${n}`") (lib.attrNames (import ./catalog.nix)))}
+
+        An explicit `customNodes` entry with the same attr name replaces the
+        catalog pin entirely for that name (use it to bump a pin or disable a
+        preset member with `enable = false`).
+      '';
+      type = types.listOf types.str;
+      default = [ ];
+      example = lib.literalExpression ''[ "ComfyUI_essentials" "civitai_comfy_nodes" ]'';
     };
 
     extraModelPaths = mkOption {
@@ -209,9 +297,11 @@ in
           description = ''
             Command (+ args) that starts the MCP server. Empty (default) =
             `npx -y comfyui-mcp@0.52.167` (artokun/comfyui-mcp, local-first,
-            drives this instance; biggest tool surface). Set your own to use
-            e.g. `[ "uvx" "comfy-mcp" ]` (Comfy-Org official server) or an
-            absolute path to a venv/script.
+            drives this instance; biggest tool surface). The default is wrapped
+            in a script that prepends `nodejs` to PATH — the npx-downloaded
+            binary is `#!/usr/bin/env node` and fails to spawn without node on
+            PATH. Set your own to use e.g. `[ "uvx" "comfy-mcp" ]` (Comfy-Org
+            official server) or an absolute path to a venv/script.
           '';
         };
         environment = mkOption {
