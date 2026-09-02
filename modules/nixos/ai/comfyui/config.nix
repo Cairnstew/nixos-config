@@ -107,16 +107,42 @@ let
   opencodeSkill = pkgs.writeText "SKILL.md" (builtins.readFile ./opencode/skill.md);
   opencodeStatusCmd = pkgs.writeText "comfyui-status.md" (builtins.readFile ./opencode/commands/status.md);
   opencodeWorkflowCmd = pkgs.writeText "comfyui-workflow.md" (builtins.readFile ./opencode/commands/workflow.md);
+  opencodeWorkspaceCmd = pkgs.writeText "comfyui-workspace.md" (builtins.readFile ./opencode/commands/workspace.md);
   opencodeApiTool = pkgs.writeText "comfyui-api.ts" (builtins.readFile ./opencode/tools/comfyui-api.ts);
+  opencodeWorkspaceTool = pkgs.writeText "comfyui-workspace.ts" (builtins.readFile ./opencode/tools/comfyui-workspace.ts);
+  opencodeWorkspacePlugin = pkgs.writeText "comfyui-workspace.ts" (builtins.readFile ./opencode/plugin/workspace.ts);
+
+  # Seeded payload for the writable workspace state file. Written by the setup
+  # script as a real file (NOT symlinked — the store-rendered file is read-only;
+  # the state must be writable by agents/humans).
+  opencodeWorkspaceSeed = builtins.toJSON {
+    workflow = "user/default/workflows/Test Workfloww.json";
+    set_by = "seed";
+    updated = "1970-01-01T00:00:00.000Z";
+  };
 
   opencodeLinks = lib.optionalString opencodeEnabled ''
     ${pkgs.coreutils}/bin/install -d -o comfy-ui -g comfy-ui -m 0770 \
-      ${opencodeDir} ${opencodeDir}/skills/comfyui-development ${opencodeDir}/commands ${opencodeDir}/tools
+      ${opencodeDir} ${opencodeDir}/skills/comfyui-development ${opencodeDir}/commands ${opencodeDir}/tools ${opencodeDir}/plugin
     ln -sfn ${opencodeJson} ${opencodeDir}/opencode.json
     ln -sfn ${opencodeSkill} ${opencodeDir}/skills/comfyui-development/SKILL.md
     ln -sfn ${opencodeStatusCmd} ${opencodeDir}/commands/comfyui-status.md
     ln -sfn ${opencodeWorkflowCmd} ${opencodeDir}/commands/comfyui-workflow.md
+    ln -sfn ${opencodeWorkspaceCmd} ${opencodeDir}/commands/comfyui-workspace.md
     ln -sfn ${opencodeApiTool} ${opencodeDir}/tools/comfyui-api.ts
+    ln -sfn ${opencodeWorkspaceTool} ${opencodeDir}/tools/comfyui-workspace.ts
+    ln -sfn ${opencodeWorkspacePlugin} ${opencodeDir}/plugin/comfyui-workspace.ts
+    # Writable workspace state (seeded to the named workflow; plugin/agents can
+    # update it). Created as a real file owned by the primary user so agents can
+    # write it without root. Seeded to the current Test Workflow initially.
+    if [ ! -f ${opencodeDir}/workspace.json ]; then
+      ${pkgs.coreutils}/bin/install -o comfy-ui -g comfy-ui -m 0660 /dev/stdin ${opencodeDir}/workspace.json <<'SEED'
+${opencodeWorkspaceSeed}
+SEED
+      echo "workspace: seeded ${opencodeDir}/workspace.json"
+    else
+      echo "workspace: keeping existing ${opencodeDir}/workspace.json"
+    fi
   '';
 in
 {
