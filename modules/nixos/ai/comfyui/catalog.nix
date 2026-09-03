@@ -154,20 +154,24 @@
     url = "https://github.com/city96/ComfyUI-GGUF";
     rev = "6ea2651e7df66d7585f6ffee804b20e92fb38b8a";
     sha256 = "1x866w03is9nkaagzj5zxj849jcbbi1788aw4wywlk2k1ir1x77x";
-    description = "GGUF — quantized GGUF model loading (checkpoints/loras/clips) for low-VRAM inference";
+    description = "GGUF — quantized GGUF model loading (checkpoints/loras/clips) for low-VRAM inference. NOTE: needs the `gguf` python module injected (config.nix ggufLinkEnv) or the pack fails to import with 'No module named gguf'.";
   };
 
   # ── CivitAI compat ──────────────────────────────────────────────────────
+  # civitai_comfy_nodes is DEPRECATED upstream (README: "no longer maintained;
+  # moved to civitai/civitai-comfy-nodes") and was removed from the server
+  # preset list. The catalog entry is kept only so old configs still eval
+  # cleanly — prefer civitai-comfy-nodes below.
   civitai_comfy_nodes = {
     url = "https://github.com/civitai/civitai_comfy_nodes";
     rev = "94949435eda6b03802471f837f45b99109041a6d";
     sha256 = "08rywsr7bs3wkb34hhfcbhnp2bwmij9ladflncbv49c4xcxywjca";
-    description = "CivitAI (legacy local pack) — load models/LoRAs directly from Civitai by AIR ID (no API key)";
+    description = "CivitAI (DEPRECATED legacy local pack) — superseded by civitai-comfy-nodes";
   };
   civitai-comfy-nodes = {
     url = "https://github.com/civitai/civitai-comfy-nodes";
     rev = "ee61d1ac0aac6febdd3ac0a13922e5cc7f164aab";
     sha256 = "18a32sg0sf7dhxcfy6dyh220dapy3a4mdqnigfsdildxj29wjifg";
-    description = "CivitAI (official, orchestration) — cloud recipes image/video/audio gen via Civitai API (needs CIVITAI_API_TOKEN)";
+    description = "CivitAI (official, orchestration) — cloud recipes image/video/audio gen via Civitai API; authenticate with my.services.comfyui.civitaiApiKeyPath (agenix civitai-key)";
   };
 }
