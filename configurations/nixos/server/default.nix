@@ -282,8 +282,10 @@
     # - video: AnimateDiff Evolved, VideoHelperSuite, KJNodes
     # - captioning: Florence2, WD14 Tagger
     # - quantized loading: GGUF
-    # - CivitAI: legacy AIR loader (no API key) + official orchestration pack
-    #   (needs CIVITAI_API_TOKEN for the cloud nodes; harmless to have loaded)
+    # - CivitAI: official orchestration pack (civitai-comfy-nodes), authenticated
+    #   with the agenix `civitai-key` secret via comfy-ui-civitai-auth. The
+    #   legacy `civitai_comfy_nodes` pack was removed — deprecated upstream and
+    #   superseded by the official pack.
     presets = [
       "ComfyUI_Comfyroll_CustomNodes"
       "ComfyUI-Custom-Scripts"
@@ -306,9 +308,79 @@
       "ComfyUI-Florence2"
       "ComfyUI-WD14-Tagger"
       "ComfyUI-GGUF"
-      "civitai_comfy_nodes"
       "civitai-comfy-nodes"
     ];
+    # Civitai API key for the official civitai-comfy-nodes pack (registered
+    # automatically on boot by comfy-ui-civitai-auth).
+    civitaiApiKeyPath = config.age.secrets."civitai-key".path;
+
+    # Declarative models.
+    #
+    # Krea 2 TURBO — DIFFUSION-MODEL-ONLY (no TE/VAE inside; CheckpointLoaderSimple
+    # can never load it), loaded via UNETLoader from models/diffusion_models/.
+    # The URN's civitai fileId is what is on disk (sha256 matches), but the URN
+    # <type> "checkpoint" would map to checkpoints/ — the folder is forced to
+    # "diffusion_models" so we verify in place. The file was manually placed at
+    # /mnt/data/comfyui/models/diffusion_models/krea2TurboFP8_krea2TURBO.safetensors
+    # (12.9 GB, raw FP8 E4M3, metadata krea2_fp8: true); download mode verifies
+    # the sha256 and only re-fetches if the file is missing/mismatched.
+    models = {
+      "krea2TurboFP8_krea2TURBO.safetensors" = {
+        urn = "urn:air:krea2:checkpoint:civitai:2723583@3060999+2939623";
+        type = "diffusion_models";
+        sha256 = "0kpn616i57djdz1ib2851jjrf4jrnjws3jafbmg9dpsrgi826d9d";
+      };
+      # Krea 2 text encoder (Qwen3-VL 4B, FP8 scaled) — required for
+      # CLIPLoader(type="krea2") text conditioning. From the official
+      # Comfy-Org/Krea-2 HF repo (not gated); download mode puts the real file
+      # in models/text_encoders/ on the data disk (dir created by the module).
+      "qwen3vl_4b_fp8_scaled.safetensors" = {
+        url = "https://huggingface.co/Comfy-Org/Krea-2/resolve/main/text_encoders/qwen3vl_4b_fp8_scaled.safetensors";
+        type = "text_encoders";
+        mode = "download";
+        sha256 = "153hm169glmxf0js9rban2hla52jdf1cppyadkfjbg0bvx253gal";
+      };
+      # Krea 2 VAE (Qwen image VAE) — VAELoader(qwen_image_vae) required for
+      # VAEDecode. Same HF repo / download-mode behavior as the text encoder.
+      "qwen_image_vae.safetensors" = {
+        url = "https://huggingface.co/Comfy-Org/Krea-2/resolve/main/vae/qwen_image_vae.safetensors";
+        type = "vae";
+        mode = "download";
+        sha256 = "07rx08z24h9lpwjaj5z00y1v13qf82xhapy9x5z9crry47q801d7";
+      };
+      # Krea 2 LoRA pack [Krea 2] Beta V0.1 → bloomgirls-ultrarealism-krea2_4k.
+      # CREATOR-GATED: anonymous downloads get 401 ("requires you to be logged
+      # in") — the download-mode script uses the configured civitaiApiKeyPath
+      # for these (curl -L never forwards the key to the CDN host).
+      "bloomgirls-ultrarealism-krea2_4k.safetensors" = {
+        urn = "urn:air:krea2:lora:civitai:2735553@3075850+2954934";
+        sha256 = "13sr5iifd7vnfhi6mzd7zjl1hsdlqny07nbzr3aa5dbn7aysxgyi";
+      };
+      # [Krea 2] "v2 -krea2" LoRA (model 2187487).
+      "cutifier_krea2.safetensors" = {
+        urn = "urn:air:krea2:lora:civitai:2187487@3107521+2987468";
+        sha256 = "1r7ssg3nc2dy4yzrn5r9v1mbag2xc94l0g4869fm0npw6xvj71vi";
+      };
+      # "Krea2 v3.0" LoRA (model 2688234) → realism_engine_krea2_v3.1.
+      "realism_engine_krea2_v3.1.safetensors" = {
+        urn = "urn:air:krea2:lora:civitai:2688234@3109006+2988982";
+        sha256 = "19albd5n6f41j74zg84ix0c7b34czaz853jn2sk92bjs8hljcwd6";
+      };
+      # "Krea 2 v1.4" LoRA (model 1972981) → snofs_krea_v1_4.
+      "snofs_krea_v1_4.safetensors" = {
+        urn = "urn:air:krea2:lora:civitai:1972981@3290120+3174557";
+        sha256 = "0cl958w3vnaby3fib9ajw8qp8apyfkqi63wkrwa3y043vvnqhy3n";
+      };
+      # Model 2738703 is a WORKFLOW, not a model (type "Workflows", file =
+      # krea2SFWNSFWUncensoredImageTo_v10.json). The URN says <type> "unknown",
+      # so the folder is set explicitly to "workflows" → lands in
+      # user/default/workflows/ (where ComfyUI reads workflow JSONs).
+      "krea2SFWNSFWUncensoredImageTo_v10.json" = {
+        urn = "urn:air:krea2:unknown:civitai:2738703@3079753+2962861";
+        type = "workflows";
+        sha256 = "1ys4pfhj13s3h7rnr3c7vpgl7xd47kkfqbv3b4lmxggbx2jgik99";
+      };
+    };
   };
 
   # ── Manga Reader (sync library to config repo) ───────────────────────────
@@ -395,8 +467,20 @@
     };
   };
 
-  # ── Neko (Remote Browser) — disabled 2026-07-30 ─────────────────────────
-  my.services.neko.enable = false;
+  # ── Neko (Remote Browser) — server-side Firefox session ─────────────────
+  # Re-enabled for the Civitai dashboard entry: browser session/profile lives
+  # on this US box (open from any machine at /neko/), auto-login to Civitai
+  # inside it, traffic egress via this server. natIp default = this box's
+  # tailscale IP (tailscale0 is a trusted firewall interface).
+  my.services.neko = {
+    enable = true;
+    adminPasswordFile = config.age.secrets."neko-admin-password".path;
+    userPasswordFile = config.age.secrets."neko-user-password".path;
+    # Persistent Firefox profile (named docker volume → survives container
+    # restarts/updates). Without it the Civitai session/login would be lost on
+    # every container restart.
+    extraVolumes = [ "neko-profile:/home/neko/.mozilla" ];
+  };
 
   # ── Squid Forward Proxy (Browser Egress) ────────────────────────────────
   my.services.squidProxy.enable = true;

@@ -6,6 +6,20 @@ in
   options.my.services.comfyui = {
     enable = mkEnableOption "ComfyUI image generation service";
 
+    package = mkOption {
+      type = types.nullOr types.package;
+      default = null;
+      example = lib.literalExpression ''pkgs.stable-diffusion-webui.comfy.cuda'';
+      description = ''
+        ComfyUI package to run. null (default) = a repo-local build pinned to
+        v0.29.2 (see modules/nixos/ai/comfyui/comfy/) — the first stable line
+        with native Krea 2 support (comfy/ldm/krea2 + CLIPLoader type "krea2").
+        The `stable-diffusion-webui-nix` input still ships v0.25.1 which lacks
+        Krea 2, so the module overrides services.comfyUi.package with the
+        vendored build unless this option is set.
+      '';
+    };
+
     listenHost = mkOption {
       type = types.nullOr types.str;
       default = null;
@@ -83,6 +97,22 @@ in
       default = [ ];
       example = [ "--highvram" "--auto-launch" ];
       description = "Additional CLI arguments passed to ComfyUI.";
+    };
+
+    civitaiApiKeyPath = mkOption {
+      type = types.nullOr types.path;
+      default = null;
+      example = lib.literalExpression ''config.age.secrets."civitai-key".path'';
+      description = ''
+        Path to a file containing a Civitai API key (usually an agenix secret
+        decrypted at `/run/agenix/<name>`). When set, a `comfy-ui-civitai-auth`
+        oneshot registers the key with the `civitai-comfy-nodes` pack after
+        ComfyUI starts, by POSTing it to `/civitai/auth/api-key` (the pack
+        validates it against Civitai and persists it to a writable
+        `$HOME/.civitai/comfy-settings.json`). The key unlocks authenticated
+        searches/generation with the official orchestration pack and avoids the
+        anonymous API's low rate limits.
+      '';
     };
 
     customNodes = mkOption {
@@ -185,7 +215,117 @@ in
       '';
       type = types.listOf types.str;
       default = [ ];
-      example = lib.literalExpression ''[ "ComfyUI_essentials" "civitai_comfy_nodes" ]'';
+      example = lib.literalExpression ''[ "ComfyUI_essentials" "civitai-comfy-nodes" ]'';
+    };
+
+    models = mkOption {
+      description = ''
+        Declarative model downloads. Each attribute name is the file name
+        (e.g. `krea2TurboFP8_krea2TURBO.safetensors`) under
+        `<dataDir>/models/<type>/`. The value is either a plain URN string
+        (`"urn:air:<family>:<type>:civitai:<modelId>@<versionId>[+<fileId>]"`)
+        or an attrset for more control.
+
+        Two fetch modes:
+        - **download** (default when a URN is given): the file is downloaded
+          at activation by `comfy-ui-prepare-dirs` straight into
+          `<dataDir>/models/<type>/<filename>` — a real file on the data
+          disk, resumable (`curl -C - --retry-all-errors`), verified against
+          `sha256` when one is set, skipped when already verified. Use this
+          for GB-scale models: nothing bloats the Nix store.
+        - **store** (default for explicit `url` + `sha256`): the file is
+          fetched at BUILD time with `pkgs.fetchurl` (a pure fixed-output
+          derivation pinned by `sha256`) and symlinked into place. Fully
+          immutable/GC-safe, but the bytes live in the store.
+
+        URN format: `urn:air:<family>:<type>:civitai:<modelId>@<versionId>[+<fileId>]`
+        e.g. `urn:air:krea2:checkpoint:civitai:2723583@3060999+2939623` maps to
+        the civitai.red download URL for version 3060999 file 2939623 and the
+        model folder for <type> (`checkpoint` → `checkpoints`,
+        `lora` → `loras`, `vae` → `vae`, `clip` → `clip`,
+        `diffusion_model` → `diffusion_models`, ...). Only `civitai` is
+        supported as a source; the .red domain is the same API as .com and
+        public model files redirect to the CDN anonymously (no API key in the
+        store or config).
+
+        Civitai's R2 delivery drops mid-stream on multi-GB files; both modes
+        retry at curl level, and `download` resumes partial transfers.
+      '';
+      type = types.attrsOf (types.either types.str (types.submodule {
+        options = {
+          enable = mkOption {
+            type = types.bool;
+            default = true;
+            description = "Enable this declarative model.";
+          };
+          urn = mkOption {
+            type = types.nullOr types.str;
+            default = null;
+            example = "urn:air:krea2:checkpoint:civitai:2723583@3060999+2939623";
+            description = ''
+              URN identifying the model (see option description). Implies the
+              civitai download URL, the model folder, and default mode
+              `download`. Cannot be combined with `url`.
+            '';
+          };
+          mode = mkOption {
+            type = types.nullOr (types.enum [ "store" "download" ]);
+            default = null;
+            description = ''
+              Where the bytes live: `store` = build-time fetchurl into the
+              Nix store + symlink (needs `sha256`); `download` = resumable
+              curl into `<dataDir>/models/<type>/` at activation.
+              null = `download` for URN-defined entries, `store` otherwise.
+            '';
+          };
+          type = mkOption {
+            type = types.nullOr types.str;
+            default = null;
+            example = "checkpoints";
+            description = ''
+              ComfyUI model folder under `<dataDir>/models/` (checkpoints,
+              loras, vae, clip, diffusion_models, ...). Default derives from
+              the URN `<type>` word. Required when no URN is given.
+            '';
+          };
+          url = mkOption {
+            type = types.nullOr types.str;
+            default = null;
+            example = "https://civitai.com/api/download/models/3060999?fileId=2939623";
+            description = "Direct download URL. Default derives from the URN. Cannot be combined with `urn`.";
+          };
+          sha256 = mkOption {
+            type = types.nullOr types.str;
+            default = null;
+            example = "0kpn616i57djdz1ib2851jjrf4jrnjws3jafbmg9dpsrgi826d9d";
+            description = ''
+              sha256 (base32) of the downloaded file. REQUIRED in `store`
+              mode. In `download` mode optional but recommended: the file is
+              verified against it after download and on later boots (a marker
+              skipping re-verification once known-good).
+            '';
+          };
+        };
+      }));
+      default = { };
+      example = lib.literalExpression ''
+        {
+          # URN shorthand → downloaded to dataDir/models/checkpoints/ on the
+          # data disk, resumable + hash-verified once sha256 is set.
+          "krea2TurboFP8_krea2TURBO.safetensors" = {
+            urn = "urn:air:krea2:checkpoint:civitai:2723583@3060999+2939623";
+            sha256 = "0kpn616i57djdz1ib2851jjrf4jrnjws3jafbmg9dpsrgi826d9d";
+          };
+          # Plain string = the same thing (download mode, no hash yet).
+          "flux1-dev.safetensors" = "urn:air:flux:checkpoint:civitai:133005@183639";
+          # Store mode: pure build-time fetch pinned by hash.
+          "sd_xl_base.safetensors" = {
+            type = "checkpoints";
+            url = "https://civitai.com/api/download/models/199240?fileId=222795";
+            sha256 = "0z15a2kbrg0djl5w70h6gd7kyaw7hcvpwinpvbsdfjb80hc70n0k";
+          };
+        }
+      '';
     };
 
     extraModelPaths = mkOption {
@@ -278,6 +418,27 @@ in
           loaded when opencode runs from the data dir — the tools never appear
           in other projects (e.g. nixos-config) for cleanliness. Wired only
           when opencode is enabled for the primary user.
+        '';
+      };
+      skills = mkOption {
+        type = types.attrsOf types.str;
+        description = ''
+          Custom opencode skills contributed by this module (name → SKILL.md
+          markdown). These render into the PRIMARY user's MAIN opencode config
+          (`my.programs.opencode.skills`), i.e. alongside the other custom
+          skills in `~/.config/opencode/skills/`, so they load in ANY project:
+          `comfyui-module-development` (developing this NixOS module; models by
+          URN, modes, activation, gotchas) and `comfyui-instance-usage`
+          (operating the running instance: API, data dir, civitai, diagnostics).
+          The dataDir project-local `.opencode/` (skill `comfyui-development`)
+          remains separate and scoped to sessions started inside the data dir.
+        '';
+        default = {
+          comfyui-module-development = builtins.readFile ./opencode/skills/comfyui-module-development.md;
+          comfyui-instance-usage = builtins.readFile ./opencode/skills/comfyui-instance-usage.md;
+        };
+        example = lib.literalExpression ''
+          { "comfyui-module-development" = builtins.readFile ./opencode/skills/comfyui-module-development.md; }
         '';
       };
       mcp = {
