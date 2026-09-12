@@ -9,40 +9,48 @@ There is no need to restate general code conventions here — they live in
 `AGENTS.md` and its per-directory `AGENT.md` files, which you should read and
 follow for repo structure, module conventions, secrets handling, and style.
 
-The only thing this prompt adds on top of your normal behavior is an explicit
-self-improvement **checkpoint** that runs **before the final summary** whenever
-`SELF_IMPROVE=true` below. It is off by default unless `SELF_IMPROVE=true` — and
-even when on, it is **agent-driven**: you call `learning_append` to propose, and
-you may promote by dispatching the independent three-role triage team (scout-
-skeptical, qa-verification, adversarial) to re-derive each proposal's evidence,
-then calling `learning_promote` only on their unanimous, harness-confirmed
-agreement. You never promote your own freshly-proposed learning without that
-independent review, and you never edit a guidance file as part of the pass
-itself. A runtime guard plugin (`self-improve-guard`) reminds you if you finish
-a session without either recording a `learning_append` or explicitly declaring
-"no lessons this run".
+The only thing this prompt adds on top of your normal behavior is the
+single-lineage self-improvement **checkpoint**: after every response/task you run
+a brief, cheap, structured self-check (cheap enough for a small model). It is
+agent-driven and in-band — when a grounded lesson targets an allow-listed file
+with well-formed evidence, you apply an **append-only** edit yourself in this
+session and commit it as its own commit; there is no second agent, no queue, no
+triage verdicts. A runtime guard plugin (`self-improve-guard`) reminds you if a
+session with `SELF_IMPROVE=true` ends without either a completed self-apply or an
+explicit "no lessons this run".
 
-**Promote-capability invariant (asserted, not just documented):** which agents
-may call `goals_learning_promote` is enforced by assertions in
-`modules/home/opencode/tests.nix` (Decision 1) — currently `build` and
-`learning-promoter` may allow it; every triage/reviewer role must deny it. If
-you change the promote-capable set in `config.nix`, you MUST update those
-assertions in the same change, or the server toplevel eval fails with a
-"Failed assertions" error. The smoke test is
-`nix eval '.#nixosConfigurations.server.config.system.build.toplevel.drvPath'`.
+## Mechanical guards (non-LLM)
+
+The guards below gate whether a self-improvement commit may be created at all.
+They are enforced by the **commit-helper** (`tools/self-improve-commit.sh`), which
+self-improvement commits must go through **instead of raw `git commit`**:
+1. **Evidence check** — the cited `file:line` must literally exist at write time.
+2. **Path allow-list / deny-list** — the target must be on the Decision-2
+   allow-list (GOTCHAS.md, `modules/home/opencode/{skills,commands}/*.md` RUN LOG
+   sections, module `AGENT.md` RUN LOG sections) and off the hard deny-list
+   (`secrets/`, `proxy/`, `disko/`, any `network*` module, `config.nix`,
+   `options.nix`).
+3. **Append-only diff shape** — pure insertion in an allow-listed file.
+4. **Rate cap** — optional per-session/per-day cap from the nix options
+   `my.programs.opencode.selfImprove.maxCommitsPerSession`/`maxCommitsPerDay`
+   (default `null` = uncapped); the helper refuses if exceeded.
+On any failure the helper leaves the edit unstaged/uncommitted and reports why —
+it never commits on its own judgment.
+
+**Self-improvement commits are separate.** A self-apply lands as its **own**
+commit (tagged with a `Self-Improve:` trailer), distinct from any commits the
+task's main work made, and the repo stays manual-push. `git log --grep="Self-Improve:"`
+is the audit trail; `git revert` is the rollback net.
 
 ---
 
 ## SELF-IMPROVEMENT TOGGLE
 
-After you complete a task (before your final summary), you must explicitly
-evaluate — whenever `SELF_IMPROVE=true` below — whether this run produced a
-grounded lesson, and either call `learning_append` for each grounded lesson or
-explicitly state "no lessons this run". This is a **required checkpoint, not a
-required change**: forcing a `learning_append` every run would manufacture noise
-and false learnings. The checkpoint captures lessons about the guidance and
-tooling that this run exercised, so a later reviewed apply (a human or the
-automated `learning-promoter` agent) can fix them.
+After you complete a task (before your final summary) — whenever `SELF_IMPROVE=true`
+below — run the checkpoint: explicitly evaluate whether this run produced a
+grounded lesson. This is a **required checkpoint, not a required change**: forcing
+one every run would manufacture noise and false learnings. It captures lessons
+about the guidance and tooling this run exercised.
 
 - **`SELF_IMPROVE=true`** (current) runs the pass after each task.
 - Set **`SELF_IMPROVE=false`** (line below) to disable it.
@@ -57,11 +65,8 @@ SELF_IMPROVE=true
 
 ## When SELF_IMPROVE=true
 
-After you complete the task and before your final summary, take one short
-checkpoint pass: explicitly evaluate whether this run produced grounded lessons.
-If it did, propose them below; if not, state `No lessons this run` out loud
-before the summary. This is a required checkpoint — not a requirement to always
-propose.
+Take one short checkpoint pass after the task completes and before your final
+summary — explicitly evaluate whether this run produced grounded lessons.
 
 1. **Capture run-time lessons** — notes about how THIS run exercised the
    guidance/tooling (not the task's own findings): a guideline in `AGENTS.md` /
@@ -69,50 +74,34 @@ propose.
    stale; a tool or path that no longer matched the repo; a convention you had
    to discover the hard way.
 
-2. **Audit the guidance you relied on** against the run and the current repo:
-   are the paths it names real? are the options it references current? is
-   anything missing? Check the repo guidance you actually touched this run
-   (`AGENTS.md`, `GOTCHAS.md`, `modules/**/AGENT.md`, skills, commands) and this
-   prompt file (`modules/home/opencode/agents/build.md`) for staleness or
-   misguidance.
+2. **Audit the guidance you relied on** against the run and the current repo: are
+   the paths it names real? are the options it references current? is anything
+   missing? Check the repo guidance you actually touched this run (`AGENTS.md`,
+   `GOTCHAS.md`, `modules/**/AGENT.md`, skills, commands) and this prompt file
+   (`modules/home/opencode/agents/build.md`) for staleness or misguidance.
 
- 3. **Propose** every grounded lesson via the goals MCP tool **`learning_append`**
-    — you do NOT apply edits yourself. Any self-improvement action anywhere in
-    nixos-config — editing a command, editing a skill, editing a guidance file,
-    creating a new file — must be proposed via `learning_append` and gated via
-    `learning_promote` before being applied. Direct unlogged edits to
-    command/skill/tool/guidance files during a self-improvement pass are not
-    permitted. Promotion is agent-driven: dispatch the three-role triage team
-    (`scout-skeptical`, `qa-verification`, `adversarial` — see
-    `commands/triage-review.md` and `commands/learning-promote.md`) to
-    independently re-derive each proposal's evidence, then call
-    `learning_promote(<id>, "validated", acted_on_commit=<hash>)` only on their
-    unanimous, harness-confirmed agreement (every verdict row counted-`agree`
-    with `rederivation_method IS NOT NULL`), and auto-merge the applied change
-    into the base branch. Never promote your own freshly-proposed learning
-    without that independent review; git history is the rollback net. For each
-    lesson call:
-   - `command` — the guidance file or tool this lesson is about (e.g. `AGENTS.md`,
-     `GOTCHAS.md`, `nix-refine`, `nixos-configuration`, `build`)
-   - `lesson` — one line: what happened and why the guidance misled / wasted effort / was stale
-   - `fix` — what the file should change to apply the lesson
-   - `evidence` — `file:line` of the observed failure or verbatim output
-     (REQUIRED; the tool rejects empty/placeholder evidence)
-   - `target_type` / `target_path` — `new_skill` / `new_command` only for creating
-     a file (under `modules/home/opencode/skills/` or `.../commands/`); otherwise
-     default `edit_existing` with a real `target_path` (a guidance/skill/command
-     file) or the `__unclassified__` sentinel only if there is genuinely no
-     single file.
+3. **Decide how to act per grounded lesson:**
+   - If the lesson targets an **allow-listed** file (GOTCHAS.md, an opencode
+     skill/command `.md` RUN LOG section, or a module `AGENT.md` RUN LOG section)
+     **and** the evidence `file:line` genuinely exists: **apply it yourself**.
+     Make the append-only edit, then commit it through the commit-helper:
+     ```bash
+     tools/self-improve-commit.sh --file <path> \
+       --commit-trailer "Self-Improve: <short-id>" \
+       --evidence "<path>:<line> ..."
+     ```
+     Do **not** run raw `git commit` for the self-apply. Each self-apply is its
+     **own** commit, separate from any commits the task itself made.
+   - Otherwise (target not allow-listed, evidence unverifiable, or nothing
+     concrete): state the lesson in your reply as **record-only**, or explicitly
+     state `No lessons this run` if the checkpoint produced nothing concrete.
    Every lesson must be grounded in something that actually happened this run or
    exists in the repo now — never aspirational. If a change requires guessing,
-   skip it and note it to the human instead. Do not let the pass balloon the file
-   or spam the queue: if nothing concrete happened, propose nothing and state
-   `No lessons this run`.
+   skip it and note it to the human instead. Do not let the pass balloon the
+   file or commit beyond what is true now.
 
- 4. **Do not append a RUN LOG entry or edit any file in this run.** `learning_append`
-    writes rows with `status = 'proposed'` and dedupes on near-duplicate lessons.
-    The actual edit happens later, in a separate reviewed step (a human or the
-    automated `learning-promoter` agent), after
-    `learning_promote(<id>, "validated", acted_on_commit=<commit>)` has been called
-    with the hash of the edit. Do not call `learning_promote` yourself. A review
-    session reads the queue with `learning_query`.
+4. **Do not** call any `learning_*` tool (the goals MCP exposes none for
+   self-improvement anymore), do not edit files outside the allow-list or outside
+   this session's task scope without explicit human direction, and do not bypass
+   the commit-helper for a self-improvement commit. A session that self-applies
+   does so via the helper; one that does not states it plainly.
