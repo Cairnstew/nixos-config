@@ -132,15 +132,15 @@ add, and are they sound" review step.
 - `structure_set` and `structure` JSONs are per-namespace; a set in one namespace
   may reference structures in another (e.g. `minecraft:villages` referencing a
   mod's `foo:village_taiga`). The summary's reference check is cross-namespace.
-- **RoadWeaver = the "trails/roads" mod.** When a user says "make the trails mod
-  go to other structures", they mean RoadWeaver (road networks between
-  structures). Its own structures (bridges, roadside decor) show up as "NOT in
-  any set" — expected, they're code-placed along roads, not spawned via sets.
-  RoadWeaver's *which structures get linked* is NOT in its structure JSONs: it's
-  `structurePrediction.structureWhitelist` in `config/roadweaver/roadweaver.json`
-  (default `["#minecraft:village"]`; supports `#tag`, `ns:*`, `ns/*`, exact ids;
-  overworld-only discovery). To link roads to the pack's other structures, ship
-  an expanded whitelist via `packwiz-config-add` (see `mc-mod-config-set`).
+- **RoadWeaver = the "trails/roads" mod (historical).** When a user said "make
+  the trails mod go to other structures", they meant RoadWeaver (road networks
+  between structures) — its *which structures get linked* was a
+  `structurePrediction.structureWhitelist` config, not its structure JSONs.
+  RoadWeaver has been **removed from AllTheTech**, so this no longer applies to
+  that pack; if a new pack adds it, the linking config is
+  `structurePrediction.structureWhitelist` (default `["#minecraft:village"]`;
+  supports `#tag`, `ns:*`, `ns/*`, exact ids; overworld-only discovery) and its
+  roadside structures (bridges, decor) are code-placed, not set-spawned.
 - Output can be large (hundreds of lines for a big pack). Summarize rather than
   pasting verbatim; drill into a mod with `mods=` when a detail matters.
 
@@ -158,6 +158,42 @@ user: what structures does AllTheTech add, and does anything override vanilla?
 3. report: pack-wide inventory summary, the vanilla redefinitions and their
    sources, missing references (none), and that set-less structures are
    code-registered so are expected.
+```
+
+## Full export
+
+Dump every structure's full metadata to a single JSON file — one scan pass,
+one write, deterministic ID-sorted output. The `entries` map is keyed by
+structure ID; each value matches the `--info` detail shape (source, type,
+biomes, pool JSON, code_registered, vanilla_override, set cross-references).
+
+```
+# CLI — defaults to <packname>-structures-full.json
+python3 tools/structures.py AllTheTech --full-export
+python3 tools/structures.py AllTheTech --full-export /tmp/all-structures.json
+
+# Scoped exports
+python3 tools/structures.py AllTheTech --full-export --mods ae2,roadweaver
+python3 tools/structures.py AllTheTech --full-export --no-datapacks
+
+# Via mc-pack.py
+python3 tools/mc-pack.py AllTheTech structures-full-export
+python3 tools/mc-pack.py AllTheTech structures-full-export /tmp/structures.json
+```
+
+**Size estimates (AllTheTech):** ~484 structures → ~654 KB JSON (~1.5s total).
+
+**Output shape:**
+```json
+{
+  "pack": "AllTheTech", "tool": "structures.py", "version": "1.0",
+  "sources": [{"kind": "mod", "name": "...", "jar": "...", "structures": {"ae2:meteorite": {...}}, "sets": {"ae2:meteorite": {...}}}],
+  "summary": {"total_structures": 484, ...},
+  "entries": {
+    "ae2:meteorite": {"id": "ae2:meteorite", "source": {...}, "type": "ae2:ae2mtrt", "biomes": "#ae2:has_meteorites", "code_registered": false, "sets": ["ae2:meteorite"], ...},
+    "minecraft:village_plains": {"id": "minecraft:village_plains", "source": {...}, "vanilla_override": true, "sets": ["minecraft:villages"], ...}
+  }
+}
 ```
 
 ## RUN LOG
@@ -180,3 +216,6 @@ placeholder-scan
 
 ### 2026-08-15
 investigate ocean/coastal structures for RoadWeaver road-end-in-sea compatibility
+
+### 2026-09-12
+Testing tool functionality

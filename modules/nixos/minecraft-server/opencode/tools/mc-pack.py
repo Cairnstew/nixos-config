@@ -56,6 +56,33 @@ Commands:
   inspect <mod-slug-or-name> [--jar]
       Query the Modrinth API for a mod: deps, side, loaders, downloads. With
       --jar, also downloads the latest jar and lists the config/ files it ships.
+  items-full-export [--mods slug1,slug2] [--no-datapacks] [--no-vanilla] [outfile]
+      Write every item's full metadata to a single JSON file via items.py.
+      If outfile is omitted, defaults to <packname>-items-full.json.
+  recipes-full-export [--mods slug1,slug2] [--no-datapacks] [--no-vanilla] [outfile]
+      Write every recipe's full metadata to a single JSON file via recipes.py.
+  loot-full-export [--mods slug1,slug2] [--no-datapacks] [--no-vanilla] [outfile]
+      Write every loot table's full metadata to a single JSON file via loot.py.
+  mobs-full-export [--mods slug1,slug2] [--no-datapacks] [--no-vanilla] [outfile]
+      Write every mob's full metadata to a single JSON file via mobs.py.
+  structures-full-export [--mods slug1,slug2] [--no-datapacks] [--no-vanilla] [outfile]
+      Write every structure's full metadata to a single JSON file via structures.py.
+  ore [--mods slug1,slug2] [--no-datapacks] [--no-vanilla]
+      Review every ore feature the pack will generate, from the pinned mod jars
+      and the pack's own datapacks. Flags: --mods restricts to listed mods;
+      --no-datapacks skips the datapack scan; --no-vanilla omits vanilla baseline.
+  ore-info <ore-id> [--mods slug1,slug2] [--no-datapacks] [--no-vanilla]
+      Show details for one ore feature (e.g. minecraft:ore_diamond).
+  ore-full-export [--mods slug1,slug2] [--no-datapacks] [--no-vanilla] [outfile]
+      Write every ore's full metadata to a single JSON file via ore.py.
+  mobspawn [--mods slug1,slug2] [--no-datapacks] [--no-vanilla]
+      Review every mob spawn entry across all biomes, from the pinned mod jars
+      and the pack's own datapacks. Flags: --mods restricts to listed mods;
+      --no-datapacks skips the datapack scan; --no-vanilla omits vanilla baseline.
+  mobspawn-info <biome-id> [--mods slug1,slug2] [--no-datapacks] [--no-vanilla]
+      Show spawn details for one biome (e.g. minecraft:plains).
+  mobspawn-full-export [--mods slug1,slug2] [--no-datapacks] [--no-vanilla] [outfile]
+      Write every biome's spawn data to a single JSON file via mobspawn.py.
 
 Each file-editing command runs `packwiz refresh` afterwards (via the repo's
 .#packwiz app) so index.toml stays in sync — skipping it causes hash
@@ -1119,6 +1146,300 @@ def cmd_inspect(pack_dir, args):
                 shutil.rmtree(tmp, ignore_errors=True)
 
 
+def _run_full_export(pack_dir: str, script: str, args: list[str], outfile_default: str) -> None:
+    """Shell out to a Python scan script's --full-export subcommand."""
+    script_path = os.path.join(os.path.dirname(__file__), script)
+    if not os.path.exists(script_path):
+        die(f"script not found: {script_path}")
+    cmd = ["python3", script_path, pack_dir, "--full-export"]
+    # Forward optional flags that may appear before the outfile positional
+    positional: list[str] = []
+    i = 0
+    while i < len(args):
+        arg = args[i]
+        if arg in ("--mods", "--no-datapacks", "--no-vanilla"):
+            cmd.append(arg)
+            if arg == "--mods" and i + 1 < len(args):
+                cmd.append(args[i + 1])
+                i += 1
+        else:
+            positional.append(arg)
+        i += 1
+    if positional:
+        cmd.append(positional[0])
+    else:
+        cmd.append(outfile_default)
+    try:
+        result = subprocess.run(cmd, capture_output=True, text=True, timeout=300)
+    except subprocess.TimeoutExpired:
+        die(f"{script} timed out after 300 s")
+    if result.stdout:
+        sys.stdout.write(result.stdout)
+    if result.stderr:
+        sys.stderr.write(result.stderr)
+    if result.returncode != 0:
+        die(f"{script} failed with exit code {result.returncode}")
+
+
+def cmd_items_full_export(pack_dir: str, args: list[str]) -> None:
+    pack_name = os.path.basename(os.path.abspath(pack_dir))
+    _run_full_export(pack_dir, "items.py", args, f"{pack_name}-items-full.json")
+
+
+def cmd_recipes_full_export(pack_dir: str, args: list[str]) -> None:
+    pack_name = os.path.basename(os.path.abspath(pack_dir))
+    _run_full_export(pack_dir, "recipes.py", args, f"{pack_name}-recipes-full.json")
+
+
+def cmd_loot_full_export(pack_dir: str, args: list[str]) -> None:
+    pack_name = os.path.basename(os.path.abspath(pack_dir))
+    _run_full_export(pack_dir, "loot.py", args, f"{pack_name}-loot-full.json")
+
+
+def cmd_mobs_full_export(pack_dir: str, args: list[str]) -> None:
+    pack_name = os.path.basename(os.path.abspath(pack_dir))
+    _run_full_export(pack_dir, "mobs.py", args, f"{pack_name}-mobs-full.json")
+
+
+def cmd_structures_full_export(pack_dir: str, args: list[str]) -> None:
+    pack_name = os.path.basename(os.path.abspath(pack_dir))
+    _run_full_export(pack_dir, "structures.py", args, f"{pack_name}-structures-full.json")
+
+
+def cmd_ore(pack_dir: str, args: list[str]) -> None:
+    """ore [--mods slug1,slug2] [--no-datapacks] [--no-vanilla]
+    Review every ore feature the pack will generate, from the pinned mod jars
+    and the pack's own datapacks. Flags: --mods restricts to listed mods;
+    --no-datapacks skips the datapack scan; --no-vanilla omits vanilla baseline."""
+    script_path = os.path.join(os.path.dirname(__file__), "ore.py")
+    if not os.path.exists(script_path):
+        die(f"script not found: {script_path}")
+    cmd = ["python3", script_path, pack_dir]
+    # Forward flags
+    i = 0
+    while i < len(args):
+        arg = args[i]
+        if arg in ("--mods", "--no-datapacks", "--no-vanilla", "--json", "--list"):
+            cmd.append(arg)
+            if arg == "--mods" and i + 1 < len(args):
+                cmd.append(args[i + 1])
+                i += 1
+        elif arg == "--info" and i + 1 < len(args):
+            cmd.extend(["--info", args[i + 1]])
+            i += 1
+        elif arg == "--full-export":
+            cmd.append("--full-export")
+        else:
+            die(f"unknown arg {arg}")
+        i += 1
+    result = subprocess.run(cmd, capture_output=True, text=True, timeout=300)
+    if result.stdout:
+        sys.stdout.write(result.stdout)
+    if result.stderr:
+        sys.stderr.write(result.stderr)
+    if result.returncode != 0:
+        die(f"ore.py failed with exit code {result.returncode}")
+
+
+def cmd_ore_info(pack_dir: str, args: list[str]) -> None:
+    """ore-info <ore-id> [--mods slug1,slug2] [--no-datapacks] [--no-vanilla]
+    Show details for one ore feature (e.g. minecraft:ore_diamond)."""
+    if not args:
+        die("usage: ore-info <ore-id> [flags]")
+    ore_id = args[0]
+    script_path = os.path.join(os.path.dirname(__file__), "ore.py")
+    cmd = ["python3", script_path, pack_dir, "--info", ore_id]
+    # Forward flags
+    for arg in args[1:]:
+        if arg in ("--mods", "--no-datapacks", "--no-vanilla"):
+            cmd.append(arg)
+        elif arg == "--mods" and args.index(arg) + 1 < len(args):
+            cmd.append(args[args.index(arg) + 1])
+    result = subprocess.run(cmd, capture_output=True, text=True, timeout=300)
+    if result.stdout:
+        sys.stdout.write(result.stdout)
+    if result.stderr:
+        sys.stderr.write(result.stderr)
+    if result.returncode != 0:
+        die(f"ore.py failed with exit code {result.returncode}")
+
+
+def cmd_ore_full_export(pack_dir: str, args: list[str]) -> None:
+    """ore-full-export [--mods slug1,slug2] [--no-datapacks] [--no-vanilla] [outfile]
+    Write every ore's full metadata to a single JSON file."""
+    pack_name = os.path.basename(os.path.abspath(pack_dir))
+    _run_full_export(pack_dir, "ore.py", args, f"{pack_name}-ore-full.json")
+
+
+def cmd_mobspawn(pack_dir: str, args: list[str]) -> None:
+    """mobspawn [--mods slug1,slug2] [--no-datapacks] [--no-vanilla]
+    Review every mob spawn entry across all biomes, from the pinned mod jars
+    and the pack's own datapacks. Flags: --mods restricts to listed mods;
+    --no-datapacks skips the datapack scan; --no-vanilla omits vanilla baseline."""
+    script_path = os.path.join(os.path.dirname(__file__), "mobspawn.py")
+    if not os.path.exists(script_path):
+        die(f"script not found: {script_path}")
+    cmd = ["python3", script_path, pack_dir]
+    # Forward flags
+    i = 0
+    while i < len(args):
+        arg = args[i]
+        if arg in ("--mods", "--no-datapacks", "--no-vanilla", "--json", "--list"):
+            cmd.append(arg)
+            if arg == "--mods" and i + 1 < len(args):
+                cmd.append(args[i + 1])
+                i += 1
+        elif arg == "--info" and i + 1 < len(args):
+            cmd.extend(["--info", args[i + 1]])
+            i += 1
+        elif arg == "--full-export":
+            cmd.append("--full-export")
+        else:
+            die(f"unknown arg {arg}")
+        i += 1
+    result = subprocess.run(cmd, capture_output=True, text=True, timeout=300)
+    if result.stdout:
+        sys.stdout.write(result.stdout)
+    if result.stderr:
+        sys.stderr.write(result.stderr)
+    if result.returncode != 0:
+        die(f"mobspawn.py failed with exit code {result.returncode}")
+
+
+def cmd_mobspawn_info(pack_dir: str, args: list[str]) -> None:
+    """mobspawn-info <biome-id> [--mods slug1,slug2] [--no-datapacks] [--no-vanilla]
+    Show spawn details for one biome (e.g. minecraft:plains)."""
+    if not args:
+        die("usage: mobspawn-info <biome-id> [flags]")
+    biome_id = args[0]
+    script_path = os.path.join(os.path.dirname(__file__), "mobspawn.py")
+    cmd = ["python3", script_path, pack_dir, "--info", biome_id]
+    # Forward flags
+    for arg in args[1:]:
+        if arg in ("--mods", "--no-datapacks", "--no-vanilla"):
+            cmd.append(arg)
+        elif arg == "--mods" and args.index(arg) + 1 < len(args):
+            cmd.append(args[args.index(arg) + 1])
+    result = subprocess.run(cmd, capture_output=True, text=True, timeout=300)
+    if result.stdout:
+        sys.stdout.write(result.stdout)
+    if result.stderr:
+        sys.stderr.write(result.stderr)
+    if result.returncode != 0:
+        die(f"mobspawn.py failed with exit code {result.returncode}")
+
+
+def cmd_mobspawn_full_export(pack_dir: str, args: list[str]) -> None:
+    """mobspawn-full-export [--mods slug1,slug2] [--no-datapacks] [--no-vanilla] [outfile]
+    Write every biome's spawn data to a single JSON file."""
+    pack_name = os.path.basename(os.path.abspath(pack_dir))
+    _run_full_export(pack_dir, "mobspawn.py", args, f"{pack_name}-mobspawn-full.json")
+
+
+def cmd_attributes_regenerate(pack_dir: str, args: list[str]) -> None:
+    """attributes-regenerate [--dry-run] [--timeout N] [--exclude-mods slug1 slug2]
+    SLOW PATH (~30min for 363-mod packs): Launch an isolated NeoForge server with the pack's real mods,
+    dump every entity's registered attributes to attributes-dump.json.
+    Re-run after mod list changes. Flags: --dry-run prints plan without executing;
+    --timeout overrides server timeout (default 1800s); --exclude-mods skips listed slugs."""
+    script_path = os.path.join(os.path.dirname(__file__), "attributes_dump.py")
+    if not os.path.exists(script_path):
+        die(f"script not found: {script_path}")
+    cmd = ["python3", script_path, pack_dir]
+    # Forward flags
+    i = 0
+    while i < len(args):
+        arg = args[i]
+        if arg == "--dry-run":
+            cmd.append("--dry-run")
+        elif arg == "--timeout" and i + 1 < len(args):
+            cmd.extend(["--timeout", args[i + 1]])
+            i += 1
+        elif arg == "--exclude-mods":
+            cmd.append("--exclude-mods")
+            # Collect remaining args as mod slugs
+            i += 1
+            while i < len(args) and not args[i].startswith("--"):
+                cmd.append(args[i])
+                i += 1
+            continue
+        elif arg == "--keep-on-failure":
+            cmd.append("--keep-on-failure")
+        else:
+            die(f"unknown arg {arg}")
+        i += 1
+    print(f"[attributes-regenerate] Launching isolated NeoForge server (~30min for 363 mods)...")
+    try:
+        result = subprocess.run(cmd, capture_output=True, text=True, timeout=2400)
+    except subprocess.TimeoutExpired:
+        die("attributes_dump.py timed out after 2400s")
+    if result.stdout:
+        sys.stdout.write(result.stdout)
+    if result.stderr:
+        sys.stderr.write(result.stderr)
+    if result.returncode != 0:
+        die(f"attributes_dump.py failed with exit code {result.returncode}")
+
+
+def cmd_attributes(pack_dir: str, args: list[str]) -> None:
+    """attributes [--list] [--no-vanilla] [--json]
+    Read the cached attributes-dump.json and show an entity-centric view.
+    Flags: --list prints entity IDs only; --no-vanilla excludes vanilla entities;
+    --json outputs machine-readable JSON."""
+    script_path = os.path.join(os.path.dirname(__file__), "attributes.py")
+    if not os.path.exists(script_path):
+        die(f"script not found: {script_path}")
+    cmd = ["python3", script_path, pack_dir]
+    # Forward flags
+    for arg in args:
+        if arg in ("--list", "--no-vanilla", "--json", "--show-all"):
+            cmd.append(arg)
+        else:
+            die(f"unknown arg {arg} (use attributes-info for entity details)")
+    result = subprocess.run(cmd, capture_output=True, text=True, timeout=30)
+    if result.stdout:
+        sys.stdout.write(result.stdout)
+    if result.stderr:
+        sys.stderr.write(result.stderr)
+    if result.returncode != 0:
+        die(f"attributes.py failed with exit code {result.returncode}")
+
+
+def cmd_attributes_info(pack_dir: str, args: list[str]) -> None:
+    """attributes-info <entity-id> [--show-all] [--attribute <name>]
+    Show the full attribute profile for one entity (e.g. minecraft:zombie)."""
+    if not args:
+        die("usage: attributes-info <entity-id> [--show-all] [--attribute <name>]")
+    script_path = os.path.join(os.path.dirname(__file__), "attributes.py")
+    cmd = ["python3", script_path, pack_dir, "--info", args[0]]
+    # Forward flags
+    i = 1
+    while i < len(args):
+        arg = args[i]
+        if arg == "--show-all":
+            cmd.append("--show-all")
+        elif arg == "--attribute" and i + 1 < len(args):
+            cmd.extend(["--attribute", args[i + 1]])
+            i += 1
+        else:
+            die(f"unknown arg {arg}")
+        i += 1
+    result = subprocess.run(cmd, capture_output=True, text=True, timeout=30)
+    if result.stdout:
+        sys.stdout.write(result.stdout)
+    if result.stderr:
+        sys.stderr.write(result.stderr)
+    if result.returncode != 0:
+        die(f"attributes.py failed with exit code {result.returncode}")
+
+
+def cmd_attributes_full_export(pack_dir: str, args: list[str]) -> None:
+    """attributes-full-export [--no-vanilla] [outfile]
+    Write every entity's full attribute data to a single JSON file."""
+    pack_name = os.path.basename(os.path.abspath(pack_dir))
+    _run_full_export(pack_dir, "attributes.py", args, f"{pack_name}-attributes-full.json")
+
+
 COMMANDS = {
     "config-add": cmd_config_add,
     "config-preserve": cmd_config_preserve,
@@ -1132,6 +1453,21 @@ COMMANDS = {
     "datapack-add": cmd_datapack_add,
     "datapack-remove": cmd_datapack_remove,
     "inspect": cmd_inspect,
+    "items-full-export": cmd_items_full_export,
+    "recipes-full-export": cmd_recipes_full_export,
+    "loot-full-export": cmd_loot_full_export,
+    "mobs-full-export": cmd_mobs_full_export,
+    "structures-full-export": cmd_structures_full_export,
+    "ore": cmd_ore,
+    "ore-info": cmd_ore_info,
+    "ore-full-export": cmd_ore_full_export,
+    "mobspawn": cmd_mobspawn,
+    "mobspawn-info": cmd_mobspawn_info,
+    "mobspawn-full-export": cmd_mobspawn_full_export,
+    "attributes-regenerate": cmd_attributes_regenerate,
+    "attributes": cmd_attributes,
+    "attributes-info": cmd_attributes_info,
+    "attributes-full-export": cmd_attributes_full_export,
 }
 
 

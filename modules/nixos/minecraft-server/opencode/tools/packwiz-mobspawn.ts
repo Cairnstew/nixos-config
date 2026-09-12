@@ -15,14 +15,14 @@ function repoRoot(): string {
 // Mirrors the RUN LOG pattern in the mc-* launcher tools, scoped to this tool's
 // source. The runtime copy (~/.config/opencode/tools/) is a read-only store
 // symlink; the SOURCE of truth is the repo file:
-//   modules/nixos/minecraft-server/opencode/tools/packwiz-structures.ts
+//   modules/nixos/minecraft-server/opencode/tools/packwiz-mobspawn.ts
 // When the agent discovers a bug or improvement while using this tool it should
 // edit that repo file (not the runtime copy) and append a RUN LOG entry. A
 // `note` argument appends the entry programmatically.
 
-const SOURCE_REL = join("modules", "nixos", "minecraft-server", "opencode", "tools", "packwiz-structures.ts");
+const SOURCE_REL = join("modules", "nixos", "minecraft-server", "opencode", "tools", "packwiz-mobspawn.ts");
 // Paired skill doc this tool self-improves too (markdown RUN LOG entry).
-const SKILL_REL = join("modules", "nixos", "minecraft-server", "opencode", "skill-mc-mod-structures.md");
+const SKILL_REL = join("modules", "nixos", "minecraft-server", "opencode", "skill-mc-mod-mobspawn.md");
 
 function appendRunLog(note: string): string {
   const repo = repoRoot();
@@ -51,20 +51,23 @@ function appendRunLog(note: string): string {
       out.push(`skill FAILED (${e.message})`);
     }
   }
-  return `packwiz-structures: appended RUN LOG entry to ${out.join(" and ")}`;
+  return `packwiz-mobspawn: appended RUN LOG entry to ${out.join(" and ")}`;
 }
 
 export default {
   description:
-    "Review every worldgen structure + structure set a packwiz modpack will generate — from the pack's PINNED mod jars (checksums.json, exactly what players get) and its own datapacks (config/paxi/datapacks/ + any pack-level data/). Lists structures with their type and biome tag, structure sets with the structures they spawn, flags structures referenced-but-missing, and flags 'minecraft:'-namespace structures the pack/mods redefine (vanilla overrides). Full-pack scans cache downloaded jars by checksum so re-runs are instant.",
+    "Scan every mob spawn entry across all biomes a packwiz modpack will generate — from the pack's PINNED mod jars (checksums.json, exactly what players get) and its own datapacks (config/paxi/datapacks/ + any pack-level data/). Lists biomes with their spawner categories (monster, creature, ambient, etc.), flags contested placements (same biome file defined by multiple sources), and tracks resolution. Full-pack scans cache downloaded jars by checksum so re-runs are instant.",
   args: {
     modpack: { type: "string", description: "Modpack directory name (e.g. 'AllTheTech')." },
-    mods: { type: "string", description: "Comma-separated mod slugs to restrict the scan to (e.g. 'ae2,still-life'). Omit to scan the whole pack." },
+    mods: { type: "string", description: "Comma-separated mod slugs to restrict the scan to (e.g. 'betternether,iceandfire'). Omit to scan the whole pack." },
     noDatapacks: { type: "boolean", description: "Skip scanning the pack's own datapacks (Paxi + data/)." },
-    fullExport: { type: "string", description: "Write every structure's full metadata to a single JSON file. Pass an optional output path, or omit to default to <modpack>-structures-full.json." },
-    note: { type: "string", description: "Self-improvement: append this note as a RUN LOG entry to the tool's source file AND its paired skill (modules/nixos/minecraft-server/opencode/skill-mc-mod-structures.md)." },
+    noVanilla: { type: "boolean", description: "Omit the embedded vanilla biome baseline." },
+    list: { type: "boolean", description: "List all biome IDs with spawn data." },
+    info: { type: "string", description: "Show spawn details for one biome (e.g. 'minecraft:plains')." },
+    fullExport: { type: "string", description: "Write every biome's spawn data to a single JSON file. Pass an optional output path, or omit to default to <modpack>-mobspawn-full.json." },
+    note: { type: "string", description: "Self-improvement: append this note as a RUN LOG entry to the tool's source file AND its paired skill (modules/nixos/minecraft-server/opencode/skill-mc-mod-mobspawn.md)." },
   },
-  async execute(args: { modpack?: string; mods?: string; noDatapacks?: boolean; fullExport?: string; note?: string }) {
+  async execute(args: { modpack?: string; mods?: string; noDatapacks?: boolean; noVanilla?: boolean; list?: boolean; info?: string; fullExport?: string; note?: string }) {
     if (args.note) {
       return appendRunLog(args.note);
     }
@@ -72,11 +75,14 @@ export default {
     const modpackDir = join(repo, "modules", "nixos", "minecraft-server", "modpacks", args.modpack || "");
     const script = join(repo, "modules", "nixos", "minecraft-server", "opencode", "tools", "mc-pack.py");
     if (!args.modpack || !existsSync(modpackDir)) {
-      return `packwiz-structures: need a valid modpack.`;
+      return `packwiz-mobspawn: need a valid modpack.`;
     }
-    const argv = [args.fullExport !== undefined ? "structures-full-export" : "structures"];
+    const argv = [args.fullExport !== undefined ? "mobspawn-full-export" : "mobspawn"];
     if (args.mods) argv.push("--mods", args.mods);
     if (args.noDatapacks) argv.push("--no-datapacks");
+    if (args.noVanilla) argv.push("--no-vanilla");
+    if (args.list) argv.push("--list");
+    if (args.info) argv.push("--info", args.info);
     if (args.fullExport !== undefined && args.fullExport) argv.push(args.fullExport);
     const quoted = argv.map((a) => `'${a.replace(/'/g, "'\\''")}'`).join(" ");
     try {
@@ -85,22 +91,7 @@ export default {
       });
       return out.trim();
     } catch (e: any) {
-      return `packwiz-structures failed:\n${((e.stdout || "") + (e.stderr || "")).trim()}`;
+      return `packwiz-mobspawn failed:\n${((e.stdout || "") + (e.stderr || "")).trim()}`;
     }
   },
 };
-
-// ## RUN LOG
-
-// ### 2026-08-14
-// 2026-08-14 — investigate ocean-crossing roads (user report)
-// Lesson: RoadWeaver issue #68 — roads pave through water in modded/untagged water biomes; check which whitelisted structure mods spawn structures in/near ocean so roads get forced across water.
-// Fix: none yet; scan to find ocean-spawning structures in the whitelist.
-
-// ### 2026-08-14
-// placeholder-scan
-
-// ### 2026-08-15
-// investigate ocean/coastal structures for RoadWeaver road-end-in-sea compatibility
-// ### 2026-09-12
-// Testing tool functionality
