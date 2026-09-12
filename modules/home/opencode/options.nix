@@ -945,6 +945,29 @@ in
       };
     };
 
+    # ── Single-lineage self-improvement (in-band checkpoint, Decision 3) ────
+
+    selfImprove = {
+      maxCommitsPerSession = mkOption {
+        type = types.nullOr types.int;
+        default = null;
+        example = 3;
+        description = ''
+          Max self-improvement commit-helper applies per opencode session.
+          null (default) = uncapped. Enforced mechanically by
+          tools/self-improve-commit.sh, which reads the value from
+          ~/.config/opencode/self-improve.json (written by this module).
+        '';
+      };
+
+      maxCommitsPerDay = mkOption {
+        type = types.nullOr types.int;
+        default = null;
+        example = 10;
+        description = "Max self-improvement commit-helper applies per day. null (default) = uncapped.";
+      };
+    };
+
     # ── Policies ──────────────────────────────────────────────────────────────
 
     policies = {

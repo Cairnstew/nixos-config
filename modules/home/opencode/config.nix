@@ -566,5 +566,14 @@ in
       '';
     })
 
+    # ── Self-improve commit-helper rate caps (mechanical, Decision 3) ────────
+    # Written for tools/self-improve-commit.sh to read; null = uncapped.
+    {
+      home.file.".config/opencode/self-improve.json".text = builtins.toJSON {
+        maxCommitsPerSession = cfg.selfImprove.maxCommitsPerSession;
+        maxCommitsPerDay = cfg.selfImprove.maxCommitsPerDay;
+      };
+    }
+
     ]);
 }
