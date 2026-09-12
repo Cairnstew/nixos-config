@@ -473,6 +473,21 @@ MCP no longer exposes them).
 - **Un-gated channels:** behavioural problems/solutions still go straight into
   `GOTCHAS.md` (§11.3), and the Minecraft pack/packwiz tooling keeps its own
   direct RUN LOG convention (below).
+- **Two lenses, one checkpoint — no second pipeline.** The single in-band pass
+  carries two lenses. The **correctness lens** is the mechanical/self-applying one
+  described above (allow-listed commit-helper self-applies). The **efficiency
+  lens** is proposal-only: the same pass also queries the session's own
+  `opencode.db` row (`cost` / `tokens_input/output/reasoning/cache_read/cache_write`)
+  and `part`-table tool-call count (reusing `self-improve-guard.ts`'s bun:sqlite
+  pattern), and when a genuinely repeated pattern would be collapsed by a new
+  tool/skill/command/config, writes a **proposal** (name + quantitative evidence,
+  marked proposal-only, never built this session) to the repo-root
+  `EFFICIENCY-PROPOSALS.md`. It is still the same checkpoint: one pass, both
+  lenses, no new agent or gate. `EFFICIENCY-PROPOSALS.md` is allow-listed for the
+  commit-helper (same evidence/append-only checks; evidence = DB query output).
+  The optional threshold options
+  `selfImprove.efficiencyLensMinToolCalls`/`...MinCost` (nullable, default `null`)
+  can gate the lens later from usage data; unset, it runs every pass.
 
 **Scoped exception — Minecraft pack/packwiz tooling (`modules/nixos/minecraft-server/opencode/`).**
 This directory keeps its own direct RUN LOG self-improvement convention: editing the repo

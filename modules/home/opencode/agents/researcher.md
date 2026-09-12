@@ -210,6 +210,25 @@ self-improvement checkpoint (a short, cheap structured self-check):
    direction.
 4. Do not call any `learning_*` tool — the goals MCP exposes none for
    self-improvement anymore.
+5. **Efficiency lens** (proposal-only, second part of the same pass — same
+   "guaranteed check, may or may not act" shape, no new agent/gate, no threshold
+   gate by default):
+   - Query this session's own row in `~/.local/share/opencode/opencode.db`
+     (reuse the bun:sqlite pattern in `plugins/self-improve-guard.ts`): read
+     `session.cost`, `tokens_input/output/reasoning/cache_read/cache_write` for
+     this session's id, and the `part`-table tool-call count. The nullable options
+     `selfImprove.efficiencyLensMinToolCalls` / `...MinCost` (default `null` =
+     no gate, always-on today) can be set later to skip below a threshold; honour
+     them if set (read `~/.config/opencode/self-improve.json`).
+   - If a genuinely repeated pattern shows up that a new tool/skill/command/
+     config would collapse, report it as a **record-only efficiency proposal** in
+     your reply (name the idea, cite the quantitative evidence: call counts /
+     cost). **Record-only by design** — this agent cannot write
+     `EFFICIENCY-PROPOSALS.md` (bash denied, edit scoped to this file only), so
+     no self-apply path here, exactly as for the correctness lens.
+   - Otherwise state `no efficiency proposal this run` alongside
+     `no lessons this run`. Never build the proposed tool/skill/command/config in
+     this session.
 
 **Historical record:** the RUN LOG entries below (from before this mandate)
 remain as history; they are not migrated anywhere and are not auto-applied.

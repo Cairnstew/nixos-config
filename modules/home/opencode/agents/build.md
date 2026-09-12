@@ -105,3 +105,26 @@ summary — explicitly evaluate whether this run produced grounded lessons.
    this session's task scope without explicit human direction, and do not bypass
    the commit-helper for a self-improvement commit. A session that self-applies
    does so via the helper; one that does not states it plainly.
+
+5. **Efficiency lens** (proposal-only, second part of the same pass — same
+   "guaranteed check, may or may not act" shape, no new agent/gate, no threshold
+   gate by default):
+   - Query this session's own row in `~/.local/share/opencode/opencode.db`
+     (reuse the bun:sqlite pattern in `plugins/self-improve-guard.ts`): read
+     `session.cost`, `tokens_input`, `tokens_output`, `tokens_reasoning`,
+     `tokens_cache_read`, `tokens_cache_write` for this session's id, and the
+     `part`-table tool-call count for it. The nullable options
+     `selfImprove.efficiencyLensMinToolCalls` / `...MinCost` (default `null` =
+     no gate, i.e. always-on today) can be set later to skip this part below a
+     threshold; honour them if they are set by reading
+     `~/.config/opencode/self-improve.json`.
+   - If a genuinely repeated pattern shows up that a new tool/skill/command/
+     config would collapse (e.g. the same multi-call sequence or expensive fetch
+     recurring throughout the session), write a **proposal** to the repo-root
+     `EFFICIENCY-PROPOSALS.md` (apply it via the commit-helper, which now
+     allow-lists that file — evidence = the DB query output, not a `file:line`):
+     name the idea, cite the quantitative evidence (call counts / cost), and
+     state plainly it is **a proposal only, not to be built this session**.
+   - Otherwise state `no efficiency proposal this run` alongside the existing
+     `no lessons this run`. Never build the proposed tool/skill/command/config
+     in this session — the efficiency lens only records proposals.
