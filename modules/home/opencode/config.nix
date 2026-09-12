@@ -264,18 +264,10 @@ in
             permission = {
               edit = "allow";
               bash = "allow";
-              # No-human auto-improvement: build may call learning_promote to
-              # validate/reject learnings (never over a fresh proposal it just
-              # recorded itself) — dispatch the
-              # three-role triage team to re-derive verdicts first, then promote
-              # only on their unanimous, harness-confirmed agreement. Auto-merge
-              # applied learnings into the base branch; git history is the
-              # rollback net.
-              tools = { "goals_learning_promote" = "allow"; };
             };
             # Required pre-final-summary self-improvement checkpoint
-            # (SELF_IMPROVE=true in ./agents/build.md) — proposal via
-            # learning_append, promotion only after team-approved triage.
+            # (SELF_IMPROVE=true in ./agents/build.md) — in-band, mechanical-guard
+            # gated by tools/self-improve-commit.sh; no promote capability.
             # Kept out of the core description so the default agent stays
             # autonomy-preserving; the prompt only appends the pass.
             prompt = builtins.readFile ./agents/build.md;
@@ -329,12 +321,9 @@ in
           nix-doc-audit = ./commands/nix-doc-audit.md;
           nix-net-audit = ./commands/nix-net-audit.md;
           shopping-research = ./commands/shopping-research.md;
-          triage-review = ./commands/triage-review.md;
-          learning-promote = ./commands/learning-promote.md;
         };
         pluginFiles = lib.mkDefault {
           copylast = ./plugins/copylast.ts;
-          triage-capture = ./plugins/triage-capture.ts;
           self-improve-guard = ./plugins/self-improve-guard.ts;
           # Vendored fork of @hueyexe/opencode-ensemble 0.16.1 — replaces the
           # npm spec (which would double-load with a similar-named local file).
@@ -372,9 +361,6 @@ in
           permission = {
             edit = "deny";
             bash = "deny";
-            # Decision 1 defense-in-depth: triage/scout roles must never reach
-            # learning_promote. MCP tools are named <server>_<tool> in opencode.
-            tools = { "goals_learning_promote" = "deny"; };
           };
         };
         qa = {
@@ -391,70 +377,6 @@ in
           permission = {
             edit = "deny";
             bash = "deny";
-            # Decision 1 defense-in-depth: same as scout — no learning_promote.
-            tools = { "goals_learning_promote" = "deny"; };
-          };
-        };
-        # ── Tier 1 triage roles (observe-only verdicts) ──────────────────
-        # Three independent reviewers that each call goals_learning_review on a
-        # proposed learning. All are read-only (edit/bash denied) and cannot
-        # reach learning_promote (Decision 1 defense-in-depth). They differ only
-        # in review stance: a skeptical scout, a verification-focused QA, and an
-        # adversarial critic. Verdicts land in review_verdicts via learning_review;
-        # the triage-capture plugin back-fills rederivation/confidence from the
-        # session transcript, so the roles are never asked to self-report.
-        scout-skeptical = {
-          description = "Skeptical read-only scout triage: re-derive the learning's evidence and render an agree/disagree/uncertain verdict via goals_learning_review";
-          mode = "subagent";
-          model = null;
-          temperature = 0.1;
-          permission = {
-            edit = "deny";
-            bash = "deny";
-            tools = { "goals_learning_promote" = "deny"; };
-          };
-        };
-        qa-verification = {
-          description = "Read-only QA triage: verify the learning's evidence still holds and render an agree/disagree/uncertain verdict via goals_learning_review";
-          mode = "subagent";
-          model = null;
-          temperature = 0.1;
-          permission = {
-            edit = "deny";
-            bash = "deny";
-            tools = { "goals_learning_promote" = "deny"; };
-          };
-        };
-        adversarial = {
-          description = "Read-only adversarial triage: attempt to falsify the learning's evidence and render an agree/disagree/uncertain verdict via goals_learning_review";
-          mode = "subagent";
-          model = null;
-          temperature = 0.2;
-          permission = {
-            edit = "deny";
-            bash = "deny";
-            tools = { "goals_learning_promote" = "deny"; };
-          };
-        };
-        # ── Full-auto promoter (promote-capable) ───────────────────────────
-        # Runs the promotion loop headlessly: dispatch the three triage reviewers
-        # to re-derive evidence, then learning_promote only on unanimous,
-        # harness-re-derived agreement, applying each accepted learning with an
-        # isolated commit and auto-merging it into the base branch. Successful
-        # review triage teams may also approve learnings whose proposals came
-        # from other sessions (a session must never promote its OWN new
-        # proposal). It has edit/bash because it applies+commits+merges each
-        # accepted learning; git history is the audit/rollback net.
-        learning-promoter = {
-          description = "Headless automated promotion of proposed agent learnings: dispatch the three triage reviewers to re-derive evidence, then learning_promote only on unanimous re-derivation-gated agreement, applying each accepted learning as an isolated commit, auto-merging into the base branch";
-          mode = "primary";
-          model = "opencode-go/mimo-v2.5";
-          temperature = 0.1;
-          prompt = builtins.readFile ./agents/learning-promoter.md;
-          permission = {
-            edit = "allow";
-            bash = "allow";
-            tools = { "goals_learning_promote" = "allow"; };
           };
         };
       };
