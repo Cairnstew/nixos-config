@@ -965,6 +965,29 @@ in
         example = 10;
         description = "Max self-improvement commit-helper applies per day. null (default) = uncapped.";
       };
+
+      efficiencyLensMinToolCalls = mkOption {
+        type = types.nullOr types.int;
+        default = null;
+        example = 30;
+        description = ''
+          Optional floor on `part`-table tool-call count before the checkpoint's
+          efficiency lens runs. null (default) = no gate, lens runs every pass.
+          Set later from usage data to skip the DB query reflection on trivial
+          sessions; read from ~/.config/opencode/self-improve.json.
+        '';
+      };
+
+      efficiencyLensMinCost = mkOption {
+        type = types.nullOr types.number;
+        default = null;
+        example = 0.5;
+        description = ''
+          Optional floor on session cost (USD) before the checkpoint's
+          efficiency lens runs. null (default) = no gate, lens runs every pass.
+          Set later from usage data; read from ~/.config/opencode/self-improve.json.
+        '';
+      };
     };
 
     # ── Policies ──────────────────────────────────────────────────────────────

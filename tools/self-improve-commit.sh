@@ -38,6 +38,7 @@ SELF_IMPROVE_JSON="${SELF_IMPROVE_JSON:-$HOME/.config/opencode/self-improve.json
 # Allow-list (Decision 2): prose guidance exactly.
 ALLOW_GLOBS=(
   'GOTCHAS.md'
+  'EFFICIENCY-PROPOSALS.md'
   'modules/home/opencode/skills/*.md'
   'modules/home/opencode/commands/*.md'
 )

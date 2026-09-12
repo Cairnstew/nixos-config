@@ -186,6 +186,16 @@ in
           || cfg.selfImprove.maxCommitsPerDay > 0;
         message = "my.programs.opencode.selfImprove.maxCommitsPerDay must be null or a positive int.";
       }
+      {
+        assertion = builtins.isNull cfg.selfImprove.efficiencyLensMinToolCalls
+          || cfg.selfImprove.efficiencyLensMinToolCalls > 0;
+        message = "my.programs.opencode.selfImprove.efficiencyLensMinToolCalls must be null or a positive int.";
+      }
+      {
+        assertion = builtins.isNull cfg.selfImprove.efficiencyLensMinCost
+          || cfg.selfImprove.efficiencyLensMinCost >= 0;
+        message = "my.programs.opencode.selfImprove.efficiencyLensMinCost must be null or a non-negative number.";
+      }
     ] ++ (lib.concatLists (lib.mapAttrsToList
       (alias: ref: [
         {

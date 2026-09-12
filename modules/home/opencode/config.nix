@@ -494,6 +494,8 @@ in
       home.file.".config/opencode/self-improve.json".text = builtins.toJSON {
         maxCommitsPerSession = cfg.selfImprove.maxCommitsPerSession;
         maxCommitsPerDay = cfg.selfImprove.maxCommitsPerDay;
+        efficiencyLensMinToolCalls = cfg.selfImprove.efficiencyLensMinToolCalls;
+        efficiencyLensMinCost = cfg.selfImprove.efficiencyLensMinCost;
       };
     }
 
