@@ -388,11 +388,12 @@ in
 Follow the self-improvement protocol in `../AGENTS.md` §11: at the end of every
 session, fix anything in this file that misled you, went stale, or is missing —
 grounded in what actually happened this session or exists in the repo now, never
-aspirational. **Any self-improvement action anywhere in nixos-config — editing a
-command, editing a skill, creating a new skill — must be proposed via
-`learning_append` and gated via `learning_promote` before being applied. Direct
-unlogged edits to command/skill/tool files during a self-improvement pass are not
-permitted.** The RUN LOG below is historical record, not the current mechanism.
+aspirational. Self-improvement is a **single in-band checkpoint**; a self-apply
+must go through the mechanical commit-helper (`tools/self-improve-commit.sh`) as
+its own `Self-Improve:`-trailed commit, gated by evidence-existence, path
+allow-list, append-only diff-shape and rate-cap checks — no `learning_*` tools,
+no queue, no triage. The RUN LOG below is historical record, not the current
+mechanism.
 
 ## RUN LOG
 
