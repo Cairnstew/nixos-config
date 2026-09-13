@@ -278,3 +278,7 @@ export default {
 
 // ### 2026-09-06 — verify the mods mirror after mc-install (concurrent Prism launch race)
 // Lesson: after `packwiz modrinth add` x8, mc-install reported "installing … -> instance … done" but the instance mods dir was UNCHANGED (all 8 new jars absent, stale roadweaver.jar still present), and a later "up to date" run refused to fix it. A detached Prism launch (mc-run monitor run) had been initializing the instance at the same moment as the install; the most probable cause is the two processes racing on the mods dir during rsync --delete. Fix: after any mc-install that follows an mc-run/mc-run-like Prism launch, diff the instance mods dir against the store (`comm` on `ls` listings) and re-run `python3 modules/flake-parts/packwiz-instance-sync.py <inst> <meta.json> <src/.minecraft> ""` manually if the mirror didn't apply — it applies cleanly as a standalone call. Also: mc-install's up-to-date compare counts only mods/version changes, so config-only pack changes need the target instance config removed first and force=true (see 2026-08-14 entry).
+// ### 2026-09-07
+// First-time install of AllTheTech into Prism Launcher for baseline boot timing
+// ### 2026-09-07
+// Install AllTheTech into Prism at detected data dir for baseline boot timing

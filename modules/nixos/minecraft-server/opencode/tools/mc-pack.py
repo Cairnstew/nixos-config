@@ -81,8 +81,44 @@ Commands:
       --no-datapacks skips the datapack scan; --no-vanilla omits vanilla baseline.
   mobspawn-info <biome-id> [--mods slug1,slug2] [--no-datapacks] [--no-vanilla]
       Show spawn details for one biome (e.g. minecraft:plains).
-  mobspawn-full-export [--mods slug1,slug2] [--no-datapacks] [--no-vanilla] [outfile]
-      Write every biome's spawn data to a single JSON file via mobspawn.py.
+   mobspawn-full-export [--mods slug1,slug2] [--no-datapacks] [--no-vanilla] [outfile]
+       Write every biome's spawn data to a single JSON file via mobspawn.py.
+   item-acquisition [--mods slug1,slug2] [--no-datapacks] [--no-vanilla] [--json]
+       Cross-reference items/recipes/loot/ore/mobspawn to build per-item acquisition records.
+   item-acquisition-info <item-id> [--json]
+       Show detailed acquisition info for a single item.
+   item-acquisition-full-export [--mods slug1,slug2] [--no-datapacks] [--no-vanilla] [outfile]
+       Write every item's acquisition record to a single JSON file.
+   item-tier [--mods slug1,slug2] [--no-datapacks] [--no-vanilla] [--json] [--list]
+       Compute deterministic 0-7 rarity tiers for all items.
+   item-tier-info <item-id> [--json]
+       Show detailed tier info for a single item.
+item-tier-full-export [--mods slug1,slug2] [--no-datapacks] [--no-vanilla] [outfile]
+        Write every item's tier record to a single JSON file.
+   item-components-regenerate [--dry-run] [--timeout N]
+       SLOW: launch isolated NeoForge server and dump every item's default
+       DataComponents to item-components-dump.json (re-run when mods change).
+   item-components [--list] [--info <id>] [--json] [--mods slug1,slug2]
+       Read cached item-components-dump.json — per-item component view.
+   item-components-info <item-id> [--json]
+       Show detailed component profile for a single item.
+   item-components-full-export [--mods slug1,slug2] [outfile]
+       Write every item's component summary to a single JSON file.
+    mob-combat [--mods slug1,slug2] [--no-datapacks] [--no-vanilla] [--json] [--list]
+        Consolidate raw combat-relevant facts for every entity (standard combat
+        attributes + custom mod combat attributes + spawn data + data-completeness
+        classification). No scoring opinion — that's mob-tier's job.
+    mob-combat-info <entity-id> [--json]
+        Show detailed combat facts for a single entity (e.g. minecraft:zombie).
+    mob-combat-full-export [--mods slug1,slug2] [--no-datapacks] [--no-vanilla] [outfile]
+        Write every entity's combat-facts record to a single JSON file.
+    mob-tier [--mods slug1,slug2] [--no-datapacks] [--no-vanilla] [--json] [--list]
+        Compute deterministic 0-7 combat-difficulty tiers for all mobs (combat
+        × encounter context, with passives/bosses/custom-only handled explicitly).
+    mob-tier-info <entity-id> [--json]
+        Show detailed tier info for a single mob.
+    mob-tier-full-export [--mods slug1,slug2] [--no-datapacks] [--no-vanilla] [outfile]
+        Write every mob's tier record to a single JSON file.
 
 Each file-editing command runs `packwiz refresh` afterwards (via the repo's
 .#packwiz app) so index.toml stays in sync — skipping it causes hash
@@ -404,6 +440,12 @@ def resolve_mod(mods, target):
     if len(matches) == 1:
         return matches[0]
     if len(matches) > 1:
+        # Prefer a key that is exactly the target plus a version/qualifier suffix
+        # (e.g. 'reliquified_artifacts-1.21.1-1.0.8' for 'reliquified_artifacts')
+        # over a key the target merely contains ('artifacts' in 'reliquified_artifacts').
+        prefixed = [k for k in matches if k.startswith(tl)]
+        if len(prefixed) == 1:
+            return prefixed[0]
         die(f"ambiguous '{target}' — matches {', '.join(sorted(matches))}; pass a unique slug or .pw.toml filename")
     return None
 
@@ -1440,6 +1482,289 @@ def cmd_attributes_full_export(pack_dir: str, args: list[str]) -> None:
     _run_full_export(pack_dir, "attributes.py", args, f"{pack_name}-attributes-full.json")
 
 
+def cmd_item_acquisition(pack_dir: str, args: list[str]) -> None:
+    """item-acquisition [--mods slug1,slug2] [--no-datapacks] [--no-vanilla] [--json]
+    Cross-reference items/recipes/loot/ore/mobspawn to build per-item acquisition records."""
+    script_path = os.path.join(os.path.dirname(__file__), "item-acquisition.py")
+    if not os.path.exists(script_path):
+        die(f"script not found: {script_path}")
+    cmd = ["python3", script_path, pack_dir]
+    i = 0
+    while i < len(args):
+        arg = args[i]
+        if arg in ("--mods", "--no-datapacks", "--no-vanilla", "--json"):
+            cmd.append(arg)
+            if arg == "--mods" and i + 1 < len(args):
+                cmd.append(args[i + 1])
+                i += 1
+        elif arg == "--info" and i + 1 < len(args):
+            cmd.extend(["--info", args[i + 1]])
+            i += 1
+        i += 1
+    result = subprocess.run(cmd, capture_output=True, text=True)
+    if result.stdout:
+        print(result.stdout, end="")
+    if result.stderr:
+        print(result.stderr, end="", file=sys.stderr)
+    if result.returncode != 0:
+        die(f"item-acquisition.py failed with exit code {result.returncode}")
+
+
+def cmd_item_acquisition_info(pack_dir: str, args: list[str]) -> None:
+    """item-acquisition-info <item-id> [--json]
+    Show detailed acquisition info for a single item."""
+    if not args:
+        die("usage: mc-pack.py <pack> item-acquisition-info <item-id> [--json]")
+    script_path = os.path.join(os.path.dirname(__file__), "item-acquisition.py")
+    if not os.path.exists(script_path):
+        die(f"script not found: {script_path}")
+    cmd = ["python3", script_path, pack_dir, "--info", args[0]]
+    if "--json" in args:
+        cmd.append("--json")
+    result = subprocess.run(cmd, capture_output=True, text=True)
+    if result.stdout:
+        print(result.stdout, end="")
+    if result.stderr:
+        print(result.stderr, end="", file=sys.stderr)
+    if result.returncode != 0:
+        die(f"item-acquisition.py failed with exit code {result.returncode}")
+
+
+def cmd_item_acquisition_full_export(pack_dir: str, args: list[str]) -> None:
+    """item-acquisition-full-export [--mods slug1,slug2] [--no-datapacks] [--no-vanilla] [outfile]
+    Write every item's acquisition record to a single JSON file."""
+    pack_name = os.path.basename(os.path.abspath(pack_dir))
+    _run_full_export(pack_dir, "item-acquisition.py", args, f"{pack_name}-acquisition-full.json")
+
+
+def cmd_item_tier(pack_dir: str, args: list[str]) -> None:
+    """item-tier [--mods slug1,slug2] [--no-datapacks] [--no-vanilla] [--json] [--list]
+    Compute deterministic 0-7 rarity tiers for all items."""
+    script_path = os.path.join(os.path.dirname(__file__), "item-tier.py")
+    if not os.path.exists(script_path):
+        die(f"script not found: {script_path}")
+    cmd = ["python3", script_path, pack_dir]
+    i = 0
+    while i < len(args):
+        arg = args[i]
+        if arg in ("--mods", "--no-datapacks", "--no-vanilla", "--json", "--list"):
+            cmd.append(arg)
+            if arg == "--mods" and i + 1 < len(args):
+                cmd.append(args[i + 1])
+                i += 1
+        elif arg == "--info" and i + 1 < len(args):
+            cmd.extend(["--info", args[i + 1]])
+            i += 1
+        i += 1
+    result = subprocess.run(cmd, capture_output=True, text=True)
+    if result.stdout:
+        print(result.stdout, end="")
+    if result.stderr:
+        print(result.stderr, end="", file=sys.stderr)
+    if result.returncode != 0:
+        die(f"item-tier.py failed with exit code {result.returncode}")
+
+
+def cmd_item_tier_info(pack_dir: str, args: list[str]) -> None:
+    """item-tier-info <item-id> [--json]
+    Show detailed tier info for a single item."""
+    if not args:
+        die("usage: mc-pack.py <pack> item-tier-info <item-id> [--json]")
+    script_path = os.path.join(os.path.dirname(__file__), "item-tier.py")
+    if not os.path.exists(script_path):
+        die(f"script not found: {script_path}")
+    cmd = ["python3", script_path, pack_dir, "--info", args[0]]
+    if "--json" in args:
+        cmd.append("--json")
+    result = subprocess.run(cmd, capture_output=True, text=True)
+    if result.stdout:
+        print(result.stdout, end="")
+    if result.stderr:
+        print(result.stderr, end="", file=sys.stderr)
+    if result.returncode != 0:
+        die(f"item-tier.py failed with exit code {result.returncode}")
+
+
+def cmd_item_tier_full_export(pack_dir: str, args: list[str]) -> None:
+    """item-tier-full-export [--mods slug1,slug2] [--no-datapacks] [--no-vanilla] [outfile]
+    Write every item's tier record to a single JSON file."""
+    pack_name = os.path.basename(os.path.abspath(pack_dir))
+    _run_full_export(pack_dir, "item-tier.py", args, f"{pack_name}-tiers-full.json")
+
+
+def cmd_item_components_regenerate(pack_dir: str, args: list[str]) -> None:
+    """item-components-regenerate [--dry-run] [--timeout N]
+    SLOW PATH (~30s server runtime + Nix FOD builds): Launch an isolated NeoForge
+    server with the pack's real mods, dump every item's default DataComponents to
+    item-components-dump.json. Re-run after mod list changes. Same launch/heap/
+    logging harness as attributes-regenerate (attributes_dump.py --dump-mod
+    item-components-dump) — nothing reinvented."""
+    script_path = os.path.join(os.path.dirname(__file__), "attributes_dump.py")
+    if not os.path.exists(script_path):
+        die(f"script not found: {script_path}")
+    cmd = ["python3", script_path, pack_dir, "--dump-mod", "item-components-dump"]
+    i = 0
+    while i < len(args):
+        arg = args[i]
+        if arg == "--dry-run":
+            cmd.append("--dry-run")
+        elif arg == "--timeout" and i + 1 < len(args):
+            cmd.extend(["--timeout", args[i + 1]])
+            i += 1
+        elif arg == "--keep-on-failure":
+            cmd.append("--keep-on-failure")
+        else:
+            die(f"unknown arg {arg}")
+        i += 1
+    print(f"[item-components-regenerate] Launching isolated NeoForge server (dump-mod=item-components-dump)...")
+    try:
+        result = subprocess.run(cmd, capture_output=True, text=True, timeout=2400)
+    except subprocess.TimeoutExpired:
+        die("attributes_dump.py timed out after 2400s")
+    if result.stdout:
+        sys.stdout.write(result.stdout)
+    if result.stderr:
+        sys.stderr.write(result.stderr)
+    if result.returncode != 0:
+        die(f"attributes_dump.py failed with exit code {result.returncode}")
+
+
+def cmd_item_components(pack_dir: str, args: list[str]) -> None:
+    """item-components [--list] [--info <id>] [--json] [--mods slug1,slug2]
+    Read the cached item-components-dump.json and show an item-centric view."""
+    script_path = os.path.join(os.path.dirname(__file__), "item-components.py")
+    if not os.path.exists(script_path):
+        die(f"script not found: {script_path}")
+    cmd = ["python3", script_path, pack_dir]
+    i = 0
+    while i < len(args):
+        arg = args[i]
+        if arg in ("--list", "--json"):
+            cmd.append(arg)
+        elif arg == "--info" and i + 1 < len(args):
+            cmd.extend(["--info", args[i + 1]])
+            i += 1
+        elif arg == "--mods" and i + 1 < len(args):
+            cmd.extend(["--mods", args[i + 1]])
+            i += 1
+        else:
+            die(f"unknown arg {arg}")
+        i += 1
+    result = subprocess.run(cmd, capture_output=True, text=True)
+    if result.stdout:
+        print(result.stdout, end="")
+    if result.stderr:
+        print(result.stderr, end="", file=sys.stderr)
+    if result.returncode != 0:
+        die(f"item-components.py failed with exit code {result.returncode}")
+
+
+def cmd_item_components_info(pack_dir: str, args: list[str]) -> None:
+    """item-components-info <item-id> [--json]
+    Show detailed component profile for a single item."""
+    if not args:
+        die("usage: mc-pack.py <pack> item-components-info <item-id> [--json]")
+    script_path = os.path.join(os.path.dirname(__file__), "item-components.py")
+    if not os.path.exists(script_path):
+        die(f"script not found: {script_path}")
+    cmd = ["python3", script_path, pack_dir, "--info", args[0]]
+    if "--json" in args:
+        cmd.append("--json")
+    result = subprocess.run(cmd, capture_output=True, text=True)
+    if result.stdout:
+        print(result.stdout, end="")
+    if result.stderr:
+        print(result.stderr, end="", file=sys.stderr)
+    if result.returncode != 0:
+        die(f"item-components.py failed with exit code {result.returncode}")
+
+
+def cmd_item_components_full_export(pack_dir: str, args: list[str]) -> None:
+    """item-components-full-export [--mods slug1,slug2] [outfile]
+    Write every item's component summary to a single JSON file."""
+    pack_name = os.path.basename(os.path.abspath(pack_dir))
+    _run_full_export(pack_dir, "item-components.py", args, f"{pack_name}-item-components-full.json")
+
+
+def _forward_scanner_args(args: list[str]) -> list[str]:
+    """Forward --mods/--no-datapacks/--no-vanilla/--json/--list/--info to a
+    scanner subprocess. Shared by the mob-combat / mob-tier proxy commands."""
+    out = []
+    i = 0
+    while i < len(args):
+        arg = args[i]
+        if arg in ("--mods", "--no-datapacks", "--no-vanilla", "--json", "--list"):
+            out.append(arg)
+            if arg == "--mods" and i + 1 < len(args):
+                out.append(args[i + 1])
+                i += 1
+        elif arg == "--info" and i + 1 < len(args):
+            out.extend(["--info", args[i + 1]])
+            i += 1
+        elif arg == "--full-export":
+            out.append("--full-export")
+        else:
+            die(f"unknown arg {arg}")
+        i += 1
+    return out
+
+
+def _run_scanner_proxy(pack_dir: str, script: str, args: list[str]) -> None:
+    script_path = os.path.join(os.path.dirname(__file__), script)
+    if not os.path.exists(script_path):
+        die(f"script not found: {script_path}")
+    cmd = ["python3", script_path, pack_dir] + _forward_scanner_args(args)
+    result = subprocess.run(cmd, capture_output=True, text=True, timeout=300)
+    if result.stdout:
+        sys.stdout.write(result.stdout)
+    if result.stderr:
+        sys.stderr.write(result.stderr)
+    if result.returncode != 0:
+        die(f"{script} failed with exit code {result.returncode}")
+
+
+def cmd_mob_combat(pack_dir: str, args: list[str]) -> None:
+    """mob-combat [--mods slug1,slug2] [--no-datapacks] [--no-vanilla] [--json] [--list]
+    Consolidate raw combat-relevant facts for every entity."""
+    _run_scanner_proxy(pack_dir, "mob-combat.py", args)
+
+
+def cmd_mob_combat_info(pack_dir: str, args: list[str]) -> None:
+    """mob-combat-info <entity-id> [--json]
+    Show detailed combat facts for a single entity."""
+    if not args:
+        die("usage: mc-pack.py <pack> mob-combat-info <entity-id> [--json]")
+    _run_scanner_proxy(pack_dir, "mob-combat.py", ["--info", args[0]] + args[1:])
+
+
+def cmd_mob_combat_full_export(pack_dir: str, args: list[str]) -> None:
+    """mob-combat-full-export [--mods slug1,slug2] [--no-datapacks] [--no-vanilla] [outfile]
+    Write every entity's combat-facts record to a single JSON file."""
+    pack_name = os.path.basename(os.path.abspath(pack_dir))
+    _run_full_export(pack_dir, "mob-combat.py", args, f"{pack_name}-mob-combat-full.json")
+
+
+def cmd_mob_tier(pack_dir: str, args: list[str]) -> None:
+    """mob-tier [--mods slug1,slug2] [--no-datapacks] [--no-vanilla] [--json] [--list]
+    Compute deterministic 0-7 combat-difficulty tiers for all mobs."""
+    _run_scanner_proxy(pack_dir, "mob-tier.py", args)
+
+
+def cmd_mob_tier_info(pack_dir: str, args: list[str]) -> None:
+    """mob-tier-info <entity-id> [--json]
+    Show detailed tier info for a single mob."""
+    if not args:
+        die("usage: mc-pack.py <pack> mob-tier-info <entity-id> [--json]")
+    _run_scanner_proxy(pack_dir, "mob-tier.py", ["--info", args[0]] + args[1:])
+
+
+def cmd_mob_tier_full_export(pack_dir: str, args: list[str]) -> None:
+    """mob-tier-full-export [--mods slug1,slug2] [--no-datapacks] [--no-vanilla] [outfile]
+    Write every mob's tier record to a single JSON file."""
+    pack_name = os.path.basename(os.path.abspath(pack_dir))
+    _run_full_export(pack_dir, "mob-tier.py", args, f"{pack_name}-mob-tiers-full.json")
+
+
 COMMANDS = {
     "config-add": cmd_config_add,
     "config-preserve": cmd_config_preserve,
@@ -1468,6 +1793,22 @@ COMMANDS = {
     "attributes": cmd_attributes,
     "attributes-info": cmd_attributes_info,
     "attributes-full-export": cmd_attributes_full_export,
+    "item-acquisition": cmd_item_acquisition,
+    "item-acquisition-info": cmd_item_acquisition_info,
+    "item-acquisition-full-export": cmd_item_acquisition_full_export,
+    "item-tier": cmd_item_tier,
+    "item-tier-info": cmd_item_tier_info,
+    "item-tier-full-export": cmd_item_tier_full_export,
+    "item-components-regenerate": cmd_item_components_regenerate,
+    "item-components": cmd_item_components,
+    "item-components-info": cmd_item_components_info,
+    "item-components-full-export": cmd_item_components_full_export,
+    "mob-combat": cmd_mob_combat,
+    "mob-combat-info": cmd_mob_combat_info,
+    "mob-combat-full-export": cmd_mob_combat_full_export,
+    "mob-tier": cmd_mob_tier,
+    "mob-tier-info": cmd_mob_tier_info,
+    "mob-tier-full-export": cmd_mob_tier_full_export,
 }
 
 

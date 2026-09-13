@@ -1,0 +1,16 @@
+# impact-overrides.toml — manual impact scores for items whose real gameplay
+# significance isn't captured by recipe centrality or item components.
+#
+# Easy agent append mechanism: if an item's real impact isn't captured by recipe
+# centrality or components (e.g. a quest item, a key/lore item, something with
+# narrative significance a mod doesn't encode mechanically), append one line
+# here with the item ID, a 0-7 impact score, and a short reason — no code
+# changes needed. The computed impact_score is ALWAYS still shown alongside the
+# override in item-tier output for transparency.
+#
+# Format: item_id = score   (# optional inline reason)
+#
+# Example — a Relics loot artifact: its real impact is the unique teleport
+# utility it grants, invisible to both the recipe graph (it has no crafting
+# path) and its components (component magnitude is low):
+relics:chorus_staff = 6   # unique teleport utility; rare loot only, no recipe path

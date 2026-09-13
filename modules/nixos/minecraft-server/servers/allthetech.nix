@@ -8,7 +8,7 @@
   my.services.minecraftServer.servers.allthetech = {
     enable = lib.mkDefault false;
 
-    package = pkgs.neoforgeServers.neoforge-1_21_1-21_1_238; # matches AllTheTech pack.toml
+    package = pkgs.neoforgeServers.neoforge-1_21_1-21_1_249; # matches AllTheTech pack.toml
     packwiz = ../modpacks/AllTheTech;
     # Heap sized for the server host (15Gi RAM total, shared with other
     # services — see hardware caps below). Modded NeoForge wants a big heap but

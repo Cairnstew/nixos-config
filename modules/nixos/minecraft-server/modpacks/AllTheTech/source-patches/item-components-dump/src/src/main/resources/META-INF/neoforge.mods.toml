@@ -1,0 +1,26 @@
+modLoader = "javafml"
+loaderVersion = "[4,)"
+license = "MIT"
+
+[[mods]]
+modId = "itemcomponentsdump"
+version = "1.0.0"
+displayName = "Item Components Dump"
+description = '''
+Dumps each registered item's default DataComponentMap to JSON.
+Runs once on load complete, writes item-components-dump.json, then exits.
+'''
+
+[[dependencies.itemcomponentsdump]]
+modId = "neoforge"
+type = "required"
+versionRange = "[21.1,)"
+ordering = "NONE"
+side = "BOTH"
+
+[[dependencies.itemcomponentsdump]]
+modId = "minecraft"
+type = "required"
+versionRange = "[1.21.1,1.21.2)"
+ordering = "NONE"
+side = "BOTH"

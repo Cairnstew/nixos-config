@@ -319,3 +319,5 @@ export default {
 
 // ### 2026-08-27
 // Getting ATM11 log to check FTB Quests status
+// ### 2026-09-07
+// Check existing Prism latest.log after mc-run attempt

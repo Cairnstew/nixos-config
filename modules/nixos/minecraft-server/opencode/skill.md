@@ -505,3 +505,18 @@ Lesson: In Control! (McJty) is discontinued (<1.19); its 1.21.1 functional succe
 
 ### 2026-09-07
 Added Apothic Attributes (DGaH8Rh0, 1.21.1-2.10.1) and its required dependency Placebo (tCkE8p2N, 1.21.1-9.9.2) to AllTheTech.
+
+### 2026-09-07
+Checking if Prism Launcher instance exists and what state it's in
+
+### 2026-09-07
+Check existing Prism latest.log after mc-run attempt
+
+### 2026-09-07
+First-time install of AllTheTech into Prism Launcher for baseline boot timing
+
+### 2026-09-07
+Install AllTheTech into Prism at detected data dir for baseline boot timing
+
+### 2026-09-07
+Fresh baseline boot of AllTheTech via Prism Launcher for timing

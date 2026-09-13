@@ -108,7 +108,18 @@ def scan_mods(pack_dir, info, mod_filter, skip_no_url, raw=False):
     """
     mod_specs = find_mod_jars(pack_dir)
     if mod_filter:
-        mod_specs = fuzzy_match(mod_specs, mod_filter)
+        # Resolve each requested slug to a mod via the shared resolver (which
+        # prefers a target-prefixed key, e.g. 'reliquified_artifacts' → the
+        # 'reliquified_artifacts-1.21.1-1.0.8' jar alias) instead of the item-ID
+        # fuzzy_matcher, which took the dict+list and crashed on the filter list.
+        selected = []
+        for t in mod_filter:
+            k = resolve_mod(mod_specs, t)
+            if k is None:
+                die(f"no mod '{t}' in pack")
+            if mod_specs[k]["pw_toml"] not in selected:
+                selected.append(mod_specs[k]["pw_toml"])
+        mod_specs = {k: e for k, e in mod_specs.items() if e["pw_toml"] in selected}
     # Group by pw_toml to deduplicate aliases
     by_toml = {}
     for k, e in mod_specs.items():
@@ -529,6 +540,8 @@ def main():
                     metavar="OUTFILE",
                     help="Full JSON dump to file (or stdout if no path)")
     args = ap.parse_args()
+    if args.mods:
+        args.mods = [s.strip().lower() for s in args.mods.split(",") if s.strip()]
 
     if args.list:
         cmd_list(args.pack, args)
@@ -545,3 +558,13 @@ def main():
 
 if __name__ == "__main__":
     sys.exit(main() or 0)
+
+# ## RUN LOG
+# ### 2026-09-13 — --mods filtering was completely broken (two bugs)
+# (1) scan_mods called fuzzy_match(mod_specs, mod_filter) — the item-ID fuzzy
+# matcher fed a dict + slug string, crashing with "AttributeError: 'dict' object
+# has no attribute 'lower'" whenever --mods was used. Every other scanner selects
+# jars via resolve_mod; write the same selection here.
+# (2) --mods was never comma-split: args.mods stayed "artifacts,relics,..." and
+# each token was treated as one huge slug. Normalize to a list right after
+# parse_args (same as items.py). Both fixed; restricted scans now return results.

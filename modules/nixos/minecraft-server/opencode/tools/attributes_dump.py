@@ -35,6 +35,14 @@ def die(msg: str) -> None:
     sys.exit(1)
 
 
+# Which source-patches/<name> dump mod to build + which output file + marker to
+# wait for. Default keeps the original attributes dump behavior; the item
+# components dump reuses this exact launch/heap/logging harness via
+# `--dump-mod item-components-dump` (the Java + this Python never reinvents the
+# boot process — see ItemComponentsDump.java RUN LOG).
+DUMP_MOD = "attributes-dump"
+
+
 def find_repo_root() -> Path:
     """Find the nixos-config repo root (where flake.nix lives)."""
     try:
@@ -55,7 +63,7 @@ def find_repo_root() -> Path:
 
 def nix_build_expression(repo: Path, modpack_name: str) -> str:
     """Return the nix-build -E expression for the dump mod."""
-    dump_dir = repo / "modules/nixos/minecraft-server/modpacks" / modpack_name / "source-patches/attributes-dump"
+    dump_dir = repo / "modules/nixos/minecraft-server/modpacks" / modpack_name / "source-patches" / DUMP_MOD
     build_mod_source = repo / "modules/nixos/minecraft-server/modpacks/build-mod-source.nix"
     rel_build = os.path.relpath(build_mod_source, dump_dir)
     return f'''
@@ -83,7 +91,7 @@ def nix_build_server() -> str:
 
 def build_dump_mod(repo: Path, modpack_name: str) -> Path:
     """Build the dump mod JAR, return its store path."""
-    dump_dir = repo / "modules/nixos/minecraft-server/modpacks" / modpack_name / "source-patches/attributes-dump"
+    dump_dir = repo / "modules/nixos/minecraft-server/modpacks" / modpack_name / "source-patches" / DUMP_MOD
     expr = nix_build_expression(repo, modpack_name)
     print(f"[attributes-dump] Building dump mod JAR...")
     try:
@@ -318,7 +326,7 @@ java \\
 def launch_and_wait(tmpdir: Path, server_dir: Path, timeout: int = 1800) -> Path | None:
     """
     Launch the NeoForge server, tail latest.log for the dump marker.
-    Returns the path to attributes-dump.json on success, None on failure.
+    Returns the path to the dump JSON on success, None on failure.
     Checks both server dir and gameDir tmpdir for the JSON output.
 
     Strategy: scan logs with offset tracking (no re-read from start), kill the
@@ -328,11 +336,11 @@ def launch_and_wait(tmpdir: Path, server_dir: Path, timeout: int = 1800) -> Path
 
     Heartbeat: prints elapsed time every 30s so long runs don't look like hangs.
     """
-    marker = "[attributes-dump] COMPLETE:"
+    marker = f"[{DUMP_MOD}] COMPLETE:"
     log_path_server = server_dir / "logs" / "latest.log"
     log_path_tmpdir = tmpdir / "logs" / "latest.log"
-    attrs_json_server = server_dir / "attributes-dump.json"
-    attrs_json_tmpdir = tmpdir / "attributes-dump.json"
+    attrs_json_server = server_dir / f"{DUMP_MOD}.json"
+    attrs_json_tmpdir = tmpdir / f"{DUMP_MOD}.json"
 
     launcher = tmpdir / "launch.sh"
     if not launcher.exists():
@@ -467,8 +475,11 @@ def launch_and_wait(tmpdir: Path, server_dir: Path, timeout: int = 1800) -> Path
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Dump entity attributes via isolated NeoForge server")
+    global DUMP_MOD
+    parser = argparse.ArgumentParser(description="Dump data via isolated NeoForge server")
     parser.add_argument("modpack_dir", help="Path to the modpack directory (e.g. modules/nixos/minecraft-server/modpacks/AllTheTech)")
+    parser.add_argument("--dump-mod", default="attributes-dump",
+                        help="Dump mod under source-patches/<name> to build+run (default: attributes-dump)")
     parser.add_argument("--dry-run", action="store_true", help="Print what would be done without doing it")
     parser.add_argument("--timeout", type=int, default=1800, help="Server timeout in seconds (default 1800)")
     parser.add_argument("--keep-on-failure", action="store_true", help="Keep isolated clone dir on failure (for debugging)")
@@ -477,6 +488,7 @@ def main():
     parser.add_argument("--vanilla-baseline", action="store_true",
                         help="Generate vanilla baseline from the full pack dump (filters to vanilla entities only)")
     args = parser.parse_args()
+    DUMP_MOD = args.dump_mod
 
     pack_dir = Path(args.modpack_dir).resolve()
     if not (pack_dir / "pack.toml").exists():
@@ -487,14 +499,14 @@ def main():
 
     if args.dry_run:
         mode = "vanilla-only baseline" if args.vanilla_baseline else "full pack dump"
-        print(f"[dry-run] Mode: {mode}")
+        print(f"[dry-run] Mode: {mode}  (dump-mod: {DUMP_MOD})")
         print(f"[dry-run] Would build dump mod for {modpack_name}")
         if not args.vanilla_baseline:
             print(f"[dry-run] Would build packwiz mod jars via Nix derivation")
         print(f"[dry-run] Would build NeoForge 21.1.249 server")
         print(f"[dry-run] Would create isolated clone in /tmp/mc-attributes-dump-*")
         print(f"[dry-run] Would symlink mods/ + config/, copy dump JAR, launch server")
-        print(f"[dry-run] Would tail logs for [attributes-dump] marker (timeout {args.timeout}s)")
+        print(f"[dry-run] Would tail logs for [{DUMP_MOD}] marker (timeout {args.timeout}s)")
         if args.vanilla_baseline:
             print(f"[dry-run] Would save baseline to {pack_dir / 'vanilla-attributes-baseline.json'}")
         return
@@ -551,7 +563,7 @@ def main():
             shutil.copy2(result, out_path)
             print(f"[attributes-dump] Wrote vanilla baseline: {out_path}")
         else:
-            out_path = pack_dir / "attributes-dump.json"
+            out_path = pack_dir / f"{DUMP_MOD}.json"
             shutil.copy2(result, out_path)
             print(f"[attributes-dump] Wrote {out_path}")
 
@@ -644,3 +656,16 @@ if __name__ == "__main__":
 # The eula.txt "instant-death" failure mode is a SEPARATE, earlier/later crash (missing/
 # empty eula acceptance), not the explanation for these CPU-heavy or stalled observations.
 # Default timeout can stay 1800s (harmless) but a fixed run needs ~30s of it.
+# ### 2026-09-13 — --dump-mod parameter (drives the item-components dump too)
+# The launch/heap/logging harness was attributes-dump-specific (marker string,
+# output json name, source-patches dir). Yet the item components dump needs the
+# EXACT same isolated NeoForge boot — the stdout-pipe deadlock fix, immediateFlush
+# log4j, heartbeat, phase timing, marker-tail detection are all reusable as-is.
+# Added a module-level DUMP_MOD (default "attributes-dump") and --dump-mod arg;
+# the marker, output json filename, and source-patches/<name> path all derive
+# from it. ItemComponentsDump.java (source-patches/item-components-dump) writes
+# item-components-dump.json and prints "[item-components-dump] COMPLETE:" which
+# this tailer now finds. Verified end-to-end: 22202 items dumped in ~30s server
+# runtime via the identical launch path.
+# NOTE: downlevel callers of attributes_dump.py keep default behavior; mc-pack.py
+# gained cmd_item_components_regenerate which passes --dump-mod item-components-dump.

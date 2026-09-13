@@ -290,6 +290,12 @@ def resolve_mod(mods, target):
     if len(matches) == 1:
         return matches[0]
     if len(matches) > 1:
+        # Prefer a key that is exactly the target plus a version/qualifier suffix
+        # (e.g. 'reliquified_artifacts-1.21.1-1.0.8' for 'reliquified_artifacts')
+        # over a key the target merely contains ('artifacts' in 'reliquified_artifacts').
+        prefixed = [k for k in matches if k.startswith(tl)]
+        if len(prefixed) == 1:
+            return prefixed[0]
         die(f"ambiguous '{target}' — matches {sorted(matches)}; pass a unique slug or .pw.toml filename")
     return None
 

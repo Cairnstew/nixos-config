@@ -425,3 +425,7 @@ export default {
 // ## RUN LOG
 // ### 2026-08-27
 // Test Houdini launch after fixing /tmp/houdini_temp permissions (1777). Root cause was EACCES on temp SVG file creation during icon processing.
+// ### 2026-09-07
+// Checking if Prism Launcher instance exists and what state it's in
+// ### 2026-09-07
+// Fresh baseline boot of AllTheTech via Prism Launcher for timing

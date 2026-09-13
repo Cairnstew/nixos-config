@@ -129,6 +129,14 @@ def resolve_mod(mods, target):
     if len(matches) == 1:
         return matches[0]
     if len(matches) > 1:
+        # Prefer a key that is exactly the target plus a version/qualifier suffix
+        # (e.g. 'reliquified_artifacts-1.21.1-1.0.8' for 'reliquified_artifacts')
+        # over a key the target merely contains ('artifacts' in 'reliquified_artifacts').
+        # This stops '--mods artifacts,relics,smallships,reliquified_artifacts' from
+        # dying on a false ambiguity and silently hollowing out the whole scan.
+        prefixed = [k for k in matches if k.startswith(tl)]
+        if len(prefixed) == 1:
+            return prefixed[0]
         die(f"ambiguous '{target}' — matches {sorted(matches)}; "
             "pass a unique slug or .pw.toml filename")
     return None
@@ -326,3 +334,13 @@ def scan_datapacks(pack_dir, scan_fn, skipped_dp=None):
         sources.append({"kind": "datapack", "name": "<pack>/data/",
                         "jar": None, "data": extracted})
     return sources
+
+# ## RUN LOG
+# ### 2026-09-13 — resolve_mod ambiguity with slug-substring collisions
+# '--mods reliquified_artifacts' died "ambiguous — matches ['artifacts',
+# 'reliquified_artifacts-1.21.1-1.0.8']" because substring matching ('tl in k or
+# k in tl') found 'artifacts' inside 'reliquified_artifacts'. Callers then swallow
+# the die() and return {} -> the whole item-acquisition/tier scan silently produced
+# nothing. Fix: when >1 substring match, prefer the key that has the target as a
+# prefix (version/qualifier-suffixed jar alias) before dying. Mirrored into the
+# duplicated copies (items.py, mobs.py, structures.py, mc-pack.py, mobspawn.py).

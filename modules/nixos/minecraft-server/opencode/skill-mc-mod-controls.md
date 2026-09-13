@@ -145,3 +145,6 @@ user: what are the default hotkeys in AllTheTech, and does the pack override any
 ## RUN LOG
 
 Self-improvement: append a dated Lesson/Fix entry here (or via `note=` on the paired tool) whenever this session surfaces a gotcha or improvement. Bare action logs are forbidden.
+
+### 2026-09-12
+Testing tool functionality

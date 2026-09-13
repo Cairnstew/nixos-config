@@ -4,7 +4,7 @@ let
   inherit (inputs) self;
   inherit (flake.config.me) username;
   cfg = config.my.homeManager;
-  mcpServersPkgs = inputs.mcp-servers-nix.packages.${pkgs.system};
+  mcpServersPkgs = inputs.mcp-servers-nix.packages.${pkgs.stdenv.hostPlatform.system};
 
   # MCP wrapper packages + opencode theme live in ./mcp-wrappers.nix (recon M11).
   # Values are byte-identical to the block that previously lived here.
@@ -122,6 +122,10 @@ in
           clarifai.patFile = config.age.secrets.clarifai-pat.path;
           deepinfra.keyFile = config.age.secrets.deepinfra-key.path;
           opencode-go.keyFile = config.age.secrets.opencode-token.path;
+          # OpenCode Zen shares the same auth key as OpenCode Go — this account's
+          # OpenCode Go token also authenticates Zen (see modules/home/opencode/
+          # options.nix opencode-zen). Both are written to auth.json.
+          opencode-zen.keyFile = config.age.secrets.opencode-token.path;
           # CLI + 5-min cache refresher for OpenCode Go usage (dashboard feeds
           # off ~/.cache/opencode/go-usage.json). Guarded on the secret existing.
           opencode-go.usage.enable =
