@@ -391,8 +391,8 @@ def extract_entities_from_jar(zf):
     lang_cache = {}
 
     for n in zf.namelist():
-        # Loot tables: data/<ns>/loot_tables/entities/<name>.json
-        m = re.match(r"^data/([^/]+)/loot_tables/entities/(.+)\.json$", n)
+        # Loot tables: data/<ns>/loot_tables/entities/<name>.json or data/<ns>/loot_table/entities/<name>.json
+        m = re.match(r"^data/([^/]+)/loot_tables?/entities/(.+)\.json$", n)
         if m:
             ns, name = m.group(1), m.group(2)
             eid = f"{ns}:{name}"
@@ -410,7 +410,7 @@ def extract_entities_from_jar(zf):
 
         # Spawn eggs via loot tables: data/<ns>/loot_tables/blocks/spawn_<mob>_egg.json
         # (not directly useful for entity listing, but indicates spawn egg exists)
-        m = re.match(r"^data/([^/]+)/loot_tables/blocks/(.+_egg)\.json$", n)
+        m = re.match(r"^data/([^/]+)/loot_tables?/blocks/(.+_egg)\.json$", n)
         if m:
             ns, egg_name = m.group(1), m.group(2)
             # Try to extract mob name from spawn_<mob>_egg pattern

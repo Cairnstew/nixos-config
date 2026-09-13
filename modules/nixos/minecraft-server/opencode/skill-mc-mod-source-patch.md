@@ -5,12 +5,12 @@ description: Use when a mod in a packwiz modpack in this repo needs a SOURCE-lev
 
 # Mod Source Patches (build a JAR from source)
 
-Some mod bugs live in **compiled Java logic** — e.g. RoadWeaver's water
-detection (`PathSpanExtractor`, `PathPostProcessor`,
-`AccurateTerrainRegion`/`AdaptiveCorridorTerrainField.waterDepth()`) — that no
-config file, Paxi datapack, KubeJS script, or jar-metadata replacement can
-influence. Fix it by **building the whole mod from source** at Nix build time
-with a source-level patch, and ship the patched jar exactly like any other mod.
+Some mod bugs live in **compiled Java logic** — e.g. Streams Reflowing
+recognising only vanilla logs so Dynamic Trees left standing in water survive
+the river carve — that no config file, Paxi datapack, KubeJS script, or
+jar-metadata replacement can influence. Fix it by **building the whole mod from
+source** at Nix build time with a source-level patch, and ship the patched jar
+exactly like any other mod.
 
 The pack's `.pw.toml` / `index.toml` / `checksums.json` stay byte-identical:
 the pack remains a pure list of upstream mods, and the patch re-applies after
@@ -20,7 +20,7 @@ every `packwiz update`.
 
 | Problem | Fix |
 |---|---|
-| Runtime setting (weights, ranges, blacklists) | `mc-mod-config-set` config / `roadweaver.json` |
+| Runtime setting (weights, ranges, blacklists) | `mc-mod-config-set` config / mod's config file |
 | Recipe/loot/structure tweak | Paxi datapack (`packwiz-datapack-add`) |
 | Wrong embedded metadata (`versionRange`, deps) | `mc-mod-patch` (`patch-jar.nix` + `patches/<mod>.py`) |
 | **Bug in compiled Java logic** (water/terrain/behaviour) | **this skill** (`buildModSource`) |
@@ -37,8 +37,8 @@ only when config and metadata replacement genuinely cannot express the fix.
   allowed network (Maven repos, the MC toolchain, and the mod's own gradle
   wrapper distribution) while the output is still pinned and trusted.
   - Uses the mod's own `./gradlew` wrapper (`:neoforge:build` by default):
-    nixpkgs' gradle may be rejected by the mod's Loom plugin (RoadWeaver pins
-    gradle 8.8, nixpkgs ships 8.14.x). The wrapper downloads its own distro.
+    nixpkgs' gradle may be rejected by the mod's Loom plugin (the mod's
+    Gradle wrapper pins its own version — e.g. 8.8). The wrapper downloads its own distro.
   - Builds with `pkgs.jdk21` (`JAVA_HOME`, `HOME=$TMPDIR` for Gradle).
   - Default `buildCmd` builds `:neoforge:build`, picks the first playable jar
     from `neoforge/build/libs/` (excluding `sources`/`dev-shadow`/`dev.jar`),
@@ -57,8 +57,9 @@ only when config and metadata replacement genuinely cannot express the fix.
   ```nix
   { pkgs, mods, patchJar, buildModSource }:
   {
-    "mods/roadweaver.jar" = import ./source-patches/roadweaver {
-      inherit buildModSource fetchFromGitHub lib;
+    "mods/dt-tree-water-cleanup.jar" = import ./source-patches/dt-tree-water-cleanup {
+      inherit buildModSource;
+      inherit (pkgs) curl unzip cacert;
     };
   }
   ```
@@ -72,7 +73,7 @@ only when config and metadata replacement genuinely cannot express the fix.
 ## Tools
 
 - `git` + the mod's GitHub — read the source and generate the diff. Clone the
-  pinned rev, branch off the mod's release branch (e.g. RoadWeaver `1.21.1-Architectury`).
+  pinned rev, branch off the mod's release branch.
 - `nix build --impure .#minecraft-modpack-<pack> --print-out-paths` — build the
   client content. The first run reports the FOD hash mismatch with
   `got: sha256-...`; paste that into `outputHash`. (FODs need `--impure` so the
@@ -88,11 +89,11 @@ only when config and metadata replacement genuinely cannot express the fix.
    Confirm it's in compiled logic (not config/metadata). Note the exact mod
    version and commit that the pack pins.
 2. **Read the pinned source.** `fetchFromGitHub` rev must match the version the
-   pack ships (RoadWeaver 2.3.1-1.21.1 → rev `331d4ded…`, the commit its
-   `2.3.1-1.21.1-hotfix` jar was built from). Clone and branch it locally; diff
-   against the branch, not `master`.
+   pack ships (e.g. our own `dt-tree-water-cleanup` pins the exact commit
+   under `source-patches/dt-tree-water-cleanup/src`). Clone and branch it
+   locally; diff against the branch, not `master`.
 3. **Write the patch.** Edit the source, `git add` the changed files, and
-   `git diff HEAD~1 HEAD > elevated-water.patch` from a throwaway repo (or
+   `git diff HEAD~1 HEAD > <mod>-fix.patch` from a throwaway repo (or
    `git diff` in the worktree). The diff needs `a/`/`b/` prefixes — `patch -p1`
    strips one leading component.
 4. **Write `source-patches/<mod>/default.nix`.** `fetchFromGitHub` (rev + hash),
@@ -126,8 +127,8 @@ only when config and metadata replacement genuinely cannot express the fix.
 
 - Fix in the **minimal set of files** and keep the logic close to what the
   mod already does elsewhere — prefer reusing an existing correct rule
-  (e.g. RoadWeaver's accurate sampler already tested `oceanFloor < worldSurface`;
-  the patch applied that height-based rule to the other water checks).
+  (e.g. reuse an existing correct rule from elsewhere in the mod rather than
+  writing the logic fresh).
 - Remove now-unused imports/variables (`isWaterLike` import,
   `int sea` param) or the build fails or the patch becomes confusing.
 - The patch must **compile** — that's the fail-loud guarantee for a source
@@ -156,15 +157,37 @@ only when config and metadata replacement genuinely cannot express the fix.
 
 ## Example (from this repo)
 
-RoadWeaver 2.3.1-1.21.1 paved roads through elevated water (upstream issue
-[#68](https://github.com/shiroha-233/RoadWeaver/issues/68)): water detection in
-the placement fallbacks and accurate terrain `waterDepth()` was
-sea-level-relative, so water above sea level got `waterDepth = 0` → never
-bridged. `source-patches/roadweaver/elevated-water.patch` (4 Java files,
-git-format diff) makes every check height-based (`waterColumn = oceanFloor <
-surfaceY`; `waterDepth = surfaceY - oceanFloor`), reusing the correct rule the
-accurate sampler already had. Registered in `patches.nix` as
-`"mods/roadweaver.jar"` via `import ./source-patches/roadweaver { … }`.
-`nix build --impure .#minecraft-modpack-AllTheTech` produced
-`roadweaver-2.3.1-elevated-water-patched.jar`; the client symlinks it under
-`.minecraft/mods/` and the server under the pack's `mods/`.
+**dt-tree-water-cleanup** — our own source-level fix that ships as an *extra*
+mod (see `extra-mods.nix`): Streams Reflowing carves rivers after feature
+placement but only recognises vanilla logs, so Dynamic Trees blocks survive the
+carve standing in water. The mod's source lives under
+`source-patches/dt-tree-water-cleanup/src/`; it is registered as a NEW jar (not
+an override) via `extra-mods.nix`:
+```nix
+"mods/dt-tree-water-cleanup.jar" = import ./source-patches/dt-tree-water-cleanup {
+  inherit buildModSource;
+  inherit (pkgs) curl unzip cacert;
+};
+```
+Because this is an additive extra, it belongs in `extra-mods.nix`; a patch that
+**overrides an existing checksums.json mod** instead goes in `patches.nix` keyed
+by `"mods/<checksums-key-stem>.jar"`. Both are imported by the client and the
+dedicated server, so the patched jar ships on both sides.
+
+*Historical example:* RoadWeaver 2.3.1-1.21.1 (roads through elevated water,
+upstream issue #68) was the first source-patch in this pack but has since been
+removed from AllTheTech along with its `source-patches/roadweaver/` module,
+`config/roadweaver/` and `patches.nix` entry.
+
+## RUN LOG
+
+Self-improvement: append a dated Lesson/Fix entry here (or via `note=` on the paired tool) whenever this session surfaces a gotcha or improvement. Bare action logs are forbidden.
+
+### 2026-09-06 — RoadWeaver removed; skill example rewritten to dt-tree-water-cleanup
+- Lesson: the pack's canonical source-patch walkthrough still cited
+  RoadWeaver (`elevated-water.patch`, `"mods/roadweaver.jar"`), but RoadWeaver
+  was removed from AllTheTech (mod + source-patches + config + patches.nix
+  entry + keybind); following the skill would send an agent to a deleted path.
+- Fix: replaced the example with the pack's remaining real source-patch
+  (`dt-tree-water-cleanup` via `extra-mods.nix`) and kept RoadWeaver only as a
+  one-line historical note.

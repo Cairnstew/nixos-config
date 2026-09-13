@@ -340,7 +340,6 @@ key_key.pud.toggle_aim_control:key.keyboard.unknown
 key_key.pud.toggle_chunk_marker:key.keyboard.unknown
 key_key.pud.toggle_quantum_hud:key.keyboard.f7
 key_key.right:key.keyboard.d
-key_key.roadweaver.open_map:key.keyboard.keypad.decimal
 key_key.saveToolbarActivator:key.keyboard.unknown
 key_key.screenshot:key.keyboard.f2
 key_key.smoothCamera:key.keyboard.unknown

@@ -95,25 +95,24 @@ let
     libxml2
     zlib
     zstd
-    xorg.libX11
-    xorg.libXau
-    xorg.libxcb
+    libx11
+    libxau
     libxcb
-    xorg.xcbutil
-    xorg.xcbutilwm
-    xorg.xcbutilimage
-    xorg.xcbutilkeysyms
-    xorg.xcbutilrenderutil
-    libXi
-    libXrandr
-    libXcursor
-    libXinerama
-    libXext
-    libXfixes
-    libXrender
-    libXcomposite
-    libXdamage
-    libXtst
+    libxcb-util
+    libxcb-wm
+    libxcb-image
+    libxcb-keysyms
+    libxcb-render-util
+    libxi
+    libxrandr
+    libxcursor
+    libxinerama
+    libxext
+    libxfixes
+    libxrender
+    libxcomposite
+    libxdamage
+    libxtst
     libpthreadstubs
     libxkbcommon
     wayland

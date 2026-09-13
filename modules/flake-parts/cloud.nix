@@ -104,6 +104,26 @@ in
           '';
           workdir = "${stateRoot}/aws";
         };
+
+        oci = {
+          modules = [ ../../cloud/oci ];
+          terraformWrapper.package = pkgs.opentofu;
+          terraformWrapper.prefixText = ''
+            # oci-cloud secret is an OCI CLI config file (INI). Point the
+            # provider at it via OCI_CONFIG_FILE, and expose the tenancy OCID
+            # (root compartment) as a TF_VAR for the module's data sources.
+            if [ -r /run/agenix/oci-cloud ]; then
+              export OCI_CONFIG_FILE=/run/agenix/oci-cloud
+              TF_VAR_tenancy_ocid="$(awk -F= '/^tenancy=/{gsub(/[ \t]/,"",$2); print $2; exit}' /run/agenix/oci-cloud)"
+              [ -n "$TF_VAR_tenancy_ocid" ] && export TF_VAR_tenancy_ocid
+            fi
+            if [ -r /run/agenix/aws-ssh-pub-key ]; then
+              TF_VAR_ssh_pub_key="$(cat /run/agenix/aws-ssh-pub-key)"
+              export TF_VAR_ssh_pub_key
+            fi
+          '';
+          workdir = "${stateRoot}/oci";
+        };
       };
 
       packages.tf-config = config.terranix.terranixConfigurations.gcp.result.terraformConfiguration;

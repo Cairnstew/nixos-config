@@ -1,13 +1,13 @@
 name = "Wakes Reforged"
-filename = "wakes-1.21.1-NeoForge-1.4.0.jar"
+filename = "wakes-1.21.1-NeoForge-1.4.1.jar"
 side = "client"
 
 [download]
-url = "https://cdn.modrinth.com/data/E0SdeAoH/versions/YQWPuboy/wakes-1.21.1-NeoForge-1.4.0.jar"
+url = "https://cdn.modrinth.com/data/E0SdeAoH/versions/Z3Ic8n5N/wakes-1.21.1-NeoForge-1.4.1.jar"
 hash-format = "sha512"
-hash = "a09205ed90dfe7e235819a69f83675c130c9a36ba4d3d04caa817d2e1e98c6547cdbae07e3eb5c07f583aaa7dbab02615d477aff615c52de07cd477eccef1fde"
+hash = "a3bc9480250b9a76ef53dec894f149b0528fd64ed81bcf7cd1570e4da022683eb7842e00e2aa84ae3235419684110da8bfa9d3ee57c2e21cc356dd47ba94406c"
 
 [update]
 [update.modrinth]
 mod-id = "E0SdeAoH"
-version = "YQWPuboy"
+version = "Z3Ic8n5N"

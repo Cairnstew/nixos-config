@@ -1,0 +1,13 @@
+name = "AE2 Growth Accelerators"
+filename = "ae2-growth-accelerator-tiers-1.0.1.jar"
+side = "both"
+
+[download]
+url = "https://cdn.modrinth.com/data/on6GHAdX/versions/rVWcjqwR/ae2-growth-accelerator-tiers-1.0.1.jar"
+hash-format = "sha512"
+hash = "afcf9c0f8a91e4a0db3197ff408e8708ef571998714a3f153360ea76aa0a1868ba88d6d99e2043379984549de015f9e3e1dd6efdd14a745c3189c33c2a57841a"
+
+[update]
+[update.modrinth]
+mod-id = "on6GHAdX"
+version = "rVWcjqwR"

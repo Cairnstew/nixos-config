@@ -321,7 +321,7 @@ def scan_worldgen(zf, raw=False):
             continue
 
         # block loot tables (for block→item mapping)
-        m = re.match(r"^data/([^/]+)/loot_tables/blocks/(.+)\.json$", n)
+        m = re.match(r"^data/([^/]+)/loot_tables?/blocks/(.+)\.json$", n)
         if m:
             ns, name = m.group(1), m.group(2)
             try:

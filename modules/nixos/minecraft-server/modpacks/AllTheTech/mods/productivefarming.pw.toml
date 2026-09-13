@@ -1,0 +1,8 @@
+name = "productivefarming"
+filename = "productivefarming-1.21.1-0.4.1.jar"
+side = "both"
+
+[download]
+url = "https://edge.forgecdn.net/files/7296/450/productivefarming-1.21.1-0.4.1.jar"
+hash-format = "sha256"
+hash = "0c8a23d650610c8d0ee2a5ee1be2762561101c5950af6be5e0ff7dd4b9da1f06"

@@ -59,8 +59,14 @@ let
   # CLI apps below so both install identical layouts.
   instanceSyncScript = ./packwiz-instance-sync.py;
 
-  # App that writes <modpack>/checksums.json into the CURRENT WORKING DIRECTORY
-  # (run from the modpack dir, matching upstream packwiz2nix behavior).
+  # App that regenerates <modpack>/checksums.json. The script reads the mods dir
+  # from the flake source (a read-only store copy) but MUST write checksums.json
+  # into the CWD (the real pack dir in the working tree). A bare
+  # `> checksums.json` therefore writes into whatever directory the app is run
+  # from — running from the repo root produced a stray <repo>/checksums.json
+  # while the pack's stayed stale (the "new mods missing" phantom). Fix: fail
+  # fast when the CWD is not the modpack dir, and write via temp+mv so a failed
+  # download never clobbers the current checksums.json.
   # The download+hash happens at RUNTIME (when the app is run), not during
   # eval or build: packwiz2nix's mkChecksums uses builtins.fetchurl (pure-eval
   # forbidden) and build-time fetching would hit the Nix build sandbox (no
@@ -70,8 +76,20 @@ let
     let
       modsDir = "${modpacksDir}/${name}/mods";
       script = pkgs.writeShellScriptBin "packwiz-checksums-${name}" ''
-        ${pkgs.python3}/bin/python3 ${checksumsScript} ${modsDir} > checksums.json
-        echo "wrote checksums.json — commit it and rebuild the server"
+        set -euo pipefail
+        # The app must be run FROM the modpack dir: checksums.json is written
+        # to the CWD, and the store copy of the mods dir is read-only. Refuse
+        # anything else so a stale/mislocated checksums.json can't be mistaken
+        # for success.
+        if [ ! -f pack.toml ] || [ ! -d mods ]; then
+          echo "ERROR: packwiz-checksums-${name} must be run from the modpack directory (the one containing pack.toml and mods/)." >&2
+          echo "  e.g. nix run .#packwiz-checksums-${name}  (from modules/nixos/minecraft-server/modpacks/${name}/)" >&2
+          exit 1
+        fi
+        tmp="checksums.json.tmp.$$"
+        ${pkgs.python3}/bin/python3 ${checksumsScript} ${modsDir} > "$tmp"
+        mv "$tmp" checksums.json
+        echo "wrote $PWD/checksums.json — commit it and rebuild the server"
       '';
     in
     {
@@ -135,7 +153,20 @@ let
         else
           { };
 
-      modLinks = (p2n.mkModLinks mods) // patchedMods;
+      # Extra LOCAL mods that are not in checksums.json (our own source, built
+      # via buildModSource — e.g. dt-tree-water-cleanup). Same keys convention:
+      # "mods/<name>.jar".
+      extraMods =
+        if builtins.pathExists "${pack}/extra-mods.nix" then
+          import "${pack}/extra-mods.nix"
+            {
+              inherit mods pkgs;
+              buildModSource = import "${modpacksDir}/build-mod-source.nix" { inherit pkgs; };
+            }
+        else
+          { };
+
+      modLinks = (p2n.mkModLinks mods) // patchedMods // extraMods;
 
       # .minecraft/<dir> symlinks (mirrors packwizStartPre on the server side).
       internalDirs = [ "config" "kubejs" "scripts" "datapacks" "defaultconfigs" ];

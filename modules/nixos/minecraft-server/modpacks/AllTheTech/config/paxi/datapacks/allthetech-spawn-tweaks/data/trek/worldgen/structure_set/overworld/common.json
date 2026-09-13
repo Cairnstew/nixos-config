@@ -1,0 +1,69 @@
+{
+ "structures": [
+  {
+   "structure": "trek:overworld/common/cooking_pork",
+   "weight": 1
+  },
+  {
+   "structure": "trek:overworld/common/elven_pillars",
+   "weight": 1
+  },
+  {
+   "structure": "trek:overworld/common/frozen_remains",
+   "weight": 1
+  },
+  {
+   "structure": "trek:overworld/common/mushroom_house",
+   "weight": 1
+  },
+  {
+   "structure": "trek:overworld/common/ruins",
+   "weight": 1
+  },
+  {
+   "structure": "trek:overworld/common/small_desert_ruins",
+   "weight": 1
+  },
+  {
+   "structure": "trek:overworld/common/small_swamp_ruins",
+   "weight": 1
+  },
+  {
+   "structure": "trek:overworld/common/smoldering_altar",
+   "weight": 1
+  },
+  {
+   "structure": "trek:overworld/common/strange_stone",
+   "weight": 1
+  },
+  {
+   "structure": "trek:overworld/common/termite_hill",
+   "weight": 1
+  },
+  {
+   "structure": "trek:overworld/common/two_woods",
+   "weight": 1
+  },
+  {
+   "structure": "trek:overworld/common/well_pillager_small",
+   "weight": 1
+  },
+  {
+   "structure": "trek:overworld/common/well",
+   "weight": 1
+  }
+ ],
+ "placement": {
+  "type": "minecraft:random_spread",
+  "spacing": 29,
+  "separation": 14,
+  "spread_type": "linear",
+  "salt": 98700001,
+  "frequency_reduction_method": "default",
+  "frequency": 1,
+  "exclusion_zone": {
+   "chunk_count": 6,
+   "other_set": "minecraft:villages"
+  }
+ }
+}

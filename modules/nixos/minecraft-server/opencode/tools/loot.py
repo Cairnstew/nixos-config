@@ -136,7 +136,7 @@ def scan_loot(zf):
     """Scan a jar/zip for loot tables. Returns {lt_id: {type, pools, items, data}}."""
     tables = {}
     for n in zf.namelist():
-        m = re.match(r"^data/([^/]+)/loot_tables/(.+)\.json$", n)
+        m = re.match(r"^data/([^/]+)/loot_tables?/(.+)\.json$", n)
         if m:
             ns, name = m.group(1), m.group(2)
             lt_id = f"{ns}:{name}"

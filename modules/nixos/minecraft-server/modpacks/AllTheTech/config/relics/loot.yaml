@@ -1,0 +1,3 @@
+# Tuned by AllTheTech pack: global chance that a structure chest roll generates a relic.
+# Default is 0.2 (20%). Lowered to 0.05 so relics stay findable but no longer flood chests.
+relicGenChance: 0.05

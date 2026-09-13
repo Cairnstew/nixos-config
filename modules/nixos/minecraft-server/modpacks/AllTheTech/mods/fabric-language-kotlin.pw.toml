@@ -1,0 +1,8 @@
+name = "fabric-language-kotlin"
+filename = "fabric-language-kotlin-1.13.13+kotlin.2.4.10.jar"
+side = "client"
+
+[download]
+url = "https://cdn.modrinth.com/data/Ha28R6CL/versions/bdhiINYC/fabric-language-kotlin-1.13.13%2Bkotlin.2.4.10.jar"
+hash-format = "sha256"
+hash = "34ccdacf13bb9351fe43ce61912c2e09b72364e43e787d36ba3d2d04dec75a52"

@@ -132,8 +132,21 @@ let
               }
           else
             { };
+        # Extra LOCAL mods that are not in checksums.json (our own source, built
+        # via buildModSource — e.g. dt-tree-water-cleanup). Same caveat about
+        # inputs.self for buildModSource as patches.nix above. Keys follow the
+        # mkModLinks convention: "mods/<name>.jar".
+        extraMods =
+          if builtins.pathExists "${srv.packwiz}/extra-mods.nix" then
+            import "${srv.packwiz}/extra-mods.nix"
+              {
+                inherit mods pkgs;
+                buildModSource = import "${flake.inputs.self}/modules/nixos/minecraft-server/modpacks/build-mod-source.nix" { inherit pkgs; };
+              }
+          else
+            { };
       in
-      (packwiz2nix.lib.mkModLinks serverMods) // patchedMods;
+      (packwiz2nix.lib.mkModLinks serverMods) // patchedMods // extraMods;
 
   # Internal (non-mod) content subdirs from the packwiz pack dir. packwiz
   # installers copy these into the game folder on install; our server must do

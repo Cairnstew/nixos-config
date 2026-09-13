@@ -23,7 +23,9 @@ function appendRunLog(note: string): string {
   if (existsSync(src)) {
     const date = new Date().toISOString().slice(0, 10);
     try {
-      appendFileSync(src, `\n// ## RUN LOG\n// ### ${date}\n// ${note.replace(/\n/g, "\n// ")}\n`);
+      const srcExisting = readFileSync(src, "utf-8");
+      const srcHeader = srcExisting.includes("\n// ## RUN LOG") ? "" : "\n// ## RUN LOG\n";
+      appendFileSync(src, `${srcHeader}// ### ${date}\n// ${note.replace(/\n/g, "\n// ")}\n`);
       out.push(`tool source ${src}`);
     } catch (e: any) {
       out.push(`tool source FAILED (${e.message})`);
@@ -305,17 +307,15 @@ export default {
 };
 
 // ## RUN LOG
+
 // ### 2026-08-21
 // Reading latest server log for performance analysis
 
-// ## RUN LOG
 // ### 2026-08-25
 // checking Better Minecraft instance logs for errors on user request
 
-// ## RUN LOG
 // ### 2026-08-27
 // Checking current running Minecraft instances
 
-// ## RUN LOG
 // ### 2026-08-27
 // Getting ATM11 log to check FTB Quests status

@@ -7,6 +7,14 @@
   "url": "https://cdn.modrinth.com/data/w2c2560c/versions/1i6VitG6/ae2-dynamic-trees-fix-1.0.jar",
   "sha256": "sha256-73WPuruZtsIzLCZFmm6p3PAZ5KSCXfdZzrJplm1nvmY="
  },
+ "ae2-growth-accelerators.pw.toml": {
+  "url": "https://cdn.modrinth.com/data/on6GHAdX/versions/rVWcjqwR/ae2-growth-accelerator-tiers-1.0.1.jar",
+  "sha256": "sha256-U7yTdH9go/xWLgcmE/NCJjzRRTC828BDV1fHoEBm7do="
+ },
+ "ae2-jei-integration.pw.toml": {
+  "url": "https://edge.forgecdn.net/files/7727/898/ae2jeiintegration-1.2.1.jar",
+  "sha256": "sha256-KYnF12LT8UpYtNtlGdqv+B5xnf80RaKzkyiUisI+VIs="
+ },
  "ae2-qol-recipes.pw.toml": {
   "url": "https://cdn.modrinth.com/data/K7VSm2YY/versions/gyP6Pp5h/ae2qolrecipes-neoforge-1.21.x-1.3.0.jar",
   "sha256": "sha256-mu25CQoZ1LFcJYrhOmgBF5gNNEknsiPFP4Zw37LR+m8="
@@ -26,6 +34,18 @@
  "anvians-lib.pw.toml": {
   "url": "https://cdn.modrinth.com/data/PuTjrq4T/versions/XjDQpd47/anvianslib-neoforge-1.21-1.4.2.jar",
   "sha256": "sha256-e8joIEaZwIhwrgIuenNW7ocq304KVtKdW+guo/IpIrc="
+ },
+ "apothic-attributes.pw.toml": {
+  "url": "https://cdn.modrinth.com/data/DGaH8Rh0/versions/Xtaunf84/ApothicAttributes-1.21.1-2.10.1.jar",
+  "sha256": "sha256-f4TugD6dT+8oWNso9VJyTcDqbDlD2xEcyUfXCqLJwVk="
+ },
+ "apothic-enchanting.pw.toml": {
+  "url": "https://cdn.modrinth.com/data/pL8MtgqY/versions/2vH7csNR/ApothicEnchanting-1.21.1-1.6.2.jar",
+  "sha256": "sha256-ZSQGvC5MLYSIyT0104ICOQiX4OxrS8YLSBPOL7atafY="
+ },
+ "apothic-spawners.pw.toml": {
+  "url": "https://cdn.modrinth.com/data/DfxVkOAO/versions/pWfxcfO2/ApothicSpawners-1.21.1-1.4.0.jar",
+  "sha256": "sha256-8MvFKtYGmXeJw2+slK5lGrfi4hyEHiapUsZAQcrZzb4="
  },
  "appflux.pw.toml": {
   "url": "https://cdn.modrinth.com/data/oMgZ004U/versions/4x40hq9D/AppliedFlux-1.21-2.1.5-neoforge.jar",
@@ -71,9 +91,17 @@
   "url": "https://cdn.modrinth.com/data/lhGA9TYQ/versions/1IiqEQGl/architectury-13.0.11-neoforge.jar",
   "sha256": "sha256-nMkvLAlTP8VILGD5k72JHGVaDjK2NwN83LfCsjre3us="
  },
+ "artifacts.pw.toml": {
+  "url": "https://cdn.modrinth.com/data/P0Mu4wcQ/versions/lMfuK0o7/artifacts-neoforge-13.2.5.jar",
+  "sha256": "sha256-42qSlCCgphar2yj1u724ZqQmqju3jRs5vBGDknwQHOY="
+ },
  "athena-ctm.pw.toml": {
   "url": "https://cdn.modrinth.com/data/b1ZV3DIJ/versions/dJgL278E/athena-neoforge-1.21.1-4.0.6.jar",
   "sha256": "sha256-Q2mYhbvOM0ORbUxcSUDPDj+fbwL960boZV4SG0IoLsU="
+ },
+ "ati-structures-vanilla-edition.pw.toml": {
+  "url": "https://cdn.modrinth.com/data/YWVAO3wq/versions/hHw6n2T7/ATi%20Structures%20Vanilla%20V1.4.5.jar",
+  "sha256": "sha256-zGS1DoDAO/Xgq9HGunbIc5e5cq3PZ43ofYHYXdckQJg="
  },
  "atmospherics.pw.toml": {
   "url": "https://cdn.modrinth.com/data/ft2cYBpB/versions/e3AdhSXi/atmospherics-2.6.5-mc-1.21.1.jar",
@@ -147,6 +175,10 @@
   "url": "https://cdn.modrinth.com/data/COlSi5iR/versions/1xCOc1iQ/c2me-neoforge-mc1.21.1-0.4.0-alpha.0.118.jar",
   "sha256": "sha256-gw14q0BUxOdhjzX7ULRt1OGT7cVdZfkk6H3c1dHxKWU="
  },
+ "centrifuge-tiers-reproduced.pw.toml": {
+  "url": "https://cdn.modrinth.com/data/kdj4UZE7/versions/GlyVB2Ru/centrifugetiersreproduced-1.21.1-0.2.5.jar",
+  "sha256": "sha256-iiGACtbG7/HXbnXy2hxWO/nFNFRKnvTgWzH7BICzEq8="
+ },
  "cerbons-api.pw.toml": {
   "url": "https://cdn.modrinth.com/data/GkIc6rRo/versions/5wbxkBQ1/CerbonsAPI-NeoForge-1.21-1.3.0.jar",
   "sha256": "sha256-XHUHYrMat5En329FU1H+eXk9jCtB4aD5SzNaWhEjU00="
@@ -167,6 +199,10 @@
   "url": "https://cdn.modrinth.com/data/fALzjamp/versions/LuFhm4eU/Chunky-NeoForge-1.4.23.jar",
   "sha256": "sha256-1y8jXPH1byw3T1LAC92lA0UksoFCMFqEz8Ejo/kq0nQ="
  },
+ "citadel-(1.21.1-port).pw.toml": {
+  "url": "https://cdn.modrinth.com/data/XjY0RcQj/versions/mIylVpkN/citadel-1.21.1-2.7.6.jar",
+  "sha256": "sha256-nhJGjEnlqVt62/IrO00FvFVWWYm4nEC5hc1zvf5jw8I="
+ },
  "cloth-config.pw.toml": {
   "url": "https://cdn.modrinth.com/data/9s6osm5g/versions/izKINKFg/cloth-config-15.0.140-neoforge.jar",
   "sha256": "sha256-Zeci4NmEMaB8Rfi92NUpohfMjBdf3hdAJIvVwbTzwNQ="
@@ -178,6 +214,18 @@
  "coastal-waves.pw.toml": {
   "url": "https://cdn.modrinth.com/data/2ygdYUcf/versions/U5Cx2fXK/Waves-1.21.x-1.6.jar",
   "sha256": "sha256-RxBCIEdewhHSb6ZaOSJUpPSBXgOdQeJiWsiBHiyhXgA="
+ },
+ "cobweb.pw.toml": {
+  "url": "https://cdn.modrinth.com/data/dQcfqGbl/versions/c10AZba0/cobweb-neoforge-1.21-1.4.0.jar",
+  "sha256": "sha256-QMFR3O5qCN7N2YCnx//tatopLnfD0s166i0B5fqNOxw="
+ },
+ "comforts.pw.toml": {
+  "url": "https://cdn.modrinth.com/data/SaCpeal4/versions/3kpPjcTc/comforts-neoforge-9.0.5%2B1.21.1.jar",
+  "sha256": "sha256-aw/TWhNJEH4IpFU5rb3paDuyA/68Q6MwX2/ErHPllhU="
+ },
+ "common-capabilities.pw.toml": {
+  "url": "https://cdn.modrinth.com/data/oFXrCkDI/versions/TOl9njea/commoncapabilities-1.21.1-neoforge-2.11.5-363.jar",
+  "sha256": "sha256-sqSuYzxrjfX0gm60AtwhbuulPRGpP5WNO3nEKO5z/IE="
  },
  "compatibility-addon-for-minecolonies.pw.toml": {
   "url": "https://edge.forgecdn.net/files/8640/200/MineColonies_Compatibility-1.21.1-3.56.jar",
@@ -223,6 +271,10 @@
   "url": "https://mediafilez.forgecdn.net/files/8587/677/cozyapartments%201.21.1%20v1.3.01%20snapshot.jar",
   "sha256": "sha256-WYHA8LpTaaF3uekqzPA8DzFCYDfcD/XIkQ0kNVs/JDA="
  },
+ "crafting-tweaks.pw.toml": {
+  "url": "https://cdn.modrinth.com/data/DMu0oBKf/versions/IhkQpEve/craftingtweaks-neoforge-1.21.1-21.1.11.jar",
+  "sha256": "sha256-CWT+/EoHEgpTIystk0+sS68V/aqZtprdMKGKZCvBz5g="
+ },
  "crafttweaker.pw.toml": {
   "url": "https://cdn.modrinth.com/data/Xg35A4rS/versions/BVOSHJwc/CraftTweaker-neoforge-1.21.1-21.0.38.jar",
   "sha256": "sha256-TEqVynBuGuxBFFstsyc38q6/H97e/aCzW2UcrT+kq68="
@@ -259,9 +311,17 @@
   "url": "https://cdn.modrinth.com/data/eqrvp4NK/versions/Cw5k6c0a/createenchantablemachinery-3.6.0%2Bmc1.21.1-neoforge.jar",
   "sha256": "sha256-kzrTewZNjGAF8fbrCbMnT+n1lhpoQfuee7Zae/9m9lM="
  },
+ "create-ender-transmission.pw.toml": {
+  "url": "https://cdn.modrinth.com/data/wtW8g4TG/versions/eI9pk5JC/createendertransmission-2.1.1-1.21.1.jar",
+  "sha256": "sha256-E/I3eWulExKjhevVWyUsVVmNSbz2d+po8L+5vYjCO2M="
+ },
  "create-goggles.pw.toml": {
   "url": "https://cdn.modrinth.com/data/L1RT5SJc/versions/Co24W2FL/creategoggles-1.21.1-6.1.1-%5BNEOFORGE%5D.jar",
   "sha256": "sha256-8I/xTHL/Fd6bPIcgCtBhFf9IxzrCFFjgONbhN+FiqQc="
+ },
+ "create-horse-power.pw.toml": {
+  "url": "https://cdn.modrinth.com/data/9Qm19XSM/versions/yj7NF0iZ/createhorsepower-1.21.1-1.1.0.jar",
+  "sha256": "sha256-tUoQC7Qo5tqJezc3YHXw1z6eRUpDcT/yl5Pyxm3GmhU="
  },
  "create-jei-compat.pw.toml": {
   "url": "https://cdn.modrinth.com/data/1fkSpqmV/versions/H8zVoq1O/createjeicompat-1.0.3.jar",
@@ -271,13 +331,45 @@
   "url": "https://cdn.modrinth.com/data/UbFnAd4l/versions/sCwiqLqq/create_jetpack-forge-5.2.1.jar",
   "sha256": "sha256-z5nBxJQyMMax2IUn2nLDqduQjXa8r04/7+NFrIo8kIE="
  },
+ "create-mechanical-extruder.pw.toml": {
+  "url": "https://cdn.modrinth.com/data/hGAlcCDJ/versions/fFDOEXAA/create_mechanical_extruder-1.21.1-2.2.2-6.0.10.jar",
+  "sha256": "sha256-0ZLQ5mXfCvOgb2X/4KutSb7tgC/a/r/Nj06c87a1wTk="
+ },
+ "create-metallurgy.pw.toml": {
+  "url": "https://cdn.modrinth.com/data/Soft45xC/versions/4RhIMmaJ/createmetallurgy-1.0.3-1.21.1.jar",
+  "sha256": "sha256-jxwwyfgAw2ekBxXo5mYvc29FR3N5h9/DDBAXK4m12T8="
+ },
+ "create-more-drill-heads.pw.toml": {
+  "url": "https://cdn.modrinth.com/data/9MEmQKkF/versions/CSXCxG3F/createmoredrillheads-1.2.0-1.21.1.jar",
+  "sha256": "sha256-YMhblGxHvDoSCr2CMcpiAYl6/uUxT+c1ub0xKm6kOfc="
+ },
  "create-new-age.pw.toml": {
   "url": "https://cdn.modrinth.com/data/FTeXqI9v/versions/IwtuwMZy/create-new-age-1.2.0%2Bneoforge-mc1.21.1.jar",
   "sha256": "sha256-ohfqIczINk6Z2Gd35RlDa8fJRRbflzetAQMEfkikRxc="
  },
+ "create-optical.pw.toml": {
+  "url": "https://cdn.modrinth.com/data/kcZ7kwxx/versions/emVIaw53/create_optical-0.4.2.jar",
+  "sha256": "sha256-UtMsU2JhfHt5bvvBpYjk2EQQclL+MMVkXrEHQdXAkL0="
+ },
  "create-ore-excavation.pw.toml": {
   "url": "https://cdn.modrinth.com/data/ResbpANg/versions/tivxiPTo/createoreexcavation-1.21-1.6.8.jar",
   "sha256": "sha256-06LhpuZd5+UK6eJ53jmbZTXaQHq8jmtGiKVvLkYaq5k="
+ },
+ "create-renewable-brass.pw.toml": {
+  "url": "https://cdn.modrinth.com/data/AqQzrKJo/versions/Nlbe2Hef/create-renewable-brass-1.0.2.jar",
+  "sha256": "sha256-FQO/FTJU8HY7YKJFjEHWxy/rMqNsjmPGr6zjyA3kjBs="
+ },
+ "create-renewable-diamonds.pw.toml": {
+  "url": "https://cdn.modrinth.com/data/IxTis4hc/versions/YbXuduVa/create-renewable-diamonds-1.0.1.jar",
+  "sha256": "sha256-kkL7IvPp1ooaRMh00P2dLpOfzINC6tSzIAeAHjPZKnQ="
+ },
+ "create-renewable-netherite.pw.toml": {
+  "url": "https://cdn.modrinth.com/data/nGq1sdd2/versions/qhKlkgfZ/create-renewable-netherite-2.0.1.jar",
+  "sha256": "sha256-JTm07ghqxEjgAhfraT3KNWNdbF8OWH95sWvyTqahotA="
+ },
+ "create-sifting.pw.toml": {
+  "url": "https://cdn.modrinth.com/data/r018adCw/versions/Z5bTlA6P/createsifter-1.21.1-2.3.0.jar",
+  "sha256": "sha256-eYaJlcq44AAu4nJFRQsk8i7YTYcpa7k/2rMS0CwXjLw="
  },
  "create-sophisticated-backpacks-compat.pw.toml": {
   "url": "https://cdn.modrinth.com/data/BAEkFrvn/versions/MGpIgh9e/create_sophback_compat-1.0.jar",
@@ -295,6 +387,10 @@
   "url": "https://cdn.modrinth.com/data/WROfLLvn/versions/K3nIvcWT/trading_floor-3.0.16.jar",
   "sha256": "sha256-8KrN2x+PGR8Tt5xgPlK9SabRy5GAeNijvcsmIciLjUA="
  },
+ "create-ultimate-factory.pw.toml": {
+  "url": "https://cdn.modrinth.com/data/N9QToVpw/versions/AEMRNsNS/create_ultimate_factory-2.2.4-neoforge-1.21.1.jar",
+  "sha256": "sha256-uV3N1DyFnq8YJfM7K0xCImGHoeh102iwsk7Qvh4PobA="
+ },
  "create.pw.toml": {
   "url": "https://cdn.modrinth.com/data/LNytGWDc/versions/UjX6dr61/create-1.21.1-6.0.10.jar",
   "sha256": "sha256-74f+Vwnxuh9bi7IKKSW1r7RmnheP1ti/EMFndZ7v43o="
@@ -306,6 +402,10 @@
  "createbetterfps.pw.toml": {
   "url": "https://cdn.modrinth.com/data/lMYIHZNH/versions/QWqEdWHy/createbetterfps-1.21.1-1.1.4.jar",
   "sha256": "sha256-8AgPXLGGv594XcVRC6urlNl63HkYlSz/eA0sX63yrJo="
+ },
+ "createnuclear.pw.toml": {
+  "url": "https://cdn.modrinth.com/data/z611fdf7/versions/waO2BSHO/createnuclear-1.3.2-beta.3-neoforge.jar",
+  "sha256": "sha256-DTPGCMdW714pPxc0QDBQ1kyWUTMqMR56rwE3D0DZseM="
  },
  "creativecore.pw.toml": {
   "url": "https://cdn.modrinth.com/data/OsZiaDHq/versions/cv1iRM3A/CreativeCore_NEOFORGE_v2.13.42_mc1.21.1.jar",
@@ -326,6 +426,10 @@
  "curios.pw.toml": {
   "url": "https://cdn.modrinth.com/data/vvuO3ImH/versions/yohfFbgD/curios-neoforge-9.5.1%2B1.21.1.jar",
   "sha256": "sha256-pF3yElwmIZl0q6dQf/ya/nuDrMlBo4avP6rLHMAFb94="
+ },
+ "cyclops-core.pw.toml": {
+  "url": "https://cdn.modrinth.com/data/Z9DM0LJ4/versions/RjMKI4zG/cyclopscore-1.21.1-neoforge-1.29.4.jar",
+  "sha256": "sha256-CI3DKFMvkn9vCSnuxq3tI3lHe5ne2/C3d6oz+rgAWVk="
  },
  "direcolonies.pw.toml": {
   "url": "https://mediafilez.forgecdn.net/files/6373/645/DireColonies-3.2.0.jar",
@@ -375,6 +479,10 @@
   "url": "https://cdn.modrinth.com/data/tpehi7ww/versions/BYUUUeZA/dungeons-and-taverns-v4.4.4.jar",
   "sha256": "sha256-HbKOieDLdq6+nkCVXRhm6KwXeVddFcKh4lCsgEp2LQU="
  },
+ "dynamic-trees-quark.pw.toml": {
+  "url": "https://cdn.modrinth.com/data/9paueCZy/versions/rn17sHPV/dtquark-2.6.1.jar",
+  "sha256": "sha256-8P20di/0X7ye2ySHFZXr0TwVZwhOB9uDltqnjqr1P+I="
+ },
  "dynamic-trees-still-life.pw.toml": {
   "url": "https://cdn.modrinth.com/data/8gWlsPXl/versions/sDsyY30R/dtstill-life-1.0.3.jar",
   "sha256": "sha256-m1YPXHyqh5s2HMtZuR0NANPcPXNnCitpcoEVoBqrf6w="
@@ -382,6 +490,10 @@
  "dynamictrees-betternether.pw.toml": {
   "url": "https://cdn.modrinth.com/data/STvBgZH8/versions/Y330mvkV/dtbetternether-1.21.1-1.9.0.jar",
   "sha256": "sha256-thRmLegKPDrem1otoiX8AvADZamCzAsAyVAnQZ09QKk="
+ },
+ "dynamictrees-vanillabackport.pw.toml": {
+  "url": "https://cdn.modrinth.com/data/sA2S5ZLK/versions/uv3Kzado/dtvanillabackport-1.21.1-1.6.0.jar",
+  "sha256": "sha256-+htLo89hSRFUb4GUOqtZeJ0z9n9B0iV0pzVPL/MSWI8="
  },
  "dynamictrees.pw.toml": {
   "url": "https://cdn.modrinth.com/data/vdjF5PL5/versions/G4uJ0UA0/dynamictrees-neoforge-1.21.1-1.7.2.jar",
@@ -398,6 +510,10 @@
  "enchantment-descriptions.pw.toml": {
   "url": "https://cdn.modrinth.com/data/UVtY3ZAC/versions/OuJDPGSM/enchdesc-neoforge-1.21.1-21.1.10.jar",
   "sha256": "sha256-lCTJr/Tt9NhzDJMd9CUxOK6u50Xsg5r3B40pK7TuqhY="
+ },
+ "enhanced-block-entities-neoforged.pw.toml": {
+  "url": "https://cdn.modrinth.com/data/HlLmiJmt/versions/Qt6IBri6/blockentities-%5BNEOFORGED%5D-1.21.1%2B1.1.0.jar",
+  "sha256": "sha256-3GpHa/8yZ/l+VR8vg6aSTecQlJuk0xx3qYuSy1QvIQM="
  },
  "entity-model-features.pw.toml": {
   "url": "https://cdn.modrinth.com/data/4I1XuqiY/versions/PAYgk63v/entity_model_features-3.2.4-1.21-neoforge.jar",
@@ -447,6 +563,10 @@
   "url": "https://cdn.modrinth.com/data/rMvP0ujv/versions/mz2cvsx6/ExtraQuests-1.7.0-1.21.1-NeoForge.jar",
   "sha256": "sha256-lU2cwA/z8UlV4SZt+k4azlqgZ6T/03lEsnkTH1WRys4="
  },
+ "fabric-language-kotlin.pw.toml": {
+  "url": "https://cdn.modrinth.com/data/Ha28R6CL/versions/bdhiINYC/fabric-language-kotlin-1.13.13%2Bkotlin.2.4.10.jar",
+  "sha256": "sha256-NMzazxO7k1H+Q85hkSwuCbcjZOQ+eH02uj0tBN7HWlI="
+ },
  "farmers-delight.pw.toml": {
   "url": "https://cdn.modrinth.com/data/R2OftAxM/versions/GbNuOZ4S/FarmersDelight-1.21.1-1.3.2.jar",
   "sha256": "sha256-j/Q41i4fzmFUKUX6rkWXXYI+BL1uc6B6Eh6gXOLwPec="
@@ -454,6 +574,10 @@
  "fast-ip-ping.pw.toml": {
   "url": "https://cdn.modrinth.com/data/9mtu0sUO/versions/gRe07TZL/fast-ip-ping-v1.0.11-mc1.21.1-neoforge.jar",
   "sha256": "sha256-yTUAqiXqp7xHPnU7ir9CNOfEZxPVC7grMDg+5H5kb1o="
+ },
+ "fastworkbench.pw.toml": {
+  "url": "https://cdn.modrinth.com/data/5NYPwQRn/versions/IwciHwPN/FastWorkbench-1.21.1-9.1.3.jar",
+  "sha256": "sha256-FoN93VWeBV/2o6+Ebkysykp3K7eyJpBim1O4CQbI+co="
  },
  "ferrite-core.pw.toml": {
   "url": "https://cdn.modrinth.com/data/uXXizFIs/versions/x7kQWVju/ferritecore-7.0.3-neoforge.jar",
@@ -551,6 +675,18 @@
   "url": "https://cdn.modrinth.com/data/bkz5C0dQ/versions/dp9cjoQC/hexalia-neoforge-1.3.5.jar",
   "sha256": "sha256-Fn6AQMbQb5E9PGUbN4oacFmi6nrbtUuAUQDiZLwII5U="
  },
+ "hypertube.pw.toml": {
+  "url": "https://cdn.modrinth.com/data/ATDdrG1y/versions/qYjOyvgW/create_hypertube-0.6.0-NEOFORGE.jar",
+  "sha256": "sha256-e9uJecf/fTsp96I3cbauSHCm3LfOLkoyFP3WBZqsrOg="
+ },
+ "iceandfire-ce.pw.toml": {
+  "url": "https://cdn.modrinth.com/data/VpmCsizY/versions/kdvvFM7V/iceandfire-2.0-beta.17.jar",
+  "sha256": "sha256-7lI0lEVhVBfmmrZM8V27lrkzKpEXIlEZ0oFpXF+NkPA="
+ },
+ "iceandfire_smithing.pw.toml": {
+  "url": "https://cdn.modrinth.com/data/xGg3Zcsk/versions/IubPoVRe/iceandfire_smithing-1.21.1.jar",
+  "sha256": "sha256-BrPj1qCv15HwUoPrnOkPvTNnndqZoMwpeqghbQMyHU0="
+ },
  "immediatelyfast.pw.toml": {
   "url": "https://cdn.modrinth.com/data/5ZwdcRci/versions/zxT50PTW/ImmediatelyFast-NeoForge-1.6.11%2B1.21.1.jar",
   "sha256": "sha256-M23xLwmdGkQaPgaFC+qG6cLQyLwCLT2aIBhwogFWKgQ="
@@ -559,9 +695,53 @@
   "url": "https://cdn.modrinth.com/data/tIm2nV03/versions/uNRARSH2/ImmersiveEngineering-1.21.1-12.4.2-194.jar",
   "sha256": "sha256-RZQphaSkrr8mW44ioMVKliCGN0cfNvJTL/XUkRMi3rw="
  },
+ "integrated-api.pw.toml": {
+  "url": "https://cdn.modrinth.com/data/V6fKbpBN/versions/cKHoMnZX/integrated_api-neoforge-1.21.1-1.8.0.jar",
+  "sha256": "sha256-SBSeKqGzvBjh0Wp15lK54UBSUARb+0NPBK6pC3XTwBM="
+ },
+ "integrated-crafting.pw.toml": {
+  "url": "https://cdn.modrinth.com/data/qwpACdla/versions/hNgLKlri/integratedcrafting-1.21.1-neoforge-1.5.0-694.jar",
+  "sha256": "sha256-Zj1nKmWldmrtFyRV9FcBYiN+UknHR34MyPnMUR+tx58="
+ },
+ "integrated-dynamics.pw.toml": {
+  "url": "https://cdn.modrinth.com/data/yYzdQHJI/versions/mXHb0GO5/integrateddynamics-1.21.1-neoforge-1.36.0.jar",
+  "sha256": "sha256-9UsdM+LW8YK4npxZafoIjb0FfjhDQlU2WGECc4Gd/1E="
+ },
+ "integrated-mekanism.pw.toml": {
+  "url": "https://cdn.modrinth.com/data/NknNmkiU/versions/MWL4pMij/integratedmekanism-1.21.1-neoforge-1.1.1.jar",
+  "sha256": "sha256-M9FeG6Foa5OEQbKEzr80+DonNF/DbyA9sFwplE2eFWI="
+ },
+ "integrated-nbt.pw.toml": {
+  "url": "https://cdn.modrinth.com/data/2PVU5Uck/versions/i04Qke2t/integratednbt-1.21.1-neoforge-1.6.2-66.jar",
+  "sha256": "sha256-ofXfl/tQZkZvl9UeZaucGu4PweBCYDdDsGTTZxxUa4k="
+ },
+ "integrated-rest.pw.toml": {
+  "url": "https://cdn.modrinth.com/data/ovubcV3F/versions/kECCIMcm/integratedrest-1.21.1-neoforge-1.1.15-210.jar",
+  "sha256": "sha256-wtNYig25hs23fAUghu/OJLa+i1LSd+TjMefXrWHdBdI="
+ },
+ "integrated-scripting.pw.toml": {
+  "url": "https://cdn.modrinth.com/data/uDJkuFRe/versions/T0lh9J7F/integratedscripting-1.21.1-neoforge-1.0.27.jar",
+  "sha256": "sha256-icjGLoT7VAxEdUMHbV+Xso0TnLTZe30Xonkj2+wiKN8="
+ },
+ "integrated-seven-seas.pw.toml": {
+  "url": "https://cdn.modrinth.com/data/Xmx7meIV/versions/rkThfF1I/ISS-1.21.1.jar",
+  "sha256": "sha256-COBiPc0hdZl7B/4jFhS1qV44F1CreSpUrwKcHkTyd5A="
+ },
+ "integrated-terminals.pw.toml": {
+  "url": "https://cdn.modrinth.com/data/HmLJoQ1K/versions/aUESttRe/integratedterminals-1.21.1-neoforge-1.8.0-917.jar",
+  "sha256": "sha256-HTP5FCqoiu6vrZVMQABD4lbWoG2Ix/xUlAKwjJFYPuw="
+ },
+ "integrated-tunnels.pw.toml": {
+  "url": "https://cdn.modrinth.com/data/Etqy1Omb/versions/PLSgXn8q/integratedtunnels-1.21.1-neoforge-1.11.0.jar",
+  "sha256": "sha256-+kQaXyt0mrX2+r62oB+RgUsdwSiWqswLUbwyofwdwug="
+ },
  "interiors.pw.toml": {
   "url": "https://cdn.modrinth.com/data/r4Knci2k/versions/gBrfZy6S/interiors-1.21.1-neoforge-0.6.1.jar",
   "sha256": "sha256-DRMm+4tnYjrhxppjt4jc3OyvjfQAx9jl5VrOeaUWb+U="
+ },
+ "inventory-profiles-next.pw.toml": {
+  "url": "https://cdn.modrinth.com/data/O7RBXm3n/versions/vjuNnHLv/InventoryProfilesNext-neoforge-1.21.1-2.2.5.jar",
+  "sha256": "sha256-BfG4Zg909UP7ph1M58+GMtTGmpW3wVsab9RCvi45fKY="
  },
  "iris.pw.toml": {
   "url": "https://cdn.modrinth.com/data/YL57xq9U/versions/KduFYu4t/iris-neoforge-1.8.14-beta.1%2Bmc1.21.1.jar",
@@ -590,6 +770,10 @@
  "jei.pw.toml": {
   "url": "https://cdn.modrinth.com/data/u6dRKJwZ/versions/Tbomhybz/jei-1.21.1-neoforge-19.44.0.401.jar",
   "sha256": "sha256-hJH5AqP/ikFwosT2TvvAGGtmZYJfINqrR4nLUQLBrJs="
+ },
+ "jupiter.pw.toml": {
+  "url": "https://cdn.modrinth.com/data/XbiLGMMU/versions/Jpcw76rq/jupiter-2.3.7-1.21.1-neoforge.jar",
+  "sha256": "sha256-la8zKvJQ+X/i2dKI/msgV8JmZzo4g0i/M3VrC2k6zhU="
  },
  "just-another-witchery-remake.pw.toml": {
   "url": "https://cdn.modrinth.com/data/LCO8KZvC/versions/XzdUmonc/witchery-0.5.7%2Bmc1.21.1.jar",
@@ -635,6 +819,14 @@
   "url": "https://cdn.modrinth.com/data/umyGl7zF/versions/F2nzeC19/kubejs-neoforge-2101.7.2-build.368.jar",
   "sha256": "sha256-AXZ7tnepxKjzGHF8TCG8p+fvgJlWA0A6VRBooOBk50A="
  },
+ "legendary-monsters.pw.toml": {
+  "url": "https://cdn.modrinth.com/data/9d9Bkqva/versions/sHmtzdVi/legendary_monsters-2.2.2%20MC%201.21.1.jar",
+  "sha256": "sha256-Y82FDS4VuA/8IMwjGc2sAR3Y5nXGdagoG9KTdtEakSA="
+ },
+ "libipn.pw.toml": {
+  "url": "https://cdn.modrinth.com/data/onSQdWhM/versions/BGe4KMlE/libIPN-neoforge-1.21.1-6.6.3.jar",
+  "sha256": "sha256-mPBhumnTF2T6EKt4EMpJBiYz4QemsmG6O2bcJbpf73s="
+ },
  "likely-a-pack.pw.toml": {
   "url": "https://mediafilez.forgecdn.net/files/7701/78/Likely_a_Pack_1.20.1_1.8.jar",
   "sha256": "sha256-fveVppnfpYZIneKpWwwggNOyC1OqB2Irc17WoDzfK1I="
@@ -651,9 +843,17 @@
   "url": "https://cdn.modrinth.com/data/XaDC71GB/versions/qPASucBM/lithostitched-1.7.13-neoforge-21.1.jar",
   "sha256": "sha256-qQsdSFsTgyjOqhVreJewgp6x7hUiuZeHClMSmuZeVRI="
  },
+ "lootjs.pw.toml": {
+  "url": "https://cdn.modrinth.com/data/fJFETWDN/versions/5AZDyUSn/lootjs-neoforge-1.21.1-3.7.0.jar",
+  "sha256": "sha256-0Wj9gPReXyPc7YpU/e6HNHpMf8bM2cdtMK5NBnupxgo="
+ },
  "lootr.pw.toml": {
   "url": "https://cdn.modrinth.com/data/EltpO5cN/versions/rxFmYTxd/lootr-neoforge-1.21.1-1.11.38.123.jar",
   "sha256": "sha256-LvjumYpcIkwgN8v+SIwtZqqVIvHwwyCDxpJ0FoKrWNk="
+ },
+ "mechanicals-lib.pw.toml": {
+  "url": "https://cdn.modrinth.com/data/ProvjTA7/versions/GBSlpwLT/mechanicals-1.21.1-1.1.6.jar",
+  "sha256": "sha256-DOm7l6aKL8c0BpXqzVuYmPLcSB3GOE32K/sQySyd5Uk="
  },
  "mekanism-additions.pw.toml": {
   "url": "https://cdn.modrinth.com/data/a6F3uASn/versions/6mkdykZa/MekanismAdditions-1.21.1-10.7.19.85.jar",
@@ -687,6 +887,10 @@
   "url": "https://edge.forgecdn.net/files/8621/898/minecolonies-1.1.1374-1.21.1-snapshot.jar",
   "sha256": "sha256-nqc5onPLINAqOgzgX249MVqn6d3ReiPw5w7l8Aw+TPo="
  },
+ "mob-control.pw.toml": {
+  "url": "https://cdn.modrinth.com/data/4gTwBSot/versions/sxs2HUNK/mobcontrol-1.21.1-2.0.1-beta-2.jar",
+  "sha256": "sha256-ittltnkqXTplcx8uoFIGTIctxu44Ui+8B9M32/hK6Pg="
+ },
  "modelfix.pw.toml": {
   "url": "https://cdn.modrinth.com/data/QdG47OkI/versions/X2U8ceG9/modelfix-1.21-1.10.jar",
   "sha256": "sha256-7ndLchNUUO+dscenWDcwTzDQXDVB46NIxPV2mrDwSRI="
@@ -707,6 +911,10 @@
   "url": "https://mediafilez.forgecdn.net/files/7756/701/ModularHubStylePack-1-21-1-v1.1.jar",
   "sha256": "sha256-tk/3/M0f62BpoEQyhKejXOWiTDUvRp9iI44SMXa0tUo="
  },
+ "moonlight.pw.toml": {
+  "url": "https://cdn.modrinth.com/data/twkfQtEc/versions/o9IoOg6k/moonlight-1.21.1-3.6.1-neoforge.jar",
+  "sha256": "sha256-2z4v4i80MvvT9h3LiVoMOGRMmWIflr9RQhCJ192AHtU="
+ },
  "more-enchantment-info.pw.toml": {
   "url": "https://cdn.modrinth.com/data/TIo1UXXV/versions/JaJl8XSj/more-enchantment-info-0.4.2.jar",
   "sha256": "sha256-wBsSczbKJ78X3dvWRXFMt38r5LGkIfQe+lga4kWOZkk="
@@ -719,6 +927,10 @@
   "url": "https://cdn.modrinth.com/data/aC3cM3Vq/versions/9I21YYxf/MouseTweaks-neoforge-mc1.21-2.26.1.jar",
   "sha256": "sha256-aOb0IBxd6Xt3kppyFclVJJVpbKajvzrk6sw04TX2zIs="
  },
+ "mowzies-mobs.pw.toml": {
+  "url": "https://cdn.modrinth.com/data/BFbX9xcm/versions/xgAXTl17/mowziesmobs-1.21.1-1.8.2.jar",
+  "sha256": "sha256-uOfjn7ZDAybef7sZPbVliO6L0E0AVFJ5JP5YjzcTHk8="
+ },
  "multi-piston.pw.toml": {
   "url": "https://edge.forgecdn.net/files/7097/877/multipiston-1.2.58-1.21.1.jar",
   "sha256": "sha256-fKJttGSFibf3ZpTCSdUJbAwK+3YV/mrfn2OMbIJcFec="
@@ -726,6 +938,34 @@
  "my-nethers-delight.pw.toml": {
   "url": "https://cdn.modrinth.com/data/O53VhQoZ/versions/OdH19ieD/MyNethersDelight-1.21.1-1.10.4.jar",
   "sha256": "sha256-/iRtCG3Lh8fSFj+7/wn9fhZPIGI45ScA/gs+NPs0NDI="
+ },
+ "mystical-agradditions.pw.toml": {
+  "url": "https://cdn.modrinth.com/data/pl0jGXIx/versions/31EVEM35/MysticalAgradditions-1.21.1-8.0.14.jar",
+  "sha256": "sha256-j2VxMYHNth9nY3xJ9yAPj7W4/vKq8xTE2hFtYAd8nkY="
+ },
+ "mystical-agriculture-tiered-crystals.pw.toml": {
+  "url": "https://cdn.modrinth.com/data/4fCwcdXD/versions/dwInVyVI/matc-1.7.1.jar",
+  "sha256": "sha256-1U3W7hklwBA7yhOEKiKbCnhRxGWPsvDNPItG+53VMqI="
+ },
+ "mystical-agriculture.pw.toml": {
+  "url": "https://cdn.modrinth.com/data/C95ReXie/versions/PLakgT6X/MysticalAgriculture-1.21.1-8.0.28.jar",
+  "sha256": "sha256-ScLVbEEAYYw1xohUh6OapH5zZMoyrp+WvPJPV1Y0fRo="
+ },
+ "mystical-automation.pw.toml": {
+  "url": "https://cdn.modrinth.com/data/wtZsRhqk/versions/tHfxBDgW/MysticalAutomation-1.21.1-1.0.7.jar",
+  "sha256": "sha256-I+1H6+pNFzHsLz21H3tFcQVDuiFWcHOkKQPXEQzHD4s="
+ },
+ "mystical-customization.pw.toml": {
+  "url": "https://cdn.modrinth.com/data/lNK9A4rh/versions/ACBylvtB/MysticalCustomization-1.21.1-6.0.2.jar",
+  "sha256": "sha256-cMY9dl7CvAq252CXrwj24KqFT2xze8qCj1DsWy1+D0g="
+ },
+ "mystical-mekanism-reprocessing.pw.toml": {
+  "url": "https://cdn.modrinth.com/data/dYPa29PH/versions/bLsPJqM5/mysticalmekanismreprocessing-1.0.1.jar",
+  "sha256": "sha256-sCv4mJCpF4OUj6vy1cuPuSfvNETVni+HMDYiIoCfRAk="
+ },
+ "mysticalmissingitems.pw.toml": {
+  "url": "https://cdn.modrinth.com/data/v2cEZmWx/versions/lt4KNRAO/mystical_missing_items-1.2.2.jar",
+  "sha256": "sha256-ZySWAtMjLjJRMRa8yT9FBJ9X7DNZnYo5kjnoR51cHfM="
  },
  "natures-compass.pw.toml": {
   "url": "https://cdn.modrinth.com/data/fPetb5Kh/versions/nFniEtJV/NaturesCompass-1.21.1-3.4.0-neoforge.jar",
@@ -739,9 +979,17 @@
   "url": "https://cdn.modrinth.com/data/nPZr02ET/versions/O09BGtgh/netherportalfix-neoforge-1.21.1-21.1.1.jar",
   "sha256": "sha256-JCJnr6MkNSEwrbImOlZn5CHG9MVzrQ3+BWWXElXqWh4="
  },
+ "no-chat-reports.pw.toml": {
+  "url": "https://cdn.modrinth.com/data/qQyHxfxd/versions/ZV8eL55E/NoChatReports-NEOFORGE-1.21.1-v2.9.1.jar",
+  "sha256": "sha256-hmrJpHr82Cm9sDiQtdj4C7TG9HMyxkcXtukJvuUTN7Y="
+ },
  "noisium.pw.toml": {
   "url": "https://cdn.modrinth.com/data/KuNKN7d2/versions/nJBE6tif/noisium-neoforge-2.3.0%2Bmc1.21-1.21.1.jar",
   "sha256": "sha256-6VIJ1ZO8ANfF3pT3Rv/R37+nCsj76Tg5Pvkw0AQWEJw="
+ },
+ "open-parties-and-claims.pw.toml": {
+  "url": "https://cdn.modrinth.com/data/gF3BGWvG/versions/AzM8UF04/open-parties-and-claims-neoforge-1.21.1-0.30.3.jar",
+  "sha256": "sha256-WI4AUxeDhtbNArMx5g40xwaW5spqris2Q3OdbBxGBGg="
  },
  "packet-fixer.pw.toml": {
   "url": "https://cdn.modrinth.com/data/c7m1mi73/versions/2C41Q8WX/packetfixer-3.3.1-1.20.5-1.21.X-merged.jar",
@@ -762,6 +1010,10 @@
  "paxi.pw.toml": {
   "url": "https://cdn.modrinth.com/data/CU0PAyzb/versions/CLZfFbCx/Paxi-1.21.1-NeoForge-5.1.3.jar",
   "sha256": "sha256-S2D46zuLiIDv98OsglzehDlISOrDkV7WGt5gfN0zHOc="
+ },
+ "placebo.pw.toml": {
+  "url": "https://cdn.modrinth.com/data/tCkE8p2N/versions/1Ypo4tf4/Placebo-1.21.1-9.9.2.jar",
+  "sha256": "sha256-GoRKWwgYE7HtuCZWMp5U04OJ7UcPamUWpYh/UwPX2q0="
  },
  "platform.pw.toml": {
   "url": "https://cdn.modrinth.com/data/i6fiqm5y/versions/v7P0nBi2/Platform-neoforge-1.21.1-1.3.3.jar",
@@ -787,6 +1039,18 @@
   "url": "https://cdn.modrinth.com/data/aaRl8GiW/versions/EE1FHDyD/prickle-neoforge-1.21.1-21.1.11.jar",
   "sha256": "sha256-zPRsRC7Tx/5BrQVvCUBWCCnsTdiDYJhd+s149GFOsWc="
  },
+ "productivebees.pw.toml": {
+  "url": "https://cdn.modrinth.com/data/jH6iiqkd/versions/jhrT0FE3/productivebees-1.21.1-13.6.11.jar",
+  "sha256": "sha256-FPOS65xkv3KDHcEWL/fJvG6soPZRjvfQiwS2/tKxw0g="
+ },
+ "productivefarming.pw.toml": {
+  "url": "https://edge.forgecdn.net/files/7296/450/productivefarming-1.21.1-0.4.1.jar",
+  "sha256": "sha256-DIoj1lBhDI0O4qXuG+J2JWEQHFlQr2vl4P991LnaHwY="
+ },
+ "productivetrees.pw.toml": {
+  "url": "https://cdn.modrinth.com/data/BTmup08e/versions/ezdbUBk7/productivetrees-1.21.1-0.7.0.jar",
+  "sha256": "sha256-ffvpRO1/M2BxmQtbvqmUTGimzcIaxJ93oCVMaJ2GIaA="
+ },
  "project-resonance-for-minecolonies.pw.toml": {
   "url": "https://edge.forgecdn.net/files/7983/841/projectresonance-1.21.1%20v1.5.4.6.jar",
   "sha256": "sha256-P1yBgG225K0wiSOdBegb2tRVAzLn/i4GSnt5T/O1row="
@@ -796,12 +1060,16 @@
   "sha256": "sha256-gCu1x3F+EQeUFwpggKAJz8wN2fn/TZJuDKVAyUexHwI="
  },
  "quark.pw.toml": {
-  "url": "https://mediafilez.forgecdn.net/files/8420/966/Quark-4.1-482.jar",
+  "url": "https://cdn.modrinth.com/data/qnQsVE2z/versions/yvp3Jbmk/Quark-4.1-482.jar",
   "sha256": "sha256-D2nODTHKpPMeH6SVlUESASHifGUs0tlUg5r2tRYvDHA="
  },
  "rainboows.pw.toml": {
   "url": "https://cdn.modrinth.com/data/MdWygI5q/versions/8TqxNXTn/Rainbows-1.21-1.5.jar",
   "sha256": "sha256-7gf9MdEpFcy+jlPZ4sqDmbkAhMauLsMkR4U+1pns6Xs="
+ },
+ "raritycore.pw.toml": {
+  "url": "https://cdn.modrinth.com/data/EtlqmUU6/versions/VZur0f0x/raritycore-1211.14.6.jar",
+  "sha256": "sha256-o1Asat63uqZ1nOK7IECvrdYug9S2OirpaEC2RgIStG0="
  },
  "rechiseled-create.pw.toml": {
   "url": "https://cdn.modrinth.com/data/E6867niZ/versions/VnOezhJR/rechiseledcreate-1.1.1-neoforge-mc1.21.jar",
@@ -815,13 +1083,17 @@
   "url": "https://cdn.modrinth.com/data/Bh37bMuy/versions/KYgu9tXl/reeses-sodium-options-neoforge-2.2.3%2Bmc1.21.1.jar",
   "sha256": "sha256-JYEvMIqHwEaG3mrJ8kqAcxAfgYZPDrmr80j5XXOmYp4="
  },
+ "relics-mod.pw.toml": {
+  "url": "https://cdn.modrinth.com/data/OCJRPujW/versions/WKEe9sPL/relics-1.21.1-0.12.8.jar",
+  "sha256": "sha256-229DYFP+cXQTOJ5VOQpfmBA8zZHMpf5GngkL3673Bxc="
+ },
+ "reliquified-artifacts.pw.toml": {
+  "url": "https://cdn.modrinth.com/data/GnU07giL/versions/x2qoJkgq/reliquified_artifacts-1.21.1-1.0.8.jar",
+  "sha256": "sha256-Ng/XAdV1tUIWdb/cUMbtiiJhRBDrkt14JCT5tftcAAY="
+ },
  "rhino.pw.toml": {
   "url": "https://cdn.modrinth.com/data/sk9knFPE/versions/cQ4POTah/rhino-2101.2.7-build.85.jar",
   "sha256": "sha256-4Omw547dOARAJmwPTqjUidrIUe8HWkVmpmptri97u2Y="
- },
- "roadweaver.pw.toml": {
-  "url": "https://cdn.modrinth.com/data/6jk8Pote/versions/4k6l0sVO/roadweaver-neoforge-2.3.1-1.21.1-hotfix.jar",
-  "sha256": "sha256-955sEnQtQUEbsM9piPMMPFXiCAI7jK81TYkpiUB3+sw="
  },
  "rpl.pw.toml": {
   "url": "https://cdn.modrinth.com/data/B3pb093D/versions/hZ6B2Z0x/ritchiesprojectilelib-2.1.2%2Bmc.1.21.1-neoforge.jar",
@@ -843,9 +1115,17 @@
   "url": "https://cdn.modrinth.com/data/RH2KUdKJ/versions/yVCCi6TK/OctoLib-NEOFORGE-0.6.2%2B1.21.jar",
   "sha256": "sha256-kroH2dnlWmVCHzw/IDxy/lFJywJNUncmfoHYEuEafzg="
  },
+ "simple-backups.pw.toml": {
+  "url": "https://cdn.modrinth.com/data/fzSKSXVK/versions/tHyCDNNH/SimpleBackups-1.21-4.0.30.jar",
+  "sha256": "sha256-DDIngbPFWffSxirIfrnXzkWfPztat3GoeU0Am0LHKew="
+ },
  "slice-and-dice.pw.toml": {
   "url": "https://cdn.modrinth.com/data/GmjmRQ0A/versions/N67LJgrN/sliceanddice-4.3.3-neoforge.jar",
   "sha256": "sha256-+If3DYpYksDP+0/KxZ3Ricdq72Ti8tR3F0PKhyHW7kg="
+ },
+ "small-ships.pw.toml": {
+  "url": "https://cdn.modrinth.com/data/rGWEHQrP/versions/6poGZvvr/smallships-neoforge-1.21.1-2.0.0-b2.1.jar",
+  "sha256": "sha256-Qj2B6uzPMgiO0LQqOhwJdmlfpauZwrax1MVwZTf8v2I="
  },
  "smallcolonies-me.pw.toml": {
   "url": "https://mediafilez.forgecdn.net/files/8045/900/smallcoloniesme%201.21.1%20v1.9.jar",
@@ -892,8 +1172,8 @@
   "sha256": "sha256-wFQgm2/7zwCpePRw2DcBV2CgmPKiWLDoxffCkA9fb1k="
  },
  "sophisticated-core.pw.toml": {
-  "url": "https://cdn.modrinth.com/data/nmoqTijg/versions/QSYJALVl/sophisticatedcore-1.21.1-1.4.85.2251.jar",
-  "sha256": "sha256-KQ+vj9Lc0qhKdar1gPQ/1GE6PGDnOLia2oFILzf9n74="
+  "url": "https://cdn.modrinth.com/data/nmoqTijg/versions/zvRSOlro/sophisticatedcore-1.21.1-1.4.90.2299.jar",
+  "sha256": "sha256-UX+6IASyzpcJUHuHR7qy76XZXdZELML78/d5tuLjh1o="
  },
  "sophisticated-jei-index.pw.toml": {
   "url": "https://cdn.modrinth.com/data/u7Rbf90L/versions/1bayJ51f/sophisticated_jei_index-1.2.0%2B1.21.1.jar",
@@ -903,13 +1183,21 @@
   "url": "https://cdn.modrinth.com/data/MJ0hdevs/versions/zG35SCtY/sophisticatedstoragecreateintegration-1.21.1-0.1.21.209.jar",
   "sha256": "sha256-Pu/n1T4uWMezjDrG59JXt1wvxsei1JJrYT7i3QBnOtY="
  },
+ "sophisticated-storage-in-motion.pw.toml": {
+  "url": "https://cdn.modrinth.com/data/6vtFbyaJ/versions/4YupqHfZ/sophisticatedstorageinmotion-1.21.1-0.10.34.358.jar",
+  "sha256": "sha256-rIzzRyQ6ihi76k5ZkIgMj+AtMnN1wZwZ6CzRtsFD7cA="
+ },
  "sophisticated-storage.pw.toml": {
-  "url": "https://cdn.modrinth.com/data/hMlaZH8f/versions/r5eqHpxi/sophisticatedstorage-1.21.1-1.5.85.2077.jar",
-  "sha256": "sha256-V72JWxLU3YoIS6BfZAG1RJZ+lLajLj8RkN/Bz5ZzJoc="
+  "url": "https://cdn.modrinth.com/data/hMlaZH8f/versions/H7wGZ8Sl/sophisticatedstorage-1.21.1-1.5.91.2127.jar",
+  "sha256": "sha256-osNSHt2IGW8pSOqaPbCBh5B7qqTNyyfBsAQGl4LGv48="
  },
  "sound-physics-remastered.pw.toml": {
   "url": "https://cdn.modrinth.com/data/qyVF9oeo/versions/Dd2tmpsk/sound-physics-remastered-neoforge-1.21.1-1.5.1.jar",
   "sha256": "sha256-vdxx7NTwdKEB6zeFWZ0Txp5kAl4QKaoP0KKPz5vM8uo="
+ },
+ "spark.pw.toml": {
+  "url": "https://cdn.modrinth.com/data/l6YH9Als/versions/v5qtqRQi/spark-1.10.124-neoforge.jar",
+  "sha256": "sha256-ZH6Kga++QU26HfS6Ff0GxdMtTLVE5ogoQF6OB0wuFts="
  },
  "stateobserver.pw.toml": {
   "url": "https://cdn.modrinth.com/data/D1lhcTKz/versions/UBLIkKTR/stateobserver-neoforge-1.21.1-1.6.4.jar",
@@ -947,6 +1235,10 @@
   "url": "https://cdn.modrinth.com/data/rOUBggPv/versions/81s25oaA/supermartijn642corelib-1.1.24-neoforge-mc1.21.jar",
   "sha256": "sha256-IohOfGt8SEfnu5f7+mG1+Da3kJu0aOdjf2eIvlblnwA="
  },
+ "supplementaries.pw.toml": {
+  "url": "https://cdn.modrinth.com/data/fFEIiSDQ/versions/A0lpiTgJ/supplementaries-1.21.1-3.9.7-neoforge.jar",
+  "sha256": "sha256-cvlFRo7ow7xCqh8iKq0sWhpS06HDwmBo+tIodkyvfbI="
+ },
  "sword-and-kingdom-schematic.pw.toml": {
   "url": "https://mediafilez.forgecdn.net/files/7274/682/sword_and_kingdom_schematic-1.6.jar",
   "sha256": "sha256-nMJlMfaM/EHW27eM6M8Dt9fhQ3rtMo25F5CrZTb8w0s="
@@ -958,6 +1250,10 @@
  "tinted-dyes.pw.toml": {
   "url": "https://cdn.modrinth.com/data/77VVvOOe/versions/DuFm9fdR/tinted_dyes-2.1.1-neoforge-1.21.1.jar",
   "sha256": "sha256-0Y8R3NsbBYe1e3KIm+68zxyOq71x8zDIysoIiovROKI="
+ },
+ "toast-control.pw.toml": {
+  "url": "https://cdn.modrinth.com/data/CnOG2wlS/versions/jXHDAUrd/ToastControl-1.21.1-9.0.1.jar",
+  "sha256": "sha256-Xv+IgS9/bREw/dwPcEEnZk2XmVToDHbKEvwiqD0Vz7I="
  },
  "towntalk.pw.toml": {
   "url": "https://edge.forgecdn.net/files/5653/504/towntalk-1.2.0.jar",
@@ -983,6 +1279,10 @@
   "url": "https://cdn.modrinth.com/data/2a8fg8M6/versions/vEr4Tzbr/u_sea-1.2.5%2Bmc1.19-1.21.11.jar",
   "sha256": "sha256-Q4iYF3T4RPf0LnEq40QG2QsrLiEZ52w22/+KLjpe6SM="
  },
+ "uranus.pw.toml": {
+  "url": "https://cdn.modrinth.com/data/3Acxy864/versions/1YdU56pR/uranus-2.4.1-1.21.1-neoforge.jar",
+  "sha256": "sha256-IVaps1O8z7Hwv3A1YadBRuqIAzI8SOm4rvX6uNWOHR4="
+ },
  "usefulmagic.pw.toml": {
   "url": "https://cdn.modrinth.com/data/T5YpEgSg/versions/CDvflNk2/UsefulMagic-NeoForge-1.21.1-3.0.3.jar",
   "sha256": "sha256-3xpD2tzkNCRsGy9LRBpdHlTPjurj7qIt1QzrYxQohfg="
@@ -992,12 +1292,20 @@
   "sha256": "sha256-7NgHrDWOJD7eF4GUVXiMe3oM5eCvSuzugsHGLFhtgY0="
  },
  "wakes-reforged.pw.toml": {
-  "url": "https://cdn.modrinth.com/data/E0SdeAoH/versions/YQWPuboy/wakes-1.21.1-NeoForge-1.4.0.jar",
-  "sha256": "sha256-k+AGGXPUvYuNlhZd6WL3FP5DztXV+uSjZJO8mkyU/8M="
+  "url": "https://cdn.modrinth.com/data/E0SdeAoH/versions/Z3Ic8n5N/wakes-1.21.1-NeoForge-1.4.1.jar",
+  "sha256": "sha256-EguVRw7TBv6Gga0N9zIDSsgNOl7kJtf537GvHvL8Pc0="
  },
  "waystones.pw.toml": {
   "url": "https://cdn.modrinth.com/data/LOpKHB2A/versions/u7m5EznS/waystones-neoforge-1.21.1-21.1.40.jar",
   "sha256": "sha256-PV0On8JxXajquf7lulbmuQDh8unGhYbtGXYss6AbF4E="
+ },
+ "when-dungeons-arise-seven-seas.pw.toml": {
+  "url": "https://cdn.modrinth.com/data/ZsrrjDbP/versions/erk04BGa/DungeonsAriseSevenSeas-1.21.x-1.0.4-neoforge.jar",
+  "sha256": "sha256-VJBA+9gdGzOuo4aBEJaF6G1jmFeFJGqDERLEuldA0t8="
+ },
+ "when-dungeons-arise.pw.toml": {
+  "url": "https://cdn.modrinth.com/data/8DfbfASn/versions/XIRJSFQ0/DungeonsArise-1.21.1-2.1.68-release.jar",
+  "sha256": "sha256-fu4eyn47LGwb7eBVk085GuLoNJ/+M+EG9FEXbSz88OQ="
  },
  "windy.pw.toml": {
   "url": "https://cdn.modrinth.com/data/EwYg6C78/versions/xcBfBf8H/windy-1.1.1%2B1.21-neoforge.jar",
@@ -1035,64 +1343,8 @@
   "url": "https://cdn.modrinth.com/data/MVARlG2f/versions/9GjNW2Gf/Zeta-1.1-40.jar",
   "sha256": "sha256-TxfRorn9bRjdt2l6pFHbf7FUBTuGSPed4nmuDX5oovo="
  },
- "ae2-jei-integration.pw.toml": {
-  "url": "https://edge.forgecdn.net/files/7727/898/ae2jeiintegration-1.2.1.jar",
-  "sha256": "sha256-KYnF12LT8UpYtNtlGdqv+B5xnf80RaKzkyiUisI+VIs="
- },
- "create-ender-transmission.pw.toml": {
-  "url": "https://cdn.modrinth.com/data/wtW8g4TG/versions/eI9pk5JC/createendertransmission-2.1.1-1.21.1.jar",
-  "sha256": "sha256-E/I3eWulExKjhevVWyUsVVmNSbz2d+po8L+5vYjCO2M="
- },
- "create-horse-power.pw.toml": {
-  "url": "https://cdn.modrinth.com/data/9Qm19XSM/versions/yj7NF0iZ/createhorsepower-1.21.1-1.1.0.jar",
-  "sha256": "sha256-tUoQC7Qo5tqJezc3YHXw1z6eRUpDcT/yl5Pyxm3GmhU="
- },
- "create-mechanical-extruder.pw.toml": {
-  "url": "https://cdn.modrinth.com/data/hGAlcCDJ/versions/fFDOEXAA/create_mechanical_extruder-1.21.1-2.2.2-6.0.10.jar",
-  "sha256": "sha256-0ZLQ5mXfCvOgb2X/4KutSb7tgC/a/r/Nj06c87a1wTk="
- },
- "create-metallurgy.pw.toml": {
-  "url": "https://cdn.modrinth.com/data/Soft45xC/versions/4RhIMmaJ/createmetallurgy-1.0.3-1.21.1.jar",
-  "sha256": "sha256-jxwwyfgAw2ekBxXo5mYvc29FR3N5h9/DDBAXK4m12T8="
- },
- "create-more-drill-heads.pw.toml": {
-  "url": "https://cdn.modrinth.com/data/9MEmQKkF/versions/CSXCxG3F/createmoredrillheads-1.2.0-1.21.1.jar",
-  "sha256": "sha256-YMhblGxHvDoSCr2CMcpiAYl6/uUxT+c1ub0xKm6kOfc="
- },
- "create-optical.pw.toml": {
-  "url": "https://cdn.modrinth.com/data/kcZ7kwxx/versions/emVIaw53/create_optical-0.4.2.jar",
-  "sha256": "sha256-UtMsU2JhfHt5bvvBpYjk2EQQclL+MMVkXrEHQdXAkL0="
- },
- "create-renewable-brass.pw.toml": {
-  "url": "https://cdn.modrinth.com/data/AqQzrKJo/versions/Nlbe2Hef/create-renewable-brass-1.0.2.jar",
-  "sha256": "sha256-FQO/FTJU8HY7YKJFjEHWxy/rMqNsjmPGr6zjyA3kjBs="
- },
- "create-renewable-diamonds.pw.toml": {
-  "url": "https://cdn.modrinth.com/data/IxTis4hc/versions/YbXuduVa/create-renewable-diamonds-1.0.1.jar",
-  "sha256": "sha256-kkL7IvPp1ooaRMh00P2dLpOfzINC6tSzIAeAHjPZKnQ="
- },
- "create-renewable-netherite.pw.toml": {
-  "url": "https://cdn.modrinth.com/data/nGq1sdd2/versions/qhKlkgfZ/create-renewable-netherite-2.0.1.jar",
-  "sha256": "sha256-JTm07ghqxEjgAhfraT3KNWNdbF8OWH95sWvyTqahotA="
- },
- "create-sifting.pw.toml": {
-  "url": "https://cdn.modrinth.com/data/r018adCw/versions/Z5bTlA6P/createsifter-1.21.1-2.3.0.jar",
-  "sha256": "sha256-eYaJlcq44AAu4nJFRQsk8i7YTYcpa7k/2rMS0CwXjLw="
- },
- "create-ultimate-factory.pw.toml": {
-  "url": "https://cdn.modrinth.com/data/N9QToVpw/versions/AEMRNsNS/create_ultimate_factory-2.2.4-neoforge-1.21.1.jar",
-  "sha256": "sha256-uV3N1DyFnq8YJfM7K0xCImGHoeh102iwsk7Qvh4PobA="
- },
- "createnuclear.pw.toml": {
-  "url": "https://cdn.modrinth.com/data/z611fdf7/versions/waO2BSHO/createnuclear-1.3.2-beta.3-neoforge.jar",
-  "sha256": "sha256-DTPGCMdW714pPxc0QDBQ1kyWUTMqMR56rwE3D0DZseM="
- },
- "hypertube.pw.toml": {
-  "url": "https://cdn.modrinth.com/data/ATDdrG1y/versions/qYjOyvgW/create_hypertube-0.6.0-NEOFORGE.jar",
-  "sha256": "sha256-e9uJecf/fTsp96I3cbauSHCm3LfOLkoyFP3WBZqsrOg="
- },
- "mechanicals-lib.pw.toml": {
-  "url": "https://cdn.modrinth.com/data/ProvjTA7/versions/GBSlpwLT/mechanicals-1.21.1-1.1.6.jar",
-  "sha256": "sha256-DOm7l6aKL8c0BpXqzVuYmPLcSB3GOE32K/sQySyd5Uk="
+ "zoomify.pw.toml": {
+  "url": "https://cdn.modrinth.com/data/w7ThoJFB/versions/6jrMC48Z/zoomify-2.15.2%2B1.21.1.jar",
+  "sha256": "sha256-bDF5h98oki4ierOsTjkJBGDZm5Zby5yNqPmkSTtwXQA="
  }
 }

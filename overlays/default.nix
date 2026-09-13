@@ -54,7 +54,7 @@ self: super: {
   # O3DE — Open 3D Engine game editor (requires Python 3.10 from nixpkgs-stable)
   o3de = self.callPackage "${packages}/o3de" {
     pkgs-stable = import inputs.nixpkgs-stable {
-      inherit (self) system;
+      system = self.stdenv.hostPlatform.system;
       config.allowUnfree = true;
     };
   };

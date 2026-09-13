@@ -141,3 +141,7 @@ user: what are the default hotkeys in AllTheTech, and does the pack override any
    defaults; list notable mod keys (iris reload = R, ae2 wireless = Unbound, …)
    and the conflicts the pack should consider rebinding.
 ```
+
+## RUN LOG
+
+Self-improvement: append a dated Lesson/Fix entry here (or via `note=` on the paired tool) whenever this session surfaces a gotcha or improvement. Bare action logs are forbidden.

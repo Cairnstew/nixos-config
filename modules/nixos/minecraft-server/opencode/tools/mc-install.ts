@@ -73,7 +73,9 @@ function appendRunLog(note: string): string {
   if (existsSync(src)) {
     const date = new Date().toISOString().slice(0, 10);
     try {
-      appendFileSync(src, `\n// ## RUN LOG\n// ### ${date}\n// ${note.replace(/\n/g, "\n// ")}\n`);
+      const srcExisting = readFileSync(src, "utf-8");
+      const srcHeader = srcExisting.includes("\n// ## RUN LOG") ? "" : "\n// ## RUN LOG\n";
+      appendFileSync(src, `${srcHeader}// ### ${date}\n// ${note.replace(/\n/g, "\n// ")}\n`);
       out.push(`tool source ${src}`);
     } catch (e: any) {
       out.push(`tool source FAILED (${e.message})`);
@@ -262,12 +264,17 @@ export default {
 };
 
 // ## RUN LOG
+
 // ### 2026-08-14
 // 2026-08-14 — config defaults seeded with --ignore-existing
 // Lesson: shipping a changed mod default config (roadweaver roadweaver.json whitelist) into an existing Prism instance was skipped: instance-sync seeds config/ with --ignore-existing, and compareContent only flags internal dirs as present/absent, so mc-install reported "up to date" despite the stale file. Fix: documented in mc-mod-config-set skill gotchas — delete the stale instance config file first, then force=true.
 
-// ## RUN LOG
 // ### 2026-08-14
 // 2026-08-14 — re-seed roadweaver.json (water-crossing road fix)
 // Lesson: user reported roads paving through ocean/water (RoadWeaver issue #68 — water in land-tagged biomes treated as land; plus whitelist forced roads to ocean structures structory:boat + dragonsurvival:*_sea, and predictRadiusChunks 1024 connected structures 16km apart). Seeding needed --ignore-existing workaround: remove the instance copy first.
 // Fix: bumped waterDepthWeight 80->200, nearWaterCost 80->160, biomeWeight 2->4; blacklisted structory:boat + 3 dragonsurvival sea structures; predictRadiusChunks 1024->256.
+// ### 2026-09-05
+// Lesson: adding RarityCore (1211.14.6) to the pack surfaced two integration requirements: (1) it presets EVERY artifacts/relics item to tier 5 (flat) and its relics preset references old item ids (relics:roller_skates) not present in the installed 0.12.8 — ship a derived FinalRarityConfig file from ITEM_TIERS.json mapping S-F to 1-7 ranks instead; (2) known ImmediatelyFast conflict — hud_batching=true nibbles hotbar rarity backgrounds (docs say disable HUD batching). Fix: generated config/raritycore/FinalRarityConfig/allthetech_tiers.json (164 mappings, expanded smallships wood variants) + config/immediatelyfast.json with hud_batching=false.
+
+// ### 2026-09-06 — verify the mods mirror after mc-install (concurrent Prism launch race)
+// Lesson: after `packwiz modrinth add` x8, mc-install reported "installing … -> instance … done" but the instance mods dir was UNCHANGED (all 8 new jars absent, stale roadweaver.jar still present), and a later "up to date" run refused to fix it. A detached Prism launch (mc-run monitor run) had been initializing the instance at the same moment as the install; the most probable cause is the two processes racing on the mods dir during rsync --delete. Fix: after any mc-install that follows an mc-run/mc-run-like Prism launch, diff the instance mods dir against the store (`comm` on `ls` listings) and re-run `python3 modules/flake-parts/packwiz-instance-sync.py <inst> <meta.json> <src/.minecraft> ""` manually if the mirror didn't apply — it applies cleanly as a standalone call. Also: mc-install's up-to-date compare counts only mods/version changes, so config-only pack changes need the target instance config removed first and force=true (see 2026-08-14 entry).

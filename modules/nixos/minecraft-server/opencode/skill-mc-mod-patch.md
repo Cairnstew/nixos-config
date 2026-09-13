@@ -158,3 +158,11 @@ dynamic-trees-still-life` showed the exact line; the patch widened it to
 `src = mods."dynamic-trees-still-life.pw.toml"`. The built client symlinks
 `dynamic-trees-still-life.jar → dtstill-life-1.0.3-patched`, and the metadata
 reads `mr_still_life versionRange="[0.1,)"`, matching Still Life 0.1.1.
+
+## RUN LOG
+
+### 2026-09-05 — addon exact-pins + empty API dependency arrays (Artifacts/Relics/Reliquified stack)
+Lesson: adding Reliquified Artifacts 1.0.8 to AllTheTech, the Modrinth version API reported `dependencies: []` (packwiz auto-adds nothing), yet the jar's `neoforge.mods.toml` requires `artifacts` at the *exact* `[13.2.3]`, `relics >= 0.12.3`, `octolib >= 0.6`, `curios >= 9.3.1`. Two traps, both caught only by reading the pinned jar (not the API): (1) a version dependency array can be empty while required deps exist — never trust the API for completeness; (2) addons commonly pin their parent mod to an **exact** version `[13.2.3]` (Maven exact-match), which refuses to load if the pack ships a newer fix release (Artifacts 13.2.5, which also fixes a Quark crash + Lootr mimic textures here). The skill example above only covered "too wide" ranges; the fix is the same recipe — widen `[13.2.3]` → `[13.2.3,)` via `patches/reliquified-artifacts.py` + `patches.nix` (`"mods/reliquified-artifacts.jar"`), keeping the tested floor and accepting the newer release.
+Fix: added this RUN LOG entry; the patch script anchors `modId = "artifacts"` + `versionRange` together so the exact-pin is matched before widening (`n == 1` guard). Reflected in the workflow: after `packwiz modrinth add`, always `packwiz-jar-meta` every newly-added mod and check (a) required deps the API may have missed, (b) exact-pin ranges vs the pack's pinned parent version.
+
+Self-improvement: append a dated Lesson/Fix entry here (or via `note=` on the paired tool) whenever this session surfaces a gotcha or improvement. Bare action logs are forbidden.

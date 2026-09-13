@@ -655,8 +655,8 @@ def extract_items_from_datapack(zf):
 
     for n in zf.namelist():
         # ── Recipes ──
-        # data/<ns>/recipes/<name>.json (1.20+ format)
-        m = re.match(r"^data/([^/]+)/recipes/(.+)\.json$", n)
+        # data/<ns>/recipes/<name>.json or data/<ns>/recipe/<name>.json (1.20+ format)
+        m = re.match(r"^data/([^/]+)/recipes?/(.+)\.json$", n)
         if m:
             ns, name = m.group(1), m.group(2)
             rid = f"{ns}:{name}"
@@ -668,8 +668,8 @@ def extract_items_from_datapack(zf):
             continue
 
         # ── Loot tables (item drops) ──
-        # data/<ns>/loot_tables/**/*.json
-        m = re.match(r"^data/([^/]+)/loot_tables/(.+)\.json$", n)
+        # data/<ns>/loot_tables/**/*.json or data/<ns>/loot_table/**/*.json
+        m = re.match(r"^data/([^/]+)/loot_tables?/(.+)\.json$", n)
         if m:
             ns, name = m.group(1), m.group(2)
             lt_id = f"{ns}:{name}"
