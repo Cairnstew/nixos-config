@@ -998,6 +998,10 @@ When you discover a new problem and its solution:
 5. Prefix with `**[SUPERSEDED]**` when the fix references modules that no longer exist in this tree — retain the entry as history.
 6. Add a `> **RESOLVED** — <date> — <how it was resolved>` line directly beneath an entry when the fix has been verified applied — keep the original text intact, matching the `**[SUPERSEDED]**` marker style.
 
+**Vanilla recipe `result` is a `{id, count}` dict, not a bare item string — code doing `dict[result]`/`set.add(result)` crashes with `TypeError: unhashable type: 'dict'`**
+
+Symptom (2026-09-13): after expanding the embedded vanilla baseline from ~57 hand-written recipes to the full 1,290-recipe set (extracted to `vanilla-recipes-1.21.1.json`), `recipes.py` and `item-acquisition.py` both crashed with `TypeError: unhashable type: 'dict'` at `by_output.setdefault(result, ...)` / `producing.add(result)` / `result_id not in recipe_index`. Cause: packwiz/Mojang recipes encode the output as a dict `{"id": "minecraft:oak_stairs", "count": 4}` (count present for multi-output recipes like stairs/slabs), not as a plain item-id string — the old 57-entry baseline only contained single-item results (`result` as a bare string), so the dictionary-key/`in`-membership code paths that treat `result` as a string had never been exercised. Fix: everywhere `result` is used as a dict key, set entry, or `in` membership check, first normalize via `result.get("id") or result.get("item")` when `isinstance(result, dict)` (keep the `list` case separate). Applied in `recipes.py` (`build_summary` by_output + producing set) and `item-acquisition.py` (recipe_index). Lesson: the inline baseline's clean string results masked this; any code that consumes recipe results should defensively handle the dict/list/str union from the start.
+
 ---
 
 Last updated: 2026-08-25
