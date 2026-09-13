@@ -33,10 +33,11 @@ dir — direct RUN LOG edits are expected; a `note=` path exists on the
 packwiz-recipes opencode tool which appends to its own .ts + skill). Append
 dated fixes to the // ## RUN LOG-style block at the end of THIS file.
 
-The vanilla baseline is an embedded table for supported MC versions (currently
-1.21.1: ~50 common recipes extracted from Mojang's data packs). To add a
-version, fetch Mojang's server jar for it, unzip data/minecraft/recipes/, and
-rebuild VANILLA_BY_MC (see the footer of this script for the exact recipe).
+The vanilla baseline is loaded from vanilla-recipes-<version>.json (currently
+1.21.1: 1,290 recipes extracted from Mojang's client jar). A legacy inline
+table (~57 common recipes) serves as fallback if the JSON file is missing.
+To add a version, extract recipes from its jar and save as
+vanilla-recipes-<version>.json.
 """
 
 import os
@@ -78,6 +79,32 @@ TOOL = "recipes.py"
 #           elif isinstance(r, dict): recipes[rid]['result'] = r.get('item', r.get('id', '?'))
 #   print(json.dumps(recipes, indent=2, sort_keys=True))
 #   "
+# ── Vanilla recipes baseline ─────────────────────────────────────────────────
+# Loaded from vanilla-recipes-1.21.1.json (1,290 recipes extracted from
+# Mojang's 1.21.1 client jar).  The JSON file lives next to this script.
+# To add a new MC version, extract recipes from its jar and save as
+# vanilla-recipes-<version>.json.
+
+_VANILLA_RECIPES_CACHE = {}  # version → recipes dict (loaded once)
+
+def _load_vanilla_recipes(version="1.21.1"):
+    """Load vanilla recipes from JSON file, cached after first load."""
+    if version in _VANILLA_RECIPES_CACHE:
+        return _VANILLA_RECIPES_CACHE[version]
+    
+    json_path = os.path.join(os.path.dirname(__file__), f"vanilla-recipes-{version}.json")
+    if not os.path.exists(json_path):
+        return None
+    
+    with open(json_path) as f:
+        data = json.load(f)
+    
+    recipes = data.get(version, {}).get("recipes", {})
+    _VANILLA_RECIPES_CACHE[version] = recipes
+    return recipes
+
+
+# Legacy inline table (kept as fallback if JSON file missing)
 VANILLA_BY_MC = {
     "1.21.1": {
         "recipes": {
@@ -251,20 +278,39 @@ def _extract_all_ingredients(data):
 
 def scan_vanilla(info):
     ver = info.get("minecraft")
-    if not ver or ver not in VANILLA_BY_MC:
-        return None, (f"no embedded vanilla baseline for MC {ver} "
-                      f"(tables: {', '.join(sorted(VANILLA_BY_MC)) or 'none'})")
-    vt = VANILLA_BY_MC[ver]
-    recipes = {}
-    for rid, rdata in vt["recipes"].items():
-        recipes[rid] = {
-            "type": rdata["type"],
-            "result": rdata.get("result"),
-            "ingredients": _extract_all_ingredients(rdata),
-            "data": {},
-        }
-    return {"kind": "vanilla", "name": f"vanilla {ver} baseline", "jar": None,
-            "data": recipes}, None
+    if not ver:
+        return None, "no minecraft version specified"
+    
+    # Try loading from JSON file first (complete 1,290-recipe baseline)
+    json_recipes = _load_vanilla_recipes(ver)
+    if json_recipes:
+        recipes = {}
+        for rid, rdata in json_recipes.items():
+            recipes[rid] = {
+                "type": rdata["type"],
+                "result": rdata.get("result"),
+                "ingredients": _extract_all_ingredients(rdata),
+                "data": {},
+            }
+        return {"kind": "vanilla", "name": f"vanilla {ver} baseline (full)", 
+                "jar": None, "data": recipes}, None
+    
+    # Fallback to inline table (57 common recipes)
+    if ver in VANILLA_BY_MC:
+        vt = VANILLA_BY_MC[ver]
+        recipes = {}
+        for rid, rdata in vt["recipes"].items():
+            recipes[rid] = {
+                "type": rdata["type"],
+                "result": rdata.get("result"),
+                "ingredients": _extract_all_ingredients(rdata),
+                "data": {},
+            }
+        return {"kind": "vanilla", "name": f"vanilla {ver} baseline (subset)", 
+                "jar": None, "data": recipes}, None
+    
+    return None, (f"no embedded vanilla baseline for MC {ver} "
+                  f"(tables: {', '.join(sorted(VANILLA_BY_MC)) or 'none'})")
 
 
 # ── scanning ──────────────────────────────────────────────────────────────────
@@ -353,11 +399,19 @@ def build_summary(sources, dl, from_cache, skipped, skipped_dp, item_index=None)
     for rid, rdata in all_recipes.items():
         result = rdata.get("result")
         if result:
+            # Extract item ID from result (may be dict with 'id' or 'item' key)
+            if isinstance(result, dict):
+                result_id = result.get("id") or result.get("item")
+            elif isinstance(result, list):
+                result_id = None  # Handle list case separately
+            else:
+                result_id = result
+            
             if isinstance(result, list):
                 for r in result:
                     by_output.setdefault(r, []).append(rid)
-            else:
-                by_output.setdefault(result, []).append(rid)
+            elif result_id:
+                by_output.setdefault(result_id, []).append(rid)
 
     for output, rids in sorted(by_output.items()):
         if len(rids) > 1:
@@ -382,7 +436,12 @@ def build_summary(sources, dl, from_cache, skipped, skipped_dp, item_index=None)
         for rid, rdata in all_recipes.items():
             result = rdata.get("result")
             if result:
-                if isinstance(result, list):
+                # Extract item ID from result (may be dict with 'id' or 'item' key)
+                if isinstance(result, dict):
+                    result_id = result.get("id") or result.get("item")
+                    if result_id:
+                        producing.add(result_id)
+                elif isinstance(result, list):
                     producing.update(result)
                 else:
                     producing.add(result)
