@@ -264,18 +264,10 @@ in
             permission = {
               edit = "allow";
               bash = "allow";
-              # No-human auto-improvement: build may call learning_promote to
-              # validate/reject learnings (never over a fresh proposal it just
-              # recorded itself) — dispatch the
-              # three-role triage team to re-derive verdicts first, then promote
-              # only on their unanimous, harness-confirmed agreement. Auto-merge
-              # applied learnings into the base branch; git history is the
-              # rollback net.
-              tools = { "goals_learning_promote" = "allow"; };
             };
             # Required pre-final-summary self-improvement checkpoint
-            # (SELF_IMPROVE=true in ./agents/build.md) — proposal via
-            # learning_append, promotion only after team-approved triage.
+            # (SELF_IMPROVE=true in ./agents/build.md) — in-band, mechanical-guard
+            # gated by tools/self-improve-commit.sh; no promote capability.
             # Kept out of the core description so the default agent stays
             # autonomy-preserving; the prompt only appends the pass.
             prompt = builtins.readFile ./agents/build.md;
@@ -329,12 +321,9 @@ in
           nix-doc-audit = ./commands/nix-doc-audit.md;
           nix-net-audit = ./commands/nix-net-audit.md;
           shopping-research = ./commands/shopping-research.md;
-          triage-review = ./commands/triage-review.md;
-          learning-promote = ./commands/learning-promote.md;
         };
         pluginFiles = lib.mkDefault {
           copylast = ./plugins/copylast.ts;
-          triage-capture = ./plugins/triage-capture.ts;
           self-improve-guard = ./plugins/self-improve-guard.ts;
           # Vendored fork of @hueyexe/opencode-ensemble 0.16.1 — replaces the
           # npm spec (which would double-load with a similar-named local file).
@@ -372,9 +361,6 @@ in
           permission = {
             edit = "deny";
             bash = "deny";
-            # Decision 1 defense-in-depth: triage/scout roles must never reach
-            # learning_promote. MCP tools are named <server>_<tool> in opencode.
-            tools = { "goals_learning_promote" = "deny"; };
           };
         };
         qa = {
@@ -391,70 +377,6 @@ in
           permission = {
             edit = "deny";
             bash = "deny";
-            # Decision 1 defense-in-depth: same as scout — no learning_promote.
-            tools = { "goals_learning_promote" = "deny"; };
-          };
-        };
-        # ── Tier 1 triage roles (observe-only verdicts) ──────────────────
-        # Three independent reviewers that each call goals_learning_review on a
-        # proposed learning. All are read-only (edit/bash denied) and cannot
-        # reach learning_promote (Decision 1 defense-in-depth). They differ only
-        # in review stance: a skeptical scout, a verification-focused QA, and an
-        # adversarial critic. Verdicts land in review_verdicts via learning_review;
-        # the triage-capture plugin back-fills rederivation/confidence from the
-        # session transcript, so the roles are never asked to self-report.
-        scout-skeptical = {
-          description = "Skeptical read-only scout triage: re-derive the learning's evidence and render an agree/disagree/uncertain verdict via goals_learning_review";
-          mode = "subagent";
-          model = null;
-          temperature = 0.1;
-          permission = {
-            edit = "deny";
-            bash = "deny";
-            tools = { "goals_learning_promote" = "deny"; };
-          };
-        };
-        qa-verification = {
-          description = "Read-only QA triage: verify the learning's evidence still holds and render an agree/disagree/uncertain verdict via goals_learning_review";
-          mode = "subagent";
-          model = null;
-          temperature = 0.1;
-          permission = {
-            edit = "deny";
-            bash = "deny";
-            tools = { "goals_learning_promote" = "deny"; };
-          };
-        };
-        adversarial = {
-          description = "Read-only adversarial triage: attempt to falsify the learning's evidence and render an agree/disagree/uncertain verdict via goals_learning_review";
-          mode = "subagent";
-          model = null;
-          temperature = 0.2;
-          permission = {
-            edit = "deny";
-            bash = "deny";
-            tools = { "goals_learning_promote" = "deny"; };
-          };
-        };
-        # ── Full-auto promoter (promote-capable) ───────────────────────────
-        # Runs the promotion loop headlessly: dispatch the three triage reviewers
-        # to re-derive evidence, then learning_promote only on unanimous,
-        # harness-re-derived agreement, applying each accepted learning with an
-        # isolated commit and auto-merging it into the base branch. Successful
-        # review triage teams may also approve learnings whose proposals came
-        # from other sessions (a session must never promote its OWN new
-        # proposal). It has edit/bash because it applies+commits+merges each
-        # accepted learning; git history is the audit/rollback net.
-        learning-promoter = {
-          description = "Headless automated promotion of proposed agent learnings: dispatch the three triage reviewers to re-derive evidence, then learning_promote only on unanimous re-derivation-gated agreement, applying each accepted learning as an isolated commit, auto-merging into the base branch";
-          mode = "primary";
-          model = "opencode-go/mimo-v2.5";
-          temperature = 0.1;
-          prompt = builtins.readFile ./agents/learning-promoter.md;
-          permission = {
-            edit = "allow";
-            bash = "allow";
-            tools = { "goals_learning_promote" = "allow"; };
           };
         };
       };
@@ -566,84 +488,16 @@ in
       '';
     })
 
-    # ── Learning-promoter watcher (v2 — opencode serve, no tmux) ──────────────
-    (mkIf cfg.learningPromoterWatcher.enable {
-      home.packages = [
-        (pkgs.python3.withPackages (_: [ ]))
-        pkgs.curl
-      ];
-
-      home.file.".local/share/opencode/learning-promoter-launcher.py".source =
-        pkgs.runCommand "learning-promoter-launcher.py" { } ''
-          cp ${./tools/learning-promoter-launcher.py} "$out"
-          chmod +x "$out"
-        '';
-
-      # Persistent headless opencode server for the promoter agent.
-      # The watcher sends commands via `opencode run --attach` — no tmux needed.
-      systemd.user.services.opencode-serve = {
-        Unit = {
-          Description = "Headless opencode server for automated agent workflows";
-          After = [ "graphical-session.target" ];
-        };
-        Service = {
-          Type = "simple";
-          WorkingDirectory = cfg.learningPromoterWatcher.repoDir;
-          ExecStart = "${cfg.package}/bin/opencode serve --port ${toString cfg.learningPromoterWatcher.servePort} --hostname 127.0.0.1";
-          Restart = "on-failure";
-          RestartSec = 5;
-          Environment = [
-            "OPENCODE_SERVER_PASSWORD=${cfg.learningPromoterWatcher.serverPassword}"
-          ];
-          # Resource limits to prevent memory leak from crashing the host (#20695)
-          MemoryMax = "2G";
-          MemoryHigh = "1536M";
-          CPUQuota = "200%";
-          TasksMax = 256;
-        };
+    # ── Self-improve commit-helper rate caps (mechanical, Decision 3) ────────
+    # Written for tools/self-improve-commit.sh to read; null = uncapped.
+    {
+      home.file.".config/opencode/self-improve.json".text = builtins.toJSON {
+        maxCommitsPerSession = cfg.selfImprove.maxCommitsPerSession;
+        maxCommitsPerDay = cfg.selfImprove.maxCommitsPerDay;
+        efficiencyLensMinToolCalls = cfg.selfImprove.efficiencyLensMinToolCalls;
+        efficiencyLensMinCost = cfg.selfImprove.efficiencyLensMinCost;
       };
-
-      systemd.user.services.learning-promoter-watcher = {
-        Unit = {
-          Description = "Learning-promoter watcher — dispatches promoter when proposed learnings exist";
-          After = [ "opencode-serve.service" ];
-          Requires = [ "opencode-serve.service" ];
-        };
-        Service = {
-          Type = "oneshot";
-          ExecStart = "${pkgs.python3}/bin/python3 ${config.home.homeDirectory}/.local/share/opencode/learning-promoter-launcher.py";
-          Environment = [
-            "GOALS_DB=${cfg.learningPromoterWatcher.goalsDb}"
-            "REPO_DIR=${cfg.learningPromoterWatcher.repoDir}"
-            "OPENCODE_SERVER_URL=http://127.0.0.1:${toString cfg.learningPromoterWatcher.servePort}"
-            "PROMOTION_TIMEOUT=${toString cfg.learningPromoterWatcher.promotionTimeout}"
-            "STALENESS_THRESHOLD=${toString cfg.learningPromoterWatcher.stalenessThreshold}"
-            "COMMAND_TIMEOUT=${toString cfg.learningPromoterWatcher.commandTimeout}"
-            "STATE_DIR=${config.home.homeDirectory}/.local/share/opencode"
-            # The PATH `opencode` is the session-gated wrapper (opencodeGated),
-            # which refuses while the web service runs. The watcher is a
-            # sanctioned headless path — it only probes + attaches to the
-            # dedicated serve instance — so it uses the gate's designed bypass.
-            "OPENCODE_ALLOW_CONCURRENT=1"
-          ];
-        };
-      };
-
-      systemd.user.timers.learning-promoter-watcher = {
-        Unit = {
-          Description = "Periodically check for proposed learnings and dispatch promoter";
-        };
-        Timer = {
-          OnBootSec = cfg.learningPromoterWatcher.checkInterval;
-          OnUnitActiveSec = cfg.learningPromoterWatcher.checkInterval;
-          Persistent = true;
-          RandomizedDelaySec = "1min";
-        };
-        Install = {
-          WantedBy = [ "timers.target" ];
-        };
-      };
-    })
+    }
 
   ]);
 }

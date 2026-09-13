@@ -4,3 +4,5 @@ checksums.json
 patches.nix
 patches/
 source-patches/
+# Dev/agent reference data — tier list for loot-table + progression authors (NOT a game file).
+ITEM_TIERS.json

@@ -31,7 +31,9 @@ function appendRunLog(note: string): string {
   if (existsSync(src)) {
     const date = new Date().toISOString().slice(0, 10);
     try {
-      appendFileSync(src, `\n// ## RUN LOG\n// ### ${date}\n// ${note.replace(/\n/g, "\n// ")}\n`);
+      const srcExisting = readFileSync(src, "utf-8");
+      const srcHeader = srcExisting.includes("\n// ## RUN LOG") ? "" : "\n// ## RUN LOG\n";
+      appendFileSync(src, `${srcHeader}// ### ${date}\n// ${note.replace(/\n/g, "\n// ")}\n`);
       out.push(`tool source ${src}`);
     } catch (e: any) {
       out.push(`tool source FAILED (${e.message})`);
@@ -59,9 +61,10 @@ export default {
     modpack: { type: "string", description: "Modpack directory name (e.g. 'AllTheTech')." },
     mods: { type: "string", description: "Comma-separated mod slugs to restrict the scan to (e.g. 'ae2,still-life'). Omit to scan the whole pack." },
     noDatapacks: { type: "boolean", description: "Skip scanning the pack's own datapacks (Paxi + data/)." },
+    fullExport: { type: "string", description: "Write every structure's full metadata to a single JSON file. Pass an optional output path, or omit to default to <modpack>-structures-full.json." },
     note: { type: "string", description: "Self-improvement: append this note as a RUN LOG entry to the tool's source file AND its paired skill (modules/nixos/minecraft-server/opencode/skill-mc-mod-structures.md)." },
   },
-  async execute(args: { modpack?: string; mods?: string; noDatapacks?: boolean; note?: string }) {
+  async execute(args: { modpack?: string; mods?: string; noDatapacks?: boolean; fullExport?: string; note?: string }) {
     if (args.note) {
       return appendRunLog(args.note);
     }
@@ -71,9 +74,10 @@ export default {
     if (!args.modpack || !existsSync(modpackDir)) {
       return `packwiz-structures: need a valid modpack.`;
     }
-    const argv = ["structures"];
+    const argv = [args.fullExport !== undefined ? "structures-full-export" : "structures"];
     if (args.mods) argv.push("--mods", args.mods);
     if (args.noDatapacks) argv.push("--no-datapacks");
+    if (args.fullExport !== undefined && args.fullExport) argv.push(args.fullExport);
     const quoted = argv.map((a) => `'${a.replace(/'/g, "'\\''")}'`).join(" ");
     try {
       const out = execSync(`python3 ${script} ${modpackDir} ${quoted} 2>&1`, {
@@ -87,15 +91,16 @@ export default {
 };
 
 // ## RUN LOG
+
 // ### 2026-08-14
 // 2026-08-14 — investigate ocean-crossing roads (user report)
 // Lesson: RoadWeaver issue #68 — roads pave through water in modded/untagged water biomes; check which whitelisted structure mods spawn structures in/near ocean so roads get forced across water.
 // Fix: none yet; scan to find ocean-spawning structures in the whitelist.
 
-// ## RUN LOG
 // ### 2026-08-14
 // placeholder-scan
 
-// ## RUN LOG
 // ### 2026-08-15
 // investigate ocean/coastal structures for RoadWeaver road-end-in-sea compatibility
+// ### 2026-09-12
+// Testing tool functionality

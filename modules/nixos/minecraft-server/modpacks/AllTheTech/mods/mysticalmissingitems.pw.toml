@@ -1,0 +1,13 @@
+name = "MysticalMissingItems"
+filename = "mystical_missing_items-1.2.2.jar"
+side = "both"
+
+[download]
+url = "https://cdn.modrinth.com/data/v2cEZmWx/versions/lt4KNRAO/mystical_missing_items-1.2.2.jar"
+hash-format = "sha512"
+hash = "2618688682315d51023f0ed582fc350e94db93e3785aaf143a46ac502a419769f4469b6a828b9dc9fcc6ff1f5f3f7234c6b85cd30de2c9164f5042151af9211e"
+
+[update]
+[update.modrinth]
+mod-id = "v2cEZmWx"
+version = "lt4KNRAO"

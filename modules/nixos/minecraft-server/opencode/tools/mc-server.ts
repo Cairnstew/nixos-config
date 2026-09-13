@@ -22,7 +22,9 @@ function appendRunLog(note: string): string {
   if (existsSync(src)) {
     const date = new Date().toISOString().slice(0, 10);
     try {
-      appendFileSync(src, `\n// ## RUN LOG\n// ### ${date}\n// ${note.replace(/\n/g, "\n// ")}\n`);
+      const srcExisting = readFileSync(src, "utf-8");
+      const srcHeader = srcExisting.includes("\n// ## RUN LOG") ? "" : "\n// ## RUN LOG\n";
+      appendFileSync(src, `${srcHeader}// ### ${date}\n// ${note.replace(/\n/g, "\n// ")}\n`);
       out.push(`tool source ${src}`);
     } catch (e: any) {
       out.push(`tool source FAILED (${e.message})`);
@@ -473,33 +475,27 @@ export default {
 };
 
 // ## RUN LOG
+
 // ### 2026-08-21
 // Checking available servers before optimization
 
-// ## RUN LOG
 // ### 2026-08-21
 // list servers
 
-// ## RUN LOG
 // ### 2026-08-21
 // Checking server status before optimization
 
-// ## RUN LOG
 // ### 2026-08-21
 // Checking server performance metrics
 
-// ## RUN LOG
 // ### 2026-08-21
 // Verifying server optimizations are applied
 
-// ## RUN LOG
 // ### 2026-08-27
 // Checking current running Minecraft instances
 
-// ## RUN LOG
 // ### 2026-08-27
 // Checking current running Minecraft instances
 
-// ## RUN LOG
 // ### 2026-08-27
 // Checking ATM11 instance status

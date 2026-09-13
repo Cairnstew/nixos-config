@@ -25,9 +25,6 @@
 # /nix/store/... and fail. The consumers reference the repo helpers via
 # inputs.self instead.
 { pkgs, mods, patchJar, buildModSource }:
-let
-  inherit (pkgs) fetchFromGitHub;
-in
 {
   # Dynamic Trees - Still Life (1.0.3) pins mr_still_life to "[1,)" but Still
   # Life has no 1.0+ release for 1.21.1 (latest is 0.1.1). Widen to "[0.1,)".
@@ -35,12 +32,6 @@ in
     name = "dtstill-life-1.0.3-patched";
     src = mods."dynamic-trees-still-life.pw.toml";
     patchScript = ./patches/dynamic-trees-still-life.py;
-  };
-
-  # RoadWeaver — roads paved through elevated water (upstream issue #68).
-  # Built from source at the pinned 2.3.1 commit with a source-level fix.
-  "mods/roadweaver.jar" = import ./source-patches/roadweaver {
-    inherit buildModSource fetchFromGitHub;
   };
 
   # GAB's Styles Pack for Minecolonies (0.4.0) — <init> calls
@@ -54,6 +45,16 @@ in
     src = mods."gabs-styles-pack-for-minecolonies.pw.toml";
     member = "com/gablabit/gabstylespack/GabStylesPack.class";
     patchScript = ./patches/gabstylespack.py;
+  };
+
+  # Reliquified Artifacts (1.0.8) pins its Artifacts dependency to the exact
+  # "[13.2.3]" (the release it was tested against), but the pack ships
+  # Artifacts 13.2.5 (fixes a Quark crash and Lootr mimic textures). Widen to
+  # "[13.2.3,)" so the newest fix release loads.
+  "mods/reliquified-artifacts.jar" = patchJar {
+    name = "reliquified-artifacts-1.0.8-patched";
+    src = mods."reliquified-artifacts.pw.toml";
+    patchScript = ./patches/reliquified-artifacts.py;
   };
 }
 

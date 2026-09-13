@@ -166,64 +166,24 @@ Two consumption paths:
 
 ### Blocked chains — no free-tier terminal (`blockedTerminal`)
 
-Some pipelines must NOT degrade when their chain exhausts. A chain whose LAST
-entry is `{ blockedTerminal = true; }` (no `model`) resolves to a
-distinguishable **BLOCKED** outcome — the selector prints a stderr reason and
-exits **5** — instead of silently falling to an always-eligible free model.
-Use this for decision-making pipelines (e.g. the learning-promoter, which
-auto-merges to the repo), not for build/explore agents where free-tier
-fallback is fine.
+A chain whose LAST entry is `{ blockedTerminal = true; }` (no `model`) resolves to
+a distinguishable **BLOCKED** outcome — the selector prints a stderr reason and
+exits **5** — instead of silently falling to an always-eligible free model. The
+`default` chain ends in a cap-free model (`opencode-go/ox-alpha-free`) so ordinary
+build/explore work never blocks. **The self-improvement pipeline no longer uses
+dedicated chains**: the promoter/triage chains were removed when the gated
+triage+promote pipeline was decommissioned (single in-band `SELF_IMPROVE`
+checkpoint; mechanical commit-helper, no agent-side model-chain dependency).
+`blockedTerminal` remains available for any future no-degrade pipeline.
 
-The learning-promoter watcher consumes this: before dispatching it resolves
-the chain, and on exit 5 it **stops its own systemd timer**
-(`learning-promoter-watcher.timer`) rather than dispatching. Resume is
-**manual by design**:
+### Known limits — self-improvement is model-chain-independent
 
-```
-systemctl --user start learning-promoter-watcher.timer   # after usage resets
-```
-
-A stopped timer runs nothing at all — including the staleness reconciliation,
-which would otherwise force-reject queued learnings during a long rate-limit
-wait. Distinguishing "stopped because usage-blocked" from "stopped for any
-other reason" would need extra state and re-create exactly that class of bug,
-so automated resume was rejected deliberately.
-
-### `/learning-promote` agent binding
-
-`commands/learning-promote.md` binds `agent: learning-promoter` in its
-frontmatter. Before this, watcher dispatches executed as the default `build`
-agent — and a live negative-direction test proved build's
-`goals_learning_promote` call passes opencode's permission layer (the goals
-server rejected it only on application-level grounds). So the pre-fix window
-was a REAL capability gap in the agent-layer isolation model, unexploited
-only because the watcher was disabled the whole time. When auditing the
-defense-in-depth property: exactly two agents are promote-capable by design
-(commit `9733f8b`, enforced by `tests.nix`) — `build` and
-`learning-promoter`; every triage/reviewer role denies the tool.
-
-### Known limits — what usage protection does NOT cover
-
-The self-improvement chains (`learning-promoter` + triage roles) protect
-**automated** promotion paths. They deliberately do NOT cover the `build`
-agent, which can also reach `goals_learning_promote`:
-
-- Why not chain-coverage: `build` is the general-purpose primary agent for
-  all coding work; gating its model on pipeline exhaustion would halt normal
-  work near every rate-limit window.
-- What enforces safety on the automated path: the watcher's
-  `/learning-promote` dispatch binds `agent: learning-promoter`
-  (live-verified both directions, 2026-08-24), so the watcher never
-  exercises build's access. THIS is enforced.
-- What is NOT enforced, only observed: build's promote access being
-  exercised solely under human supervision (interactive TUI sessions, or
-  manually launched commands like `triage-review`, which currently has no
-  `agent:` binding and therefore runs as build). Nothing technical prevents
-  a FUTURE unbound command or skill from routing a headless dispatch through
-  build into promotion territory — that would silently recreate the pre-fix
-  exposure. Mitigation is the GOTCHAS rule ("any command whose semantics
-  depend on a specific agent MUST set `agent:`"), which is documentation,
-  not enforcement.
+The single-lineage self-improvement checkpoint runs in-band on `build`/`researcher`
+and has no dedicated model chain, watcher, queue, or `opencode serve` dependency —
+it no longer needs usage-aware model protection. `modelFallback`
+(`my.programs.opencode.modelFallback`) now governs only the `default` chain that
+all interactive sessions ride. (Historical: the retired promoter watcher used to
+stop its timer on BLOCKED; that mechanism is gone with the watcher.)
 
 Scope statement: "usage-aware protections for the self-improvement pipeline"
 means the watcher-dispatched promotion loop and the triage subagents — not
@@ -238,12 +198,6 @@ my.programs.opencode.modelFallback = {
     { model = "opencode-go/deepseek-v4-flash"; maxWeeklyPercent = 80; }
     { model = "opencode-go/mimo-v2.5"; maxWeeklyPercent = 95; }
     { model = "opencode-go/ox-alpha-free"; }          # safety net, no caps
-  ];
-  # Decision-making pipeline: no free tier — exhaustion => BLOCKED (exit 5).
-  chains.learning-promoter = [
-    { model = "opencode-go/mimo-v2.5"; maxRollingPercent = 85; maxWeeklyPercent = 95; }
-    { model = "opencode-go/deepseek-v4-flash"; maxRollingPercent = 70; maxWeeklyPercent = 80; }
-    { blockedTerminal = true; }
   ];
 };
 ```

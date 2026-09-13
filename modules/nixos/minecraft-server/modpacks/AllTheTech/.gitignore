@@ -1,0 +1,19 @@
+# Generated scanner dumps — regeneratable from the pinned mod jars via the
+# opencode scanner tools (attributes-regenerate / items/mobs/recipes/loot/
+# ore/mobspawn/structures/qe --full-export). These are derived build artifacts,
+# NOT source: rebuild them after mod list changes instead of committing an
+# out-of-date snapshot.
+/attributes-dump.json
+/vanilla-attributes-baseline.json
+/*-attributes-full.json
+/*-items-full.json
+/*-mobs-full.json
+/*-recipes-full.json
+/*-loot-full.json
+/*-ore-full.json
+/*-mobspawn-full.json
+/*-structures-full.json
+/*-analyze.json
+
+# Stray dump-mod build artifact copied into mods/ (built from source-patches/attributes-dump/).
+/mods/*-attributes-dump-*.jar

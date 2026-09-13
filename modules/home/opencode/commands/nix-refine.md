@@ -825,25 +825,22 @@ The lead triages the meta-scout's findings with the same TASK / SKIP / NOTE prot
 - Do not add aspirational self-healing ("in future we might..."); only fix what is true now.
 - Do not let Phase 6 balloon the file; keep each fix tight and referenced to the lesson.
 
-## 6.4 RUN LOG → `learning_append` (proposal-only, gated)
+## 6.4 RUN LOG → self-apply via the commit-helper (single in-band checkpoint)
 
-**The lead no longer appends RUN LOG entries to this command file directly.** Decision 4
-(Option 1) closes the un-gated write path: a run may only *propose* learnings. For each
-operational lesson captured in 6.1, call the goals MCP tool **`learning_append`** with:
+**The lead no longer appends RUN LOG entries to this command file directly, and the
+gated `learning_append` pipeline is decommissioned.** For each operational lesson
+captured in 6.1, choose one of two actions under the in-band checkpoint:
 
-- `command` = `"nix-refine"` (this command's own name)
-- `lesson` — one line: what happened and why the command misled/wasted effort
-- `fix` — what the command file should change to apply the lesson
-- `evidence` — `file:line` of the observed failure or verbatim command output (REQUIRED;
-  the tool rejects empty/placeholder evidence, so never pass "placeholder" or prose)
+- If the lesson targets an **allow-listed** file (GOTCHAS.md / an opencode
+  skill+command RUN LOG section / a module `AGENT.md` RUN LOG section) with
+  verifiable `file:line` evidence: make the append-only edit, then commit it as its
+  **own** commit through the mechanical commit-helper:
+  `tools/self-improve-commit.sh --file <path> --commit-trailer "Self-Improve: <id>" --evidence "<path>:<line>"`.
+  The helper enforces evidence-existence, path allow-list, append-only diff shape
+  and the rate caps; it never commits on LLM judgment, and never raw `git commit`.
+- Otherwise, state the lesson as record-only in the run report, or `no lessons this run`.
 
-`learning_append` writes the row with `status = 'proposed'` and dedupes against an existing
-open learning with the same command + near-duplicate lesson. The actual command-file edit the
-learning describes is **not** applied in this run: it happens in a separate reviewed step (a
-human, or the automated `learning-promoter` agent) after
-`learning_promote(<id>, "validated", acted_on_commit=<commit>)` has been called
-with the hash of the edit. Do not call `learning_promote` yourself, and do not apply the
-learning's edit silently. A review/promotion session reads the queue with `learning_query`.
+`git log --grep="Self-Improve:"` is the audit trail; `git revert` is the rollback net.
 
 **Historical record:** the RUN LOG entries below (from before this pilot) remain in this file
 as history and are **not** migrated to the learnings tables in this task — migrating history

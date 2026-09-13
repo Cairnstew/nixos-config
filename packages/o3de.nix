@@ -4,7 +4,7 @@ let
   # For the auto-wired flake output, import it here so default.nix gets
   # Python 3.10 from nixpkgs-stable regardless of which path builds o3de.
   pkgs-stable = import inputs.nixpkgs-stable {
-    inherit (pkgs) system;
+    system = pkgs.stdenv.hostPlatform.system;
     config.allowUnfree = true;
   };
   pkg = callPackage ./o3de/default.nix { inherit pkgs-stable; };

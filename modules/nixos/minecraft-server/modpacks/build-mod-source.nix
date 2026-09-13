@@ -12,7 +12,7 @@
 # `outputHash`, so the build result is still trusted and reproducible.
 #
 # Usage: buildModSource { name, src, patches, buildCmd, outputHash }
-#   name        — output jar name (e.g. "roadweaver-2.3.1-water-patched.jar")
+#   name        — output jar name (e.g. "dt-tree-water-cleanup-1.0.0.jar")
 #   src         — the mod's source (a fetchFromGitHub / fetchgit derivation)
 #   patches     — list of source-level patch files (git-format unified diffs
 #                 applied with `patch -p1`, paths relative to the repo root)
@@ -32,6 +32,10 @@
 , src
 , patches ? [ ]
 , buildCmd ? null
+# Extra build-time tools for buildCmd (e.g. curl + unzip to fetch a pinned
+# Gradle distribution inside the FOD). Defaults to empty — RoadWeaver and other
+# existing callers are unaffected.
+, extraNativeBuildInputs ? [ ]
 , outputHash
 }:
 let
@@ -59,7 +63,7 @@ pkgs.stdenv.mkDerivation {
   outputHashMode = "flat";
   inherit outputHash;
 
-  nativeBuildInputs = [ jdk ];
+  nativeBuildInputs = [ jdk ] ++ extraNativeBuildInputs;
 
   # Gradle needs a writable HOME; the Nix build dir is on tmpfs.
   buildPhase = ''

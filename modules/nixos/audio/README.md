@@ -12,6 +12,7 @@ mixer (VoiceMeeter-style).
 | `my.system.audio.mic.enable` | `false` | Declare a default microphone |
 | `my.system.audio.mic.name` | `null` | PipeWire source node name (from `wpctl status`) |
 | `my.system.audio.mic.description` | `null` | Human-readable mic label |
+| `my.system.audio.deviceDefaultVolumes` | `{}` | Per-device default sink volume (`device.name` → linear 0.0–1.0) |
 | `my.system.audio.virtualMixer.enable` | `false` | Pulsemeeter + EasyEffects virtual mixer |
 | `my.system.audio.virtualMixer.effects` | `true` | Include EasyEffects (EQ/compression/noise reduction) |
 | `my.system.audio.virtualMixer.patchbay` | `none` | GUI patchbay: `none` or `qpwgraph` |
@@ -50,6 +51,34 @@ my.system.audio = {
   PulseAudio daemon would break Pulsemeeter's pulsectl control.
 - No VoiceMeeter macro-buttons / VBAN equivalent; use EasyEffects presets or
   `pw-link` scripts for that.
+
+## Per-device default volume boost
+
+Some outputs are quieter than others for hardware reasons — e.g. a passive
+analog headphone jack relies entirely on the motherboard DAC/amp, while
+Bluetooth headsets carry their own amplifier and are loud at the same level.
+Use `my.system.audio.deviceDefaultVolumes` to raise the **default** volume of
+specific ALSA cards only:
+
+```nix
+my.system.audio = {
+  deviceDefaultVolumes = {
+    # Realtek ALCS1200A analog on the desktop — raise above global 40%.
+    "alsa_card.pci-0000_09_00.4" = 0.8;
+  };
+};
+```
+
+This is implemented via WirePlumber's per-device `device.routes.default-sink-volume`
+property (an ALSA rule matching `device.name`; `apply-routes.lua` reads it as a
+per-device override over the global default). Find the card name with
+`wpctl status -n` under "Devices". The value is on PipeWire's linear volume
+scale (1.0 = 100%): `wpctl` displays the cubic root, so 0.8 shows as ~93%.
+
+**Note:** WirePlumber restores a device's previously-stored volume from its
+runtime state after you've changed it manually (e.g. with `wpctl`/`pavucontrol`).
+The declared value is the *default* for a freshly-seen device; run `wpctl reset`
+once to clear leftover state and pick up the new default.
 
 ## Related Modules
 

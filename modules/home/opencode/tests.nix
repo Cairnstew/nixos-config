@@ -122,11 +122,6 @@ in
         assertion = cfg.share != null -> (cfg.share == "manual" || cfg.share == "auto" || cfg.share == "disabled");
         message = "my.programs.opencode: share must be one of: manual, auto, or disabled.";
       }
-      # learning-promoter-watcher requires opencode itself to be enabled
-      {
-        assertion = cfg.learningPromoterWatcher.enable -> cfg.enable;
-        message = "my.programs.opencode: learningPromoterWatcher.enable requires my.programs.opencode.enable to be true.";
-      }
       # Verify shorthand options are passed through correctly
       {
         assertion = cfg.smallModel != null -> opencodeCfg.settings.small_model == cfg.smallModel;
@@ -159,31 +154,47 @@ in
         assertion = !(builtins.elem "@hueyexe/opencode-ensemble" cfg.plugins);
         message = "my.programs.opencode.plugins: remove '@hueyexe/opencode-ensemble' from the npm plugins array — the ensemble is vendored as a local fork (pluginFiles.opencode-ensemble). A similar-named npm spec and local file BOTH load and would double-register tools. See FORK.md.";
       }
-      # ── Decision 1 invariant (revised): promote-capable agents ─────────
-      # build + learning-promoter may reach goals_learning_promote (no-human,
-      # team-gated auto-improvement); every triage/reviewer role (scout,
-      # reviewer, scout-skeptical, qa-verification, adversarial) must explicitly
-      # deny it (defense-in-depth against mid-review capture). Enforce it so a
-      # future edit can't silently make a triage role promote-capable or strip
-      # the promoter's access, which would break the auto loop's trust model.
+      # ── Single-lineage self-improvement invariants (post-gated-pipeline) ──
+      # The decommissioned promote tool (goals_learning_promote) no longer
+      # exists, so NO agent may retain a promote-equivalent permission.
+      # The checkpoint lives on the `build` + `researcher` agents on every host
+      # (their prompts carry SELF_IMPROVE=true) and is enforced by the
+      # self-improve-guard plugin, which is loaded unconditionally through
+      # pluginFiles whenever opencode is enabled — NOT gated behind
+      # my.programs.goals.enable.
       {
-        assertion =
-          let
-            promoteSetting = agent:
-              (cfg.agents.${agent}.permission.tools.goals_learning_promote or "deny");
-            denyOnlyAgents = lib.filter (n: n != "learning-promoter" && n != "build") (lib.attrNames cfg.agents);
-          in
-          cfg.agents ? "learning-promoter" && cfg.agents ? "build"
-            && builtins.all (a: (promoteSetting a) != "allow") denyOnlyAgents;
-        message = "my.programs.opencode: the 'learning-promoter' and 'build' agents must exist — they are the promote-capable agents (full-auto, team-gated promotion). All other agents (triage/reviewer roles) must deny goals_learning_promote.";
+        assertion = builtins.all
+          (a: (cfg.agents.${a}.permission.tools.goals_learning_promote or "deny") != "allow")
+          (lib.attrNames cfg.agents);
+        message = "my.programs.opencode: no agent may grant goals_learning_promote — the promote tool was decommissioned with the gated pipeline. Self-improvement is now the in-band SELF_IMPROVE checkpoint (tools/self-improve-commit.sh).";
       }
       {
-        assertion =
-          let
-            promoterSetting = cfg.agents."learning-promoter".permission.tools.goals_learning_promote or null;
-          in
-          cfg.agents ? "learning-promoter" -> promoterSetting == "allow";
-        message = "my.programs.opencode: agent 'learning-promoter' must have goals_learning_promote = \"allow\" (it is the headless promoter).";
+        assertion = cfg.agents ? "build" && cfg.agents ? "researcher";
+        message = "my.programs.opencode: the checkpoint-carrying agents 'build' and 'researcher' must exist.";
+      }
+      {
+        assertion = cfg.pluginFiles ? "self-improve-guard";
+        message = "my.programs.opencode: the self-improve-guard plugin (which enforces the SELF_IMPROVE checkpoint for build+researcher) must be wired in pluginFiles on every host — not gated behind my.programs.goals.enable.";
+      }
+      {
+        assertion = builtins.isNull cfg.selfImprove.maxCommitsPerSession
+          || cfg.selfImprove.maxCommitsPerSession > 0;
+        message = "my.programs.opencode.selfImprove.maxCommitsPerSession must be null or a positive int.";
+      }
+      {
+        assertion = builtins.isNull cfg.selfImprove.maxCommitsPerDay
+          || cfg.selfImprove.maxCommitsPerDay > 0;
+        message = "my.programs.opencode.selfImprove.maxCommitsPerDay must be null or a positive int.";
+      }
+      {
+        assertion = builtins.isNull cfg.selfImprove.efficiencyLensMinToolCalls
+          || cfg.selfImprove.efficiencyLensMinToolCalls > 0;
+        message = "my.programs.opencode.selfImprove.efficiencyLensMinToolCalls must be null or a positive int.";
+      }
+      {
+        assertion = builtins.isNull cfg.selfImprove.efficiencyLensMinCost
+          || cfg.selfImprove.efficiencyLensMinCost >= 0;
+        message = "my.programs.opencode.selfImprove.efficiencyLensMinCost must be null or a non-negative number.";
       }
     ] ++ (lib.concatLists (lib.mapAttrsToList
       (alias: ref: [

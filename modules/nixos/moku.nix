@@ -4,7 +4,7 @@ let
   cfg = config.my.programs.moku;
   inherit (flake) inputs;
 
-  mokuPackage = inputs.moku.packages.${pkgs.system}.moku.overrideAttrs (old: {
+  mokuPackage = inputs.moku.packages.${pkgs.stdenv.hostPlatform.system}.moku.overrideAttrs (old: {
     pnpmDeps = pkgs.fetchPnpmDeps {
       pname = "moku";
       version = old.version;
