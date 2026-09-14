@@ -354,6 +354,14 @@ in
           ];
           timeout = 120000;
         };
+        mcp.pdf-mcp = {
+          enabled = true;
+          type = "local";
+          command = [
+            "${pkgs.callPackage ../../../packages/pdf-mcp {}}/bin/pdf-mcp"
+          ];
+          timeout = 30000;
+        };
       };
     }
 
