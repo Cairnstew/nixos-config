@@ -23,7 +23,7 @@ let
     (n: _:
       let pw = "${modsDir}/${n}";
       in !builtins.pathExists pw
-         || ((builtins.fromTOML (builtins.readFile pw)).side or "both") != "client"
+        || ((builtins.fromTOML (builtins.readFile pw)).side or "both") != "client"
     )
     mods;
 
@@ -61,10 +61,12 @@ let
   finalMods = baseModLinks // patchedMods // extraMods;
 
   # Build the linkFarm entries: strip the "mods/" prefix for linkFarm names
-  entries = map (key: {
-    name = pkgs.lib.removePrefix "mods/" key;
-    path = finalMods.${key};
-  }) (builtins.attrNames finalMods);
+  entries = map
+    (key: {
+      name = pkgs.lib.removePrefix "mods/" key;
+      path = finalMods.${key};
+    })
+    (builtins.attrNames finalMods);
 
 in
-  pkgs.linkFarm "allthetech-mods" entries
+pkgs.linkFarm "allthetech-mods" entries

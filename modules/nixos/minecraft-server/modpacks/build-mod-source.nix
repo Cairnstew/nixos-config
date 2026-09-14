@@ -32,9 +32,9 @@
 , src
 , patches ? [ ]
 , buildCmd ? null
-# Extra build-time tools for buildCmd (e.g. curl + unzip to fetch a pinned
-# Gradle distribution inside the FOD). Defaults to empty — RoadWeaver and other
-# existing callers are unaffected.
+  # Extra build-time tools for buildCmd (e.g. curl + unzip to fetch a pinned
+  # Gradle distribution inside the FOD). Defaults to empty — RoadWeaver and other
+  # existing callers are unaffected.
 , extraNativeBuildInputs ? [ ]
 , outputHash
 }:
