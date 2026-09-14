@@ -48,7 +48,7 @@ in
             "12-device-default-volume" = {
               "monitor.alsa.rules" = lib.mapAttrsToList
                 (deviceName: volume: {
-                  matches = [ { "device.name" = deviceName; } ];
+                  matches = [{ "device.name" = deviceName; }];
                   actions.update-props."device.routes.default-sink-volume" = volume;
                 })
                 cfg.deviceDefaultVolumes;
