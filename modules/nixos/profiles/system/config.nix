@@ -19,8 +19,16 @@ in
 
     # Hyprland profile
     (lib.mkIf cfg.desktop.hyprland.enable {
+      # NetworkManager: wireless + wired networking (mirrors GNOME's
+      # networking.networkmanager.enable in gnome/config.nix).
+      networking.networkmanager.enable = true;
+
       my.desktop.hyprland = {
         enable = true;
+        # Desktop utilities: nm-applet (tray network manager), thunar, polkit,
+        # fonts, brightnessctl, etc. The nm-applet tray icon and exec-once in
+        # hyprland/core/config.nix are gated on this.
+        utilities.enable = true;
         idle = {
           enable = true;
           dpmsTimeout = 60;
