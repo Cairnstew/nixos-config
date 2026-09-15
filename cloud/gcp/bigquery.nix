@@ -18,11 +18,14 @@ let
   # Apply defaults to a dataset config
   applyDatasetDefaults = name: dsCfg: {
     dataset_id = name;
-    friendly_name = if dsCfg.friendly_name != "" then dsCfg.friendly_name
+    friendly_name =
+      if dsCfg.friendly_name != "" then dsCfg.friendly_name
       else lib.replaceStrings [ "-" "_" ] [ " " " " ] (lib.capitalize name);
-    description = if dsCfg.description != "" then dsCfg.description
+    description =
+      if dsCfg.description != "" then dsCfg.description
       else "BigQuery dataset: ${name}";
-    location = if dsCfg.location != "" then dsCfg.location
+    location =
+      if dsCfg.location != "" then dsCfg.location
       else lib.tf.ref "var.region";
     project = lib.tf.ref "var.project";
     inherit (dsCfg) max_time_travel_hours delete_contents_on_destroy;
@@ -41,7 +44,7 @@ let
   };
 
   # Collect all datasets from config
-  datasets = config.bigquery.datasets // (config.extraBigqueryDatasets or {});
+  datasets = config.bigquery.datasets // (config.extraBigqueryDatasets or { });
 
   # Collect all tables from config (keyed as "dataset.table")
   tables = lib.concatMapAttrs
@@ -50,7 +53,7 @@ let
         (tableName: tblCfg: {
           "${datasetName}.${tableName}" = applyTableDefaults datasetName tableName tblCfg;
         })
-        (dsCfg.tables or {})
+        (dsCfg.tables or { })
     )
     datasets;
 in
@@ -91,7 +94,7 @@ in
           };
           labels = lib.mkOption {
             type = lib.types.attrsOf lib.types.str;
-            default = {};
+            default = { };
             description = "Resource labels";
           };
           tables = lib.mkOption {
@@ -113,17 +116,17 @@ in
                 };
                 labels = lib.mkOption {
                   type = lib.types.attrsOf lib.types.str;
-                  default = {};
+                  default = { };
                   description = "Table labels";
                 };
               };
             });
-            default = {};
+            default = { };
             description = "Tables in this dataset";
           };
         };
       });
-      default = {};
+      default = { };
       description = "BigQuery datasets to create";
     };
   };
@@ -131,15 +134,17 @@ in
   # ── External override point (for terranix extraArgs) ──────────────────────
   options.extraBigqueryDatasets = lib.mkOption {
     type = lib.types.attrsOf lib.types.anything;
-    default = {};
+    default = { };
     description = "Additional datasets merged into bigquery.datasets (via extraArgs)";
   };
 
   # ── Terraform resources ──────────────────────────────────────────────────
   config = {
-    resource.google_bigquery_dataset = lib.mapAttrs (name: dsCfg:
-      applyDatasetDefaults name dsCfg
-    ) datasets;
+    resource.google_bigquery_dataset = lib.mapAttrs
+      (name: dsCfg:
+        applyDatasetDefaults name dsCfg
+      )
+      datasets;
 
     resource.google_bigquery_table = lib.mapAttrs (_: tblCfg: tblCfg) tables;
 
