@@ -312,6 +312,7 @@ in
           network-security = builtins.readFile ./skills/network-security.md;
           model-selection = builtins.readFile ./skills/model-selection.md;
           music-playlists = builtins.readFile ./skills/music-playlists.md;
+          mcp-server-management = builtins.readFile ./skills/mcp-server-management.md;
         };
         commands = {
           copy-last = ./commands/copylast.md;
@@ -341,6 +342,21 @@ in
             "--graph"
             "${../../../tools/nix-graph/graph.json}"
           ];
+          timeout = 120000;
+        };
+        mcp.terraform = {
+          enabled = true;
+          type = "local";
+          command = [ "terraform-mcp-server" "stdio" ];
+          timeout = 120000;
+        };
+        mcp.ieee = lib.mkIf (config.age.secrets ? "ieee-api-key") {
+          enabled = true;
+          type = "local";
+          command = [ "npx" "-y" "danieltyukov-ieee-mcp" ];
+          environment = {
+            IEEE_API_KEY = "{file:${config.age.secrets.ieee-api-key.path}}";
+          };
           timeout = 120000;
         };
       };
@@ -394,7 +410,9 @@ in
         tui = lib.mkDefault cfg.tui;
         skills = cfg.skills;
         tools = cfg.tools;
-        extraPackages = cfg.extraPackages ++ lib.optionals cfg.enableLsp [ pkgs.nixd ];
+        extraPackages = cfg.extraPackages
+          ++ lib.optionals cfg.enableLsp [ pkgs.nixd ]
+          ++ [ pkgs.terraform-mcp-server ];
         settings = mergedSettings // lib.optionalAttrs cfg.enableLsp { lsp = true; };
       };
     }
