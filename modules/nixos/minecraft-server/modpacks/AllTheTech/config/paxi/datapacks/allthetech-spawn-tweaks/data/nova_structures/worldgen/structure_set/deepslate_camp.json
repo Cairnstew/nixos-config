@@ -1,0 +1,14 @@
+{
+ "structures": [
+  {
+   "structure": "nova_structures:deepslate_camp",
+   "weight": 1
+  }
+ ],
+ "placement": {
+  "spacing": 20,
+  "separation": 10,
+  "salt": 87069654,
+  "type": "minecraft:random_spread"
+ }
+}

@@ -2,7 +2,7 @@
 let
   cfg = config.my.services.chatterbox-tts;
   stateDir = cfg.stateDir;
-  selfPkgs = flake.inputs.self.packages.${pkgs.system};
+  selfPkgs = flake.inputs.self.packages.${pkgs.stdenv.hostPlatform.system};
 in
 {
   config = lib.mkIf cfg.enable {

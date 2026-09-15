@@ -36,7 +36,6 @@ let
   gcp = {
     project = "";
     region = "europe-west4";
-    imageFamily = "nixos-25.05";
   };
   aws = {
     region = "eu-west-2";
@@ -72,15 +71,7 @@ in
               else
                 "TF_VAR_project=$(jq -r .project_id /run/agenix/gcloud-auth) && export TF_VAR_project"}
             fi
-            if [ -r /run/agenix/tailscale-authkey ]; then
-              TF_VAR_tailscale_auth_key="$(cat /run/agenix/tailscale-authkey)"
-              export TF_VAR_tailscale_auth_key
-            fi
-            # SSH pub key for first-boot access (used by stage-2 deploys)
-            if [ -r /run/agenix/aws-ssh-pub-key ]; then
-              TF_VAR_ssh_pub_key="$(cat /run/agenix/aws-ssh-pub-key)"
-              export TF_VAR_ssh_pub_key
-            fi
+            # (tailscale_auth_key + ssh_pub_key not set — no instances provisioned)
           '';
           workdir = "${stateRoot}/gcp";
         };
@@ -103,6 +94,26 @@ in
             export TF_VAR_region=${aws.region}
           '';
           workdir = "${stateRoot}/aws";
+        };
+
+        oci = {
+          modules = [ ../../cloud/oci ];
+          terraformWrapper.package = pkgs.opentofu;
+          terraformWrapper.prefixText = ''
+            # oci-cloud secret is an OCI CLI config file (INI). Point the
+            # provider at it via OCI_CONFIG_FILE, and expose the tenancy OCID
+            # (root compartment) as a TF_VAR for the module's data sources.
+            if [ -r /run/agenix/oci-cloud ]; then
+              export OCI_CONFIG_FILE=/run/agenix/oci-cloud
+              TF_VAR_tenancy_ocid="$(awk -F= '/^tenancy=/{gsub(/[ \t]/,"",$2); print $2; exit}' /run/agenix/oci-cloud)"
+              [ -n "$TF_VAR_tenancy_ocid" ] && export TF_VAR_tenancy_ocid
+            fi
+            if [ -r /run/agenix/aws-ssh-pub-key ]; then
+              TF_VAR_ssh_pub_key="$(cat /run/agenix/aws-ssh-pub-key)"
+              export TF_VAR_ssh_pub_key
+            fi
+          '';
+          workdir = "${stateRoot}/oci";
         };
       };
 

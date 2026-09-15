@@ -527,15 +527,18 @@ elsewhere.
 Follow the self-improvement protocol in `../AGENTS.md` §11: at the end of every
 session, fix anything in this file that misled you, went stale, or is missing —
 grounded in what actually happened this session or exists in the repo now, never
-aspirational. **Any self-improvement action anywhere in nixos-config — editing a
-command, editing a skill, creating a new skill — must be proposed via
-`learning_append` and gated via `learning_promote` before being applied. Direct
-unlogged edits to command/skill/tool files during a self-improvement pass are not
-permitted.** Promotion is not limited to a human: the dedicated `learning-promoter`
-agent (see `modules/home/opencode/agents/learning-promoter.md`) auto-promotes a
-learning only on a unanimous, harness-re-derived triage `agree`, each applied as an
-isolated commit on its own branch. The proposing session still never self-certifies.
-The RUN LOG below is historical record, not the current mechanism.
+aspirational. Self-improvement is a **single in-band checkpoint** run by the
+checkpoint-carrying primary agents (`build`, `researcher`): they capture grounded
+run lessons and, when the target is an allow-listed guidance file (GOTCHAS.md /
+opencode skill+command RUN LOGs / module `AGENT.md` RUN LOGs), apply the
+append-only edit as their **own** commit through the mechanical commit-helper
+(`tools/self-improve-commit.sh`), gated by evidence-existence, path allow-list,
+append-only diff-shape and rate-cap checks — no `learning_*` tools, no queue, no
+triage. **Direct unlogged edits to command/skill/tool files during a
+self-improvement pass are not permitted**; every self-apply must go through the
+helper and carries a `Self-Improve:` trailer for the audit trail
+(`git log --grep="Self-Improve:"`). The RUN LOG below is historical record, not
+the current mechanism.
 
 ## RUN LOG
 

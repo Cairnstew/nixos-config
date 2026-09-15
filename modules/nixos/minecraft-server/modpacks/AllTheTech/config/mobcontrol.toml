@@ -1,0 +1,873 @@
+# ===============================================================
+# Mob Control — AllTheTech tiered, THEMEd structure placement
+# ===============================================================
+# GENERATED from config/allthetech/mob_tiers.json (keep both in sync).
+# Categories are sorted by tier desc (harder first, first-match-wins).
+# Each tiered mob gets:
+#   1. natural rule allowed inside its category's structures (+
+#      structure-only scaling from the category tier),
+#   2. natural wild rule (structure=none) so it still appears outside
+#      generated structures (vanilla-like behavior).
+# Mobs in multiple categories get one [[mob]] block per category; the
+# first block whose structure rule matches wins, so cross-theme mobs
+# (e.g. beheaded_knight in graveyard AND pirate) resolve correctly.
+# Unmatched spawns fall through to the pack catch-all at the bottom.
+#
+# NOTE: structure= matches by EXACT structure id ('<ns>:<id>' or full
+# path like 'trek:monster_room/lower/default') or '<ns>:*' wildcard —
+# set names are NOT valid here. Verified against the pinned jars.
+# ===============================================================
+
+[general]
+debug=false
+use-generation-check=false
+
+# ===== Category: Dragon & Primordial (Tier 4 Boss) =====
+
+[[mob]]
+    name = "iceandfire:fire_dragon"
+    # Dragon & Primordial — allowed structures
+    [[mob.rule]]
+        type = "natural"
+        structure = ["iceandfire:fire_dragon_roost", "iceandfire:fire_dragon_cave", "iceandfire:ice_dragon_roost", "iceandfire:ice_dragon_cave", "iceandfire:lightning_dragon_roost", "iceandfire:lightning_dragon_cave", "trek:overworld/medium/bone_dragon", "mowziesmobs:frostmaw_spawn", "mowziesmobs:umvuthana_grove", "legendary_monsters:skeletosaurus_nest", "legendary_monsters:frostbitten_temple"]
+        set.health = [120, 200]
+        set.damage = [20, 40]
+        set.xp = [60, 150]
+    # Dragon & Primordial — general wild spawns (outside structures)
+    [[mob.rule]]
+        type = "natural"
+        structure = "none"
+
+[[mob]]
+    name = "iceandfire:ice_dragon"
+    # Dragon & Primordial — allowed structures
+    [[mob.rule]]
+        type = "natural"
+        structure = ["iceandfire:fire_dragon_roost", "iceandfire:fire_dragon_cave", "iceandfire:ice_dragon_roost", "iceandfire:ice_dragon_cave", "iceandfire:lightning_dragon_roost", "iceandfire:lightning_dragon_cave", "trek:overworld/medium/bone_dragon", "mowziesmobs:frostmaw_spawn", "mowziesmobs:umvuthana_grove", "legendary_monsters:skeletosaurus_nest", "legendary_monsters:frostbitten_temple"]
+        set.health = [120, 200]
+        set.damage = [20, 40]
+        set.xp = [60, 150]
+    # Dragon & Primordial — general wild spawns (outside structures)
+    [[mob.rule]]
+        type = "natural"
+        structure = "none"
+
+[[mob]]
+    name = "iceandfire:lightning_dragon"
+    # Dragon & Primordial — allowed structures
+    [[mob.rule]]
+        type = "natural"
+        structure = ["iceandfire:fire_dragon_roost", "iceandfire:fire_dragon_cave", "iceandfire:ice_dragon_roost", "iceandfire:ice_dragon_cave", "iceandfire:lightning_dragon_roost", "iceandfire:lightning_dragon_cave", "trek:overworld/medium/bone_dragon", "mowziesmobs:frostmaw_spawn", "mowziesmobs:umvuthana_grove", "legendary_monsters:skeletosaurus_nest", "legendary_monsters:frostbitten_temple"]
+        set.health = [120, 200]
+        set.damage = [20, 40]
+        set.xp = [60, 150]
+    # Dragon & Primordial — general wild spawns (outside structures)
+    [[mob.rule]]
+        type = "natural"
+        structure = "none"
+
+[[mob]]
+    name = "mowziesmobs:frostmaw"
+    # Dragon & Primordial — allowed structures
+    [[mob.rule]]
+        type = "natural"
+        structure = ["iceandfire:fire_dragon_roost", "iceandfire:fire_dragon_cave", "iceandfire:ice_dragon_roost", "iceandfire:ice_dragon_cave", "iceandfire:lightning_dragon_roost", "iceandfire:lightning_dragon_cave", "trek:overworld/medium/bone_dragon", "mowziesmobs:frostmaw_spawn", "mowziesmobs:umvuthana_grove", "legendary_monsters:skeletosaurus_nest", "legendary_monsters:frostbitten_temple"]
+        set.health = [120, 200]
+        set.damage = [20, 40]
+        set.xp = [60, 150]
+    # Dragon & Primordial — general wild spawns (outside structures)
+    [[mob.rule]]
+        type = "natural"
+        structure = "none"
+
+[[mob]]
+    name = "mowziesmobs:umvuthi"
+    # Dragon & Primordial — allowed structures
+    [[mob.rule]]
+        type = "natural"
+        structure = ["iceandfire:fire_dragon_roost", "iceandfire:fire_dragon_cave", "iceandfire:ice_dragon_roost", "iceandfire:ice_dragon_cave", "iceandfire:lightning_dragon_roost", "iceandfire:lightning_dragon_cave", "trek:overworld/medium/bone_dragon", "mowziesmobs:frostmaw_spawn", "mowziesmobs:umvuthana_grove", "legendary_monsters:skeletosaurus_nest", "legendary_monsters:frostbitten_temple"]
+        set.health = [120, 200]
+        set.damage = [20, 40]
+        set.xp = [60, 150]
+    # Dragon & Primordial — general wild spawns (outside structures)
+    [[mob.rule]]
+        type = "natural"
+        structure = "none"
+
+[[mob]]
+    name = "legendary_monsters:skeletosaurus"
+    # Dragon & Primordial — allowed structures
+    [[mob.rule]]
+        type = "natural"
+        structure = ["iceandfire:fire_dragon_roost", "iceandfire:fire_dragon_cave", "iceandfire:ice_dragon_roost", "iceandfire:ice_dragon_cave", "iceandfire:lightning_dragon_roost", "iceandfire:lightning_dragon_cave", "trek:overworld/medium/bone_dragon", "mowziesmobs:frostmaw_spawn", "mowziesmobs:umvuthana_grove", "legendary_monsters:skeletosaurus_nest", "legendary_monsters:frostbitten_temple"]
+        set.health = [120, 200]
+        set.damage = [20, 40]
+        set.xp = [60, 150]
+    # Dragon & Primordial — general wild spawns (outside structures)
+    [[mob.rule]]
+        type = "natural"
+        structure = "none"
+
+[[mob]]
+    name = "legendary_monsters:frostbitten_golem"
+    # Dragon & Primordial — allowed structures
+    [[mob.rule]]
+        type = "natural"
+        structure = ["iceandfire:fire_dragon_roost", "iceandfire:fire_dragon_cave", "iceandfire:ice_dragon_roost", "iceandfire:ice_dragon_cave", "iceandfire:lightning_dragon_roost", "iceandfire:lightning_dragon_cave", "trek:overworld/medium/bone_dragon", "mowziesmobs:frostmaw_spawn", "mowziesmobs:umvuthana_grove", "legendary_monsters:skeletosaurus_nest", "legendary_monsters:frostbitten_temple"]
+        set.health = [120, 200]
+        set.damage = [20, 40]
+        set.xp = [60, 150]
+    # Dragon & Primordial — general wild spawns (outside structures)
+    [[mob.rule]]
+        type = "natural"
+        structure = "none"
+
+[[mob]]
+    name = "legendary_monsters:overgrown_colossus"
+    # Dragon & Primordial — allowed structures
+    [[mob.rule]]
+        type = "natural"
+        structure = ["iceandfire:fire_dragon_roost", "iceandfire:fire_dragon_cave", "iceandfire:ice_dragon_roost", "iceandfire:ice_dragon_cave", "iceandfire:lightning_dragon_roost", "iceandfire:lightning_dragon_cave", "trek:overworld/medium/bone_dragon", "mowziesmobs:frostmaw_spawn", "mowziesmobs:umvuthana_grove", "legendary_monsters:skeletosaurus_nest", "legendary_monsters:frostbitten_temple"]
+        set.health = [120, 200]
+        set.damage = [20, 40]
+        set.xp = [60, 150]
+    # Dragon & Primordial — general wild spawns (outside structures)
+    [[mob.rule]]
+        type = "natural"
+        structure = "none"
+# ===== Category: Deep Dark & Heart of Darkness (Tier 4 Boss) =====
+
+[[mob]]
+    name = "minecraft:warden"
+    # Deep Dark & Heart of Darkness — allowed structures
+    [[mob.rule]]
+        type = "natural"
+        structure = ["minecraft:ancient_city", "ati_structures:warden_monument", "ati_structures:sculk_deposit", "trek:monster_room/lower/deep_dark"]
+        set.health = [120, 200]
+        set.damage = [20, 40]
+        set.xp = [60, 150]
+    # Deep Dark & Heart of Darkness — general wild spawns (outside structures)
+    [[mob.rule]]
+        type = "natural"
+        structure = "none"
+
+[[mob]]
+    name = "legendary_monsters:the_obliterator"
+    # Deep Dark & Heart of Darkness — allowed structures
+    [[mob.rule]]
+        type = "natural"
+        structure = ["minecraft:ancient_city", "ati_structures:warden_monument", "ati_structures:sculk_deposit", "trek:monster_room/lower/deep_dark"]
+        set.health = [120, 200]
+        set.damage = [20, 40]
+        set.xp = [60, 150]
+    # Deep Dark & Heart of Darkness — general wild spawns (outside structures)
+    [[mob.rule]]
+        type = "natural"
+        structure = "none"
+
+[[mob]]
+    name = "legendary_monsters:dark_cloud_golem"
+    # Deep Dark & Heart of Darkness — allowed structures
+    [[mob.rule]]
+        type = "natural"
+        structure = ["minecraft:ancient_city", "ati_structures:warden_monument", "ati_structures:sculk_deposit", "trek:monster_room/lower/deep_dark"]
+        set.health = [120, 200]
+        set.damage = [20, 40]
+        set.xp = [60, 150]
+    # Deep Dark & Heart of Darkness — general wild spawns (outside structures)
+    [[mob.rule]]
+        type = "natural"
+        structure = "none"
+
+[[mob]]
+    name = "iceandfire:dread_beast"
+    # Deep Dark & Heart of Darkness — allowed structures
+    [[mob.rule]]
+        type = "natural"
+        structure = ["minecraft:ancient_city", "ati_structures:warden_monument", "ati_structures:sculk_deposit", "trek:monster_room/lower/deep_dark"]
+        set.health = [120, 200]
+        set.damage = [20, 40]
+        set.xp = [60, 150]
+    # Deep Dark & Heart of Darkness — general wild spawns (outside structures)
+    [[mob.rule]]
+        type = "natural"
+        structure = "none"
+
+[[mob]]
+    name = "iceandfire:dread_queen"
+    # Deep Dark & Heart of Darkness — allowed structures
+    [[mob.rule]]
+        type = "natural"
+        structure = ["minecraft:ancient_city", "ati_structures:warden_monument", "ati_structures:sculk_deposit", "trek:monster_room/lower/deep_dark"]
+        set.health = [120, 200]
+        set.damage = [20, 40]
+        set.xp = [60, 150]
+    # Deep Dark & Heart of Darkness — general wild spawns (outside structures)
+    [[mob.rule]]
+        type = "natural"
+        structure = "none"
+# ===== Category: Pirate & Sea (Tier 3 Elite) =====
+
+[[mob]]
+    name = "minecraft:drowned"
+    # Pirate & Sea — allowed structures
+    [[mob.rule]]
+        type = "natural"
+        structure = ["minecraft:shipwreck", "minecraft:ocean_ruin_cold", "minecraft:ocean_ruin_warm", "structory:boat", "dungeons_arise:undead_pirate_ship", "dungeons_arise:illager_corsair", "dungeons_arise:illager_galley", "dungeons_arise_seven_seas:corsair_corvette", "dungeons_arise_seven_seas:pirate_junk", "dungeons_arise_seven_seas:small_yacht", "dungeons_arise_seven_seas:unicorn_galleon", "dungeons_arise_seven_seas:victory_frigate", "trek:overworld/medium/ruine_bateaux", "ati_structures:underwater_dungeon", "ati_structures:pufferfish_cave", "iceandfire:siren_island"]
+        set.health = [90, 140]
+        set.damage = [12, 24]
+        set.xp = [30, 80]
+    # Pirate & Sea — general wild spawns (outside structures)
+    [[mob.rule]]
+        type = "natural"
+        structure = "none"
+
+[[mob]]
+    name = "minecraft:skeleton"
+    # Pirate & Sea — allowed structures
+    [[mob.rule]]
+        type = "natural"
+        structure = ["minecraft:shipwreck", "minecraft:ocean_ruin_cold", "minecraft:ocean_ruin_warm", "structory:boat", "dungeons_arise:undead_pirate_ship", "dungeons_arise:illager_corsair", "dungeons_arise:illager_galley", "dungeons_arise_seven_seas:corsair_corvette", "dungeons_arise_seven_seas:pirate_junk", "dungeons_arise_seven_seas:small_yacht", "dungeons_arise_seven_seas:unicorn_galleon", "dungeons_arise_seven_seas:victory_frigate", "trek:overworld/medium/ruine_bateaux", "ati_structures:underwater_dungeon", "ati_structures:pufferfish_cave", "iceandfire:siren_island"]
+        set.health = [90, 140]
+        set.damage = [12, 24]
+        set.xp = [30, 80]
+    # Pirate & Sea — general wild spawns (outside structures)
+    [[mob.rule]]
+        type = "natural"
+        structure = "none"
+
+[[mob]]
+    name = "iceandfire:siren"
+    # Pirate & Sea — allowed structures
+    [[mob.rule]]
+        type = "natural"
+        structure = ["minecraft:shipwreck", "minecraft:ocean_ruin_cold", "minecraft:ocean_ruin_warm", "structory:boat", "dungeons_arise:undead_pirate_ship", "dungeons_arise:illager_corsair", "dungeons_arise:illager_galley", "dungeons_arise_seven_seas:corsair_corvette", "dungeons_arise_seven_seas:pirate_junk", "dungeons_arise_seven_seas:small_yacht", "dungeons_arise_seven_seas:unicorn_galleon", "dungeons_arise_seven_seas:victory_frigate", "trek:overworld/medium/ruine_bateaux", "ati_structures:underwater_dungeon", "ati_structures:pufferfish_cave", "iceandfire:siren_island"]
+        set.health = [90, 140]
+        set.damage = [12, 24]
+        set.xp = [30, 80]
+    # Pirate & Sea — general wild spawns (outside structures)
+    [[mob.rule]]
+        type = "natural"
+        structure = "none"
+
+[[mob]]
+    name = "iceandfire:hippocampus"
+    # Pirate & Sea — allowed structures
+    [[mob.rule]]
+        type = "natural"
+        structure = ["minecraft:shipwreck", "minecraft:ocean_ruin_cold", "minecraft:ocean_ruin_warm", "structory:boat", "dungeons_arise:undead_pirate_ship", "dungeons_arise:illager_corsair", "dungeons_arise:illager_galley", "dungeons_arise_seven_seas:corsair_corvette", "dungeons_arise_seven_seas:pirate_junk", "dungeons_arise_seven_seas:small_yacht", "dungeons_arise_seven_seas:unicorn_galleon", "dungeons_arise_seven_seas:victory_frigate", "trek:overworld/medium/ruine_bateaux", "ati_structures:underwater_dungeon", "ati_structures:pufferfish_cave", "iceandfire:siren_island"]
+        set.health = [90, 140]
+        set.damage = [12, 24]
+        set.xp = [30, 80]
+    # Pirate & Sea — general wild spawns (outside structures)
+    [[mob.rule]]
+        type = "natural"
+        structure = "none"
+
+[[mob]]
+    name = "iceandfire:sea_serpent"
+    # Pirate & Sea — allowed structures
+    [[mob.rule]]
+        type = "natural"
+        structure = ["minecraft:shipwreck", "minecraft:ocean_ruin_cold", "minecraft:ocean_ruin_warm", "structory:boat", "dungeons_arise:undead_pirate_ship", "dungeons_arise:illager_corsair", "dungeons_arise:illager_galley", "dungeons_arise_seven_seas:corsair_corvette", "dungeons_arise_seven_seas:pirate_junk", "dungeons_arise_seven_seas:small_yacht", "dungeons_arise_seven_seas:unicorn_galleon", "dungeons_arise_seven_seas:victory_frigate", "trek:overworld/medium/ruine_bateaux", "ati_structures:underwater_dungeon", "ati_structures:pufferfish_cave", "iceandfire:siren_island"]
+        set.health = [90, 140]
+        set.damage = [12, 24]
+        set.xp = [30, 80]
+    # Pirate & Sea — general wild spawns (outside structures)
+    [[mob.rule]]
+        type = "natural"
+        structure = "none"
+
+[[mob]]
+    name = "legendary_monsters:beheaded_knight"
+    # Pirate & Sea — allowed structures
+    [[mob.rule]]
+        type = "natural"
+        structure = ["minecraft:shipwreck", "minecraft:ocean_ruin_cold", "minecraft:ocean_ruin_warm", "structory:boat", "dungeons_arise:undead_pirate_ship", "dungeons_arise:illager_corsair", "dungeons_arise:illager_galley", "dungeons_arise_seven_seas:corsair_corvette", "dungeons_arise_seven_seas:pirate_junk", "dungeons_arise_seven_seas:small_yacht", "dungeons_arise_seven_seas:unicorn_galleon", "dungeons_arise_seven_seas:victory_frigate", "trek:overworld/medium/ruine_bateaux", "ati_structures:underwater_dungeon", "ati_structures:pufferfish_cave", "iceandfire:siren_island"]
+        set.health = [90, 140]
+        set.damage = [12, 24]
+        set.xp = [30, 80]
+    # Pirate & Sea — general wild spawns (outside structures)
+    [[mob.rule]]
+        type = "natural"
+        structure = "none"
+# ===== Category: Nether & Scorched (Tier 3 Elite) =====
+
+[[mob]]
+    name = "minecraft:blaze"
+    # Nether & Scorched — allowed structures
+    [[mob.rule]]
+        type = "natural"
+        structure = ["betterfortresses:fortress", "formationsnether:blackstone_castle", "formationsnether:checkerboard_temple", "formationsnether:small_fire_arena", "formationsnether:small_lava_arena", "formationsnether:small_lava_shrine", "formationsnether:rib_cage", "formationsnether:sphere_cage", "nova_structures:nether_keep", "nova_structures:nether_port", "nova_structures:nether_skeleton_tower_crimson", "nova_structures:nether_skeleton_tower_warped", "nova_structures:nether_skeleton_tower_soul", "nova_structures:nether_skeleton_tower_waste", "nova_structures:piglin_camp", "nova_structures:piglin_donjon", "nova_structures:piglin_outstation", "nova_structures:hamlet", "nova_structures:skeleton_camp_crimson", "nova_structures:skeleton_camp_warped", "nova_structures:skeleton_camp_soul", "nova_structures:skeleton_camp_waste", "trek:nether/common/nether_pillar", "trek:nether/medium/overworld_leak_1", "trek:nether/medium/overworld_leak_2", "legendary_monsters:warped_fungussus_nest", "ati_structures:wither_cavern", "ati_structures:wither_keep"]
+        set.health = [90, 140]
+        set.damage = [12, 24]
+        set.xp = [30, 80]
+    # Nether & Scorched — general wild spawns (outside structures)
+    [[mob.rule]]
+        type = "natural"
+        structure = "none"
+
+[[mob]]
+    name = "minecraft:wither_skeleton"
+    # Nether & Scorched — allowed structures
+    [[mob.rule]]
+        type = "natural"
+        structure = ["betterfortresses:fortress", "formationsnether:blackstone_castle", "formationsnether:checkerboard_temple", "formationsnether:small_fire_arena", "formationsnether:small_lava_arena", "formationsnether:small_lava_shrine", "formationsnether:rib_cage", "formationsnether:sphere_cage", "nova_structures:nether_keep", "nova_structures:nether_port", "nova_structures:nether_skeleton_tower_crimson", "nova_structures:nether_skeleton_tower_warped", "nova_structures:nether_skeleton_tower_soul", "nova_structures:nether_skeleton_tower_waste", "nova_structures:piglin_camp", "nova_structures:piglin_donjon", "nova_structures:piglin_outstation", "nova_structures:hamlet", "nova_structures:skeleton_camp_crimson", "nova_structures:skeleton_camp_warped", "nova_structures:skeleton_camp_soul", "nova_structures:skeleton_camp_waste", "trek:nether/common/nether_pillar", "trek:nether/medium/overworld_leak_1", "trek:nether/medium/overworld_leak_2", "legendary_monsters:warped_fungussus_nest", "ati_structures:wither_cavern", "ati_structures:wither_keep"]
+        set.health = [90, 140]
+        set.damage = [12, 24]
+        set.xp = [30, 80]
+    # Nether & Scorched — general wild spawns (outside structures)
+    [[mob.rule]]
+        type = "natural"
+        structure = "none"
+
+[[mob]]
+    name = "minecraft:magma_cube"
+    # Nether & Scorched — allowed structures
+    [[mob.rule]]
+        type = "natural"
+        structure = ["betterfortresses:fortress", "formationsnether:blackstone_castle", "formationsnether:checkerboard_temple", "formationsnether:small_fire_arena", "formationsnether:small_lava_arena", "formationsnether:small_lava_shrine", "formationsnether:rib_cage", "formationsnether:sphere_cage", "nova_structures:nether_keep", "nova_structures:nether_port", "nova_structures:nether_skeleton_tower_crimson", "nova_structures:nether_skeleton_tower_warped", "nova_structures:nether_skeleton_tower_soul", "nova_structures:nether_skeleton_tower_waste", "nova_structures:piglin_camp", "nova_structures:piglin_donjon", "nova_structures:piglin_outstation", "nova_structures:hamlet", "nova_structures:skeleton_camp_crimson", "nova_structures:skeleton_camp_warped", "nova_structures:skeleton_camp_soul", "nova_structures:skeleton_camp_waste", "trek:nether/common/nether_pillar", "trek:nether/medium/overworld_leak_1", "trek:nether/medium/overworld_leak_2", "legendary_monsters:warped_fungussus_nest", "ati_structures:wither_cavern", "ati_structures:wither_keep"]
+        set.health = [90, 140]
+        set.damage = [12, 24]
+        set.xp = [30, 80]
+    # Nether & Scorched — general wild spawns (outside structures)
+    [[mob.rule]]
+        type = "natural"
+        structure = "none"
+
+[[mob]]
+    name = "minecraft:zombified_piglin"
+    # Nether & Scorched — allowed structures
+    [[mob.rule]]
+        type = "natural"
+        structure = ["betterfortresses:fortress", "formationsnether:blackstone_castle", "formationsnether:checkerboard_temple", "formationsnether:small_fire_arena", "formationsnether:small_lava_arena", "formationsnether:small_lava_shrine", "formationsnether:rib_cage", "formationsnether:sphere_cage", "nova_structures:nether_keep", "nova_structures:nether_port", "nova_structures:nether_skeleton_tower_crimson", "nova_structures:nether_skeleton_tower_warped", "nova_structures:nether_skeleton_tower_soul", "nova_structures:nether_skeleton_tower_waste", "nova_structures:piglin_camp", "nova_structures:piglin_donjon", "nova_structures:piglin_outstation", "nova_structures:hamlet", "nova_structures:skeleton_camp_crimson", "nova_structures:skeleton_camp_warped", "nova_structures:skeleton_camp_soul", "nova_structures:skeleton_camp_waste", "trek:nether/common/nether_pillar", "trek:nether/medium/overworld_leak_1", "trek:nether/medium/overworld_leak_2", "legendary_monsters:warped_fungussus_nest", "ati_structures:wither_cavern", "ati_structures:wither_keep"]
+        set.health = [90, 140]
+        set.damage = [12, 24]
+        set.xp = [30, 80]
+    # Nether & Scorched — general wild spawns (outside structures)
+    [[mob.rule]]
+        type = "natural"
+        structure = "none"
+
+[[mob]]
+    name = "legendary_monsters:flameborn_guard"
+    # Nether & Scorched — allowed structures
+    [[mob.rule]]
+        type = "natural"
+        structure = ["betterfortresses:fortress", "formationsnether:blackstone_castle", "formationsnether:checkerboard_temple", "formationsnether:small_fire_arena", "formationsnether:small_lava_arena", "formationsnether:small_lava_shrine", "formationsnether:rib_cage", "formationsnether:sphere_cage", "nova_structures:nether_keep", "nova_structures:nether_port", "nova_structures:nether_skeleton_tower_crimson", "nova_structures:nether_skeleton_tower_warped", "nova_structures:nether_skeleton_tower_soul", "nova_structures:nether_skeleton_tower_waste", "nova_structures:piglin_camp", "nova_structures:piglin_donjon", "nova_structures:piglin_outstation", "nova_structures:hamlet", "nova_structures:skeleton_camp_crimson", "nova_structures:skeleton_camp_warped", "nova_structures:skeleton_camp_soul", "nova_structures:skeleton_camp_waste", "trek:nether/common/nether_pillar", "trek:nether/medium/overworld_leak_1", "trek:nether/medium/overworld_leak_2", "legendary_monsters:warped_fungussus_nest", "ati_structures:wither_cavern", "ati_structures:wither_keep"]
+        set.health = [90, 140]
+        set.damage = [12, 24]
+        set.xp = [30, 80]
+    # Nether & Scorched — general wild spawns (outside structures)
+    [[mob.rule]]
+        type = "natural"
+        structure = "none"
+
+[[mob]]
+    name = "legendary_monsters:flameborn_warrior"
+    # Nether & Scorched — allowed structures
+    [[mob.rule]]
+        type = "natural"
+        structure = ["betterfortresses:fortress", "formationsnether:blackstone_castle", "formationsnether:checkerboard_temple", "formationsnether:small_fire_arena", "formationsnether:small_lava_arena", "formationsnether:small_lava_shrine", "formationsnether:rib_cage", "formationsnether:sphere_cage", "nova_structures:nether_keep", "nova_structures:nether_port", "nova_structures:nether_skeleton_tower_crimson", "nova_structures:nether_skeleton_tower_warped", "nova_structures:nether_skeleton_tower_soul", "nova_structures:nether_skeleton_tower_waste", "nova_structures:piglin_camp", "nova_structures:piglin_donjon", "nova_structures:piglin_outstation", "nova_structures:hamlet", "nova_structures:skeleton_camp_crimson", "nova_structures:skeleton_camp_warped", "nova_structures:skeleton_camp_soul", "nova_structures:skeleton_camp_waste", "trek:nether/common/nether_pillar", "trek:nether/medium/overworld_leak_1", "trek:nether/medium/overworld_leak_2", "legendary_monsters:warped_fungussus_nest", "ati_structures:wither_cavern", "ati_structures:wither_keep"]
+        set.health = [90, 140]
+        set.damage = [12, 24]
+        set.xp = [30, 80]
+    # Nether & Scorched — general wild spawns (outside structures)
+    [[mob.rule]]
+        type = "natural"
+        structure = "none"
+
+[[mob]]
+    name = "legendary_monsters:lava_eater"
+    # Nether & Scorched — allowed structures
+    [[mob.rule]]
+        type = "natural"
+        structure = ["betterfortresses:fortress", "formationsnether:blackstone_castle", "formationsnether:checkerboard_temple", "formationsnether:small_fire_arena", "formationsnether:small_lava_arena", "formationsnether:small_lava_shrine", "formationsnether:rib_cage", "formationsnether:sphere_cage", "nova_structures:nether_keep", "nova_structures:nether_port", "nova_structures:nether_skeleton_tower_crimson", "nova_structures:nether_skeleton_tower_warped", "nova_structures:nether_skeleton_tower_soul", "nova_structures:nether_skeleton_tower_waste", "nova_structures:piglin_camp", "nova_structures:piglin_donjon", "nova_structures:piglin_outstation", "nova_structures:hamlet", "nova_structures:skeleton_camp_crimson", "nova_structures:skeleton_camp_warped", "nova_structures:skeleton_camp_soul", "nova_structures:skeleton_camp_waste", "trek:nether/common/nether_pillar", "trek:nether/medium/overworld_leak_1", "trek:nether/medium/overworld_leak_2", "legendary_monsters:warped_fungussus_nest", "ati_structures:wither_cavern", "ati_structures:wither_keep"]
+        set.health = [90, 140]
+        set.damage = [12, 24]
+        set.xp = [30, 80]
+    # Nether & Scorched — general wild spawns (outside structures)
+    [[mob.rule]]
+        type = "natural"
+        structure = "none"
+
+[[mob]]
+    name = "legendary_monsters:warped_fungussus"
+    # Nether & Scorched — allowed structures
+    [[mob.rule]]
+        type = "natural"
+        structure = ["betterfortresses:fortress", "formationsnether:blackstone_castle", "formationsnether:checkerboard_temple", "formationsnether:small_fire_arena", "formationsnether:small_lava_arena", "formationsnether:small_lava_shrine", "formationsnether:rib_cage", "formationsnether:sphere_cage", "nova_structures:nether_keep", "nova_structures:nether_port", "nova_structures:nether_skeleton_tower_crimson", "nova_structures:nether_skeleton_tower_warped", "nova_structures:nether_skeleton_tower_soul", "nova_structures:nether_skeleton_tower_waste", "nova_structures:piglin_camp", "nova_structures:piglin_donjon", "nova_structures:piglin_outstation", "nova_structures:hamlet", "nova_structures:skeleton_camp_crimson", "nova_structures:skeleton_camp_warped", "nova_structures:skeleton_camp_soul", "nova_structures:skeleton_camp_waste", "trek:nether/common/nether_pillar", "trek:nether/medium/overworld_leak_1", "trek:nether/medium/overworld_leak_2", "legendary_monsters:warped_fungussus_nest", "ati_structures:wither_cavern", "ati_structures:wither_keep"]
+        set.health = [90, 140]
+        set.damage = [12, 24]
+        set.xp = [30, 80]
+    # Nether & Scorched — general wild spawns (outside structures)
+    [[mob.rule]]
+        type = "natural"
+        structure = "none"
+
+[[mob]]
+    name = "legendary_monsters:flame_drifter"
+    # Nether & Scorched — allowed structures
+    [[mob.rule]]
+        type = "natural"
+        structure = ["betterfortresses:fortress", "formationsnether:blackstone_castle", "formationsnether:checkerboard_temple", "formationsnether:small_fire_arena", "formationsnether:small_lava_arena", "formationsnether:small_lava_shrine", "formationsnether:rib_cage", "formationsnether:sphere_cage", "nova_structures:nether_keep", "nova_structures:nether_port", "nova_structures:nether_skeleton_tower_crimson", "nova_structures:nether_skeleton_tower_warped", "nova_structures:nether_skeleton_tower_soul", "nova_structures:nether_skeleton_tower_waste", "nova_structures:piglin_camp", "nova_structures:piglin_donjon", "nova_structures:piglin_outstation", "nova_structures:hamlet", "nova_structures:skeleton_camp_crimson", "nova_structures:skeleton_camp_warped", "nova_structures:skeleton_camp_soul", "nova_structures:skeleton_camp_waste", "trek:nether/common/nether_pillar", "trek:nether/medium/overworld_leak_1", "trek:nether/medium/overworld_leak_2", "legendary_monsters:warped_fungussus_nest", "ati_structures:wither_cavern", "ati_structures:wither_keep"]
+        set.health = [90, 140]
+        set.damage = [12, 24]
+        set.xp = [30, 80]
+    # Nether & Scorched — general wild spawns (outside structures)
+    [[mob.rule]]
+        type = "natural"
+        structure = "none"
+# ===== Category: Temple & Cursed Relic (Tier 3 Elite) =====
+
+[[mob]]
+    name = "minecraft:husk"
+    # Temple & Cursed Relic — allowed structures
+    [[mob.rule]]
+        type = "natural"
+        structure = ["minecraft:desert_pyramid", "minecraft:jungle_pyramid", "minecraft:mansion", "minecraft:swamp_hut", "minecraft:monument", "ati_structures:ancient_temple", "ati_structures:ancient_vessel", "ati_structures:fortified_temple", "ati_structures:rotting_temple", "ati_structures:sinking_temple", "ati_structures:marble_chateau", "ati_structures:dojo", "dungeons_arise:abandoned_temple", "dungeons_arise:infested_temple", "dungeons_arise:kisegi_sanctuary", "mowziesmobs:wrought_chamber", "legendary_monsters:ruined_pyramid", "legendary_monsters:mossy_temple", "legendary_monsters:ancient_stronghold", "legendary_monsters:cloudy_temple", "iceandfire:gorgon_temple", "iceandfire:hydra_cave", "iceandfire:cyclops_cave"]
+        set.health = [90, 140]
+        set.damage = [12, 24]
+        set.xp = [30, 80]
+    # Temple & Cursed Relic — general wild spawns (outside structures)
+    [[mob.rule]]
+        type = "natural"
+        structure = "none"
+
+[[mob]]
+    name = "mowziesmobs:ferrous_wroughtnaut"
+    # Temple & Cursed Relic — allowed structures
+    [[mob.rule]]
+        type = "natural"
+        structure = ["minecraft:desert_pyramid", "minecraft:jungle_pyramid", "minecraft:mansion", "minecraft:swamp_hut", "minecraft:monument", "ati_structures:ancient_temple", "ati_structures:ancient_vessel", "ati_structures:fortified_temple", "ati_structures:rotting_temple", "ati_structures:sinking_temple", "ati_structures:marble_chateau", "ati_structures:dojo", "dungeons_arise:abandoned_temple", "dungeons_arise:infested_temple", "dungeons_arise:kisegi_sanctuary", "mowziesmobs:wrought_chamber", "legendary_monsters:ruined_pyramid", "legendary_monsters:mossy_temple", "legendary_monsters:ancient_stronghold", "legendary_monsters:cloudy_temple", "iceandfire:gorgon_temple", "iceandfire:hydra_cave", "iceandfire:cyclops_cave"]
+        set.health = [90, 140]
+        set.damage = [12, 24]
+        set.xp = [30, 80]
+    # Temple & Cursed Relic — general wild spawns (outside structures)
+    [[mob.rule]]
+        type = "natural"
+        structure = "none"
+
+[[mob]]
+    name = "iceandfire:cyclops"
+    # Temple & Cursed Relic — allowed structures
+    [[mob.rule]]
+        type = "natural"
+        structure = ["minecraft:desert_pyramid", "minecraft:jungle_pyramid", "minecraft:mansion", "minecraft:swamp_hut", "minecraft:monument", "ati_structures:ancient_temple", "ati_structures:ancient_vessel", "ati_structures:fortified_temple", "ati_structures:rotting_temple", "ati_structures:sinking_temple", "ati_structures:marble_chateau", "ati_structures:dojo", "dungeons_arise:abandoned_temple", "dungeons_arise:infested_temple", "dungeons_arise:kisegi_sanctuary", "mowziesmobs:wrought_chamber", "legendary_monsters:ruined_pyramid", "legendary_monsters:mossy_temple", "legendary_monsters:ancient_stronghold", "legendary_monsters:cloudy_temple", "iceandfire:gorgon_temple", "iceandfire:hydra_cave", "iceandfire:cyclops_cave"]
+        set.health = [90, 140]
+        set.damage = [12, 24]
+        set.xp = [30, 80]
+    # Temple & Cursed Relic — general wild spawns (outside structures)
+    [[mob.rule]]
+        type = "natural"
+        structure = "none"
+
+[[mob]]
+    name = "iceandfire:cockatrice"
+    # Temple & Cursed Relic — allowed structures
+    [[mob.rule]]
+        type = "natural"
+        structure = ["minecraft:desert_pyramid", "minecraft:jungle_pyramid", "minecraft:mansion", "minecraft:swamp_hut", "minecraft:monument", "ati_structures:ancient_temple", "ati_structures:ancient_vessel", "ati_structures:fortified_temple", "ati_structures:rotting_temple", "ati_structures:sinking_temple", "ati_structures:marble_chateau", "ati_structures:dojo", "dungeons_arise:abandoned_temple", "dungeons_arise:infested_temple", "dungeons_arise:kisegi_sanctuary", "mowziesmobs:wrought_chamber", "legendary_monsters:ruined_pyramid", "legendary_monsters:mossy_temple", "legendary_monsters:ancient_stronghold", "legendary_monsters:cloudy_temple", "iceandfire:gorgon_temple", "iceandfire:hydra_cave", "iceandfire:cyclops_cave"]
+        set.health = [90, 140]
+        set.damage = [12, 24]
+        set.xp = [30, 80]
+    # Temple & Cursed Relic — general wild spawns (outside structures)
+    [[mob.rule]]
+        type = "natural"
+        structure = "none"
+
+[[mob]]
+    name = "iceandfire:deathworm"
+    # Temple & Cursed Relic — allowed structures
+    [[mob.rule]]
+        type = "natural"
+        structure = ["minecraft:desert_pyramid", "minecraft:jungle_pyramid", "minecraft:mansion", "minecraft:swamp_hut", "minecraft:monument", "ati_structures:ancient_temple", "ati_structures:ancient_vessel", "ati_structures:fortified_temple", "ati_structures:rotting_temple", "ati_structures:sinking_temple", "ati_structures:marble_chateau", "ati_structures:dojo", "dungeons_arise:abandoned_temple", "dungeons_arise:infested_temple", "dungeons_arise:kisegi_sanctuary", "mowziesmobs:wrought_chamber", "legendary_monsters:ruined_pyramid", "legendary_monsters:mossy_temple", "legendary_monsters:ancient_stronghold", "legendary_monsters:cloudy_temple", "iceandfire:gorgon_temple", "iceandfire:hydra_cave", "iceandfire:cyclops_cave"]
+        set.health = [90, 140]
+        set.damage = [12, 24]
+        set.xp = [30, 80]
+    # Temple & Cursed Relic — general wild spawns (outside structures)
+    [[mob.rule]]
+        type = "natural"
+        structure = "none"
+
+[[mob]]
+    name = "iceandfire:gorgon"
+    # Temple & Cursed Relic — allowed structures
+    [[mob.rule]]
+        type = "natural"
+        structure = ["minecraft:desert_pyramid", "minecraft:jungle_pyramid", "minecraft:mansion", "minecraft:swamp_hut", "minecraft:monument", "ati_structures:ancient_temple", "ati_structures:ancient_vessel", "ati_structures:fortified_temple", "ati_structures:rotting_temple", "ati_structures:sinking_temple", "ati_structures:marble_chateau", "ati_structures:dojo", "dungeons_arise:abandoned_temple", "dungeons_arise:infested_temple", "dungeons_arise:kisegi_sanctuary", "mowziesmobs:wrought_chamber", "legendary_monsters:ruined_pyramid", "legendary_monsters:mossy_temple", "legendary_monsters:ancient_stronghold", "legendary_monsters:cloudy_temple", "iceandfire:gorgon_temple", "iceandfire:hydra_cave", "iceandfire:cyclops_cave"]
+        set.health = [90, 140]
+        set.damage = [12, 24]
+        set.xp = [30, 80]
+    # Temple & Cursed Relic — general wild spawns (outside structures)
+    [[mob.rule]]
+        type = "natural"
+        structure = "none"
+
+[[mob]]
+    name = "iceandfire:hydra"
+    # Temple & Cursed Relic — allowed structures
+    [[mob.rule]]
+        type = "natural"
+        structure = ["minecraft:desert_pyramid", "minecraft:jungle_pyramid", "minecraft:mansion", "minecraft:swamp_hut", "minecraft:monument", "ati_structures:ancient_temple", "ati_structures:ancient_vessel", "ati_structures:fortified_temple", "ati_structures:rotting_temple", "ati_structures:sinking_temple", "ati_structures:marble_chateau", "ati_structures:dojo", "dungeons_arise:abandoned_temple", "dungeons_arise:infested_temple", "dungeons_arise:kisegi_sanctuary", "mowziesmobs:wrought_chamber", "legendary_monsters:ruined_pyramid", "legendary_monsters:mossy_temple", "legendary_monsters:ancient_stronghold", "legendary_monsters:cloudy_temple", "iceandfire:gorgon_temple", "iceandfire:hydra_cave", "iceandfire:cyclops_cave"]
+        set.health = [90, 140]
+        set.damage = [12, 24]
+        set.xp = [30, 80]
+    # Temple & Cursed Relic — general wild spawns (outside structures)
+    [[mob.rule]]
+        type = "natural"
+        structure = "none"
+
+[[mob]]
+    name = "legendary_monsters:mossy_golem"
+    # Temple & Cursed Relic — allowed structures
+    [[mob.rule]]
+        type = "natural"
+        structure = ["minecraft:desert_pyramid", "minecraft:jungle_pyramid", "minecraft:mansion", "minecraft:swamp_hut", "minecraft:monument", "ati_structures:ancient_temple", "ati_structures:ancient_vessel", "ati_structures:fortified_temple", "ati_structures:rotting_temple", "ati_structures:sinking_temple", "ati_structures:marble_chateau", "ati_structures:dojo", "dungeons_arise:abandoned_temple", "dungeons_arise:infested_temple", "dungeons_arise:kisegi_sanctuary", "mowziesmobs:wrought_chamber", "legendary_monsters:ruined_pyramid", "legendary_monsters:mossy_temple", "legendary_monsters:ancient_stronghold", "legendary_monsters:cloudy_temple", "iceandfire:gorgon_temple", "iceandfire:hydra_cave", "iceandfire:cyclops_cave"]
+        set.health = [90, 140]
+        set.damage = [12, 24]
+        set.xp = [30, 80]
+    # Temple & Cursed Relic — general wild spawns (outside structures)
+    [[mob.rule]]
+        type = "natural"
+        structure = "none"
+
+[[mob]]
+    name = "legendary_monsters:cloud_golem"
+    # Temple & Cursed Relic — allowed structures
+    [[mob.rule]]
+        type = "natural"
+        structure = ["minecraft:desert_pyramid", "minecraft:jungle_pyramid", "minecraft:mansion", "minecraft:swamp_hut", "minecraft:monument", "ati_structures:ancient_temple", "ati_structures:ancient_vessel", "ati_structures:fortified_temple", "ati_structures:rotting_temple", "ati_structures:sinking_temple", "ati_structures:marble_chateau", "ati_structures:dojo", "dungeons_arise:abandoned_temple", "dungeons_arise:infested_temple", "dungeons_arise:kisegi_sanctuary", "mowziesmobs:wrought_chamber", "legendary_monsters:ruined_pyramid", "legendary_monsters:mossy_temple", "legendary_monsters:ancient_stronghold", "legendary_monsters:cloudy_temple", "iceandfire:gorgon_temple", "iceandfire:hydra_cave", "iceandfire:cyclops_cave"]
+        set.health = [90, 140]
+        set.damage = [12, 24]
+        set.xp = [30, 80]
+    # Temple & Cursed Relic — general wild spawns (outside structures)
+    [[mob.rule]]
+        type = "natural"
+        structure = "none"
+# ===== Category: End & Void (Tier 3 Elite) =====
+
+[[mob]]
+    name = "minecraft:shulker"
+    # End & Void — allowed structures
+    [[mob.rule]]
+        type = "natural"
+        structure = ["minecraft:end_city", "nova_structures:end_castle", "nova_structures:end_lighthouse", "nova_structures:end_ship", "trek:end/medium/end_city", "legendary_monsters:space_station", "legendary_monsters:soul_fortress_remains"]
+        set.health = [90, 140]
+        set.damage = [12, 24]
+        set.xp = [30, 80]
+    # End & Void — general wild spawns (outside structures)
+    [[mob.rule]]
+        type = "natural"
+        structure = "none"
+
+[[mob]]
+    name = "minecraft:enderman"
+    # End & Void — allowed structures
+    [[mob.rule]]
+        type = "natural"
+        structure = ["minecraft:end_city", "nova_structures:end_castle", "nova_structures:end_lighthouse", "nova_structures:end_ship", "trek:end/medium/end_city", "legendary_monsters:space_station", "legendary_monsters:soul_fortress_remains"]
+        set.health = [90, 140]
+        set.damage = [12, 24]
+        set.xp = [30, 80]
+    # End & Void — general wild spawns (outside structures)
+    [[mob.rule]]
+        type = "natural"
+        structure = "none"
+
+[[mob]]
+    name = "legendary_monsters:chorusling"
+    # End & Void — allowed structures
+    [[mob.rule]]
+        type = "natural"
+        structure = ["minecraft:end_city", "nova_structures:end_castle", "nova_structures:end_lighthouse", "nova_structures:end_ship", "trek:end/medium/end_city", "legendary_monsters:space_station", "legendary_monsters:soul_fortress_remains"]
+        set.health = [90, 140]
+        set.damage = [12, 24]
+        set.xp = [30, 80]
+    # End & Void — general wild spawns (outside structures)
+    [[mob.rule]]
+        type = "natural"
+        structure = "none"
+
+[[mob]]
+    name = "legendary_monsters:shulker_mimic"
+    # End & Void — allowed structures
+    [[mob.rule]]
+        type = "natural"
+        structure = ["minecraft:end_city", "nova_structures:end_castle", "nova_structures:end_lighthouse", "nova_structures:end_ship", "trek:end/medium/end_city", "legendary_monsters:space_station", "legendary_monsters:soul_fortress_remains"]
+        set.health = [90, 140]
+        set.damage = [12, 24]
+        set.xp = [30, 80]
+    # End & Void — general wild spawns (outside structures)
+    [[mob.rule]]
+        type = "natural"
+        structure = "none"
+
+[[mob]]
+    name = "legendary_monsters:endersent"
+    # End & Void — allowed structures
+    [[mob.rule]]
+        type = "natural"
+        structure = ["minecraft:end_city", "nova_structures:end_castle", "nova_structures:end_lighthouse", "nova_structures:end_ship", "trek:end/medium/end_city", "legendary_monsters:space_station", "legendary_monsters:soul_fortress_remains"]
+        set.health = [90, 140]
+        set.damage = [12, 24]
+        set.xp = [30, 80]
+    # End & Void — general wild spawns (outside structures)
+    [[mob.rule]]
+        type = "natural"
+        structure = "none"
+
+[[mob]]
+    name = "legendary_monsters:wandering_eye"
+    # End & Void — allowed structures
+    [[mob.rule]]
+        type = "natural"
+        structure = ["minecraft:end_city", "nova_structures:end_castle", "nova_structures:end_lighthouse", "nova_structures:end_ship", "trek:end/medium/end_city", "legendary_monsters:space_station", "legendary_monsters:soul_fortress_remains"]
+        set.health = [90, 140]
+        set.damage = [12, 24]
+        set.xp = [30, 80]
+    # End & Void — general wild spawns (outside structures)
+    [[mob.rule]]
+        type = "natural"
+        structure = "none"
+# ===== Category: Graveyard & Undead (Tier 2 Grunt) =====
+
+[[mob]]
+    name = "minecraft:skeleton"
+    # Graveyard & Undead — allowed structures
+    [[mob.rule]]
+        type = "natural"
+        structure = ["structory:graveyard", "nova_structures:remnant_graveyard", "nova_structures:remnant_birch_graveyard", "trek:overworld/medium/graveyard", "tombstone:abandoned_grave_land", "tombstone:abandoned_grave_ocean", "ati_structures:haunted_ruin", "ati_structures:stray_ruins", "iceandfire:graveyard"]
+    # Graveyard & Undead — general wild spawns (outside structures)
+    [[mob.rule]]
+        type = "natural"
+        structure = "none"
+
+[[mob]]
+    name = "minecraft:zombie"
+    # Graveyard & Undead — allowed structures
+    [[mob.rule]]
+        type = "natural"
+        structure = ["structory:graveyard", "nova_structures:remnant_graveyard", "nova_structures:remnant_birch_graveyard", "trek:overworld/medium/graveyard", "tombstone:abandoned_grave_land", "tombstone:abandoned_grave_ocean", "ati_structures:haunted_ruin", "ati_structures:stray_ruins", "iceandfire:graveyard"]
+    # Graveyard & Undead — general wild spawns (outside structures)
+    [[mob.rule]]
+        type = "natural"
+        structure = "none"
+
+[[mob]]
+    name = "iceandfire:ghost"
+    # Graveyard & Undead — allowed structures
+    [[mob.rule]]
+        type = "natural"
+        structure = ["structory:graveyard", "nova_structures:remnant_graveyard", "nova_structures:remnant_birch_graveyard", "trek:overworld/medium/graveyard", "tombstone:abandoned_grave_land", "tombstone:abandoned_grave_ocean", "ati_structures:haunted_ruin", "ati_structures:stray_ruins", "iceandfire:graveyard"]
+    # Graveyard & Undead — general wild spawns (outside structures)
+    [[mob.rule]]
+        type = "natural"
+        structure = "none"
+
+[[mob]]
+    name = "iceandfire:dread_thrall"
+    # Graveyard & Undead — allowed structures
+    [[mob.rule]]
+        type = "natural"
+        structure = ["structory:graveyard", "nova_structures:remnant_graveyard", "nova_structures:remnant_birch_graveyard", "trek:overworld/medium/graveyard", "tombstone:abandoned_grave_land", "tombstone:abandoned_grave_ocean", "ati_structures:haunted_ruin", "ati_structures:stray_ruins", "iceandfire:graveyard"]
+    # Graveyard & Undead — general wild spawns (outside structures)
+    [[mob.rule]]
+        type = "natural"
+        structure = "none"
+
+[[mob]]
+    name = "legendary_monsters:beheaded_knight"
+    # Graveyard & Undead — allowed structures
+    [[mob.rule]]
+        type = "natural"
+        structure = ["structory:graveyard", "nova_structures:remnant_graveyard", "nova_structures:remnant_birch_graveyard", "trek:overworld/medium/graveyard", "tombstone:abandoned_grave_land", "tombstone:abandoned_grave_ocean", "ati_structures:haunted_ruin", "ati_structures:stray_ruins", "iceandfire:graveyard"]
+    # Graveyard & Undead — general wild spawns (outside structures)
+    [[mob.rule]]
+        type = "natural"
+        structure = "none"
+
+[[mob]]
+    name = "legendary_monsters:haunted_guard"
+    # Graveyard & Undead — allowed structures
+    [[mob.rule]]
+        type = "natural"
+        structure = ["structory:graveyard", "nova_structures:remnant_graveyard", "nova_structures:remnant_birch_graveyard", "trek:overworld/medium/graveyard", "tombstone:abandoned_grave_land", "tombstone:abandoned_grave_ocean", "ati_structures:haunted_ruin", "ati_structures:stray_ruins", "iceandfire:graveyard"]
+    # Graveyard & Undead — general wild spawns (outside structures)
+    [[mob.rule]]
+        type = "natural"
+        structure = "none"
+
+[[mob]]
+    name = "legendary_monsters:skeloraptor"
+    # Graveyard & Undead — allowed structures
+    [[mob.rule]]
+        type = "natural"
+        structure = ["structory:graveyard", "nova_structures:remnant_graveyard", "nova_structures:remnant_birch_graveyard", "trek:overworld/medium/graveyard", "tombstone:abandoned_grave_land", "tombstone:abandoned_grave_ocean", "ati_structures:haunted_ruin", "ati_structures:stray_ruins", "iceandfire:graveyard"]
+    # Graveyard & Undead — general wild spawns (outside structures)
+    [[mob.rule]]
+        type = "natural"
+        structure = "none"
+# ===== Category: Crypt & Underground Lair (Tier 2 Grunt) =====
+
+[[mob]]
+    name = "minecraft:silverfish"
+    # Crypt & Underground Lair — allowed structures
+    [[mob.rule]]
+        type = "natural"
+        structure = ["nova_structures:undead_crypt", "nova_structures:creeping_crypt", "ati_structures:underground_monument", "ati_structures:rotting_temple_underground", "ati_structures:silverfish_nest", "ati_structures:spider_nest", "trek:monster_room/lower/default", "trek:monster_room/upper/default", "trek:monster_room/lower/lush", "trek:monster_room/lower/dripstone"]
+    # Crypt & Underground Lair — general wild spawns (outside structures)
+    [[mob.rule]]
+        type = "natural"
+        structure = "none"
+
+[[mob]]
+    name = "minecraft:cave_spider"
+    # Crypt & Underground Lair — allowed structures
+    [[mob.rule]]
+        type = "natural"
+        structure = ["nova_structures:undead_crypt", "nova_structures:creeping_crypt", "ati_structures:underground_monument", "ati_structures:rotting_temple_underground", "ati_structures:silverfish_nest", "ati_structures:spider_nest", "trek:monster_room/lower/default", "trek:monster_room/upper/default", "trek:monster_room/lower/lush", "trek:monster_room/lower/dripstone"]
+    # Crypt & Underground Lair — general wild spawns (outside structures)
+    [[mob.rule]]
+        type = "natural"
+        structure = "none"
+
+[[mob]]
+    name = "minecraft:spider"
+    # Crypt & Underground Lair — allowed structures
+    [[mob.rule]]
+        type = "natural"
+        structure = ["nova_structures:undead_crypt", "nova_structures:creeping_crypt", "ati_structures:underground_monument", "ati_structures:rotting_temple_underground", "ati_structures:silverfish_nest", "ati_structures:spider_nest", "trek:monster_room/lower/default", "trek:monster_room/upper/default", "trek:monster_room/lower/lush", "trek:monster_room/lower/dripstone"]
+    # Crypt & Underground Lair — general wild spawns (outside structures)
+    [[mob.rule]]
+        type = "natural"
+        structure = "none"
+
+[[mob]]
+    name = "mowziesmobs:grottol"
+    # Crypt & Underground Lair — allowed structures
+    [[mob.rule]]
+        type = "natural"
+        structure = ["nova_structures:undead_crypt", "nova_structures:creeping_crypt", "ati_structures:underground_monument", "ati_structures:rotting_temple_underground", "ati_structures:silverfish_nest", "ati_structures:spider_nest", "trek:monster_room/lower/default", "trek:monster_room/upper/default", "trek:monster_room/lower/lush", "trek:monster_room/lower/dripstone"]
+    # Crypt & Underground Lair — general wild spawns (outside structures)
+    [[mob.rule]]
+        type = "natural"
+        structure = "none"
+
+[[mob]]
+    name = "mowziesmobs:naga"
+    # Crypt & Underground Lair — allowed structures
+    [[mob.rule]]
+        type = "natural"
+        structure = ["nova_structures:undead_crypt", "nova_structures:creeping_crypt", "ati_structures:underground_monument", "ati_structures:rotting_temple_underground", "ati_structures:silverfish_nest", "ati_structures:spider_nest", "trek:monster_room/lower/default", "trek:monster_room/upper/default", "trek:monster_room/lower/lush", "trek:monster_room/lower/dripstone"]
+    # Crypt & Underground Lair — general wild spawns (outside structures)
+    [[mob.rule]]
+        type = "natural"
+        structure = "none"
+
+[[mob]]
+    name = "legendary_monsters:ambusher"
+    # Crypt & Underground Lair — allowed structures
+    [[mob.rule]]
+        type = "natural"
+        structure = ["nova_structures:undead_crypt", "nova_structures:creeping_crypt", "ati_structures:underground_monument", "ati_structures:rotting_temple_underground", "ati_structures:silverfish_nest", "ati_structures:spider_nest", "trek:monster_room/lower/default", "trek:monster_room/upper/default", "trek:monster_room/lower/lush", "trek:monster_room/lower/dripstone"]
+    # Crypt & Underground Lair — general wild spawns (outside structures)
+    [[mob.rule]]
+        type = "natural"
+        structure = "none"
+# ===== Category: Fortress & Military (Tier 2 Grunt) =====
+
+[[mob]]
+    name = "minecraft:pillager"
+    # Fortress & Military — allowed structures
+    [[mob.rule]]
+        type = "natural"
+        structure = ["minecraft:pillager_outpost", "minecraft:pillager_outpost_dark_forest", "minecraft:pillager_outpost_forest", "minecraft:pillager_outpost_mangrove", "minecraft:pillager_outpost_swamp", "ati_structures:castillo", "ati_structures:catalonian_castle", "ati_structures:dark_keep", "ati_structures:dark_tower", "ati_structures:deepslate_keep", "ati_structures:granite_fort", "ati_structures:old_fort", "ati_structures:small_keep", "ati_structures:woodland_keep", "ati_structures:ruined_castle", "ati_structures:illager_homestead", "ati_structures:illager_tower", "ati_structures:ati_stoneworks", "dungeons_arise:bandit_towers", "dungeons_arise:bandit_village", "dungeons_arise:illager_fort", "dungeons_arise:illager_windmill", "dungeons_arise:illager_campsite", "dungeons_arise:thornborn_towers", "dungeons_arise:keep_kayra", "dungeons_arise:monastery", "dungeons_arise:foundry", "dungeons_arise:shiraz_palace", "dungeons_arise:coliseum", "dungeons_arise:plague_asylum", "dungeons_arise:typhon", "dungeons_arise:mechanical_nest", "nova_structures:illager_camp", "nova_structures:illager_hideout", "nova_structures:illager_manor", "trek:overworld/medium/fort", "trek:overworld/medium/base_pillager", "trek:overworld/medium/ice_fort", "trek:overworld/rare/abandoned_castle_pillager", "trek:overworld/rare/pillager_mansion", "trek:overworld/rare/villager_fortress"]
+    # Fortress & Military — general wild spawns (outside structures)
+    [[mob.rule]]
+        type = "natural"
+        structure = "none"
+
+[[mob]]
+    name = "minecraft:vindicator"
+    # Fortress & Military — allowed structures
+    [[mob.rule]]
+        type = "natural"
+        structure = ["minecraft:pillager_outpost", "minecraft:pillager_outpost_dark_forest", "minecraft:pillager_outpost_forest", "minecraft:pillager_outpost_mangrove", "minecraft:pillager_outpost_swamp", "ati_structures:castillo", "ati_structures:catalonian_castle", "ati_structures:dark_keep", "ati_structures:dark_tower", "ati_structures:deepslate_keep", "ati_structures:granite_fort", "ati_structures:old_fort", "ati_structures:small_keep", "ati_structures:woodland_keep", "ati_structures:ruined_castle", "ati_structures:illager_homestead", "ati_structures:illager_tower", "ati_structures:ati_stoneworks", "dungeons_arise:bandit_towers", "dungeons_arise:bandit_village", "dungeons_arise:illager_fort", "dungeons_arise:illager_windmill", "dungeons_arise:illager_campsite", "dungeons_arise:thornborn_towers", "dungeons_arise:keep_kayra", "dungeons_arise:monastery", "dungeons_arise:foundry", "dungeons_arise:shiraz_palace", "dungeons_arise:coliseum", "dungeons_arise:plague_asylum", "dungeons_arise:typhon", "dungeons_arise:mechanical_nest", "nova_structures:illager_camp", "nova_structures:illager_hideout", "nova_structures:illager_manor", "trek:overworld/medium/fort", "trek:overworld/medium/base_pillager", "trek:overworld/medium/ice_fort", "trek:overworld/rare/abandoned_castle_pillager", "trek:overworld/rare/pillager_mansion", "trek:overworld/rare/villager_fortress"]
+    # Fortress & Military — general wild spawns (outside structures)
+    [[mob.rule]]
+        type = "natural"
+        structure = "none"
+
+[[mob]]
+    name = "minecraft:evoker"
+    # Fortress & Military — allowed structures
+    [[mob.rule]]
+        type = "natural"
+        structure = ["minecraft:pillager_outpost", "minecraft:pillager_outpost_dark_forest", "minecraft:pillager_outpost_forest", "minecraft:pillager_outpost_mangrove", "minecraft:pillager_outpost_swamp", "ati_structures:castillo", "ati_structures:catalonian_castle", "ati_structures:dark_keep", "ati_structures:dark_tower", "ati_structures:deepslate_keep", "ati_structures:granite_fort", "ati_structures:old_fort", "ati_structures:small_keep", "ati_structures:woodland_keep", "ati_structures:ruined_castle", "ati_structures:illager_homestead", "ati_structures:illager_tower", "ati_structures:ati_stoneworks", "dungeons_arise:bandit_towers", "dungeons_arise:bandit_village", "dungeons_arise:illager_fort", "dungeons_arise:illager_windmill", "dungeons_arise:illager_campsite", "dungeons_arise:thornborn_towers", "dungeons_arise:keep_kayra", "dungeons_arise:monastery", "dungeons_arise:foundry", "dungeons_arise:shiraz_palace", "dungeons_arise:coliseum", "dungeons_arise:plague_asylum", "dungeons_arise:typhon", "dungeons_arise:mechanical_nest", "nova_structures:illager_camp", "nova_structures:illager_hideout", "nova_structures:illager_manor", "trek:overworld/medium/fort", "trek:overworld/medium/base_pillager", "trek:overworld/medium/ice_fort", "trek:overworld/rare/abandoned_castle_pillager", "trek:overworld/rare/pillager_mansion", "trek:overworld/rare/villager_fortress"]
+    # Fortress & Military — general wild spawns (outside structures)
+    [[mob.rule]]
+        type = "natural"
+        structure = "none"
+
+[[mob]]
+    name = "minecraft:witch"
+    # Fortress & Military — allowed structures
+    [[mob.rule]]
+        type = "natural"
+        structure = ["minecraft:pillager_outpost", "minecraft:pillager_outpost_dark_forest", "minecraft:pillager_outpost_forest", "minecraft:pillager_outpost_mangrove", "minecraft:pillager_outpost_swamp", "ati_structures:castillo", "ati_structures:catalonian_castle", "ati_structures:dark_keep", "ati_structures:dark_tower", "ati_structures:deepslate_keep", "ati_structures:granite_fort", "ati_structures:old_fort", "ati_structures:small_keep", "ati_structures:woodland_keep", "ati_structures:ruined_castle", "ati_structures:illager_homestead", "ati_structures:illager_tower", "ati_structures:ati_stoneworks", "dungeons_arise:bandit_towers", "dungeons_arise:bandit_village", "dungeons_arise:illager_fort", "dungeons_arise:illager_windmill", "dungeons_arise:illager_campsite", "dungeons_arise:thornborn_towers", "dungeons_arise:keep_kayra", "dungeons_arise:monastery", "dungeons_arise:foundry", "dungeons_arise:shiraz_palace", "dungeons_arise:coliseum", "dungeons_arise:plague_asylum", "dungeons_arise:typhon", "dungeons_arise:mechanical_nest", "nova_structures:illager_camp", "nova_structures:illager_hideout", "nova_structures:illager_manor", "trek:overworld/medium/fort", "trek:overworld/medium/base_pillager", "trek:overworld/medium/ice_fort", "trek:overworld/rare/abandoned_castle_pillager", "trek:overworld/rare/pillager_mansion", "trek:overworld/rare/villager_fortress"]
+    # Fortress & Military — general wild spawns (outside structures)
+    [[mob.rule]]
+        type = "natural"
+        structure = "none"
+
+[[mob]]
+    name = "mowziesmobs:naga"
+    # Fortress & Military — allowed structures
+    [[mob.rule]]
+        type = "natural"
+        structure = ["minecraft:pillager_outpost", "minecraft:pillager_outpost_dark_forest", "minecraft:pillager_outpost_forest", "minecraft:pillager_outpost_mangrove", "minecraft:pillager_outpost_swamp", "ati_structures:castillo", "ati_structures:catalonian_castle", "ati_structures:dark_keep", "ati_structures:dark_tower", "ati_structures:deepslate_keep", "ati_structures:granite_fort", "ati_structures:old_fort", "ati_structures:small_keep", "ati_structures:woodland_keep", "ati_structures:ruined_castle", "ati_structures:illager_homestead", "ati_structures:illager_tower", "ati_structures:ati_stoneworks", "dungeons_arise:bandit_towers", "dungeons_arise:bandit_village", "dungeons_arise:illager_fort", "dungeons_arise:illager_windmill", "dungeons_arise:illager_campsite", "dungeons_arise:thornborn_towers", "dungeons_arise:keep_kayra", "dungeons_arise:monastery", "dungeons_arise:foundry", "dungeons_arise:shiraz_palace", "dungeons_arise:coliseum", "dungeons_arise:plague_asylum", "dungeons_arise:typhon", "dungeons_arise:mechanical_nest", "nova_structures:illager_camp", "nova_structures:illager_hideout", "nova_structures:illager_manor", "trek:overworld/medium/fort", "trek:overworld/medium/base_pillager", "trek:overworld/medium/ice_fort", "trek:overworld/rare/abandoned_castle_pillager", "trek:overworld/rare/pillager_mansion", "trek:overworld/rare/villager_fortress"]
+    # Fortress & Military — general wild spawns (outside structures)
+    [[mob.rule]]
+        type = "natural"
+        structure = "none"
+
+[[mob]]
+    name = "legendary_monsters:guard"
+    # Fortress & Military — allowed structures
+    [[mob.rule]]
+        type = "natural"
+        structure = ["minecraft:pillager_outpost", "minecraft:pillager_outpost_dark_forest", "minecraft:pillager_outpost_forest", "minecraft:pillager_outpost_mangrove", "minecraft:pillager_outpost_swamp", "ati_structures:castillo", "ati_structures:catalonian_castle", "ati_structures:dark_keep", "ati_structures:dark_tower", "ati_structures:deepslate_keep", "ati_structures:granite_fort", "ati_structures:old_fort", "ati_structures:small_keep", "ati_structures:woodland_keep", "ati_structures:ruined_castle", "ati_structures:illager_homestead", "ati_structures:illager_tower", "ati_structures:ati_stoneworks", "dungeons_arise:bandit_towers", "dungeons_arise:bandit_village", "dungeons_arise:illager_fort", "dungeons_arise:illager_windmill", "dungeons_arise:illager_campsite", "dungeons_arise:thornborn_towers", "dungeons_arise:keep_kayra", "dungeons_arise:monastery", "dungeons_arise:foundry", "dungeons_arise:shiraz_palace", "dungeons_arise:coliseum", "dungeons_arise:plague_asylum", "dungeons_arise:typhon", "dungeons_arise:mechanical_nest", "nova_structures:illager_camp", "nova_structures:illager_hideout", "nova_structures:illager_manor", "trek:overworld/medium/fort", "trek:overworld/medium/base_pillager", "trek:overworld/medium/ice_fort", "trek:overworld/rare/abandoned_castle_pillager", "trek:overworld/rare/pillager_mansion", "trek:overworld/rare/villager_fortress"]
+    # Fortress & Military — general wild spawns (outside structures)
+    [[mob.rule]]
+        type = "natural"
+        structure = "none"
+
+[[mob]]
+    name = "legendary_monsters:ancient_guardian"
+    # Fortress & Military — allowed structures
+    [[mob.rule]]
+        type = "natural"
+        structure = ["minecraft:pillager_outpost", "minecraft:pillager_outpost_dark_forest", "minecraft:pillager_outpost_forest", "minecraft:pillager_outpost_mangrove", "minecraft:pillager_outpost_swamp", "ati_structures:castillo", "ati_structures:catalonian_castle", "ati_structures:dark_keep", "ati_structures:dark_tower", "ati_structures:deepslate_keep", "ati_structures:granite_fort", "ati_structures:old_fort", "ati_structures:small_keep", "ati_structures:woodland_keep", "ati_structures:ruined_castle", "ati_structures:illager_homestead", "ati_structures:illager_tower", "ati_structures:ati_stoneworks", "dungeons_arise:bandit_towers", "dungeons_arise:bandit_village", "dungeons_arise:illager_fort", "dungeons_arise:illager_windmill", "dungeons_arise:illager_campsite", "dungeons_arise:thornborn_towers", "dungeons_arise:keep_kayra", "dungeons_arise:monastery", "dungeons_arise:foundry", "dungeons_arise:shiraz_palace", "dungeons_arise:coliseum", "dungeons_arise:plague_asylum", "dungeons_arise:typhon", "dungeons_arise:mechanical_nest", "nova_structures:illager_camp", "nova_structures:illager_hideout", "nova_structures:illager_manor", "trek:overworld/medium/fort", "trek:overworld/medium/base_pillager", "trek:overworld/medium/ice_fort", "trek:overworld/rare/abandoned_castle_pillager", "trek:overworld/rare/pillager_mansion", "trek:overworld/rare/villager_fortress"]
+    # Fortress & Military — general wild spawns (outside structures)
+    [[mob.rule]]
+        type = "natural"
+        structure = "none"
+
+[[mob]]
+    name = "iceandfire:dread_knight"
+    # Fortress & Military — allowed structures
+    [[mob.rule]]
+        type = "natural"
+        structure = ["minecraft:pillager_outpost", "minecraft:pillager_outpost_dark_forest", "minecraft:pillager_outpost_forest", "minecraft:pillager_outpost_mangrove", "minecraft:pillager_outpost_swamp", "ati_structures:castillo", "ati_structures:catalonian_castle", "ati_structures:dark_keep", "ati_structures:dark_tower", "ati_structures:deepslate_keep", "ati_structures:granite_fort", "ati_structures:old_fort", "ati_structures:small_keep", "ati_structures:woodland_keep", "ati_structures:ruined_castle", "ati_structures:illager_homestead", "ati_structures:illager_tower", "ati_structures:ati_stoneworks", "dungeons_arise:bandit_towers", "dungeons_arise:bandit_village", "dungeons_arise:illager_fort", "dungeons_arise:illager_windmill", "dungeons_arise:illager_campsite", "dungeons_arise:thornborn_towers", "dungeons_arise:keep_kayra", "dungeons_arise:monastery", "dungeons_arise:foundry", "dungeons_arise:shiraz_palace", "dungeons_arise:coliseum", "dungeons_arise:plague_asylum", "dungeons_arise:typhon", "dungeons_arise:mechanical_nest", "nova_structures:illager_camp", "nova_structures:illager_hideout", "nova_structures:illager_manor", "trek:overworld/medium/fort", "trek:overworld/medium/base_pillager", "trek:overworld/medium/ice_fort", "trek:overworld/rare/abandoned_castle_pillager", "trek:overworld/rare/pillager_mansion", "trek:overworld/rare/villager_fortress"]
+    # Fortress & Military — general wild spawns (outside structures)
+    [[mob.rule]]
+        type = "natural"
+        structure = "none"
+
+# ---------- Pack catch-all ----------
+# Allow everything that matched no specific rule (the mod's own defaults).
+[[mob]]
+    name = "*"
+    [[mob.rule]]
+        type = "all"

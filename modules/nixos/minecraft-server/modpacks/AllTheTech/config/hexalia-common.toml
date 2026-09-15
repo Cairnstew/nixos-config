@@ -1,0 +1,90 @@
+[others]
+	mutationSpawnsItemEntity = true
+	# Default: 5.0
+	# Range: 1.0 ~ 32.0
+	mandrakeScreamRadius = 5.0
+	# Default: 6
+	# Range: 1 ~ 60
+	mandrakeStunDuration = 6
+	# Default: 8
+	# Range: 1 ~ 60
+	foulSacDuration = 8
+	# Default: 8
+	# Range: 1 ~ 60
+	frostSacDuration = 8
+	# Default: 8
+	# Range: 1 ~ 60
+	searingSacDuration = 8
+	# Default: 8
+	# Range: 1 ~ 60
+	purifyingSacDuration = 8
+	# Default: 5.0
+	# Range: 0.5 ~ 64.0
+	siphonRadius = 5.0
+	# Default: 0.5
+	# Range: 0.0 ~ 10.0
+	bleedingDamage = 0.5
+	# Default: 16
+	# Range: 4 ~ 64
+	cacofeyHarvestRadius = 16
+
+[functional_blocks]
+	# Default: 16
+	# Range: 1 ~ 64
+	censerEffectRadius = 16
+	# Default: 7200
+	# Range: 20 ~ 24000
+	censerEffectDuration = 7200
+	# Default: 4800
+	# Range: 20 ~ 24000
+	brewingDuration = 4800
+	# Default: 4800
+	# Range: 20 ~ 24000
+	overcookedDuration = 4800
+	# Default: 16
+	# Range: 1 ~ 64
+	dreamcatcherRadius = 16
+	# Default: 100
+	# Range: 0 ~ 600
+	phantomIgniteDuration = 100
+	# Default: 9600
+	# Range: 20 ~ 24000
+	eggClusterHatchDuration = 9600
+
+[plants]
+	# Default: 2400
+	# Range: 100 ~ 24000
+	nautiliteDuration = 2400
+	# Default: 16
+	# Range: 1 ~ 64
+	nautiliteEffectRadius = 16
+	# Default: 600
+	# Range: 100 ~ 24000
+	windsongDuration = 600
+	# Default: 6
+	# Range: 1 ~ 32
+	windsongEffectRadius = 6
+	# Default: 1200
+	# Range: 100 ~ 24000
+	astrylisDuration = 1200
+	# Default: 240
+	# Range: 20 ~ 1200
+	astrylisBonemealInterval = 240
+	# Default: 6
+	# Range: 1 ~ 32
+	morphoraEffectRadius = 6
+	# Default: 2400
+	# Range: 100 ~ 24000
+	grimshadeDuration = 2400
+	# Default: 16
+	# Range: 1 ~ 64
+	grimshadeEffectRadius = 16
+	ghostFernEmitsParticles = true
+	celestialBloomEmitsParticles = true
+	dreamshroomEmitsParticles = true
+	# Default: 600
+	# Range: 100 ~ 24000
+	lourdesDuration = 600
+	# Default: 8.0
+	# Range: 1.0 ~ 64.0
+	lourdesEffectRadius = 8.0

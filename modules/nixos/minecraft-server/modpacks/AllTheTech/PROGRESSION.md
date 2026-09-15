@@ -1,6 +1,10 @@
 # AllTheTech Progression Guide
 
 > Based on analysis of popular tech modpacks: Create 2 Mekanism, Neo Mechanica, Create Brassline, and Stone to Tech
+>
+> **Loot & gating reference:** when placing items in loot tables or quest rewards, consult
+> [`ITEM_TIERS.json`](ITEM_TIERS.json) — an S–F tier list (rarity × impact) for the pack's
+> loot-content mods, with per-item drop source, loot guidance, tags, and curios slots.
 
 ## Overview
 

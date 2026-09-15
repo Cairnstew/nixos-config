@@ -115,3 +115,7 @@ user: what config does sodium-dynamic-lights ship in AllTheTech, and does the pa
    → report: ships no config; defaults are generated at first launch; the pack
      doesn't override anything for it (no config/ files at all).
 ```
+
+## RUN LOG
+
+Self-improvement: append a dated Lesson/Fix entry here (or via `note=` on the paired tool) whenever this session surfaces a gotcha or improvement. Bare action logs are forbidden.

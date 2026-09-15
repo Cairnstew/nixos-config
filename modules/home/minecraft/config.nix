@@ -32,8 +32,9 @@ let
 in
 {
   config = lib.mkIf cfg.enable {
-    nixpkgs.config.allowUnfree = true;
-
+    # NOTE: allowUnfree is set globally in flake.nix perSystem; setting
+    # nixpkgs.config here is dead under home-manager.useGlobalPkgs and only
+    # triggers a warning. Do not re-add.
     home.packages =
       [ launcherWithDir ]
       ++ cfg.extraPackages

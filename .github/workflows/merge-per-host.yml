@@ -74,10 +74,23 @@ jobs:
           rm -f "$BODY_FILE"
           echo "pr-number=$(gh pr view "$BRANCH" --repo "${{ github.repository }}" --json number --jq .number)" >> "$GITHUB_OUTPUT"
 
-      - name: Enable auto-merge
+      - name: Merge PR
         if: steps.create-pr.outputs.pr-number != ''
+        continue-on-error: true
         env:
           GH_TOKEN: ${{ secrets.GH_PAT || secrets.GITHUB_TOKEN }}
         run: |
-          gh pr merge --auto --merge "${{ steps.create-pr.outputs.pr-number }}" \
-            --repo "${{ github.repository }}"
+          PR="${{ steps.create-pr.outputs.pr-number }}"
+          # Try auto-merge first (requires branch protection on master).
+          # Fall back to direct merge if auto-merge is unavailable.
+          # This step is non-fatal: if both fail, the PR stays open for manual merge.
+          if gh pr merge --auto --merge "$PR" --repo "${{ github.repository }}" 2>/dev/null; then
+            echo "Auto-merge enabled for PR #$PR"
+          else
+            echo "::notice::Auto-merge unavailable (branch protection may not be configured); trying direct merge"
+            if gh pr merge --merge "$PR" --repo "${{ github.repository }}" 2>/dev/null; then
+              echo "Direct merge succeeded for PR #$PR"
+            else
+              echo "::warning::Direct merge also failed; PR #$PR left open for manual merge"
+            fi
+          fi

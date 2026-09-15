@@ -121,38 +121,35 @@ Skills should follow the [OpenCode skills documentation](https://opencode.ai/doc
 
 ---
 
-## Learning Promotion (self-improvement pipeline)
+## Self-Improvement — single in-band checkpoint
 
-Proposed agent learnings (`learning_append`) are reviewed and promoted via
-`learning_promote`, the ONLY path that flips `learnings.status`. Promotion is
-**fully automated — no human gate**: both the **`build`** agent and the
-dedicated **`learning-promoter`** agent
-(`agents/learning-promoter.md`, `commands/learning-promote.md`) have runtime
-permission to call `goals_learning_promote` (`config.nix`), and the promoter
-runs from a persistent `opencode serve` headless server (NOT `opencode run`,
-which disposes the lead instance mid-triage, and NOT tmux, which was replaced
-in v2 for reliability). A session promotes only on a **unanimous,
-harness-re-derived triage `agree`** (no `disagree`/`uncertain` present; every
-`review_verdicts` row has `rederivation_method IS NOT NULL`), applying each
-accepted learning as an isolated commit and **auto-merging it into the base
-branch** (`server`); git history is the audit/rollback net. This is enforced by
-assertions in `tests.nix` (Decision 1: `build` + `learning-promoter` may allow
-`goals_learning_promote`; every triage/reviewer role must deny it). The three
-triage roles (`scout-skeptical`, `qa-verification`, `adversarial`) must deny it,
-so a learning never self-certifies.
+Self-improvement is now a **single in-band, per-response checkpoint** run by the
+checkpoint-carrying primary agents (`build`, `researcher`) — there is no separate
+review/promotion pipeline, no `learning_*` MCP tools, no queue, and no `opencode
+serve` / watcher infra anymore (decommissioned 2026-09-12).
 
-### Hotfixing the watcher/launcher live
+- The checkpoint (`SELF_IMPROVE=true` in `agents/{build,researcher}.md`) runs after
+  every response/task: it captures grounded run lessons and, for a lesson targeting
+  an allow-listed guidance file (GOTCHAS.md / opencode skill+command RUN LOGs /
+  module `AGENT.md` RUN LOGs), applies the append-only edit as its **own** commit.
+  `researcher` is read-only and therefore record-only.
+- Every self-apply goes through the **mechanical commit-helper**
+  (`tools/self-improve-commit.sh`) instead of raw `git commit`. The helper enforces
+  (a) evidence `file:line` exists, (b) path allow-list / hard deny-list (`secrets/`,
+  `proxy/`, `disko/`, `network*`, `config.nix`, `options.nix`), (c) append-only
+  diff shape, and (d) the Decision-3 rate caps
+  (`my.programs.opencode.selfImprove.maxCommitsPerSession`/`maxCommitsPerDay`,
+  default `null` = uncapped); on any failure it leaves the edit unstaged.
+- The `self-improve-guard` plugin (loaded unconditionally when opencode is enabled,
+  NOT gated behind `my.programs.goals.enable`) reminds a `build`/`researcher`
+  session if it skipped the checkpoint.
+- Audit trail: each self-apply is its own commit with a `Self-Improve:` trailer;
+  `git log --grep="Self-Improve:"` + GOTCHAS.md are the audit trail; `git revert`
+  is the rollback net. The repo stays manual-push.
 
-The deployed watcher lives are **read-only `/nix/store` symlinks**: the launcher
-(`~/.local/share/opencode/learning-promoter-launcher.py`, a `home.file` entry)
-and the systemd user units (`learning-promoter-watcher.service`/`.timer`,
-`opencode-serve.service`) are symlinks into
-`/nix/store/...-home-manager-files/`. Editing them in place fails with
-`Read-only file system` / `permission denied`. To hotfix one live, `rm` the
-symlink and write a real file in its place; the **durable fix goes in the repo**
-(`config.nix` + `tools/learning-promoter-launcher.py`) because the next rebuild
-recreates the store symlink from the repo. See the GOTCHAS.md entry for the full
-pattern.
+**Decoupled from `goals`:** the checkpoint + guard run wherever opencode runs
+(`desktop`, laptop, `server`) regardless of `my.programs.goals.enable`; the goals
+module is now scoped to the personal/CV DB only.
 
 ## Self-Improvement
 

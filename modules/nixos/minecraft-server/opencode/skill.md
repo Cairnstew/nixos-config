@@ -88,7 +88,8 @@ enabled:
     `<pack>/source-patches/<mod>/` (`default.nix` + git-format `.patch`),
     registered in `patches.nix` under the same `"mods/<key>.jar"` keys, and
     consumed by both client and server. The basis for the `mc-mod-source-patch`
-    skill (e.g. RoadWeaver's elevated-water fix).
+    skill (see `source-patches/dt-tree-water-cleanup/` for the current example; the
+    original RoadWeaver elevated-water fix was removed with the mod in 2026-09).
 - **Structure review tooling** (worldgen):
   - `packwiz-structures` — review every worldgen structure + structure set the
     pack generates, scanned from the pinned mod jars and the pack's own
@@ -159,22 +160,42 @@ enabled:
     (`mc-server <name> perf` + how to tune the `hardware` option).
 - `mc-modpack` command — orchestrated workflow for a requested modpack change.
 
- ### Self-improvement (mc-run, mc-prism-log, mc-install, packwiz-structures, packwiz-controls, packwiz-controls-set & packwiz-config-add)
+ ### Self-improvement — mandatory end-of-session checkpoint
 
-All seven carry a self-improvement protocol like the researcher agent: theirsource is the repo file
+All of the RUN-LOG-capable tools (`mc-run`, `mc-prism-log`, `mc-install`,
+`mc-server`, `packwiz-checksums`, `packwiz-structures`, `packwiz-controls`,
+`packwiz-controls-set`, `packwiz-config-add`) carry a self-improvement
+protocol. Their source is the repo file
 `modules/nixos/minecraft-server/opencode/tools/<tool>.ts` (the runtime copy in
-`~/.config/opencode/tools/` is a read-only store symlink). When using any of
-them surfaces a bug or a missing feature, **edit the repo `.ts` file directly**
-and append a `// ## RUN LOG` entry (dated, one-line title + lesson/fix),
-mirroring the RUN LOG convention. You can also pass `note=<text>` to any of
-them to append a RUN LOG entry programmatically without a manual edit — a note
-appends to BOTH the tool source AND the tool's paired skill doc
-(`skill-mc-mod-structures.md` for packwiz-structures, `skill-mc-mod-controls*.md`
-for packwiz-controls*, `skill-mc-mod-config-set.md` for packwiz-config-add,
-`skill.md` for the mc-* launchers).
-Note: when you append a RUN LOG entry by hand, place it at the very end of the
-file AFTER the `export default` block — never mid-file, and never remove the
-`// ## RUN LOG` marker from inside the `appendRunLog` template literal.
+`~/.config/opencode/tools/` is a read-only store symlink). This is a scoped
+**exception to AGENTS.md §11.4**: minecraft pack/packwiz development improves
+its own tooling directly via RUN LOG entries, separate from the repo-wide
+learning promoter.
+
+**Every packwiz/pack session MUST run this checkpoint before reporting done:**
+
+1. If the session surfaced a gotcha, bug, or missing feature, capture it as a
+   **Lesson/Fix RUN LOG entry**: pass `note="Lesson: … Fix: …"` to the tool you
+   used (appends to BOTH the tool source AND its paired skill doc), or edit the
+   repo `.ts`/`skill` file directly and append the entry.
+2. RUN LOG entries must be substantive lessons (what happened + the fix) —
+   bare action logs ("init", "checking status", "list servers") are forbidden;
+   they pollute instead of improve. If the session truly had no lesson, say so
+   in the report rather than appending filler.
+3. `git add` the opencode files you touched
+   (`modules/nixos/minecraft-server/opencode/`) **together with** the pack work
+   — flakes only see tracked files, so an uncommitted RUN LOG or tool fix never
+   ships to the running tooling.
+
+Paired skill docs per tool: `skill-mc-mod-structures.md` for packwiz-structures,
+`skill-mc-mod-controls*.md` for packwiz-controls*, `skill-mc-mod-config-set.md`
+for packwiz-config-add, `skill.md` for the `mc-*` launchers and
+packwiz-checksums.
+
+Note: `appendRunLog` dedupes the `// ## RUN LOG` marker, so repeated `note=`
+appends merge into one section. Manual entries go at the very end of the file
+AFTER the `export default` block — never mid-file, and never remove the
+`// ## RUN LOG` marker.
 - Just recipes: `just packwiz <pack> <cmd>`, `just packwiz-checksums <pack>`.
 
 ## Workflow
@@ -317,11 +338,12 @@ example).
 2. `mc-server list` → confirm the server is registered.
 3. `mc-server <name> boot` → start and wait for `Done (Ns)!`. **A large pack's
    first boot is SLOW** — 200+ mods can take 10+ minutes (AllTheTech: ~675s on a
-   fresh world before tuning; after RoadWeaver preload-radius tuning ~107s).
+   fresh world before tuning; after preload-radius tuning ~107s for the
+   RoadWeaver-era boot, now removed).
    Subsequent boots ~85s. The tool waits up to 20 min by default. Do not assume
    the server is wedged just because it's still loading — and if it clears the
    mod-loading phase but then idles at high CPU for a long time on a fresh
-   world, suspect RoadWeaver's preload radii (see gotchas) rather than a hang.
+   world, suspect a preload mod's radii (see gotchas) rather than a hang.
 4. `mc-server <name> status` → players / uptime / boot progress anytime.
 5. After any pack change (add mod, mark a mod side, patch, config edit):
    rebuild the host and re-run `mc-server <name> boot` to confirm it still boots.
@@ -370,14 +392,16 @@ example).
   `memoryMax` well above steady-state RSS or the unit gets OOM-killed. Monitor
   with `mc-server <name> perf` (cgroup memory/CPU + log TPS/overload), and load
   the `mc-server-monitor` skill for the full workflow.
-- **A post-"Done" stall on a fresh world can be RoadWeaver's preload, not a
-  hang.** RoadWeaver's OpenCL coarse-sampling **falls back to CPU** when base
-  c2me's density-function nodes are present (benign log lines: `OpenCL 粗采样暂不
-  支持主世界，回退到 CPU: unsupported density node: com.ishland.c2me.opts.df...`).
-  With the CPU fallback, the `config/roadweaver/roadweaver.json` preload radii
-  are the lever: `predictRadiusChunks 256` + plan radii `128` spun ~4 CPU cores
-  for hours after boot on AllTheTech (looked like a hang). Tune them down for
-  fresh-world boots (AllTheTech uses 32/16/16, `initialGenerationThreads 6`).
+- **A post-"Done" stall on a fresh world can be a road/roadside preload, not a
+  hang.** RoadWeaver (removed from AllTheTech 2026-09) had an OpenCL
+  coarse-sampling that **fell back to CPU** when base c2me's density-function
+  nodes were present (benign log lines: `OpenCL 粗采样暂不支持主世界，回退到 CPU:
+  unsupported density node: ...`). With the CPU fallback, its
+  `config/roadweaver/roadweaver.json` preload radii were the lever:
+  `predictRadiusChunks 256` + plan radii `128` spun ~4 CPU cores for hours after
+  boot on AllTheTech (looked like a hang). Tune them down for fresh-world boots
+  (AllTheTech used 32/16/16, `initialGenerationThreads 6`). Any louder
+  first-boot preload mod with CPU-fallback OpenCL shows the same signature.
 - **Pack config changes do NOT reach an already-booted server's live config.**
   `packwizStartPre` seeds `config/` and `defaultconfigs/` with
   `rsync --ignore-existing` (config.nix:182) — a pack-side config edit only
@@ -450,3 +474,49 @@ Checking ATM11 instance status
 
 ### 2026-08-27
 Getting ATM11 log to check FTB Quests status
+
+### 2026-09-05 — self-improvement mechanism hardened (dedupe + mandatory checkpoint + checksums guard)
+Lesson: this session's note= appends were junk ("init" ×2), tool-source RUN LOGs had stacked duplicate `// ## RUN LOG` markers (mc-install 4, mc-prism-log 4, mc-server 8) because appendRunLog always re-appended the header, and packwiz-checksums — the tool at the center of the untracked-mods trap — had no self-improvement machinery at all.
+Fix: appendRunLog now dedupes the marker in all 8 tools (mirrors the skill-side check); packwiz-checksums gained a note= param plus an automatic guard (blocks when untracked .pw.toml exist, since `nix run` only sees git-tracked files, and self-documents the lesson once); self-improvement is now a MANDATORY end-of-session checkpoint in skill.md + mc-modpack command (Lesson/Fix format, no action-log noise, git add the opencode files with the pack work); AGENTS.md §11.4 carve-out added for this directory.
+
+### 2026-09-05 — loader-version bumps for new mods (missing guidance)
+Lesson: Supplementaries 3.9.7 failed boot with `Mod supplementaries requires neoforge 21.1.247 or above` while the pack was on 21.1.238 — adding a new mod can demand a NeoForge patch bump inside the same MC line, and that requirement is NOT in the packvance/mc-pack-status checks.
+Fix: bump `pack.toml` `[versions].neoforge` (minor patch within the same MC line; no checksums change), then `mc-install` to sync the instance. Always read a new mod's min-loader requirement (Modrinth loader field / neoforge.mods.toml) before adding it.
+
+### 2026-09-05 — pack-root reference data files need .packwizignore (missing guidance)
+Lesson: created `ITEM_TIERS.json` at the pack root as a loot/progression tier-list data source for agents. `PROGRESSION.md` at pack root IS indexed (ships as an internal file) because it was never ignored, and a bare `packwiz refresh` will happily index ANY new pack-root file — a machine JSON that is a dev/agent reference, not a player-facing game file, would ship into every install.
+Fix: `ITEM_TIERS.json` goes in `.packwizignore` (same category as checksums.json/patches.nix: repo-side reference, never shipped). Documented pattern: player-readable doc = index it like PROGRESSION.md; agent-only reference data = ignore it. `packwiz refresh` + `grep -c ITEM_TIERS index.toml` verified it stays out.
+
+### 2026-09-05
+Lesson: RarityCore (1211.14.6) added for 1.21.1 NeoForge. Known conflict with ImmediatelyFast: hud_batching=true causes nibbled hotbar item backgrounds (3/4 size) — RarityCore docs say disable ImmediatelyFast HUD batching to fix. Fix: ship config/immediatelyfast.json with hud_batching=false in the pack.
+
+### 2026-09-05
+Lesson: adding RarityCore (1211.14.6) to the pack surfaced two integration requirements: (1) it presets EVERY artifacts/relics item to tier 5 (flat) and its relics preset references old item ids (relics:roller_skates) not present in the installed 0.12.8 — ship a derived FinalRarityConfig file from ITEM_TIERS.json mapping S-F to 1-7 ranks instead; (2) known ImmediatelyFast conflict — hud_batching=true nibbles hotbar rarity backgrounds (docs say disable HUD batching). Fix: generated config/raritycore/FinalRarityConfig/allthetech_tiers.json (164 mappings, expanded smallships wood variants) + config/immediatelyfast.json with hud_batching=false.
+
+### 2026-09-05
+Lesson: LootJS (fJFETWDN, 3.7.0 neoforge 1.21.1) is required for regex injection into datapack/mod-defined loot tables — plain KubeJS only rewrites vanilla-held tables. Also: smallships items are wood-variant real ids (smallships:oak_war_galley), so logical ids in ITEM_TIERS.json must be mapped to a representative wood variant when referenced in KubeJS/LootJS addLoot().
+
+### 2026-09-05 — structure difficulty→loot tuning workflow (new capability)
+Lesson: user wanted structure loot tied to difficulty/frequency AND rare-ified spawns. Mechanism: a Paxi datapack overriding `worldgen/structure_set/*.json` placement (copy the jar's JSON verbatim, change only spacing/separation, keep placement.type/frequency/salt) + a LootJS KubeJS server script (`kubejs/server_structures/structure_loot.js`) bucketing chest-table IDs by regex into Easy/Medium/Hard/Elite and injecting ITEM_TIERS-derived pools (`LootEntry.of(id).withWeight(w)` + `.randomChance(p)`). Requires the LootJS addon (plain KubeJS cannot touch mod/datapack loot tables).
+Fix: shippped `config/paxi/datapacks/allthetech-spawn-tweaks/` (25 set overrides, mild ×1.3–2) + `kubejs/server_scripts/structure_loot.js` (33 modifiers, 79 items verified against jar lang files), generated from `ITEM_TIERS.json` by a one-off script. Regenerate pattern documented: ITEM_TIERS.json is the item source of truth; smallships logical ids must map to wood-variant real ids.
+
+### 2026-09-06 — mob-tier structure placement (Mowzie's/Legendary Monsters/IAF-CE/Mob Control)
+Lesson: In Control! (McJty) is discontinued (<1.19); its 1.21.1 functional successor is **Mob Control** (`mobcontrol-1.21.1-2.0.1-beta-2` — the beta is REQUIRED over 2.0.0-release because it fixes a startup crash with Supplementaries/Moonlight Lib, which this pack has). Ice and Fire's original stops at 1.20.1 — the working 1.21.1 NeoForge path is **IceAndFire Community Edition** (`iceandfire-2.0-beta.17.jar`, Modrinth VpmCsizY, unlisted status — pin via `modrinth add --project-id VpmCsizY --version-id kdvvFM7V --yes`) + the **Citadel 1.21.1 port** (XjY0RcQj/mIylVpkN) + optional `iceandfire_smithing`; IAF-CE auto-deps Jupiter+Uranus. Mob Control's config is `config/mobcontrol.toml` FLAT in the config root (not a subdir), first-match-wins, `structure=` matches by ID or `<ns>:*` (no structure-TAG support). Fix: shipped `config/allthetech/mob_tiers.json` (tier SSOT: T4→T1, own-structures + wild `structure="none"` rules, optional structure-only `set.health/damage/xp` scaling) + generated `config/mobcontrol.toml` (47 mob blocks). Structure/entity IDs harvested from the pinned jars (`packwiz-structures` + `assets/*/lang/en_us.json` via zipfile) — never guess IDs; `structure="none"` must be the only entry in its rule.
+
+### 2026-09-07
+Added Apothic Attributes (DGaH8Rh0, 1.21.1-2.10.1) and its required dependency Placebo (tCkE8p2N, 1.21.1-9.9.2) to AllTheTech.
+
+### 2026-09-07
+Checking if Prism Launcher instance exists and what state it's in
+
+### 2026-09-07
+Check existing Prism latest.log after mc-run attempt
+
+### 2026-09-07
+First-time install of AllTheTech into Prism Launcher for baseline boot timing
+
+### 2026-09-07
+Install AllTheTech into Prism at detected data dir for baseline boot timing
+
+### 2026-09-07
+Fresh baseline boot of AllTheTech via Prism Launcher for timing

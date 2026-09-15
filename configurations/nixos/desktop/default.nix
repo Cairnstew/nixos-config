@@ -80,6 +80,13 @@
   # per-stream EQ/compression. The mic name is baked into WirePlumber config as
   # the default source — update `name` from `wpctl status` if it differs.
   my.system.audio = {
+    # Boost the integrated Realtek ALCS1200A analog output (front / rear 3.5mm
+    # jacks — passive headphones rely entirely on the motherboard DAC/amp and
+    # come up too quiet at WirePlumber's global 40%). Bluetooth headsets are
+    # self-amplified, so they're left on the global default.
+    deviceDefaultVolumes = {
+      "alsa_card.pci-0000_09_00.4" = 0.8;
+    };
     virtualMixer = {
       enable = true;
       patchbay = "qpwgraph";
@@ -937,7 +944,7 @@
   # answering through-tunnel pings (the documented "data-plane wedge" — local
   # interface/MTU/self-ping all look fine while every TCP connection times out).
   my.services.tailscaleWatchdog = {
-    enable = true;
+    enable = false; # DISABLED 2026-09-15: server is down, pinging 100.78.102.28 spams degradation emails
     canaryPeers = [ "100.78.102.28" "100.70.43.44" ]; # server, pikvm
   };
 

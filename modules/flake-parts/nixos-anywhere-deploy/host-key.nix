@@ -17,7 +17,7 @@ in
 {
   perSystem = { pkgs, ... }:
     let
-      isLinux = builtins.elem pkgs.system [ "x86_64-linux" "aarch64-linux" ];
+      isLinux = builtins.elem pkgs.stdenv.hostPlatform.system [ "x86_64-linux" "aarch64-linux" ];
 
       prepPkgs =
         if isLinux then

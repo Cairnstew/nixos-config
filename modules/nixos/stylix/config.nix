@@ -1,6 +1,6 @@
 { lib, config, pkgs, flake, ... }:
 let
-  inherit (lib) mkIf mkDefault;
+  inherit (lib) mkIf;
   cfg = config.my.theming.stylix;
   me = flake.config.me;
   prefs = flake.config.preferences or { };
@@ -68,7 +68,28 @@ in
       # Upstream stylix defaults to qt.platformTheme.name = "gnome",
       # but that's deprecated — "adwaita" is the replacement.
       targets.gnome.enable = config.my.desktop.gnome.enable or false;
+
+      # On GNOME desktops stylix auto-selects stylix.targets.qt.platform = "gnome",
+      # whose qt.platformTheme.name is now deprecated in nixpkgs ("use adwaita
+      # instead" — but the NixOS enum only accepts gnome/gtk2/kde/lxqt/qt5ct).
+      # Pin it to "qtct" (stylix's supported mode → qt5ct theme): silences both
+      # stylix's "unsupported platform" warning and the nixpkgs deprecation,
+      # and matches the qt5ct theming non-GNOME hosts already get.
+      targets.qt.platform = lib.mkForce "qtct";
     };
+
+    # Stylix's firefox target lives in its home-manager module (auto-imported
+    # only when stylix is enabled) and warns unless profileNames is set. The
+    # home firefox module (modules/home/firefox) creates a profile named after
+    # the user's home-dir username, so declare that profile here. This must be
+    # a (conditional) sharedModules *import*, not a plain config definition,
+    # because hosts without stylix never import the stylix HM module and would
+    # fail on a definition of the missing `stylix.targets.firefox` option.
+    home-manager.sharedModules = [
+      {
+        stylix.targets.firefox.profileNames = [ me.username ];
+      }
+    ];
 
     qt.platformTheme = lib.mkDefault "adwaita";
   };

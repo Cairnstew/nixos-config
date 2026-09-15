@@ -172,10 +172,10 @@ information from the web and project files.
 
 ## SELF-IMPROVEMENT TOGGLE
 
-This agent can optionally improve itself after a run, mirroring the `nix-refine`
-and `nix-doc-audit` commands.
+This agent can optionally run a self-improvement checkpoint after a run,
+mirroring the in-band checkpoint in `agents/build.md`.
 
-- **`SELF_IMPROVE=true`** (current) runs the self-improvement pass after each run.
+- **`SELF_IMPROVE=true`** (current) runs the checkpoint after each run.
 - Set **`SELF_IMPROVE=false`** in this file (line below) to make the agent a
   fixed, read-only research subagent.
 
@@ -190,7 +190,7 @@ SELF_IMPROVE=true
 ## When SELF_IMPROVE=true
 
 After you complete the research task and before your final summary, run the
-self-improvement pass on `modules/home/opencode/agents/researcher.md` (this file):
+self-improvement checkpoint (a short, cheap structured self-check):
 
 1. **Capture run-time lessons** — notes about how THIS agent's instructions
    performed during the run (not research findings): a guideline that misled,
@@ -198,36 +198,40 @@ self-improvement pass on `modules/home/opencode/agents/researcher.md` (this file
 2. **Audit this file** against the run and the current repo state: are the tools
    and paths it names real? is the guidance accurate? is anything missing? Check
    the `nix-doc-audit` / `nix-refine` commands for shared conventions if relevant.
- 3. **Propose** every lesson via the goals MCP tool **`learning_append`** — you do
-    NOT apply edits to this file yourself. Any self-improvement action anywhere in
-    nixos-config — editing a command, editing a skill, creating a new skill — must
-    be proposed via `learning_append` and gated via `learning_promote` before
-    being applied. Direct unlogged edits to command/skill/tool files during a
-    self-improvement pass are not permitted. Promotion is a separate step run by a
-    human or the dedicated automated `learning-promoter` agent — never by the
-    proposing session. Call:
-   - `command` = `"researcher"` (this agent's own name)
-   - `lesson` — one line: what happened and why the guidance misled/wasted effort
-   - `fix` — what this file should change to apply the lesson
-   - `evidence` — `file:line` of the observed failure or verbatim output
-     (REQUIRED; the tool rejects empty/placeholder evidence)
-   - `target_type` / `target_path` — `new_skill`/`new_command` only for creating
-     a file; otherwise default `edit_existing`
-   Every lesson must be grounded in something that actually happened this run or
-   exists in the repo now — never aspirational. If a change requires guessing,
-   skip it and note it instead. Do not let the pass balloon the file.
- 4. **Do not append a RUN LOG entry or edit this file in this run.** `learning_append`
-    writes rows with `status = 'proposed'` and dedupes on near-duplicate lessons. The
-    actual edit happens later, in a separate reviewed step (a human, or the automated
-    `learning-promoter` agent), after
-    `learning_promote(<id>, "validated", acted_on_commit=<commit>)` has been called
-    with the hash of the edit. Do not call `learning_promote` yourself. A review
-    session reads the queue with `learning_query`.
+3. **Record-only by design.** This agent is read-only: `edit` is scoped to this
+   file and `bash` is denied, so it cannot run the mechanical commit-helper
+   (`tools/self-improve-commit.sh`) or edit allow-listed files (GOTCHAS.md /
+   opencode skill + command RUN LOGs / module `AGENT.md` RUN LOGs). There is no
+   self-apply path here. Report any grounded lesson as **record-only** in your
+   reply, or explicitly state `No lessons this run` if the checkpoint produced
+   nothing concrete. Every lesson must be grounded in something that actually
+   happened this run or exists in the repo now — never aspirational. Do not
+   balloon the file; do not edit outside this file without explicit human
+   direction.
+4. Do not call any `learning_*` tool — the goals MCP exposes none for
+   self-improvement anymore.
+5. **Efficiency lens** (proposal-only, second part of the same pass — same
+   "guaranteed check, may or may not act" shape, no new agent/gate, no threshold
+   gate by default):
+   - Query this session's own row in `~/.local/share/opencode/opencode.db`
+     (reuse the bun:sqlite pattern in `plugins/self-improve-guard.ts`): read
+     `session.cost`, `tokens_input/output/reasoning/cache_read/cache_write` for
+     this session's id, and the `part`-table tool-call count. The nullable options
+     `selfImprove.efficiencyLensMinToolCalls` / `...MinCost` (default `null` =
+     no gate, always-on today) can be set later to skip below a threshold; honour
+     them if set (read `~/.config/opencode/self-improve.json`).
+   - If a genuinely repeated pattern shows up that a new tool/skill/command/
+     config would collapse, report it as a **record-only efficiency proposal** in
+     your reply (name the idea, cite the quantitative evidence: call counts /
+     cost). **Record-only by design** — this agent cannot write
+     `EFFICIENCY-PROPOSALS.md` (bash denied, edit scoped to this file only), so
+     no self-apply path here, exactly as for the correctness lens.
+   - Otherwise state `no efficiency proposal this run` alongside
+     `no lessons this run`. Never build the proposed tool/skill/command/config in
+     this session.
 
 **Historical record:** the RUN LOG entries below (from before this mandate)
-remain as history and are **not** migrated to the learnings tables — migrating
-history is a separate decision, and ungated history must not be falsely marked
-as validated.
+remain as history; they are not migrated anywhere and are not auto-applied.
 
 ## RUN LOG
 

@@ -78,7 +78,7 @@ let
           else null
         else null;
       diskoMode = if opts ? diskoMode && opts.diskoMode != null then opts.diskoMode else autoMode;
-      nixosAnywhereBin = "${inputs.nixos-anywhere.packages.${pkgs.system}.default}/bin/nixos-anywhere";
+      nixosAnywhereBin = "${inputs.nixos-anywhere.packages.${pkgs.stdenv.hostPlatform.system}.default}/bin/nixos-anywhere";
       identityStr = if opts ? agentIdentity && opts.agentIdentity != null then opts.agentIdentity else "";
       # Auto-detect generateHostKey: enabled when host has a disk-config.nix
       # (needs SSH host keys for agenix secrets at install time), OR uses
@@ -141,7 +141,7 @@ in
 {
   perSystem = { pkgs, ... }:
     let
-      isLinux = builtins.elem pkgs.system [ "x86_64-linux" "aarch64-linux" ];
+      isLinux = builtins.elem pkgs.stdenv.hostPlatform.system [ "x86_64-linux" "aarch64-linux" ];
 
       deployPkgs =
         if isLinux then

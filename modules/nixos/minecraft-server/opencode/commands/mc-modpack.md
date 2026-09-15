@@ -50,7 +50,16 @@ Request: $ARGUMENTS
 6. **Stage the files** — `git add modules/nixos/minecraft-server/modpacks/<name>`
    (git flakes only see tracked files; without this the flake's checksum app
    and server build won't see the new pack).
-7. **Report** a short summary: pack, mods added/removed/updated, config files
+7. **Self-improvement checkpoint (mandatory, not optional)** — if this session
+   surfaced any gotcha, bug, or missing feature, append a Lesson/Fix RUN LOG
+   entry via the `note=` argument on the tool you used (or edit the repo
+   `.ts`/skill file directly — see the mc-modpack skill's Self-improvement
+   section). Bare action-log notes ("init", "checking status") are forbidden;
+   if nothing was learned, say so in the report instead of appending filler.
+   Then `git add modules/nixos/minecraft-server/opencode/` together with the
+   pack files so the improvement actually ships (flakes only see tracked
+   files).
+8. **Report** a short summary: pack, mods added/removed/updated, config files
    shipped (and preserve state), datapacks added, any CurseForge conversions
    (with URLs), checksum status, and a final `mc-pack-status` line.
 
@@ -60,4 +69,5 @@ Request: $ARGUMENTS
   diagnose rather than proceeding.
 - Never edit `checksums.json` by hand; always regenerate it.
 - Never skip the `git add` step or commit unless asked.
-- If `$ARGUMENTS` is just "verify", run steps 2, 5 and 7 only.
+- If `$ARGUMENTS` is just "verify", run steps 2, 5 and 8 only (a verify-only run
+  is exempt from step 7 unless it surfaces a lesson).

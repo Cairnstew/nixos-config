@@ -1,0 +1,22 @@
+modLoader = "javafml"
+loaderVersion = "[4,)"
+license = "MIT"
+
+[[mods]]
+modId = "dt_tree_water_cleanup"
+version = "1.0.0"
+displayName = "DT Tree Water Cleanup"
+description = "Removes Dynamic Trees left standing in bodies of water that Streams Reflowing carves after feature placement. Streams' tree-clearing only recognises vanilla logs, so DT trees survive the carve 'sunken under varying degrees of water'; this mod fells DT trees rooted in 2+ deep water at the end of chunk generation."
+authors = ["nixos-config"]
+[[dependencies.dt_tree_water_cleanup]]
+modId = "neoforge"
+type = "required"
+versionRange = "[21.1.238,)"
+ordering = "NONE"
+side = "BOTH"
+[[dependencies.dt_tree_water_cleanup]]
+modId = "dynamictrees"
+type = "optional"
+versionRange = "[1.7.2,)"
+ordering = "NONE"
+side = "BOTH"

@@ -1,0 +1,1381 @@
+{
+ "schema": "allthetech-item-tiers",
+ "schema_version": 1,
+ "pack": "AllTheTech",
+ "minecraft": "1.21.1",
+ "loader": "neoforge",
+ "generated": "2026-09-05",
+ "curated_by": "build agent \u2014 tier = rarity \u00d7 impact, grounded in mod drop data where exposed",
+ "purpose": "Reference for loot-table authors and progression designers: every item's S\u2013F tier, drop source, and where it should (or shouldn't) appear in loot.",
+ "usage": "When adding an item to a loot table or quest reward, look up its tier: S/A = gated jackpots, B = common pool, C/D = filler, F = exclude unless April Fools. Tags cover function; slots cover curios placement. Wood variants of ships share the type's entry.",
+ "extension": "Part 1 covers the four loot-content mods (Artifacts, Relics, Reliquified Artifacts, Small Ships). Future parts can add items from other mods (vanilla, Create, Mekanism, AE2, Minecolonies, ...) using the same item schema with an incremented part field.",
+ "tiers": {
+  "S": {
+   "label": "Pack-defining / jackpot",
+   "criteria": "Transforms how you play the whole pack (movement, item magnet, flight, sustain) or is an endgame/legendary gate. Build a progression wall or jackpot-drop around these.",
+   "loot_guidance": "Ultra-rare jackpot: quest reward or boss/end-structure only; never in common pools. If injected, weight <= 1 of a gated pool."
+  },
+  "A": {
+   "label": "Strong upgrade / rare drop",
+   "criteria": "Major combat/mobility/utility win; the mod itself treats it as rare (low pool weight) or it's a mid-game power spike.",
+   "loot_guidance": "Rare pool: weight 2-5 in mid/late structure chests, boss drops, or mimicked loot."
+  },
+  "B": {
+   "label": "Solid situational",
+   "criteria": "Genuinely useful in a niche (biome, slotted task, playstyle). Common-quality drop, strong when it applies.",
+   "loot_guidance": "Common pool: weight 6-10 in general loot; safe in campsites/dungeons."
+  },
+  "C": {
+   "label": "Niche convenience",
+   "criteria": "Flavor-adjacent or weak-utility; nice to find, not progression-relevant. Safe early.",
+   "loot_guidance": "Filler weight in any early chest; never gated."
+  },
+  "D": {
+   "label": "Common consumable/material",
+   "criteria": "Consumables, crafting bits, or cosmetic blocks. No loot-table gate warranted.",
+   "loot_guidance": "Unlimited filler; weights in generic supply pools."
+  },
+  "F": {
+   "label": "Novelty / joke",
+   "criteria": "April-Fools, easter-egg, or pure-gag items. Fine as rare curiosities, never progression.",
+   "loot_guidance": "April-Fools window or creative only; exclude from normal pools."
+  }
+ },
+ "mods": {
+  "artifacts": {
+   "pool_weights": "data/artifacts/loot_table/artifact.json \u2014 most entries weight 8 (common pool); everlasting_beef=2, helium_flamingo=4, umbrella=5, whoopee_cushion=5 are the mod-rare entries. onion_ring is April-Fools-gated."
+  },
+  "relics": {
+   "pool": "All relics drop via RNG from any mob (relics loot modifier) and level through research. Tier here reflects community meta + impact, not a fixed pool weight."
+  },
+  "smallships": {
+   "pool": "All craftable vehicles; tiers reflect gameplay impact and naval progression, not drop rarity. Wood variants are cosmetic and share the type's entry. NOTE: rowboat + dhow are NOT registered items in Small Ships 2.0.0-b2.1 (lang entries exist, but no item class) - excluded. war_galley remains in mod lang but has no registered item in 2.0.0-b2.1 (same as rowboat/dhow) - excluded."
+  },
+  "reliquified_artifacts": {
+   "pool": "mimi_dust is the pack's loot-enabler (chest -> mimic -> relic drops)."
+  }
+ },
+ "items": [
+  {
+   "id": "artifacts:running_shoes",
+   "name": "Running Shoes",
+   "mod": "artifacts",
+   "tier": "S",
+   "slots": [
+    "curios:feet"
+   ],
+   "tags": [
+    "mobility",
+    "utility"
+   ],
+   "obtain": "Artifact pool / campsites / mob drops",
+   "impact": "Sprint speed + step assist on everything, forever \u2014 the single best QoL artifact in the pack.",
+   "loot_note": "weight 8 (common pool) \u2014 high VALUE not high rarity; give early as a quest reward.",
+   "part": 1
+  },
+  {
+   "id": "artifacts:universal_attractor",
+   "name": "Universal Attractor",
+   "mod": "artifacts",
+   "tier": "S",
+   "slots": [
+    "curios:belt"
+   ],
+   "tags": [
+    "qol",
+    "utility"
+   ],
+   "obtain": "Artifact pool / campsites / mob drops",
+   "impact": "Item magnet: loot vacuum that compounds with every Create/AE2 build and with Relics mob farming.",
+   "loot_note": "weight 8 \u2014 same value-gated reasoning as running shoes.",
+   "part": 1
+  },
+  {
+   "id": "artifacts:cloud_in_a_bottle",
+   "name": "Cloud in a Bottle",
+   "mod": "artifacts",
+   "tier": "S",
+   "slots": [
+    "curios:belt"
+   ],
+   "tags": [
+    "mobility"
+   ],
+   "obtain": "Artifact pool / campsites / mob drops",
+   "impact": "Double-jump + reduced fall \u2014 core mobility that trivialises parkour and roof traversal.",
+   "loot_note": "weight 8; classic early-game jackpot.",
+   "part": 1
+  },
+  {
+   "id": "artifacts:everlasting_beef",
+   "name": "Everlasting Beef",
+   "mod": "artifacts",
+   "tier": "A",
+   "slots": [
+    "curios:belt"
+   ],
+   "tags": [
+    "food",
+    "sustain"
+   ],
+   "obtain": "Artifact pool (mod-rare weight 2) / campsites",
+   "impact": "Infinite food source (craft into Eternal Steak). Removes hunger logistics.",
+   "loot_note": "weight 2 \u2014 one of the few the mod itself treats as rare. Jackpot-tier common drop.",
+   "part": 1
+  },
+  {
+   "id": "artifacts:power_glove",
+   "name": "Power Glove",
+   "mod": "artifacts",
+   "tier": "A",
+   "slots": [
+    "curios:hands"
+   ],
+   "tags": [
+    "combat"
+   ],
+   "obtain": "Artifact pool / campsites / mob drops",
+   "impact": "+50% melee damage \u2014 largest combat multiplier in the mod.",
+   "loot_note": "weight 8.",
+   "part": 1
+  },
+  {
+   "id": "artifacts:vampiric_glove",
+   "name": "Vampiric Glove",
+   "mod": "artifacts",
+   "tier": "A",
+   "slots": [
+    "curios:hands"
+   ],
+   "tags": [
+    "combat",
+    "sustain"
+   ],
+   "obtain": "Artifact pool / campsites / mob drops",
+   "impact": "Lifesteal on melee \u2014 sustain that stacks with Epic Fight.",
+   "loot_note": "weight 8.",
+   "part": 1
+  },
+  {
+   "id": "artifacts:feral_claws",
+   "name": "Feral Claws",
+   "mod": "artifacts",
+   "tier": "A",
+   "slots": [
+    "curios:hands"
+   ],
+   "tags": [
+    "combat"
+   ],
+   "obtain": "Artifact pool / campsites / mob drops",
+   "impact": "+attack speed; DPS multiplier.",
+   "loot_note": "weight 8.",
+   "part": 1
+  },
+  {
+   "id": "artifacts:cross_necklace",
+   "name": "Cross Necklace",
+   "mod": "artifacts",
+   "tier": "A",
+   "slots": [
+    "curios:necklace"
+   ],
+   "tags": [
+    "combat",
+    "defense"
+   ],
+   "obtain": "Artifact pool / campsites / mob drops",
+   "impact": "Extended invulnerability frames \u2014 the defense meta.",
+   "loot_note": "weight 8.",
+   "part": 1
+  },
+  {
+   "id": "artifacts:crystal_heart",
+   "name": "Crystal Heart",
+   "mod": "artifacts",
+   "tier": "A",
+   "slots": [
+    "curios:necklace"
+   ],
+   "tags": [
+    "defense"
+   ],
+   "obtain": "Artifact pool / campsites / mob drops",
+   "impact": "Permanent +2 max hearts.",
+   "loot_note": "weight 8.",
+   "part": 1
+  },
+  {
+   "id": "artifacts:scarf_of_invisibility",
+   "name": "Scarf of Invisibility",
+   "mod": "artifacts",
+   "tier": "A",
+   "slots": [
+    "curios:necklace"
+   ],
+   "tags": [
+    "stealth"
+   ],
+   "obtain": "Artifact pool / campsites / mob drops",
+   "impact": "Invisibility on demand \u2014 strong with structure mods.",
+   "loot_note": "weight 8.",
+   "part": 1
+  },
+  {
+   "id": "artifacts:night_vision_goggles",
+   "name": "Night Vision Goggles",
+   "mod": "artifacts",
+   "tier": "A",
+   "slots": [
+    "curios:head"
+   ],
+   "tags": [
+    "utility",
+    "exploration"
+   ],
+   "obtain": "Artifact pool / campsites / mob drops",
+   "impact": "Permanent night vision \u2014 removes torch logistics in dark dungeons.",
+   "loot_note": "weight 8.",
+   "part": 1
+  },
+  {
+   "id": "artifacts:snorkel",
+   "name": "Snorkel",
+   "mod": "artifacts",
+   "tier": "A",
+   "slots": [
+    "curios:face"
+   ],
+   "tags": [
+    "utility",
+    "underwater"
+   ],
+   "obtain": "Artifact pool / campsites / mob drops",
+   "impact": "Water breathing \u2014 pairs with Small Ships / ocean content.",
+   "loot_note": "weight 8.",
+   "part": 1
+  },
+  {
+   "id": "artifacts:aqua_dashers",
+   "name": "Aqua-Dashers",
+   "mod": "artifacts",
+   "tier": "A",
+   "slots": [
+    "curios:feet"
+   ],
+   "tags": [
+    "mobility",
+    "underwater"
+   ],
+   "obtain": "Artifact pool / campsites / mob drops",
+   "impact": "Swim speed \u2014 strong with Ships and Streams.",
+   "loot_note": "weight 8.",
+   "part": 1
+  },
+  {
+   "id": "artifacts:pickaxe_heater",
+   "name": "Pickaxe Heater",
+   "mod": "artifacts",
+   "tier": "A",
+   "slots": [
+    "curios:hands"
+   ],
+   "tags": [
+    "mining"
+   ],
+   "obtain": "Artifact pool / campsites / mob drops",
+   "impact": "Speed-mines stone with auto-smelt \u2014 mining-loop QoL in a tech pack.",
+   "loot_note": "weight 8.",
+   "part": 1
+  },
+  {
+   "id": "artifacts:digging_claws",
+   "name": "Digging Claws",
+   "mod": "artifacts",
+   "tier": "A",
+   "slots": [
+    "curios:hands"
+   ],
+   "tags": [
+    "mining"
+   ],
+   "obtain": "Artifact pool / campsites / mob drops",
+   "impact": "Mining speed; pairs with Pickaxe Heater for tunneling.",
+   "loot_note": "weight 8.",
+   "part": 1
+  },
+  {
+   "id": "artifacts:golden_hook",
+   "name": "Golden Hook",
+   "mod": "artifacts",
+   "tier": "A",
+   "slots": [
+    "curios:hands"
+   ],
+   "tags": [
+    "fishing"
+   ],
+   "obtain": "Artifact pool / campsites / mob drops",
+   "impact": "Auto-fishing intensification \u2014 enables AFK fishing loot.",
+   "loot_note": "weight 8.",
+   "part": 1
+  },
+  {
+   "id": "artifacts:chorus_totem",
+   "name": "Chorus Totem",
+   "mod": "artifacts",
+   "tier": "A",
+   "slots": [
+    "curios:necklace"
+   ],
+   "tags": [
+    "mobility",
+    "defense"
+   ],
+   "obtain": "Artifact pool / campsites / mob drops",
+   "impact": "Teleport on hit \u2014 escape tool for dangerous dungeons.",
+   "loot_note": "weight 8.",
+   "part": 1
+  },
+  {
+   "id": "artifacts:warp_drive",
+   "name": "Warp Drive",
+   "mod": "artifacts",
+   "tier": "A",
+   "slots": [
+    "curios:belt"
+   ],
+   "tags": [
+    "mobility"
+   ],
+   "obtain": "Artifact pool / campsites / mob drops",
+   "impact": "Dash teleport; strong traversal.",
+   "loot_note": "weight 8.",
+   "part": 1
+  },
+  {
+   "id": "artifacts:flame_pendant",
+   "name": "Flame Pendant",
+   "mod": "artifacts",
+   "tier": "A",
+   "slots": [
+    "curios:necklace"
+   ],
+   "tags": [
+    "combat"
+   ],
+   "obtain": "Artifact pool / campsites / mob drops",
+   "impact": "Ignites enemies \u2014 fire DPS on every hit with Epic Fight.",
+   "loot_note": "weight 8.",
+   "part": 1
+  },
+  {
+   "id": "artifacts:shock_pendant",
+   "name": "Shock Pendant",
+   "mod": "artifacts",
+   "tier": "A",
+   "slots": [
+    "curios:necklace"
+   ],
+   "tags": [
+    "combat"
+   ],
+   "obtain": "Artifact pool / campsites / mob drops",
+   "impact": "Chance to strike lightning on hit.",
+   "loot_note": "weight 8.",
+   "part": 1
+  },
+  {
+   "id": "artifacts:thorn_pendant",
+   "name": "Thorn Pendant",
+   "mod": "artifacts",
+   "tier": "A",
+   "slots": [
+    "curios:necklace"
+   ],
+   "tags": [
+    "combat",
+    "defense"
+   ],
+   "obtain": "Artifact pool / campsites / mob drops",
+   "impact": "Thorns aura on melee attackers.",
+   "loot_note": "weight 8.",
+   "part": 1
+  },
+  {
+   "id": "artifacts:panic_necklace",
+   "name": "Panic Necklace",
+   "mod": "artifacts",
+   "tier": "A",
+   "slots": [
+    "curios:necklace"
+   ],
+   "tags": [
+    "combat",
+    "mobility"
+   ],
+   "obtain": "Artifact pool / campsites / mob drops",
+   "impact": "Speed burst when damaged \u2014 escape and kiting.",
+   "loot_note": "weight 8.",
+   "part": 1
+  },
+  {
+   "id": "artifacts:antidote_vessel",
+   "name": "Antidote Vessel",
+   "mod": "artifacts",
+   "tier": "A",
+   "slots": [
+    "curios:belt"
+   ],
+   "tags": [
+    "defense"
+   ],
+   "obtain": "Artifact pool / campsites / mob drops",
+   "impact": "Poison/status removal \u2014 heavy status enemies in pack.",
+   "loot_note": "weight 8.",
+   "part": 1
+  },
+  {
+   "id": "artifacts:obsidian_skull",
+   "name": "Obsidian Skull",
+   "mod": "artifacts",
+   "tier": "A",
+   "slots": [
+    "curios:necklace"
+   ],
+   "tags": [
+    "defense"
+   ],
+   "obtain": "Artifact pool / campsites / mob drops",
+   "impact": "Fire immunity \u2014 nether safety.",
+   "loot_note": "weight 8.",
+   "part": 1
+  },
+  {
+   "id": "artifacts:bunny_hoppers",
+   "name": "Bunny Hoppers",
+   "mod": "artifacts",
+   "tier": "B",
+   "slots": [
+    "curios:feet"
+   ],
+   "tags": [
+    "mobility"
+   ],
+   "obtain": "Artifact pool / campsites / mob drops",
+   "impact": "Jump boost + no fall damage; nice when it applies.",
+   "loot_note": "weight 8.",
+   "part": 1
+  },
+  {
+   "id": "artifacts:flippers",
+   "name": "Flippers",
+   "mod": "artifacts",
+   "tier": "B",
+   "slots": [
+    "curios:feet"
+   ],
+   "tags": [
+    "mobility",
+    "underwater"
+   ],
+   "obtain": "Artifact pool / campsites / mob drops",
+   "impact": "Swim speed; weaker than Aqua-Dashers.",
+   "loot_note": "weight 8.",
+   "part": 1
+  },
+  {
+   "id": "artifacts:strider_shoes",
+   "name": "Strider Shoes",
+   "mod": "artifacts",
+   "tier": "B",
+   "slots": [
+    "curios:feet"
+   ],
+   "tags": [
+    "mobility"
+   ],
+   "obtain": "Artifact pool / campsites / mob drops",
+   "impact": "Walk on lava briefly; nether convenience.",
+   "loot_note": "weight 8.",
+   "part": 1
+  },
+  {
+   "id": "artifacts:snowshoes",
+   "name": "Snowshoes",
+   "mod": "artifacts",
+   "tier": "B",
+   "slots": [
+    "curios:feet"
+   ],
+   "tags": [
+    "mobility"
+   ],
+   "obtain": "Artifact pool / campsites / mob drops",
+   "impact": "Walk up snow; niche biome utility.",
+   "loot_note": "weight 8.",
+   "part": 1
+  },
+  {
+   "id": "artifacts:rooted_boots",
+   "name": "Rooted Boots",
+   "mod": "artifacts",
+   "tier": "B",
+   "slots": [
+    "curios:feet"
+   ],
+   "tags": [
+    "mobility"
+   ],
+   "obtain": "Artifact pool / campsites / mob drops",
+   "impact": "Climb on grass/snow \u2014 vertical convenience.",
+   "loot_note": "weight 8.",
+   "part": 1
+  },
+  {
+   "id": "artifacts:pocket_piston",
+   "name": "Pocket Piston",
+   "mod": "artifacts",
+   "tier": "B",
+   "slots": [
+    "curios:hands"
+   ],
+   "tags": [
+    "utility"
+   ],
+   "obtain": "Artifact pool / campsites / mob drops",
+   "impact": "Knockback punch \u2014 utility tool.",
+   "loot_note": "weight 8.",
+   "part": 1
+  },
+  {
+   "id": "artifacts:steadfast_spikes",
+   "name": "Steadfast Spikes",
+   "mod": "artifacts",
+   "tier": "B",
+   "slots": [
+    "curios:feet"
+   ],
+   "tags": [
+    "defense"
+   ],
+   "obtain": "Artifact pool / campsites / mob drops",
+   "impact": "Anti-knockback + fall mitigation; niche defense.",
+   "loot_note": "weight 8.",
+   "part": 1
+  },
+  {
+   "id": "artifacts:charm_of_shrinking",
+   "name": "Charm of Shrinking",
+   "mod": "artifacts",
+   "tier": "B",
+   "slots": [
+    "curios:belt"
+   ],
+   "tags": [
+    "utility"
+   ],
+   "obtain": "Artifact pool / campsites / mob drops",
+   "impact": "Shrink to fit 1-block gaps; fun traversal.",
+   "loot_note": "weight 8.",
+   "part": 1
+  },
+  {
+   "id": "artifacts:charm_of_sinking",
+   "name": "Charm of Sinking",
+   "mod": "artifacts",
+   "tier": "B",
+   "slots": [
+    "curios:belt"
+   ],
+   "tags": [
+    "underwater"
+   ],
+   "obtain": "Artifact pool / campsites / mob drops",
+   "impact": "Sink quickly underwater; diving convenience.",
+   "loot_note": "weight 8.",
+   "part": 1
+  },
+  {
+   "id": "artifacts:withered_bracelet",
+   "name": "Withered Bracelet",
+   "mod": "artifacts",
+   "tier": "B",
+   "slots": [
+    "curios:belt"
+   ],
+   "tags": [
+    "combat"
+   ],
+   "obtain": "Artifact pool / campsites / mob drops",
+   "impact": "Wither effect on hit; situational crowd control.",
+   "loot_note": "weight 8.",
+   "part": 1
+  },
+  {
+   "id": "artifacts:lucky_scarf",
+   "name": "Lucky Scarf",
+   "mod": "artifacts",
+   "tier": "B",
+   "slots": [
+    "curios:necklace"
+   ],
+   "tags": [
+    "fortune",
+    "utility"
+   ],
+   "obtain": "Artifact pool / campsites / mob drops",
+   "impact": "Fortune-like luck \u2014 helps loot-hunting runs.",
+   "loot_note": "weight 8.",
+   "part": 1
+  },
+  {
+   "id": "artifacts:eternal_steak",
+   "name": "Eternal Steak",
+   "mod": "artifacts",
+   "tier": "B",
+   "slots": [
+    "curios:belt"
+   ],
+   "tags": [
+    "food",
+    "sustain"
+   ],
+   "obtain": "Craft from Everlasting Beef (campfire/furnace/smoker)",
+   "impact": "Cooked infinite food; upgrade of Everlasting Beef.",
+   "loot_note": "Crafted, not dropped.",
+   "part": 1
+  },
+  {
+   "id": "artifacts:fire_gauntlet",
+   "name": "Fire Gauntlet",
+   "mod": "artifacts",
+   "tier": "B",
+   "slots": [
+    "curios:hands"
+   ],
+   "tags": [
+    "combat"
+   ],
+   "obtain": "Artifact pool / campsites / mob drops",
+   "impact": "Fire aspect melee \u2014 weaker than Flame Pendant.",
+   "loot_note": "weight 8.",
+   "part": 1
+  },
+  {
+   "id": "artifacts:helium_flamingo",
+   "name": "Helium Flamingo",
+   "mod": "artifacts",
+   "tier": "B",
+   "slots": [
+    "curios:belt"
+   ],
+   "tags": [
+    "novelty",
+    "mobility"
+   ],
+   "obtain": "Artifact pool (mod-rare weight 4) / campsites",
+   "impact": "Bounce/floating gimmick mount \u2014 rare but novelty-adjacent.",
+   "loot_note": "weight 4 \u2014 keep as a fun rare.",
+   "part": 1
+  },
+  {
+   "id": "artifacts:umbrella",
+   "name": "Umbrella",
+   "mod": "artifacts",
+   "tier": "B",
+   "slots": [
+    "curios:hands"
+   ],
+   "tags": [
+    "novelty",
+    "utility"
+   ],
+   "obtain": "Artifact pool (mod-rare weight 5) / campsites",
+   "impact": "Slow-fall umbrella; moderate utility + flair.",
+   "loot_note": "weight 5.",
+   "part": 1
+  },
+  {
+   "id": "artifacts:anglers_hat",
+   "name": "Angler's Hat",
+   "mod": "artifacts",
+   "tier": "C",
+   "slots": [
+    "curios:head"
+   ],
+   "tags": [
+    "fishing"
+   ],
+   "obtain": "Artifact pool / campsites / mob drops",
+   "impact": "Fishing luck; minor.",
+   "loot_note": "weight 8.",
+   "part": 1
+  },
+  {
+   "id": "artifacts:cowboy_hat",
+   "name": "Cowboy Hat",
+   "mod": "artifacts",
+   "tier": "C",
+   "slots": [
+    "curios:head"
+   ],
+   "tags": [
+    "flavor"
+   ],
+   "obtain": "Artifact pool / campsites / mob drops",
+   "impact": "Cosmetic + minor effect.",
+   "loot_note": "weight 8.",
+   "part": 1
+  },
+  {
+   "id": "artifacts:villager_hat",
+   "name": "Villager Hat",
+   "mod": "artifacts",
+   "tier": "C",
+   "slots": [
+    "curios:head"
+   ],
+   "tags": [
+    "flavor",
+    "economy"
+   ],
+   "obtain": "Artifact pool / campsites / mob drops",
+   "impact": "Villager reputation boost \u2014 minor trade utility.",
+   "loot_note": "weight 8.",
+   "part": 1
+  },
+  {
+   "id": "artifacts:superstitious_hat",
+   "name": "Superstitious Hat",
+   "mod": "artifacts",
+   "tier": "C",
+   "slots": [
+    "curios:head"
+   ],
+   "tags": [
+    "flavor"
+   ],
+   "obtain": "Artifact pool / campsites / mob drops",
+   "impact": "Luck-flavored cosmetic.",
+   "loot_note": "weight 8.",
+   "part": 1
+  },
+  {
+   "id": "artifacts:kitty_slippers",
+   "name": "Kitty Slippers",
+   "mod": "artifacts",
+   "tier": "C",
+   "slots": [
+    "curios:feet"
+   ],
+   "tags": [
+    "flavor"
+   ],
+   "obtain": "Artifact pool / campsites / mob drops",
+   "impact": "Creeper repel (minor) + cosmetic.",
+   "loot_note": "weight 8.",
+   "part": 1
+  },
+  {
+   "id": "artifacts:drinking_hat",
+   "name": "Drinking Hat (Plastic/Novelty)",
+   "mod": "artifacts",
+   "tier": "D",
+   "slots": [
+    "curios:head"
+   ],
+   "tags": [
+    "flavor",
+    "joke"
+   ],
+   "obtain": "Artifact pool / campsites / mob drops",
+   "impact": "Slow drinking gimmick \u2014 flavor items.",
+   "loot_note": "weight 8.",
+   "part": 1
+  },
+  {
+   "id": "artifacts:whoopee_cushion",
+   "name": "Whoopee Cushion",
+   "mod": "artifacts",
+   "tier": "F",
+   "slots": [
+    "curios:belt"
+   ],
+   "tags": [
+    "joke"
+   ],
+   "obtain": "Artifact pool (mod-rare weight 5) / campsites",
+   "impact": "Flatulence gag. Pure novelty.",
+   "loot_note": "weight 5 \u2014 easter-egg only.",
+   "part": 1
+  },
+  {
+   "id": "artifacts:onion_ring",
+   "name": "Onion Ring",
+   "mod": "artifacts",
+   "tier": "F",
+   "slots": [
+    "curios:belt"
+   ],
+   "tags": [
+    "joke",
+    "april_fools"
+   ],
+   "obtain": "April Fools only",
+   "impact": "April-Fools joke artifact.",
+   "loot_note": "Exclude from normal pools; April-Fools window only.",
+   "part": 1
+  },
+  {
+   "id": "artifacts:mimic_spawn_egg",
+   "name": "Mimic Spawn Egg",
+   "mod": "artifacts",
+   "tier": "D",
+   "slots": [],
+   "tags": [
+    "spawner",
+    "utility"
+   ],
+   "obtain": "Creative/utility",
+   "impact": "Spawns the Mimic mob for testing loot.",
+   "loot_note": "Creative tab only.",
+   "part": 1
+  },
+  {
+   "id": "relics:ring_of_the_seven_deadly_sins",
+   "name": "Ring of the Seven Deadly Sins",
+   "mod": "relics",
+   "tier": "S",
+   "slots": [
+    "curios:ring"
+   ],
+   "tags": [
+    "combat",
+    "legendary"
+   ],
+   "obtain": "Mob drop / Relic RNG + research",
+   "impact": "Cycling sins give massive conditional damage multipliers. Endgame relic.",
+   "loot_note": "Gated drop (boss/end structure) or very rare RNG; quest-reward tier.",
+   "part": 1
+  },
+  {
+   "id": "relics:ghostly_mantle",
+   "name": "Ghostly Mantle",
+   "mod": "relics",
+   "tier": "S",
+   "slots": [
+    "curios:back"
+   ],
+   "tags": [
+    "mobility",
+    "flight"
+   ],
+   "obtain": "Mob drop / Relic RNG",
+   "impact": "Creative-mode-style flight on a relic. Top-tier mobility.",
+   "loot_note": "Gated drop; never in early pools.",
+   "part": 1
+  },
+  {
+   "id": "relics:midnight_mantle",
+   "name": "Midnight Mantle",
+   "mod": "relics",
+   "tier": "A",
+   "slots": [
+    "curios:back"
+   ],
+   "tags": [
+    "mobility",
+    "stealth"
+   ],
+   "obtain": "Mob drop / Relic RNG",
+   "impact": "Dark-teleport / shadow mobility.",
+   "loot_note": "Rare pool.",
+   "part": 1
+  },
+  {
+   "id": "relics:hunting_belt",
+   "name": "Hunting Belt",
+   "mod": "relics",
+   "tier": "A",
+   "slots": [
+    "curios:belt"
+   ],
+   "tags": [
+    "combat",
+    "farming"
+   ],
+   "obtain": "Mob drop / Relic RNG",
+   "impact": "Passive kill-aura for animals \u2014 supply automation angle.",
+   "loot_note": "Rare pool.",
+   "part": 1
+  },
+  {
+   "id": "relics:kinetic_belt",
+   "name": "Kinetic Belt",
+   "mod": "relics",
+   "tier": "A",
+   "slots": [
+    "curios:belt"
+   ],
+   "tags": [
+    "mobility",
+    "combat"
+   ],
+   "obtain": "Mob drop / Relic RNG",
+   "impact": "Dash + charge damage.",
+   "loot_note": "Rare pool.",
+   "part": 1
+  },
+  {
+   "id": "relics:springy_boot",
+   "name": "Springy Boot",
+   "mod": "relics",
+   "tier": "A",
+   "slots": [
+    "curios:feet"
+   ],
+   "tags": [
+    "mobility"
+   ],
+   "obtain": "Mob drop / Relic RNG",
+   "impact": "Bounce mobility \u2014 strong vertical.",
+   "loot_note": "Rare pool.",
+   "part": 1
+  },
+  {
+   "id": "relics:chorus_staff",
+   "name": "Chorus Staff",
+   "mod": "relics",
+   "tier": "A",
+   "slots": [
+    "curios:hands"
+   ],
+   "tags": [
+    "mobility"
+   ],
+   "obtain": "Mob drop / Relic RNG",
+   "impact": "Teleport staff \u2014 strong traversal.",
+   "loot_note": "Rare pool.",
+   "part": 1
+  },
+  {
+   "id": "relics:cut_glass_boot",
+   "name": "Cut Glass Boot",
+   "mod": "relics",
+   "tier": "A",
+   "slots": [
+    "curios:feet"
+   ],
+   "tags": [
+    "mobility",
+    "defense"
+   ],
+   "obtain": "Mob drop / Relic RNG",
+   "impact": "Fall-damage immunity + glide.",
+   "loot_note": "Rare pool.",
+   "part": 1
+  },
+  {
+   "id": "relics:jellyfish_necklace",
+   "name": "Jellyfish Necklace",
+   "mod": "relics",
+   "tier": "A",
+   "slots": [
+    "curios:necklace"
+   ],
+   "tags": [
+    "combat"
+   ],
+   "obtain": "Mob drop / Relic RNG",
+   "impact": "Conditional damage buff near death.",
+   "loot_note": "Rare pool.",
+   "part": 1
+  },
+  {
+   "id": "relics:clot_of_time",
+   "name": "Clot of Time",
+   "mod": "relics",
+   "tier": "A",
+   "slots": [
+    "curios:charm"
+   ],
+   "tags": [
+    "combat",
+    "time"
+   ],
+   "obtain": "Mob drop / Relic RNG",
+   "impact": "Time-manipulation on kills.",
+   "loot_note": "Rare pool.",
+   "part": 1
+  },
+  {
+   "id": "relics:golden_tooth",
+   "name": "Golden Tooth",
+   "mod": "relics",
+   "tier": "A",
+   "slots": [
+    "curios:charm"
+   ],
+   "tags": [
+    "economy",
+    "greed"
+   ],
+   "obtain": "Mob drop / Relic RNG",
+   "impact": "Greed/currency angle.",
+   "loot_note": "Rare pool.",
+   "part": 1
+  },
+  {
+   "id": "relics:roller_skate",
+   "name": "Roller Skate",
+   "mod": "relics",
+   "tier": "B",
+   "slots": [
+    "curios:feet"
+   ],
+   "tags": [
+    "mobility"
+   ],
+   "obtain": "Mob drop / Relic RNG",
+   "impact": "Speed roller; fun mobility.",
+   "loot_note": "Common pool.",
+   "part": 1
+  },
+  {
+   "id": "relics:piglin_mask",
+   "name": "Piglin Mask",
+   "mod": "relics",
+   "tier": "B",
+   "slots": [
+    "curios:head"
+   ],
+   "tags": [
+    "economy",
+    "nether"
+   ],
+   "obtain": "Mob drop / Relic RNG",
+   "impact": "Piglin neutrality + barter utility.",
+   "loot_note": "Common pool.",
+   "part": 1
+  },
+  {
+   "id": "relics:reflective_necklace",
+   "name": "Reflective Necklace",
+   "mod": "relics",
+   "tier": "B",
+   "slots": [
+    "curios:necklace"
+   ],
+   "tags": [
+    "combat",
+    "defense"
+   ],
+   "obtain": "Mob drop / Relic RNG",
+   "impact": "Reflect damage back.",
+   "loot_note": "Common pool.",
+   "part": 1
+  },
+  {
+   "id": "relics:shield_of_retaliation",
+   "name": "Shield of Retaliation",
+   "mod": "relics",
+   "tier": "B",
+   "slots": [
+    "curios:curio"
+   ],
+   "tags": [
+    "combat",
+    "defense"
+   ],
+   "obtain": "Mob drop / Relic RNG",
+   "impact": "Retaliation shield.",
+   "loot_note": "Common pool.",
+   "part": 1
+  },
+  {
+   "id": "relics:glitchy_mantle",
+   "name": "Glitchy Mantle",
+   "mod": "relics",
+   "tier": "B",
+   "slots": [
+    "curios:back"
+   ],
+   "tags": [
+    "mobility",
+    "novelty"
+   ],
+   "obtain": "Mob drop / Relic RNG",
+   "impact": "Glitch-dash mobility.",
+   "loot_note": "Common pool.",
+   "part": 1
+  },
+  {
+   "id": "relics:leafy_mantle",
+   "name": "Leafy Mantle",
+   "mod": "relics",
+   "tier": "B",
+   "slots": [
+    "curios:back"
+   ],
+   "tags": [
+    "defense",
+    "nature"
+   ],
+   "obtain": "Mob drop / Relic RNG",
+   "impact": "Leafy protection.",
+   "loot_note": "Common pool.",
+   "part": 1
+  },
+  {
+   "id": "relics:experience_disperser",
+   "name": "Experience Disperser",
+   "mod": "relics",
+   "tier": "B",
+   "slots": [
+    "curios:charm"
+   ],
+   "tags": [
+    "xp",
+    "utility"
+   ],
+   "obtain": "Mob drop / Relic RNG",
+   "impact": "XP vacuum \u2014 farming-friendly.",
+   "loot_note": "Common pool.",
+   "part": 1
+  },
+  {
+   "id": "relics:sphere_of_self_sacrifice",
+   "name": "Sphere of Self-Sacrifice",
+   "mod": "relics",
+   "tier": "B",
+   "slots": [
+    "curios:charm"
+   ],
+   "tags": [
+    "defense",
+    "combat"
+   ],
+   "obtain": "Mob drop / Relic RNG",
+   "impact": "Trade-off defensive sphere.",
+   "loot_note": "Common pool.",
+   "part": 1
+  },
+  {
+   "id": "relics:pet_bone",
+   "name": "Pet Bone",
+   "mod": "relics",
+   "tier": "C",
+   "slots": [
+    "curios:charm"
+   ],
+   "tags": [
+    "utility",
+    "flavor"
+   ],
+   "obtain": "Mob drop / Relic RNG",
+   "impact": "Revive dead tamed pets \u2014 flavor-utility.",
+   "loot_note": "Filler.",
+   "part": 1
+  },
+  {
+   "id": "relics:rider_flute",
+   "name": "Rider Flute",
+   "mod": "relics",
+   "tier": "C",
+   "slots": [
+    "curios:charm"
+   ],
+   "tags": [
+    "mobility",
+    "flavor"
+   ],
+   "obtain": "Mob drop / Relic RNG",
+   "impact": "Summon a rideable mount.",
+   "loot_note": "Filler.",
+   "part": 1
+  },
+  {
+   "id": "relics:chef_hat",
+   "name": "Chef's Hat",
+   "mod": "relics",
+   "tier": "C",
+   "slots": [
+    "curios:head"
+   ],
+   "tags": [
+    "food",
+    "flavor"
+   ],
+   "obtain": "Mob drop / Relic RNG",
+   "impact": "Food-crafting bonus; cooking utility.",
+   "loot_note": "Filler.",
+   "part": 1
+  },
+  {
+   "id": "relics:relic_experience_bottle",
+   "name": "Relic Experience Bottle",
+   "mod": "relics",
+   "tier": "D",
+   "slots": [],
+   "tags": [
+    "xp",
+    "consumable"
+   ],
+   "obtain": "Craft / mob drop",
+   "impact": "Feeds relic research/leveling.",
+   "loot_note": "Consumable filler.",
+   "part": 1
+  },
+  {
+   "id": "relics:cooked_meatball",
+   "name": "Cooked Meatball",
+   "mod": "relics",
+   "tier": "D",
+   "slots": [],
+   "tags": [
+    "food",
+    "consumable"
+   ],
+   "obtain": "Craft from Raw Meatball",
+   "impact": "Relic food item.",
+   "loot_note": "Consumable filler.",
+   "part": 1
+  },
+  {
+   "id": "relics:raw_meatball",
+   "name": "Raw Meatball",
+   "mod": "relics",
+   "tier": "D",
+   "slots": [],
+   "tags": [
+    "food",
+    "consumable"
+   ],
+   "obtain": "Craft",
+   "impact": "Relic food item.",
+   "loot_note": "Consumable filler.",
+   "part": 1
+  },
+  {
+   "id": "smallships:brigg",
+   "name": "Brigg",
+   "mod": "smallships",
+   "tier": "A",
+   "slots": [],
+   "tags": [
+    "vehicle",
+    "transport"
+   ],
+   "obtain": "Craft (9 wood variants: oak brigg, spruce brigg, birch brigg, jungle brigg, acacia brigg, dark_oak brigg, mangrove brigg, cherry brigg, bamboo brigg)",
+   "impact": "Mid-tier multi-mast ship; fast ocean travel + combat capably.",
+   "loot_note": "Rare-adjacent naval upgrade.",
+   "part": 1
+  },
+  {
+   "id": "smallships:galley",
+   "name": "Galley",
+   "mod": "smallships",
+   "tier": "A",
+   "slots": [],
+   "tags": [
+    "vehicle",
+    "transport"
+   ],
+   "obtain": "Craft (9 wood variants: oak galley, spruce galley, birch galley, jungle galley, acacia galley, dark_oak galley, mangrove galley, cherry galley, bamboo galley)",
+   "impact": "Oar-powered transport ship; core ocean logistics.",
+   "loot_note": "Mid-game naval upgrade.",
+   "part": 1
+  },
+  {
+   "id": "smallships:drakkar",
+   "name": "Drakkar",
+   "mod": "smallships",
+   "tier": "A",
+   "slots": [],
+   "tags": [
+    "vehicle",
+    "transport"
+   ],
+   "obtain": "Craft (9 wood variants: oak drakkar, spruce drakkar, birch drakkar, jungle drakkar, acacia drakkar, dark_oak drakkar, mangrove drakkar, cherry drakkar, bamboo drakkar)",
+   "impact": "Viking-style longship; strong raid capability.",
+   "loot_note": "Mid-game naval upgrade.",
+   "part": 1
+  },
+  {
+   "id": "smallships:cog",
+   "name": "Cog",
+   "mod": "smallships",
+   "tier": "B",
+   "slots": [],
+   "tags": [
+    "vehicle",
+    "transport"
+   ],
+   "obtain": "Craft (9 wood variants: oak cog, spruce cog, birch cog, jungle cog, acacia cog, dark_oak cog, mangrove cog, cherry cog, bamboo cog)",
+   "impact": "Sturdy trade ship; good early ocean transport.",
+   "loot_note": "Common ocean vessel.",
+   "part": 1
+  },
+  {
+   "id": "smallships:cannon",
+   "name": "Ship Cannon",
+   "mod": "smallships",
+   "tier": "A",
+   "slots": [],
+   "tags": [
+    "vehicle",
+    "combat"
+   ],
+   "obtain": "Craft",
+   "impact": "Naval cannon \u2014 the ship combat weapon.",
+   "loot_note": "Craftable; gate behind ship progression.",
+   "part": 1
+  },
+  {
+   "id": "smallships:cannon_ball",
+   "name": "Cannon Ball",
+   "mod": "smallships",
+   "tier": "D",
+   "slots": [],
+   "tags": [
+    "ammo",
+    "consumable"
+   ],
+   "obtain": "Craft",
+   "impact": "Naval ammo for cannons.",
+   "loot_note": "Craftable consumable.",
+   "part": 1
+  },
+  {
+   "id": "smallships:sail",
+   "name": "Sail",
+   "mod": "smallships",
+   "tier": "C",
+   "slots": [],
+   "tags": [
+    "vehicle",
+    "component"
+   ],
+   "obtain": "Craft",
+   "impact": "Required ship component for sails.",
+   "loot_note": "Craftable component.",
+   "part": 1
+  },
+  {
+   "id": "reliquified_artifacts:mimi_dust",
+   "name": "Mimi-Dust",
+   "mod": "reliquified_artifacts",
+   "tier": "A",
+   "slots": [],
+   "tags": [
+    "loot_enabler",
+    "utility"
+   ],
+   "obtain": "Craft / loot",
+   "impact": "Transform any chest into a Mimic that drops as many random relics as it contained \u2014 a loot-multiplier for relic-hunting.",
+   "loot_note": "Gate behind artifact progression; strong Lootr-chest interaction.",
+   "part": 1
+  }
+ ]
+}

@@ -91,20 +91,17 @@ extra native memory. Current jvmOpts use `-Xmx6G -Xms3G -XX:+UseG1GC
    Noisium — don't chase config.
 5. Never add `-XX:+UseCompactObjectHeaders`.
 
-## RoadWeaver OpenCL / preload interplay
+## RoadWeaver OpenCL / preload interplay (historical — RoadWeaver removed)
 
-RoadWeaver (road generation) has its own OpenCL coarse-sampling, but it **falls
-back to CPU** when base c2me's density-function nodes are present — it logs
-benign lines like `OpenCL 粗采样暂不支持主世界，回退到 CPU: unsupported density
-node: com.ishland.c2me.opts.df...`. Those are **not errors**.
-
-With the CPU fallback active, RoadWeaver's `preloadBeforePrepareLevels` uses the
-values in `config/roadweaver/roadweaver.json`, and huge radii are fatal on a
-fresh world: `predictRadiusChunks 256` + `initialPlanRadiusChunks/dynamicPlan
-128` spun ~4 CPU cores for **hours** after "Done" (looked like a hang). Tuned
-values (AllTheTech): `predictRadiusChunks 32`, plan radii `16`, stride `64`,
-`initialGenerationThreads 6`. Any future GPU enablement should re-check these
-with OpenCL active — GPU coarse sampling changes the CPU cost profile.
+RoadWeaver (road generation) had its own OpenCL coarse-sampling, but it **fell
+back to CPU** when base c2me's density-function nodes were present — benign log
+lines like `OpenCL 粗采样暂不支持主世界，回退到 CPU: ...` were **not errors**.
+With the CPU fallback active its `preloadBeforePrepareLevels` used
+`config/roadweaver/roadweaver.json`; huge radii were fatal on a fresh world
+(`predictRadiusChunks 256` reached ~4 CPU cores for hours). RoadWeaver has been
+removed from AllTheTech, so the tuned radii note no longer applies here — if a
+new pack adds it, tune `predictRadiusChunks` + plan radii + threads and re-check
+with OpenCL active.
 
 ## RUN LOG
 

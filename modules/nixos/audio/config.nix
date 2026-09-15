@@ -40,6 +40,20 @@ in
               "bluetooth.autoswitch-to-headset-profile" = false;
             };
           }
+          // lib.optionalAttrs (cfg.deviceDefaultVolumes != { }) {
+            # Per-device default sink volume (boost the quiet analog output without
+            # touching louder Bluetooth/HDMI). `apply-routes.lua` reads
+            # `device.routes.default-sink-volume` as a per-device override over the
+            # global default. Matched on device.name (the card), not node.name.
+            "12-device-default-volume" = {
+              "monitor.alsa.rules" = lib.mapAttrsToList
+                (deviceName: volume: {
+                  matches = [{ "device.name" = deviceName; }];
+                  actions.update-props."device.routes.default-sink-volume" = volume;
+                })
+                cfg.deviceDefaultVolumes;
+            };
+          }
           // lib.optionalAttrs (cfg.mic.enable && cfg.mic.name != null) {
             # Declared default microphone — baked into WirePlumber config at build
             # time so the chosen mic is the system default source (no runtime step).

@@ -1,0 +1,13 @@
+name = "Integrated REST"
+filename = "integratedrest-1.21.1-neoforge-1.1.15-210.jar"
+side = "both"
+
+[download]
+url = "https://cdn.modrinth.com/data/ovubcV3F/versions/kECCIMcm/integratedrest-1.21.1-neoforge-1.1.15-210.jar"
+hash-format = "sha512"
+hash = "365534bf63ebfcc5092abaeb1c2d6cab49d9105e9e811f7339f91ac2665ab37e67df527b1ba3ad24806388a1652755e7b682e387469086099e090e555ee032ee"
+
+[update]
+[update.modrinth]
+mod-id = "ovubcV3F"
+version = "kECCIMcm"

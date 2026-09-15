@@ -442,36 +442,61 @@ guidance file(s) you relied on this session.
 - Do not let the file balloon. Fix what is true now; leave the rest for a real
   event.
 
-### 11.4 Self-improvement must be gated, not direct
+### 11.4 Self-improvement is a single in-band checkpoint
 
-**Any self-improvement action anywhere in nixos-config — editing a command, editing a
-skill, creating a new skill — must be proposed via `learning_append` and gated via
-`learning_promote` before being applied. Direct unlogged edits to command/skill/tool
-files during a self-improvement pass are not permitted.**
+Self-improvement is now a **single, in-band, per-response checkpoint** run by the
+checkpoint-carrying primary agents (`build`, `researcher`) — there is no separate
+review/promotion pipeline, no queue, and no `learning_*` tools anymore (the goals
+MCP no longer exposes them).
 
-- `learning_append` (goals MCP tool) records a learning with `status = 'proposed'`, requires
-  `file:line` evidence, and dedupes against near-duplicate open learnings. Always use it for a
-  new lesson; use `target_type = 'new_skill'`/`'new_command'` (with `target_path` under
-  `modules/home/opencode/skills/` or `.../commands/`) when proposing to create a file.
-- `learning_promote(<id>, "validated", acted_on_commit=<hash>)` is the ONLY way a learning
-  becomes actionable — it is the sole path that flips `learnings.status`. It takes the hash of
-  the edit it validates, so edit and promotion are one reviewed action. Promotion is
-  **fully automated — no human gate**. Both the **`build`** agent and the dedicated
-  **`learning-promoter`** agent have `"goals_learning_promote": "allow"` in `config.nix` (every
-  triage role is denied it, defense-in-depth against mid-review capture). The hard rule mirrors
-  the old human gate: a session must NEVER promote its own freshly-proposed learning without
-  dispatching the independent three-role triage team, and it only promotes on a unanimous,
-  harness-re-derived triage `agree` (no `disagree`/`uncertain` present, every verdict row
-  `rederivation_method IS NOT NULL`). Accepted learnings are applied as isolated commits and
-  **auto-merged into the base branch** (`server`); git history (`git log` / `git revert`) is the
-  audit/rollback net — a bad merge is reverted like any other change. See
-  `commands/learning-promote.md`, `agents/learning-promoter.md`, and `agents/build.md`.
-- `learning_query` lists the review queue (e.g. all `proposed` learnings for one command); each
-  row carries its `review_verdicts` so an automated promoter or a human can read the triage
-  verdicts and their harness back-fill.
-- The RUN LOG entries below are **historical record** — from before this mandate — and are not
-  migrated to the learnings tables (migrating history is a separate decision; ungated history
-  must not be falsely marked as validated).
+- **How it works:** after every response/task (when `SELF_IMPROVE=true`, the
+  current default in `agents/build.md`) the agent runs a short, cheap, structured
+  self-check: capture grounded run lessons, audit the guidance it relied on, then
+  either apply an **append-only, evidence-backed** edit to an **allow-listed**
+  target as its **own commit**, or explicitly state "no lessons this run". A
+  runtime guard plugin (`self-improve-guard`) reminds the session if it skipped
+  the checkpoint.
+- **Mechanical guards (non-LLM), not reviewers:** the commit-helper
+  (`tools/self-improve-commit.sh`) every self-apply must go through instead of raw
+  `git commit` enforces: (1) the cited `file:line` exists at write time, (2) the
+  target is on the Decision-2 allow-list (GOTCHAS.md,
+  `modules/home/opencode/{skills,commands}/*.md` RUN LOG sections, module
+  `AGENT.md` RUN LOG sections) and off the hard deny-list (`secrets/`, `proxy/`,
+  `disko/`, any `network*` module, `config.nix`, `options.nix`), (3) the diff is
+  pure insertion, and (4) the Decision-3 rate caps
+  (`my.programs.opencode.selfImprove.maxCommitsPerSession`/`maxCommitsPerDay`,
+  default `null` = uncapped). On any failure it leaves the edit unstaged and
+  reports why.
+- **Audit trail:** each self-apply is its **own** commit with a `Self-Improve:`
+  trailer — `git log --grep="Self-Improve:"` is the audit trail; `git revert` is
+  the rollback net. The repo stays manual-push.
+- **Un-gated channels:** behavioural problems/solutions still go straight into
+  `GOTCHAS.md` (§11.3), and the Minecraft pack/packwiz tooling keeps its own
+  direct RUN LOG convention (below).
+- **Two lenses, one checkpoint — no second pipeline.** The single in-band pass
+  carries two lenses. The **correctness lens** is the mechanical/self-applying one
+  described above (allow-listed commit-helper self-applies). The **efficiency
+  lens** is proposal-only: the same pass also queries the session's own
+  `opencode.db` row (`cost` / `tokens_input/output/reasoning/cache_read/cache_write`)
+  and `part`-table tool-call count (reusing `self-improve-guard.ts`'s bun:sqlite
+  pattern), and when a genuinely repeated pattern would be collapsed by a new
+  tool/skill/command/config, writes a **proposal** (name + quantitative evidence,
+  marked proposal-only, never built this session) to the repo-root
+  `EFFICIENCY-PROPOSALS.md`. It is still the same checkpoint: one pass, both
+  lenses, no new agent or gate. `EFFICIENCY-PROPOSALS.md` is allow-listed for the
+  commit-helper (same evidence/append-only checks; evidence = DB query output).
+  The optional threshold options
+  `selfImprove.efficiencyLensMinToolCalls`/`...MinCost` (nullable, default `null`)
+  can gate the lens later from usage data; unset, it runs every pass.
+
+**Scoped exception — Minecraft pack/packwiz tooling (`modules/nixos/minecraft-server/opencode/`).**
+This directory keeps its own direct RUN LOG self-improvement convention: editing the repo
+tool/skill files there and appending dated Lesson/Fix RUN LOG entries (programmatically via
+each tool's `note=` argument, or by hand) is permitted and expected after every packwiz/pack
+session — do NOT route those lessons through the in-band checkpoint. This scoped exception
+exists because Minecraft pack development self-improves its own tooling frequently and inline
+(see the mc-modpack skill's "Self-improvement — mandatory end-of-session checkpoint").
+Everything outside that directory relies on the in-band checkpoint above.
 
 ---
 
@@ -489,6 +514,38 @@ files during a self-improvement pass are not permitted.**
 ---
 
 ## RUN LOG
+
+### 2026-09-05 — goals MCP appears unwired on desktop; SUPERSEDED 2026-09-12 by full pipeline decommission
+- Lesson: sessions ran where `learning_append` (goals MCP) was not available and
+  stranded grounded lessons in chat. Root-caused at the time as "the goals MCP
+  server is not registered anywhere — `config.nix` wires only `nix-graph`
+  (line 346)". **Correction (2026-09-12, Tier 0 re-check):** the goals MCP IS
+  wired on `server` via `modules/home/goals/config.nix` (it asserts
+  `my.programs.opencode.mcp.goals`) once `my.programs.goals.enable = true`
+  (`configurations/nixos/server/default.nix:53`); it is only absent on hosts
+  (like `desktop`) where the goals module isn't enabled — the original
+  root-cause claim ("not registered anywhere") conflated the goals-module wiring
+  path with opencode's own `config.nix`.
+- Fix: **superseded entirely by the 2026-09-12 decommission** of the gated
+  triage+promote pipeline (single in-band SELF_IMPROVE checkpoint; audit via git
+  log `Self-Improve:` trailer + GOTCHAS/RUN LOG). There are no `learning_*` tools
+  and no promoter queue to reach anymore. The `packwiz.nix` `mkChecksumsApp` CWD
+  bug fixed in the same session remains a durable fix (absolute `${modpacksDir}/<name>/checksums.json`).
+
+### 2026-09-05 — scoped exception: minecraft pack/packwiz tooling self-improves directly
+- Lesson: the RUN LOG convention in `modules/nixos/minecraft-server/opencode/`
+  (edit the repo `.ts`/skill + `note=`) predates the §11.4 gating mandate, but
+  was being treated as optional — sessions punted lessons to the review queue or
+  logged junk ("init"), the marker-append code stacked duplicate `// ## RUN LOG`
+  headers in the tool files, and `packwiz-checksums` had no self-improvement
+  wiring at all (silently omitting untracked mods from checksums.json).
+- Fix: made the checkpoint mandatory in the mc-modpack skill + command, deduped
+  the `// ## RUN LOG` marker in every tool's `appendRunLog`, gave
+  `packwiz-checksums` a `note=` param plus an automatic untracked-mods guard
+  (blocks loudly, self-documents the lesson once), and added this scoped
+  exception — everything under `modules/nixos/minecraft-server/opencode/`
+  self-improves directly and must NOT be routed through
+  `learning_append`/`learning_promote`.
 
 ### 2026-08-16 — §11.4: promote is no longer human-only
 - Lesson: §11.4 said `learning_promote` "is for Sean or a human-reviewed session,
