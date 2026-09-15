@@ -1,0 +1,13 @@
+name = "Centrifuge Tiers: Reproduced"
+filename = "centrifugetiersreproduced-1.21.1-0.2.5.jar"
+side = "both"
+
+[download]
+url = "https://cdn.modrinth.com/data/kdj4UZE7/versions/GlyVB2Ru/centrifugetiersreproduced-1.21.1-0.2.5.jar"
+hash-format = "sha512"
+hash = "9d71584c3e4f4ecabd12f3ab98481c668c32b0e00b0e0cf97386a736532761ca121fa5487fbaffeaeacaf60d2fd1c59e14d698804fefe2ac0fbc4ba5aff77137"
+
+[update]
+[update.modrinth]
+mod-id = "kdj4UZE7"
+version = "GlyVB2Ru"

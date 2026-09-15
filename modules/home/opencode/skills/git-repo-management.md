@@ -69,6 +69,9 @@ host commit → gitreposync autoPush → origin/<host>
 
 ## Common Git Tasks in This Repo
 
+For the complete local workflow (staging, committing, pushing, monitoring CI), see
+**`skills/git-staging-commit-push.md`**. The sections below are quick references.
+
 ### Adding a New Host Configuration
 
 1. Create directory: `mkdir configurations/nixos/myhost/`

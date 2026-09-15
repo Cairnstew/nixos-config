@@ -44,6 +44,24 @@ in
         "${cfg.redeemNonCommercial.version}".
       '';
     }
+    {
+      assertion = !cfg.opencode.enable || !cfg.opencode.mcp.enable ||
+        cfg.opencode.mcp.host == "127.0.0.1" || cfg.opencode.mcp.host == "localhost";
+      message = ''
+        `my.programs.houdini.opencode.mcp.host` must stay loopback
+        ("127.0.0.1" or "localhost"). The fxhoudinimcp bridge can execute
+        arbitrary Python in your Houdini session; exposing the hwebserver
+        beyond loopback would let any local process drive it.
+      '';
+    }
+    {
+      assertion = !cfg.opencode.mcp.enable ||
+        builtins.match "^[A-Za-z0-9_-]+$" cfg.opencode.mcp.name != null;
+      message = ''
+        `my.programs.houdini.opencode.mcp.name` must be a plain identifier
+        (alphanumerics, `-`, `_`). It becomes the opencode MCP config key.
+      '';
+    }
   ];
 
   # ── L2: Smoke Test ────────────────────────────────────────────────────────

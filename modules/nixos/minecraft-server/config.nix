@@ -132,8 +132,21 @@ let
               }
           else
             { };
+        # Extra LOCAL mods that are not in checksums.json (our own source, built
+        # via buildModSource — e.g. dt-tree-water-cleanup). Same caveat about
+        # inputs.self for buildModSource as patches.nix above. Keys follow the
+        # mkModLinks convention: "mods/<name>.jar".
+        extraMods =
+          if builtins.pathExists "${srv.packwiz}/extra-mods.nix" then
+            import "${srv.packwiz}/extra-mods.nix"
+              {
+                inherit mods pkgs;
+                buildModSource = import "${flake.inputs.self}/modules/nixos/minecraft-server/modpacks/build-mod-source.nix" { inherit pkgs; };
+              }
+          else
+            { };
       in
-      (packwiz2nix.lib.mkModLinks serverMods) // patchedMods;
+      (packwiz2nix.lib.mkModLinks serverMods) // patchedMods // extraMods;
 
   # Internal (non-mod) content subdirs from the packwiz pack dir. packwiz
   # installers copy these into the game folder on install; our server must do
@@ -411,6 +424,19 @@ in
           packwiz-mod-pin = ./opencode/tools/packwiz-mod-pin.ts;
           packwiz-inspect-mod = ./opencode/tools/packwiz-inspect-mod.ts;
           packwiz-update-safe = ./opencode/tools/packwiz-update-safe.ts;
+          # Extraction / analysis tools (see modules/nixos/minecraft-server/opencode/tools/)
+          packwiz-ore = ./opencode/tools/packwiz-ore.ts;
+          packwiz-mobs = ./opencode/tools/packwiz-mobs.ts;
+          packwiz-mobspawn = ./opencode/tools/packwiz-mobspawn.ts;
+          packwiz-items = ./opencode/tools/packwiz-items.ts;
+          packwiz-attributes = ./opencode/tools/packwiz-attributes.ts;
+          packwiz-loot = ./opencode/tools/packwiz-loot.ts;
+          packwiz-recipes = ./opencode/tools/packwiz-recipes.ts;
+          packwiz-item-acquisition = ./opencode/tools/packwiz-item-acquisition.ts;
+          packwiz-item-tier = ./opencode/tools/packwiz-item-tier.ts;
+          packwiz-mob-combat = ./opencode/tools/packwiz-mob-combat.ts;
+          packwiz-mob-tier = ./opencode/tools/packwiz-mob-tier.ts;
+          packwiz-analyze = ./opencode/tools/packwiz-analyze.ts;
           mc-prism-log = ./opencode/tools/mc-prism-log.ts;
           mc-run = ./opencode/tools/mc-run.ts;
           mc-install = ./opencode/tools/mc-install.ts;
@@ -428,6 +454,19 @@ in
         skills.mc-mod-controls = builtins.readFile ./opencode/skill-mc-mod-controls.md;
         skills.mc-mod-controls-set = builtins.readFile ./opencode/skill-mc-mod-controls-set.md;
         skills.mc-server-monitor = builtins.readFile ./opencode/skill-mc-server-monitor.md;
+        # Extraction / analysis skill docs
+        skills.mc-mod-ore = builtins.readFile ./opencode/skill-mc-mod-ore.md;
+        skills.mc-mod-mobs = builtins.readFile ./opencode/skill-mc-mod-mobs.md;
+        skills.mc-mod-mobspawn = builtins.readFile ./opencode/skill-mc-mod-mobspawn.md;
+        skills.mc-mod-items = builtins.readFile ./opencode/skill-mc-mod-items.md;
+        skills.mc-mod-attributes = builtins.readFile ./opencode/skill-mc-mod-attributes.md;
+        skills.mc-mod-loot = builtins.readFile ./opencode/skill-mc-mod-loot.md;
+        skills.mc-mod-recipes = builtins.readFile ./opencode/skill-mc-mod-recipes.md;
+        skills.mc-mod-analyze = builtins.readFile ./opencode/skill-mc-mod-analyze.md;
+        skills.mc-mod-item-acquisition = builtins.readFile ./opencode/skill-mc-item-acquisition.md;
+        skills.mc-mod-item-tier = builtins.readFile ./opencode/skill-mc-item-tier.md;
+        skills.mc-mod-combat = builtins.readFile ./opencode/skill-mc-mod-combat.md;
+        skills.mc-mod-tier = builtins.readFile ./opencode/skill-mc-mod-tier.md;
         commands.mc-modpack = ./opencode/commands/mc-modpack.md;
       };
     })

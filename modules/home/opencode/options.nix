@@ -116,9 +116,8 @@ let
         description = ''
           Per-tool permission overrides keyed by exact tool name, merged into the
           agent's rendered `permission` object. Use to scope MCP tools per agent,
-          e.g. `{ "goals_learning_promote" = "deny"; }` to hide the promote tool
-          from triage roles (Tier 1, Decision 1 defense-in-depth). opencode names
-          MCP tools as `<server>_<tool>` (verified against live tool-call data).
+          e.g. `{ "nix_graph_graph_stats" = "deny"; }`. opencode names MCP tools
+          as `<server>_<tool>` (verified against live tool-call data).
         '';
       };
     };
@@ -945,105 +944,48 @@ in
       };
     };
 
-    # ── Learning-promoter watcher (v2 — opencode serve) ──────────────────────
+    # ── Single-lineage self-improvement (in-band checkpoint, Decision 3) ────
 
-    learningPromoterWatcher = {
-      enable = mkEnableOption ''
-        Learning-promoter watcher: polls the goals DB for proposed learnings
-        and dispatches the promoter agent via `opencode run --attach` to a
-        persistent `opencode serve` instance. Runs under a systemd user timer
-        (default: 1min).
-
-        Features:
-        - API-based communication (no tmux, no send-keys fragility)
-        - Post-crash verdict reconciliation (force-rejects partial learnings)
-        - Stale learning reconciliation (force-rejects never-triaged learnings)
-        - Promotion timeout (configurable, default 30min)
-        - Fast crash recovery (1min timer interval)
-        - Overlap prevention via state file (prevents concurrent promotions)
-
-        Requires the `opencode-serve` systemd service to be running (auto-started
-        when this watcher is enabled). The watcher checks server health before
-        dispatching and skips if the server is unreachable.
-      '';
-
-      repoDir = mkOption {
-        type = types.str;
-        default = "${config.home.homeDirectory}/nixos-config";
-        defaultText = literalExpression ''"''${config.home.homeDirectory}/nixos-config"'';
-        description = "Path to the nixos-config repo for the promoter session.";
-      };
-
-      goalsDb = mkOption {
-        type = types.str;
-        default = "${config.home.homeDirectory}/.local/share/goals/goals.db";
-        defaultText = literalExpression ''"''${config.home.homeDirectory}/.local/share/goals/goals.db"'';
-        description = "Path to the goals SQLite database.";
-      };
-
-      checkInterval = mkOption {
-        type = types.str;
-        default = "1min";
-        example = "5min";
+    selfImprove = {
+      maxCommitsPerSession = mkOption {
+        type = types.nullOr types.int;
+        default = null;
+        example = 3;
         description = ''
-          Interval between watcher checks (systemd time span format, e.g.
-          "1min", "5min"). Uses OnBootSec + OnUnitActiveSec under the hood.
-          Set to "1min" to check every minute (recommended for fast crash
-          recovery). The check is a single SQLite query — cheap enough for
-          sub-minute intervals.
+          Max self-improvement commit-helper applies per opencode session.
+          null (default) = uncapped. Enforced mechanically by
+          tools/self-improve-commit.sh, which reads the value from
+          ~/.config/opencode/self-improve.json (written by this module).
         '';
       };
 
-      servePort = mkOption {
-        type = types.ints.positive;
-        default = 4096;
+      maxCommitsPerDay = mkOption {
+        type = types.nullOr types.int;
+        default = null;
+        example = 10;
+        description = "Max self-improvement commit-helper applies per day. null (default) = uncapped.";
+      };
+
+      efficiencyLensMinToolCalls = mkOption {
+        type = types.nullOr types.int;
+        default = null;
+        example = 30;
         description = ''
-          Port for the persistent `opencode serve` instance. The watcher
-          connects to this port via `opencode run --attach`. Must not conflict
-          with other services.
+          Optional floor on `part`-table tool-call count before the checkpoint's
+          efficiency lens runs. null (default) = no gate, lens runs every pass.
+          Set later from usage data to skip the DB query reflection on trivial
+          sessions; read from ~/.config/opencode/self-improve.json.
         '';
       };
 
-      serverPassword = mkOption {
-        type = types.str;
-        default = "";
+      efficiencyLensMinCost = mkOption {
+        type = types.nullOr types.number;
+        default = null;
+        example = 0.5;
         description = ''
-          Optional basic auth password for the opencode serve instance.
-          Set to "" (default) for unauthenticated local connections.
-        '';
-      };
-
-      promotionTimeout = mkOption {
-        type = types.ints.positive;
-        default = 1800;
-        description = ''
-          Maximum seconds for a single promotion cycle. If the promoter agent
-          takes longer than this (e.g. model API hanging, stuck reviewer), the
-          watcher cleans up the state and retries on the next cycle. Default:
-          1800 (30 minutes).
-        '';
-      };
-
-      stalenessThreshold = mkOption {
-        type = types.ints.positive;
-        default = 1800;
-        description = ''
-          Seconds after which a proposed learning with zero verdicts is
-          considered stale (never triaged) and force-rejected. This catches
-          learnings that were proposed but the promoter never got to them
-          (crashed before triage, server was down, etc.). Default: 1800
-          (30 minutes). Should be >= promotionTimeout to avoid killing
-          learnings that are queued but not yet reached in a sequential batch.
-        '';
-      };
-
-      commandTimeout = mkOption {
-        type = types.ints.positive;
-        default = 600;
-        description = ''
-          Timeout in seconds for the `opencode run --attach` command. If the
-          promoter agent doesn't complete within this window, the command is
-          killed and retried on the next cycle. Default: 600 (10 minutes).
+          Optional floor on session cost (USD) before the checkpoint's
+          efficiency lens runs. null (default) = no gate, lens runs every pass.
+          Set later from usage data; read from ~/.config/opencode/self-improve.json.
         '';
       };
     };

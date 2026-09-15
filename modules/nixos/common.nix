@@ -16,6 +16,7 @@ let
     "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIIZ1mor/quSbisUKJivp3lMDvMcQR4wojD/l5Etg6KCV root@server" # server
     "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIKWiP0JxNaeWS30gzg4A2zLnSRdZutWzCP0mjZit7/De seanc@desktop" # desktop
     "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIKekVg/4uXAmOcRzxbaPn9zW5NTB6te+F0PUXO1FmrkQ seanc@laptop" # nixos-deploy/desktop
+    "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIC6lmFOrfiT1Wg3r0CpoNZnHbbft0y66Y57zC2rK9Lrp root@oracle" # oracle (Oracle Cloud A1 VM, .deploy-keys/oracle/)
   ];
   usersKeys = [ flake.config.me.sshKey ];
 in

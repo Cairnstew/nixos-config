@@ -16,6 +16,15 @@ SideFX Houdini — 3D animation, visual effects, and procedural generation softw
 | `my.programs.houdini.redeemNonCommercial.version` | auto-detected | Houdini `major.minor` version for license generation |
 | `my.programs.houdini.redeemNonCommercial.products` | `["HOUDINI-NC" "RENDER-NC"]` | Non-commercial products to license |
 | `my.programs.houdini.extraEnv` | `{}` | Extra environment variables |
+| `my.programs.houdini.opencode.enable` | `true` | Register MCP + skills into the primary user's opencode config |
+| `my.programs.houdini.opencode.skills` | 6 skills | name → SKILL.md (hou Python, VEX, HDAs, .hip, rendering, hscript) |
+| `my.programs.houdini.opencode.mcp.enable` | `true` | Add the MCP server entry |
+| `my.programs.houdini.opencode.mcp.name` | `fxhoudini` | opencode MCP config key |
+| `my.programs.houdini.opencode.mcp.host` | `127.0.0.1` | Houdini hwebserver host (must stay loopback) |
+| `my.programs.houdini.opencode.mcp.port` | `8100` | Houdini hwebserver port |
+| `my.programs.houdini.opencode.mcp.timeout` | `120000` | MCP startup timeout in ms |
+| `my.programs.houdini.opencode.mcp.command` | `[]` | Empty = `uvx --from fxhoudinimcp fxhoudinimcp` |
+| `my.programs.houdini.opencode.mcp.environment` | `{}` | Extra env vars (merged over `HOUDINI_HOST`/`HOUDINI_PORT`) |
 
 ## Usage Examples
 
@@ -23,6 +32,18 @@ SideFX Houdini — 3D animation, visual effects, and procedural generation softw
 
 ```nix
 my.programs.houdini.enable = true;
+```
+
+### opencode MCP + skills (default when enabled)
+
+Enabling the module also registers the `fxhoudinimcp` MCP server and six
+Houdini knowledge skills into the primary user's global opencode config
+(`my.programs.opencode`), exactly like the other module MCPs. To turn just
+this off:
+
+```nix
+my.programs.houdini.enable = true;
+my.programs.houdini.opencode.enable = false;  # skip MCP + skills
 ```
 
 ### With Remote License Server
@@ -151,3 +172,18 @@ automatically.
   only activates when the agenix secret exists; sesinetd only starts when
   `localLicenseServer` or `redeemNonCommercial` is enabled; redemption only runs
   when both the secret and `redeemNonCommercial.enable` are present
+- **MCP requires a live Houdini.** `fxhoudinimcp` (healkeiser/fxhoudinimcp, MIT)
+  is a stdio bridge to a plugin loaded inside a *running* Houdini instance
+  (hwebserver on `127.0.0.1:8100`) — Houdini 20.5+; without Houdini running,
+  MCP calls fail, but the skills work anywhere. The skills are knowledge skills
+  (HOM/hou Python, hython, VEX, HDAs, .hip format, rendering, hscript) and
+  don't need Houdini installed.
+- **Installing the MCP plugin**: run the install from a shell where `uvx` is
+  on PATH (e.g. a devshell with `uv`, or using an absolute store path):
+  `uvx --from fxhoudinimcp python -m fxhoudinimcp install` — fetches
+  fxhoudinimcp on demand (same mechanism the MCP `command` uses), writes
+  `fxhoudinimcp.json` into `~/houdini<ver>/packages/`, and skips the Claude
+  client wiring (this module's opencode MCP already spawns the server).
+  Requires Houdini 20.5+; no API keys; binds loopback by default — the bridge
+  executes arbitrary Python inside Houdini, so never expose the hwebserver
+  beyond loopback.

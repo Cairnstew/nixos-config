@@ -3,7 +3,7 @@ let
   cfg = config.my.services.game-servers;
   inherit (flake.inputs) self;
 
-  selfPkgs = self.packages.${pkgs.system} or { };
+  selfPkgs = self.packages.${pkgs.stdenv.hostPlatform.system} or { };
   a2sExporter = selfPkgs.a2s-exporter or null;
 
   enabledServers = lib.filterAttrs (_: s: s.enable) cfg.servers;

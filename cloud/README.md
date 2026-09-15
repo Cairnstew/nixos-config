@@ -1,7 +1,7 @@
 # Cloud Infrastructure
 
-Declare cloud infrastructure — VMs, containers, services on **GCP** and **AWS** —
-alongside NixOS hosts in the same flake.
+Declare cloud infrastructure — VMs, containers, services on **GCP**, **AWS**, and
+**Oracle Cloud** — alongside NixOS hosts in the same flake.
 
 ## Approach
 
@@ -26,14 +26,19 @@ NixOS modules. They live here in `cloud/`, wired up by
 
 ```bash
 # GCP
-nix run .#gcp -- plan          # or nix run .#gcp.plan
-nix run .#gcp -- apply
-nix run .#gcp -- destroy
+nix run .#gcp.plan          # or nix run .#gcp -- plan (see note below)
+nix run .#gcp.apply
+nix run .#gcp.destroy
 
 # AWS
-nix run .#aws -- plan
-nix run .#aws -- apply
-nix run .#aws -- destroy
+nix run .#aws.plan
+nix run .#aws.apply
+nix run .#aws.destroy
+
+# Oracle Cloud (Always Free Ampere A1)
+nix run .#oci.plan
+nix run .#oci.apply
+nix run .#oci.destroy
 
 # Inspect the generated Terraform config
 nix run .#tf-show-config       # pretty JSON via jq
@@ -42,6 +47,10 @@ nix run .#tf-show-config       # pretty JSON via jq
 nix run .#tf -- plan
 nix run .#tf -- apply
 ```
+
+> ⚠️ Use the `<config>.plan` / `<config>.apply` passthru forms: the wrapper's
+> `bin/apply` script does not dispatch on trailing args, so `nix run .#gcp -- plan`
+> would run `tofu apply` with `plan` misinterpreted as a plan-file argument.
 
 State is persisted per config in `~/.local/share/terraform/nixos-infra/<name>`
 (no remote backend yet — see [State](#state)).
@@ -52,6 +61,7 @@ State is persisted per config in `~/.local/share/terraform/nixos-infra/<name>`
 |---|---|---|
 | `cloud/gcp/` | Google Cloud | VPC, Cloud NAT, firewalls, GCS model-cache bucket, service account, **NixOS** GPU spot MIG |
 | `cloud/aws/` | AWS | VPC, internet gateway, key pair, security group, **NixOS** EC2 instance |
+| `cloud/oci/` | Oracle Cloud | VCN, internet gateway, route table, security list, **Ubuntu** Ampere A1.Flex instance + block volume (Always Free) |
 
 ### GCP (`.#gcp`)
 
@@ -75,6 +85,33 @@ Variables (set via `TF_VAR_*` by the wrapper, from agenix secrets when present):
 Provisions a VPC and a `t3.medium` NixOS EC2 instance (AMI auto-fetched from
 NixOS's official AMI owner). The `nixos-cloud` key pair is imported from the
 `aws-ssh-pub-key` secret.
+
+### OCI (`.#oci`)
+
+Provisions a **free-tier-only** footprint on Oracle Cloud Always Free (home
+region): a VCN with internet gateway, a security list (SSH bootstrap + Tailscale
+UDP only), and one **Ampere A1.Flex** instance (default 1 OCPU / 6 GB — inside
+the 2 OCPU / 12 GB pool) with a 100 GB block volume (inside the 200 GB pool).
+Boots Canonical Ubuntu (ARM) from the newest platform image.
+
+Credentials come from the agenix `oci-cloud` secret (a full OCI CLI `~/.oci/config`
+INI) — the wrapper exports `OCI_CONFIG_FILE=/run/agenix/oci-cloud` and extracts
+the tenancy OCID as `TF_VAR_tenancy_ocid` (the root compartment). Region must
+match the `region=` in that secret (Always Free only applies in the home region).
+
+Variables (set via `TF_VAR_*` by the wrapper, from agenix secrets when present):
+
+| Variable | Source / default |
+|---|---|
+| `tenancy_ocid` | extracted from `/run/agenix/oci-cloud` |
+| `ssh_pub_key` | `/run/agenix/aws-ssh-pub-key` |
+| `compartment_ocid` | `""` → defaults to tenancy (root compartment) |
+| `oci_region` | `uk-london-1` (must match the secret) |
+| `ocpus` / `memory_gbs` / `data_volume_gbs` | `1` / `6` / `100` (stay inside the free pool) |
+
+> ⚠️ Always Free is home-region-scoped and subject to Oracle's idle-reclamation
+> policy (<20% CPU/network/memory over 7 days → instance reclaimed). Keep the box
+> busy or upgrade the account to PAYG (free resources stay free; no reclamation).
 
 ## Stage 2: deploying NixOS onto provisioned hosts
 

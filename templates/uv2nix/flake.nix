@@ -122,7 +122,7 @@
 
       nixosModules.default = { pkgs, ... }: {
         imports = [ ./nix/module.nix ];
-        services.uv2nix-template.package = lib.mkDefault self.packages.${pkgs.system}.default;
+        services.uv2nix-template.package = lib.mkDefault self.packages.${pkgs.stdenv.hostPlatform.system}.default;
       };
 
       homeManagerModules.default = import ./nix/home-module.nix;

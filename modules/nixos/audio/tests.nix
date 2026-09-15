@@ -1,4 +1,4 @@
-{ config, ... }:
+{ config, lib, ... }:
 let
   cfg = config.my.system.audio;
 in
@@ -15,6 +15,12 @@ in
     {
       assertion = !cfg.mic.enable || cfg.mic.name != null;
       message = "my.system.audio.mic.enable requires my.system.audio.mic.name (find it with `wpctl status`).";
+    }
+    {
+      # WirePlumber treats the value as a linear volume ratio; the schema clamps
+      # device.routes.default-sink-volume to [0.0, 1.0].
+      assertion = builtins.all (v: v >= 0.0 && v <= 1.0) (lib.attrValues cfg.deviceDefaultVolumes);
+      message = "my.system.audio.deviceDefaultVolumes values must be between 0.0 and 1.0.";
     }
   ];
 }

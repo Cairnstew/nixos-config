@@ -21,9 +21,9 @@ jobs:
       fail-fast: false
       matrix:
         package:
-          - ci
+          - act
+          - opencode
           - update
-          - test
           - localsend
     steps:
       - uses: actions/checkout@v6

@@ -131,3 +131,7 @@ user: make the pack's default sneak key X and iris reload L, keep player remaps.
    their remaps; fresh installs get the new defaults), index refreshed, no
    checksums regen needed.
 ```
+
+## RUN LOG
+
+Self-improvement: append a dated Lesson/Fix entry here (or via `note=` on the paired tool) whenever this session surfaces a gotcha or improvement. Bare action logs are forbidden.

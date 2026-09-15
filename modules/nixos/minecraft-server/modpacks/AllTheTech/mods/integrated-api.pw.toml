@@ -1,0 +1,13 @@
+name = "Integrated API"
+filename = "integrated_api-neoforge-1.21.1-1.8.0.jar"
+side = "both"
+
+[download]
+url = "https://cdn.modrinth.com/data/V6fKbpBN/versions/cKHoMnZX/integrated_api-neoforge-1.21.1-1.8.0.jar"
+hash-format = "sha512"
+hash = "028cf5be6667dd760a70f9a3024dde3f05decf0a942a54b99a2bee25e954532abe9e2eb57eb2c5e627759a37902309b8be7e0b114fa1612ccab6e787c52ea9f8"
+
+[update]
+[update.modrinth]
+mod-id = "V6fKbpBN"
+version = "cKHoMnZX"

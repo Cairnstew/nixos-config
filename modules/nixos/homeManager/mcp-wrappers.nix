@@ -81,7 +81,7 @@
           exit 1
         fi
         export KEEPA_API_KEY="$(cat ${config.age.secrets.keepa-api-key.path})"
-        exec ${self.packages.${pkgs.system}.keepa-mcp}/bin/keepa-mcp "$@"
+        exec ${self.packages.${pkgs.stdenv.hostPlatform.system}.keepa-mcp}/bin/keepa-mcp "$@"
       '';
       meta.description = "MCP server: Keepa Amazon price history, deals, sellers";
     };

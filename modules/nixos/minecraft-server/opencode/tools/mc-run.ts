@@ -135,7 +135,9 @@ function appendRunLog(note: string): string {
   if (existsSync(src)) {
     const date = new Date().toISOString().slice(0, 10);
     try {
-      appendFileSync(src, `\n// ## RUN LOG\n// ### ${date}\n// ${note.replace(/\n/g, "\n// ")}\n`);
+      const srcExisting = readFileSync(src, "utf-8");
+      const srcHeader = srcExisting.includes("\n// ## RUN LOG") ? "" : "\n// ## RUN LOG\n";
+      appendFileSync(src, `${srcHeader}// ### ${date}\n// ${note.replace(/\n/g, "\n// ")}\n`);
       out.push(`tool source ${src}`);
     } catch (e: any) {
       out.push(`tool source FAILED (${e.message})`);
@@ -423,3 +425,7 @@ export default {
 // ## RUN LOG
 // ### 2026-08-27
 // Test Houdini launch after fixing /tmp/houdini_temp permissions (1777). Root cause was EACCES on temp SVG file creation during icon processing.
+// ### 2026-09-07
+// Checking if Prism Launcher instance exists and what state it's in
+// ### 2026-09-07
+// Fresh baseline boot of AllTheTech via Prism Launcher for timing

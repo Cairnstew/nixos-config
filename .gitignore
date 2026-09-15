@@ -15,3 +15,22 @@ modules/flake-parts/ventoy/ts.key
 __pycache__/
 .playwright-mcp/
 arch_userspace.tar.gz
+
+# Large/binary files
+*.tachibk
+extension_api.json
+desktop.qcow2
+
+# Research reports / stale docs at root
+*-meccha-chameleon.md
+research-report-*.md
+godot-template-audit-findings.md
+
+# Editor configs
+.obsidian/
+.vscode/
+
+# Misc stale files
+tui.json
+template.nix
+gcu-calendar-snapshot
