@@ -29,11 +29,7 @@
     type = "string";
   };
 
-  variable.instance_type = {
-    description = "EC2 instance type";
-    type = "string";
-    default = "t3.medium";
-  };
+  # (instance_type variable removed — no EC2 instance provisioned)
 
   provider.aws = {
     region = lib.tf.ref "var.region";
@@ -124,30 +120,15 @@
     tags = { Name = "nixos-cloud"; };
   };
 
-  # ── EC2 instance ──────────────────────────────────────────────────────────
-  resource.aws_instance.nixos = {
-    ami = lib.tf.ref "data.aws_ami.nixos.id";
-    instance_type = lib.tf.ref "var.instance_type";
-    subnet_id = lib.tf.ref "aws_subnet.main.id";
-    vpc_security_group_ids = [ "\${aws_security_group.main.id}" ];
-    key_name = lib.tf.ref "aws_key_pair.main.key_name";
-
-    root_block_device = [{
-      volume_size = 40;
-      volume_type = "gp3";
-    }];
-
-    tags = { Name = "nixos-cloud"; };
+  # ── Outputs ────────────────────────────────────────────────────────────────
+  # (EC2 instance removed — it costs money. Re-add when ready to deploy.)
+  output.vpc_id = {
+    value = lib.tf.ref "aws_vpc.main.id";
+    description = "VPC id for the nixos-cloud network";
   };
 
-  # ── Outputs (consumed by stage-2 colmena/deploy-rs inventory) ─────────────
-  output.public_ip = {
-    value = lib.tf.ref "aws_instance.nixos.public_ip";
-    description = "Public IP of the NixOS instance (for nixos-anywhere bootstrap)";
-  };
-
-  output.instance_id = {
-    value = lib.tf.ref "aws_instance.nixos.id";
-    description = "EC2 instance id";
+  output.subnet_id = {
+    value = lib.tf.ref "aws_subnet.main.id";
+    description = "Public subnet id";
   };
 }
