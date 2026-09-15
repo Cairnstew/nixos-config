@@ -302,6 +302,7 @@ in
         };
         skills = lib.mkDefault {
           git-repo-management = builtins.readFile ./skills/git-repo-management.md;
+          git-staging-commit-push = builtins.readFile ./skills/git-staging-commit-push.md;
           nixos-configuration = builtins.readFile ./skills/nixos-configuration.md;
           module-development = builtins.readFile ./skills/module-development.md;
           deploy-workflow = builtins.readFile ./skills/deploy-workflow.md;
