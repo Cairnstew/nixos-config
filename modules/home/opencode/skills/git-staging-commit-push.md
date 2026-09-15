@@ -143,10 +143,32 @@ git push
 This triggers the **branch-per-host CI pipeline**:
 
 ```
-push to origin/<host> → merge-per-host.yml validates → auto-PR to master
+push to origin/<host> → merge-per-host.yml validates → auto-PR to master → direct merge
 ```
 
 **Important:** Never push directly to `master`. Always push to your host branch and let CI create the PR.
+
+#### How Auto-Merge Works
+
+The `merge-per-host.yml` workflow:
+1. Validates the config (`nix build --dry-run`)
+2. Creates a PR from your host branch to master
+3. Attempts to merge immediately via `gh pr merge --merge`
+
+If the merge fails (e.g., conflicts with master, checks not passing), the PR stays open for manual merge. The workflow step is non-fatal (`continue-on-error: true`), so it won't block the pipeline.
+
+#### When Your Branch Falls Behind Master
+
+If another host merged first, your auto-merge PR may have conflicts. Fix this by merging master into your branch:
+
+```bash
+git fetch origin
+git merge origin/master
+# resolve conflicts if any
+git push origin <your-branch>
+```
+
+The workflow will create a new PR (or update the existing one) and merge it.
 
 ### Step 7: Monitor CI
 
@@ -181,6 +203,8 @@ gh run view <run-id>
 | `eval-check` fails | Check nix syntax, missing imports, or undefined options |
 | `lint-check` fails | Fix statix/deadnix warnings in changed files |
 | `module-lint` fails | Ensure `default.nix` is import-only, `meta.nix` present |
+| `auto-pr` fails (merge conflict) | Merge master into your branch, push again |
+| `auto-pr` fails (format check) | Run `nix fmt` on your branch, push again |
 
 ## Handling Multiple Logical Changes
 
@@ -267,12 +291,34 @@ Ensure SSH keys are configured or use HTTPS with a valid token.
 
 - You may have unstaged formatting changes. Run `git diff` to check.
 - Some templates have pre-existing format issues (known, not your problem).
+- The format check also runs on the auto-merge PR to master — if your branch is behind master, the PR may pick up format issues from other branches.
 
 ### Eval check fails after clean local build
 
 - CI may be evaluating a different host or using different inputs
 - Check the CI logs for the specific host that failed
 - Run `nix eval .#nixosConfigurations.<host>.config.system.build.toplevel` locally
+
+### Auto-merge PR has merge conflicts
+
+Your branch fell behind master. Merge master into your branch:
+
+```bash
+git fetch origin
+git merge origin/master
+# resolve any conflicts
+git push origin <your-branch>
+```
+
+The workflow will create a new PR and attempt to merge it.
+
+### Auto-merge PR fails with "Branch does not have required protected branch rules"
+
+This is expected when branch protection is not configured for `master`. The workflow's "Merge PR" step uses `continue-on-error: true`, so it won't fail the pipeline. The PR stays open for manual merge via the GitHub UI or:
+
+```bash
+gh pr merge <pr-number> --merge --repo Cairnstew/nixos-config
+```
 
 ## See Also
 
