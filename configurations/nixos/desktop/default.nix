@@ -944,7 +944,7 @@
   # answering through-tunnel pings (the documented "data-plane wedge" — local
   # interface/MTU/self-ping all look fine while every TCP connection times out).
   my.services.tailscaleWatchdog = {
-    enable = true;
+    enable = false; # DISABLED 2026-09-15: server is down, pinging 100.78.102.28 spams degradation emails
     canaryPeers = [ "100.78.102.28" "100.70.43.44" ]; # server, pikvm
   };
 
