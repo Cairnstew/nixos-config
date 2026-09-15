@@ -1,6 +1,6 @@
 # Laptop Configuration
 # See: ../../AGENT.md for configuration conventions
-{ flake, config, ... }:
+{ flake, config, lib, pkgs, ... }:
 {
   imports = [
     # Import hardware config FIRST to set hostPlatform
@@ -67,6 +67,17 @@
   # ── Laptop-specific services ─────────────────────────────────────────────
   services.fwupd.enable = true;
 
+  # ── Reverse Proxy ────────────────────────────────────────────────────────
+  # Unified proxy module: services auto-register with my.services.proxy.upstreams.
+  # Caddy serves the service dashboard at / and proxies subpaths to each backend.
+  # tailscale serve forwards :443 → Caddy:8081 so each service is at
+  # https://laptop.tail685690.ts.net/<service>/.
+  my.services.proxy = {
+    listenAddresses = [ "100.108.181.64" "127.0.0.1" ];
+    tailscaleServe.enable = true;
+    dashboard.title = "${lib.toUpper (builtins.substring 0 1 config.networking.hostName)}${builtins.substring 1 (builtins.stringLength config.networking.hostName) config.networking.hostName} Dashboard";
+  };
+
   # ── Service Configuration ────────────────────────────────────────────────
   my.services.natShare = {
     enable = true;
@@ -80,6 +91,10 @@
 
   # ── Additional Programs ────────────────────────────────────────────────
   my.programs.ventoy.enable = true;
+
+  # mosh client — pair with server's my.services.mosh for lag-free sessions
+  # over flaky links (UDP, survives relay flaps).
+  environment.systemPackages = with pkgs; [ mosh ];
 
   # ── Backup Source ───────────────────────────────────────────────────────
   # Push /home/seanc to the server's restic repository over SFTP (tailnet
