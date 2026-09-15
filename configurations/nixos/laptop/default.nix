@@ -1,11 +1,12 @@
 # Laptop Configuration
 # See: ../../AGENT.md for configuration conventions
-{ flake, ... }:
+{ flake, config, ... }:
 {
   imports = [
     # Import hardware config FIRST to set hostPlatform
     ./hardware-configuration.nix
     flake.inputs.self.nixosModules.common
+    flake.inputs.self.nixosModules.eduroam
   ];
 
   # ── Bootloader (was in configuration.nix, now inlined) ─────────────────
@@ -25,13 +26,17 @@
     # Role
     workstation.enable = true;
 
-    # Desktop — GNOME
-    desktop.gnome.enable = true;
+    # Desktop — Hyprland
+    desktop.choice = "hyprland";
 
     # Hardware
     gpu.mesa.enable = true;
     location.enable = true;
-    power.laptop.enable = true;
+    # Battery-aware power management (auto-cpufreq, thermald, logind lid
+    # handling). Replaces power.laptop, which is GNOME-only and asserts
+    # desktop.gnome.enable. For Hyprland, idle/lock/suspend is handled by
+    # hypridle (my.desktop.hyprland.idle).
+    battery.enable = true;
 
     # Theming
     theming.stylix.enable = true;
@@ -46,6 +51,18 @@
 
   # ── SSH Access
   # F12: authorizedKeys inherited from common.nix mkDefault (single source of truth)
+
+  # ── Eduroam (GCU WiFi) ─────────────────────────────────────────────────────
+  # Declarative WPA2-Enterprise profile. Password stored in agenix secret.
+  # On campus: eduroam auto-connects. Off campus: profile is inert.
+  # To set the secret:  echo -n 'yourpassword' > /tmp/eduroam-pw
+  #                     agenix-manager new eduroam-password --file /tmp/eduroam-pw
+  my.networking.eduroam = {
+    enable = true;
+    identity = "SCAIRN303@gcu.ac.uk"; # ← replace with your GCU student/staff email
+    interface = "wlp170s0";
+    domain = "gcu.ac.uk";
+  };
 
   # ── Laptop-specific services ─────────────────────────────────────────────
   services.fwupd.enable = true;
@@ -74,4 +91,9 @@
     };
   };
 
+  # ── OpenCode Zen provider ────────────────────────────────────────────────
+  # The laptop uses a dedicated zen key (laptop-opencode-key) instead of the
+  # shared OpenCode token used by default on all other hosts.
+  my.homeManager.extraConfig.my.programs.opencode.opencode-zen.keyFile =
+    config.age.secrets.laptop-opencode-key.path;
 }

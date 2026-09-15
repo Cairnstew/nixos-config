@@ -4,7 +4,7 @@ let
   inherit (inputs) self;
   inherit (flake.config.me) username;
   cfg = config.my.homeManager;
-  mcpServersPkgs = inputs.mcp-servers-nix.packages.${pkgs.stdenv.hostPlatform.system};
+  mcpServersPkgs = inputs.mcp-servers-nix.packages.${pkgs.system};
 
   # MCP wrapper packages + opencode theme live in ./mcp-wrappers.nix (recon M11).
   # Values are byte-identical to the block that previously lived here.
@@ -47,6 +47,7 @@ in
       clarifai-pat = { owner = lib.mkForce username; };
       deepinfra-key = { owner = lib.mkForce username; };
       opencode-token = { owner = lib.mkForce username; };
+      laptop-opencode-key = { owner = lib.mkForce username; };
       opencodeWeb-password = { owner = lib.mkForce username; group = lib.mkForce "users"; };
       groq-token = { owner = lib.mkForce username; };
       github-token = { owner = lib.mkForce username; group = lib.mkForce "users"; };
@@ -122,10 +123,10 @@ in
           clarifai.patFile = config.age.secrets.clarifai-pat.path;
           deepinfra.keyFile = config.age.secrets.deepinfra-key.path;
           opencode-go.keyFile = config.age.secrets.opencode-token.path;
-          # OpenCode Zen shares the same auth key as OpenCode Go — this account's
-          # OpenCode Go token also authenticates Zen (see modules/home/opencode/
-          # options.nix opencode-zen). Both are written to auth.json.
-          opencode-zen.keyFile = config.age.secrets.opencode-token.path;
+          # OpenCode Zen key: default hosts reuse the shared OpenCode token as the
+          # "normal zen key". The laptop overrides this to a dedicated
+          # laptop-opencode-key secret (see configurations/nixos/laptop/default.nix).
+          opencode-zen.keyFile = lib.mkDefault config.age.secrets.opencode-token.path;
           # CLI + 5-min cache refresher for OpenCode Go usage (dashboard feeds
           # off ~/.cache/opencode/go-usage.json). Guarded on the secret existing.
           opencode-go.usage.enable =
@@ -188,7 +189,9 @@ in
           # Usage-aware model fallback (my.programs.opencode.modelFallback).
           # Chains resolve against ~/.cache/opencode/go-usage.json percent data:
           # first entry whose caps all pass wins; the LAST entry is the
-          # cap-free safety net. Thresholds are PERCENT-based — the Go
+          # cap-free safety net. Self-improvement/triage agents get tighter
+          # caps than the default chain because they run unattended and in
+          # bursts (ensemble triage). Thresholds are PERCENT-based — the Go
           # usage API exposes no dollar amounts, so USD budgets are not
           # enforceable here by construction.
           modelFallback.enable = lib.mkDefault true;
@@ -198,6 +201,38 @@ in
               { model = "opencode-go/deepseek-v4-flash"; maxRollingPercent = 70; maxWeeklyPercent = 80; }
               { model = "opencode-go/mimo-v2.5"; maxRollingPercent = 85; maxWeeklyPercent = 95; }
               { model = "opencode-go/ox-alpha-free"; }
+            ];
+            # Triage roles: tighter rolling cap — they fire in bursts of three.
+            # Self-improvement pipeline (learning-promoter + triage roles).
+            # MiMo-V2.5 is the LEAD entry (D4 steady-state default); DeepSeek
+            # V4 Flash is demoted to an escalation rung. NO free-tier
+            # terminal (D3): these agents make promotion decisions that
+            # auto-merge to the repo — exhaustion must surface as selector
+            # exit 5 (BLOCKED) so the watcher pauses instead of degrading.
+            # HONESTY NOTE (D4): mimo-as-lead is a reasoned default, not a
+            # validated-in-isolation one — the evidence that "mimo already ran
+            # this role successfully" was gathered largely while the old
+            # default chain was already degraded to mimo via cap exhaustion,
+            # not under light-usage steady state. Watch, don't assume.
+            learning-promoter = [
+              { model = "opencode-go/mimo-v2.5"; maxRollingPercent = 85; maxWeeklyPercent = 95; }
+              { model = "opencode-go/deepseek-v4-flash"; maxRollingPercent = 70; maxWeeklyPercent = 80; }
+              { blockedTerminal = true; }
+            ];
+            scout-skeptical = [
+              { model = "opencode-go/mimo-v2.5"; maxRollingPercent = 40; maxWeeklyPercent = 60; }
+              { model = "opencode-go/deepseek-v4-flash"; maxRollingPercent = 70; maxWeeklyPercent = 80; }
+              { blockedTerminal = true; }
+            ];
+            qa-verification = [
+              { model = "opencode-go/mimo-v2.5"; maxRollingPercent = 40; maxWeeklyPercent = 60; }
+              { model = "opencode-go/deepseek-v4-flash"; maxRollingPercent = 70; maxWeeklyPercent = 80; }
+              { blockedTerminal = true; }
+            ];
+            adversarial = [
+              { model = "opencode-go/mimo-v2.5"; maxRollingPercent = 40; maxWeeklyPercent = 60; }
+              { model = "opencode-go/deepseek-v4-flash"; maxRollingPercent = 70; maxWeeklyPercent = 80; }
+              { blockedTerminal = true; }
             ];
           };
 
