@@ -2,12 +2,12 @@ name: Module Lint
 
 on:
   pull_request:
-    branches: [main, master]
+    branches: [main, master, laptop, desktop, server]
     paths:
       - 'modules/nixos/**'
       - 'modules/home/**'
   push:
-    branches: [main, master]
+    branches: [main, master, laptop, desktop, server]
     paths:
       - 'modules/nixos/**'
       - 'modules/home/**'

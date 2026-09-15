@@ -22,6 +22,8 @@ jobs:
             system: x86_64-linux
           - host: wsl
             system: x86_64-linux
+          - host: desktop
+            system: x86_64-linux
 
     steps:
       - name: Checkout

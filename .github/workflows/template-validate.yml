@@ -2,11 +2,11 @@ name: Template Validate
 
 on:
   pull_request:
-    branches: [main, master]
+    branches: [main, master, laptop, desktop, server]
     paths:
       - 'templates/**'
   push:
-    branches: [main, master]
+    branches: [main, master, laptop, desktop, server]
     paths:
       - 'templates/**'
 

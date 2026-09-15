@@ -2,9 +2,9 @@ name: Smart CI
 
 on:
   pull_request:
-    branches: [main, master]
+    branches: [main, master, laptop, desktop, server]
   push:
-    branches: [main, master]
+    branches: [main, master, laptop, desktop, server]
   workflow_dispatch:
 
 concurrency:

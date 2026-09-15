@@ -2,11 +2,11 @@ name: Format Check
 
 on:
   pull_request:
-    branches: [main, master]
+    branches: [main, master, laptop, desktop, server]
     paths:
       - '**/*.nix'
   push:
-    branches: [main, master]
+    branches: [main, master, laptop, desktop, server]
     paths:
       - '**/*.nix'
 
