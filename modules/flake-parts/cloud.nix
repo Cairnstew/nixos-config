@@ -36,7 +36,6 @@ let
   gcp = {
     project = "";
     region = "europe-west4";
-    imageFamily = "nixos-25.05";
   };
   aws = {
     region = "eu-west-2";
@@ -72,15 +71,7 @@ in
               else
                 "TF_VAR_project=$(jq -r .project_id /run/agenix/gcloud-auth) && export TF_VAR_project"}
             fi
-            if [ -r /run/agenix/tailscale-authkey ]; then
-              TF_VAR_tailscale_auth_key="$(cat /run/agenix/tailscale-authkey)"
-              export TF_VAR_tailscale_auth_key
-            fi
-            # SSH pub key for first-boot access (used by stage-2 deploys)
-            if [ -r /run/agenix/aws-ssh-pub-key ]; then
-              TF_VAR_ssh_pub_key="$(cat /run/agenix/aws-ssh-pub-key)"
-              export TF_VAR_ssh_pub_key
-            fi
+            # (tailscale_auth_key + ssh_pub_key not set — no instances provisioned)
           '';
           workdir = "${stateRoot}/gcp";
         };
