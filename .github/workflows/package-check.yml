@@ -2,11 +2,11 @@ name: Package Check
 
 on:
   pull_request:
-    branches: [main, master]
+    branches: [main, master, laptop, desktop, server]
     paths:
       - 'packages/**'
   push:
-    branches: [main, master]
+    branches: [main, master, laptop, desktop, server]
     paths:
       - 'packages/**'
 

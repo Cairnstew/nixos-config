@@ -42,7 +42,7 @@ jobs:
       - name: Evaluate all configurations
         run: |
           echo "=== Evaluating NixOS configurations ==="
-          for host in laptop server wsl; do
+          for host in laptop server wsl desktop minimal; do
             echo ""
             echo "→ Evaluating $host..."
             if nix eval .#nixosConfigurations.$host.config.system.build.toplevel --json > /dev/null 2>&1; then
