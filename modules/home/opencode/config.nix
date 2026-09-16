@@ -515,6 +515,13 @@ in
       '';
     })
 
+    # ── Efficiency lens dependency ───────────────────────────────────────────
+    # The self-improvement checkpoint's efficiency lens queries opencode.db
+    # via sqlite3 CLI; without it the lens silently no-ops.
+    {
+      home.packages = [ pkgs.sqlite ];
+    }
+
     # ── Self-improve commit-helper rate caps (mechanical, Decision 3) ────────
     # Written for tools/self-improve-commit.sh to read; null = uncapped.
     {
