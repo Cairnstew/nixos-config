@@ -1010,5 +1010,11 @@ Symptom (2026-09-13): after expanding the embedded vanilla baseline from ~57 han
 
 ---
 
+**Efficiency lens silently no-ops without sqlite3 CLI — add `pkgs.sqlite` to the opencode home-module**
+
+Symptom (2026-09-16): the efficiency lens checkpoint (agents/build.md) queries `~/.local/share/opencode/opencode.db` to extract cost/token/tool-call data for efficiency proposals. On desktop, `sqlite3` was not on PATH (confirmed via `which sqlite3` → NOT FOUND). The lens ran but silently skipped the DB query step, falling through to "no efficiency proposal this run" without surfacing the missing dependency as an error. Server/laptop unreachable for PATH check (1Password agent not loaded). Fix: add `pkgs.sqlite` to `home.packages` in the opencode home-module (`modules/home/opencode/config.nix:522`). After rebuild, `sqlite3` is on PATH and the lens can query the DB. Lesson: the efficiency lens's DB fallback is "try sqlite3, fall back gracefully" — but graceful fallback hides the problem. Any host missing sqlite3 will silently never produce efficiency proposals. If the lens is expected to work, the dependency must be explicit in the home-module.
+
+---
+
 Last updated: 2026-08-25
 
