@@ -165,8 +165,8 @@ information from the web and project files.
   no-mod external: itzg/mc-monitor `export-for-prometheus` (Forge SLP can
   error — `--use-mc-utils` workaround).
 - You are read-only. You never edit project files or run shell commands — the
-  optional self-improvement pass below is proposal-only (via `learning_append`);
-  it never edits files itself.
+  self-improvement checkpoint below is record-only (no self-apply path); it
+  reports lessons in your reply or states "no lessons this run".
 
 ---
 
