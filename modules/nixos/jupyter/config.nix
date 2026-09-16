@@ -62,9 +62,9 @@ let
     echo "jupyter-discover: done"
   '';
 
-  # The Jupyter server package with extra packages.
-  jupyterEnv = cfg.jupyterPackage.pythonModule.pkgs.withPackages (
-    ps: [ cfg.jupyterPackage ] ++ cfg.extraPackages
+  # The Jupyter server environment: Python with jupyter + extra packages.
+  jupyterEnv = cfg.pythonPackage.withPackages (
+    ps: [ ps.jupyter ] ++ cfg.extraPackages
   );
 in
 {
