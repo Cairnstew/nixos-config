@@ -14,7 +14,7 @@ stdenv.mkDerivation rec {
     owner = "jztan";
     repo = "pdf-mcp";
     rev = "develop";
-    hash = "sha256-PEledMq+odrZ24Ab2VQH7JFqjjQG23yZYBaiJ161w40=";
+    hash = "sha256-Coz/xFWaWu1VSc/IlUW4lUJyrbNDxA+FuN2DUXLJVlY=";
   };
 
   nativeBuildInputs = [ makeWrapper python3 ];
