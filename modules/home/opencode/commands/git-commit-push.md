@@ -137,11 +137,17 @@ git push origin $(git branch --show-current)
 
 ### 8. Monitor CI
 
-```bash
-gh run list --branch=$(git branch --show-current) --limit=5
-```
+Use the `ci-monitor` tool (from `skills/ci-monitoring.md`) to confirm the run registered and block until it completes:
 
-Report the CI status. The **push-triggered** checks (not `pull_request` events) are what matter. If any failed, suggest the fix:
+1. **Confirm run started:** `ci-monitor action=list`
+2. **Block until terminal:** `ci-monitor action=watch`
+
+If the watch returns a failure conclusion, inspect the result:
+
+- `failed_jobs` — which jobs didn't pass
+- `log_excerpt` — last 2000 chars of the failed job logs
+
+Suggest the fix based on the failure:
 
 | Failure | Fix |
 |---------|-----|
@@ -149,6 +155,8 @@ Report the CI status. The **push-triggered** checks (not `pull_request` events) 
 | `eval-check` fails | Check nix syntax, missing imports, or undefined options |
 | `lint-check` fails | Fix statix/deadnix warnings in changed files |
 | `auto-pr` fails (merge conflict) | `git pull --rebase origin <branch>`, push again |
+
+If `ci-monitor action=watch` returns a `timeout` error, check the `url` field manually or re-invoke with a longer `timeout`.
 
 ## Gotchas
 
