@@ -214,7 +214,8 @@ self-improvement checkpoint (a short, cheap structured self-check):
    "guaranteed check, may or may not act" shape, no new agent/gate, no threshold
    gate by default):
    - Query this session's own row in `~/.local/share/opencode/opencode.db`
-     (reuse the bun:sqlite pattern in `plugins/self-improve-guard.ts`): read
+      (via the `sqlite3` CLI — guaranteed present via `pkgs.sqlite`; fall back
+      to `python3 -c "import sqlite3"` if `sqlite3` is ever missing): read
      `session.cost`, `tokens_input/output/reasoning/cache_read/cache_write` for
      this session's id, and the `part`-table tool-call count. The nullable options
      `selfImprove.efficiencyLensMinToolCalls` / `...MinCost` (default `null` =
