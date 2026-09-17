@@ -326,6 +326,7 @@ in
           nix-net-audit = ./commands/nix-net-audit.md;
           shopping-research = ./commands/shopping-research.md;
           git-commit-push = ./commands/git-commit-push.md;
+          git-pull-master = ./commands/git-pull-master.md;
         };
         pluginFiles = lib.mkDefault {
           copylast = ./plugins/copylast.ts;
