@@ -28,6 +28,7 @@ in
     # ── Home-manager program defaults for the gaming profile ────────────────
     home-manager.users.${username}.my.programs = {
       minecraft.enable = lib.mkDefault true;
+      balatro.enable = lib.mkDefault true;
       discord.tui = {
         enable = lib.mkDefault false;
       };
