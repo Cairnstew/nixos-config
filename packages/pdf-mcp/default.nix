@@ -13,8 +13,8 @@ stdenv.mkDerivation rec {
   src = fetchFromGitHub {
     owner = "jztan";
     repo = "pdf-mcp";
-    rev = "develop";
-    hash = "sha256-Coz/xFWaWu1VSc/IlUW4lUJyrbNDxA+FuN2DUXLJVlY=";
+    rev = "31893b974730100b4588b6834d14a6be8717edf4";
+    hash = "sha256-DDAlBxl31UJ84TYLmVdLvCIS3ezeN6aDu/WaMtFaSCo=";
   };
 
   nativeBuildInputs = [ makeWrapper python3 ];
