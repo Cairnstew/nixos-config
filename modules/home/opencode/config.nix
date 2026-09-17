@@ -299,6 +299,7 @@ in
           nix-flake-check = ./tools/nix-flake-check.ts;
           just = ./tools/just.ts;
           opencode-models = ./tools/opencode-models.ts;
+          ci-monitor = ./tools/ci-monitor.ts;
         };
         skills = lib.mkDefault {
           git-repo-management = builtins.readFile ./skills/git-repo-management.md;
@@ -314,6 +315,7 @@ in
           model-selection = builtins.readFile ./skills/model-selection.md;
           music-playlists = builtins.readFile ./skills/music-playlists.md;
           mcp-server-management = builtins.readFile ./skills/mcp-server-management.md;
+          ci-monitoring = builtins.readFile ./skills/ci-monitoring.md;
         };
         commands = {
           copy-last = ./commands/copylast.md;
