@@ -133,16 +133,20 @@ in
           useDefaultShell = true;
         };
       })
-      # Add the primary user to the jupyter group so they can read/write projects
+      # Add the primary user to the jupyter group so they can read/write projects.
+      # Also add the jupyter service user to the users group so it can traverse
+      # /home/<user>/Documents/ to reach the default dataDir.
       {
         ${flake.config.me.username}.extraGroups =
           lib.mkIf (cfg.group == "jupyter") [ "jupyter" ];
+        ${cfg.user}.extraGroups =
+          lib.mkIf (cfg.user == "jupyter") [ "users" ];
       }
     ];
 
     # ── Ensure dataDir exists ───────────────────────────────────────────────
-    # Owned by primary user with jupyter group so both can read/write.
-    # Mode 0775 gives group write access for the jupyter service user.
+    # dataDir is owned by primary user + jupyter group (0775) so both
+    # the human user and the jupyter service can read/write notebooks.
     systemd.tmpfiles.rules = [
       "d ${cfg.dataDir} 0775 ${flake.config.me.username} ${cfg.group} - -"
       "d ${kernelPrefix} 0775 ${cfg.user} ${cfg.group} - -"
@@ -227,18 +231,17 @@ in
         Group = cfg.group;
         WorkingDirectory = "~";
 
-        ExecStart = [
-          "${jupyterEnv}/bin/jupyter"
-          "notebook"
-          "--no-browser"
-          "--ip=${cfg.ip}"
-          "--port=${toString cfg.port}"
-          "--port-retries=0"
-          "--notebook-dir=${cfg.dataDir}"
-        ] ++ lib.optionals (cfg.passwordFile != null) [
-          "--ServerApp.password_file=${cfg.passwordFile}"
-          "--ServerApp.token=''"
-        ];
+        # NixOS 26.11 renders ExecStart lists as separate lines (one per element),
+        # which systemd rejects for non-oneshot services. Use a single string instead.
+        ExecStart =
+          let
+            base = "${jupyterEnv}/bin/jupyter notebook --no-browser"
+              + " --ip=${cfg.ip} --port=${toString cfg.port}"
+              + " --port-retries=0 --notebook-dir=${cfg.dataDir}";
+          in
+          if cfg.passwordFile != null
+          then "${base} --ServerApp.password_file=${cfg.passwordFile} --ServerApp.token=''"
+          else base;
       };
     };
 
