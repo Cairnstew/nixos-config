@@ -16,7 +16,6 @@ let
 
     UV_PYTHON="${cfg.pythonPackage}/bin/python${lib.versions.majorMinor cfg.pythonPackage.version}"
     UV="${cfg.uvPackage}/bin/uv"
-    IPYKERNEL="${cfg.pythonPackage}/bin/python${lib.versions.majorMinor cfg.pythonPackage.version} -m ipykernel"
 
     mkdir -p "${kernelPrefix}"
 
