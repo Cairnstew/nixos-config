@@ -231,7 +231,10 @@
   # dataDir lives under the jupyter service user's home so it can create
   # subdirectories (the default /home/seanc/... path is unreadable to it,
   # and /mnt/data is root-owned so mkdir -p can't traverse).
-  my.services.jupyter.dataDir = "/var/lib/jupyter/projects";
+  my.services.jupyter = {
+    dataDir = "/var/lib/jupyter/projects";
+    passwordFile = config.age.secrets.jupyter-password.path;
+  };
 
   # ── Houdini (SideFX 3D/VFX) ─────────────────────────────────────────────
   # Requires the SideFX installer tarball in the store (already present /

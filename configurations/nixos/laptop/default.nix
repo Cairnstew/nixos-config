@@ -92,6 +92,7 @@
   my.services.jupyter = {
     user = flake.config.me.username;
     group = "users";
+    passwordFile = config.age.secrets.jupyter-password.path;
     templates = [
       { name = "project_template"; packages = [ "ipykernel" ]; description = "Starter template"; }
     ];

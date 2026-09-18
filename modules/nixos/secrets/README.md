@@ -56,6 +56,7 @@ Then add to `secrets-manifest.json`.
 | google-calendar-oauth | Google Calendar OAuth for the MCP server |
 | groq-token | Groq API token |
 | huggingface-token | HuggingFace API token |
+| jupyter-password | Jupyter notebook server password (argon2 hash from `jupyter_server.auth.passwd`) |
 | live-iso-ssh-key | Plaintext age private key for decrypting tailscale auth at boot |
 | mcp-better-email-password | MCP better-email password |
 | neko-admin-password | Neko admin password (NEKO_MEMBER_MULTIUSER_ADMIN_PASSWORD) |
@@ -82,7 +83,7 @@ Then add to `secrets-manifest.json`.
 - Ownership overrides are set in consuming modules via `config.age.secrets.<name>.owner`
 - Always check `config.age.secrets ? "name"` before referencing a secret path
 - CI package builds do **not** disable agenix-manager. `modules/flake-parts/packages.nix` only forces `services.tailscale.enable = false` and `services.tailscale-manager.enable = false` so package builds evaluate without tailscale. The committed `.age` files evaluate fine in CI.
-- `secrets-manifest.json` is the source of truth (41 secrets). `onepassword-token` has an `.age` file but is **not** listed in the manifest — it is not wired to `age.secrets.*`.
+- `secrets-manifest.json` is the source of truth (42 secrets). `onepassword-token` has an `.age` file but is **not** listed in the manifest — it is not wired to `age.secrets.*`.
 
 ## Related Modules
 

@@ -227,7 +227,7 @@ in
         Group = cfg.group;
         WorkingDirectory = "~";
 
-        ExecStart = lib.concatStringsSep " " [
+        ExecStart = [
           "${jupyterEnv}/bin/jupyter"
           "notebook"
           "--no-browser"
@@ -235,6 +235,9 @@ in
           "--port=${toString cfg.port}"
           "--port-retries=0"
           "--notebook-dir=${cfg.dataDir}"
+        ] ++ lib.optionals (cfg.passwordFile != null) [
+          "--ServerApp.password_file=${cfg.passwordFile}"
+          "--ServerApp.token=''"
         ];
       };
     };

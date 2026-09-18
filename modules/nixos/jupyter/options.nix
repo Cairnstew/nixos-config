@@ -54,6 +54,18 @@ in
       description = "IP address the Jupyter server binds to.";
     };
 
+    passwordFile = mkOption {
+      type = types.nullOr types.path;
+      default = null;
+      example = lib.literalExpression "config.age.secrets.jupyter-password.path";
+      description = ''
+        Path to a file containing a bcrypt-hashed password for the Jupyter
+        server. When set, token authentication is disabled and password
+        login is required. Generate the hash with:
+        <literal>python3 -c "from jupyter_server.auth import passwd; print(passwd())"</literal>
+      '';
+    };
+
     openFirewall = mkEnableOption "open the Jupyter server port in the firewall";
 
     jupyterPackage = mkOption {
