@@ -117,17 +117,28 @@ in
 {
   config = lib.mkIf cfg.enable {
     # ── Users & groups ──────────────────────────────────────────────────────
-    users.groups.jupyter = { };
-    users.users.jupyter = {
-      inherit (cfg) group;
-      home = "/var/lib/jupyter";
-      createHome = true;
-      isSystemUser = true;
-      useDefaultShell = true;
+    # Only create the dedicated jupyter user/group when not overridden.
+    # Precedent: chatterbox-tts/config.nix, suwayomi/config.nix
+    users.groups = lib.mkIf (cfg.group == "jupyter") {
+      jupyter = { };
     };
 
-    # Add the primary user to the jupyter group so they can read/write projects
-    users.users.${flake.config.me.username}.extraGroups = [ "jupyter" ];
+    users.users = lib.mkMerge [
+      (lib.mkIf (cfg.user == "jupyter") {
+        jupyter = {
+          inherit (cfg) group;
+          home = "/var/lib/jupyter";
+          createHome = true;
+          isSystemUser = true;
+          useDefaultShell = true;
+        };
+      })
+      # Add the primary user to the jupyter group so they can read/write projects
+      {
+        ${flake.config.me.username}.extraGroups =
+          lib.mkIf (cfg.group == "jupyter") [ "jupyter" ];
+      }
+    ];
 
     # ── Ensure dataDir exists ───────────────────────────────────────────────
     # Owned by primary user with jupyter group so both can read/write.
