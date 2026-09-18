@@ -136,12 +136,16 @@ in
       # Add the primary user to the jupyter group so they can read/write projects.
       # Also add the jupyter service user to the users group so it can traverse
       # /home/<user>/Documents/ to reach the default dataDir.
+      # Guard the service user line to avoid a duplicate attribute when
+      # cfg.user == flake.config.me.username (e.g. laptop sets user = primary).
       {
         ${flake.config.me.username}.extraGroups =
           lib.mkIf (cfg.group == "jupyter") [ "jupyter" ];
+      }
+      (lib.mkIf (cfg.user != flake.config.me.username) {
         ${cfg.user}.extraGroups =
           lib.mkIf (cfg.user == "jupyter") [ "users" ];
-      }
+      })
     ];
 
     # ── Ensure dataDir exists ───────────────────────────────────────────────
