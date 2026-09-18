@@ -80,6 +80,7 @@ in
     ./remote-gui
 
     # ── Development ────────────────────────────────────────────────────────
+    ./jupyter
     ./vscode-server.nix
     ./opencode-web
 

@@ -25,6 +25,7 @@
   my.profiles = {
     # Role
     workstation.enable = true;
+    development.enable = true;
 
     # Desktop — Hyprland
     desktop.choice = "hyprland";
@@ -83,6 +84,17 @@
     enable = true;
     wanInterface = "wlp170s0";
     lanInterface = "enp0s13f0u2";
+  };
+
+  # ── Jupyter Template Projects ───────────────────────────────────────────
+  # Created on every rebuild so they're always available.
+  # Runs as primary user since dataDir lives in ~/Documents.
+  my.services.jupyter = {
+    user = flake.config.me.username;
+    group = "users";
+    templates = [
+      { name = "project_template"; packages = [ "ipykernel" ]; description = "Starter template"; }
+    ];
   };
 
   # ═══════════════════════════════════════════════════════════════════════════

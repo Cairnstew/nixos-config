@@ -1,6 +1,7 @@
-{ lib, pkgs, ... }:
+{ lib, pkgs, flake, ... }:
 let
   inherit (lib) mkEnableOption mkOption types;
+  username = flake.config.me.username;
 in
 {
   options.my.services.jupyter = {
@@ -20,7 +21,7 @@ in
 
     dataDir = mkOption {
       type = types.str;
-      default = "/var/lib/jupyter/projects";
+      default = "/home/${username}/Documents/jupyter_projects";
       description = ''
         Base directory holding per-project repos. Each subdirectory containing
         <literal>pyproject.toml</literal> + <literal>uv.lock</literal> is
@@ -74,6 +75,43 @@ in
       default = [ ];
       example = lib.literalExpression "[ pkgs.python3.pkgs.ipykernel ]";
       description = "Extra packages available in the Jupyter server environment.";
+    };
+
+    templates = mkOption {
+      type = types.listOf (types.submodule {
+        options = {
+          name = mkOption {
+            type = types.str;
+            description = "Directory name for the project.";
+          };
+
+          packages = mkOption {
+            type = types.listOf types.str;
+            default = [ "ipykernel" ];
+            example = lib.literalExpression ''[ "ipykernel" "pandas" "matplotlib" ]'';
+            description = "Python packages to include in the project's pyproject.toml.";
+          };
+
+          description = mkOption {
+            type = types.str;
+            default = "";
+            description = "Optional project description for pyproject.toml.";
+          };
+        };
+      });
+      default = [ ];
+      example = lib.literalExpression ''
+        [
+          { name = "gcu_ai"; packages = [ "ipykernel" "pandas" "scikit-learn" ]; }
+          { name = "data_analysis"; packages = [ "ipykernel" "numpy" "matplotlib" ]; }
+        ]
+      '';
+      description = ''
+        Template projects to create on every rebuild. Each template gets a
+        directory under <literal>dataDir</literal> with a
+        <literal>pyproject.toml</literal> and <literal>uv.lock</literal>.
+        The Jupyter discover service automatically registers them as kernels.
+      '';
     };
   };
 }

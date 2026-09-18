@@ -1,4 +1,4 @@
-{ config, lib, pkgs, ... }:
+{ config, lib, pkgs, flake, ... }:
 let
   cfg = config.my.services.jupyter;
 
@@ -14,9 +14,9 @@ let
   discoverScript = pkgs.writeShellScript "jupyter-discover" ''
     set -euo pipefail
 
-    UV_PYTHON="${cfg.pythonPackage}/bin/python${lib.versions.minor (lib.versions.majorMinor cfg.pythonPackage.version)}"
+    UV_PYTHON="${cfg.pythonPackage}/bin/python${lib.versions.majorMinor cfg.pythonPackage.version}"
     UV="${cfg.uvPackage}/bin/uv"
-    IPYKERNEL="${cfg.pythonPackage}/bin/python${lib.versions.minor (lib.versions.majorMinor cfg.pythonPackage.version)} -m ipykernel"
+    IPYKERNEL="${cfg.pythonPackage}/bin/python${lib.versions.majorMinor cfg.pythonPackage.version} -m ipykernel"
 
     mkdir -p "${kernelPrefix}"
 
@@ -66,6 +66,54 @@ let
   jupyterEnv = cfg.pythonPackage.withPackages (
     ps: [ ps.jupyter ] ++ cfg.extraPackages
   );
+
+  # Script to initialize a template project (create pyproject.toml + uv.lock)
+  # Always overwrites — templates are not meant to be edited by the user.
+  initTemplateScript = pkgs.writeShellScript "jupyter-init-templates" (''
+    set -euo pipefail
+
+    UV_PYTHON="${cfg.pythonPackage}/bin/python${lib.versions.majorMinor cfg.pythonPackage.version}"
+    UV="${cfg.uvPackage}/bin/uv"
+
+    echo "jupyter-init-templates: creating ${toString (builtins.length cfg.templates)} templates"
+
+  '' + lib.concatMapStringsSep "\n"
+    (tpl:
+      let
+        name = tpl.name;
+        desc = if tpl.description != "" then tpl.description else "Jupyter project: ${name}";
+        deps = lib.concatMapStringsSep ",\n  " (p: "\"${p}\"") tpl.packages;
+      in
+      ''
+            echo "jupyter-init-templates: setting up ${name}"
+            mkdir -p "${cfg.dataDir}/${name}"
+
+            cat > "${cfg.dataDir}/${name}/pyproject.toml" << EOF
+        [project]
+        name = "${name}"
+        version = "0.1.0"
+        description = "${desc}"
+        requires-python = ">=3.12"
+        dependencies = [
+          ${deps}
+        ]
+        EOF
+
+            echo "jupyter-init-templates: generating ${name}/uv.lock"
+            UV_PYTHON="$UV_PYTHON" UV_PYTHON_DOWNLOADS="never" \
+              "$UV" lock --directory "${cfg.dataDir}/${name}" || {
+                echo "jupyter-init-templates: WARNING: uv lock failed for ${name}"
+              }
+
+            echo "jupyter-init-templates: ${name} ready"
+      '')
+    cfg.templates + ''
+
+    echo "jupyter-init-templates: done"
+
+    # Trigger kernel discovery now that templates are in place
+    systemctl start jupyter-discover.service || true
+  '');
 in
 {
   config = lib.mkIf cfg.enable {
@@ -79,22 +127,61 @@ in
       useDefaultShell = true;
     };
 
+    # Add the primary user to the jupyter group so they can read/write projects
+    users.users.${flake.config.me.username}.extraGroups = [ "jupyter" ];
+
     # ── Ensure dataDir exists ───────────────────────────────────────────────
+    # Owned by primary user with jupyter group so both can read/write.
+    # Mode 0775 gives group write access for the jupyter service user.
     systemd.tmpfiles.rules = [
-      "d ${cfg.dataDir} 0775 ${cfg.user} ${cfg.group} - -"
+      "d ${cfg.dataDir} 0775 ${flake.config.me.username} ${cfg.group} - -"
       "d ${kernelPrefix} 0775 ${cfg.user} ${cfg.group} - -"
     ];
+
+    # ── Template project initialization ─────────────────────────────────────
+    # Creates template projects on every rebuild so they're always available.
+    # Runs as a systemd service after network (uv lock needs PyPI access),
+    # then triggers jupyter-discover to register the new kernels.
+    systemd.services.jupyter-init-templates = lib.mkIf (cfg.templates != [ ]) {
+      description = "Create Jupyter template projects";
+      after = [ "network.target" ];
+      wantedBy = [ "multi-user.target" ];
+      before = [ "jupyter-discover.service" ];
+      serviceConfig = {
+        Type = "oneshot";
+        RemainAfterExit = true;
+        Environment = "LD_LIBRARY_PATH=${lib.makeLibraryPath [ pkgs.stdenv.cc.cc.lib ]}";
+      };
+      path = [
+        cfg.uvPackage
+        cfg.pythonPackage
+        pkgs.systemd # for systemctl
+      ];
+      script = ''
+        # Run init as cfg.user so files are owned correctly
+        ${pkgs.su}/bin/su -s ${pkgs.bash}/bin/bash ${cfg.user} -c '${initTemplateScript}'
+
+        # Trigger kernel discovery as root
+        systemctl start jupyter-discover.service || true
+      '';
+      unitConfig = {
+        # Re-run when templates change
+        ConditionPathExists = "${cfg.dataDir}";
+      };
+    };
 
     # ── Discovery oneshot ───────────────────────────────────────────────────
     systemd.services.jupyter-discover = {
       description = "Discover Jupyter projects and register kernels";
-      after = [ "network.target" ];
-      wantedBy = [ "multi-user.target" ];
+      after = [ "network.target" ] ++ lib.optionals (cfg.templates != [ ]) [ "jupyter-init-templates.service" ];
+      requires = lib.optionals (cfg.templates != [ ]) [ "jupyter-init-templates.service" ];
+      # No wantedBy — triggered by the path unit after init-templates creates files
       serviceConfig = {
         Type = "oneshot";
         RemainAfterExit = true;
         User = cfg.user;
         Group = cfg.group;
+        Environment = "LD_LIBRARY_PATH=${lib.makeLibraryPath [ pkgs.stdenv.cc.cc.lib ]}";
       };
       path = [
         cfg.uvPackage
@@ -102,17 +189,6 @@ in
         pkgs.bash
       ];
       script = "${discoverScript}";
-    };
-
-    # ── Path unit: trigger discovery on new directories ─────────────────────
-    systemd.paths.jupyter-discover = {
-      description = "Watch ${cfg.dataDir} for new project directories";
-      wantedBy = [ "multi-user.target" ];
-      pathConfig = {
-        PathModified = cfg.dataDir;
-        PathExists = cfg.dataDir;
-        Unit = "jupyter-discover.service";
-      };
     };
 
     # ── Jupyter server ──────────────────────────────────────────────────────

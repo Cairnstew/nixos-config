@@ -51,6 +51,12 @@ in
       conflictStrategy = lib.mkDefault "ff-only";
     };
 
+    # ── Jupyter Notebook Server ─────────────────────────────────────────────
+    # Per-project uv-managed Python environments with auto-discovered kernels.
+    # Add projects by cloning into /var/lib/jupyter/projects/<name>/ — no config
+    # edit required. Each project needs pyproject.toml + uv.lock.
+    my.services.jupyter.enable = lib.mkDefault true;
+
     # ── OpenCode Web ───────────────────────────────────────────────────────
     # Headless browser UI for opencode. Runs as the primary user (so it picks
     # up ~/.config/opencode + auth.json) and serves the nixos-config repo by
