@@ -70,5 +70,13 @@ in
       bash.enable = lib.mkDefault true;
       # Everything else disabled
     })
+
+    # Balatro profile (requires Steam)
+    (lib.mkIf cfg.balatro.enable {
+      balatro = {
+        enable = lib.mkDefault true;
+        multiplayer.enable = lib.mkDefault false; # Opt-in: set true for multiplayer
+      };
+    })
   ]);
 }

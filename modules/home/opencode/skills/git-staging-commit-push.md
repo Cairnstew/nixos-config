@@ -172,16 +172,17 @@ The workflow will create a new PR (or update the existing one) and merge it.
 
 ### Step 7: Monitor CI
 
-After pushing, check the CI status:
+After pushing, monitor CI status:
 
+**Using the ci-monitor tool (recommended — returns structured JSON):**
+- `ci-monitor action=list` → see recent runs
+- `ci-monitor action=watch` → block until terminal (default: 1800s timeout)
+- `ci-monitor action=view run_id=<id>` → full details for a specific run
+
+**Or manually:**
 ```bash
-# List recent runs on current branch
 gh run list --branch=$(git branch --show-current) --limit=5
-
-# Watch a specific run
 gh run watch
-
-# View failed run details
 gh run view <run-id>
 ```
 
@@ -322,6 +323,7 @@ gh pr merge <pr-number> --merge --repo Cairnstew/nixos-config
 
 ## See Also
 
+- `skills/ci-monitoring.md` — Blocking CI monitoring with structured JSON output
 - `skills/git-repo-management.md` — Branch-per-host model, gitRepoSync service, conflict strategies
 - `skills/deploy-workflow.md` — Deployment and activation workflow
 - `AGENTS.md` §9 Style & Lint — Formatting rules and conventions

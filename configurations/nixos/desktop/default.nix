@@ -1015,6 +1015,10 @@
         proxyPasswordFile = config.age.secrets."squid-htpasswd".path;
       };
 
+      # Balatro multiplayer (base enabled via gaming profile; opt-in to multiplayer here)
+      balatro.enable = true;
+      balatro.multiplayer.enable = true;
+
       # Prism Launcher data (instances, libraries, assets) on the external media
       # drive to keep the system SSD free.
       minecraft.dataDir = "/mnt/media/Modding/PrismLauncher";

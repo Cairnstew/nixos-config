@@ -379,6 +379,18 @@ but the guard pattern is still required for any secret that may not exist on eve
 | Run nixtest suites | `nix run .#nixtests-run` |
 | Garbage collect | `sudo nix-env -p /nix/var/nix/profiles/system --delete-generations +2 && sudo nixos-rebuild boot` |
 
+**⚠ Flake visibility rule:** Nix flakes only see **git-tracked** files. Before
+running *any* `nix` command (`build`, `eval`, `flake check`, `nixos-rebuild`,
+`nix run`, etc.), stage new or modified files first:
+
+```bash
+git add -A          # or git add path/to/new-file.nix
+```
+
+No commit needed — staging is enough. Forgetting this causes confusing
+"does not provide attribute" errors on new packages/modules, or silently
+stale eval results on changed files. See GOTCHAS.md for full details.
+
 ---
 
 ## 9. Style & Lint
@@ -514,6 +526,29 @@ Everything outside that directory relies on the in-band checkpoint above.
 ---
 
 ## RUN LOG
+
+### 2026-09-16 — efficiency lens sqlite3 dependency: fix applied, first lens run completed
+- Lesson: the efficiency lens (build.md line 112) shells out to `sqlite3` CLI to
+  query `opencode.db`, but `sqlite3` was not on PATH on desktop (confirmed via
+  `which sqlite3` → NOT FOUND). The lens silently no-ops without it — falling
+  through to "no efficiency proposal this run" without surfacing the missing
+  dependency. Server/laptop unreachable for PATH check (1Password agent not
+  loaded). Fix: `pkgs.sqlite` added to `home.packages` in the opencode
+  home-module (`config.nix:522`), committed as `56a667a`. GOTCHAS.md entry
+  committed via commit-helper (`97a5fea`).
+- Fix (this session): completed the efficiency lens evaluation using python3's
+  stdlib `sqlite3` module as a workaround (python3 v3.51.2, always on PATH).
+  Session stats: 204 tool calls, $0.00 cost (free model), 524K input tokens,
+  45K output tokens. Most common repeated pattern: 9× ad-hoc Python DB query
+  scripts (investigation-specific, not a workflow a new tool would collapse).
+  Verdict: **no efficiency proposal this run** — the repeated patterns are
+  deliberate parallelism, not redundancy. Full runtime verification (agent using
+  `sqlite3` CLI) pending rebuild.
+- Note: build.md line 113 says "reuse the bun:sqlite pattern in
+  `plugins/self-improve-guard.ts`" — this is misleading because `bun` is not on
+  PATH either. After the sqlite3 fix, the lens should use `sqlite3` CLI directly.
+  build.md is not on the self-improve allow-list, so this wording fix is
+  record-only (not committed via commit-helper).
 
 ### 2026-09-05 — goals MCP appears unwired on desktop; SUPERSEDED 2026-09-12 by full pipeline decommission
 - Lesson: sessions ran where `learning_append` (goals MCP) was not available and

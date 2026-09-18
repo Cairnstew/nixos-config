@@ -299,6 +299,7 @@ in
           nix-flake-check = ./tools/nix-flake-check.ts;
           just = ./tools/just.ts;
           opencode-models = ./tools/opencode-models.ts;
+          ci-monitor = ./tools/ci-monitor.ts;
         };
         skills = lib.mkDefault {
           git-repo-management = builtins.readFile ./skills/git-repo-management.md;
@@ -314,6 +315,7 @@ in
           model-selection = builtins.readFile ./skills/model-selection.md;
           music-playlists = builtins.readFile ./skills/music-playlists.md;
           mcp-server-management = builtins.readFile ./skills/mcp-server-management.md;
+          ci-monitoring = builtins.readFile ./skills/ci-monitoring.md;
         };
         commands = {
           copy-last = ./commands/copylast.md;
@@ -323,6 +325,8 @@ in
           nix-doc-audit = ./commands/nix-doc-audit.md;
           nix-net-audit = ./commands/nix-net-audit.md;
           shopping-research = ./commands/shopping-research.md;
+          git-commit-push = ./commands/git-commit-push.md;
+          git-pull-master = ./commands/git-pull-master.md;
         };
         pluginFiles = lib.mkDefault {
           copylast = ./plugins/copylast.ts;
@@ -514,6 +518,13 @@ in
         ${writeAuthJsonScript}
       '';
     })
+
+    # ── Efficiency lens dependency ───────────────────────────────────────────
+    # The self-improvement checkpoint's efficiency lens queries opencode.db
+    # via sqlite3 CLI; without it the lens silently no-ops.
+    {
+      home.packages = [ pkgs.sqlite ];
+    }
 
     # ── Self-improve commit-helper rate caps (mechanical, Decision 3) ────────
     # Written for tools/self-improve-commit.sh to read; null = uncapped.
