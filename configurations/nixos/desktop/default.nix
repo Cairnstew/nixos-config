@@ -176,14 +176,17 @@
 
       extraExecOnce = [ "playerctld daemon" ];
 
+      debug.enable = true;
+      accelProfile = "flat";
+    };
+
+    appearance = {
+      enable = true;
       windowOpacity = {
         enable = true;
         focused = 0.93;
         unfocused = 0.80;
       };
-
-      debug.enable = true;
-      accelProfile = "flat";
     };
 
     wallpapers = {

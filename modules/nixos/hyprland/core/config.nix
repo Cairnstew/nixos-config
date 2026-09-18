@@ -129,24 +129,6 @@ let
         resize_on_border = true
     }
 
-    # ── Decoration ─────────────────────────────────────────────────────────
-    decoration {
-        rounding = 8
-        ${lib.optionalString (cfg.core.windowOpacity.enable) "active_opacity   = ${toString cfg.core.windowOpacity.focused}"}
-        ${lib.optionalString (cfg.core.windowOpacity.enable) "inactive_opacity = ${toString cfg.core.windowOpacity.unfocused}"}
-        blur {
-            enabled = true
-            size    = 6
-            passes  = 2
-        }
-        shadow {
-            enabled      = true
-            range        = 12
-            render_power = 3
-            color        = rgba(1a1a2ecc)
-        }
-    }
-
     # ── Animations ─────────────────────────────────────────────────────────
     animations {
         enabled = true
@@ -190,7 +172,6 @@ let
 
     # ── Window rules ───────────────────────────────────────────────────────
     ${lib.concatStringsSep "\n" workspaceWindowRuleLines}
-    ${lib.concatStringsSep "\n" (builtins.map (o: "windowrule = opacity ${toString o.focused} ${toString o.unfocused}, class:^(${o.class})$") cfg.core.windowOpacity.overrides)}
     ${lib.concatMapStringsSep "\n" (r: "windowrule = ${r}") cfg.core.extraWindowRules}
 
     # ── Keybinds ───────────────────────────────────────────────────────────

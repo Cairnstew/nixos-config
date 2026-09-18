@@ -25,19 +25,30 @@ in
 
       my.desktop.hyprland = {
         enable = true;
-        # Desktop utilities: nm-applet (tray network manager), thunar, polkit,
-        # fonts, brightnessctl, etc. The nm-applet tray icon and exec-once in
-        # hyprland/core/config.nix are gated on this.
+
+        # ── Appearance ──────────────────────────────────────────────────────
+        appearance.enable = true;
+
+        # ── Desktop utilities ───────────────────────────────────────────────
+        # nm-applet (tray network manager), thunar, polkit, fonts, brightnessctl, etc.
         utilities.enable = true;
+
+        # ── Idle / power management ─────────────────────────────────────────
         idle = {
           enable = true;
-          dpmsTimeout = 60;
+          dpmsTimeout = 180;
           suspendTimeout = 0;
         };
+
+        # ── Visual features ─────────────────────────────────────────────────
         colorpicker.enable = true;
         nightLight.enable = true;
+
+        # ── Plugins ─────────────────────────────────────────────────────────
         pyprland.enable = true;
         pyprland.plugins = [ "scratchpads" "expose" "toggle_dpms" ];
+
+        # ── Wallpapers ──────────────────────────────────────────────────────
         wallpapers = {
           backend = "awww";
           settings.awww = {

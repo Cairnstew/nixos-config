@@ -118,56 +118,6 @@
       '';
     };
 
-    windowOpacity = {
-      enable = lib.mkOption {
-        type = lib.types.bool;
-        default = false;
-        description = "Enable default window opacity overlay. Sets decoration:active_opacity and decoration:inactive_opacity for global window transparency.";
-      };
-
-      focused = lib.mkOption {
-        type = lib.types.float;
-        default = 0.97;
-        example = 0.95;
-        description = "Opacity for focused/active windows, rendered as decoration:active_opacity (0.0 = fully transparent, 1.0 = fully opaque).";
-      };
-
-      unfocused = lib.mkOption {
-        type = lib.types.float;
-        default = 0.92;
-        example = 0.85;
-        description = "Opacity for unfocused/inactive windows, rendered as decoration:inactive_opacity (0.0 = fully transparent, 1.0 = fully opaque).";
-      };
-
-      overrides = lib.mkOption {
-        type = lib.types.listOf (lib.types.submodule {
-          options = {
-            class = lib.mkOption {
-              type = lib.types.str;
-              example = "steam";
-              description = "Window class to match. Use hyprctl clients to discover class names.";
-            };
-            focused = lib.mkOption {
-              type = lib.types.float;
-              default = 1.0;
-              description = "Opacity when focused (0.0-1.0).";
-            };
-            unfocused = lib.mkOption {
-              type = lib.types.float;
-              default = 1.0;
-              description = "Opacity when unfocused (0.0-1.0).";
-            };
-          };
-        });
-        default = [ ];
-        example = [
-          { class = "steam"; focused = 1.0; unfocused = 1.0; }
-          { class = "mpv"; focused = 0.99; }
-        ];
-        description = "Per-class opacity overrides for specific applications (generates windowrule = opacity with class target). All values default to 1.0.";
-      };
-    };
-
     extraWindowRules = lib.mkOption {
       type = lib.types.listOf lib.types.str;
       default = [ ];

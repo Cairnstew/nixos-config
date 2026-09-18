@@ -3,7 +3,7 @@ let
   cfg = config.my.desktop.hyprland;
   inherit (lib) mkIf;
 
-  wpCfg = cfg.core.windowOpacity;
+  wpCfg = cfg.appearance.windowOpacity;
   wpOverrides = wpCfg.overrides or [ ];
 
   monitors = config.my.monitors or [ ];
@@ -22,7 +22,7 @@ let
     (i: o: {
       assertion = o.focused >= 0.0 && o.focused <= 1.0 && o.unfocused >= 0.0 && o.unfocused <= 1.0;
       message = lib.concatStrings [
-        "my.desktop.hyprland.core.windowOpacity.overrides[${toString i}]."
+        "my.desktop.hyprland.appearance.windowOpacity.overrides[${toString i}]."
         (if o.focused < 0.0 || o.focused > 1.0 then
           "focused (${toString o.focused}) must be between 0.0 and 1.0."
         else
@@ -86,11 +86,11 @@ in
     # wallpapers.backend = "awww"; the assertion that forbade enabling both is gone.
     {
       assertion = !cfg.enable || !wpCfg.enable || (wpCfg.focused >= 0.0 && wpCfg.focused <= 1.0);
-      message = "my.desktop.hyprland.core.windowOpacity.focused (${toString wpCfg.focused}) must be between 0.0 and 1.0.";
+      message = "my.desktop.hyprland.appearance.windowOpacity.focused (${toString wpCfg.focused}) must be between 0.0 and 1.0.";
     }
     {
       assertion = !cfg.enable || !wpCfg.enable || (wpCfg.unfocused >= 0.0 && wpCfg.unfocused <= 1.0);
-      message = "my.desktop.hyprland.core.windowOpacity.unfocused (${toString wpCfg.unfocused}) must be between 0.0 and 1.0.";
+      message = "my.desktop.hyprland.appearance.windowOpacity.unfocused (${toString wpCfg.unfocused}) must be between 0.0 and 1.0.";
     }
     {
       assertion = !cfg.enable || !btEnabled || config.services.blueman.enable or false;
@@ -103,7 +103,7 @@ in
         without a class: or title: target. Such rules are silently ignored by Hyprland.
         Use decoration:active_opacity and decoration:inactive_opacity for global window
         transparency, or add a class:^(ClassName)$ target for per-window overrides via
-        windowOpacity.overrides.
+        appearance.windowOpacity.overrides.
       '';
     }
     {

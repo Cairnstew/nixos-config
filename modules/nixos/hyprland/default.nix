@@ -2,6 +2,7 @@
 {
   imports = [
     ./core
+    ./appearance
     ./bar
     ./launcher
     ./notifications
