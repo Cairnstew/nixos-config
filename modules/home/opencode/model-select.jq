@@ -19,8 +19,11 @@
 #     whole chain resolves BLOCKED (exit 5) while ROLLING sits at ~0% and
 #     every static cap passes.
 #   - paceCap = min(100, elapsedPercent + buffer), inert below floor.
-#     Weekly periodStart = resetsAt - 7d (exact); monthly = resetsAt - 30d
-#     (approximate ±1 day ≈ ±3 pp of cap).
+#     Weekly periodStart = resetsAt - 7d (exact; calendar-aligned Monday
+#     00:00 UTC — rollover observed verbatim 2026-08-31T00:00:00Z).
+#     Monthly = resetsAt - 30d: a FIXED 30-day window anchored at
+#     2026-09-20T09:25:34Z (both weekly rollover and monthly reset observed).
+#     Re-confirm at the 2026-10-20 reset; next expected 2026-11-19T09:25:34Z.
 #   - Rolling never consults pacing fields (trailing 5h sliding window).
 #   - NOTE: `. as $doc` is required because inside select() the current
 #     input is the chain ENTRY — a bare `.usage` there would be null, and

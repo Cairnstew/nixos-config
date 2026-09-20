@@ -52,6 +52,60 @@
           echo "ok: enable=false resolved statically (m/test); enable=true paced out"
         '';
       }
+    {
+        name = "monthly-static-caps";
+        type = "script";
+        script = ''
+          set -euo pipefail
+          export PATH=${pkgs.jq}/bin:$PATH
+          prog=${../modules/home/opencode/model-select.jq}
+
+          # now = 1800000000 = 2027-01-15T08:00:00Z. Static monthly cap only --
+          # no pacing, so maxMonthlyPercent alone governs the monthly window.
+          monthcache() { # $1 = monthly percent literal
+            printf '{"usage":{
+              "rolling":{"status":"ok","percent":1,"resetsAt":"2027-01-15T13:00:00.000Z"},
+              "weekly":{"status":"ok","percent":10,"resetsAt":"2027-01-18T00:00:00.000Z"},
+              "monthly":{"status":"ok","percent":%s,"resetsAt":"2027-02-14T22:24:00.000Z"}}}' "$1"
+          }
+          monthcache2() { # $1 = monthly percent, $2 = monthly resetsAt
+            printf '{"usage":{
+              "rolling":{"status":"ok","percent":1,"resetsAt":"2027-01-15T13:00:00.000Z"},
+              "weekly":{"status":"ok","percent":10,"resetsAt":"2027-01-18T00:00:00.000Z"},
+              "monthly":{"status":"ok","percent":%s,"resetsAt":"%s"}}}' "$1" "$2"
+          }
+          chain='[{"model":"m/monthly","blockedTerminal":false,"maxMonthlyPercent":90}]'
+
+          # percent below cap -> eligible
+          ok=$(jq -re -f "$prog" --argjson now 1800000000 --argjson chain "$chain" <<<"$(monthcache 45)")
+          [ "$ok" = "m/monthly" ] || { echo "FAIL: 45% below cap 90 should resolve (got: $ok)" >&2; exit 1; }
+          # percent exactly AT cap -> eligible
+          ok=$(jq -re -f "$prog" --argjson now 1800000000 --argjson chain "$chain" <<<"$(monthcache 90)")
+          [ "$ok" = "m/monthly" ] || { echo "FAIL: 90% exactly at cap should resolve (got: $ok)" >&2; exit 1; }
+          # percent ABOVE cap -> rescued by no entry, empty output
+          out=$(jq -re -f "$prog" --argjson now 1800000000 --argjson chain "$chain" <<<"$(monthcache 91)" || true)
+          [ -z "$out" ] || { echo "FAIL: 91% above cap 90 must fall through (got: $out)" >&2; exit 1; }
+
+          # cache with usage.monthly MISSING must make jq -re exit non-zero
+          # (the wrapper's resolve_chain swallows it: "2>/dev/null || true" and
+          # degrades to the chain's last entry -- pin the jq behavior here).
+          missing='{"usage":{
+            "rolling":{"status":"ok","percent":1,"resetsAt":"2027-01-15T13:00:00.000Z"},
+            "weekly":{"status":"ok","percent":10,"resetsAt":"2027-01-18T00:00:00.000Z"}}}'
+          rc=0
+          jq -re -f "$prog" --argjson now 1800000000 --argjson chain "$chain" <<<"$missing" >/dev/null 2>&1 || rc=$?
+          [ "$rc" -ne 0 ] || { echo "FAIL: missing usage.monthly must make jq exit non-zero (got rc=0)" >&2; exit 1; }
+
+          # exact monthly boundary: resetsAt == now and resetsAt == now + 30d
+          # both parse and behave identically for a static cap
+          for reset in "2027-01-15T08:00:00Z" "2027-02-14T08:00:00Z"; do
+            ok=$(jq -re -f "$prog" --argjson now 1800000000 --argjson chain "$chain" <<<"$(monthcache2 50 "$reset")")
+            [ "$ok" = "m/monthly" ] || { echo "FAIL: 50% with resetsAt=$reset should resolve (got: $ok)" >&2; exit 1; }
+          done
+
+          echo "ok: monthly static caps (below/at/above), missing-monthly errors, resetsAt boundaries"
+        '';
+      }
     ];
   };
 }

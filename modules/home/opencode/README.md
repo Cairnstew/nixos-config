@@ -116,24 +116,27 @@ Semantics (`modules/home/opencode/fallback.nix`, program in
   `elapsedPercent = clamp((now − periodStart) / periodLength × 100, 0, 100)`.
 - Below `floor` percent elapsed, pacing is entirely inert for that entry.
 - `periodStart` derives from the snapshot's `resetsAt` alone — no new state:
-  weekly = `resetsAt − 7d` (**exact**, anchored Monday 00:00 UTC);
-  monthly = `resetsAt − 30d` (**approximate** ±1 day ≈ ±3 pp of cap — the
-  provider does not expose a period-start field, adjacent endpoints are 404,
-  and the true monthly period length is unverified until its first observed
-  reset on 2026-09-19).
+  weekly = `resetsAt − 7d` (**exact**; calendar-aligned Monday 00:00 UTC —
+  rollover observed verbatim at `2026-08-31T00:00:00Z`); monthly =
+  `resetsAt − 30d` (**exact** — a fixed 30-day window anchored at
+  `2026-09-20T09:25:34Z`, not the ±1 day approximation previously feared;
+  the weekly rollover and the monthly reset have both been observed).
+  Re-confirm at the 2026-10-20 reset; next expected `2026-11-19T09:25:34Z`.
 - Rolling is **excluded**: it is a trailing 5-hour *sliding* window
   (`resetsAt = now + 5h` on every poll — nine samples across two days), so it
   has no anchor to pace against. Entries setting `pacing.enable` must
   constrain `maxWeeklyPercent` or `maxMonthlyPercent`; this is asserted in
   `tests.nix` and throws at eval otherwise.
 
-**Why pacing ships disabled:** both production chains currently run with
-static caps only. Weekly pacing should be flipped to `enable = true` only
-after tonight-style rollover is observed once (next `weekly.resetsAt` must
-read `2026-08-31T00:00:00Z` verbatim from the API); monthly only after the
-2026-09-19 reset confirms its true period length. The two evidence gates are
-independent. (Until 2026-08-26 this paragraph was aspirational — the dead
-flag above meant pacing ran regardless; with the fix it is literally true.)
+**Why elapsed pacing ships disabled:** both production chains currently run with
+static caps only. The evidence gates are now **confirmed** — weekly rollover was
+observed verbatim (`weekly.resetsAt = 2026-08-31T00:00:00Z`), and the monthly
+reset confirmed a fixed 30-day window anchored at `2026-09-20T09:25:34Z` (so
+`periodStart = resetsAt − 30d` is exact, not approximate; re-confirm at the
+2026-10-20 reset, next expected `2026-11-19T09:25:34Z`). Elapsed pacing just is
+not enabled on the current chains — the monthly window is guarded by the fixed
+`maxMonthlyPercent` backstop on every rung (see below) and, on the lead rung,
+by budget pacing.
 
 Boundary behavior is validated against synthetic snapshots at controlled
 times (elapsed 0%, just-under/just-over floor, stale cache past `resetsAt`,
@@ -170,20 +173,23 @@ A chain whose LAST entry is `{ blockedTerminal = true; }` (no `model`) resolves 
 a distinguishable **BLOCKED** outcome — the selector prints a stderr reason and
 exits **5** — instead of silently falling to an always-eligible free model. The
 `default` chain ends in a cap-free model (`opencode-go/ox-alpha-free`) so ordinary
-build/explore work never blocks. **The self-improvement pipeline no longer uses
-dedicated chains**: the promoter/triage chains were removed when the gated
-triage+promote pipeline was decommissioned (single in-band `SELF_IMPROVE`
-checkpoint; mechanical commit-helper, no agent-side model-chain dependency).
-`blockedTerminal` remains available for any future no-degrade pipeline.
+build/explore work never blocks. The **triage chains are live** in
+`modules/nixos/homeManager/config.nix` (`learning-promoter`, `scout-skeptical`,
+`qa-verification`, `adversarial`): they give scout/qa/reviewer subagents tighter
+caps than the default chain and end in `blockedTerminal`, so a triage chain that
+exhausts surfaces as **BLOCKED** (selector exit 5) instead of silently degrading
+to a free-tier model.
 
 ### Known limits — self-improvement is model-chain-independent
 
 The single-lineage self-improvement checkpoint runs in-band on `build`/`researcher`
-and has no dedicated model chain, watcher, queue, or `opencode serve` dependency —
-it no longer needs usage-aware model protection. `modelFallback`
-(`my.programs.opencode.modelFallback`) now governs only the `default` chain that
-all interactive sessions ride. (Historical: the retired promoter watcher used to
-stop its timer on BLOCKED; that mechanism is gone with the watcher.)
+and has no dedicated watcher, queue, or `opencode serve` dependency — the in-band
+checkpoint itself needs no model protection. `modelFallback` governs the
+interactive `default` chain and the triage chains
+(`scout-skeptical`/`qa-verification`/`adversarial`/`learning-promoter`) that
+scout/verify/review ensemble work: the triage chains carry the tightest caps and
+end in `blockedTerminal`, so an exhausted triage chain pauses its dispatch instead
+of running a degraded model.
 
 Scope statement: "usage-aware protections for the self-improvement pipeline"
 means the watcher-dispatched promotion loop and the triage subagents — not

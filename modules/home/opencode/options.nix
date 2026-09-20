@@ -886,9 +886,15 @@ in
                   cap is always `min(staticCap, paceCap)` — pacing can only
                   tighten, never loosen. Rolling is EXCLUDED by design (Tier 0:
                   it is a trailing 5h sliding window with no fixed anchor).
-                  Ships disabled by default; weekly needs its first observed
-                  rollover confirmed (Mon 2026-08-31T00:00Z expected), monthly
-                  needs the 2026-09-19 reset to verify period length.
+                  Period lengths are VERIFIED: weekly rollover observed
+                  verbatim (resetsAt = 2026-08-31T00:00:00Z, Monday 00:00 UTC);
+                  monthly is a fixed 30-day window anchored at
+                  2026-09-20T09:25:34Z, so periodStart = resetsAt − 30d is
+                  exact, not approximate. Re-confirm at the 2026-10-20 reset
+                  (next expected 2026-11-19T09:25:34Z). Ships disabled by
+                  default; the monthly window is guarded by the fixed
+                  `maxMonthlyPercent` backstop on every rung and, with
+                  <literal>pacing.mode = "budget"</literal>, by budget pacing.
                 '';
               };
               floor = mkOption {

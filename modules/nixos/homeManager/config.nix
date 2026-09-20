@@ -193,13 +193,16 @@ in
           # caps than the default chain because they run unattended and in
           # bursts (ensemble triage). Thresholds are PERCENT-based — the Go
           # usage API exposes no dollar amounts, so USD budgets are not
-          # enforceable here by construction.
+          # enforceable here by construction. Every rung also carries a
+          # maxMonthlyPercent: the monthly window is a hard backstop (a rung
+          # is never eligible above it), and the lead rung's pacing can only
+          # tighten it further.
           modelFallback.enable = lib.mkDefault true;
           modelFallback.syncEnsembleProjectFile = lib.mkDefault true;
           modelFallback.chains = lib.mkDefault {
             default = [
-              { model = "opencode-go/deepseek-v4-flash"; maxRollingPercent = 70; maxWeeklyPercent = 80; }
-              { model = "opencode-go/mimo-v2.5"; maxRollingPercent = 85; maxWeeklyPercent = 95; }
+              { model = "opencode-go/deepseek-v4-flash"; maxRollingPercent = 70; maxWeeklyPercent = 80; maxMonthlyPercent = 90; }
+              { model = "opencode-go/mimo-v2.5"; maxRollingPercent = 85; maxWeeklyPercent = 95; maxMonthlyPercent = 95; }
               { model = "opencode-go/ox-alpha-free"; }
             ];
             # Triage roles: tighter rolling cap — they fire in bursts of three.
@@ -215,23 +218,23 @@ in
             # default chain was already degraded to mimo via cap exhaustion,
             # not under light-usage steady state. Watch, don't assume.
             learning-promoter = [
-              { model = "opencode-go/mimo-v2.5"; maxRollingPercent = 85; maxWeeklyPercent = 95; }
-              { model = "opencode-go/deepseek-v4-flash"; maxRollingPercent = 70; maxWeeklyPercent = 80; }
+              { model = "opencode-go/mimo-v2.5"; maxRollingPercent = 85; maxWeeklyPercent = 95; maxMonthlyPercent = 90; }
+              { model = "opencode-go/deepseek-v4-flash"; maxRollingPercent = 70; maxWeeklyPercent = 80; maxMonthlyPercent = 95; }
               { blockedTerminal = true; }
             ];
             scout-skeptical = [
-              { model = "opencode-go/mimo-v2.5"; maxRollingPercent = 40; maxWeeklyPercent = 60; }
-              { model = "opencode-go/deepseek-v4-flash"; maxRollingPercent = 70; maxWeeklyPercent = 80; }
+              { model = "opencode-go/mimo-v2.5"; maxRollingPercent = 40; maxWeeklyPercent = 60; maxMonthlyPercent = 90; }
+              { model = "opencode-go/deepseek-v4-flash"; maxRollingPercent = 70; maxWeeklyPercent = 80; maxMonthlyPercent = 95; }
               { blockedTerminal = true; }
             ];
             qa-verification = [
-              { model = "opencode-go/mimo-v2.5"; maxRollingPercent = 40; maxWeeklyPercent = 60; }
-              { model = "opencode-go/deepseek-v4-flash"; maxRollingPercent = 70; maxWeeklyPercent = 80; }
+              { model = "opencode-go/mimo-v2.5"; maxRollingPercent = 40; maxWeeklyPercent = 60; maxMonthlyPercent = 90; }
+              { model = "opencode-go/deepseek-v4-flash"; maxRollingPercent = 70; maxWeeklyPercent = 80; maxMonthlyPercent = 95; }
               { blockedTerminal = true; }
             ];
             adversarial = [
-              { model = "opencode-go/mimo-v2.5"; maxRollingPercent = 40; maxWeeklyPercent = 60; }
-              { model = "opencode-go/deepseek-v4-flash"; maxRollingPercent = 70; maxWeeklyPercent = 80; }
+              { model = "opencode-go/mimo-v2.5"; maxRollingPercent = 40; maxWeeklyPercent = 60; maxMonthlyPercent = 90; }
+              { model = "opencode-go/deepseek-v4-flash"; maxRollingPercent = 70; maxWeeklyPercent = 80; maxMonthlyPercent = 95; }
               { blockedTerminal = true; }
             ];
           };
