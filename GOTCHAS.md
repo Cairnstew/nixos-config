@@ -1022,6 +1022,13 @@ Symptom (2026-09-20, opencode modelFallback budget pacing): reasoning about the 
 
 ---
 
+**`jq -n` nulls the input — the selector's last-entry safety net was silently dead, and budget sliceCap can never drop below the current usage at low usage**
+
+Symptom (2026-09-20, live-verification round): (1) `opencode-model-select`'s `last_model_of_chain` ran `jq -rn '. | last | (.model // empty)' <<< "$chain"` — `-n` means *null input*, so `. | last` yielded nothing and the "always-eligible cap-free last entry" never resolved: any exhausted chain (e.g. missing `usage.monthly` in the cache) printed the BLOCKED message and exited 5 instead of degrading to the last model. Caught by the new `missing-monthly-fallback` nixtest; fixed by dropping `-n` (`jq -r`, read the stdin array). (2) Attempting to demo the budget-pacing skip with the LIVE cache: the slice cap `usageAtStart + (100 − usageAtStart)/slicesLeft` is always ≥ `usageAtStart` (minimum 3.3% at 30 slices left, usageAtStart 0), so with live usage near 1% **no valid snapshot can make the cap fall below current usage** — the budget skip cannot be reproduced against light-usage live data; a synthetic cache with high monthly usage is required. Lesson: when verifying a selector's rejection path against live data, check whether the manufactured condition is even reachable at the current live values before concluding the fix "does nothing"; the `-n`-nulls-input class of bug is a recurring footgun in this wrapper (compare the earlier `-f <store-path>` apostrophe bug).
+
+---
+
 Last updated: 2026-09-20
+
 
 

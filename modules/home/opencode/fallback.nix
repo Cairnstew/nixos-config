@@ -138,6 +138,14 @@ in
               else
                 snapshot='null'
               fi
+              # Missing usage.monthly: the jq program depends on it and would
+              # error (swallowed by `|| true` below), silently degrading to the
+              # last chain entry. Make that degradation loud — one line on
+              # stderr — while keeping the exact same exit-0 fallback behavior.
+              if ! jq -e '.usage.monthly' "$CACHE_FILE" >/dev/null 2>&1; then
+                echo "opencode-model-select: usage.monthly missing, falling back to last chain entry" >&2
+                return 0
+              fi
               jq -re -f ${resolveJqFile} --argjson chain "$1" --argjson now "$now" --argjson snapshot "$snapshot" "$CACHE_FILE" 2>/dev/null || true
             }
 
@@ -147,7 +155,10 @@ in
             # net by design: exhaustion must surface as BLOCKED (exit 5), never as
             # a degraded model choice.
             last_model_of_chain() {
-              jq -rn '. | last | (.model // empty)' <<< "$1"
+              # NOTE: jq -n would make the input null and `last` would yield
+              # nothing — the safety net silently vanished (caught 2026-09-20
+              # by the missing-monthly-fallback nixtest). Read the stdin array.
+              jq -r '. | last | (.model // empty)' <<< "$1"
             }
 
             resolve_for_agent() { # $1 = agent name; empty means default chain

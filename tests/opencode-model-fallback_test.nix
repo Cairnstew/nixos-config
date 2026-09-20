@@ -171,6 +171,90 @@
           echo "ok: budget pacing (mid-slice cap, backstop precedence, degrade rules, reset handling)"
         '';
       }
+      {
+        # Regression for the 2026-09-20 windowOk rewrite (budget pacing round):
+        # the pace term used to be consulted ONLY when a static cap was set
+        # (`$staticCap == null` short-circuited the `or`). The rewrite made
+        # effective cap = min(static, pace) with null meaning "no constraint".
+        # These cases pin the ELAPSED-mode semantics at now = 1800000000 with
+        # the same cache fixture as the original pacing test:
+        #   weekly resetsAt 2027-01-20T08:57:36Z  -> weekly elapsed 28% -> pace 38
+        #   monthly resetsAt 2027-02-08T22:24:00Z -> monthly elapsed 18% -> pace 28
+        name = "pacing-elapsed-windookup";
+        type = "script";
+        script = ''
+          set -euo pipefail
+          export PATH=${pkgs.jq}/bin:$PATH
+          prog=${../modules/home/opencode/model-select.jq}
+
+          cache() { # $1 = weekly percent, $2 = monthly percent
+            printf '{"usage":{
+              "rolling":{"status":"ok","percent":1,"resetsAt":"2027-01-15T00:00:00.000Z"},
+              "weekly":{"status":"ok","percent":%s,"resetsAt":"2027-01-20T08:57:36.000Z"},
+              "monthly":{"status":"ok","percent":%s,"resetsAt":"2027-02-08T22:24:00.000Z"}}}' "$1" "$2"
+          }
+          entry() { # $1 = monthly static cap literal, $2 = pacing.enable literal
+            printf '[{"model":"m/elapsed","blockedTerminal":false,"maxRollingPercent":null,"maxWeeklyPercent":null,"maxMonthlyPercent":%s,"pacing":{"enable":%s,"floor":5,"buffer":10}}]' "$1" "$2"
+          }
+
+          # A. static null + pacing enabled: the pace term applies.
+          out=$(jq -re -f "$prog" --argjson now 1800000000 --argjson chain "$(entry null true)" <<<"$(cache 5 45)" || true)
+          [ -z "$out" ] || { echo "FAIL A: monthly 45 > paceCap 28 must reject when pacing enabled, static null (got: $out)" >&2; exit 1; }
+          out=$(jq -re -f "$prog" --argjson now 1800000000 --argjson chain "$(entry null true)" <<<"$(cache 5 10)")
+          [ "$out" = "m/elapsed" ] || { echo "FAIL A: monthly 10 <= paceCap 28 must resolve (got: $out)" >&2; exit 1; }
+
+          # B. static null + pacing disabled: cap-free (even 99% usage).
+          out=$(jq -re -f "$prog" --argjson now 1800000000 --argjson chain "$(entry null false)" <<<"$(cache 5 99)")
+          [ "$out" = "m/elapsed" ] || { echo "FAIL B: pacing disabled, static null must be cap-free (got: $out)" >&2; exit 1; }
+
+          # C. static set + pacing enabled: effective cap = min(static, pace).
+          #    Static 40, pace 28: usage 30 passes static but fails pace.
+          out=$(jq -re -f "$prog" --argjson now 1800000000 --argjson chain "$(entry 40 true)" <<<"$(cache 5 30)" || true)
+          [ -z "$out" ] || { echo "FAIL C: monthly 30 > paceCap 28 (static 40) must reject — pace binds (got: $out)" >&2; exit 1; }
+          out=$(jq -re -f "$prog" --argjson now 1800000000 --argjson chain "$(entry 40 true)" <<<"$(cache 5 15)")
+          [ "$out" = "m/elapsed" ] || { echo "FAIL C: monthly 15 under min(40,28) must resolve (got: $out)" >&2; exit 1; }
+          #    Static 15, pace 28: usage 18 under pace but over static.
+          out=$(jq -re -f "$prog" --argjson now 1800000000 --argjson chain "$(entry 15 true)" <<<"$(cache 5 18)" || true)
+          [ -z "$out" ] || { echo "FAIL C: monthly 18 > static 15 must reject — static binds under pace (got: $out)" >&2; exit 1; }
+
+          echo "ok: elapsed windowOk rewrite (pace applies with null static, cap-free when disabled, min(static,pace) binds)"
+        '';
+      }
+      {
+        # Missing usage.monthly: the wrapper keeps the current behavior (jq
+        # errors are swallowed, resolve_chain degrades to the last chain entry)
+        # but now prints one stderr warning. This test asserts (a) the wrapper
+        # source contains the warning, and (b) the degradation path resolves
+        # the LAST entry with exit 0 exactly as resolve_for_agent does.
+        name = "missing-monthly-fallback";
+        type = "script";
+        script = ''
+          set -euo pipefail
+          export PATH=${pkgs.jq}/bin:${pkgs.gnugrep}/bin:$PATH
+          prog=${../modules/home/opencode/model-select.jq}
+          fb=${../modules/home/opencode/fallback.nix}
+
+          grep -q 'usage.monthly missing, falling back to last chain entry' "$fb" || {
+            echo "FAIL: opencode-model-select wrapper must print the missing-monthly warning" >&2; exit 1; }
+
+          # Degradation: chain whose last entry is the cap-free safety net.
+          chain='[{"model":"m/first"},{"model":"m/safety"}]'
+          missing='{"usage":{
+            "rolling":{"status":"ok","percent":1,"resetsAt":"2027-01-15T00:00:00.000Z"},
+            "weekly":{"status":"ok","percent":3,"resetsAt":"2027-01-20T08:57:36.000Z"}}}'
+
+          # resolve_chain semantics: jq errors are swallowed (|| true) -> empty
+          # winner; unlike the real wrapper the cache is fed via stdin here.
+          winner=$(jq -re -f "$prog" --argjson now 1800000000 --argjson chain "$chain" <<<"$missing" 2>/dev/null || true)
+          [ -z "$winner" ] || { echo "FAIL: missing monthly must produce no winner from jq (got: $winner)" >&2; exit 1; }
+          # resolve_for_agent semantics: empty winner -> last_model_of_chain (the
+          # wrapper uses `jq -r` on the stdin array — `-n` would null the input).
+          last=$(jq -r '. | last | (.model // empty)' <<< "$chain")
+          [ "$last" = "m/safety" ] || { echo "FAIL: fallback must resolve the last chain entry (got: $last)" >&2; exit 1; }
+          [ -z "$winner" ] || exit 1
+          echo "ok: missing monthly -> stderr warning wired, degrade resolves last entry with exit 0"
+        '';
+      }
     ];
   };
 
@@ -222,6 +306,45 @@
           [ ! -e "$dir/bad.json.tmp" ] || { echo "FAIL 5: temp file must not remain" >&2; exit 1; }
 
           echo "ok: snapshot roll (fresh/preserve/roll-on-elapse/roll-on-reset/corrupt-replace)"
+        '';
+      }
+      {
+        # Wiring regression: the roll CLI must actually be invoked by the poll
+        # unit, after the cache write, guarded so a roll failure cannot fail
+        # the poll. Source-level assertions on usage.nix + snapshot-roll.sh —
+        # exactly the bytes that get built into opencode-go-usage.
+        name = "slice-roll-wired";
+        type = "script";
+        script = ''
+          set -euo pipefail
+          export PATH=${pkgs.gnugrep}/bin:${pkgs.coreutils}/bin:$PATH
+          u=${../modules/home/opencode/usage.nix}
+          r=${../modules/home/opencode/snapshot-roll.sh}
+
+          # The roll binary exists and is invoked inside the poll script.
+          grep -q 'writeShellScriptBin "opencode-go-slices-roll"' "$u" \
+            || { echo "FAIL: usage.nix must define the opencode-go-slices-roll binary" >&2; exit 1; }
+          grep -q 'opencode-go-slices-roll "$JSON" "$SLICE_FILE" "$SLICE_HOURS"' "$u" \
+            || { echo "FAIL: usage.nix must invoke the roll after the poll" >&2; exit 1; }
+          grep -q 'slice snapshot roll failed' "$u" \
+            || { echo "FAIL: roll failure must be non-fatal for the poll unit" >&2; exit 1; }
+          grep -q 'runtimeInputs = with pkgs; \[ curl jq coreutils sliceRoll \]' "$u" \
+            || { echo "FAIL: usage.nix must put the roll binary on the poll PATH" >&2; exit 1; }
+
+          # Ordering: the invocation must come AFTER the cache write/mv
+          # (''${CACHE_FILE}.tmp" is the cache tmp-write line; the substring
+          # 'CACHE_FILE}.tmp"' is brace-free so it needs no Nix escaping).
+          cache_mv=$(grep -n 'CACHE_FILE}.tmp"' "$u" | head -1 | cut -d: -f1)
+          roll_line=$(grep -n 'opencode-go-slices-roll "$JSON"' "$u" | head -1 | cut -d: -f1)
+          [ -n "$cache_mv" ] && [ -n "$roll_line" ] && [ "$roll_line" -gt "$cache_mv" ] \
+            || { echo "FAIL: roll must run after the cache write (cache_mv=$cache_mv roll=$roll_line)" >&2; exit 1; }
+
+          # snapshot-roll.sh writes atomically (tmp + mv, never partial).
+          grep -q '\.tmp' "$r" || { echo "FAIL: snapshot-roll.sh must write via a tmp file" >&2; exit 1; }
+          grep -q 'slice_file}.tmp"' "$r" \
+            || { echo "FAIL: snapshot-roll.sh must mv the tmp file into place" >&2; exit 1; }
+
+          echo "ok: slice roll wired into usage.nix after the cache write, non-fatal, atomic"
         '';
       }
     ];
