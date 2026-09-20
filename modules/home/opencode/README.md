@@ -59,10 +59,14 @@ the terminal, with support for 15+ LLM providers, custom skills, agents, and MCP
 | `my.programs.opencode.modelFallback.enable` | `false` | Usage-aware model fallback |
 | `my.programs.opencode.modelFallback.chains` | `{}` | Ordered fallback chains per agent (`model` + optional `maxRollingPercent` / `maxWeeklyPercent` / `maxMonthlyPercent`) |
 | `my.programs.opencode.modelFallback.syncEnsembleProjectFile` | `false` | Rewrite `<repoDir>/.opencode/ensemble.json` before dispatch so ensemble spawns use chain-resolved models |
+| `my.programs.opencode.modelFallback.cacheFile` | `~/.cache/opencode/go-usage.json` | Usage snapshot consumed by the selector |
+| `my.programs.opencode.modelFallback.sliceFile` | `~/.cache/opencode/go-usage-slices.json` | Budget-pacing slice snapshot (written by usage.nix) |
 | `my.programs.opencode.modelFallback.repoDir` | `~/nixos-config` | Repo whose project-level ensemble override receives resolved models |
 
-Chain entries additionally accept a `pacing` block — see
-[Pace-based caps](#pace-based-caps-weeklymonthly-only) below.
+Chain entries additionally accept a `pacing` block (`mode`,
+`budget.windows`, `budget.sliceHours`, `floor`, `buffer`) — see
+[Pace-based caps](#pace-based-caps-weeklymonthly-only) and
+[Budget pacing](#budget-pacing-pacingmode--budget-monthly-only-by-default) below.
 
 ## Usage-Aware Model Fallback
 
@@ -128,15 +132,55 @@ Semantics (`modules/home/opencode/fallback.nix`, program in
   constrain `maxWeeklyPercent` or `maxMonthlyPercent`; this is asserted in
   `tests.nix` and throws at eval otherwise.
 
-**Why elapsed pacing ships disabled:** both production chains currently run with
-static caps only. The evidence gates are now **confirmed** — weekly rollover was
-observed verbatim (`weekly.resetsAt = 2026-08-31T00:00:00Z`), and the monthly
-reset confirmed a fixed 30-day window anchored at `2026-09-20T09:25:34Z` (so
-`periodStart = resetsAt − 30d` is exact, not approximate; re-confirm at the
-2026-10-20 reset, next expected `2026-11-19T09:25:34Z`). Elapsed pacing just is
-not enabled on the current chains — the monthly window is guarded by the fixed
-`maxMonthlyPercent` backstop on every rung (see below) and, on the lead rung,
-by budget pacing.
+### Budget pacing (`pacing.mode = "budget"`, monthly only by default)
+
+While *elapsed* pacing grows the cap with calendar time, **budget** pacing
+divides what is *left* of a fixed window by the time left, in slices:
+
+```
+sliceCap = usageAtStart + (100 − usageAtStart) / slicesLeft
+slicesLeft = ceil((resetsAt − sliceStart) / sliceHours)
+```
+
+`usageAtStart` is the usage percent recorded at the start of the current
+slice; `sliceStart` is when that slice began. A new slice starts every
+`sliceHours` (default 24h) and at every monthly reset, seeded with the usage
+percent at that moment. Example: 40% of the month already spent with 21 days
+left → `slicesLeft ≈ 21`, `sliceCap ≈ 43.3%` for the day — about 1.9%/day.
+
+Unspent budget rolls forward each slice (the next slice re-seeds from actual
+usage), and overspend is spread over the remaining slices rather than causing
+a lockout followed by a full-rate resume. The effective cap is
+`min(maxMonthlyPercent, sliceCap)` — the static monthly backstop always wins.
+
+**Snapshot file:** usage.nix writes `~/.cache/opencode/go-usage-slices.json`
+(shape `{"monthly": {"sliceStart": <epoch>, "usageAtStart": <pct>,
+"resetsAt": "<iso>"}}`) atomically on every poll; a new snapshot starts when
+none exists, when the slice has elapsed, or when the cache's `resetsAt`
+differs from the snapshot's (period reset).
+
+**Degrade rules (never an error):** budget pacing is skipped for a window and
+only static caps apply when the snapshot is missing, its `resetsAt` disagrees
+with the cache, or it is older than 2 slices (the 5-minute refresher has been
+down). A malformed snapshot is treated the same way from inside
+`model-select.jq` (`try … catch null`).
+
+**Why monthly only:** budget math needs a fixed, known window length. The
+monthly window is a fixed 30-day period (anchored `2026-09-20T09:25:34Z`);
+rolling is a trailing 5h sliding window (no anchor), and weekly is
+use-it-or-lose-it — both stay on static ceilings. Weekly can be added to
+`pacing.budget.windows` later using the same math with its own slice length.
+
+**Why elapsed pacing ships disabled:** the current chains do not enable
+*elapsed* pacing. The monthly window is instead guarded two ways: a fixed
+`maxMonthlyPercent` backstop on every rung, and — on the lead rung of the
+default chain — **budget** pacing (`pacing.mode = "budget"`, see above),
+which is strictly better for a fixed 30-day window than elapsed pacing. The
+evidence gates that used to block shipping pacing are confirmed: weekly
+rollover observed verbatim (`weekly.resetsAt = 2026-08-31T00:00:00Z`), and the
+monthly reset confirmed a fixed 30-day window anchored at
+`2026-09-20T09:25:34Z` (re-confirm at the 2026-10-20 reset, next expected
+`2026-11-19T09:25:34Z`).
 
 Boundary behavior is validated against synthetic snapshots at controlled
 times (elapsed 0%, just-under/just-over floor, stale cache past `resetsAt`,

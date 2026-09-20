@@ -829,6 +829,20 @@ in
         description = "Path to the usage snapshot consumed by the selector.";
       };
 
+      sliceFile = mkOption {
+        type = types.str;
+        default = "${config.home.homeDirectory}/.cache/opencode/go-usage-slices.json";
+        defaultText = literalExpression ''"''${config.home.homeDirectory}/.cache/opencode/go-usage-slices.json"'';
+        description = ''
+          Path to the budget-pacing slice snapshot, written by
+          <option>my.programs.opencode.opencode-go.usage</option> on each poll
+          (usage.nix → snapshot-roll.sh). The selector passes it to
+          model-select.jq for entries with
+          <literal>pacing.mode = "budget"</literal>; a missing file disables
+          budget pacing (static caps only).
+        '';
+      };
+
       chains = mkOption {
         type = types.attrsOf (types.listOf (types.submodule {
           options = {
@@ -879,12 +893,13 @@ in
                 default = false;
                 description = ''
                   Pace-based cap for this entry on the WEEKLY and MONTHLY
-                  windows: the allowed usage ceiling scales with how much of
-                  the window's period has elapsed,
-                  `cap = min(100, elapsedFraction*100 + buffer)`, and is inert
-                  entirely while `elapsedFraction*100 < floor`. The effective
-                  cap is always `min(staticCap, paceCap)` — pacing can only
-                  tighten, never loosen. Rolling is EXCLUDED by design (Tier 0:
+                  windows (see <literal>mode</literal> for the formula).
+                  This is a hard backstop for the monthly leak: without it a
+                  rung is capped only by maxMonthlyPercent, and
+                  maxMonthlyPercent was historically left unset until fixed
+                  2026-09-20. The effective window cap is always
+                  `min(staticCap, paceCap)` — pacing can only tighten, never
+                  loosen. Rolling is EXCLUDED by design (Tier 0:
                   it is a trailing 5h sliding window with no fixed anchor).
                   Period lengths are VERIFIED: weekly rollover observed
                   verbatim (resetsAt = 2026-08-31T00:00:00Z, Monday 00:00 UTC);
@@ -894,8 +909,53 @@ in
                   (next expected 2026-11-19T09:25:34Z). Ships disabled by
                   default; the monthly window is guarded by the fixed
                   `maxMonthlyPercent` backstop on every rung and, with
-                  <literal>pacing.mode = "budget"</literal>, by budget pacing.
+                  <literal>mode = "budget"</literal>, by budget pacing.
                 '';
+              };
+              mode = mkOption {
+                type = types.enum [ "elapsed" "budget" ];
+                default = "elapsed";
+                description = ''
+                  Pacing formula for this entry:
+                  <literal>"elapsed"</literal> (default, unchanged legacy
+                  behavior) — cap grows with elapsed time in the window,
+                  `paceCap = min(100, elapsedPercent + buffer)`, inert below
+                  <literal>floor</literal>.
+                  <literal>"budget"</literal> — remaining-budget pacing:
+                  divide the usage LEFT in the window over the slices LEFT.
+                  On each slice the cap becomes
+                  `usageAtStart + (100 − usageAtStart) / slicesLeft`, where
+                  `slicesLeft = ceil((resetsAt − sliceStart) / sliceHours)`.
+                  Unspent budget rolls forward each slice; overspend spreads
+                  over the remaining slices instead of locking out then
+                  resuming at full rate. Reads the slice snapshot written by
+                  <option>my.programs.opencode.opencode-go.usage</option>
+                  (~/.cache/opencode/go-usage-slices.json) and silently
+                  degrades to static caps when that snapshot is missing,
+                  older than 2 slices, or its <literal>resetsAt</literal>
+                  disagrees with the cache (see README "Budget pacing").
+                '';
+              };
+              budget = {
+                windows = mkOption {
+                  type = types.listOf (types.enum [ "weekly" "monthly" ]);
+                  default = [ "monthly" ];
+                  description = ''
+                    Windows budget pacing applies to. Defaults to monthly
+                    only: the monthly window is a fixed 30-day period, which
+                    is what remaining-budget math needs. Rolling and weekly
+                    are use-it-or-lose-it and stay on static ceilings; weekly
+                    can be added here later using the same math.
+                  '';
+                };
+                sliceHours = mkOption {
+                  type = types.ints.positive;
+                  default = 24;
+                  description = ''
+                    Slice length in hours for budget pacing (used for the
+                    monthly window; weekly would need its own length).
+                  '';
+                };
               };
               floor = mkOption {
                 type = types.ints.between 0 100;

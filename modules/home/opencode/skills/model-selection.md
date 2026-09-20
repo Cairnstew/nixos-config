@@ -102,3 +102,22 @@ number. For per-token prices, always use `models.dev` via this tool.
   subscription limits.
 - If `opencode-models` reports a model but opencode says "not found", run
   `/models` in the TUI to refresh the local model list.
+
+## Usage caps change the effective model mid-period
+
+The `modelFallback` selector picks the model per dispatch from the Go usage
+caps (`~/.cache/opencode/go-usage.json`) plus pacing (see
+`modules/home/opencode/README.md`). Consequences to keep in mind when
+answering "which model will run":
+
+- **The lead rung is budget-paced on the monthly window.** The default chain
+  runs `opencode-go/deepseek-v4-flash` only while usage stays under the
+  slice cap; a heavy day can push it to the next rung
+  (`opencode-go/mimo-v2.5`) until the next slice starts (each 24h slice
+  re-seeds the ratchet from actual usage).
+- **A downgrade can happen mid-period, not just at a reset.** If a session
+  starts on the lead rung and monthly usage crosses the slice cap, later
+  dispatches in the same period land on mimo/free. Check
+  `opencode-model-select --agent <agent>` (or the usage table,
+  `opencode-go-usage`) before promising a specific model for a long piece of
+  work.

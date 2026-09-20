@@ -1016,5 +1016,12 @@ Symptom (2026-09-16): the efficiency lens checkpoint (agents/build.md) queries `
 
 ---
 
-Last updated: 2026-08-25
+**Budget pacing slice snapshot: staleness degrades to static caps, and the cap resets every slice**
+
+Symptom (2026-09-20, opencode modelFallback budget pacing): reasoning about the model selector's budget mode from the live `go-usage.json` alone misleads — the *slice snapshot* (`~/.cache/opencode/go-usage-slices.json`, written by `usage.nix` → `snapshot-roll.sh`) is what drives `pacing.mode = "budget"` on the lead rung of the default chain, and it is deliberately NOT up to the minute. Two behaviors to expect: (1) **slice-boundary ratchet** — the allowed monthly percent is fixed for the current slice (`sliceCap = usageAtStart + (100 − usageAtStart)/slicesLeft`); it re-seeds at the next slice (default 24h) from the *then-current* usage, so a heavy day drops the agent to the next rung (mimo) until the next slice starts, not at a fixed threshold. (2) **stale snapshot degrades silently** — if the 5-minute refresher has been down long enough that the snapshot is older than 2 slices (48h), or its `resetsAt` disagrees with the cache (a monthly reset happened between polls), budget pacing is skipped entirely and only the static `maxMonthlyPercent` backstop applies; the selector never errors because of the snapshot (`try … catch null` inside `budgetCap`). Cause: budget pacing was added 2026-09-20 in response to a real monthly exhaustion — no chain set `maxMonthlyPercent` and pacing was never enabled, so a 100%-month window burned the paid tier mid-month. Fix: every rung now carries `maxMonthlyPercent` (90/95) as a hard backstop and the lead rung runs `pacing = { enable = true; mode = "budget"; }`. Diagnose with `opencode-go-usage --json` for the live percents and `cat ~/.cache/opencode/go-usage-slices.json` for the snapshot; if the snapshot file is missing/stale the selector is on static caps, which is the safe fallback, not a malfunction.
+
+---
+
+Last updated: 2026-09-20
+
 

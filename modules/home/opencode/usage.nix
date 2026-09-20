@@ -7,6 +7,9 @@
 #   - `opencode-go-usage`      CLI: human table (default) or `--json`
 #   - a systemd user timer that refreshes ~/.cache/opencode/go-usage.json
 #     every 5 minutes so the proxy dashboard can read the cached snapshot.
+#   - the budget-pacing slice snapshot (~/.cache/opencode/go-usage-slices.json)
+#     via snapshot-roll.sh, consumed by the model selector's "budget" pacing
+#     mode (model-select.jq / README "Budget pacing").
 { config, lib, pkgs, ... }:
 let
   cfg = config.my.programs.opencode;
@@ -14,15 +17,22 @@ let
 
   usageJson = "%{XDG_CACHE_HOME:-$HOME/.cache}/opencode/go-usage.json";
 
+  # Slice-snapshot roll logic, standalone so the nixtest suite can run the
+  # exact bytes (tests/opencode-model-fallback_test.nix).
+  sliceRoll = pkgs.writeShellScriptBin "opencode-go-slices-roll"
+    (builtins.readFile ./snapshot-roll.sh);
+
   usageCli = pkgs.writeShellApplication {
     name = "opencode-go-usage";
-    runtimeInputs = with pkgs; [ curl jq coreutils ];
+    runtimeInputs = with pkgs; [ curl jq coreutils sliceRoll ];
     text = ''
       set -euo pipefail
 
       KEY_FILE=${lib.escapeShellArg goCfg.keyFile}
       CACHE_DIR="''${XDG_CACHE_HOME:-$HOME/.cache}/opencode"
       CACHE_FILE="''${CACHE_DIR}/go-usage.json"
+      SLICE_FILE="''${CACHE_DIR}/go-usage-slices.json"
+      SLICE_HOURS=24
 
       [ -r "$KEY_FILE" ] || { echo "opencode-go-usage: cannot read key file $KEY_FILE" >&2; exit 1; }
       KEY=$(tr -d '[:space:]' < "$KEY_FILE")
@@ -62,6 +72,11 @@ let
         | jq '. + {fetchedAt: (now | todate)}' \
         > "''${CACHE_FILE}.tmp"
       mv "''${CACHE_FILE}.tmp" "$CACHE_FILE"
+
+      # Budget-pacing slice snapshot (best-effort, after the cache write so a
+      # failure here never loses the usage cache). See snapshot-roll.sh.
+      opencode-go-slices-roll "$JSON" "$SLICE_FILE" "$SLICE_HOURS" || \
+        { echo "opencode-go-usage: slice snapshot roll failed (ignored)" >&2; }
     '';
   };
 in

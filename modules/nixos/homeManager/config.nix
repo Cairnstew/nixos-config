@@ -201,7 +201,12 @@ in
           modelFallback.syncEnsembleProjectFile = lib.mkDefault true;
           modelFallback.chains = lib.mkDefault {
             default = [
-              { model = "opencode-go/deepseek-v4-flash"; maxRollingPercent = 70; maxWeeklyPercent = 80; maxMonthlyPercent = 90; }
+              # Lead rung: monthly is budget-paced (pacing.mode = "budget"):
+              # the allowed monthly percent ratchets down the remaining budget
+              # over the remaining slices of the fixed 30-day window, and the
+              # static maxMonthlyPercent 90 is a hard backstop that pacing can
+              # only tighten. Weekly/rolling stay static.
+              { model = "opencode-go/deepseek-v4-flash"; maxRollingPercent = 70; maxWeeklyPercent = 80; maxMonthlyPercent = 90; pacing = { enable = true; mode = "budget"; }; }
               { model = "opencode-go/mimo-v2.5"; maxRollingPercent = 85; maxWeeklyPercent = 95; maxMonthlyPercent = 95; }
               { model = "opencode-go/ox-alpha-free"; }
             ];

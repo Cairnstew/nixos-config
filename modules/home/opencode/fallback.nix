@@ -53,10 +53,14 @@ let
   #
   # Pacing (D1–D4): ONLY for entries with pacing.enable = true on the
   # weekly/monthly windows; periodStart derives from resetsAt alone (weekly
-  # −7d exact, monthly −30d APPROXIMATE — see README), paceCap =
-  # min(100, elapsed% + buffer), inert while elapsed% < floor, and the entry
-  # stays subject to its static caps as hard ceilings: eligible iff
-  # percent <= min(static, pace). Entries without the flag are judged on
+  # −7d exact, monthly −30d exact — a fixed 30-day window anchored at
+  # 2026-09-20T09:25:34Z, see README). Two modes:
+  #   "elapsed" — paceCap = min(100, elapsed% + buffer), inert below floor.
+  #   "budget"  — sliceCap = usageAtStart + (100 − usageAtStart)/slicesLeft
+  #               from the slice snapshot (go-usage-slices.json, written by
+  #               usage.nix), monthly only by default.
+  # The entry stays subject to its static caps as hard ceilings: eligible
+  # iff percent <= min(static, pace). Entries without the flag are judged on
   # static caps alone. Rolling never consults pacing fields.
   resolveJqFile = ./model-select.jq;
 in
@@ -86,6 +90,7 @@ in
 
             FALLBACK_CONFIG="''${XDG_CONFIG_HOME:-$HOME/.config}/opencode/model-fallback.json"
             CACHE_FILE="${cfg.modelFallback.cacheFile}"
+            SLICE_FILE="${cfg.modelFallback.sliceFile}"
             ENSEMBLE_PROJECT="${cfg.modelFallback.repoDir}/.opencode/ensemble.json"
 
             usage() {
@@ -121,11 +126,19 @@ in
             # Resolve one chain (JSON array in $1) against the usage snapshot.
             # The program is loaded with -f from its store path (see
             # resolveJqFile above for why it is not interpolated into this
-            # script). NOW supplies the selector's own clock for pace caps.
+            # script). NOW supplies the selector's own clock for pace caps;
+            # SNAPSHOT supplies the budget-pacing slice snapshot
+            # (go-usage-slices.json, written by usage.nix) — 'null' when the
+            # file is missing, which the program treats as "budget skipped".
             resolve_chain() {
-              local now
+              local now snapshot
               now=$(date +%s)
-              jq -re -f ${resolveJqFile} --argjson chain "$1" --argjson now "$now" "$CACHE_FILE" 2>/dev/null || true
+              if [ -r "$SLICE_FILE" ]; then
+                snapshot=$(cat "$SLICE_FILE")
+              else
+                snapshot='null'
+              fi
+              jq -re -f ${resolveJqFile} --argjson chain "$1" --argjson now "$now" --argjson snapshot "$snapshot" "$CACHE_FILE" 2>/dev/null || true
             }
 
             # Last entry of a chain is the always-eligible safety net by convention;
