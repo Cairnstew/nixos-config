@@ -1028,7 +1028,14 @@ Symptom (2026-09-20, live-verification round): (1) `opencode-model-select`'s `la
 
 ---
 
+**Unusable usage data must BLOCK triage chains (capped/blockedTerminal tail), not degrade to the last entry — and the degrade path now has behavioural tests, not just source greps**
+
+Symptom (2026-09-20, degrade-hardening round): with the live usage cache missing `usage.monthly` (or any window malformed), the selector fell back to the chain's LAST entry. For the default chain that tail is ox-alpha-free (cap-free, fine); for the triage chains (`learning-promoter`/`scout-skeptical`/`qa-verification`/`adversarial`) the last entry is `blockedTerminal` — and the pre-fix code degraded to `last_model_of_chain(...)` which, after the `jq -rn` fix (see prior entry), returned EMPTY and exited 5 only because the tail had no model. The vulnerability: a chain whose last entry was a MODEL with a static cap would dispatch a capped against-no-data paid model. Fix (`modules/home/opencode/model-select.sh`, extracted from the inline wrapper so the nixtest runs the real bytes): classify unusable data up front (any window missing or percent not a number => `UNUSABLE=1` with a distinct `why`); degrade to the tail ONLY when `last_is_capfree` (model set AND no static caps); otherwise exit 5 with a distinct message ("...and chain for agent='X' has no cap-free terminal — BLOCKED"). Same rule applies to exhaustion. exit 5 semantics are unchanged ("do not dispatch"); ensemble `--sync-ensemble` already skips blocked agents and keeps their previous entry, so no conflict. Also: the wrapper now appends a decision log (`~/.cache/opencode/model-select.log`, one JSON line per resolution, best-effort + trimmed to ~2000 lines) with per-window skip reasons (`by: "static"|"pace"`, effective cap) for tuning; require a documented jq one-liner in README to aggregate per-day skips. Lesson: source-level grep tests of the wrapper (previous round's `missing-monthly-fallback`) cannot catch logic bugs in the generated shell; the wrapper was moved to a standalone file (`model-select.sh`) that the behavioural nixtest executes with fixture caches. `slice-roll-wired` stays source-level only because the poll unit cannot be built/evaluated inside a nixtest.
+
+---
+
 Last updated: 2026-09-20
+
 
 
 

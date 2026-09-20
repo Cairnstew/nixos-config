@@ -51,7 +51,7 @@ let
   # quoting, and the nixtest suite (tests/opencode-model-fallback_test.nix)
   # runs the exact same file.
   #
-  # Pacing (D1–D4): ONLY for entries with pacing.enable = true on the
+  # Pacing/Degrade (D1–D4): ONLY for entries with pacing.enable = true on the
   # weekly/monthly windows; periodStart derives from resetsAt alone (weekly
   # −7d exact, monthly −30d exact — a fixed 30-day window anchored at
   # 2026-09-20T09:25:34Z, see README). Two modes:
@@ -62,7 +62,20 @@ let
   # The entry stays subject to its static caps as hard ceilings: eligible
   # iff percent <= min(static, pace). Entries without the flag are judged on
   # static caps alone. Rolling never consults pacing fields.
+  #
+  # Degrade rule (2026-09-20): a chain's LAST entry is the safety net ONLY
+  # when it is cap-free (model set, no static caps). On unusable usage data
+  # (any window missing / percent not a number) — and on exhaustion — a chain
+  # with a cap-free tail degrades to it (exit 0, one stderr warning); a chain
+  # ending in blockedTerminal or a CAPPED entry exits 5 (BLOCKED) instead of
+  # running a paid model with no enforcement.
   resolveJqFile = ./model-select.jq;
+
+  # The selector logic is a standalone script (env-parameterized via
+  # OPENCODE_SELECT_* so the nixtest suite runs the exact deployed bytes);
+  # this wrapper binds the baked store paths and paths.
+  modelSelectScript = pkgs.writeShellScript "opencode-model-select-core"
+    (builtins.readFile ./model-select.sh);
 in
 {
   # ── Chains config → ~/.config/opencode/model-fallback.json ────────────────
@@ -87,140 +100,13 @@ in
     (pkgs.writeShellScriptBin "opencode-model-select" ''
             set -euo pipefail
             export PATH="${pkgs.jq}/bin:${pkgs.coreutils}/bin:$PATH"
-
-            FALLBACK_CONFIG="''${XDG_CONFIG_HOME:-$HOME/.config}/opencode/model-fallback.json"
-            CACHE_FILE="${cfg.modelFallback.cacheFile}"
-            SLICE_FILE="${cfg.modelFallback.sliceFile}"
-            ENSEMBLE_PROJECT="${cfg.modelFallback.repoDir}/.opencode/ensemble.json"
-
-            usage() {
-              cat <<'USAGE'
-      usage: opencode-model-select [--agent NAME] [--sync-ensemble]
-        Resolves the winning model for an agent from the cached Go usage snapshot
-        and the configured modelFallback chains. Prints the model id on stdout.
-        --agent NAME        use chains[NAME], falling back to chains.default
-        --sync-ensemble     additionally rewrite ${cfg.modelFallback.repoDir}/.opencode/ensemble.json
-                            with modelsByAgent resolved for EVERY configured agent
-                            (must run BEFORE the opencode process starts)
-
-      Exit codes: 0 resolved (model id on stdout); 3 missing config/cache;
-      4 no chain configured for the agent; 5 chain exhausted with a blockedTerminal
-      last entry — callers must treat this as "do not dispatch", not an error to retry.
-      USAGE
-            }
-
-            agent=""
-            sync=0
-            while [ $# -gt 0 ]; do
-              case "$1" in
-                --agent) agent="''$2"; shift 2 ;;
-                --sync-ensemble) sync=1; shift ;;
-                -h|--help) usage; exit 0 ;;
-                *) echo "opencode-model-select: unknown arg $1" >&2; usage >&2; exit 2 ;;
-              esac
-            done
-
-            [ -r "$FALLBACK_CONFIG" ] || { echo "opencode-model-select: missing $FALLBACK_CONFIG" >&2; exit 3; }
-            [ -r "$CACHE_FILE" ] || { echo "opencode-model-select: missing usage cache $CACHE_FILE" >&2; exit 3; }
-
-            # Resolve one chain (JSON array in $1) against the usage snapshot.
-            # The program is loaded with -f from its store path (see
-            # resolveJqFile above for why it is not interpolated into this
-            # script). NOW supplies the selector's own clock for pace caps;
-            # SNAPSHOT supplies the budget-pacing slice snapshot
-            # (go-usage-slices.json, written by usage.nix) — 'null' when the
-            # file is missing, which the program treats as "budget skipped".
-            resolve_chain() {
-              local now snapshot
-              now=$(date +%s)
-              if [ -r "$SLICE_FILE" ]; then
-                snapshot=$(cat "$SLICE_FILE")
-              else
-                snapshot='null'
-              fi
-              # Missing usage.monthly: the jq program depends on it and would
-              # error (swallowed by `|| true` below), silently degrading to the
-              # last chain entry. Make that degradation loud — one line on
-              # stderr — while keeping the exact same exit-0 fallback behavior.
-              if ! jq -e '.usage.monthly' "$CACHE_FILE" >/dev/null 2>&1; then
-                echo "opencode-model-select: usage.monthly missing, falling back to last chain entry" >&2
-                return 0
-              fi
-              jq -re -f ${resolveJqFile} --argjson chain "$1" --argjson now "$now" --argjson snapshot "$snapshot" "$CACHE_FILE" 2>/dev/null || true
-            }
-
-            # Last entry of a chain is the always-eligible safety net by convention;
-            # an exhausted chain degrades to it instead of failing hard. A chain
-            # whose last entry is a blockedTerminal marker (no model) has NO safety
-            # net by design: exhaustion must surface as BLOCKED (exit 5), never as
-            # a degraded model choice.
-            last_model_of_chain() {
-              # NOTE: jq -n would make the input null and `last` would yield
-              # nothing — the safety net silently vanished (caught 2026-09-20
-              # by the missing-monthly-fallback nixtest). Read the stdin array.
-              jq -r '. | last | (.model // empty)' <<< "$1"
-            }
-
-            resolve_for_agent() { # $1 = agent name; empty means default chain
-              local key="$1" chain winner
-              if [ -n "$key" ]; then
-                chain=$(jq -c --arg k "$key" '.chains[$k] // .chains.default // empty' "$FALLBACK_CONFIG")
-              else
-                chain=$(jq -c '.chains.default // empty' "$FALLBACK_CONFIG")
-              fi
-              [ -n "$chain" ] || return 1
-              winner=$(resolve_chain "$chain")
-              if [ -z "$winner" ]; then
-                winner=$(last_model_of_chain "$chain")
-                if [ -z "$winner" ]; then
-                  # NOTE: report $key (this function's argument), not the
-                  # CLI-level $agent — during --sync-ensemble the CLI var is
-                  # empty and every per-agent BLOCKED used to mislabel itself
-                  # as "agent=default" (caught 2026-08-26, Tier 1 Task 2).
-                  echo "opencode-model-select: chain for agent=''${key:-default} exhausted; no free-tier terminal — BLOCKED" >&2
-                  exit 5
-                fi
-              fi
-              [ -n "$winner" ] && printf '%s' "$winner"
-            }
-
-            if [ "$sync" -eq 0 ]; then
-              m=$(resolve_for_agent "$agent")
-              if [ -z "$m" ]; then
-                echo "opencode-model-select: no resolvable chain for agent=''${agent:-default}" >&2
-                exit 4
-              fi
-              printf '%s\n' "$m"
-              exit 0
-            fi
-
-            # --sync-ensemble: resolve every configured agent and write the project
-            # override atomically, preserving unrelated keys already in the file.
-            # NOTE: a BLOCKED/unresolvable agent is skipped and its PREVIOUS
-            # modelsByAgent entry is left in place — the file cannot distinguish
-            # fresh-resolved from carried-over entries. The stderr line below
-            # makes that visible (self-improve-usage Tier 0 §2c secondary wrinkle).
-            models_by_agent='{}'
-            while IFS= read -r key; do
-              [ "$key" = "default" ] && continue
-              if m=$(resolve_for_agent "$key"); then
-                models_by_agent=$(jq -cn --argjson acc "$models_by_agent" --arg k "$key" --arg m "$m" '$acc + { ($k): $m }')
-              else
-                echo "opencode-model-select: agent '$key' has no eligible model (rc=$?) — keeping its existing modelsByAgent entry unchanged" >&2
-              fi
-            done < <(jq -r '.chains | keys[]' "$FALLBACK_CONFIG")
-
-            mkdir -p "$(dirname "$ENSEMBLE_PROJECT")"
-            tmp=$(mktemp "$(dirname "$ENSEMBLE_PROJECT")/.ensemble.json.tmp.XXXXXX")
-            trap 'rm -f "$tmp"' EXIT
-
-            if [ -r "$ENSEMBLE_PROJECT" ]; then base=$(cat "$ENSEMBLE_PROJECT"); else base='{}'; fi
-            jq -s '.[0] * { modelsByAgent: ((.[0].modelsByAgent // {}) * $mba) }' \
-              --argjson mba "$models_by_agent" \
-              <(echo "$base") <(printf '{"modelsByAgent":%s}' "$models_by_agent") > "$tmp"
-            mv "$tmp" "$ENSEMBLE_PROJECT"
-            trap - EXIT
-            echo "opencode-model-select: synced $ENSEMBLE_PROJECT ($(jq -r '.modelsByAgent | length' "$ENSEMBLE_PROJECT") agents)" >&2
+            export OPENCODE_SELECT_JQ="${resolveJqFile}"
+            export OPENCODE_SELECT_CONFIG="''${XDG_CONFIG_HOME:-$HOME/.config}/opencode/model-fallback.json"
+            export OPENCODE_SELECT_CACHE="${cfg.modelFallback.cacheFile}"
+            export OPENCODE_SELECT_SLICE="${cfg.modelFallback.sliceFile}"
+            export OPENCODE_SELECT_LOG="${cfg.modelFallback.logFile}"
+            export OPENCODE_SELECT_ENSEMBLE="${cfg.modelFallback.repoDir}/.opencode/ensemble.json"
+            exec ${modelSelectScript} "$@"
     '')
   ];
 }

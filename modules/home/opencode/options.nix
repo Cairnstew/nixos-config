@@ -843,6 +843,21 @@ in
         '';
       };
 
+      logFile = mkOption {
+        type = types.str;
+        default = "${config.home.homeDirectory}/.cache/opencode/model-select.log";
+        defaultText = literalExpression ''"''${config.home.homeDirectory}/.cache/opencode/model-select.log"'';
+        description = ''
+          Decision log appended to by the selector on every resolution: one
+          JSON line per run —
+          <literal>{"ts", "agent", "chosen", "skipped": [{"model","window","used","cap","by"}], "degraded"}</literal>.
+          Used to tune pacing from real skip data. Appends are best-effort
+          (never fail/slow the selector), contain no secrets, and the file is
+          trimmed in batches to the last ~2000 lines. See README "Decision
+          log" for the per-day jq reports.
+        '';
+      };
+
       chains = mkOption {
         type = types.attrsOf (types.listOf (types.submodule {
           options = {

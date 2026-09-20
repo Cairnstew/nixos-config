@@ -180,7 +180,7 @@
         # the same cache fixture as the original pacing test:
         #   weekly resetsAt 2027-01-20T08:57:36Z  -> weekly elapsed 28% -> pace 38
         #   monthly resetsAt 2027-02-08T22:24:00Z -> monthly elapsed 18% -> pace 28
-        name = "pacing-elapsed-windookup";
+        name = "pacing-elapsed-windowok";
         type = "script";
         script = ''
           set -euo pipefail
@@ -220,39 +220,152 @@
           echo "ok: elapsed windowOk rewrite (pace applies with null static, cap-free when disabled, min(static,pace) binds)"
         '';
       }
+    ];
+  };
+
+  # BEHAVIOURAL tests of the real selector wrapper (modules/home/opencode/
+  # model-select.sh — the exact bytes run by fallback.nix's opencode-model-select,
+  # env-parameterized via OPENCODE_SELECT_*). Source-level greps cannot catch
+  # shell logic bugs (the jq -rn safety-net bug slipped past one), so these
+  # execute the wrapper against fixture caches and assert stdout/exit/stderr.
+  #
+  # Chains mirror modules/nixos/homeManager/config.nix modelFallback.chains
+  # (default + the four triage chains). If the config changes, update the
+  # fixtures here — the test intentionally records the live chain shapes.
+  suites."opencode-select-behaviour-tests" = {
+    pos = __curPos;
+    tests = [
       {
-        # Missing usage.monthly: the wrapper keeps the current behavior (jq
-        # errors are swallowed, resolve_chain degrades to the last chain entry)
-        # but now prints one stderr warning. This test asserts (a) the wrapper
-        # source contains the warning, and (b) the degradation path resolves
-        # the LAST entry with exit 0 exactly as resolve_for_agent does.
-        name = "missing-monthly-fallback";
+        name = "degrade-path-per-chain";
         type = "script";
         script = ''
           set -euo pipefail
-          export PATH=${pkgs.jq}/bin:${pkgs.gnugrep}/bin:$PATH
+          export PATH=${pkgs.jq}/bin:${pkgs.coreutils}/bin:${pkgs.gnugrep}/bin:${pkgs.bash}/bin:$PATH
+          wrap=${../modules/home/opencode/model-select.sh}
           prog=${../modules/home/opencode/model-select.jq}
-          fb=${../modules/home/opencode/fallback.nix}
+          dir=$(mktemp -d)
+          trap 'rm -rf "$dir"' EXIT
 
-          grep -q 'usage.monthly missing, falling back to last chain entry' "$fb" || {
-            echo "FAIL: opencode-model-select wrapper must print the missing-monthly warning" >&2; exit 1; }
+          # Exact chain shapes from config.nix (kept in sync manually).
+          # Built with `jq -n` so leading indentation is harmless (JSON inside
+          # a jq program is whitespace-insensitive; heredocs would keep it).
+          jq -n '{"chains":{
+            "default":[
+              {"model":"opencode-go/deepseek-v4-flash","maxRollingPercent":70,"maxWeeklyPercent":80,"maxMonthlyPercent":90,"pacing":{"enable":true,"mode":"budget"}},
+              {"model":"opencode-go/mimo-v2.5","maxRollingPercent":85,"maxWeeklyPercent":95,"maxMonthlyPercent":95},
+              {"model":"opencode-go/ox-alpha-free"}],
+            "learning-promoter":[
+              {"model":"opencode-go/mimo-v2.5","maxRollingPercent":85,"maxWeeklyPercent":95,"maxMonthlyPercent":90},
+              {"model":"opencode-go/deepseek-v4-flash","maxRollingPercent":70,"maxWeeklyPercent":80,"maxMonthlyPercent":95},
+              {"blockedTerminal":true}],
+            "scout-skeptical":[
+              {"model":"opencode-go/mimo-v2.5","maxRollingPercent":40,"maxWeeklyPercent":60,"maxMonthlyPercent":90},
+              {"model":"opencode-go/deepseek-v4-flash","maxRollingPercent":70,"maxWeeklyPercent":80,"maxMonthlyPercent":95},
+              {"blockedTerminal":true}],
+            "qa-verification":[
+              {"model":"opencode-go/mimo-v2.5","maxRollingPercent":40,"maxWeeklyPercent":60,"maxMonthlyPercent":90},
+              {"model":"opencode-go/deepseek-v4-flash","maxRollingPercent":70,"maxWeeklyPercent":80,"maxMonthlyPercent":95},
+              {"blockedTerminal":true}],
+            "adversarial":[
+              {"model":"opencode-go/mimo-v2.5","maxRollingPercent":40,"maxWeeklyPercent":60,"maxMonthlyPercent":90},
+              {"model":"opencode-go/deepseek-v4-flash","maxRollingPercent":70,"maxWeeklyPercent":80,"maxMonthlyPercent":95},
+              {"blockedTerminal":true}]}}' > "$dir/mf.json"
+          goodcache="$dir/good.json"
+          jq -n '{"usage":{"rolling":{"status":"ok","percent":4,"resetsAt":"2026-09-20T23:34:57.935Z"},"weekly":{"status":"ok","percent":3,"resetsAt":"2026-09-21T00:00:00.000Z"},"monthly":{"status":"ok","percent":94,"resetsAt":"2026-10-20T09:25:34.000Z"}}}' > "$goodcache"
+          jq 'del(.usage.monthly)' "$goodcache" > "$dir/nomonth.json"
+          jq '.usage.monthly.percent = "abc"' "$goodcache" > "$dir/badpct.json"
+          printf 'not json at all' > "$dir/garbage.json"
 
-          # Degradation: chain whose last entry is the cap-free safety net.
-          chain='[{"model":"m/first"},{"model":"m/safety"}]'
-          missing='{"usage":{
-            "rolling":{"status":"ok","percent":1,"resetsAt":"2027-01-15T00:00:00.000Z"},
-            "weekly":{"status":"ok","percent":3,"resetsAt":"2027-01-20T08:57:36.000Z"}}}'
+          run() { # $1 = agent, $2 = cache file; writes rc/stdout/stderr in $dir
+            local rc=0
+            OPENCODE_SELECT_JQ="$prog" OPENCODE_SELECT_CONFIG="$dir/mf.json" \
+              OPENCODE_SELECT_CACHE="$2" OPENCODE_SELECT_SLICE="$dir/none.json" \
+              OPENCODE_SELECT_LOG="$dir/log.jsonl" OPENCODE_SELECT_ENSEMBLE="$dir/ens.json" \
+              bash "$wrap" --agent "$1" > "$dir/stdout" 2> "$dir/stderr" || rc=$?
+            printf '%s' "$rc" > "$dir/rc"
+          }
+          rc_of() { cat "$dir/rc"; }
+          stdout_of() { cat "$dir/stdout"; }
+          stderr_of() { cat "$dir/stderr"; }
 
-          # resolve_chain semantics: jq errors are swallowed (|| true) -> empty
-          # winner; unlike the real wrapper the cache is fed via stdin here.
-          winner=$(jq -re -f "$prog" --argjson now 1800000000 --argjson chain "$chain" <<<"$missing" 2>/dev/null || true)
-          [ -z "$winner" ] || { echo "FAIL: missing monthly must produce no winner from jq (got: $winner)" >&2; exit 1; }
-          # resolve_for_agent semantics: empty winner -> last_model_of_chain (the
-          # wrapper uses `jq -r` on the stdin array — `-n` would null the input).
-          last=$(jq -r '. | last | (.model // empty)' <<< "$chain")
-          [ "$last" = "m/safety" ] || { echo "FAIL: fallback must resolve the last chain entry (got: $last)" >&2; exit 1; }
-          [ -z "$winner" ] || exit 1
-          echo "ok: missing monthly -> stderr warning wired, degrade resolves last entry with exit 0"
+          # default chain: cap-free tail -> degrade with exit 0 on every bad case.
+          for cache in "$dir/nomonth.json" "$dir/badpct.json" "$dir/garbage.json"; do
+            run default "$cache"
+            [ "$(rc_of)" = "0" ] || { echo "FAIL default $cache: rc=$(rc_of)" >&2; exit 1; }
+            [ "$(stdout_of)" = "opencode-go/ox-alpha-free" ] || { echo "FAIL default degrade stdout: $(stdout_of)" >&2; exit 1; }
+            stderr_of | grep -qi 'falling back to last chain entry' \
+              || { echo "FAIL default degrade warning missing: $(stderr_of)" >&2; exit 1; }
+          done
+          # missing cache file -> exit 3, no model, "missing usage cache".
+          run default "$dir/nonexistent.json"
+          [ "$(rc_of)" = "3" ] || { echo "FAIL default missing-cache: rc=$(rc_of)" >&2; exit 1; }
+          [ -z "$(stdout_of)" ] || { echo "FAIL default missing-cache stdout not empty: $(stdout_of)" >&2; exit 1; }
+          stderr_of | grep -q 'missing usage cache' || { echo "FAIL default missing-cache stderr: $(stderr_of)" >&2; exit 1; }
+
+          # triage chains: blockedTerminal tail -> exit 5 + distinct BLOCKED msg.
+          for agent in learning-promoter scout-skeptical qa-verification adversarial; do
+            for cache in "$dir/nomonth.json" "$dir/badpct.json" "$dir/garbage.json"; do
+              run "$agent" "$cache"
+              [ "$(rc_of)" = "5" ] || { echo "FAIL $agent $cache: expected rc=5 got $(rc_of)" >&2; exit 1; }
+              [ -z "$(stdout_of)" ] || { echo "FAIL $agent BLOCKED must print nothing on stdout: $(stdout_of)" >&2; exit 1; }
+              stderr_of | grep -q 'has no cap-free terminal — BLOCKED' \
+                || { echo "FAIL $agent BLOCKED stderr: $(stderr_of)" >&2; exit 1; }
+            done
+            run "$agent" "$dir/nonexistent.json"
+            [ "$(rc_of)" = "3" ] || { echo "FAIL $agent missing-cache: rc=$(rc_of)" >&2; exit 1; }
+          done
+
+          echo "ok: degrade path per live chain (default degrades, triage blocks, missing cache rc=3)"
+        '';
+      }
+      {
+        name = "decision-log";
+        type = "script";
+        script = ''
+          set -euo pipefail
+          export PATH=${pkgs.jq}/bin:${pkgs.coreutils}/bin:${pkgs.gnugrep}/bin:${pkgs.bash}/bin:$PATH
+          wrap=${../modules/home/opencode/model-select.sh}
+          prog=${../modules/home/opencode/model-select.jq}
+          dir=$(mktemp -d)
+          trap 'rm -rf "$dir"' EXIT
+
+          jq -n '{"chains":{"default":[
+            {"model":"opencode-go/deepseek-v4-flash","maxRollingPercent":70,"maxWeeklyPercent":80,"maxMonthlyPercent":90,"pacing":{"enable":true,"mode":"budget"}},
+            {"model":"opencode-go/mimo-v2.5","maxRollingPercent":85,"maxWeeklyPercent":95,"maxMonthlyPercent":95},
+            {"model":"opencode-go/ox-alpha-free"}]}}' > "$dir/mf.json"
+          jq -n '{"usage":{"rolling":{"status":"ok","percent":4,"resetsAt":"2026-09-20T23:34:57.935Z"},"weekly":{"status":"ok","percent":3,"resetsAt":"2026-09-21T00:00:00.000Z"},"monthly":{"status":"ok","percent":94,"resetsAt":"2026-10-20T09:25:34.000Z"}}}' > "$dir/cache.json"
+
+          export OPENCODE_SELECT_JQ="$prog" OPENCODE_SELECT_CONFIG="$dir/mf.json" \
+            OPENCODE_SELECT_CACHE="$dir/cache.json" OPENCODE_SELECT_SLICE="$dir/none.json" \
+            OPENCODE_SELECT_LOG="$dir/log.jsonl" OPENCODE_SELECT_ENSEMBLE="$dir/ens.json"
+
+          # Usable run: monthly 94 > deepseek static cap 90 -> skipped by static,
+          # mimo chosen. The log line must contain the expected skipped entry.
+          out=$(bash "$wrap" --agent default)
+          [ "$out" = "opencode-go/mimo-v2.5" ] || { echo "FAIL: won model (got: $out)" >&2; exit 1; }
+          [ -s "$dir/log.jsonl" ] || { echo "FAIL: no log line written" >&2; exit 1; }
+          jq -e '(.chosen == "opencode-go/mimo-v2.5")
+              and (.agent == "default")
+              and (.degraded == false)
+              and (.skipped | length) == 1
+              and (.skipped[0].model == "opencode-go/deepseek-v4-flash")
+              and (.skipped[0].window == "monthly")
+              and (.skipped[0].used == 94)
+              and (.skipped[0].cap == 90)
+              and (.skipped[0].by == "static")
+              and (.ts | type) == "number"' "$dir/log.jsonl" \
+            || { echo "FAIL: log line malformed: $(cat "$dir/log.jsonl")" >&2; exit 1; }
+
+          # Unwritable log path: stdout and exit code must be unchanged.
+          mkdir -p "$dir/ro" && chmod 555 "$dir/ro"
+          out2=$(OPENCODE_SELECT_LOG="$dir/ro/log.jsonl" bash "$wrap" --agent default 2>/dev/null || echo "RC=$?")
+          case "$out2" in
+            "opencode-go/mimo-v2.5") : ;;
+            *) echo "FAIL: unwritable log changed behaviour (got: $out2)" >&2; exit 1 ;;
+          esac
+          [ ! -e "$dir/ro/log.jsonl" ] || { echo "FAIL: unwritable log should not exist" >&2; exit 1; }
+
+          echo "ok: decision log line written with expected skipped entry; unwritable log is inert"
         '';
       }
     ];
@@ -311,8 +424,12 @@
       {
         # Wiring regression: the roll CLI must actually be invoked by the poll
         # unit, after the cache write, guarded so a roll failure cannot fail
-        # the poll. Source-level assertions on usage.nix + snapshot-roll.sh —
-        # exactly the bytes that get built into opencode-go-usage.
+        # the poll. SOURCE-LEVEL by necessity: the poll unit is a
+        # writeShellApplication derivation generated inside a full home-manager
+        # eval (needs the module graph + a live API key + network), which a
+        # nixtest cannot build — so there is no behavioural test possible here.
+        # model-select.sh, by contrast, is extracted standalone and IS tested
+        # behaviourally (opencode-select-behaviour-tests suite).
         name = "slice-roll-wired";
         type = "script";
         script = ''

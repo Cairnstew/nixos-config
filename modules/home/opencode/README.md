@@ -213,16 +213,60 @@ Two consumption paths:
 
 ### Blocked chains — no free-tier terminal (`blockedTerminal`)
 
-A chain whose LAST entry is `{ blockedTerminal = true; }` (no `model`) resolves to
-a distinguishable **BLOCKED** outcome — the selector prints a stderr reason and
-exits **5** — instead of silently falling to an always-eligible free model. The
-`default` chain ends in a cap-free model (`opencode-go/ox-alpha-free`) so ordinary
-build/explore work never blocks. The **triage chains are live** in
-`modules/nixos/homeManager/config.nix` (`learning-promoter`, `scout-skeptical`,
-`qa-verification`, `adversarial`): they give scout/qa/reviewer subagents tighter
-caps than the default chain and end in `blockedTerminal`, so a triage chain that
-exhausts surfaces as **BLOCKED** (selector exit 5) instead of silently degrading
-to a free-tier model.
+A chain whose LAST entry is `{ blockedTerminal = true; }` (no `model`) — or whose
+last entry carries ANY static cap — resolves to a distinguishable **BLOCKED**
+outcome: the selector prints a stderr reason and exits **5** instead of running a
+paid model with no (or capped) enforcement. The degrade rule is:
+
+- **Unusable usage data** (any window missing, a percent not a number, or an
+  unparseable cache) and **exhaustion** both take the same path: a chain with a
+  **cap-free** last entry (model set, no static caps) degrades to it (exit 0,
+  one stderr warning — logged as `degraded: true`); a chain ending in
+  `blockedTerminal` or a capped entry exits **5** with a distinct message.
+- The `default` chain ends in a cap-free model (`opencode-go/ox-alpha-free`) so
+  ordinary build/explore work never blocks — even with a dead cache.
+- The **triage chains** are live in `modules/nixos/homeManager/config.nix`
+  (`learning-promoter`, `scout-skeptical`, `qa-verification`, `adversarial`):
+  they give scout/qa/reviewer subagents tighter caps and end in
+  `blockedTerminal`, so bad usage data or exhaustion surfaces as **BLOCKED**
+  (selector exit 5) instead of dispatching an uncapped paid model.
+- Exit 5 means "do not dispatch": ensemble `--sync-ensemble` skips blocked
+  agents and keeps their previous `modelsByAgent` entry (it cannot distinguish
+  fresh from carried-over; the stderr line makes it visible).
+
+### Decision log
+
+Every resolution appends one JSON line to `~/.cache/opencode/model-select.log`
+(`modelFallback.logFile`):
+
+```json
+{"ts": 1789933880, "agent": "default", "chosen": "opencode-go/mimo-v2.5",
+ "skipped": [{"model": "opencode-go/deepseek-v4-flash", "window": "monthly",
+              "used": 94, "cap": 90, "by": "static"}], "degraded": false}
+```
+
+`skipped` covers every failed window of every entry before the winner — `cap`
+is the effective cap that bound (`min(static, pace)`), `by` is which principle
+did the binding so you can see whether pacing or the static backstop is what
+drops the lead rung. Logging is best-effort (never fails or slows the
+selector), contains no secrets, and the file is trimmed in batches to the last
+~2000 lines (`modelFallback.logFile`).
+
+Per-day report — how often each model was chosen, and how often
+`opencode-go/deepseek-v4-flash` was skipped by `pace` vs `static`:
+
+```bash
+jq -r -s '
+  group_by(.ts / 86400 | floor)
+  | .[] as $day
+  | ($day[0].ts | todate | .[0:10]) as $d
+  | ([$day[] | select(.chosen != "") | .chosen] | group_by(.) 
+     | map("\(.[0])=\(length)") | join(", ")) as $picks
+  | (($day | map(.skipped[]) | map(select(.model == "opencode-go/deepseek-v4-flash" and .by == "pace")) | length)) as $pace
+  | (($day | map(.skipped[]) | map(select(.model == "opencode-go/deepseek-v4-flash" and .by == "static")) | length)) as $static
+  | "\($d)  chosen: \($picks // "none")  deepseek-skips: pace=\($pace) static=\($static)"
+' ~/.cache/opencode/model-select.log
+```
 
 ### Known limits — self-improvement is model-chain-independent
 

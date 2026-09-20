@@ -42,6 +42,14 @@
 #     input is the chain ENTRY — a bare `.usage` there would be null, and
 #     jq treats any number >= null as true, silently disabling every cap
 #     (bug #4 class).
+#   - REPORT MODE (--argjson report true): the wrapper requests the full
+#     decision for the decision log. Output becomes
+#       { "winner": <model|"">, "skipped": [ {model, window, used, cap, by} ] }
+#     where `skipped` lists every FAILED window of every entry before the
+#     winner (or of every entry when no winner). cap = the effective cap
+#     min(static, pace); by = which cap bound ("static" or "pace") — used to
+#     tune pacing from real data. Without --argjson report the program emits
+#     the winning model id (or nothing) exactly as before.
   . as $doc
 | ($doc.usage.weekly.resetsAt | sub("[.][0-9]+Z$"; "Z") | fromdateiso8601) as $wEnd
 | ($doc.usage.monthly.resetsAt | sub("[.][0-9]+Z$"; "Z") | fromdateiso8601) as $mEnd
@@ -81,15 +89,43 @@
     elif ((e.pacing.mode // "elapsed") == "budget")
       then budgetCap(e; winName; winEnd; sliceLen)
     else paceCap(e; winEnd; periodSecs) end;
-  def windowOk(e; staticField; usagePct; winEnd; periodSecs; winName; sliceLen):
+  # wCap: window evaluation with the per-window decision for the report.
+  # Eligibility is EXACTLY windowOk (static AND pace must both pass); cap and
+  # by are reporting only and never participate in the decision.
+  def wCap(e; staticField; usagePct; winEnd; periodSecs; winName; sliceLen):
     (e[staticField]) as $staticCap
     | (windowPaceCap(e; winEnd; periodSecs; winName; sliceLen)) as $pc
-    | (($staticCap == null) or ($staticCap >= usagePct))
-      and (($pc == null) or (usagePct <= $pc));
-  [$chain[]
-   | select((.model != null)
-            and (windowOk(.; "maxWeeklyPercent"; $doc.usage.weekly.percent; $wEnd; 604800; "weekly"; ( .pacing.budget.sliceHours // 24 ) * 3600))
-            and (windowOk(.; "maxMonthlyPercent"; $doc.usage.monthly.percent; $mEnd; 2592000; "monthly"; ( .pacing.budget.sliceHours // 24 ) * 3600))
-            and ((.maxRollingPercent == null)
-                 or (.maxRollingPercent >= $doc.usage.rolling.percent)))]
-  | (.[0].model) // empty
+    | (($staticCap == null) or ($staticCap >= usagePct)) as $staticOk
+    | (($pc == null) or (usagePct <= $pc)) as $paceOk
+    | ($staticCap // 100) as $staticEff
+    | ($pc // 100) as $paceEff
+    | (if $staticEff <= $paceEff
+       then { cap: $staticEff, by: "static" }
+       else { cap: $paceEff, by: "pace" } end) as $bind
+    | { ok: ($staticOk and $paceOk), used: usagePct } + $bind;
+  def rollingCap(e; usagePct):
+    (e.maxRollingPercent) as $r
+    | { ok: (($r == null) or ($r >= usagePct))
+      , used: usagePct, cap: ($r // 100), by: "static" };
+  ([$chain[]
+    | (.model // null) as $m
+    | if $m == null then { model: null, ok: false, fails: [] }
+      else
+        (rollingCap(.; $doc.usage.rolling.percent)) as $dr
+        | (wCap(.; "maxWeeklyPercent"; $doc.usage.weekly.percent; $wEnd; 604800; "weekly"; ( .pacing.budget.sliceHours // 24 ) * 3600)) as $dw
+        | (wCap(.; "maxMonthlyPercent"; $doc.usage.monthly.percent; $mEnd; 2592000; "monthly"; ( .pacing.budget.sliceHours // 24 ) * 3600)) as $dm
+        | { model: $m
+          , ok: ($dr.ok and $dw.ok and $dm.ok)
+          , fails: (if $dr.ok then [] else [($dr | {window: "rolling", used, cap, by})] end)
+                   + (if $dw.ok then [] else [($dw | {window: "weekly", used, cap, by})] end)
+                   + (if $dm.ok then [] else [($dm | {window: "monthly", used, cap, by})] end)
+          }
+      end]) as $E
+| ([$E[].ok] | index(true)) as $winIdx
+| (if $winIdx == null then ($E | length) else $winIdx end) as $probeEnd
+| ([range(0; $probeEnd) as $i | $E[$i].fails[] | {model: $E[$i].model} + .]) as $skipped
+| (if $winIdx == null then null else $E[$winIdx].model end) as $winner
+| if ($ARGS.named.report == true)
+  then { winner: ($winner // ""), skipped: $skipped }
+  else ($winner) // empty
+  end
