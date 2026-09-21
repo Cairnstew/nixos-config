@@ -1060,10 +1060,6 @@ Symptom (2026-09-22): `ci-monitor watch` (the shell script in `packages/ci-monit
 
 Last updated: 2026-09-22
 
-
-
-
-
 **eduroam prompts for the WiFi password after reboot instead of auto-authenticating — NM consults the file-secret-agent on auto-connect only; the GUI click path shows a dialog**
 
 Symptom (2026-09-21): on laptop, after poweroff + moving around campus, eduroam required a manual password entry. On the 09:05 boot the nm-file-secret-agent auto-answered (EAP-SUCCESS, no dialog, PMKSA cached across APs); on the 12:04 boot the same agent registered but was never consulted — the laptop first joined the open "WiFi Guest" network, and when eduroam was activated 8 min later the keyfile gained a password= line at 12:11:55 (NM persisting a manually-entered secret) before connecting. Cause: (1) the eduroam profile is regenerated passwordless from the ensureProfiles template each boot (volatile /run, by design — secret comes from nm-file-secret-agent at connect time); (2) NM only asks the file-secret-agent on *system-initiated* activation (boot auto-connect). A user-initiated GUI activation (clicking the network) is served by the interactive agent (nm-applet) which shows a password dialog; (3) with autoconnect-priority 0/unset, an open network like "WiFi Guest" can win the boot-time auto-connect race over eduroam, so eduroam is only ever activated on the manual GUI path. Fix (commit-helper pending / see module): the eduroam module now sets autoconnect-priority 100 and runs a oneshot (`my-networking-eduroam-inject`) that bakes the agenix password into the volatile keyfile right after ensure-profiles regenerates it, then `nmcli connection reload` — NM then has the secret on every activation path and never prompts. Roaming between campus APs is unaffected (PMKSA cache; no re-auth).
