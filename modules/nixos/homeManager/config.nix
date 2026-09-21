@@ -50,7 +50,7 @@ in
       laptop-opencode-key = { owner = lib.mkForce username; };
       opencodeWeb-password = { owner = lib.mkForce username; group = lib.mkForce "users"; };
       groq-api-key = { owner = lib.mkForce username; };
-      openrouter-api-key = {owner = lib.mkForce username; };
+      openrouter-api-key = { owner = lib.mkForce username; };
       github-token = { owner = lib.mkForce username; group = lib.mkForce "users"; };
       spotify-cred = { owner = lib.mkForce username; };
       google-calendar-oauth = { owner = lib.mkForce username; group = lib.mkForce "users"; };

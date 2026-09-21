@@ -98,15 +98,15 @@ in
   # ── The selector CLI ───────────────────────────────────────────────────────
   home.packages = mkIf (cfg.modelFallback.chains != { }) [
     (pkgs.writeShellScriptBin "opencode-model-select" ''
-            set -euo pipefail
-            export PATH="${pkgs.jq}/bin:${pkgs.coreutils}/bin:$PATH"
-            export OPENCODE_SELECT_JQ="${resolveJqFile}"
-            export OPENCODE_SELECT_CONFIG="''${XDG_CONFIG_HOME:-$HOME/.config}/opencode/model-fallback.json"
-            export OPENCODE_SELECT_CACHE="${cfg.modelFallback.cacheFile}"
-            export OPENCODE_SELECT_SLICE="${cfg.modelFallback.sliceFile}"
-            export OPENCODE_SELECT_LOG="${cfg.modelFallback.logFile}"
-            export OPENCODE_SELECT_ENSEMBLE="${cfg.modelFallback.repoDir}/.opencode/ensemble.json"
-            exec ${modelSelectScript} "$@"
+      set -euo pipefail
+      export PATH="${pkgs.jq}/bin:${pkgs.coreutils}/bin:$PATH"
+      export OPENCODE_SELECT_JQ="${resolveJqFile}"
+      export OPENCODE_SELECT_CONFIG="''${XDG_CONFIG_HOME:-$HOME/.config}/opencode/model-fallback.json"
+      export OPENCODE_SELECT_CACHE="${cfg.modelFallback.cacheFile}"
+      export OPENCODE_SELECT_SLICE="${cfg.modelFallback.sliceFile}"
+      export OPENCODE_SELECT_LOG="${cfg.modelFallback.logFile}"
+      export OPENCODE_SELECT_ENSEMBLE="${cfg.modelFallback.repoDir}/.opencode/ensemble.json"
+      exec ${modelSelectScript} "$@"
     '')
   ];
 }
