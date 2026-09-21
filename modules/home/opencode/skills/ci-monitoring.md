@@ -4,46 +4,61 @@
 
 ## Overview
 
-The `ci-monitor` tool wraps `gh` CLI commands into a single blocking, JSON-returning operation. It exists because:
+The `ci-monitor` wraps `gh` CLI commands into a single blocking, JSON-returning operation. It exists because:
 
 - The **GitHub MCP server** provides one-shot API calls (list/get workflow runs) but does not block or poll — every call returns immediately with current state.
 - **Manual `gh` commands** (`gh run list`, `gh run watch`, `gh run view`) work but require the agent to parse CLI output, manage sleep-loops, and handle rate limits.
 - **`ci-monitor`** does all three: it blocks until the run reaches a terminal state (delegating polling/backoff to `gh run watch`), returns clean structured JSON, and auto-detects the repo and run ID from the current git state.
 
+### Availability
+
+`ci-monitor` is available in **two forms**:
+
+1. **Opencode tool** — for direct tool calls within opencode sessions
+2. **CLI command** (`packages/ci-monitor/`) — for shell usage via `ci-monitor` binary, including from within other tools/commands like `git-commit-push`
+
+When you need CI monitoring from a bash context (e.g., inside a command or script), use the CLI directly:
+
+```bash
+ci-monitor list
+ci-monitor watch
+ci-monitor view --run-id 12345
+```
+
 ## Quick Reference
 
 | Action | What it does | Example |
 |--------|-------------|---------|
-| `action=list` | List 10 most recent runs on the current branch | `ci-monitor action=list` |
-| `action=watch` | Block until a run completes, then return results | `ci-monitor action=watch` |
-| `action=view` | View details for a specific run (including failure logs) | `ci-monitor action=view run_id=12345` |
+| `list` | List 10 most recent runs on the current branch | `ci-monitor list` |
+| `watch` | Block until a run completes, then return results | `ci-monitor watch` |
+| `view` | View details for a specific run (including failure logs) | `ci-monitor view --run-id 12345` |
 
 ## When to Use
 
-### `action=list` — Confirm a run started
+### `list` — Confirm a run started
 
 Use right after a push to confirm the CI run registered and is in progress:
 
 ```
-ci-monitor action=list
+ci-monitor list
 ```
 
-### `action=watch` — Block until CI is terminal
+### `watch` — Block until CI is terminal
 
 Use before proceeding to a dependent task (e.g., before deploy, before starting another build):
 
 ```
-ci-monitor action=watch
+ci-monitor watch
 ```
 
 The tool matches runs by commit SHA (not "latest run on branch") to avoid picking up stale runs. It retries up to 8 times (80s max) if the run hasn't registered yet.
 
-### `action=view` — Diagnose a specific run
+### `view` — Diagnose a specific run
 
 Use to inspect a specific run, including old/past runs unrelated to the current push:
 
 ```
-ci-monitor action=view run_id=12345
+ci-monitor view --run-id 12345
 ```
 
 ## Timeout Guidance
@@ -91,33 +106,33 @@ All actions return structured JSON. The key fields:
 
 ```
 git-commit-push
-  → ci-monitor action=list     # confirm run registered
-  → ci-monitor action=watch    # block until terminal
-  → on failure: ci-monitor action=view run_id=<id>  # diagnose
+  → ci-monitor list     # confirm run registered
+  → ci-monitor watch    # block until terminal
+  → on failure: ci-monitor view --run-id <id>  # diagnose
 ```
 
 ### After pushing
 
 ```bash
 # Confirm the run started
-ci-monitor action=list
+ci-monitor list
 
 # Block until it completes
-ci-monitor action=watch
+ci-monitor watch
 ```
 
 ### Diagnosing a failure
 
 ```bash
 # Get full details + logs for a specific run
-ci-monitor action=view run_id=12345
+ci-monitor view --run-id 12345
 ```
 
 ### Checking an old run
 
 ```bash
 # View any past run by ID — no SHA matching needed
-ci-monitor action=view run_id=67890
+ci-monitor view --run-id 67890
 ```
 
 ## Race Condition Handling

@@ -462,6 +462,8 @@ in
   environment.systemPackages = with pkgs; [
     nix-template-selector # Interactive flake template selector
     github-actions-cleanup # GitHub Actions cleanup tool
+    ci-monitor # GitHub Actions CI run monitor
+    ci-resolve # CI/CD failure diagnosis and resolution
   ]
   ++ lib.optionals config.services.xserver.enable [
     xclip # X11 clipboard utility

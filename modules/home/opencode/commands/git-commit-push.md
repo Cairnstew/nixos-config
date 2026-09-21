@@ -137,10 +137,10 @@ git push origin $(git branch --show-current)
 
 ### 8. Monitor CI
 
-Use the `ci-monitor` tool (from `skills/ci-monitoring.md`) to confirm the run registered and block until it completes:
+Use the `ci-monitor` CLI (from `packages/ci-monitor/`) to confirm the run registered and block until it completes:
 
-1. **Confirm run started:** `ci-monitor action=list`
-2. **Block until terminal:** `ci-monitor action=watch`
+1. **Confirm run started:** `ci-monitor list`
+2. **Block until terminal:** `ci-monitor watch`
 
 If the watch returns a failure conclusion, inspect the result:
 

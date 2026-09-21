@@ -10,6 +10,13 @@ in
       allowBroken = true;
       allowUnsupportedSystem = true;
       allowUnfree = true;
+      # ventoy versions are flagged insecure due to binary blobs (nixpkgs#404663)
+      permittedInsecurePackages = [
+        "ventoy-1.1.12"
+        "ventoy-1.1.17"
+        "ventoy-qt5-1.1.12"
+        "ventoy-gtk3-1.1.12"
+      ];
     };
     overlays = lib.attrValues self.overlays;
   };
@@ -33,7 +40,7 @@ in
       min-free = lib.mkDefault (5 * 1024 * 1024 * 1024);
       max-free = lib.mkDefault (30 * 1024 * 1024 * 1024);
       auto-optimise-store = true;
-      experimental-features = "nix-command flakes";
+      experimental-features = [ "nix-command" "flakes" ];
       # I don't have an Intel mac.
       extra-platforms = lib.mkIf pkgs.stdenv.isDarwin "aarch64-darwin x86_64-darwin";
       # Nullify the registry for purity.

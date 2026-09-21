@@ -174,10 +174,10 @@ The workflow will create a new PR (or update the existing one) and merge it.
 
 After pushing, monitor CI status:
 
-**Using the ci-monitor tool (recommended — returns structured JSON):**
-- `ci-monitor action=list` → see recent runs
-- `ci-monitor action=watch` → block until terminal (default: 1800s timeout)
-- `ci-monitor action=view run_id=<id>` → full details for a specific run
+**Using the ci-monitor CLI (recommended — returns structured JSON):**
+- `ci-monitor list` → see recent runs
+- `ci-monitor watch` → block until terminal (default: 1800s timeout)
+- `ci-monitor view --run-id <id>` → full details for a specific run
 
 **Or manually:**
 ```bash
