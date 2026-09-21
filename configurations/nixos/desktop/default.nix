@@ -1024,6 +1024,15 @@
       # homeProfiles.desktop (profiles/home/config.nix:26-38) — only genuinely per-host
       # extras kept below. localsend/whatsapp-electron/youtube-music + direnv spotify
       # secretFiles moved to homeProfiles.desktop (recon D2/D3).
+
+      # Obsidian: point the pre-registered vault at the REAL vault dir. Module default
+      # is "Documents/Obsidian_Vault" (underscore); the actual dir is "Obsidian Vault"
+      # (space), so the registered path didn't exist and Obsidian showed the vault
+      # switcher instead of auto-opening. repo.* intentionally left off for now: the
+      # vault isn't git-backed yet (no remote); add repo.url + tokenFile (using the
+      # github-token-obsidian secret) once it is.
+      obsidian.defaultDirectory = "Documents/Obsidian Vault";
+
       squidProxyClient = {
         enable = true;
         proxyPasswordFile = config.age.secrets."squid-htpasswd".path;
