@@ -54,5 +54,17 @@
       default = 1;
       description = "Protected Management Frames (802.11w). 0=disabled, 1=optional, 2=required.";
     };
+
+    autoconnectPriority = lib.mkOption {
+      type = lib.types.int;
+      default = 100;
+      description = ''
+        NetworkManager autoconnect-priority for the eduroam profile. Higher
+        values win when several autoconnect=yes networks are in range, which
+        prevents NM from silently joining an open/guest network (e.g. "WiFi
+        Guest") instead of eduroam after a reboot. Default 100 so eduroam is
+        preferred whenever it is visible.
+      '';
+    };
   };
 }
