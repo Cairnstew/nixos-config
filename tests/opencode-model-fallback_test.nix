@@ -16,7 +16,20 @@
 #   entry caps: maxRollingPercent 40, maxWeeklyPercent 60 (static-passing)
 # enable=false must match static-only evaluation → eligible.
 # enable=true  must be paced out on both windows → no survivor.
-{ pkgs, lib, ... }: {
+{ pkgs, lib, realChains ? null, ... }:
+let
+  # The LIVE chains from modules/nixos/homeManager/config.nix, evaluated by
+  # the nixtest harness (modules/flake-parts/nixtest.nix) and serialized as
+  # the exact ~/.config/opencode/model-fallback.json payload the deployed
+  # selector consumes. Replaces the hand-copied fixtures (which drifted from
+  # the config's option-default expansion — blockedTerminal/model:null/pacing
+  # defaults appear in the evaluated value but not in the hand copy). Written
+  # to a store path so the scripts reference it without heredoc/quoting
+  # pitfalls inside Nix '' strings.
+  chainsConfig = pkgs.writeText "model-fallback-test.json" (builtins.toJSON { chains = realChains; });
+  chainsFile = "${chainsConfig}";
+in
+{
   suites."opencode-model-fallback-tests" = {
     pos = __curPos;
     tests = [
@@ -52,7 +65,7 @@
           echo "ok: enable=false resolved statically (m/test); enable=true paced out"
         '';
       }
-    {
+      {
         name = "monthly-static-caps";
         type = "script";
         script = ''
@@ -239,133 +252,159 @@
         name = "degrade-path-per-chain";
         type = "script";
         script = ''
-          set -euo pipefail
-          export PATH=${pkgs.jq}/bin:${pkgs.coreutils}/bin:${pkgs.gnugrep}/bin:${pkgs.bash}/bin:$PATH
-          wrap=${../modules/home/opencode/model-select.sh}
-          prog=${../modules/home/opencode/model-select.jq}
-          dir=$(mktemp -d)
-          trap 'rm -rf "$dir"' EXIT
+                    set -euo pipefail
+                    export PATH=${pkgs.jq}/bin:${pkgs.coreutils}/bin:${pkgs.gnugrep}/bin:${pkgs.bash}/bin:$PATH
+                    wrap=${../modules/home/opencode/model-select.sh}
+                    prog=${../modules/home/opencode/model-select.jq}
+                    dir=$(mktemp -d)
+                    trap 'rm -rf "$dir"' EXIT
 
-          # Exact chain shapes from config.nix (kept in sync manually).
-          # Built with `jq -n` so leading indentation is harmless (JSON inside
-          # a jq program is whitespace-insensitive; heredocs would keep it).
-          jq -n '{"chains":{
-            "default":[
-              {"model":"opencode-go/deepseek-v4-flash","maxRollingPercent":70,"maxWeeklyPercent":80,"maxMonthlyPercent":90,"pacing":{"enable":true,"mode":"budget"}},
-              {"model":"opencode-go/mimo-v2.5","maxRollingPercent":85,"maxWeeklyPercent":95,"maxMonthlyPercent":95},
-              {"model":"opencode-go/ox-alpha-free"}],
-            "learning-promoter":[
-              {"model":"opencode-go/mimo-v2.5","maxRollingPercent":85,"maxWeeklyPercent":95,"maxMonthlyPercent":90},
-              {"model":"opencode-go/deepseek-v4-flash","maxRollingPercent":70,"maxWeeklyPercent":80,"maxMonthlyPercent":95},
-              {"blockedTerminal":true}],
-            "scout-skeptical":[
-              {"model":"opencode-go/mimo-v2.5","maxRollingPercent":40,"maxWeeklyPercent":60,"maxMonthlyPercent":90},
-              {"model":"opencode-go/deepseek-v4-flash","maxRollingPercent":70,"maxWeeklyPercent":80,"maxMonthlyPercent":95},
-              {"blockedTerminal":true}],
-            "qa-verification":[
-              {"model":"opencode-go/mimo-v2.5","maxRollingPercent":40,"maxWeeklyPercent":60,"maxMonthlyPercent":90},
-              {"model":"opencode-go/deepseek-v4-flash","maxRollingPercent":70,"maxWeeklyPercent":80,"maxMonthlyPercent":95},
-              {"blockedTerminal":true}],
-            "adversarial":[
-              {"model":"opencode-go/mimo-v2.5","maxRollingPercent":40,"maxWeeklyPercent":60,"maxMonthlyPercent":90},
-              {"model":"opencode-go/deepseek-v4-flash","maxRollingPercent":70,"maxWeeklyPercent":80,"maxMonthlyPercent":95},
-              {"blockedTerminal":true}]}}' > "$dir/mf.json"
-          goodcache="$dir/good.json"
-          jq -n '{"usage":{"rolling":{"status":"ok","percent":4,"resetsAt":"2026-09-20T23:34:57.935Z"},"weekly":{"status":"ok","percent":3,"resetsAt":"2026-09-21T00:00:00.000Z"},"monthly":{"status":"ok","percent":94,"resetsAt":"2026-10-20T09:25:34.000Z"}}}' > "$goodcache"
-          jq 'del(.usage.monthly)' "$goodcache" > "$dir/nomonth.json"
-          jq '.usage.monthly.percent = "abc"' "$goodcache" > "$dir/badpct.json"
-          printf 'not json at all' > "$dir/garbage.json"
+                    # Live chain shapes from config.nix (evaluated by the nixtest
+                    # harness, NOT hand-copied — see realChains at the top of this
+                    # file; previously a jq -n literal that drifted from the config's
+                    # option-default expansion).
+                    cp ${chainsFile} "$dir/mf.json"
+                    goodcache="$dir/good.json"
+                    jq -n '{"usage":{"rolling":{"status":"ok","percent":4,"resetsAt":"2026-09-20T23:34:57.935Z"},"weekly":{"status":"ok","percent":3,"resetsAt":"2026-09-21T00:00:00.000Z"},"monthly":{"status":"ok","percent":94,"resetsAt":"2026-10-20T09:25:34.000Z"}}}' > "$goodcache"
+                    jq 'del(.usage.monthly)' "$goodcache" > "$dir/nomonth.json"
+                    jq '.usage.monthly.percent = "abc"' "$goodcache" > "$dir/badpct.json"
+                    printf 'not json at all' > "$dir/garbage.json"
 
-          run() { # $1 = agent, $2 = cache file; writes rc/stdout/stderr in $dir
-            local rc=0
-            OPENCODE_SELECT_JQ="$prog" OPENCODE_SELECT_CONFIG="$dir/mf.json" \
-              OPENCODE_SELECT_CACHE="$2" OPENCODE_SELECT_SLICE="$dir/none.json" \
-              OPENCODE_SELECT_LOG="$dir/log.jsonl" OPENCODE_SELECT_ENSEMBLE="$dir/ens.json" \
-              bash "$wrap" --agent "$1" > "$dir/stdout" 2> "$dir/stderr" || rc=$?
-            printf '%s' "$rc" > "$dir/rc"
-          }
-          rc_of() { cat "$dir/rc"; }
-          stdout_of() { cat "$dir/stdout"; }
-          stderr_of() { cat "$dir/stderr"; }
+                    run() { # $1 = agent, $2 = cache file; writes rc/stdout/stderr in $dir
+                      local rc=0
+                      OPENCODE_SELECT_JQ="$prog" OPENCODE_SELECT_CONFIG="$dir/mf.json" \
+                        OPENCODE_SELECT_CACHE="$2" OPENCODE_SELECT_SLICE="$dir/none.json" \
+                        OPENCODE_SELECT_LOG="$dir/log.jsonl" OPENCODE_SELECT_ENSEMBLE="$dir/ens.json" \
+                        bash "$wrap" --agent "$1" > "$dir/stdout" 2> "$dir/stderr" || rc=$?
+                      printf '%s' "$rc" > "$dir/rc"
+                    }
+                    rc_of() { cat "$dir/rc"; }
+                    stdout_of() { cat "$dir/stdout"; }
+                    stderr_of() { cat "$dir/stderr"; }
 
-          # default chain: cap-free tail -> degrade with exit 0 on every bad case.
-          for cache in "$dir/nomonth.json" "$dir/badpct.json" "$dir/garbage.json"; do
-            run default "$cache"
-            [ "$(rc_of)" = "0" ] || { echo "FAIL default $cache: rc=$(rc_of)" >&2; exit 1; }
-            [ "$(stdout_of)" = "opencode-go/ox-alpha-free" ] || { echo "FAIL default degrade stdout: $(stdout_of)" >&2; exit 1; }
-            stderr_of | grep -qi 'falling back to last chain entry' \
-              || { echo "FAIL default degrade warning missing: $(stderr_of)" >&2; exit 1; }
-          done
-          # missing cache file -> exit 3, no model, "missing usage cache".
-          run default "$dir/nonexistent.json"
-          [ "$(rc_of)" = "3" ] || { echo "FAIL default missing-cache: rc=$(rc_of)" >&2; exit 1; }
-          [ -z "$(stdout_of)" ] || { echo "FAIL default missing-cache stdout not empty: $(stdout_of)" >&2; exit 1; }
-          stderr_of | grep -q 'missing usage cache' || { echo "FAIL default missing-cache stderr: $(stderr_of)" >&2; exit 1; }
+                    # default chain: cap-free tail -> degrade with exit 0 on every bad case.
+                    for cache in "$dir/nomonth.json" "$dir/badpct.json" "$dir/garbage.json"; do
+                      run default "$cache"
+                      [ "$(rc_of)" = "0" ] || { echo "FAIL default $cache: rc=$(rc_of)" >&2; exit 1; }
+                      [ "$(stdout_of)" = "opencode-go/ox-alpha-free" ] || { echo "FAIL default degrade stdout: $(stdout_of)" >&2; exit 1; }
+                      stderr_of | grep -qi 'falling back to last chain entry' \
+                        || { echo "FAIL default degrade warning missing: $(stderr_of)" >&2; exit 1; }
+                    done
+                    # missing cache file -> exit 3, no model, "missing usage cache".
+                    run default "$dir/nonexistent.json"
+                    [ "$(rc_of)" = "3" ] || { echo "FAIL default missing-cache: rc=$(rc_of)" >&2; exit 1; }
+                    [ -z "$(stdout_of)" ] || { echo "FAIL default missing-cache stdout not empty: $(stdout_of)" >&2; exit 1; }
+                    stderr_of | grep -q 'missing usage cache' || { echo "FAIL default missing-cache stderr: $(stderr_of)" >&2; exit 1; }
 
-          # triage chains: blockedTerminal tail -> exit 5 + distinct BLOCKED msg.
-          for agent in learning-promoter scout-skeptical qa-verification adversarial; do
-            for cache in "$dir/nomonth.json" "$dir/badpct.json" "$dir/garbage.json"; do
-              run "$agent" "$cache"
-              [ "$(rc_of)" = "5" ] || { echo "FAIL $agent $cache: expected rc=5 got $(rc_of)" >&2; exit 1; }
-              [ -z "$(stdout_of)" ] || { echo "FAIL $agent BLOCKED must print nothing on stdout: $(stdout_of)" >&2; exit 1; }
-              stderr_of | grep -q 'has no cap-free terminal — BLOCKED' \
-                || { echo "FAIL $agent BLOCKED stderr: $(stderr_of)" >&2; exit 1; }
-            done
-            run "$agent" "$dir/nonexistent.json"
-            [ "$(rc_of)" = "3" ] || { echo "FAIL $agent missing-cache: rc=$(rc_of)" >&2; exit 1; }
-          done
+                    # triage chains: blockedTerminal tail -> exit 5 + distinct BLOCKED msg.
+                    for agent in learning-promoter scout-skeptical qa-verification adversarial; do
+                      for cache in "$dir/nomonth.json" "$dir/badpct.json" "$dir/garbage.json"; do
+                        run "$agent" "$cache"
+                        [ "$(rc_of)" = "5" ] || { echo "FAIL $agent $cache: expected rc=5 got $(rc_of)" >&2; exit 1; }
+                        [ -z "$(stdout_of)" ] || { echo "FAIL $agent BLOCKED must print nothing on stdout: $(stdout_of)" >&2; exit 1; }
+                        stderr_of | grep -q 'has no cap-free terminal — BLOCKED' \
+                          || { echo "FAIL $agent BLOCKED stderr: $(stderr_of)" >&2; exit 1; }
+                      done
+                      run "$agent" "$dir/nonexistent.json"
+                      [ "$(rc_of)" = "3" ] || { echo "FAIL $agent missing-cache: rc=$(rc_of)" >&2; exit 1; }
+                    done
 
-          echo "ok: degrade path per live chain (default degrades, triage blocks, missing cache rc=3)"
+                    echo "ok: degrade path per live chain (default degrades, triage blocks, missing cache rc=3)"
         '';
       }
       {
         name = "decision-log";
         type = "script";
         script = ''
-          set -euo pipefail
-          export PATH=${pkgs.jq}/bin:${pkgs.coreutils}/bin:${pkgs.gnugrep}/bin:${pkgs.bash}/bin:$PATH
-          wrap=${../modules/home/opencode/model-select.sh}
-          prog=${../modules/home/opencode/model-select.jq}
-          dir=$(mktemp -d)
-          trap 'rm -rf "$dir"' EXIT
+                    set -euo pipefail
+                    export PATH=${pkgs.jq}/bin:${pkgs.coreutils}/bin:${pkgs.gnugrep}/bin:${pkgs.bash}/bin:${pkgs.diffutils}/bin:$PATH
+                    wrap=${../modules/home/opencode/model-select.sh}
+                    prog=${../modules/home/opencode/model-select.jq}
+                    dir=$(mktemp -d)
+                    trap 'rm -rf "$dir"' EXIT
 
-          jq -n '{"chains":{"default":[
-            {"model":"opencode-go/deepseek-v4-flash","maxRollingPercent":70,"maxWeeklyPercent":80,"maxMonthlyPercent":90,"pacing":{"enable":true,"mode":"budget"}},
-            {"model":"opencode-go/mimo-v2.5","maxRollingPercent":85,"maxWeeklyPercent":95,"maxMonthlyPercent":95},
-            {"model":"opencode-go/ox-alpha-free"}]}}' > "$dir/mf.json"
-          jq -n '{"usage":{"rolling":{"status":"ok","percent":4,"resetsAt":"2026-09-20T23:34:57.935Z"},"weekly":{"status":"ok","percent":3,"resetsAt":"2026-09-21T00:00:00.000Z"},"monthly":{"status":"ok","percent":94,"resetsAt":"2026-10-20T09:25:34.000Z"}}}' > "$dir/cache.json"
+# Real default chain from config.nix (evaluated by the harness,
+                    # not hand-copied). Whole payload written; --agent default reads
+                    # .chains.default.
+                    cp ${chainsFile} "$dir/mf.json"
+                    jq -n '{"usage":{"rolling":{"status":"ok","percent":4,"resetsAt":"2026-09-20T23:34:57.935Z"},"weekly":{"status":"ok","percent":3,"resetsAt":"2026-09-21T00:00:00.000Z"},"monthly":{"status":"ok","percent":94,"resetsAt":"2026-10-20T09:25:34.000Z"}}}' > "$dir/cache.json"
 
-          export OPENCODE_SELECT_JQ="$prog" OPENCODE_SELECT_CONFIG="$dir/mf.json" \
-            OPENCODE_SELECT_CACHE="$dir/cache.json" OPENCODE_SELECT_SLICE="$dir/none.json" \
-            OPENCODE_SELECT_LOG="$dir/log.jsonl" OPENCODE_SELECT_ENSEMBLE="$dir/ens.json"
+                    export OPENCODE_SELECT_JQ="$prog" OPENCODE_SELECT_CONFIG="$dir/mf.json" \
+                      OPENCODE_SELECT_CACHE="$dir/cache.json" OPENCODE_SELECT_SLICE="$dir/none.json" \
+                      OPENCODE_SELECT_LOG="$dir/log.jsonl" OPENCODE_SELECT_ENSEMBLE="$dir/ens.json"
 
-          # Usable run: monthly 94 > deepseek static cap 90 -> skipped by static,
-          # mimo chosen. The log line must contain the expected skipped entry.
-          out=$(bash "$wrap" --agent default)
-          [ "$out" = "opencode-go/mimo-v2.5" ] || { echo "FAIL: won model (got: $out)" >&2; exit 1; }
-          [ -s "$dir/log.jsonl" ] || { echo "FAIL: no log line written" >&2; exit 1; }
-          jq -e '(.chosen == "opencode-go/mimo-v2.5")
-              and (.agent == "default")
-              and (.degraded == false)
-              and (.skipped | length) == 1
-              and (.skipped[0].model == "opencode-go/deepseek-v4-flash")
-              and (.skipped[0].window == "monthly")
-              and (.skipped[0].used == 94)
-              and (.skipped[0].cap == 90)
-              and (.skipped[0].by == "static")
-              and (.ts | type) == "number"' "$dir/log.jsonl" \
-            || { echo "FAIL: log line malformed: $(cat "$dir/log.jsonl")" >&2; exit 1; }
+                    # Usable run: monthly 94 > deepseek static cap 90 -> skipped by static,
+                    # mimo chosen. The log line must contain the expected skipped entry.
+                    out=$(bash "$wrap" --agent default)
+                    [ "$out" = "opencode-go/mimo-v2.5" ] || { echo "FAIL: won model (got: $out)" >&2; exit 1; }
+                    [ -s "$dir/log.jsonl" ] || { echo "FAIL: no log line written" >&2; exit 1; }
+                    jq -e '(.chosen == "opencode-go/mimo-v2.5")
+                        and (.agent == "default")
+                        and (.degraded == false)
+                        and (.skipped | length) == 1
+                        and (.skipped[0].model == "opencode-go/deepseek-v4-flash")
+                        and (.skipped[0].window == "monthly")
+                        and (.skipped[0].used == 94)
+                        and (.skipped[0].cap == 90)
+                        and (.skipped[0].by == "static")
+                        and (.ts | type) == "number"' "$dir/log.jsonl" \
+                      || { echo "FAIL: log line malformed: $(cat "$dir/log.jsonl")" >&2; exit 1; }
 
-          # Unwritable log path: stdout and exit code must be unchanged.
-          mkdir -p "$dir/ro" && chmod 555 "$dir/ro"
-          out2=$(OPENCODE_SELECT_LOG="$dir/ro/log.jsonl" bash "$wrap" --agent default 2>/dev/null || echo "RC=$?")
-          case "$out2" in
-            "opencode-go/mimo-v2.5") : ;;
-            *) echo "FAIL: unwritable log changed behaviour (got: $out2)" >&2; exit 1 ;;
-          esac
-          [ ! -e "$dir/ro/log.jsonl" ] || { echo "FAIL: unwritable log should not exist" >&2; exit 1; }
+                    # Unwritable log path: stdout and exit code must be unchanged.
+                    mkdir -p "$dir/ro" && chmod 555 "$dir/ro"
+                    out2=$(OPENCODE_SELECT_LOG="$dir/ro/log.jsonl" bash "$wrap" --agent default 2>/dev/null || echo "RC=$?")
+                    case "$out2" in
+                      "opencode-go/mimo-v2.5") : ;;
+                      *) echo "FAIL: unwritable log changed behaviour (got: $out2)" >&2; exit 1 ;;
+                    esac
+                    [ ! -e "$dir/ro/log.jsonl" ] || { echo "FAIL: unwritable log should not exist" >&2; exit 1; }
 
-          echo "ok: decision log line written with expected skipped entry; unwritable log is inert"
+                    # ── Log trim ────────────────────────────────────────────────────────
+                    # Seed 2510 valid JSONL lines, run one resolution, and assert the
+                    # file is trimmed back to LOG_CAP (2000): newest lines kept, file
+                    # still valid JSONL, resolution line present as the newest entry.
+                    biglog="$dir/big.jsonl"
+                    : > "$biglog"
+                    i=0
+                    while [ "$i" -lt 2510 ]; do
+                      printf '{"ts":%s,"agent":"seed-%s","chosen":"m/seed","skipped":[],"degraded":false}\n' "$i" "$i" >> "$biglog"
+                      i=$((i + 1))
+                    done
+                    [ "$(wc -l < "$biglog")" = "2510" ] || { echo "FAIL: seeding big log" >&2; exit 1; }
+
+                    out3=$(OPENCODE_SELECT_LOG="$biglog" bash "$wrap" --agent default 2>/dev/null || echo "RC=$?")
+                    case "$out3" in
+                      "opencode-go/mimo-v2.5") : ;;
+                      *) echo "FAIL: log trim changed stdout (got: $out3)" >&2; exit 1 ;;
+                    esac
+
+                    n=$(wc -l < "$biglog")
+                    [ "$n" -eq "2000" ] || {
+                      echo "FAIL: log not trimmed to LOG_CAP 2000 (got $n lines)" >&2; exit 1
+                    }
+                    # All remaining lines must still be valid JSONL.
+                    jq -e 'type == "object"' "$biglog" >/dev/null 2>&1 \
+                      || { echo "FAIL: trimmed log not valid JSONL: $(head -c 200 "$biglog")" >&2; exit 1; }
+                    # The newest resolution line must be the last line.
+                    last1=$(tail -n 1 "$biglog")
+                    printf '%s' "$last1" | jq -e '.agent == "default" and .chosen == "opencode-go/mimo-v2.5"' >/dev/null \
+                      || { echo "FAIL: newest resolution not kept as last line (got: $last1)" >&2; exit 1; }
+
+                    # Read-only LOG_FILE: append + trim both fail silently; stdout and
+                    # exit code must be unchanged, and the file must stay byte-identical.
+                    rolog="$dir/rotrim.jsonl"
+                    cp "$biglog" "$rolog"
+                    chmod 444 "$rolog"
+                    before=$(sha256sum "$rolog" | cut -d' ' -f1)
+                    out4=$(OPENCODE_SELECT_LOG="$rolog" bash "$wrap" --agent default 2>/dev/null || echo "RC=$?")
+                    case "$out4" in
+                      "opencode-go/mimo-v2.5") : ;;
+                      *) echo "FAIL: read-only log changed stdout (got: $out4)" >&2; exit 1 ;;
+                    esac
+                    after=$(sha256sum "$rolog" | cut -d' ' -f1)
+                    [ "$before" = "$after" ] || { echo "FAIL: read-only log file mutated" >&2; exit 1; }
+
+                    echo "ok: decision log line written with expected skipped entry; unwritable log is inert; trim keeps newest; read-only log is inert"
         '';
       }
     ];
