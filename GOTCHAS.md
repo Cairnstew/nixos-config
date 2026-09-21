@@ -1034,6 +1034,12 @@ Symptom (2026-09-20, degrade-hardening round): with the live usage cache missing
 
 ---
 
+**nixtest test scripts: JSON fixtures via heredoc inside a Nix `''` string break under `nix fmt` — write the file with `pkgs.writeText` + store-path `cp` instead**
+
+Symptom (2026-09-21, deriving the modelFallback test chains from the live config): replacing a `jq -n '{"chains":{...}}'` fixture with a heredoc `cat > mf.json <<'CHAINS_EOF' … CHAINS_EOF` inside the test's Nix `''…''` script string looked fine until `nix fmt` ran: nixpkgs-fmt re-indents the whole string body, so the heredoc content and, critically, the `CHAINS_EOF` terminator line land at arbitrary leading indentation — the terminator then no longer sits unindented once Nix strips the common `''`-string indentation, and the heredoc never closes (or the JSON line keeps stray spaces). Fragile by construction, and the diff churn hides it. Fix (commit `39609c1`, `tests/opencode-model-fallback_test.nix:29`): the fixture is built once in Nix — `chainsConfig = pkgs.writeText "model-fallback-test.json" (builtins.toJSON { chains = realChains; })` — and the script just does `cp ${chainsFile} "$dir/mf.json"`. No heredoc, no quoting, fmt-immune. Lesson: any sizable JSON/script payload that belongs in a nixtest script should arrive as a store path (writeText) and be copied in, never inline heredoc'd inside `''` strings — the same reasoning as the earlier apostrophe-in-jq-program bug (interpolated text inside Nix strings rots on reformat/quoting).
+
+---
+
 Last updated: 2026-09-20
 
 
