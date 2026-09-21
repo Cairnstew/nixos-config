@@ -71,6 +71,9 @@ self: super: {
   # XMLTV — TV listings grabber (tv_grab_uk_freeview) for EPG data
   xmltv = self.callPackage "${packages}/xmltv" { };
 
+  # CI Monitor — GitHub Actions run watcher with structured JSON output
+  ci-monitor = self.callPackage "${packages}/ci-monitor" { };
+
   # wimboot 2.8.0 fails with GCC -Werror=unterminated-string-initialization
   # Suppress the specific warning until upstream fixes it
   wimboot = super.wimboot.overrideAttrs (old: {
