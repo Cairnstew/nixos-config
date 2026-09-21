@@ -1068,4 +1068,5 @@
     # GNOME-specific extras removed: host-info extension (broken/unused),
     # dconf shell settings, and gnome-monitor-config service (replaced by my.monitors)
   };
+
 }

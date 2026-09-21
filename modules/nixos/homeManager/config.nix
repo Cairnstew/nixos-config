@@ -49,7 +49,8 @@ in
       opencode-token = { owner = lib.mkForce username; };
       laptop-opencode-key = { owner = lib.mkForce username; };
       opencodeWeb-password = { owner = lib.mkForce username; group = lib.mkForce "users"; };
-      groq-token = { owner = lib.mkForce username; };
+      groq-api-key = { owner = lib.mkForce username; };
+      openrouter-api-key = {owner = lib.mkForce username; };
       github-token = { owner = lib.mkForce username; group = lib.mkForce "users"; };
       spotify-cred = { owner = lib.mkForce username; };
       google-calendar-oauth = { owner = lib.mkForce username; group = lib.mkForce "users"; };
@@ -123,6 +124,7 @@ in
           clarifai.patFile = config.age.secrets.clarifai-pat.path;
           deepinfra.keyFile = config.age.secrets.deepinfra-key.path;
           opencode-go.keyFile = config.age.secrets.opencode-token.path;
+          openrouter.keyFile = config.age.secrets.openrouter-api-key.path;
           # OpenCode Zen key: default hosts reuse the shared OpenCode token as the
           # "normal zen key". The laptop overrides this to a dedicated
           # laptop-opencode-key secret (see configurations/nixos/laptop/default.nix).
@@ -131,7 +133,7 @@ in
           # off ~/.cache/opencode/go-usage.json). Guarded on the secret existing.
           opencode-go.usage.enable =
             lib.mkDefault (config.age.secrets ? "opencode-token");
-          groq.keyFile = config.age.secrets.groq-token.path;
+          groq.keyFile = config.age.secrets.groq-api-key.path;
 
           model = lib.mkDefault "opencode-go/deepseek-v4-flash";
           enableMcpIntegration = lib.mkDefault true;
