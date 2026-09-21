@@ -74,6 +74,9 @@ self: super: {
   # CI Monitor — GitHub Actions run watcher with structured JSON output
   ci-monitor = self.callPackage "${packages}/ci-monitor" { };
 
+  # CI Resolve — Diagnose and fix CI/CD failures deterministically
+  ci-resolve = self.callPackage "${packages}/ci-resolve" { };
+
   # wimboot 2.8.0 fails with GCC -Werror=unterminated-string-initialization
   # Suppress the specific warning until upstream fixes it
   wimboot = super.wimboot.overrideAttrs (old: {
