@@ -1025,13 +1025,18 @@
       # extras kept below. localsend/whatsapp-electron/youtube-music + direnv spotify
       # secretFiles moved to homeProfiles.desktop (recon D2/D3).
 
-      # Obsidian: point the pre-registered vault at the REAL vault dir. Module default
-      # is "Documents/Obsidian_Vault" (underscore); the actual dir is "Obsidian Vault"
-      # (space), so the registered path didn't exist and Obsidian showed the vault
-      # switcher instead of auto-opening. repo.* intentionally left off for now: the
-      # vault isn't git-backed yet (no remote); add repo.url + tokenFile (using the
-      # github-token-obsidian secret) once it is.
-      obsidian.defaultDirectory = "Documents/Obsidian Vault";
+      # Obsidian: point the pre-registered vault at the REAL vault dir (module default
+      # is "Documents/Obsidian_Vault" underscore; the actual dir is "Obsidian Vault" with
+      # a space) and git-back it from the private Cairns-Notes repo. On the first
+      # activation after this change the module removes the empty local dir and clones.
+      obsidian = {
+        defaultDirectory = "Documents/Obsidian Vault";
+        repo = {
+          enable = true;
+          url = "https://github.com/Cairnstew/Cairns-Notes";
+          tokenFile = config.age.secrets."github-token-obsidian".path;
+        };
+      };
 
       squidProxyClient = {
         enable = true;
