@@ -96,7 +96,7 @@ let
   };
 in
 {
-  config = lib.mkIf cfg.enable {
+  config = lib.mkIf (cfg.enable && serverCfg.enable) {
     systemd.services.suwayomi-sync-export = {
       description = "Suwayomi filtered backup export to git repo";
       after = [ "suwayomi-server.service" "network-online.target" ];
