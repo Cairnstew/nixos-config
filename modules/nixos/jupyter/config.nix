@@ -109,9 +109,6 @@ let
     cfg.templates + ''
 
     echo "jupyter-init-templates: done"
-
-    # Trigger kernel discovery now that templates are in place
-    systemctl start jupyter-discover.service || true
   '');
 in
 {
@@ -179,8 +176,10 @@ in
         # Run init as cfg.user so files are owned correctly
         ${pkgs.su}/bin/su -s ${pkgs.bash}/bin/bash ${cfg.user} -c '${initTemplateScript}'
 
-        # Trigger kernel discovery as root
-        systemctl start jupyter-discover.service || true
+        # Trigger kernel discovery as root. --no-block: discovery (uv sync) can
+        # take a while; waiting on it here would block multi-user.target's start
+        # job and hang every switch (see GOTCHAS: oneshot services on the target).
+        systemctl start --no-block jupyter-discover.service || true
       '';
       unitConfig = {
         # Re-run when templates change
