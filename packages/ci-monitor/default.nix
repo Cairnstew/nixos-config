@@ -241,7 +241,7 @@ writeShellApplication {
     fi
 
     # Block until run completes
-    if ! gh_cmd run watch "$RUN_ID" --repo "$REPO" --exit-status --exit-name complete; then
+    if ! gh_cmd run watch "$RUN_ID" --repo "$REPO" --exit-status; then
       # run failed/cancelled — that's expected, proceed to fetch details
       :
     fi

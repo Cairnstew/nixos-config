@@ -1052,9 +1052,13 @@ Symptom (2026-09-21, deriving the modelFallback test chains from the live config
 
 Symptom (2026-09-21, desktop): `~/.config/obsidian/obsidian.json` is generated with the vault registered (`open: true`, `ts: 0`), but launching Obsidian shows the vault switcher instead of opening anything. Cause stack, all verified live: (1) **path mismatch** — the module default `defaultDirectory = "Documents/Obsidian_Vault"` (`modules/home/obsidian/options.nix:19`, underscore) doesn't match the real vault dir on disk, which is `Documents/Obsidian Vault` (space); Obsidian ignores a registered vault whose path doesn't exist. (2) **repo-clone feature dormant** — "open the repo automatically" is `my.programs.obsidian.repo.{enable,url,tokenFile}`; enabling Obsidian via `my.homeProfiles.desktop` (`modules/nixos/profiles/home/config.nix:33`) sets only `obsidian.enable`, so the activation script (`modules/home/obsidian/config.nix:61-66`) prints "WARNING: Obsidian vault not found … Clone your vault repo there" and never clones. The agenix secret `github-token-obsidian` exists but is referenced nowhere. (3) **read-only store symlink** — `home.file.".config/obsidian/obsidian.json"` (`modules/home/obsidian/config.nix:12`) is the default HM store symlink, so Obsidian can't persist its own last-open state and any UI-side fix is overwritten on the next home-manager switch. Fix: per-host override, e.g. desktop: `my.homeManager.extraConfig.my.programs.obsidian = { defaultDirectory = "Documents/Obsidian Vault"; repo.enable = true; repo.url = "https://github.com/<user>/<vault>"; repo.tokenFile = config.age.secrets."github-token-obsidian".path; };` — `repo.url` is required when `repo.enable` (asserted in `modules/home/obsidian/tests.nix`).
 
+**`ci-monitor watch` returns instantly instead of blocking — invalid `--exit-name` flag silently fails**
+
+Symptom (2026-09-22): `ci-monitor watch` (the shell script in `packages/ci-monitor/default.nix`) exits immediately without waiting for the CI run to complete, because `gh run watch` rejects the unknown `--exit-name complete` flag. The `if !` on line 244 catches the error as "run failed/cancelled" and proceeds to fetch details, but the watch never actually blocked. Root cause: `--exit-name` is not a valid `gh run watch` flag — only `--exit-status` exists (confirmed: `gh run watch --help` in gh v2.100.0). The TypeScript tool version (`modules/home/opencode/tools/ci-monitor.ts:295`) correctly uses only `--exit-status`. Fix (this session): removed `--exit-name complete` from line 244. Lesson: `gh run watch` has exactly one exit-related flag (`--exit-status`); any other flag starting with `--exit-` is invalid and will cause a silent early exit when wrapped in `if !`.
+
 ---
 
-Last updated: 2026-09-20
+Last updated: 2026-09-22
 
 
 
