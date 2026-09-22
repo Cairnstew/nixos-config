@@ -9,9 +9,9 @@ let
       pname = "moku";
       version = old.version;
       src = old.src;
-      fetcherVersion = 3;
-      # Updated from build output: sha256-fBkNpQXEeGZNbrpx7+0xVYYtQ6dGvpgRflCGPoxvnVY=
-      hash = "sha256-fBkNpQXEeGZNbrpx7+0xVYYtQ6dGvpgRflCGPoxvnVY=";
+      fetcherVersion = 4;
+      # Updated from build output (fetcherVersion 4, pnpm 11): sha256-XuHbezNWyEBzsJeHU4U+eF0m1ecJz0ThZpNBQ6iffxk=
+      hash = "sha256-XuHbezNWyEBzsJeHU4U+eF0m1ecJz0ThZpNBQ6iffxk=";
     };
     postPatch = (old.postPatch or "") + ''
       substituteInPlace src/lib/types/settings.ts \

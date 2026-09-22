@@ -10,13 +10,15 @@ in
       allowBroken = true;
       allowUnsupportedSystem = true;
       allowUnfree = true;
-      # ventoy versions are flagged insecure due to binary blobs (nixpkgs#404663)
-      permittedInsecurePackages = [
-        "ventoy-1.1.12"
-        "ventoy-1.1.17"
-        "ventoy-qt5-1.1.12"
-        "ventoy-gtk3-1.1.12"
-      ];
+      # ventoy versions are flagged insecure due to binary blobs (nixpkgs#404663).
+      # Derive the names from the packages so a nixpkgs version bump (e.g.
+      # 1.1.12 → 1.1.17) can't leave the list stale and break the system build.
+      permittedInsecurePackages = map (p: p.name) (with pkgs; [
+        ventoy
+        ventoy-full
+        ventoy-full-qt
+        ventoy-full-gtk
+      ]);
     };
     overlays = lib.attrValues self.overlays;
   };
