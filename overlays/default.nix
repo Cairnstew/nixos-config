@@ -84,4 +84,16 @@ self: super: {
       NIX_CFLAGS_COMPILE = (old.env.NIX_CFLAGS_COMPILE or "") + " -Wno-error=unterminated-string-initialization";
     };
   });
+
+  # inline-snapshot 0.34.2: 3 of 1402 tests fail in the Nix sandbox (snapshot
+  # write-back + codegen tests that exercise file I/O). It's a build-time
+  # (not runtime) dep of fastapi → openapi-core → jupyterlab-server →
+  # jupyter.service. Disable tests so the build chain unblocks.
+  pythonPackagesExtensions = super.pythonPackagesExtensions ++ [
+    (pyfinal: pyprev: {
+      inline-snapshot = pyprev.inline-snapshot.overridePythonAttrs (old: {
+        doCheck = false;
+      });
+    })
+  ];
 }
