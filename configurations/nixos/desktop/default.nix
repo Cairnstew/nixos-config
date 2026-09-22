@@ -918,6 +918,10 @@
   # ── Manga Reader ─────────────────────────────────────────────────────────
   # Suwayomi-Server backend + Moku frontend (both enabled via entertainment profile)
   # Moku connects to the server's Suwayomi instance over Tailscale
+  # Temporarily disabled (2026-09-22): the moku Tauri build is heavy on every
+  # nix run; re-enable by deleting this override once the system rebuild is done.
+  # (modules/nixos/moku.nix already bumped to fetchPnpmDeps fetcherVersion 4.)
+  my.programs.moku.enable = false;
   my.programs.moku.serverUrl = "http://100.78.102.28:4567/suwayomi";
   my.services.suwayomi = {
     # F11: extensionRepos, sync.export.{enable,autoPush,repoPath,secretPath}, sync.import.enable
