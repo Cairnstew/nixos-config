@@ -78,15 +78,31 @@ in
         # claude-code, vscode, etc. via enableMcpIntegration.
         mcp-servers = {
           programs = {
-            nixos.enable = true;
+            # mcp-servers-nix's generic-ts builder breaks under tsc 7 (pinned
+            # nixpkgs): compilerOptions.types defaults to [] so @types/node
+            # never loads. nixpkgs ships fixed builds (postPatch + typescript_7),
+            # so override `package` for the failing servers here. (mcp-nixos is
+            # technically already the nixpkgs fixed 3.0.1 via overlay fallthrough;
+            # the explicit pin is defensive.)
+            nixos = {
+              enable = true;
+              package = pkgs.mcp-nixos;
+            };
             fetch.enable = true;
             filesystem = {
               enable = true;
+              package = pkgs.mcp-server-filesystem;
               args = [ "/home/${username}/nixos-config" ]; # use flake config username instead of hard-coded seanc (M2)
             };
             time.enable = true;
-            sequential-thinking.enable = true;
-            memory.enable = true;
+            sequential-thinking = {
+              enable = true;
+              package = pkgs.mcp-server-sequential-thinking;
+            };
+            memory = {
+              enable = true;
+              package = pkgs.mcp-server-memory;
+            };
             playwright.enable = true;
             github = {
               enable = true;
