@@ -139,14 +139,14 @@ Confirm the checkout actually sits on the latest master — this is what makes `
 git merge-base --is-ancestor origin/master HEAD \
   && echo "OK: checkout includes latest origin/master — nix run will evaluate the newest config" \
   || echo "WARN: checkout is behind origin/master — nix run would evaluate a stale config"
-git rev-parse --short master origin/master
+git show -s --format="%h %s" master origin/master
 ```
 
 Report:
 - Whether the working tree is clean or has uncommitted local changes
 - The last 5 commits (confirm master's latest commits are present)
 - Whether any conflicts remain unresolved
-- Whether the local `master` ref matches `origin/master` (same hash from the `rev-parse` above)
+- Whether the local `master` ref matches `origin/master` (same hash from the `git show` above — note `git rev-parse --short` refuses multiple revisions, so use `git show -s --format="%h"` for this comparison)
 
 If everything is clean, confirm the sync succeeded. If there are uncommitted changes, confirm those are the user's original local work restored on top of master.
 
