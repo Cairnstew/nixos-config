@@ -225,6 +225,28 @@ in
                   else
                     fail "waybar modules missing config: $MODULES"
                   fi
+                  # Regression guard: battery format args must be documented ones.
+                  # An unknown arg (e.g. {timeToFull}) makes waybar throw in
+                  # update() before the label renders, hiding the whole module.
+                  BATTERY_ARGS=$(python3 -c "
+      import json, re
+      c = json.load(open(\"/etc/xdg/waybar/config\"))
+      bat = c.get(\"battery\", {})
+      allowed = {\"capacity\", \"power\", \"icon\", \"time\", \"timeTo\", \"cycles\", \"health\", \"H\", \"M\", \"m\"}
+      found = set()
+      for key, val in bat.items():
+          if isinstance(val, str) and (\"format\" in key or \"tooltip\" in key):
+              found.update(re.findall(r\"\{([a-zA-Z]+)\", val))
+      bad = sorted(found - allowed)
+      print(\"OK\" if not bad else \"BAD: \" + \",\".join(bad))
+      " 2>/dev/null || echo "unknown")
+                  if echo "$BATTERY_ARGS" | grep -q "^OK"; then
+                    pass "waybar battery uses only documented format args"
+                  elif [ "$BATTERY_ARGS" = "unknown" ]; then
+                    fail "could not check waybar battery format args"
+                  else
+                    fail "waybar battery has invalid format args: $BATTERY_ARGS"
+                  fi
                 else
                   fail "waybar config is not valid JSON"
                 fi
@@ -480,6 +502,27 @@ in
                     fail "waybar network.format-ethernet is empty or whitespace"
                   else
                     fail "could not check waybar network.format-ethernet"
+                  fi
+                  # Regression guard: battery format args must be documented
+                  # ones — an unknown arg (e.g. {timeToFull}) hides the module.
+                  BATTERY_ARGS=$(python3 -c "
+      import json, re
+      c = json.load(open(\"$WAYBAR_CFG\"))
+      bat = c.get(\"battery\", {})
+      allowed = {\"capacity\", \"power\", \"icon\", \"time\", \"timeTo\", \"cycles\", \"health\", \"H\", \"M\", \"m\"}
+      found = set()
+      for key, val in bat.items():
+          if isinstance(val, str) and (\"format\" in key or \"tooltip\" in key):
+              found.update(re.findall(r\"\{([a-zA-Z]+)\", val))
+      bad = sorted(found - allowed)
+      print(\"OK\" if not bad else \"BAD: \" + \",\".join(bad))
+      " 2>/dev/null || echo "unknown")
+                  if echo "$BATTERY_ARGS" | grep -q "^OK"; then
+                    pass "waybar battery uses only documented format args"
+                  elif [ "$BATTERY_ARGS" = "unknown" ]; then
+                    fail "could not check waybar battery format args"
+                  else
+                    fail "waybar battery has invalid format args: $BATTERY_ARGS"
                   fi
                 else
                   fail "waybar config is not valid JSON"

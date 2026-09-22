@@ -146,11 +146,42 @@ let
     };
 
     battery = {
-      states = { warning = 30; critical = 15; };
+      # waybar ≥ 0.11 rewrote the battery module. Unknown format args (e.g. the
+      # removed `{timeToFull}`) make fmt::format throw inside update() BEFORE
+      # label_.set_markup() runs, so the module renders nothing while the
+      # journal spams "battery: argument not found". Use only documented args:
+      # {capacity} {power} {icon} {time} {timeTo} {cycles} {health}.
+      interval = 60;
+      states = {
+        warning = 30;
+        critical = 15;
+      };
       format = "{icon} {capacity}%";
-      format-icons = [ "" "" "" "" "" ];
+      # Status-aware icons: object keys are matched against the sysfs status
+      # (discharging → default; charging → bolt + battery; plugged/full → full).
+      format-icons = {
+        default = [ "" "" "" "" "" ];
+        charging = [ "" "" "" "" "" ];
+        full = "";
+        plugged = "";
+      };
       tooltip = true;
-      tooltip-format = "Battery: {capacity}%  {power}W  ({timeTo}, {timeToFull})";
+      tooltip-format = ''Battery: {capacity}%  {power}W
+{timeTo}'';
+      # Left-click lock, right-click suspend (deliberate), scroll = backlight.
+      on-click = "loginctl lock-session";
+      on-click-right = "systemctl suspend";
+      on-scroll-up = "brightnessctl set 5%+";
+      on-scroll-down = "brightnessctl set 5%-";
+      # Native low-battery events (waybar ≥ 0.15, fire once per state change).
+      events = {
+        on-discharging-warning =
+          "notify-send -u normal -a waybar 'Low battery' 'Battery below 30% — plug in soon'";
+        on-discharging-critical =
+          "notify-send -u critical -a waybar 'Critical battery' 'Battery below 15% — suspend soon'";
+      };
+      # Smooth the power reading so the {timeTo} estimate doesn't jump around.
+      smooth-power = true;
     };
 
     network = {
@@ -231,6 +262,9 @@ let
 
     #battery.warning  { color: #fab387; }
     #battery.critical { color: #f38ba8; }
+    #battery.charging { color: #a6e3a1; }
+    #battery.plugged  { color: #a6e3a1; }
+    #battery.full     { color: #a6e3a1; }
     #temperature.critical { color: #f38ba8; }
 
     #pulseaudio.muted { color: #6c7086; }
