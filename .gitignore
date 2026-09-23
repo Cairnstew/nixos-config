@@ -16,6 +16,15 @@ __pycache__/
 .playwright-mcp/
 arch_userspace.tar.gz
 
+# Editor temps & backups
+*.swp
+*.swo
+*~
+*.orig
+*.bak
+\#*\#
+.#*
+
 # Large/binary files
 *.tachibk
 extension_api.json
