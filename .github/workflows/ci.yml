@@ -18,7 +18,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        host: [laptop, server, wsl, desktop]
+        host: [laptop, server, wsl]
+        # desktop excluded — Houdini requires proprietary tarball download from SideFX servers
     steps:
       - name: Checkout
         uses: actions/checkout@v6
