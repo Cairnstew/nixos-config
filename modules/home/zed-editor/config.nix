@@ -253,6 +253,11 @@ let
         args = [ "acp" ];
       };
     };
+  } // lib.optionalAttrs cfg.enableNotebooks {
+    # WIP Jupyter notebook support — feature flag (see options.nix).
+    feature_flags = {
+      notebooks = "on";
+    };
   };
 
   mergedSettings = lib.recursiveUpdate computedSettings cfg.extraSettings;
@@ -278,6 +283,22 @@ in
       userKeymaps = cfg.userKeymaps;
       userTasks = cfg.userTasks;
       userDebug = cfg.userDebug;
+    };
+
+    # ── Notebooks (WIP feature flag, see options.nix) ──────────────────────
+    # Both the settings feature flag AND the env var are required; the env var
+    # must reach the process actually launching Zed: environment.d (picked up
+    # by systemd user sessions / GUI launches), home.sessionVariables (shell
+    # launches), and the devShell/`nix run .` wrapper set it too.
+    home.sessionVariables = lib.mkIf cfg.enableNotebooks {
+      LOCAL_NOTEBOOK_DEV = "1";
+    };
+
+    # ~/.config/environment.d/zed-notebooks.conf — systemd environment.d is the
+    # reliable channel for GUI apps on Hyprland/session launches (a plain
+    # shell sessionVariable does not reach processes started by the compositor).
+    xdg.configFile."environment.d/zed-notebooks.conf" = lib.mkIf cfg.enableNotebooks {
+      text = "LOCAL_NOTEBOOK_DEV=1\n";
     };
   };
 }

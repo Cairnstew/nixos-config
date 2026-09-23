@@ -85,9 +85,21 @@ in
     # a (conditional) sharedModules *import*, not a plain config definition,
     # because hosts without stylix never import the stylix HM module and would
     # fail on a definition of the missing `stylix.targets.firefox` option.
+    #
+    # Same channel for zed: the target option exists only in stylix's HM module.
+    # Disable it so the dedicated zed home module (my.programs.zed-editor) is the
+    # single source of truth for settings.json — it generates a full dark
+    # Catppuccin Mocha theme from me.colorScheme. Stylix's zed target sets
+    # userSettings at normal priority, clobbering the module's mkDefault settings
+    # wholesale, and its generated theme is invalid for zed ("Base16 untitled",
+    # appearance "unspecified" — our base16Scheme lacks name/variant), so zed
+    # rejects it and falls back to the default LIGHT theme.
     home-manager.sharedModules = [
       {
         stylix.targets.firefox.profileNames = [ me.username ];
+      }
+      {
+        stylix.targets.zed.enable = lib.mkDefault false;
       }
     ];
 
