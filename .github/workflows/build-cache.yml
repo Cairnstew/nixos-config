@@ -22,8 +22,7 @@ jobs:
             system: x86_64-linux
           - host: wsl
             system: x86_64-linux
-          - host: desktop
-            system: x86_64-linux
+          # desktop excluded — Houdini requires proprietary tarball download from SideFX servers
 
     steps:
       - name: Checkout
