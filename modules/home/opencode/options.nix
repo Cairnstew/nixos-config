@@ -782,12 +782,12 @@ in
         mergeOnCleanup = true;
       };
       description = ''
-        Configuration for the @hueyexe/opencode-ensemble plugin.
+        Configuration for the opencode-ensemble plugin.
         Written to $XDG_CONFIG_HOME/opencode/ensemble.json.
 
         Controls model selection, rate limiting, stall detection, timeout,
         dashboard port, and auto-merge behavior for parallel agent teams.
-        See https://github.com/hueyexe/opencode-ensemble for full reference.
+        See https://github.com/Cairnstew/opencode-ensemble for full reference.
       '';
     };
 

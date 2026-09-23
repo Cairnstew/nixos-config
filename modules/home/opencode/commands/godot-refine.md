@@ -58,7 +58,7 @@ fi
 
 ## 0.75 Multi-agent orchestration check
 
-This command can optionally run as a small coordinated team via the [opencode-ensemble](https://github.com/hueyexe/opencode-ensemble) plugin (`team_create`/`team_spawn`/`team_tasks_add`/etc.), if it's enabled. Detect this before deciding how to execute the rest of the command.
+This command can optionally run as a small coordinated team via the [opencode-ensemble](https://github.com/Cairnstew/opencode-ensemble) plugin (`team_create`/`team_spawn`/`team_tasks_add`/etc.), if it's enabled. Detect this before deciding how to execute the rest of the command.
 
 !`
 FOUND=false

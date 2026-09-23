@@ -1,8 +1,9 @@
 # FORK.md — vendored fork of @hueyexe/opencode-ensemble
 
 **Status:** ACTIVE fork. This repo installs a build-time-patched copy of
-`@hueyexe/opencode-ensemble@0.16.1` as a **local opencode plugin** instead of
-installing the npm package.
+`@hueyexe/opencode-ensemble` from the GitHub repository
+`https://github.com/Cairnstew/opencode-ensemble` as a **local opencode plugin**
+instead of installing the npm package.
 
 ## Why this fork exists
 
@@ -26,21 +27,20 @@ stopgap-until-upstream.
 
 | | |
 |---|---|
-| Package | `@hueyexe/opencode-ensemble` |
-| Version | **0.16.1** |
-| Artifact | `https://registry.npmjs.org/@hueyexe/opencode-ensemble/-/opencode-ensemble-0.16.1.tgz` |
-| sha256 | `2f3268a2d87ed1918b0fc6d20a2bc4386dd0b796ebf63d00442cbb5119a94a98` |
-| Published | 2026-08-15 |
+| Source | `https://github.com/Cairnstew/opencode-ensemble` |
+| Commit | **de091d148c7455e014f5ff332b9c3cebf0de2c81** |
+| Base package | `@hueyexe/opencode-ensemble` |
+| Version | **0.19.0** (from GitHub, vendored dist) |
 | Dist | single-file `dist/index.js` (node-core imports only; exports the plugin fn) |
 
-Chosen over 0.15.0 (the previously-pinned version) because 0.16.1 already
-carries fixes this repo wants — team-spawn agent-null normalization (issue #28),
-`claim_task` auto-claim (issue #27), task-board integrity — and ahead of 0.17.0
-(published later; no wake-path fix). Drift audit 0.15.0→0.16.1: 13 files; the
-other changes are dashboard verbose-activity UI (`activity.ts` + `dashboard*`),
-SDK `session.messages`/`get` wrappers (`client.ts`/`types.ts`), a bundler-safe
-`node:sqlite` require spelling (`db.ts`), and cleanup bookkeeping (`index.ts`).
-None affect the wake path, spawn semantics, or pacing.
+This is a fork of the original `@hueyexe/opencode-ensemble` that includes:
+- **Agent Spaces feature** — spawn teammates into predetermined separate repositories
+- **Wake-path fix** — partial upstream fix + our patch for remaining sites
+
+The repository is maintained by Cairnstew and includes the latest features from the upstream project.
+
+Note: The GitHub repository only contains source files (src/). We vendor the
+pre-built dist/index.js from a local build and apply the patch to it.
 
 ## What the patch does
 
@@ -67,8 +67,11 @@ re-asserts the post-conditions at nixtest time.
 
 ## How it's wired
 
-- `fork.nix` — fetches the pinned tarball, extracts `dist/index.js`, runs the
-  patch, `node --check`s the result (ESM), outputs the patched file.
+- `fork.nix` — uses the vendored dist/index.js from the local build of the
+  Cairnstew fork (commit de091d1), runs the patch, `node --check`s the result
+  (ESM), outputs the patched file.
+- `vendor/opencode-ensemble-0.19.0-dist.js` — pre-built dist from the local
+  build of the Cairnstew fork (includes Agent Spaces feature).
 - `config.nix` `pluginFiles.opencode-ensemble` — installs the patched bundle to
   `~/.config/opencode/plugins/opencode-ensemble.js` (auto-discovered).
 - `modules/nixos/homeManager/config.nix` `plugins = [ ]` — the npm spec was
@@ -78,17 +81,19 @@ re-asserts the post-conditions at nixtest time.
 
 ## Fork policy — read before any ensemble version bump
 
-1. Re-check upstream for a wake-path fix: grep the newest published dist for
-   `promptAsync({ yes sessionID` without agent/model. If fixed → drop the fork,
-   restore the npm spec, delete `fork.nix`/`patches/`, remove the assertion,
-   remove `lead_model` migration need, update this file to REVOKED.
-2. If not fixed → re-base the fork on the newer tarball:
-   - update the sha256 + version in `fork.nix` (and this table);
+1. Re-check the GitHub repository for updates: visit
+   `https://github.com/Cairnstew/opencode-ensemble` and check for new commits
+   or releases. If the wake-path fix is fully included upstream → consider dropping
+   the fork, restore the npm spec, delete `fork.nix`/`patches/`, remove the
+   assertion, remove `lead_model` migration need, update this file to REVOKED.
+2. If updating to a new commit → rebuild from source and update the vendor:
+   - build the project from the GitHub repository source
+   - copy the built dist/index.js to `vendor/opencode-ensemble-<version>-dist.js`
+   - update `fork.nix` to reference the new vendor file
    - re-run the patch — anchors fail loudly where the new dist moved them;
      re-derive those anchors (this file's patch inventory + the nixtest are the
      map);
-   - re-run the 0.15→<new> drift audit notes above;
-   - keep migration 9 idempotent (already applied on existing DBs);
+   - keep migration 12 idempotent (already applied on existing DBs);
    - run nixtests + a live spawn-batch verification (see below).
 3. Any opencode version bump that touches the plugin API surface re-runs the
    same nixtest + live verification (triage-capture schema-fragility smoke test

@@ -291,32 +291,32 @@ in
             };
           };
         };
-        tools = lib.mkDefault {
-          tailscale-manager = ./tools/tailscale-manager.ts;
-          agenix-manager = ./tools/agenix-manager.ts;
-          nix-hosts = ./tools/nix-hosts.ts;
-          nix-eval = ./tools/nix-eval.ts;
-          nix-flake-check = ./tools/nix-flake-check.ts;
-          just = ./tools/just.ts;
-          opencode-models = ./tools/opencode-models.ts;
-          ci-monitor = ./tools/ci-monitor.ts;
-        };
-        skills = lib.mkDefault {
-          git-repo-management = builtins.readFile ./skills/git-repo-management.md;
-          git-staging-commit-push = builtins.readFile ./skills/git-staging-commit-push.md;
-          nixos-configuration = builtins.readFile ./skills/nixos-configuration.md;
-          module-development = builtins.readFile ./skills/module-development.md;
-          deploy-workflow = builtins.readFile ./skills/deploy-workflow.md;
-          secrets-management = builtins.readFile ./skills/secrets-management.md;
-          testing-patterns = builtins.readFile ./skills/testing-patterns.md;
-          windows-integration = builtins.readFile ./skills/windows-integration.md;
-          docker-management = builtins.readFile ./skills/docker-management.md;
-          network-security = builtins.readFile ./skills/network-security.md;
-          model-selection = builtins.readFile ./skills/model-selection.md;
-          music-playlists = builtins.readFile ./skills/music-playlists.md;
-          mcp-server-management = builtins.readFile ./skills/mcp-server-management.md;
-          ci-monitoring = builtins.readFile ./skills/ci-monitoring.md;
-        };
+        # Individual key assignments (not lib.mkDefault on the whole attrset)
+        # so they merge correctly with per-module overrides (mc-*, houdini-*, etc.)
+        # that also set individual keys. Using mkDefault on the whole attrset
+        # causes individual-key definitions from other modules to replace it entirely.
+        tools.tailscale-manager = ./tools/tailscale-manager.ts;
+        tools.agenix-manager = ./tools/agenix-manager.ts;
+        tools.nix-hosts = ./tools/nix-hosts.ts;
+        tools.nix-eval = ./tools/nix-eval.ts;
+        tools.nix-flake-check = ./tools/nix-flake-check.ts;
+        tools.just = ./tools/just.ts;
+        tools.opencode-models = ./tools/opencode-models.ts;
+        tools.ci-monitor = ./tools/ci-monitor.ts;
+        skills.git-repo-management = builtins.readFile ./skills/git-repo-management.md;
+        skills.git-staging-commit-push = builtins.readFile ./skills/git-staging-commit-push.md;
+        skills.nixos-configuration = builtins.readFile ./skills/nixos-configuration.md;
+        skills.module-development = builtins.readFile ./skills/module-development.md;
+        skills.deploy-workflow = builtins.readFile ./skills/deploy-workflow.md;
+        skills.secrets-management = builtins.readFile ./skills/secrets-management.md;
+        skills.testing-patterns = builtins.readFile ./skills/testing-patterns.md;
+        skills.windows-integration = builtins.readFile ./skills/windows-integration.md;
+        skills.docker-management = builtins.readFile ./skills/docker-management.md;
+        skills.network-security = builtins.readFile ./skills/network-security.md;
+        skills.model-selection = builtins.readFile ./skills/model-selection.md;
+        skills.music-playlists = builtins.readFile ./skills/music-playlists.md;
+        skills.mcp-server-management = builtins.readFile ./skills/mcp-server-management.md;
+        skills.ci-monitoring = builtins.readFile ./skills/ci-monitoring.md;
         commands = {
           copy-last = ./commands/copylast.md;
           refactor-python = ./commands/refactor-python.md;
@@ -331,9 +331,9 @@ in
         pluginFiles = lib.mkDefault {
           copylast = ./plugins/copylast.ts;
           self-improve-guard = ./plugins/self-improve-guard.ts;
-          # Vendored fork of @hueyexe/opencode-ensemble 0.16.1 — replaces the
-          # npm spec (which would double-load with a similar-named local file).
-          # See fork.nix + FORK.md. Loads from the plugins dir as
+          # Vendored fork from https://github.com/Cairnstew/opencode-ensemble
+          # — replaces the npm spec (which would double-load with a similar-named
+          # local file). See fork.nix + FORK.md. Loads from the plugins dir as
           # opencode-ensemble.js (auto-discovered); the npm `plugins` entry in
           # modules/nixos/homeManager/config.nix must stay empty.
           opencode-ensemble = import ./fork.nix { inherit pkgs; };
@@ -377,10 +377,8 @@ in
 
     # ── Ensemble skills & sub-agents ──────────────────────────────────────
     {
-      my.programs.opencode.skills = lib.mkDefault {
-        opencode-ensemble = builtins.readFile ./skills/opencode-ensemble.md;
-        nixos-ensemble-decomposition = builtins.readFile ./skills/nixos-ensemble-decomposition.md;
-      };
+      my.programs.opencode.skills.opencode-ensemble = builtins.readFile ./skills/opencode-ensemble.md;
+      my.programs.opencode.skills.nixos-ensemble-decomposition = builtins.readFile ./skills/nixos-ensemble-decomposition.md;
       my.programs.opencode.agents = lib.mkDefault {
         scout = {
           description = "Quickly explore the codebase by searching files, patterns, and keywords (read-only) — ensemble scout role";

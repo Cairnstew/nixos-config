@@ -152,7 +152,7 @@ in
       # the unfixed upstream. Enforce the `plugins` array stays free of it.
       {
         assertion = !(builtins.elem "@hueyexe/opencode-ensemble" cfg.plugins);
-        message = "my.programs.opencode.plugins: remove '@hueyexe/opencode-ensemble' from the npm plugins array — the ensemble is vendored as a local fork (pluginFiles.opencode-ensemble). A similar-named npm spec and local file BOTH load and would double-register tools. See FORK.md.";
+        message = "my.programs.opencode.plugins: remove '@hueyexe/opencode-ensemble' from the npm plugins array — the ensemble is vendored as a local fork from https://github.com/Cairnstew/opencode-ensemble (pluginFiles.opencode-ensemble). A similar-named npm spec and local file BOTH load and would double-register tools. See FORK.md.";
       }
       # ── Single-lineage self-improvement invariants (post-gated-pipeline) ──
       # The decommissioned promote tool (goals_learning_promote) no longer
