@@ -55,6 +55,7 @@ in
       vscode.enable = lib.mkDefault true;
       obsidian.enable = lib.mkDefault true;
       "zed-editor".enable = lib.mkDefault true;
+      "zed-editor".enableNotebooks = lib.mkDefault true;
       opencode.commands.godot-refine = ../../../home/opencode/commands/godot-refine.md;
     })
 

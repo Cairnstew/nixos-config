@@ -76,6 +76,14 @@ in
       example = [ "nix" "rust" "toml" "yaml" "json" "markdown-preview" "html" "css" ];
     };
 
+    # ── Notebooks / REPL ─────────────────────────────────────────────────────
+
+    enableNotebooks = lib.mkEnableOption ''
+      Zed's built-in Jupyter notebook support (feature flag `notebooks` + the
+      LOCAL_NOTEBOOK_DEV[=1] environment variable). Without this, .ipynb files
+      open as raw JSON. Requires a Jupyter kernel (ipykernel) to run cells.
+    '';
+
     # ── Appearance ────────────────────────────────────────────────────────────
 
     theme = lib.mkOption {
