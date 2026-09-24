@@ -49,8 +49,8 @@ def patch(input_path: str, output_path: str) -> None:
     if "__ensembleWakeArgs" in src:
         sys.exit("FORK-PATCH: output already patched")
     
-    # Find injection point - after init_process() call
-    inject_marker = "init_process();"
+    # Find injection point - after init_process variable declaration (module scope)
+    inject_marker = "var init_process = () => {};"
     inject_pos = src.find(inject_marker)
     if inject_pos == -1:
         sys.exit("FORK-PATCH: could not find injection point")
