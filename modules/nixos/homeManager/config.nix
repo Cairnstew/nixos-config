@@ -271,6 +271,13 @@ in
             };
             dashboardPort = 4747;
             mergeOnCleanup = true;
+            spaces = {
+              ensemble = {
+                path = "/home/seanc/Projects/opencode-ensemble";
+                agent = "build";
+                description = "Ensemble plugin source repo";
+              };
+            };
           };
 
           themes = opencodeTheme;

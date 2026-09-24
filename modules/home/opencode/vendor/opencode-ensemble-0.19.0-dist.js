@@ -24363,7 +24363,7 @@ async function executeTeamCreate(deps, args2, sessionId) {
 }
 
 // src/tools/team-spawn.ts
-import { statSync } from "node:fs";
+import { statSync, mkdirSync } from "node:fs";
 import path2 from "node:path";
 
 // src/tools/shared.ts
@@ -24452,6 +24452,7 @@ async function executeTeamClaim(deps, args2, sessionId) {
 
 // src/tools/team-spawn.ts
 init_merge_helper();
+init_process();
 var spawnFailures = new Map;
 function resolveModel(explicitModel, agentType, teamMemberCount, config) {
   if (explicitModel)
@@ -24500,7 +24501,6 @@ function validateSpaceDirectory(spaceName, spaceDir) {
   }
 }
 async function executeTeamSpawn(deps, args2, sessionId) {
-  const agent = args2.agent ?? "build";
   const nameError = validateMemberName(args2.name);
   if (nameError)
     throw new Error(nameError);
@@ -24514,6 +24514,7 @@ async function executeTeamSpawn(deps, args2, sessionId) {
     throw new Error(`Teammate "${args2.name}" already exists in team "${teamInfo.teamName}"`);
   let spaceName = null;
   let spaceDir = null;
+  let spaceConfig = null;
   if (args2.space) {
     if (args2.worktree !== false) {
       throw new Error(`Cannot use both "space" and "worktree" on the same spawn. ` + `Space-based spawns operate in an independent repository, not a worktree. ` + `Set worktree: false when using space.`);
@@ -24524,9 +24525,12 @@ async function executeTeamSpawn(deps, args2, sessionId) {
       throw new Error(`Unknown agent space "${args2.space}". ` + `Valid spaces: ${validNames.length > 0 ? validNames.join(", ") : "(none configured)"}`);
     }
     spaceName = args2.space;
-    spaceDir = spaces[args2.space];
+    const raw = spaces[args2.space];
+    spaceConfig = typeof raw === "string" ? { path: raw } : { ...raw };
+    spaceDir = spaceConfig.path;
     log2(`spawn:space name=${args2.name} space=${spaceName} dir=${spaceDir}`);
   }
+  const agent = args2.agent ?? spaceConfig?.agent ?? "build";
   const isReadOnly = agent === "plan" || agent === "explore";
   const useWorktree = !spaceDir && args2.worktree !== false && !isReadOnly && !isWorktreeDirectory(deps.directory);
   const usePlanApproval = args2.plan_approval === true;
@@ -24597,6 +24601,63 @@ async function executeTeamSpawn(deps, args2, sessionId) {
   }
   permission.push(...TEAM_TOOLS.map((t) => ({ permission: t, pattern: "*", action: "allow" })));
   permission.push({ permission: "execute", pattern: "*", action: "allow" });
+  if (spaceConfig?.url && spaceDir) {
+    const fs = await import("node:fs");
+    const cloneExists = fs.existsSync(path2.join(spaceDir, ".git"));
+    if (!cloneExists) {
+      log2(`spawn:clone:start name=${args2.name} space=${spaceName} url=${spaceConfig.url}`);
+      const parentDir = path2.dirname(spaceDir);
+      try {
+        mkdirSync(parentDir, { recursive: true });
+      } catch {}
+      const cloneResult = await runCommand(["git", "clone", spaceConfig.url, spaceDir], { cwd: parentDir });
+      if (cloneResult.exitCode !== 0) {
+        const stderr = cloneResult.stderr.trim();
+        throw new Error(`Failed to clone agent space "${spaceName}" from ${spaceConfig.url}: ${stderr || `exit code ${cloneResult.exitCode}`}. Check that the URL is correct and that network access and authentication are available in the plugin process environment.`);
+      }
+      log2(`spawn:clone:done name=${args2.name} space=${spaceName}`);
+    } else {
+      log2(`spawn:fetch:start name=${args2.name} space=${spaceName}`);
+      const fetchResult = await runCommand(["git", "-C", spaceDir, "fetch", "origin"]);
+      if (fetchResult.exitCode !== 0) {
+        const stderr = fetchResult.stderr.trim();
+        log2(`spawn:fetch:failed name=${args2.name} space=${spaceName} err=${stderr}`);
+        notifyLead(deps.client, deps.db, teamInfo.teamId, `Space "${spaceName}" fetch failed: ${stderr}. Proceeding with the existing clone at ${spaceDir}.`);
+      } else {
+        let defaultBranch = "";
+        const symRef = await runCommand(["git", "-C", spaceDir, "symbolic-ref", "refs/remotes/origin/HEAD", "--short"]);
+        if (symRef.exitCode === 0 && symRef.stdout.trim()) {
+          defaultBranch = symRef.stdout.trim().replace(/^origin\//, "");
+        } else {
+          const headResult = await runCommand(["git", "-C", spaceDir, "rev-parse", "--abbrev-ref", "HEAD"]);
+          if (headResult.exitCode === 0 && headResult.stdout.trim()) {
+            defaultBranch = headResult.stdout.trim();
+          }
+        }
+        if (defaultBranch) {
+          const dirty = await checkWorktreeDirty(spaceDir);
+          if (dirty) {
+            log2(`spawn:fetch:dirty name=${args2.name} space=${spaceName}`);
+            notifyLead(deps.client, deps.db, teamInfo.teamId, `Space "${spaceName}" has uncommitted changes at ${spaceDir} — skipping fast-forward. Proceeding with the existing clone as-is.`);
+          } else {
+            const isAncestor = await runCommand(["git", "-C", spaceDir, "merge-base", "--is-ancestor", "HEAD", `origin/${defaultBranch}`]);
+            if (isAncestor.exitCode === 0) {
+              const ffResult = await runCommand(["git", "-C", spaceDir, "merge", "--ff-only", `origin/${defaultBranch}`]);
+              if (ffResult.exitCode !== 0) {
+                log2(`spawn:fetch:ff-failed name=${args2.name} space=${spaceName} err=${ffResult.stderr.trim()}`);
+                notifyLead(deps.client, deps.db, teamInfo.teamId, `Space "${spaceName}" fast-forward failed: ${ffResult.stderr.trim()}. Proceeding with the existing clone.`);
+              } else {
+                log2(`spawn:fetch:ff-done name=${args2.name} space=${spaceName}`);
+              }
+            } else {
+              log2(`spawn:fetch:diverged name=${args2.name} space=${spaceName}`);
+              notifyLead(deps.client, deps.db, teamInfo.teamId, `Space "${spaceName}" has diverged from origin at ${spaceDir} — needs manual attention. Proceeding with the existing clone.`);
+            }
+          }
+        }
+      }
+    }
+  }
   if (spaceDir) {
     validateSpaceDirectory(spaceName, spaceDir);
   }
@@ -24673,6 +24734,9 @@ async function executeTeamSpawn(deps, args2, sessionId) {
   }
   if (spaceDir && spaceName) {
     context3.push(`You are working in a predetermined agent space "${spaceName}".`, `Your working directory is: ${spaceDir}`, `This is an independent git repository — manage its git history directly.`, `Your changes are isolated from the main project and from other teammates.`);
+    if (spaceConfig?.description) {
+      context3.push(`Space description: ${spaceConfig.description}`);
+    }
   } else if (worktreeBranch && worktreeDir && !workspaceId) {
     context3.push(`You are working on branch "${worktreeBranch}" in your own worktree at: ${worktreeDir}`, `Your changes are isolated from other teammates.`, `IMPORTANT: All file operations and shell commands MUST target your worktree directory.`, `Before running shell commands, cd to: ${worktreeDir}`);
   } else if (worktreeBranch && worktreeDir) {
@@ -25050,15 +25114,32 @@ ${r.content}`;
 
 // src/tools/team-shutdown.ts
 init_merge_helper();
+init_process();
+async function checkUnpushedCommits(dir) {
+  try {
+    const result3 = await runCommand(["git", "-C", dir, "rev-list", "@{u}..HEAD", "--count"]);
+    if (result3.exitCode !== 0)
+      return -1;
+    const n = Number.parseInt(result3.stdout.trim(), 10);
+    return Number.isNaN(n) ? -1 : n;
+  } catch {
+    return -1;
+  }
+}
 async function executeTeamShutdown(deps, args2, sessionId, isDirty = checkWorktreeDirty, preserve = preserveBranch, commitCount = countBranchCommits) {
   const teamInfo = requireLead(deps, sessionId);
-  const member = deps.db.query("SELECT session_id, status, worktree_branch, worktree_dir FROM team_member WHERE team_id = ? AND name = ?").get(teamInfo.teamId, args2.member);
+  const member = deps.db.query("SELECT session_id, status, worktree_branch, worktree_dir, space_name, space_dir FROM team_member WHERE team_id = ? AND name = ?").get(teamInfo.teamId, args2.member);
   if (!member)
     throw new Error(`Teammate "${args2.member}" not found in team "${teamInfo.teamName}"`);
   if (member.status === "shutdown")
     throw new Error(`Teammate "${args2.member}" is already shut down`);
   const force = args2.force ?? false;
   if (member.status === "shutdown_requested") {
+    if (member.space_name && member.space_dir) {
+      await abortSpaceMember(deps, teamInfo.teamId, args2.member, member.session_id, member.space_name, member.space_dir);
+      const status2 = await getSpaceStatus(deps, teamInfo.teamId, args2.member, member.space_name, member.space_dir, isDirty);
+      return `Force shut down "${args2.member}".${status2}`;
+    }
     await preserveAndAbort(deps, teamInfo.teamId, args2.member, member.session_id, member.worktree_branch, preserve);
     const status = await getBranchStatus(deps, teamInfo.teamId, args2.member, member.worktree_dir, isDirty, commitCount);
     return `Force shut down "${args2.member}".${status}`;
@@ -25070,6 +25151,11 @@ async function executeTeamShutdown(deps, args2, sessionId, isDirty = checkWorktr
     isIdle = !sessionStatus || sessionStatus.type === "idle";
   } catch {}
   if (isIdle || force) {
+    if (member.space_name && member.space_dir) {
+      await abortSpaceMember(deps, teamInfo.teamId, args2.member, member.session_id, member.space_name, member.space_dir);
+      const status2 = await getSpaceStatus(deps, teamInfo.teamId, args2.member, member.space_name, member.space_dir, isDirty);
+      return `Teammate "${args2.member}" has been shut down.${status2}`;
+    }
     await preserveAndAbort(deps, teamInfo.teamId, args2.member, member.session_id, member.worktree_branch, preserve);
     const status = await getBranchStatus(deps, teamInfo.teamId, args2.member, member.worktree_dir, isDirty, commitCount);
     return `Teammate "${args2.member}" has been shut down.${status}`;
@@ -25083,17 +25169,51 @@ async function executeTeamShutdown(deps, args2, sessionId, isDirty = checkWorktr
       log2(`shutdown:branch:preserved-graceful src=${member.worktree_branch} target=${safeBranch}`);
     }
   }
+  let shutdownText = `[Shutdown requested]: The lead has requested you shut down. Finish your current task, send your final findings to the lead via team_message, then stop.`;
+  if (member.space_name && member.space_dir) {
+    const dirty = await isDirty(member.space_dir).catch(() => false);
+    const unpushed = await checkUnpushedCommits(member.space_dir);
+    if (dirty || unpushed !== 0) {
+      shutdownText = [
+        `[Shutdown requested]: The lead has requested you shut down.`,
+        `1. Commit your changes with a meaningful message.`,
+        `2. Push to origin if an upstream is configured.`,
+        `3. Send your final findings to the lead via team_message, then stop.`,
+        ``,
+        `IMPORTANT: Your space "${member.space_name}" has ${dirty ? "uncommitted changes" : ""}${dirty && unpushed !== 0 ? " and " : ""}${unpushed !== 0 ? `${unpushed < 0 ? "unknown (no upstream configured)" : `${unpushed} unpushed commit${unpushed !== 1 ? "s" : ""}`} ` : ""}that must be saved before shutdown.`
+      ].join(`
+`);
+    }
+  }
   try {
     deps.client.session.promptAsync({
       sessionID: member.session_id,
-      parts: [{
-        type: "text",
-        text: `[Shutdown requested]: The lead has requested you shut down. Finish your current task, send your final findings to the lead via team_message, then stop.`
-      }]
+      parts: [{ type: "text", text: shutdownText }]
     }).catch(() => {});
   } catch {}
   deps.db.run("UPDATE team_member SET status = 'shutdown_requested', time_updated = ? WHERE team_id = ? AND name = ?", [Date.now(), teamInfo.teamId, args2.member]);
   return `Shutdown requested for ${args2.member}. They will finish current work and shut down. Call team_shutdown with force: true to abort immediately.`;
+}
+async function abortSpaceMember(deps, teamId, memberName, sessionId, spaceName, spaceDir) {
+  const dirty = await checkWorktreeDirty(spaceDir).catch(() => false);
+  const unpushed = await checkUnpushedCommits(spaceDir);
+  if (dirty || unpushed !== 0) {
+    const details = [];
+    if (dirty)
+      details.push("uncommitted changes");
+    if (unpushed === -1)
+      details.push("unpushed commits (no upstream configured)");
+    else if (unpushed > 0)
+      details.push(`${unpushed} unpushed commit${unpushed !== 1 ? "s" : ""}`);
+    notifyLead(deps.client, deps.db, teamId, `Space "${spaceName}" (${memberName}) shut down with ${details.join(" and ")}. Check the work at: ${spaceDir}`);
+  }
+  try {
+    await deps.client.session.abort({ sessionID: sessionId });
+  } catch {}
+  deps.db.run("UPDATE team_member SET status = 'shutdown', execution_status = 'idle', time_updated = ? WHERE team_id = ? AND name = ?", [Date.now(), teamId, memberName]);
+  const released = releaseMemberTasks(deps.db, teamId, memberName);
+  if (released > 0)
+    log2(`shutdown:tasks:released name=${memberName} count=${released}`);
 }
 async function preserveAndAbort(deps, teamId, memberName, sessionId, worktreeBranch, preserve) {
   if (worktreeBranch && !worktreeBranch.startsWith("ensemble/preserved/")) {
@@ -25139,6 +25259,54 @@ async function getBranchStatus(deps, teamId, memberName, worktreeDir, isDirty, c
   return `
 ${parts.join(`
 `)}`;
+}
+async function getSpaceStatus(deps, teamId, memberName, spaceName, spaceDir, isDirty) {
+  const parts = [];
+  const dirty = await isDirty(spaceDir).catch(() => false);
+  const unpushed = await checkUnpushedCommits(spaceDir);
+  if (dirty && unpushed !== 0) {
+    parts.push(`${memberName} has uncommitted changes and ${unpushed === -1 ? "unknown (no upstream)" : `${unpushed} unpushed commit${unpushed !== 1 ? "s" : ""}`} in space "${spaceName}".`);
+  } else if (dirty) {
+    parts.push(`${memberName} has uncommitted changes in space "${spaceName}".`);
+  } else if (unpushed === -1) {
+    parts.push(`${memberName}'s space "${spaceName}" has no upstream configured. Check the work at: ${spaceDir}`);
+  } else if (unpushed > 0) {
+    parts.push(`${memberName} has ${unpushed} unpushed commit${unpushed !== 1 ? "s" : ""} in space "${spaceName}". Push to origin to save work.`);
+  } else {
+    parts.push(`${memberName}'s space "${spaceName}" is clean and up to date with origin.`);
+  }
+  const spaceRow = deps.db.query("SELECT space_name FROM team_member WHERE team_id = ? AND name = ?").get(teamId, memberName);
+  if (spaceRow?.space_name) {
+    const spaces = deps.config.spaces;
+    const rawEntry = spaces?.[spaceRow.space_name];
+    const spaceConfig = rawEntry ? typeof rawEntry === "string" ? { path: rawEntry } : rawEntry : undefined;
+    if (spaceConfig?.flakeInput && !dirty && unpushed === 0) {
+      let shortSha = "";
+      try {
+        const shaResult = await runCommand(["git", "-C", spaceDir, "rev-parse", "--short", "HEAD"]);
+        if (shaResult.exitCode === 0)
+          shortSha = shaResult.stdout.trim();
+      } catch {}
+      parts.push(`Flake input "${spaceConfig.flakeInput}" should be updated. Run: nix flake lock --update-input ${spaceConfig.flakeInput}`);
+      if (spaceConfig.autoUpdateFlakeInput) {
+        log2(`shutdown:flake:auto-update input=${spaceConfig.flakeInput}`);
+        const nixResult = await runCommand(["nix", "flake", "lock", "--update-input", spaceConfig.flakeInput], { cwd: deps.directory });
+        if (nixResult.exitCode !== 0) {
+          const stderr = nixResult.stderr.trim();
+          log2(`shutdown:flake:auto-update:failed input=${spaceConfig.flakeInput} err=${stderr}`);
+          notifyLead(deps.client, deps.db, teamId, `Auto-update of flake input "${spaceConfig.flakeInput}" failed: ${stderr || `exit code ${nixResult.exitCode}`}. Run manually: nix flake lock --update-input ${spaceConfig.flakeInput}`);
+        } else {
+          log2(`shutdown:flake:auto-update:done input=${spaceConfig.flakeInput}`);
+          notifyLead(deps.client, deps.db, teamId, `Auto-updated flake input "${spaceConfig.flakeInput}" to ${shortSha || "latest"}. Space "${spaceRow.space_name}" (${memberName}) completed clean.`);
+        }
+      } else {
+        notifyLead(deps.client, deps.db, teamId, `Space "${spaceRow.space_name}" (${memberName}) completed work and pushed to origin (${shortSha || "latest"}). Run: nix flake lock --update-input ${spaceConfig.flakeInput}`);
+      }
+    }
+  }
+  return parts.length > 0 ? `
+${parts.join(`
+`)}` : "";
 }
 
 // src/tools/team-cleanup.ts
@@ -25803,7 +25971,11 @@ async function registerV2Tools(domain, deps) {
     });
     editor.add({
       name: "team_spawn",
-      description: "Spawn a new teammate that works in parallel. The teammate starts immediately with the given prompt. " + "Each teammate gets their own git worktree for file isolation, or can be spawned into a predetermined agent space. " + "Teammates work asynchronously and will message you when done. Do not poll for their status.",
+      description: "Spawn a new teammate that works in parallel. The teammate starts immediately with the given prompt. " + "Each teammate gets their own git worktree for file isolation, or can be spawned into a predetermined agent space. " + "Teammates work asynchronously and will message you when done. Do not poll for their status." + (deps.config.spaces && Object.keys(deps.config.spaces).length > 0 ? " Registered spaces: " + Object.entries(deps.config.spaces).map(([name, entry]) => {
+        const space = typeof entry === "string" ? { path: entry } : entry;
+        const desc = space.description ? ` (${space.description})` : "";
+        return `${name}${desc}`;
+      }).join(", ") + "." : ""),
       input: {
         type: "object",
         properties: {
@@ -26167,8 +26339,42 @@ var DEFAULT_CONFIG = {
   modelsByAgent: {},
   modelAssignment: "default",
   promptForModels: false,
-  spaces: {}
+  spaces: {},
+  spaceCloneDir: ""
 };
+function resolveSpace(raw) {
+  if (typeof raw === "string") {
+    return { path: raw };
+  }
+  return { ...raw };
+}
+function validateSpaceEntry(name, space) {
+  if (space.path && space.url) {
+    return `Space "${name}" has both "path" and "url" — exactly one must be set`;
+  }
+  if (!space.path && !space.url) {
+    return `Space "${name}" has neither "path" nor "url" — exactly one must be set`;
+  }
+  if (space.url !== undefined && typeof space.url !== "string") {
+    return `Space "${name}" "url" must be a string`;
+  }
+  if (space.path !== undefined && typeof space.path !== "string") {
+    return `Space "${name}" "path" must be a string`;
+  }
+  if (space.agent !== undefined && typeof space.agent !== "string") {
+    return `Space "${name}" "agent" must be a string`;
+  }
+  if (space.description !== undefined && typeof space.description !== "string") {
+    return `Space "${name}" "description" must be a string`;
+  }
+  if (space.flakeInput !== undefined && typeof space.flakeInput !== "string") {
+    return `Space "${name}" "flakeInput" must be a string`;
+  }
+  if (space.autoUpdateFlakeInput !== undefined && typeof space.autoUpdateFlakeInput !== "boolean") {
+    return `Space "${name}" "autoUpdateFlakeInput" must be a boolean`;
+  }
+  return null;
+}
 function readConfigFile(filePath) {
   try {
     const text = readFileSync(filePath, "utf-8");
@@ -26206,10 +26412,34 @@ function readConfigFile(filePath) {
     if (typeof raw.promptForModels === "boolean")
       result3.promptForModels = raw.promptForModels;
     if (typeof raw.spaces === "object" && raw.spaces !== null && !Array.isArray(raw.spaces)) {
-      const valid = Object.entries(raw.spaces).every(([k, v]) => typeof k === "string" && typeof v === "string");
+      const validSpaces = {};
+      let valid = true;
+      for (const [k, v] of Object.entries(raw.spaces)) {
+        if (typeof k !== "string") {
+          valid = false;
+          break;
+        }
+        if (typeof v === "string") {
+          validSpaces[k] = v;
+        } else if (typeof v === "object" && v !== null && !Array.isArray(v)) {
+          const resolved = resolveSpace(v);
+          const err = validateSpaceEntry(k, resolved);
+          if (err) {
+            valid = false;
+            console.warn(`[ensemble] ${err} — skipping`);
+            continue;
+          }
+          validSpaces[k] = resolved;
+        } else {
+          valid = false;
+          break;
+        }
+      }
       if (valid)
-        result3.spaces = raw.spaces;
+        result3.spaces = validSpaces;
     }
+    if (typeof raw.spaceCloneDir === "string")
+      result3.spaceCloneDir = raw.spaceCloneDir;
     return result3;
   } catch (err) {
     if (err && typeof err === "object" && "code" in err && err.code === "ENOENT")
@@ -26234,24 +26464,42 @@ function loadConfig(projectDir) {
   const stall = process.env.STALL_THRESHOLD_MS;
   if (stall !== undefined)
     merged.stallThresholdMs = stall === "0" ? 0 : parseInt(stall, 10) || merged.stallThresholdMs;
+  if (!merged.spaceCloneDir) {
+    merged.spaceCloneDir = path3.join(homeDir, ".config", "opencode", "ensemble-spaces");
+  }
   if (merged.spaces && Object.keys(merged.spaces).length > 0) {
     const validSpaces = {};
-    for (const [name, dir] of Object.entries(merged.spaces)) {
-      try {
-        const stat = statSync2(dir);
-        if (!stat.isDirectory()) {
-          console.warn(`[ensemble] Space "${name}" path is not a directory: ${dir} — skipping`);
+    for (const [name, raw] of Object.entries(merged.spaces)) {
+      const space = resolveSpace(raw);
+      const validationErr = validateSpaceEntry(name, space);
+      if (validationErr) {
+        console.warn(`[ensemble] ${validationErr} — skipping`);
+        continue;
+      }
+      if (space.url) {
+        if (!space.url.trim()) {
+          console.warn(`[ensemble] Space "${name}" has an empty URL — skipping`);
           continue;
         }
+        space.path = path3.join(merged.spaceCloneDir, name);
+        validSpaces[name] = space;
+      } else if (space.path) {
         try {
-          statSync2(path3.join(dir, ".git"));
+          const stat = statSync2(space.path);
+          if (!stat.isDirectory()) {
+            console.warn(`[ensemble] Space "${name}" path is not a directory: ${space.path} — skipping`);
+            continue;
+          }
+          try {
+            statSync2(path3.join(space.path, ".git"));
+          } catch {
+            console.warn(`[ensemble] Space "${name}" is not a git repository (no .git): ${space.path} — skipping`);
+            continue;
+          }
+          validSpaces[name] = space;
         } catch {
-          console.warn(`[ensemble] Space "${name}" is not a git repository (no .git): ${dir} — skipping`);
-          continue;
+          console.warn(`[ensemble] Space "${name}" directory does not exist: ${space.path} — skipping`);
         }
-        validSpaces[name] = dir;
-      } catch {
-        console.warn(`[ensemble] Space "${name}" directory does not exist: ${dir} — skipping`);
       }
     }
     merged.spaces = validSpaces;
@@ -44641,7 +44889,7 @@ class OpencodeClient extends HeyApiClient {
 var import_cross_spawn = __toESM(require_cross_spawn(), 1);
 // src/index.ts
 import path4 from "node:path";
-import { mkdirSync } from "node:fs";
+import { mkdirSync as mkdirSync2 } from "node:fs";
 
 // src/client.ts
 function extractError(err) {
@@ -44822,7 +45070,7 @@ class Watchdog {
     if (this.ttlMs === 0)
       return;
     const cutoff = Date.now() - this.ttlMs;
-    const stale = this.db.query(`SELECT tm.team_id, tm.name, tm.session_id, tm.worktree_branch, t.name as team_name, p.name as project_name
+    const stale = this.db.query(`SELECT tm.team_id, tm.name, tm.session_id, tm.worktree_branch, tm.space_name, tm.space_dir, t.name as team_name, p.name as project_name
        FROM team_member tm
        JOIN team t ON tm.team_id = t.id
        JOIN project p ON t.project_id = p.id
@@ -44842,7 +45090,8 @@ class Watchdog {
       const released = releaseMemberTasks(this.db, member.team_id, member.name);
       if (released > 0)
         log2(`watchdog:tasks:released name=${member.name} count=${released}`);
-      notifyLead(this.client, this.db, member.team_id, `Teammate "${member.name}" timed out after exceeding the busy time limit and was aborted. Their in-progress work has been released. Review their session, then re-spawn or reassign the task if needed.`);
+      const spaceInfo = member.space_name ? ` They were working in agent space "${member.space_name}" at ${member.space_dir}.` : "";
+      notifyLead(this.client, this.db, member.team_id, `Teammate "${member.name}" timed out after exceeding the busy time limit and was aborted. Their in-progress work has been released.${spaceInfo} Review their session, then re-spawn or reassign the task if needed.`);
       try {
         await this.client.session.abort({ sessionID: member.session_id });
       } catch {}
@@ -44878,7 +45127,7 @@ var DEFAULT_RATE_LIMIT_INTERVAL_MS = 1000;
 var DEFAULT_WATCHDOG_CHECK_MS = 60 * 1000;
 var plugin = async (input) => {
   const dbPath = getDbPath();
-  mkdirSync(path4.dirname(dbPath), { recursive: true });
+  mkdirSync2(path4.dirname(dbPath), { recursive: true });
   const db = createDb(dbPath);
   const config2 = loadConfig(input.directory);
   const registry2 = new MemberRegistry;
@@ -45123,12 +45372,18 @@ var plugin = async (input) => {
       output.env.ENSEMBLE_ROLE = teamInfo.role;
       if (teamInfo.memberName) {
         output.env.ENSEMBLE_MEMBER = teamInfo.memberName;
-        const member = db.query("SELECT worktree_branch, worktree_dir FROM team_member WHERE team_id = ? AND name = ?").get(teamInfo.teamId, teamInfo.memberName);
+        const member = db.query("SELECT worktree_branch, worktree_dir, space_name, space_dir FROM team_member WHERE team_id = ? AND name = ?").get(teamInfo.teamId, teamInfo.memberName);
         if (member?.worktree_branch) {
           output.env.ENSEMBLE_BRANCH = member.worktree_branch;
         }
         if (member?.worktree_dir) {
           output.env.ENSEMBLE_WORKTREE_DIR = member.worktree_dir;
+        }
+        if (member?.space_name) {
+          output.env.ENSEMBLE_SPACE = member.space_name;
+        }
+        if (member?.space_dir) {
+          output.env.ENSEMBLE_SPACE_DIR = member.space_dir;
         }
       }
     },
@@ -45146,7 +45401,11 @@ var plugin = async (input) => {
         }
       }),
       team_spawn: tool({
-        description: "Spawn a new teammate that works in parallel. The teammate starts immediately with the given prompt. Each teammate gets their own git worktree for file isolation, or can be spawned into a predetermined agent space. Teammates work asynchronously and will message you when done. Do not poll for their status.",
+        description: "Spawn a new teammate that works in parallel. The teammate starts immediately with the given prompt. Each teammate gets their own git worktree for file isolation, or can be spawned into a predetermined agent space. Teammates work asynchronously and will message you when done. Do not poll for their status." + (deps.config.spaces && Object.keys(deps.config.spaces).length > 0 ? " Registered spaces: " + Object.entries(deps.config.spaces).map(([name, entry]) => {
+          const space = typeof entry === "string" ? { path: entry } : entry;
+          const desc = space.description ? ` (${space.description})` : "";
+          return `${name}${desc}`;
+        }).join(", ") + "." : ""),
         args: {
           name: tool.schema.string().describe("Teammate name (lowercase alphanumeric with hyphens)"),
           agent: tool.schema.string().default("build").describe("Agent type (e.g. 'build', 'plan', 'explore')"),

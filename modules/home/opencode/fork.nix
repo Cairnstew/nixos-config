@@ -1,8 +1,9 @@
 # Vendored fork of @hueyexe/opencode-ensemble from GitHub repository.
 #
-# Source: https://github.com/Cairnstew/opencode-ensemble (commit de091d1)
+# Source: https://github.com/Cairnstew/opencode-ensemble (commit fd5555e)
 # This is a fork of the original @hueyexe/opencode-ensemble that includes
-# the Agent Spaces feature and the wake-path fix.
+# the Agent Spaces feature, the wake-path fix, and the Agent Spaces expansion
+# (richer metadata, clone-on-demand, deterministic handoff protocol).
 #
 # The GitHub repository contains only source files (src/), not pre-built dist.
 # Since the Nix sandbox doesn't have network access to install dependencies,
@@ -24,7 +25,8 @@
 }:
 let
   # Pre-built dist/index.js from the local build of Cairnstew/opencode-ensemble
-  # (commit de091d1 — includes Agent Spaces feature)
+  # (commit fd5555e — Agent Spaces expansion: richer metadata, clone-on-demand,
+  #  deterministic handoff protocol)
   upstream = ./vendor/opencode-ensemble-0.19.0-dist.js;
 
   patchScript = ./patches/opencode-ensemble.py;
