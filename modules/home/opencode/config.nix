@@ -545,5 +545,32 @@ in
       };
     }
 
+    # ── Guard: tools must be files, not path-string stubs ─────────────────────
+    # my.programs.opencode.tools renders a path via home.file.source (real file)
+    # but a string via .text (literal content). A caller that writes
+    # `tools.x = "${someInput}/tools/x.ts"` (interpolated string) installs an
+    # 85-byte file containing only the store path; opencode then dies parsing it
+    # as TypeScript ("Invalid flag" regex errors). Fail eval instead.
+    {
+      assertions = [{
+        assertion = lib.all
+          (v:
+            !(builtins.isString v)
+            || !(lib.hasPrefix "/nix/store/" v)
+            || builtins.stringLength v > 200)
+          (lib.attrValues cfg.tools);
+        message = ''
+          my.programs.opencode.tools contains a store-path string stub: one or
+          more tool values are bare "/nix/store/..." strings with no real content
+          (likely "''${input}/tools/x.ts" interpolation). Pass real path values —
+          e.g. /. + builtins.unsafeDiscardStringContext (input.outPath + "/tools/x.ts")
+          (plain input.outPath + "/x" is still a *string* on Nix 2.34; only the
+          /. + unsafeDiscardStringContext construct reaches the source = src;
+          branch) so home-manager copies the file instead of writing the path
+          string as literal text.
+        '';
+      }];
+    }
+
   ]);
 }
