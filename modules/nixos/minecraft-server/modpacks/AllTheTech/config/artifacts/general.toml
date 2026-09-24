@@ -1,5 +1,0 @@
-# AllTheTech pack tuning: make artifacts ~3.5x rarer in chest loot.
-# artifactRarity = 4.0: each artifact chest pool (default 15%) becomes ~4.2%.
-# Missing keys (entity equipment, archaeology, campsite, slots) fall back to mod defaults.
-[general]
-artifactRarity = 4.0

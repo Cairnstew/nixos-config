@@ -52,12 +52,10 @@ let
     else
       [ ];
 
-  checksumsScript = ./packwiz-checksums.py;
+  checksumsScript = "${inputs.nixos-minecraft-modpacks}/packwiz-checksums.py";
 
   # Shared instance sync (instance.cfg + mmc-pack.json + mods/internal dirs).
-  # Used by the home module's minecraft-instance-<name> service AND the manual
-  # CLI apps below so both install identical layouts.
-  instanceSyncScript = ./packwiz-instance-sync.py;
+  instanceSyncScript = "${inputs.nixos-minecraft-modpacks}/packwiz-instance-sync.py";
 
   # App that regenerates <modpack>/checksums.json. The script reads the mods dir
   # from the flake source (a read-only store copy) but MUST write checksums.json

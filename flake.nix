@@ -161,7 +161,7 @@
 
     # Minecraft modpacks, build helpers, and opencode tooling (extracted from nixos-config)
     nixos-minecraft-modpacks = {
-      url = "path:///home/seanc/Projects/nixos-minecraft-modpacks";
+      url = "github:Cairnstew/nixos-minecraft-modpacks";
     };
 
     # ── CV / portfolio site (content-driven Zola site + thin MCP server) ──────

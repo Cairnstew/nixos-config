@@ -1,5 +1,0 @@
-{
-  "biomes": ["minecraft:savanna", "minecraft:savanna_plateau"],
-  "bed": "minecraft:gravel", "waterline": "minecraft:gravel", "bank": "minecraft:grass_block",
-  "underwater_noise": 0.15
-}

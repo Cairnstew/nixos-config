@@ -1,8 +1,0 @@
-# Nix-side build artifacts — never shipped to players, keep out of the index.
-checksums.json
-# Nix-side patch machinery — same treatment (packwiz refresh indexes these otherwise).
-patches.nix
-patches/
-source-patches/
-# Dev/agent reference data — tier list for loot-table + progression authors (NOT a game file).
-ITEM_TIERS.json

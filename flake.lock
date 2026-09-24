@@ -800,13 +800,16 @@
       },
       "locked": {
         "lastModified": 1790263396,
-        "narHash": "sha256-yBPl8BKxsHQXMHy+m1IOJ2Sso/27G7q3tLc0mjEDr44=",
-        "path": "/home/seanc/Projects/nixos-minecraft-modpacks",
-        "type": "path"
+        "narHash": "sha256-gJBUVbUD48wQg8YaWTk753TrKB+9x92MO/EUED/dYqQ=",
+        "owner": "Cairnstew",
+        "repo": "nixos-minecraft-modpacks",
+        "rev": "c02854a9cf4adea3f733c82de5ed492026d62c3c",
+        "type": "github"
       },
       "original": {
-        "path": "/home/seanc/Projects/nixos-minecraft-modpacks",
-        "type": "path"
+        "owner": "Cairnstew",
+        "repo": "nixos-minecraft-modpacks",
+        "type": "github"
       }
     },
     "nixos-stable": {

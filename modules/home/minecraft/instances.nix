@@ -50,7 +50,7 @@ let
   syncScript = name: inst:
     let
       pkg = instancePkg name inst;
-      syncPy = ../../flake-parts/packwiz-instance-sync.py;
+      syncPy = "${flake.inputs.nixos-minecraft-modpacks}/packwiz-instance-sync.py";
     in
     pkgs.writeShellScript "minecraft-instance-${name}-sync" ''
       set -euo pipefail
