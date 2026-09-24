@@ -122,3 +122,25 @@ team_spawn(name="worker", space="ensemble", prompt="fix the bug in src/foo.ts", 
 - **Clean + pushed**: Teammate shuts down cleanly. If `flakeInput` is set, lead gets a notification with the commit SHA and update command.
 - **Dirty worktree**: Teammate is force-aborted, lead is notified with push instructions.
 - **Unpushed commits**: Teammate is force-aborted, lead is notified with the unpushed count.
+
+### Available Spaces
+
+| Space | Repo | Description |
+|-------|------|-------------|
+| `ensemble` | `Cairnstew/opencode-ensemble` | Ensemble plugin source — fix wake-path bugs, add features |
+| `agenix-manager` | `Cairnstew/agenix-manager` | Agenix-manager — fix bugs, add secret lifecycle features |
+
+### Using Spaces for Upstream Fixes
+
+When a bug or feature request involves an external dependency managed in this repo, use a space to work directly in that dependency's source:
+
+1. **Identify the space**: Check the Available Spaces table above, or add a new space in `modules/nixos/homeManager/config.nix`.
+2. **Spawn into the space**: `team_spawn(name="fix", space="agenix-manager", prompt="fix the bug in ...", worktree=false)`
+3. **Teammate works in the cloned repo**: Makes changes, commits, pushes to the upstream remote.
+4. **Teammate shuts down**: Lead gets notified with the commit SHA.
+5. **Update the nixos-config pin**: After the upstream fix is pushed, update the flake input or vendored copy in this repo.
+
+This pattern is ideal for:
+- Fixing bugs in vendored plugins (opencode-ensemble, agenix-manager)
+- Adding features to upstream tools before they land in nixpkgs
+- Testing changes against an external codebase without polluting the current repo

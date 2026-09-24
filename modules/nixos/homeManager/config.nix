@@ -277,6 +277,11 @@ in
                 agent = "build";
                 description = "Ensemble plugin source repo";
               };
+              agenix-manager = {
+                path = "/home/seanc/Projects/agenix-manager";
+                agent = "build";
+                description = "Agenix-manager: declarative agenix secret lifecycle";
+              };
             };
           };
 
