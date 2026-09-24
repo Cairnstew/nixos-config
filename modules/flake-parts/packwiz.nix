@@ -41,14 +41,14 @@ let
   # launcher's default under $HOME. Keep instances off the system disk.
   defaultDataDir = config.minecraft.dataDir or null;
 
-  # Directory holding packwiz modpacks (one subdir per modpack). Read at eval
-  # time so a new modpack directory automatically gets a checksums app.
-  # Only subdirectories count — the shared patch-jar.nix helper lives here too
-  # and must not be mistaken for a modpack.
-  modpacksDir = "${inputs.self}/modules/nixos/minecraft-server/modpacks";
+  # Directory holding packwiz modpacks — now sourced from the extracted repo.
+  modpacksDir = "${inputs.nixos-minecraft-modpacks}/modpacks";
   modpackNames =
     if builtins.pathExists modpacksDir then
-      builtins.attrNames (lib.filterAttrs (_: t: t == "directory") (builtins.readDir modpacksDir))
+      let
+        allDirs = builtins.attrNames (lib.filterAttrs (_: t: t == "directory") (builtins.readDir modpacksDir));
+      in
+      builtins.filter (name: builtins.pathExists "${modpacksDir}/${name}/pack.toml") allDirs
     else
       [ ];
 
@@ -295,7 +295,11 @@ let
           echo "modpack-update-${name}: run this from the repo root" >&2
           exit 1
         fi
-        PACK="$PWD/modules/nixos/minecraft-server/modpacks/${name}"
+        PACK="$PWD/modpacks/${name}"
+        if [ ! -d "$PACK" ]; then
+          # Fall back to the extracted modpacks repo
+          PACK="${modpacksDir}/${name}"
+        fi
         if [ ! -d "$PACK" ]; then
           echo "modpack-update-${name}: no modpack dir at $PACK" >&2
           exit 1

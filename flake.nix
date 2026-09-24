@@ -159,6 +159,11 @@
       url = "github:getchoo/packwiz2nix";
     };
 
+    # Minecraft modpacks, build helpers, and opencode tooling (extracted from nixos-config)
+    nixos-minecraft-modpacks = {
+      url = "path:///home/seanc/Projects/nixos-minecraft-modpacks";
+    };
+
     # ── CV / portfolio site (content-driven Zola site + thin MCP server) ──────
     # GitHub repo pushed at the Tier 1 gate (2026-08-29); Pages deployed from
     # its deploy.yml (user page: https://Cairnstew.github.io). The CV repo

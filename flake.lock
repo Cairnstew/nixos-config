@@ -793,6 +793,22 @@
         "type": "github"
       }
     },
+    "nixos-minecraft-modpacks": {
+      "inputs": {
+        "nixpkgs": "nixpkgs_4",
+        "packwiz2nix": "packwiz2nix"
+      },
+      "locked": {
+        "lastModified": 1790263396,
+        "narHash": "sha256-yBPl8BKxsHQXMHy+m1IOJ2Sso/27G7q3tLc0mjEDr44=",
+        "path": "/home/seanc/Projects/nixos-minecraft-modpacks",
+        "type": "path"
+      },
+      "original": {
+        "path": "/home/seanc/Projects/nixos-minecraft-modpacks",
+        "type": "path"
+      }
+    },
     "nixos-stable": {
       "locked": {
         "lastModified": 1780902259,
@@ -970,6 +986,22 @@
     },
     "nixpkgs_4": {
       "locked": {
+        "lastModified": 1790185690,
+        "narHash": "sha256-xJ+X4hBtOcAFGBOe5nAMyMUeF9foJBmIOu3NjBqBycU=",
+        "owner": "NixOS",
+        "repo": "nixpkgs",
+        "rev": "4975466d324710c576dc11ad614684e6bd8cad8e",
+        "type": "github"
+      },
+      "original": {
+        "owner": "NixOS",
+        "ref": "nixos-unstable",
+        "repo": "nixpkgs",
+        "type": "github"
+      }
+    },
+    "nixpkgs_5": {
+      "locked": {
         "lastModified": 1789785513,
         "narHash": "sha256-B44WL6h0XoLjJ41bUPJk0X5SDinLCII//6EcBLXKiJ0=",
         "owner": "nixos",
@@ -984,7 +1016,7 @@
         "type": "github"
       }
     },
-    "nixpkgs_5": {
+    "nixpkgs_6": {
       "locked": {
         "lastModified": 1782959384,
         "narHash": "sha256-xnJJk+ct+D2+wdRxj1wk36w5zV9RVESwRqcklPdt3fM=",
@@ -1000,7 +1032,7 @@
         "type": "github"
       }
     },
-    "nixpkgs_6": {
+    "nixpkgs_7": {
       "locked": {
         "lastModified": 1779560665,
         "narHash": "sha256-tpyBcxPpcQb8ukyNF7DoCwfSY3VPsxHoYwj00Cayv5o=",
@@ -1016,7 +1048,7 @@
         "type": "github"
       }
     },
-    "nixpkgs_7": {
+    "nixpkgs_8": {
       "locked": {
         "lastModified": 1771043024,
         "narHash": "sha256-O1XDr7EWbRp+kHrNNgLWgIrB0/US5wvw9K6RERWAj6I=",
@@ -1121,6 +1153,21 @@
       }
     },
     "packwiz2nix": {
+      "locked": {
+        "lastModified": 1683887515,
+        "narHash": "sha256-eYxlzal5DNUvpv3F9W42wREdRi6h1hceOcgoiN6gvRg=",
+        "owner": "getchoo",
+        "repo": "packwiz2nix",
+        "rev": "1c9c0ef2e40fbd1a921b446d8fe5884e645e4308",
+        "type": "github"
+      },
+      "original": {
+        "owner": "getchoo",
+        "repo": "packwiz2nix",
+        "type": "github"
+      }
+    },
+    "packwiz2nix_2": {
       "locked": {
         "lastModified": 1683887515,
         "narHash": "sha256-eYxlzal5DNUvpv3F9W42wREdRi6h1hceOcgoiN6gvRg=",
@@ -1299,15 +1346,16 @@
         "moku": "moku",
         "nix-minecraft": "nix-minecraft",
         "nixos-anywhere": "nixos-anywhere",
+        "nixos-minecraft-modpacks": "nixos-minecraft-modpacks",
         "nixos-unified": "nixos-unified",
         "nixos-vscode-server": "nixos-vscode-server",
         "nixos-wsl": "nixos-wsl",
-        "nixpkgs": "nixpkgs_4",
+        "nixpkgs": "nixpkgs_5",
         "nixpkgs-stable": "nixpkgs-stable",
         "nixtest": "nixtest",
         "nuenv": "nuenv",
         "packwiz": "packwiz",
-        "packwiz2nix": "packwiz2nix",
+        "packwiz2nix": "packwiz2nix_2",
         "sillytavern": "sillytavern",
         "stable-diffusion-webui-nix": "stable-diffusion-webui-nix",
         "steamlink-archlinux": "steamlink-archlinux",
@@ -1426,7 +1474,7 @@
     },
     "steamlink-archlinux": {
       "inputs": {
-        "nixpkgs": "nixpkgs_5"
+        "nixpkgs": "nixpkgs_6"
       },
       "locked": {
         "lastModified": 1783193268,
@@ -1808,7 +1856,7 @@
     },
     "windows-iso-src": {
       "inputs": {
-        "nixpkgs": "nixpkgs_6"
+        "nixpkgs": "nixpkgs_7"
       },
       "locked": {
         "lastModified": 1779823506,
@@ -1827,7 +1875,7 @@
     "zig-overlay": {
       "inputs": {
         "flake-compat": "flake-compat_4",
-        "nixpkgs": "nixpkgs_7",
+        "nixpkgs": "nixpkgs_8",
         "systems": "systems_10"
       },
       "locked": {

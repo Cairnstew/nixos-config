@@ -317,6 +317,7 @@ in
         skills.music-playlists = builtins.readFile ./skills/music-playlists.md;
         skills.mcp-server-management = builtins.readFile ./skills/mcp-server-management.md;
         skills.ci-monitoring = builtins.readFile ./skills/ci-monitoring.md;
+        skills.module-extraction = builtins.readFile ./skills/module-extraction.md;
         commands = {
           copy-last = ./commands/copylast.md;
           refactor-python = ./commands/refactor-python.md;

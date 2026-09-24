@@ -63,6 +63,7 @@ They are stored in `$XDG_CONFIG_HOME/opencode/skills/<name>/SKILL.md`.
 | `deploy-workflow` | Deploying NixOS via nixos-anywhere, Ventoy USB, and related tools |
 | `docker-management` | Docker/Podman containers, Ollama, and OCI tooling |
 | `module-development` | Creating modules following repo conventions |
+| `module-extraction` | Auditing for extraction candidates, extracting modules to standalone repos, ensemble space setup, update workflow |
 | `model-selection` | Looking up LLM models by pricing/capabilities (OpenCode Go & beyond) |
 | `nixos-configuration` | Working with this NixOS configuration repository |
 | `nixos-ensemble-decomposition` | Splitting NixOS work into parallel team slices |

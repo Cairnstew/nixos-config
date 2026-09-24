@@ -3,13 +3,16 @@
 # folder is disabled by default — opt in from a host config or a profile, e.g.:
 #   my.services.minecraftServer.servers.allthetech.enable = true;
 #   my.profiles.gaming.minecraftServers = [ "allthetech" ];
-{ lib, pkgs, ... }:
+{ lib, pkgs, flake, ... }:
+let
+  modpacksDir = flake.inputs.nixos-minecraft-modpacks.modpacksDir;
+in
 {
   my.services.minecraftServer.servers.allthetech = {
     enable = lib.mkDefault false;
 
     package = pkgs.neoforgeServers.neoforge-1_21_1-21_1_249; # matches AllTheTech pack.toml
-    packwiz = ../modpacks/AllTheTech;
+    packwiz = "${modpacksDir}/AllTheTech";
     # Heap sized for the server host (15Gi RAM total, shared with other
     # services — see hardware caps below). Modded NeoForge wants a big heap but
     # the OS + other units need headroom; 6G heap + 3G start is the balance.
