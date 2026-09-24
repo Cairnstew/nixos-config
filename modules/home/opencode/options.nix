@@ -780,14 +780,29 @@ in
         defaultModel = "opencode-go/deepseek-v4-flash";
         dashboardPort = 4747;
         mergeOnCleanup = true;
+        spaces = {
+          my-repo = {
+            path = "/home/user/projects/my-repo";
+            agent = "build";
+            description = "My project source";
+          };
+        };
       };
       description = ''
         Configuration for the opencode-ensemble plugin.
         Written to $XDG_CONFIG_HOME/opencode/ensemble.json.
 
         Controls model selection, rate limiting, stall detection, timeout,
-        dashboard port, and auto-merge behavior for parallel agent teams.
+        dashboard port, auto-merge behavior, and Agent Spaces for parallel
+        agent teams.
         See https://github.com/Cairnstew/opencode-ensemble for full reference.
+
+        Agent Spaces (spaces key):
+          Spawn teammates into separate, independent repositories instead of
+          git worktrees. Each space is a full clone with its own git history.
+          Keys are space names used with team_spawn(space="name").
+          Spaces appear in tool descriptions so agents see them as context.
+          See the opencode-ensemble skill for full documentation.
       '';
     };
 

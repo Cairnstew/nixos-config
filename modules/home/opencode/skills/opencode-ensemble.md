@@ -65,3 +65,60 @@ Start with two or three teammates. Add more only when the work has more independ
 ## NixOS-Specific Guidance
 
 This repository is a multi-system Nix flake. Refer to the `nixos-ensemble-decomposition` skill for how to split NixOS configuration work into independent, parallel slices.
+
+## Agent Spaces
+
+Agent Spaces let you spawn teammates into **separate, independent repositories** instead of git worktrees. Each space is a full clone of a repo, giving the teammate complete isolation — its own git history, its own working directory, no shared state with the lead.
+
+### When to Use Spaces
+
+- The teammate needs to work in a **different repo** than the lead (e.g. a plugin source repo, a separate project).
+- The teammate's work should **not** be on a branch of the current repo.
+- You want to test changes against an **external codebase** before integrating.
+- The teammate needs its own git remote for push/pull (independent from the lead's).
+
+### When NOT to Use Spaces
+
+- The teammate is modifying files in the **same repo** as the lead — use a worktree instead.
+- The work is a small, focused change that belongs on a branch of the current project.
+- You need to review and merge the teammate's work back into the current repo.
+
+### Configuration
+
+Spaces are defined in `ensemble.json` under the `spaces` key:
+
+```json
+{
+  "spaces": {
+    "ensemble": {
+      "path": "/home/seanc/Projects/opencode-ensemble",
+      "agent": "build",
+      "description": "Ensemble plugin source repo"
+    }
+  }
+}
+```
+
+Each space entry supports:
+- **`path`** (or `url`): Local path or git URL to clone from. Exactly one required.
+- **`agent`**: Default agent type for teammates spawned into this space (e.g. `build`, `explore`).
+- **`description`**: Human-readable description shown in tool hints.
+- **`flakeInput`**: Optional flake input name — on clean+pushed shutdown, the lead gets a notification with the SHA and `nix flake lock --update-input` command.
+- **`autoUpdateFlakeInput`**: If `true`, automatically runs `nix flake lock --update-input` after a clean shutdown.
+
+### Usage
+
+```
+team_spawn(name="worker", space="ensemble", prompt="fix the bug in src/foo.ts", worktree=false)
+```
+
+- The teammate works in the cloned space directory, not a worktree.
+- `worktree=false` is required (spaces and worktrees are mutually exclusive).
+- On first spawn, the plugin clones the repo into `~/.config/opencode/ensemble-spaces/<space-name>/`.
+- On subsequent spawns, it fetches and fast-forwards (refuses if dirty or diverged).
+
+### Shutdown Behavior
+
+- **Clean + pushed**: Teammate shuts down cleanly. If `flakeInput` is set, lead gets a notification with the commit SHA and update command.
+- **Dirty worktree**: Teammate is force-aborted, lead is notified with push instructions.
+- **Unpushed commits**: Teammate is force-aborted, lead is notified with the unpushed count.

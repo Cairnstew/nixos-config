@@ -442,6 +442,15 @@ in
     }
 
     # ── Ensemble plugin config → ~/.config/opencode/ensemble.json ─────────
+    # The ensemble plugin (opencode-ensemble) reads this file once at process
+    # start. It controls model selection, rate limiting, stall detection,
+    # timeout, dashboard port, auto-merge, and Agent Spaces.
+    #
+    # Agent Spaces (my.programs.opencode.ensemble.spaces):
+    #   Spawn teammates into separate, independent repositories instead of
+    #   git worktrees. Each space is a full clone with its own git history.
+    #   Spaces are listed in tool descriptions so agents see them as context.
+    #   See the opencode-ensemble skill for full documentation.
     (mkIf (cfg.ensemble != null) {
       home.file.".config/opencode/ensemble.json" = {
         text = builtins.toJSON cfg.ensemble;

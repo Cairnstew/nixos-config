@@ -46,6 +46,7 @@ modules/home/opencode/
 | `tools` | Custom tools for opencode |
 | `agents` | Custom agent configurations |
 | `mcp` | MCP server configurations |
+| `ensemble` | OpenCode Ensemble plugin config (models, spaces, dashboard) |
 
 ---
 
@@ -106,6 +107,43 @@ Skills should follow the [OpenCode skills documentation](https://opencode.ai/doc
 - **agenix**: API keys read from age-encrypted secrets
 - **home-manager**: User environment and config files
 - **MCP**: Model Context Protocol servers for extended capabilities
+- **OpenCode Ensemble**: Parallel agent coordination via `opencode-ensemble` plugin (see `my.programs.opencode.ensemble`)
+
+---
+
+## OpenCode Ensemble & Agent Spaces
+
+The [opencode-ensemble](https://github.com/Cairnstew/opencode-ensemble) plugin adds parallel agent coordination to opencode. It is vendored in `modules/home/opencode/vendor/` and patched via `patches/opencode-ensemble.py` (see `FORK.md`).
+
+### Core Features
+
+- **Team management**: `team_create`, `team_spawn`, `team_shutdown`, `team_merge`, `team_cleanup`
+- **Task board**: `team_tasks_add`, `team_tasks_list`, `team_tasks_complete`
+- **Inter-agent messaging**: `team_message`, `team_broadcast`, `team_results`
+- **Dashboard**: Real-time team status at `http://localhost:4747`
+
+### Agent Spaces
+
+Agent Spaces let you spawn teammates into **separate, independent repositories** instead of git worktrees. Each space is a full clone with its own git history and working directory.
+
+Spaces are defined in `ensemble.json` and appear in tool descriptions automatically — agents see available spaces as context without needing to read the config file.
+
+```nix
+# In modules/nixos/homeManager/config.nix
+ensemble = {
+  spaces = {
+    ensemble = {
+      path = "/home/seanc/Projects/opencode-ensemble";
+      agent = "build";
+      description = "Ensemble plugin source repo";
+    };
+  };
+};
+```
+
+Usage: `team_spawn(name="worker", space="ensemble", prompt="...", worktree=false)`
+
+See the `opencode-ensemble` skill for full documentation on spaces, shutdown behavior, and flake-input handoff.
 
 ---
 
