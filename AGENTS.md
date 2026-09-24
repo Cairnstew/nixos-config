@@ -501,14 +501,16 @@ MCP no longer exposes them).
   `selfImprove.efficiencyLensMinToolCalls`/`...MinCost` (nullable, default `null`)
   can gate the lens later from usage data; unset, it runs every pass.
 
-**Scoped exception — Minecraft pack/packwiz tooling (`modules/nixos/minecraft-server/opencode/`).**
-This directory keeps its own direct RUN LOG self-improvement convention: editing the repo
-tool/skill files there and appending dated Lesson/Fix RUN LOG entries (programmatically via
-each tool's `note=` argument, or by hand) is permitted and expected after every packwiz/pack
-session — do NOT route those lessons through the in-band checkpoint. This scoped exception
-exists because Minecraft pack development self-improves its own tooling frequently and inline
-(see the mc-modpack skill's "Self-improvement — mandatory end-of-session checkpoint").
-Everything outside that directory relies on the in-band checkpoint above.
+**Rule — no external-repo-specific opencode config in nixos-config.** The main nixos-config
+must NOT inherit or pipe opencode config (tools, agents, skills, commands, MCP servers,
+permissions) from external repos. nixos-config is not used to develop minecraft modpacks or
+server things, so that config has no business in global `~/.config/opencode`. Each external
+repo owns its opencode config in its own `.opencode/` (and opencode.json if needed), and a
+space/session uses the config of the directory it is spawned in. In-repo modules (e.g.
+`modules/home/goals`, `modules/home/cv`, `modules/nixos/ai/comfyui` which writes a
+directory-local `<dataDir>/.opencode/`) are the user's own; only external-repo config is
+excluded. This is a hard rule for new wiring — do not reintroduce `${input}/opencode/...`
+style tool/skill/command injection from flake inputs.
 
 ---
 

@@ -393,78 +393,8 @@ in
       # it to reach packDir — scp to packDir would fail with "Permission denied".
       users.groups.minecraft.members = [ me.username ];
     })
-
-    # ── OpenCode utilities for modpack work ──────────────────────────────────
-    # Available on ANY host (client or server) that has opencode enabled, so
-    # modpack editing can happen where the modpack is used (e.g. a desktop with
-    # Prism Launcher) without running a minecraft server. Tools and skills are
-    # sourced from the nixos-minecraft-modpacks input (extracted repo).
-    # Gate with my.services.minecraftServer.opencode.enable (default true).
-    (mkIf cfg.opencode.enable {
-      my.homeManager.extraConfig.my.programs.opencode = {
-        tools = {
-          packwiz = "${nixos-minecraft-modpacks}/opencode/tools/packwiz.ts";
-          packwiz-checksums = "${nixos-minecraft-modpacks}/opencode/tools/packwiz-checksums.ts";
-          mc-pack-status = "${nixos-minecraft-modpacks}/opencode/tools/mc-pack-status.ts";
-          # Config / patch tooling
-          packwiz-config-add = "${nixos-minecraft-modpacks}/opencode/tools/packwiz-config-add.ts";
-          packwiz-config-preserve = "${nixos-minecraft-modpacks}/opencode/tools/packwiz-config-preserve.ts";
-          packwiz-config-list = "${nixos-minecraft-modpacks}/opencode/tools/packwiz-config-list.ts";
-          packwiz-config-diff = "${nixos-minecraft-modpacks}/opencode/tools/packwiz-config-diff.ts";
-          packwiz-config-show = "${nixos-minecraft-modpacks}/opencode/tools/packwiz-config-show.ts";
-          packwiz-jar-meta = "${nixos-minecraft-modpacks}/opencode/tools/packwiz-jar-meta.ts";
-          packwiz-structures = "${nixos-minecraft-modpacks}/opencode/tools/packwiz-structures.ts";
-          packwiz-controls = "${nixos-minecraft-modpacks}/opencode/tools/packwiz-controls.ts";
-          packwiz-controls-set = "${nixos-minecraft-modpacks}/opencode/tools/packwiz-controls-set.ts";
-          packwiz-datapack-add = "${nixos-minecraft-modpacks}/opencode/tools/packwiz-datapack-add.ts";
-          packwiz-datapack-remove = "${nixos-minecraft-modpacks}/opencode/tools/packwiz-datapack-remove.ts";
-          packwiz-mod-pin = "${nixos-minecraft-modpacks}/opencode/tools/packwiz-mod-pin.ts";
-          packwiz-inspect-mod = "${nixos-minecraft-modpacks}/opencode/tools/packwiz-inspect-mod.ts";
-          packwiz-update-safe = "${nixos-minecraft-modpacks}/opencode/tools/packwiz-update-safe.ts";
-          # Extraction / analysis tools
-          packwiz-ore = "${nixos-minecraft-modpacks}/opencode/tools/packwiz-ore.ts";
-          packwiz-mobs = "${nixos-minecraft-modpacks}/opencode/tools/packwiz-mobs.ts";
-          packwiz-mobspawn = "${nixos-minecraft-modpacks}/opencode/tools/packwiz-mobspawn.ts";
-          packwiz-items = "${nixos-minecraft-modpacks}/opencode/tools/packwiz-items.ts";
-          packwiz-attributes = "${nixos-minecraft-modpacks}/opencode/tools/packwiz-attributes.ts";
-          packwiz-loot = "${nixos-minecraft-modpacks}/opencode/tools/packwiz-loot.ts";
-          packwiz-recipes = "${nixos-minecraft-modpacks}/opencode/tools/packwiz-recipes.ts";
-          packwiz-item-acquisition = "${nixos-minecraft-modpacks}/opencode/tools/packwiz-item-acquisition.ts";
-          packwiz-item-tier = "${nixos-minecraft-modpacks}/opencode/tools/packwiz-item-tier.ts";
-          packwiz-mob-combat = "${nixos-minecraft-modpacks}/opencode/tools/packwiz-mob-combat.ts";
-          packwiz-mob-tier = "${nixos-minecraft-modpacks}/opencode/tools/packwiz-mob-tier.ts";
-          packwiz-analyze = "${nixos-minecraft-modpacks}/opencode/tools/packwiz-analyze.ts";
-          mc-prism-log = "${nixos-minecraft-modpacks}/opencode/tools/mc-prism-log.ts";
-          mc-run = "${nixos-minecraft-modpacks}/opencode/tools/mc-run.ts";
-          mc-install = "${nixos-minecraft-modpacks}/opencode/tools/mc-install.ts";
-          # Dedicated-server management
-          mc-server = "${nixos-minecraft-modpacks}/opencode/tools/mc-server.ts";
-        };
-        skills.mc-modpack = builtins.readFile "${nixos-minecraft-modpacks}/opencode/skill.md";
-        skills.mc-gpu-worldgen = builtins.readFile "${nixos-minecraft-modpacks}/opencode/skill-mc-gpu-worldgen.md";
-        skills.mc-mod-config = builtins.readFile "${nixos-minecraft-modpacks}/opencode/skill-mc-mod-config.md";
-        skills.mc-mod-config-set = builtins.readFile "${nixos-minecraft-modpacks}/opencode/skill-mc-mod-config-set.md";
-        skills.mc-mod-patch = builtins.readFile "${nixos-minecraft-modpacks}/opencode/skill-mc-mod-patch.md";
-        skills.mc-mod-source-patch = builtins.readFile "${nixos-minecraft-modpacks}/opencode/skill-mc-mod-source-patch.md";
-        skills.mc-mod-structures = builtins.readFile "${nixos-minecraft-modpacks}/opencode/skill-mc-mod-structures.md";
-        skills.mc-mod-controls = builtins.readFile "${nixos-minecraft-modpacks}/opencode/skill-mc-mod-controls.md";
-        skills.mc-mod-controls-set = builtins.readFile "${nixos-minecraft-modpacks}/opencode/skill-mc-mod-controls-set.md";
-        skills.mc-server-monitor = builtins.readFile "${nixos-minecraft-modpacks}/opencode/skill-mc-server-monitor.md";
-        # Extraction / analysis skill docs
-        skills.mc-mod-ore = builtins.readFile "${nixos-minecraft-modpacks}/opencode/skill-mc-mod-ore.md";
-        skills.mc-mod-mobs = builtins.readFile "${nixos-minecraft-modpacks}/opencode/skill-mc-mod-mobs.md";
-        skills.mc-mod-mobspawn = builtins.readFile "${nixos-minecraft-modpacks}/opencode/skill-mc-mod-mobspawn.md";
-        skills.mc-mod-items = builtins.readFile "${nixos-minecraft-modpacks}/opencode/skill-mc-mod-items.md";
-        skills.mc-mod-attributes = builtins.readFile "${nixos-minecraft-modpacks}/opencode/skill-mc-mod-attributes.md";
-        skills.mc-mod-loot = builtins.readFile "${nixos-minecraft-modpacks}/opencode/skill-mc-mod-loot.md";
-        skills.mc-mod-recipes = builtins.readFile "${nixos-minecraft-modpacks}/opencode/skill-mc-mod-recipes.md";
-        skills.mc-mod-analyze = builtins.readFile "${nixos-minecraft-modpacks}/opencode/skill-mc-mod-analyze.md";
-        skills.mc-mod-item-acquisition = builtins.readFile "${nixos-minecraft-modpacks}/opencode/skill-mc-item-acquisition.md";
-        skills.mc-mod-item-tier = builtins.readFile "${nixos-minecraft-modpacks}/opencode/skill-mc-item-tier.md";
-        skills.mc-mod-combat = builtins.readFile "${nixos-minecraft-modpacks}/opencode/skill-mc-mod-combat.md";
-        skills.mc-mod-tier = builtins.readFile "${nixos-minecraft-modpacks}/opencode/skill-mc-mod-tier.md";
-        commands.mc-modpack = "${nixos-minecraft-modpacks}/opencode/commands/mc-modpack.md";
-      };
-    })
+    # OpenCode utilities for modpack work live in the nixos-minecraft-modpacks
+    # repo's own `.opencode/` — external repos own their opencode config; the
+    # main nixos-config does not pipe tooling/skills/commands from them.
   ];
 }

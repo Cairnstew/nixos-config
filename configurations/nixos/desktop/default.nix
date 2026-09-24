@@ -1013,11 +1013,6 @@
   # over the flaky Scotland→Texas tailnet path (UDP, survives relay flaps).
   environment.systemPackages = with pkgs; [ mosh ntfs3g ];
 
-  # packwiz/modpack opencode tools + mc-modpack skill for editing modpacks here
-  # on the desktop. This enables ONLY the opencode tooling (no minecraft
-  # server is run on this host — see minecraft-server/config.nix opencode block).
-  my.services.minecraftServer.opencode.enable = true;
-
   # Music playlists live on the server host (configurations/nixos/server) —
   # not here; desktop previously enabled them and music-install-funky failed.
 

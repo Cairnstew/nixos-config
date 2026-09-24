@@ -308,30 +308,6 @@ Minecraft does **not** speak A2S. Options:
 - RCON (`enable-rcon = true` + `rcon.password`) for admin commands only — never
   expose it to the internet.
 
-## OpenCode integration
-
-Enabling this module also wires modpack utilities into the user's
-[opencode](https://opencode.ai) config (`my.programs.opencode`), via
-`my.homeManager.extraConfig` — so agents can edit/verify modpacks directly:
-
-- **CLI tools**: `packwiz` (run the CLI inside a pack), `packwiz-checksums`
-  (regenerate `checksums.json`), `mc-pack-status` (verify the pack, including
-  internal files and datapack pack_formats).
-- **Config tools** (default player configs): `packwiz-config-add`,
-  `packwiz-config-preserve`, `packwiz-config-list`, `packwiz-config-diff`.
-- **Patch tools** (Paxi datapacks): `packwiz-datapack-add`,
-  `packwiz-datapack-remove`.
-- **Version / QA tools**: `packwiz-mod-pin`, `packwiz-inspect-mod`,
-  `packwiz-update-safe`.
-- **Skill** `mc-modpack`: the packwiz/checksum/CurseForge-conversion workflow
-  plus the config/patch tooling.
-- **Command** `/mc-modpack`: orchestrated add/convert/config/patch/verify flow.
-
-Toggle with `my.services.minecraftServer.opencode.enable` (default `true`;
-only applied on hosts that also enable opencode). Files live in
-`modules/nixos/minecraft-server/opencode/`; the config/patch logic is in
-`opencode/tools/mc-pack.py`.
-
 ## Notes
 
 - The nix-minecraft module hardens the systemd unit itself (sandboxing,
