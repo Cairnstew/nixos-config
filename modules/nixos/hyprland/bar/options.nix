@@ -58,6 +58,29 @@ let
         default = null;
         description = "Command to run on scroll down.";
       };
+      menu = lib.mkOption {
+        type = lib.types.nullOr lib.types.str;
+        default = null;
+        example = "on-click-right";
+        description = ''
+          Event that pops up an interactable GtkMenu pane for this module
+          (waybar's only multi-button UI — label HTML cannot dispatch clicks to
+          separate elements). Value is the triggering event, e.g. "on-click" or
+          "on-click-right". Requires menu-file + menu-actions.
+        '';
+      };
+      menu-file = lib.mkOption {
+        type = lib.types.nullOr lib.types.str;
+        default = null;
+        example = "/etc/xdg/waybar/spotify-menu.xml";
+        description = "Path to a GtkBuilder XML file containing a GtkMenu with id 'menu' (see menuFiles — keep it under /etc/xdg/waybar, not ~/.config).";
+      };
+      menu-actions = lib.mkOption {
+        type = lib.types.nullOr (lib.types.attrsOf lib.types.str);
+        default = null;
+        example = { shutdown = "systemctl poweroff"; };
+        description = "Map of GtkMenuItem ids (in menu-file) to commands — each item is a button.";
+      };
       tooltip = lib.mkOption {
         type = lib.types.bool;
         default = true;
@@ -73,6 +96,17 @@ let
         type = lib.types.enum [ "left" "center" "right" ];
         default = "right";
         description = "Which side of the bar the module appears on.";
+      };
+      order = lib.mkOption {
+        type = lib.types.int;
+        default = 0;
+        example = 1;
+        description = ''
+          Display order within the module's side. customModules render sorted
+          alphabetically by name; set order to control the sequence explicitly
+          (lower first, ties broken alphabetically). Use adjacent values for
+          related modules that must keep a fixed left-to-right order.
+        '';
       };
     };
   };
@@ -101,6 +135,22 @@ in
       type = lib.types.int;
       default = 30;
       description = "Waybar height in pixels.";
+    };
+    menuFiles = lib.mkOption {
+      type = lib.types.attrsOf lib.types.lines;
+      default = { };
+      example."power-menu" = ''
+        <?xml version="1.0" encoding="UTF-8"?>
+        <interface>…GtkMenu id="menu"…</interface>
+      '';
+      description = ''
+        GtkBuilder menu files for custom-module popup menus, written to
+        /etc/xdg/waybar/<name>. Keep menu files here (system path), NOT in
+        ~/.config/waybar via home-manager: NixOS restarts user units with
+        changed restartTriggers BEFORE the home-manager user activation runs,
+        and waybar builds its popup menu once at startup — a home-manager
+        file doesn't exist yet and the menu is silently disabled.
+      '';
     };
     customModules = lib.mkOption {
       type = lib.types.attrsOf customModuleSubmodule;

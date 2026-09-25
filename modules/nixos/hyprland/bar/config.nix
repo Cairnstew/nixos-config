@@ -47,9 +47,20 @@ let
 
   customModNames = builtins.attrNames barCfg.customModules;
 
-  customLeft = builtins.filter (n: barCfg.customModules.${n}.position == "left") customModNames;
-  customCenter = builtins.filter (n: barCfg.customModules.${n}.position == "center") customModNames;
-  customRight = builtins.filter (n: barCfg.customModules.${n}.position == "right") customModNames;
+  # customModules is attrs (unordered): within a side, render by `order` first,
+  # then alphabetically — so related modules (e.g. media buttons) can pin an
+  # explicit left-to-right sequence instead of relying on name lexicography.
+  orderOf = n: barCfg.customModules.${n}.order;
+  sortByOrder = list:
+    builtins.sort
+      (a: b:
+        let oa = orderOf a; ob = orderOf b;
+        in if oa != ob then oa < ob else a < b)
+      list;
+
+  customLeft = sortByOrder (builtins.filter (n: barCfg.customModules.${n}.position == "left") customModNames);
+  customCenter = sortByOrder (builtins.filter (n: barCfg.customModules.${n}.position == "center") customModNames);
+  customRight = sortByOrder (builtins.filter (n: barCfg.customModules.${n}.position == "right") customModNames);
 
   modulesLeft = [ "hyprland/workspaces" "hyprland/submap" ]
     ++ map (n: "custom/${n}") customLeft ++ barCfg.extraModulesLeft;
@@ -78,9 +89,17 @@ let
     };
   };
 
+  # Waybar expects kebab-case keys. The customModule submodule exposes
+  # `returnType` (camelCase, matching the other option names); translate it
+  # to waybar's `return-type` when serialising. All other submodule keys
+  # (exec, interval, format, on-click, tooltip, ...) already match waybar.
   customModuleConfig = name:
+    let
+      raw = barCfg.customModules.${name};
+    in
     filterAttrs (n: v: v != null)
-      (builtins.removeAttrs barCfg.customModules.${name} [ "position" ]);
+      (builtins.removeAttrs raw [ "position" "returnType" ]
+        // { return-type = raw.returnType; });
 
   customModulesConfig = builtins.listToAttrs (map
     (n: {
@@ -270,6 +289,19 @@ let
     #pulseaudio.muted { color: #6c7086; }
     #network.disconnected { color: #f38ba8; }
 
+    #custom-spotify-now-playing { padding: 0 10px; color: #1db954; }
+    #custom-spotify-now-playing.playing { color: #1db954; }
+    #custom-spotify-now-playing.paused { color: #6c7086; }
+    #custom-spotify-now-playing.idle { color: #6c7086; }
+    /* Inline media-control buttons (left of the song info) — one visual cluster. */
+    #custom-spotify-back, #custom-spotify-play, #custom-spotify-forward {
+      padding: 0 6px;
+      color: #cdd6f4;
+    }
+    #custom-spotify-back:hover, #custom-spotify-play:hover, #custom-spotify-forward:hover {
+      color: #1db954;
+    }
+
     ${customModuleCSS}
 
     tooltip {
@@ -279,6 +311,25 @@ let
     }
     tooltip label {
       padding: 6px 10px;
+    }
+
+    /* Waybar popup menu (widget control panes, e.g. custom module `menu`).
+       Themed to match the bar; nerd font so glyph item labels render. */
+    menu {
+      background: rgba(26,27,38,0.97);
+      border: 1px solid rgba(137,180,250,0.5);
+      border-radius: 6px;
+      padding: 4px;
+      font-family: "JetBrainsMono Nerd Font", monospace;
+    }
+    menuitem {
+      border-radius: 4px;
+      color: #cdd6f4;
+      padding: 3px 12px;
+    }
+    menuitem:hover {
+      background: rgba(137,180,250,0.18);
+      color: #89b4fa;
     }
     ${barCfg.style}
   '';
@@ -291,7 +342,7 @@ in
       environment.etc = {
         "xdg/waybar/config".text = waybarConfigJSON;
         "xdg/waybar/style.css".text = defaultWaybarStyle;
-      };
+      } // lib.mapAttrs' (name: text: lib.nameValuePair "xdg/waybar/${name}" { inherit text; }) barCfg.menuFiles;
     })
     (mkIf (cfg.enable && barCfg.enable && hasAmdGpu) {
       environment.systemPackages = [ amdgpuStats ];
@@ -304,6 +355,16 @@ in
         partOf = [ "hyprland-session.target" ];
         after = [ "hyprland-session.target" ];
         wantedBy = [ "hyprland-session.target" ];
+        # Restart on `nixos-rebuild switch` when the generated config/style
+        # actually changed. NixOS's switch-to-configuration runs a per-user pass
+        # and restarts NixOS-declared user units whose restartTriggers differ
+        # (units shadowed by ~/.config/systemd/user are skipped, so this stays
+        # under /etc/systemd/user). Hash of the generated files keeps the unit
+        # small and unchanged rebuilds don't restart (same hash).
+        restartTriggers = [
+          (builtins.hashString "sha256"
+            (waybarConfigJSON + defaultWaybarStyle + builtins.toJSON barCfg.menuFiles))
+        ];
         serviceConfig = {
           Type = "simple";
           ExecStart = "${pkgs.waybar}/bin/waybar";

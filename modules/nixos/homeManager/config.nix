@@ -282,6 +282,11 @@ in
                 agent = "build";
                 description = "Agenix-manager: declarative agenix secret lifecycle";
               };
+              spotify-playlist-manager = {
+                path = "/home/seanc/Projects/spotify-playlist-manager";
+                agent = "build";
+                description = "Spotify playlist manager tool";
+              };
             };
           };
 

@@ -39,5 +39,35 @@ in
         '';
       };
     };
+
+    player = {
+      enable = lib.mkEnableOption "Spotify now-playing widget for Waybar";
+
+      interval = lib.mkOption {
+        type = types.ints.positive;
+        default = 5;
+        example = 3;
+        description = "Polling interval in seconds for the now-playing widget.";
+      };
+
+      package = lib.mkOption {
+        type = types.package;
+        default = pkgs.python3.withPackages (ps: [ ps.spotipy ]);
+        defaultText = lib.literalExpression "pkgs.python3.withPackages (ps: [ ps.spotipy ])";
+        description = "Python environment with spotipy for the now-playing script.";
+      };
+
+      credentialsFile = lib.mkOption {
+        type = types.nullOr types.path;
+        default = null;
+        example = "/run/secrets/spotify-cred";
+        description = ''
+          Path to a file sourced as environment before running the widget.
+          Must export SPOTIFY_CLIENT_ID and SPOTIFY_REDIRECT_URI.
+          When null, expects the variables to already be in the environment
+          (e.g. via direnv or home.sessionVariables).
+        '';
+      };
+    };
   };
 }

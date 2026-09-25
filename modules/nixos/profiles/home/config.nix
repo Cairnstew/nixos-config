@@ -25,7 +25,14 @@ in
     # Desktop profile
     (lib.mkIf cfg.desktop.enable {
       discord.enable = lib.mkDefault true;
-      spotify.enable = lib.mkDefault true;
+      spotify = {
+        enable = lib.mkDefault true;
+        player = {
+          enable = lib.mkDefault true;
+          credentialsFile = lib.mkIf (config.age.secrets ? "spotify-cred")
+            (lib.mkDefault config.age.secrets."spotify-cred".path);
+        };
+      };
       firefox = {
         enable = lib.mkDefault true;
         extensions = lib.mkDefault [ "ublock-origin" "1password" ];

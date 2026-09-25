@@ -223,6 +223,47 @@
     };
 
     displayManager.greeter = "sddm";
+
+    bar.customModules.spotify-now-playing = {
+      # Absolute path: waybar runs under its own systemd user unit whose PATH
+      # does NOT include /etc/profiles/per-user/<user>/bin (bare "spotify-now-playing"
+      # fails with "command not found" on every tick — see waybar unit logs).
+      exec = "/etc/profiles/per-user/${flake.config.me.username}/bin/spotify-now-playing";
+      interval = 5;
+      returnType = "json";
+      tooltip = true;
+      position = "left";
+      order = 0;
+      # Left-click opens Spotify (or runs sign-in when not authenticated).
+      on-click = "/etc/profiles/per-user/${flake.config.me.username}/bin/spotify-widget-click";
+    };
+
+    # Inline horizontal media-control buttons, immediately right of the song
+    # info (order pins the left-to-right sequence: ◀ ⏯ ▶). Static-glyph custom
+    # modules — no exec, no polling — each with its own on-click. (waybar's
+    # GtkMenu popup is vertical-only, so a horizontal row means separate
+    # modules.) Absolute paths: waybar's unit PATH has no profile bin.
+    bar.customModules.spotify-back = {
+      format = "⏮";
+      tooltip = false;
+      position = "left";
+      order = 1;
+      on-click = "/etc/profiles/per-user/${flake.config.me.username}/bin/spotify-widget-click previous";
+    };
+    bar.customModules.spotify-play = {
+      format = "⏯";
+      tooltip = false;
+      position = "left";
+      order = 2;
+      on-click = "/etc/profiles/per-user/${flake.config.me.username}/bin/spotify-widget-click toggle";
+    };
+    bar.customModules.spotify-forward = {
+      format = "⏭";
+      tooltip = false;
+      position = "left";
+      order = 3;
+      on-click = "/etc/profiles/per-user/${flake.config.me.username}/bin/spotify-widget-click next";
+    };
   };
 
   my.programs.proton.ge.enable = true;
