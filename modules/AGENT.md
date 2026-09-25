@@ -245,6 +245,18 @@ cheaply.
   # Optional: who maintains this (GitHub handle or name)
   maintainer  = "seanc";
 
+  # Optional: external upstream this module wraps/vendors/consumes.
+  # Declared ONLY for modules whose implementation (or data) lives in a repo
+  # outside this flake. Consumed by .opencode/tools/nix-modules.ts (rendered
+  # as the `upstream:` line) and validated at flake-check time against
+  # my.programs.opencode.ensemble.spaces (modules/home/opencode/tests.nix).
+  upstream = {
+    repo       = "github:Cairnstew/agenix-manager";  # upstream source
+    mode       = "wrapped";  # wrapped | vendored | input
+    space      = "agenix-manager";  # ensemble space to develop it in — REQUIRED for vendored; optional for wrapped; omit for input
+    flakeInput = "agenix-manager";  # flake input to nix flake lock --update-input after an upstream push (optional)
+  };
+
   # Autowiring hints (consumed by future tooling, ignored by Nix today)
   autowire = {
     enable   = true;
@@ -253,6 +265,14 @@ cheaply.
 }
 ```
 
+**`upstream.mode` semantics** — how this repo consumes the upstream:
+
+| mode | meaning | ensemble `space` | layer-2 handling |
+|---|---|---|---|
+| `wrapped` | This module wires config around an upstream module/package/CLI consumed via flake input or package. Local `config.nix` editing is legitimate; **implementation changes belong upstream**. | optional — set when a space is registered (you can `team_spawn(space=...)` into it) | README "Upstream" note (no file banner) |
+| `vendored` | This repo carries a copy of an upstream artifact (e.g. `modules/home/opencode/vendor/`). Local edits to that artifact are **forbidden** (hash-guarded). | **required** | "DO NOT EDIT — vendored" banner on the artifact + hash-guard nixtest |
+| `input` | Upstream is consumed only as a data/source input; there is no local copy to edit. | omit — spawning "into it locally" is meaningless | no banner, no guard |
+
 ### 4.2 Agent Rules for `meta.nix`
 
 * **Must** evaluate without importing `default.nix`.
@@ -260,6 +280,15 @@ cheaply.
   renamed, update `provides`.
 * **Must not** contain executable logic, `import`s, or references to `pkgs` /
   `config`.
+* **Check `upstream` FIRST before editing any module.** Before opening a
+  module's implementation, run `nix-modules` (or read its `meta.nix`) and
+  look at the `upstream:` line. If it names an ensemble `space`, **implementation
+  changes belong upstream** — spawn `team_spawn(name=..., space=<that>,
+  worktree=false)`, push, then update the pin (`nix flake lock --update-input
+  <flakeInput>` if set) or re-vendor. Only config-wiring stays local. Do not
+  brute-force a local change when an upstream path is declared — local edits
+  to a `vendored` artifact fail CI (hash-guard). If the line says "no space
+  registered", work in the upstream repo directly.
 
 ---
 

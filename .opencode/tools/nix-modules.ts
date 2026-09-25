@@ -2,6 +2,13 @@ import { tool } from "@opencode-ai/plugin";
 import { readFileSync, readdirSync, existsSync } from "node:fs";
 import { join } from "node:path";
 
+interface UpstreamMeta {
+  repo?: string;
+  space?: string;
+  mode?: string; // 'wrapped' | 'vendored' | 'input' — see modules/AGENT.md §4
+  flakeInput?: string;
+}
+
 interface ModuleMeta {
   name: string;
   description: string;
@@ -13,6 +20,7 @@ interface ModuleMeta {
   tested: boolean;
   maintainer?: string;
   homepage?: string;
+  upstream?: UpstreamMeta;
   path: string;
   relPath: string;
 }
@@ -53,7 +61,47 @@ function parseMetaNix(content: string): Partial<ModuleMeta> {
   meta.maintainer = str("maintainer");
   meta.homepage = str("homepage");
 
+  // upstream block: `upstream = { repo = "..."; mode = "..."; space = "..."; flakeInput = "..."; };`
+  const up = content.match(/upstream\s*=\s*\{(.*?)\n\s*\};/s);
+  if (up) {
+    const upStr = (key: string): string | undefined => {
+      const m = up[1].match(new RegExp(`${key}\\s*=\\s*"([^"]*)"`));
+      return m?.[1];
+    };
+    const u: UpstreamMeta = {};
+    const repo = upStr("repo");
+    const mode = upStr("mode");
+    const space = upStr("space");
+    const flakeInput = upStr("flakeInput");
+    if (repo || mode || space || flakeInput) {
+      u.repo = repo;
+      u.mode = mode;
+      u.space = space;
+      u.flakeInput = flakeInput;
+      meta.upstream = u;
+    }
+  }
+
   return meta;
+}
+
+// Render the upstream line for one module, mode-aware (matches the finalized
+// per-mode matrix in the space-discovery design; modes in modules/AGENT.md §4).
+function renderUpstream(u: UpstreamMeta): string {
+  const repo = u.repo ? `repo=${u.repo}` : "";
+  const flake = u.flakeInput ? `flakeInput=${u.flakeInput}` : "";
+  switch (u.mode) {
+    case "vendored":
+      return `upstream: VENDORED space=${u.space ?? "(missing)"} — do NOT edit locally; re-vendor per modules/home/opencode/FORK.md`;
+    case "input":
+      return `upstream: (input) ${repo} — work in the upstream repo (no local copy to edit); no space registered`;
+    case "wrapped":
+    default:
+      if (u.space) {
+        return `upstream: space=${u.space} (wrapped)${[repo, flake].filter(Boolean).join(", ") ? ` [${[repo, flake].filter(Boolean).join(", ")}]` : ""}`;
+      }
+      return `upstream: (wrapped) ${[repo, flake].filter(Boolean).join(", ")} — no space registered; work upstream directly`;
+  }
 }
 
 function discoverModules(worktree: string, category: string): ModuleMeta[] {
@@ -88,6 +136,7 @@ function discoverModules(worktree: string, category: string): ModuleMeta[] {
         tested: meta.tested || false,
         maintainer: meta.maintainer,
         homepage: meta.homepage,
+        upstream: meta.upstream,
         path: metaPath,
         relPath: `modules/${category}/${entry}/meta.nix`,
       });
@@ -112,7 +161,7 @@ function discoverModules(worktree: string, category: string): ModuleMeta[] {
 
 export default tool({
   description:
-    "List all NixOS/home/darwin/flake-parts modules with their metadata from meta.nix files. Returns name, description, category, what options they provide, their complexity, and test status. Use this to discover what modules exist and what they do before writing configuration.",
+    "List all NixOS/home/darwin/flake-parts modules with their metadata from meta.nix files. Returns name, description, category, what options they provide, their complexity, test status, and — when the module wraps/vendors/consumes an external repo — an 'upstream' line naming the ensemble space to develop it in (or noting no space is registered). Use this to discover what modules exist and what they do before writing configuration. ALWAYS check the upstream line before editing a module: if it names a space, implementation changes belong upstream via team_spawn(space=...), not in this repo.",
 
   args: {
     category: tool.schema
@@ -186,6 +235,7 @@ export default tool({
       const tested = m.tested ? "✓" : "✗";
       lines.push(`  ${tested} ${m.name.padEnd(25)} ${m.category.padEnd(12)} ${m.complexity.padEnd(8)}${tags}`);
       lines.push(`     provides: ${m.provides.join(", ") || "(none)"}`);
+      if (m.upstream) lines.push(`     ${renderUpstream(m.upstream)}`);
       if (m.description) lines.push(`     ${m.description}`);
       lines.push(`     ${m.relPath}`);
       lines.push("");

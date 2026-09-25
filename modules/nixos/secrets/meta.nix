@@ -8,4 +8,13 @@
   complexity = "low";
   tested = true;
   maintainer = "seanc";
+
+  # External upstream this module wraps — see modules/AGENT.md §4 (upstream schema).
+  # Changes to agenix-manager itself belong upstream via the ensemble space, not here.
+  upstream = {
+    repo = "github:Cairnstew/agenix-manager";
+    mode = "wrapped";
+    space = "agenix-manager";
+    flakeInput = "agenix-manager";
+  };
 }

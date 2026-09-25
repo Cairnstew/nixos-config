@@ -10,4 +10,14 @@
   ];
   complexity = "low";
   tested = false;
+
+  # External upstream this module wraps — see modules/AGENT.md §4 (upstream schema).
+  # agenix-manager CLI is the primary tooling here; upstream changes go via the
+  # ensemble space, not by editing this repo's tool wrappers.
+  upstream = {
+    repo = "github:Cairnstew/agenix-manager";
+    mode = "wrapped";
+    space = "agenix-manager";
+    flakeInput = "agenix-manager";
+  };
 }

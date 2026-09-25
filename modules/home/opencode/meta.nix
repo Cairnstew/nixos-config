@@ -20,4 +20,14 @@
   expects = [ ];
   complexity = "medium";
   tested = true; # validated live 2026-08-23: wrapper dispatch selected ox-alpha-free under weekly=100%, sync wrote triage modelsByAgent; 2026-08-26: pacing.enable gate fix live-verified against real cache (rolling 1%/weekly 55%/monthly 45% — all four pipeline agents BLOCKED before, resolve opencode-go/mimo-v2.5 after), nixtest regression 5/5, server switched to gen 246
+
+  # External upstream this module consumes as a VENDORED fork — see
+  # modules/AGENT.md §4 (upstream schema) and modules/home/opencode/FORK.md.
+  # The vendored dist is hash-guarded; local edits to it fail CI. Develop in the
+  # ensemble space, then re-vendor via tools/revendor-opencode-ensemble.sh.
+  upstream = {
+    repo = "github:Cairnstew/opencode-ensemble";
+    mode = "vendored";
+    space = "ensemble";
+  };
 }

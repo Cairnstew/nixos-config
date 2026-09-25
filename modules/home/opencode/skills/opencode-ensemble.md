@@ -129,12 +129,35 @@ team_spawn(name="worker", space="ensemble", prompt="fix the bug in src/foo.ts", 
 |-------|------|-------------|
 | `ensemble` | `Cairnstew/opencode-ensemble` | Ensemble plugin source — fix wake-path bugs, add features |
 | `agenix-manager` | `Cairnstew/agenix-manager` | Agenix-manager — fix bugs, add secret lifecycle features |
+| `spotify-playlist-manager` | `spotify-playlist-manager` | Spotify playlist manager tool |
 
 ### Using Spaces for Upstream Fixes
 
+#### Step 0 — check `upstream` in meta.nix BEFORE editing a module
+
+Before touching any module in this repo, run `nix-modules` (or read its
+`meta.nix`) and look at the `upstream:` line. This is a **look first** rule,
+not a "when you remember" rule: modules that wrap, vendor, or consume an
+external repo declare it there, and the line tells you exactly what to do:
+
+- `upstream: space=X (wrapped)` → implementation changes belong in space `X` via
+  `team_spawn(space="X", ...)`, not in this repo. Only config-wiring is local.
+- `upstream: VENDORED space=X` → the artifact is **hash-guarded**: a local edit
+  fails CI. Develop upstream in space `X`, then re-vendor
+  (`tools/revendor-opencode-ensemble.sh` / FORK.md).
+- `upstream: (wrapped/input) … no space registered` → work in the upstream repo
+  directly (e.g. `gh clone`), no space exists.
+- No `upstream` line → local editing is normal.
+
+The registry assertion in `modules/home/opencode/tests.nix` flags any declared
+`upstream.space` that is not a registered ensemble space at `nix flake check`
+time — a typo fails loudly instead of failing at `team_spawn` time.
+
 When a bug or feature request involves an external dependency managed in this repo, use a space to work directly in that dependency's source:
 
-1. **Identify the space**: Check the Available Spaces table above, or add a new space in `modules/nixos/homeManager/config.nix`.
+1. **Identify the space**: the module's `meta.nix` `upstream` block is the
+   source of truth (Step 0 above); the Available Spaces table below is the
+   convenience index. Add a new space in `modules/nixos/homeManager/config.nix`.
 2. **Spawn into the space**: `team_spawn(name="fix", space="agenix-manager", prompt="fix the bug in ...", worktree=false)`
 3. **Teammate works in the cloned repo**: Makes changes, commits, pushes to the upstream remote.
 4. **Teammate shuts down**: Lead gets notified with the commit SHA.

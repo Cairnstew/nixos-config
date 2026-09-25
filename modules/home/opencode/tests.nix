@@ -25,6 +25,43 @@ let
   # Get the final opencode config that would be generated
   opencodeCfg = config.programs.opencode;
 
+  # ── upstream registry (meta.nix `upstream` blocks) ─────────────────────────
+  # Every meta.nix that declares an `upstream.space` must name a registered
+  # ensemble space (my.programs.opencode.ensemble.spaces), so a typo or a
+  # meta.nix pointing at a space that was never registered fails `nix flake
+  # check` here instead of mysteriously at team_spawn time. We scan ALL
+  # meta.nix files (same depth-1 discovery as .opencode/tools/nix-modules.ts)
+  # rather than a hand-maintained list, so new modules are covered
+  # automatically. meta.nix must be a pure attrset (§4 of modules/AGENT.md);
+  # tryEval keeps the assertion robust against a stray non-attrset file.
+  categoryDirs = lib.filter (p: builtins.pathExists p)
+    [ ../../../nixos ../../../home ../../../darwin ../../../flake-parts ];
+  observedMetas = let
+    scan = dir:
+      let entries = builtins.attrNames (builtins.readDir dir);
+      in builtins.concatMap
+        (name:
+          let m = dir + "/${name}/meta.nix";
+          in lib.optional (builtins.pathExists m)
+            (let evaled = builtins.tryEval (import m);
+             in {
+               path = m;
+               meta = if evaled.success then evaled.value else { };
+             }))
+        entries;
+  in builtins.concatMap scan categoryDirs;
+  upstreamModules = lib.filter (e: e.meta ? upstream) observedMetas;
+  declaredSpaces =
+    lib.filter (s: s != null)
+      (map (e: e.meta.upstream.space or null) upstreamModules);
+  registeredSpaces =
+    builtins.attrNames ((cfg.ensemble or { }).spaces or { });
+  unregisteredSpaces =
+    lib.filter (s: !(builtins.elem s registeredSpaces)) declaredSpaces;
+  vendoredWithoutSpace = lib.filter
+    (e: (e.meta.upstream.mode or "") == "vendored" && (e.meta.upstream.space or "") == "")
+    upstreamModules;
+
 in
 {
   config = mkIf cfg.enable {
@@ -153,6 +190,24 @@ in
       {
         assertion = !(builtins.elem "@hueyexe/opencode-ensemble" cfg.plugins);
         message = "my.programs.opencode.plugins: remove '@hueyexe/opencode-ensemble' from the npm plugins array — the ensemble is vendored as a local fork from https://github.com/Cairnstew/opencode-ensemble (pluginFiles.opencode-ensemble). A similar-named npm spec and local file BOTH load and would double-register tools. See FORK.md.";
+      }
+      # ── upstream registry assertions (space-discovery hardening) ─────────
+      # Every meta.nix upstream.space must be a registered ensemble space.
+      {
+        assertion = unregisteredSpaces == [ ];
+        message = "my.programs.opencode.ensemble.spaces: meta.nix 'upstream.space' values must be registered ensemble spaces. "
+          + "Unregistered: ${builtins.toJSON unregisteredSpaces}. "
+          + "Register the space under my.programs.opencode.ensemble.spaces in modules/nixos/homeManager/config.nix, "
+          + "or drop the space field from the module's meta.nix upstream block.";
+      }
+      # vendored-mode modules MUST declare a space: their artifacts are
+      # hash-guarded, so a local edit can never be the legitimate change path.
+      {
+        assertion = vendoredWithoutSpace == [ ];
+        message = "modules with upstream.mode = \"vendored\" must declare upstream.space (the ensemble space to develop the upstream repo in): "
+          + builtins.concatStringsSep ", " (map (e: e.path) vendoredWithoutSpace)
+          + ". The vendored artifact is hash-guarded — a local edit cannot be the change path; "
+          + "see modules/home/opencode/FORK.md + tools/revendor-opencode-ensemble.sh.";
       }
       # ── Single-lineage self-improvement invariants (post-gated-pipeline) ──
       # The decommissioned promote tool (goals_learning_promote) no longer
