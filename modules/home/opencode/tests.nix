@@ -36,20 +36,24 @@ let
   # tryEval keeps the assertion robust against a stray non-attrset file.
   categoryDirs = lib.filter (p: builtins.pathExists p)
     [ ../../../nixos ../../../home ../../../darwin ../../../flake-parts ];
-  observedMetas = let
-    scan = dir:
-      let entries = builtins.attrNames (builtins.readDir dir);
-      in builtins.concatMap
-        (name:
-          let m = dir + "/${name}/meta.nix";
-          in lib.optional (builtins.pathExists m)
-            (let evaled = builtins.tryEval (import m);
-             in {
-               path = m;
-               meta = if evaled.success then evaled.value else { };
-             }))
-        entries;
-  in builtins.concatMap scan categoryDirs;
+  observedMetas =
+    let
+      scan = dir:
+        let entries = builtins.attrNames (builtins.readDir dir);
+        in builtins.concatMap
+          (name:
+            let m = dir + "/${name}/meta.nix";
+            in lib.optional (builtins.pathExists m)
+              (
+                let evaled = builtins.tryEval (import m);
+                in {
+                  path = m;
+                  meta = if evaled.success then evaled.value else { };
+                }
+              ))
+          entries;
+    in
+    builtins.concatMap scan categoryDirs;
   upstreamModules = lib.filter (e: e.meta ? upstream) observedMetas;
   declaredSpaces =
     lib.filter (s: s != null)
