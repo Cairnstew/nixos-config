@@ -799,11 +799,11 @@
         "packwiz2nix": "packwiz2nix"
       },
       "locked": {
-        "lastModified": 1790263396,
-        "narHash": "sha256-gJBUVbUD48wQg8YaWTk753TrKB+9x92MO/EUED/dYqQ=",
+        "lastModified": 1790267505,
+        "narHash": "sha256-eQdtlgDMgdBiXUJ1zo31T/2UN1qT6Leab1cpG+sGTY0=",
         "owner": "Cairnstew",
         "repo": "nixos-minecraft-modpacks",
-        "rev": "c02854a9cf4adea3f733c82de5ed492026d62c3c",
+        "rev": "95e23372ac8a0fc69d4498f1b9dd839ddea54b14",
         "type": "github"
       },
       "original": {
