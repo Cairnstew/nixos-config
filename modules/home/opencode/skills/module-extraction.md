@@ -349,3 +349,20 @@ The standalone module must NOT import anything from `nixos-config`. All dependen
 ### "ensemble space won't clone"
 
 Check that the repo exists and is accessible: `gh repo view Cairnstew/nixos-<name>`. The ensemble plugin clones into `~/.config/opencode/ensemble-spaces/<space-name>/`.
+
+## RUN LOG
+
+### 2026-09-24 — Quick Reference table drift vs live repo (verified during audit)
+- Lesson: the Quick Reference table (lines 315-333) listed `mssClamp` and `ollama` as
+  "Zero refs" Tier 1/2 candidates, but both have cross-module wiring in the current
+  repo: `mss-clamp/config.nix:9-10` reads `config.my.services.tailscale.mtu` (falls
+  back to a hardcoded 1140 when unset), and `ollama/config.nix:73` registers
+  `my.services.proxy.upstreams.ollama`. Table also listed `docker`/`ssh` as Tier 2,
+  yet neither appears in any `flake.config.me` / `inputs.self` / `my.services.proxy.`
+  grep — they are Tier 1 (zero coupling) by the skill's own criteria.
+- Fix (grounded): run the Phase 1 greps fresh before trusting the table each audit
+  (the table is a snapshot, not a guarantee). For `mssClamp` the decoupling work is
+  parameterizing the tailscale MTU read into a plain `mss` default; for `ollama`
+  it is the same `registerProxy`/`mkIf` pattern used by `ttyd`. `docker` and `ssh`
+  remain easy Tier 1 wins but are low-value standalone repos (thin wrappers around
+  upstream nixpkgs services).
