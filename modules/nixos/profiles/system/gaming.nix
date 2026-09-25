@@ -24,6 +24,10 @@ in
     my.programs.steam.enable = lib.mkDefault true;
     my.programs.hearthstone.enable = lib.mkDefault true;
     my.programs.proton.enable = lib.mkDefault true;
+    my.programs.satisfactory = {
+      enable = lib.mkDefault true;
+      modding.enable = lib.mkDefault true;
+    };
 
     # ── Home-manager program defaults for the gaming profile ────────────────
     home-manager.users.${username}.my.programs = {

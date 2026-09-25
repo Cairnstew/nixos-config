@@ -117,6 +117,7 @@ in
     ./minecraft-server
     ./game-servers
     ./projectzomboid-server
+    ./satisfactory
     ./music
 
     # ── TV & EPG ─────────────────────────────────────────────────────────
