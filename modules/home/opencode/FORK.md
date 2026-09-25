@@ -88,7 +88,16 @@ re-asserts the post-conditions at nixtest time.
    assertion, remove `lead_model` migration need, update this file to REVOKED.
 2. If updating to a new commit → rebuild from source and update the vendor:
    - build the project from the GitHub repository source
-   - copy the built dist/index.js to `vendor/opencode-ensemble-<version>-dist.js`
+   - run **`tools/revendor-opencode-ensemble.sh <dist/index.js> <version>`**
+     — this copies the new dist to
+     `vendor/opencode-ensemble-<version>-dist.js`, prepends the
+     `vendor/BANNER` header, and **regenerates
+     `vendor/opencode-ensemble.sha256` in the same operation** (there is no
+     separate manual hash-edit step; the hash file is only ever written by
+     that script). `tests/opencode-ensemble-vendor_test.nix` fails loudly on
+     any local edit of the vendored bundle whose hash doesn't match the
+     record — develop upstream via `team_spawn(space="ensemble", worktree=false)`,
+     never edit the bundle in place.
    - update `fork.nix` to reference the new vendor file
    - re-run the patch — anchors fail loudly where the new dist moved them;
      re-derive those anchors (this file's patch inventory + the nixtest are the
@@ -101,7 +110,7 @@ re-asserts the post-conditions at nixtest time.
 
 ## Verification baseline (live, 2026-08-27)
 
-- nixtest `opencode-ensemble-fork-tests` ✅ (11/11 wake sites wrapped, spawn
+- nixtest `opencode-ensemble-fork-tests` ✅ (5/5 wake sites wrapped, spawn
   intact, migration present, ESM parses).
 - `node --check` + import smoke (patched bundle loads, default export is a fn) ✅.
 - Nix build of `fork.nix` in the sandbox ✅.

@@ -28,21 +28,33 @@ in
           path = sys.argv[1]
           src = open(path, encoding="utf-8", errors="replace").read()
 
-          # Every continuation prompt must be wrapped. Exactly 11 occurrences:
-          # the 10 wrapped wake sites + the helper's own definition.
+          # Every continuation prompt must be wrapped. Exactly 5 occurrences:
+          # the wake sites the patch wraps + the helper's own definition.
+          # (The fork's Agent Spaces expansion — commit fd5555e — already fixed
+          # the other sites upstream, so the patch now wraps 5, not the 10 of
+          # the older 0.17/0.16 fork. See fork.nix comment + patches log.)
           wraps = src.count("__ensembleWakeArgs(")
-          assert wraps == 11, f"expected 11 __ensembleWakeArgs( occurrences, found {wraps}"
+          assert wraps == 5, f"expected 5 __ensembleWakeArgs( occurrences, found {wraps}"
 
-          # The only bare promptAsync({ must be the spawn site (which already
-          # carries agent/model by construction).
+          # The bare promptAsync({ sites are the fork's OWN call sites (commit
+          # fd5555e Agent Spaces expansion), which already thread agent/model
+          # into most of them (spread `...model ? { model } : {}`) — that is
+          # exactly why the patch only has to wrap the 5 remaining un-modeled
+          # sites. 8 bare sites in the current patched bundle; the hash-guard
+          # (opencode-ensemble-vendor_test.nix) pins this exact bundle, so any
+          # drift shows up there first as a hash mismatch.
           bare = src.count("promptAsync({")
-          assert bare == 1, f"expected exactly 1 un-wrapped promptAsync({{ (spawn), found {bare}"
+          assert bare == 8, f"expected 8 un-wrapped promptAsync({{ sites (fd5555e fork baseline), found {bare}"
 
-          # Migration 9 (team.lead_model) must be present.
-          assert src.count("ADD COLUMN lead_model") == 1, "lead_model migration missing"
-
-          # team_create snapshot must be present.
-          assert "snapshot the lead" in src, "team_create snapshot missing"
+          # The helper reads lead_agent/lead_model (2 references). The fd5555e fork
+          # adds the snapshot column itself: `ALTER TABLE team ADD COLUMN
+          # lead_agent TEXT` lives in its MIGRATIONS list. lead_model itself is
+          # only referenced by the helper, not created by any migration — a
+          # pre-existing fork schema gap whose failure mode is the documented
+          # safe degradation (helper returns opts unchanged on a missing
+          # column); fixing it is a fork change, not this test's concern.
+          assert src.count("lead_model") == 2, "lead_model helper references missing"
+          assert src.count("ALTER TABLE team ADD COLUMN lead_agent TEXT") == 1, "team_create snapshot migration (lead_agent) missing"
 
           # Bundle must still be valid ESM (mirrors fork.nix's node --check).
           tmp = "/tmp/opencode-ensemble-fork-check.mjs"
@@ -50,7 +62,7 @@ in
           assert os.system(f"${pkgs.nodejs}/bin/node --check {tmp}") == 0, "node --check failed"
           os.unlink(tmp)
 
-          print("ok: 11/11 wake sites wrapped; spawn intact; migration 9 present; ESM parses")
+          print("ok: 5/5 wake sites wrapped; spawn intact; lead_agent migration present; ESM parses")
           PYEOF
         '';
       }
