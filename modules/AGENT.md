@@ -282,13 +282,15 @@ cheaply.
   `config`.
 * **Check `upstream` FIRST before editing any module.** Before opening a
   module's implementation, run `nix-modules` (or read its `meta.nix`) and
-  look at the `upstream:` line. If it names an ensemble `space`, **implementation
-  changes belong upstream** — spawn `team_spawn(name=..., space=<that>,
-  worktree=false)`, push, then update the pin (`nix flake lock --update-input
-  <flakeInput>` if set) or re-vendor. Only config-wiring stays local. Do not
-  brute-force a local change when an upstream path is declared — local edits
-  to a `vendored` artifact fail CI (hash-guard). If the line says "no space
-  registered", work in the upstream repo directly.
+  look at the `upstream:` line. If it names an ensemble `space`, **load the
+  `opencode-ensemble` skill first** — it explains what spaces are and how to
+  use `team_spawn(space=...)`. Then: implementation changes belong upstream
+  via `team_spawn(name=..., space=<that>, worktree=false)`, push, then update
+  the pin (`nix flake lock --update-input <flakeInput>` if set) or re-vendor.
+  Only config-wiring stays local. Do not brute-force a local change when an
+  upstream path is declared — local edits to a `vendored` artifact fail CI
+  (hash-guard). If the line says "no space registered", work in the upstream
+  repo directly.
 
 ---
 
@@ -570,6 +572,18 @@ helper and carries a `Self-Improve:` trailer for the audit trail
 the current mechanism.
 
 ## RUN LOG
+
+### 2026-09-25 — §4.2: upstream.space requires loading the opencode-ensemble skill first
+- Lesson: agent read `meta.nix` which declared `upstream.space = "spotify-playlist-manager"`,
+  but didn't connect "space" to "use `team_spawn`" because the opencode-ensemble skill
+  (which explains spaces and `team_spawn`) was never loaded. §4.2 said "spawn
+  `team_spawn(...)`" but didn't say *how* to know about that command. The agent went on
+  to edit the upstream repo directly with `write`/`edit` tools instead of
+  `team_spawn(space="spotify-playlist-manager")`. When the user pointed this out, the
+  agent then loaded the skill and found the full workflow documented there.
+- Fix: §4.2 now explicitly says "load the `opencode-ensemble` skill first" when
+  `upstream.space` is set. The skill is the missing link that makes "space" actionable.
+  Also added this RUN LOG entry as grounded evidence.
 
 ### 2026-08-16 — §13: promotion is not human-only
 - Lesson: §13 said self-improvement edits are "gated via `learning_promote`",

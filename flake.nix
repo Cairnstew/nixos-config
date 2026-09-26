@@ -172,6 +172,15 @@
       url = "github:Cairnstew/Cairnstew.github.io";
     };
 
+    # Spotify playlist manager — Python wrapper + CLI + Waybar/Hyprland widgets.
+    # Developed via the ensemble space (spotify-playlist-manager); the home
+    # spotify module installs its `spotify-playlist-manager` binary and points
+    # the waybar custom modules at `waybar now/upvote --json`.
+    spotify-playlist-manager = {
+      url = "github:Cairnstew/spotify-playlist-manager";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+
   };
 
   # Wired using https://nixos-unified.org/autowiring.html

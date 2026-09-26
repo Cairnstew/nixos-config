@@ -29,6 +29,7 @@ in
         enable = lib.mkDefault true;
         player = {
           enable = lib.mkDefault true;
+          upvote.enable = lib.mkDefault true;
           credentialsFile = lib.mkIf (config.age.secrets ? "spotify-cred")
             (lib.mkDefault config.age.secrets."spotify-cred".path);
         };

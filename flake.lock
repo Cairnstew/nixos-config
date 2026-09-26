@@ -1360,6 +1360,7 @@
         "packwiz": "packwiz",
         "packwiz2nix": "packwiz2nix_2",
         "sillytavern": "sillytavern",
+        "spotify-playlist-manager": "spotify-playlist-manager",
         "stable-diffusion-webui-nix": "stable-diffusion-webui-nix",
         "steamlink-archlinux": "steamlink-archlinux",
         "stylix": "stylix",
@@ -1449,6 +1450,26 @@
       "original": {
         "owner": "Cairnstew",
         "repo": "SillyTavern",
+        "type": "github"
+      }
+    },
+    "spotify-playlist-manager": {
+      "inputs": {
+        "nixpkgs": [
+          "nixpkgs"
+        ]
+      },
+      "locked": {
+        "lastModified": 1790346888,
+        "narHash": "sha256-usXzXjF7SsOa1JwpsFlXAR60+5wGb97/F/K/fw0g9tk=",
+        "owner": "Cairnstew",
+        "repo": "spotify-playlist-manager",
+        "rev": "a81356c6439287c0f55cc5f86e0d4602fa2b3876",
+        "type": "github"
+      },
+      "original": {
+        "owner": "Cairnstew",
+        "repo": "spotify-playlist-manager",
         "type": "github"
       }
     },

@@ -1,7 +1,8 @@
-{ lib, pkgs, ... }:
+{ lib, pkgs, flake, ... }:
 
 let
   inherit (lib) types;
+  spotifyPlaylistMgr = flake.inputs.spotify-playlist-manager.packages.${pkgs.system}.default;
 in
 {
   options.my.programs.spotify = {
@@ -67,6 +68,22 @@ in
           When null, expects the variables to already be in the environment
           (e.g. via direnv or home.sessionVariables).
         '';
+      };
+
+      upvote = {
+        enable = lib.mkEnableOption "Spotify upvote button for Waybar";
+
+        package = lib.mkOption {
+          type = types.package;
+          default = spotifyPlaylistMgr;
+          defaultText = lib.literalExpression "flake.inputs.spotify-playlist-manager.packages.<system>.default";
+          description = ''
+            The spotify-playlist-manager package (upstream flake input).
+            Provides the `spotify-playlist-manager waybar upvote` CLI used by
+            the waybar module. The upstream is developed via the ensemble space
+            (spotify-playlist-manager); see modules/AGENT.md §4.2.
+          '';
+        };
       };
     };
   };

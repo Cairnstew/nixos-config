@@ -373,6 +373,12 @@ in
           };
           timeout = 120000;
         };
+        mcp.steam = {
+          enabled = true;
+          type = "local";
+          command = [ "npx" "-y" "@praeses/steam-mcp" ];
+          timeout = 120000;
+        };
       };
     }
 

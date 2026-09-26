@@ -16,8 +16,11 @@ in
           line or TUI, and sets up the Satisfactory Mod Manager (SMM) for
           GUI-based mod management.
 
-          Mods are installed into the game's Proton prefix at
-          <literal>&lt;steam-library&gt;/steamapps/compatdata/1690809/pfx/drive_c/users/steamuser/AppData/Local/FactoryGame/Mods/</literal>.
+          Mods are always installed into the game installation's own
+          <literal>&lt;steam-library&gt;/steamapps/common/Satisfactory/FactoryGame/Mods/</literal>
+          folder (SML loads them from there), so where mods land is decided by
+          which Steam library folder the game is installed in — install the
+          game into a library on a large drive to keep mods off the OS disk.
           Use <literal>ficsit-cli</literal> to manage them — see
           <link xlink:href="https://docs.ficsit.app/satisfactory-modding/latest/ForUsers/SatisfactoryModManager.html">the modding docs</link>.
         '';

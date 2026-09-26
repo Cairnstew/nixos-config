@@ -264,7 +264,22 @@ modules/nixos/example/
 
 **Rule:** `default.nix` is an **import manifest** — contains only `imports`, no logic.
 
-See `modules/AGENT.md` for detailed module conventions.
+### 5.3 Upstream Modules & Ensemble Spaces
+
+Some modules wrap external repos. Their `meta.nix` declares an `upstream` block
+with a `space` name. **When you see `upstream.space` in a module's `meta.nix`,
+load the `opencode-ensemble` skill** — it explains what ensemble spaces are and
+how to use `team_spawn(space=...)` to develop upstream changes in isolation.
+
+| `upstream.mode` | What it means | What to do |
+|---|---|---|
+| `wrapped` + `space=X` | Implementation changes belong in space `X` | Load `opencode-ensemble` skill → `team_spawn(space="X", ...)` |
+| `vendored` + `space=X` | Hash-guarded local copy; edits fail CI | Develop in space `X`, then re-vendor |
+| `wrapped` / `input`, no space | Upstream repo, no ensemble space | Work in the upstream repo directly |
+| No `upstream` block | Pure local module | Edit normally |
+
+See `modules/AGENT.md` §4.2 for the full rule and `modules/home/opencode/skills/opencode-ensemble.md`
+for the skill.
 
 ---
 
@@ -528,6 +543,17 @@ style tool/skill/command injection from flake inputs.
 ---
 
 ## RUN LOG
+
+### 2026-09-25 — §5.3: added upstream modules & ensemble spaces entry point
+- Lesson: agent read `meta.nix` declaring `upstream.space = "spotify-playlist-manager"`
+  but didn't know to use `team_spawn(space=...)` because the root AGENTS.md had zero
+  mention of ensemble spaces. The knowledge lived in `modules/AGENT.md` §4.2 and the
+  `opencode-ensemble` skill, but neither was read before the agent started implementing.
+  The skill's description only mentioned "coordinating teams" — not upstream development
+  — so it was never loaded.
+- Fix: added §5.3 with a table mapping `upstream.mode` to actions, explicitly telling
+  agents to load the `opencode-ensemble` skill when they see `upstream.space`. Also
+  updated the skill description and "Use Ensemble When" section to include the trigger.
 
 ### 2026-09-16 — efficiency lens sqlite3 dependency: fix applied, first lens run completed
 - Lesson: the efficiency lens (build.md line 112) shells out to `sqlite3` CLI to

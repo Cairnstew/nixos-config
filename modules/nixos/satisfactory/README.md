@@ -28,8 +28,10 @@ my.programs.satisfactory = {
 
 ## Notes
 
-- Satisfactory runs via Proton on Linux — install it through Steam.
-- The game's Steam App ID is `1690809`.
+- Satisfactory installs through Steam (App ID `526870`); it is installed into
+  the Steam library folder that Steam picks, and **mods follow the game install**
+  — ficsit-cli/SMM always write into the install's own
+  `FactoryGame/Mods` folder, wherever that library lives.
 - Mods are managed via `ficsit-cli` (CLI/TUI) or Satisfactory Mod Manager (GUI).
 - See the [Satisfactory Modding Docs](https://docs.ficsit.app/satisfactory-modding/latest/index.html) for details.
 - Requires `my.programs.steam.enable = true` (Steam with Proton support).

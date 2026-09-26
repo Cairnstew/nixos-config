@@ -164,6 +164,7 @@ nix run
 | `nix-graph` | Static analysis of NixOS config graph | No |
 | `terraform` | Terraform/HCP provider + module registry | No |
 | `ieee` | IEEE Xplore academic paper search | Yes (`ieee-api-key`) |
+| `steam` | Steam game library management | Optional (`steam-api-key`) |
 
 ## Common Patterns
 

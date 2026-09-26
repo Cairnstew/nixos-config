@@ -302,6 +302,12 @@ let
       color: #1db954;
     }
 
+    /* Upvote button */
+    #custom-spotify-upvote { padding: 0 6px; color: #6c7086; }
+    #custom-spotify-upvote.not-upvoted { color: #6c7086; }
+    #custom-spotify-upvote.upvoted { color: #f38ba8; }
+    #custom-spotify-upvote:hover { color: #f38ba8; }
+
     ${customModuleCSS}
 
     tooltip {

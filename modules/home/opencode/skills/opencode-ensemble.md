@@ -1,6 +1,6 @@
 ---
 name: opencode-ensemble
-description: "Use when coordinating multiple coding agents, delegating independent software work, managing OpenCode Ensemble teams, choosing teammate roles or models, reviewing teammate output, or deciding whether parallel execution is appropriate."
+description: "Use when coordinating multiple coding agents, delegating independent software work, managing OpenCode Ensemble teams, choosing teammate roles or models, reviewing teammate output, deciding whether parallel execution is appropriate, OR when a module's meta.nix declares upstream.space (implementation changes belong upstream via team_spawn)."
 ---
 
 # OpenCode Ensemble
@@ -18,6 +18,7 @@ Spawn teammates only for independent, verifiable work. A good Ensemble team has 
 - Multiple files or subsystems can be changed without overlapping ownership.
 - A risky change benefits from `plan_approval: true` before edits.
 - A final reviewer can inspect merged changes without creating another branch.
+- **A module's `meta.nix` declares `upstream.space`** — implementation changes belong upstream via `team_spawn(space=...)`, not in this repo. This is the primary trigger for upstream development.
 
 ## Do Not Use Ensemble When
 
@@ -167,3 +168,16 @@ This pattern is ideal for:
 - Fixing bugs in vendored plugins (opencode-ensemble, agenix-manager)
 - Adding features to upstream tools before they land in nixpkgs
 - Testing changes against an external codebase without polluting the current repo
+
+## RUN LOG
+
+### 2026-09-25 — added upstream.space as a primary trigger
+- Lesson: agent read `meta.nix` which declared `upstream.space = "spotify-playlist-manager"`
+  but never loaded this skill because the description only mentioned "coordinating teams"
+  and "delegating work" — nothing about upstream development or meta.nix. The agent
+  went on to edit the upstream repo directly instead of using `team_spawn(space=...)`.
+  Root cause: the skill's description and "Use Ensemble When" section didn't include
+  the upstream.space trigger, so the agent had no reason to load it.
+- Fix: description now includes "when a module's meta.nix declares upstream.space";
+  "Use Ensemble When" section now lists meta.nix upstream.space as a primary trigger;
+  root AGENTS.md §5.3 added a table mapping upstream.mode to actions.

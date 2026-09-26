@@ -264,6 +264,21 @@
       order = 3;
       on-click = "/etc/profiles/per-user/${flake.config.me.username}/bin/spotify-widget-click next";
     };
+
+    # Upvote button: exec mode shows vote count via upstream CLI, click upvotes
+    # the current song. Requires my.programs.spotify.player.upvote.enable = true
+    # (enabled by default in the desktop home profile). The wrapper exports
+    # SPOTIFY_* creds then delegates to the upstream spotify-playlist-manager
+    # `waybar upvote --json` / `waybar upvote` subcommands.
+    bar.customModules.spotify-upvote = {
+      exec = "/etc/profiles/per-user/${flake.config.me.username}/bin/spotify-upvote --json";
+      interval = 30;
+      returnType = "json";
+      tooltip = true;
+      position = "left";
+      order = 4;
+      on-click = "/etc/profiles/per-user/${flake.config.me.username}/bin/spotify-upvote";
+    };
   };
 
   my.programs.proton.ge.enable = true;

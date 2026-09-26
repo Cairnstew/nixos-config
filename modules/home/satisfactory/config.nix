@@ -20,7 +20,7 @@ in
         echo "  ficsit-cli              # Interactive TUI"
         echo "  ficsit-cli help         # Show commands"
 
-        exec ${lib.getBin pkgs.steam}/bin/steam steam://rungameid/1690809
+        exec ${lib.getBin pkgs.steam}/bin/steam steam://rungameid/526870
       '')
     ] ++ cfg.extraPackages;
 
