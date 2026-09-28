@@ -23,5 +23,14 @@ in
     home.packages = [
       cfg.package
     ];
+
+    # Desktop entry so wofi can find it
+    xdg.desktopEntries.whatsapp-electron = {
+      name = "WhatsApp";
+      comment = "WhatsApp Desktop";
+      exec = "${lib.getExe cfg.package}";
+      categories = [ "InstantMessaging" "Network" ];
+      icon = "whatsapp";
+    };
   };
 }

@@ -22,6 +22,51 @@ let
   sliceRoll = pkgs.writeShellScriptBin "opencode-go-slices-roll"
     (builtins.readFile ./snapshot-roll.sh);
 
+  # Waybar module: reads the cached usage JSON and emits waybar-compatible output.
+  # Rolling usage is the primary text; tooltip shows all three budget windows.
+  usageWaybar = pkgs.writeShellApplication {
+    name = "opencode-go-waybar";
+    runtimeInputs = with pkgs; [ jq coreutils ];
+    text = ''
+      set -euo pipefail
+
+      CACHE="''${XDG_CACHE_HOME:-$HOME/.cache}/opencode/go-usage.json"
+
+      if [ ! -r "$CACHE" ]; then
+        printf '{"text": " OpenCode: —", "tooltip": "Usage cache not found"}\n'
+        exit 0
+      fi
+
+      # If the cache is older than 10 minutes, flag it as stale
+      cache_age=$(( $(date +%s) - $(stat -c %Y "$CACHE" 2>/dev/null || echo 0) ))
+      stale=""
+      [ "$cache_age" -gt 600 ] && stale=" (stale)"
+
+      jq -c --arg stale "$stale" '
+        def status_icon:
+          if . == "ok" then ""
+          elif . == "warning" then "⚠"
+          else "⛔"
+          end;
+
+        .usage.rolling as $r |
+        .usage.weekly as $w |
+        .usage.monthly as $m |
+
+        {
+          "text": (" OpenCode: \($m.percent)%\($stale)"),
+          "tooltip": (
+            "OpenCode Go Usage\($stale)\n" +
+            "─────────────────\n" +
+            "Rolling (5h):  \($r.percent)%  \($r.status | status_icon)\n" +
+            "Weekly:        \($w.percent)%  \($w.status | status_icon)\n" +
+            "Monthly:       \($m.percent)%  \($m.status | status_icon)"
+          )
+        }
+      ' "$CACHE"
+    '';
+  };
+
   usageCli = pkgs.writeShellApplication {
     name = "opencode-go-usage";
     runtimeInputs = with pkgs; [ curl jq coreutils sliceRoll ];
@@ -82,7 +127,7 @@ let
 in
 {
   config = lib.mkIf cfg.enable {
-    home.packages = lib.mkIf goCfg.usage.enable [ usageCli ];
+    home.packages = lib.mkIf goCfg.usage.enable [ usageCli usageWaybar ];
 
     systemd.user.services.opencode-go-usage = lib.mkIf goCfg.usage.enable {
       Unit = {

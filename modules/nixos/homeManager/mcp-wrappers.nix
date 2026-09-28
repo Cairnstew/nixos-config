@@ -86,6 +86,25 @@
       meta.description = "MCP server: Keepa Amazon price history, deals, sellers";
     };
 
+  # Official GitHub MCP server (github/github-mcp-server, Go binary).
+  # Reads the PAT from agenix at runtime so it never appears in /nix/store.
+  githubMcpPkg =
+    pkgs.writeShellApplication {
+      name = "github-mcp-server";
+      runtimeInputs = [ pkgs.github-mcp-server ];
+      text = ''
+        if [[ ! -s ${config.age.secrets.github-token.path} ]]; then
+          echo "github-mcp-server disabled: github-token is missing/empty" >&2
+          exit 1
+        fi
+        GITHUB_PERSONAL_ACCESS_TOKEN="$(cat ${config.age.secrets.github-token.path})"
+        export GITHUB_PERSONAL_ACCESS_TOKEN
+        export GITHUB_TOOLSETS="repos,issues,pull_requests,actions,code_security,context"
+        exec github-mcp-server stdio "$@"
+      '';
+      meta.description = "MCP server: GitHub official (repos, issues, PRs, actions, file tree)";
+    };
+
   # Opencode theme derived from config.nix me.colorScheme
   # Maps semantic UI roles to Base16 color definitions
   opencodeTheme =

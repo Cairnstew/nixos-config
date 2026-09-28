@@ -14,6 +14,7 @@ let
   inherit (mcpWrappers)
     betterEmailPkg
     googleCalendarMcpPkg
+    githubMcpPkg
     secondhandMcpPkg
     shoppingscraperMcpPkg
     keepaMcpPkg
@@ -99,21 +100,25 @@ in
               enable = true;
               package = pkgs.mcp-server-sequential-thinking;
             };
-            memory = {
-              enable = true;
-              package = pkgs.mcp-server-memory;
-            };
             playwright.enable = true;
-            github = {
-              enable = true;
-              # Read token from agenix at runtime — never stored in /nix/store
-              passwordCommand = {
-                GITHUB_PERSONAL_ACCESS_TOKEN = [ "cat" "/run/agenix/github-token" ];
-              };
-            };
           };
 
           settings.servers = {
+            # Official GitHub MCP server (github/github-mcp-server, Go binary).
+            # Replaces the community @modelcontextprotocol/server-github — includes
+            # file tree browsing (repos toolset), issues, PRs, actions, and more.
+            # Token read from agenix at runtime via wrapper.
+            github = {
+              command = "${githubMcpPkg}/bin/github-mcp-server";
+            };
+            # Knowledge Graph Memory — official MCP reference implementation.
+            # Persistent JSONL storage in XDG data dir so the graph survives rebuilds.
+            memory = {
+              command = "${pkgs.mcp-server-memory}/bin/mcp-server-memory";
+              env = {
+                MEMORY_FILE_PATH = "/home/${username}/.local/share/opencode/memory.jsonl";
+              };
+            };
             # better-email with agenix secret read by wrapper
             better-email = {
               command = "${betterEmailPkg}/bin/better-email";
@@ -286,6 +291,11 @@ in
                 path = "/home/seanc/Projects/spotify-playlist-manager";
                 agent = "build";
                 description = "Spotify playlist manager tool";
+              };
+              kraken-python = {
+                path = "/home/seanc/Projects/kraken-python";
+                agent = "build";
+                description = "Kraken Python API wrapper — historical data pipelines, pagination";
               };
             };
           };

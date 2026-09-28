@@ -379,6 +379,30 @@ in
           command = [ "npx" "-y" "@praeses/steam-mcp" ];
           timeout = 120000;
         };
+        # Official GitHub MCP server (github/github-mcp-server, Go binary).
+        # File tree browsing via repos toolset, issues, PRs, actions, code security.
+        # Token read from agenix at runtime via {file:...} substitution.
+        mcp.github = {
+          enabled = true;
+          type = "local";
+          command = [ "${pkgs.github-mcp-server}/bin/github-mcp-server" "stdio" ];
+          environment = {
+            GITHUB_PERSONAL_ACCESS_TOKEN = "{file:/run/agenix/github-token}";
+            GITHUB_TOOLSETS = "repos,issues,pull_requests,actions,code_security,context";
+          };
+          timeout = 120000;
+        };
+        # Knowledge Graph Memory — official MCP reference implementation.
+        # Persistent JSONL storage so the graph survives rebuilds.
+        mcp.memory = {
+          enabled = true;
+          type = "local";
+          command = [ "${pkgs.mcp-server-memory}/bin/mcp-server-memory" ];
+          environment = {
+            MEMORY_FILE_PATH = "/home/seanc/.local/share/opencode/memory.jsonl";
+          };
+          timeout = 120000;
+        };
       };
     }
 
@@ -430,7 +454,7 @@ in
         tools = cfg.tools;
         extraPackages = cfg.extraPackages
           ++ lib.optionals cfg.enableLsp [ pkgs.nixd ]
-          ++ [ pkgs.terraform-mcp-server ];
+          ++ [ pkgs.terraform-mcp-server pkgs.nodejs ];
         settings = mergedSettings // lib.optionalAttrs cfg.enableLsp { lsp = true; };
       };
     }

@@ -1460,11 +1460,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1790346888,
-        "narHash": "sha256-usXzXjF7SsOa1JwpsFlXAR60+5wGb97/F/K/fw0g9tk=",
+        "lastModified": 1790353112,
+        "narHash": "sha256-u0Gsh5sntmoHWhf2V8+2+l2oqMQDM5xJT2OXSuWDlJg=",
         "owner": "Cairnstew",
         "repo": "spotify-playlist-manager",
-        "rev": "a81356c6439287c0f55cc5f86e0d4602fa2b3876",
+        "rev": "24b33878388bc2c1bd3c2fd883f91223e6051626",
         "type": "github"
       },
       "original": {

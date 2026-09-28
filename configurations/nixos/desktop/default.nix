@@ -75,6 +75,11 @@
     outputCap = 3.0;
   };
 
+  # ── Vulkan ────────────────────────────────────────────────────────────────
+  # Required for native Vulkan games (Satisfactory, etc.). Adds vulkan-loader,
+  # validation layers, and 32-bit support for mod DLLs.
+  my.hardware.vulkan.enable = true;
+
   # ── Audio: virtual mixer + declared default mic ──────────────────────────
   # Pulsemeeter provides VoiceMeeter-style virtual buses; EasyEffects adds
   # per-stream EQ/compression. The mic name is baked into WirePlumber config as
@@ -311,19 +316,32 @@
   my.programs.steam = {
     shaderPreCaching.enable = true;
     gamemode.enable = true;
-    games.overwatch-2 = {
-      appId = "2357570";
-      name = "Overwatch 2";
-      gamescope = {
-        enable = true;
-        width = 2560;
-        height = 1440;
-        refreshRate = 120;
-        extraArgs = [
-          "--prefer-output"
-          "DP-1" # fullscreen on the main gaming monitor
-          "--immediate-flips" # reduce latency / stutter
-        ];
+    games = {
+      overwatch-2 = {
+        appId = "2357570";
+        name = "Overwatch 2";
+        gamescope = {
+          enable = true;
+          width = 2560;
+          height = 1440;
+          refreshRate = 120;
+          extraArgs = [
+            "--prefer-output"
+            "DP-1" # fullscreen on the main gaming monitor
+            "--immediate-flips" # reduce latency / stutter
+          ];
+        };
+      };
+      satisfactory = {
+        appId = "526870";
+        name = "Satisfactory";
+        env = {
+          # Disable Steam's Fossilize layer — it deadlocks with RADV during
+          # Satisfactory's heavy UE5 Vulkan pipeline compilation, causing
+          # "Compiling Vulkan Shaders" to hang forever.
+          STEAM_SHADER_CACHE_DISABLE = "1";
+          VK_LAYER_DISABLE = "Fossilize";
+        };
       };
     };
   };
@@ -1068,6 +1086,19 @@
   # mosh client — pair with server's my.services.mosh for lag-free sessions
   # over the flaky Scotland→Texas tailnet path (UDP, survives relay flaps).
   environment.systemPackages = with pkgs; [ mosh ntfs3g ];
+
+  # ── Vulkan environment ──────────────────────────────────────────────────
+  # Disable Steam's Fossilize layer globally — it deadlocks with RADV during
+  # heavy Vulkan pipeline compilation (Satisfactory, Overwatch, etc.).
+  # Fossilize is an implicit layer loaded by Pressure Vessel, so
+  # VK_LAYER_DISABLE alone isn't enough; we also set STEAM_FOSSILIZE_DUMP_PATH
+  # to /dev/null to prevent recording, and disable threaded GL to avoid
+  # multi-threaded pipeline deadlocks.
+  environment.sessionVariables = {
+    VK_LAYER_DISABLE = "Fossilize";
+    STEAM_FOSSILIZE_DUMP_PATH = "/dev/null";
+    __GL_THREADED_OPTIMIZATIONS = "0";
+  };
 
   # Music playlists live on the server host (configurations/nixos/server) —
   # not here; desktop previously enabled them and music-install-funky failed.
