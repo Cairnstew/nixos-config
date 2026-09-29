@@ -284,6 +284,17 @@
       order = 4;
       on-click = "/etc/profiles/per-user/${flake.config.me.username}/bin/spotify-upvote";
     };
+
+    # OpenCode Go usage: rolling/weekly/monthly budget consumption from the
+    # cached usage snapshot (refreshed every 5m by the systemd timer).
+    bar.customModules.opencode-usage = {
+      exec = "/etc/profiles/per-user/${flake.config.me.username}/bin/opencode-go-waybar";
+      interval = 60;
+      returnType = "json";
+      tooltip = true;
+      position = "right";
+      order = 90; # between tray and custom/gpu
+    };
   };
 
   my.programs.proton.ge.enable = true;
