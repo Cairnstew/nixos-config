@@ -95,10 +95,13 @@ in_allowlist() {
   local p="$1"
   local g
   for g in "${ALLOW_GLOBS[@]}"; do
-    if [[ "$p" == "$g" ]]; then return 0; fi
+    # RHS unquoted: in bash [[ ]], an unquoted right-hand side is a pattern, so
+    # the glob entries ('commands/*.md' etc.) actually match. Quoting it ("$g")
+    # forces a literal string compare and silently rejects every glob entry.
+    if [[ "$p" == $g ]]; then return 0; fi
   done
   for g in "${AGENT_MD_GLOBS[@]}"; do
-    if [[ "$p" == "$g" ]]; then return 0; fi
+    if [[ "$p" == $g ]]; then return 0; fi
   done
   return 1
 }
