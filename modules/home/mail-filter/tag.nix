@@ -1,0 +1,280 @@
+{ config, lib, pkgs, flake, ... }:
+let
+  inherit (lib) mkEnableOption mkOption types concatStringsSep mapAttrsToList;
+  cfg = config.my.services.mailFilter;
+  me = flake.config.me or { };
+  email = me.email or "";
+in
+{
+  options.my.services.mailFilter = {
+    enable = mkEnableOption "Gmail IMAP label tagging based on flake.config.mail.tags";
+
+    address = mkOption {
+      type = types.str;
+      default = email;
+      description = "Gmail address (also the IMAP login).";
+    };
+
+    secretName = mkOption {
+      type = types.str;
+      default = "mcp-better-email-password";
+      description = "Agenix secret holding the Gmail app password (decrypted at /run/agenix/<name>).";
+    };
+
+    dryRun = mkOption {
+      type = types.bool;
+      default = true;
+      description = "Preview which tags would be applied without actually writing them (safe default).";
+    };
+
+    frequency = mkOption {
+      type = types.str;
+      default = "15min";
+      description = "systemd OnCalendar value for the tagging timer (see systemd.time(7)).";
+    };
+
+    limit = mkOption {
+      type = types.int;
+      default = 500;
+      description = "Only scan the N most recent messages by UID (bounds the first-run backfill).";
+    };
+
+    tags = mkOption {
+      type = types.attrsOf (types.submodule {
+        options = {
+          path = mkOption {
+            type = types.str;
+            description = "Gmail label applied when a matcher hits (e.g. 'Security/1Password').";
+          };
+          description = mkOption {
+            type = types.str;
+            default = "";
+            description = "Human-readable description (used as a comment in the generated script).";
+          };
+          matchers = mkOption {
+            type = types.listOf types.str;
+            default = [ ];
+            description = "Case-insensitive substrings matched against From/Subject/List-Id headers.";
+          };
+          aliases = mkOption {
+            type = types.listOf types.str;
+            default = [ ];
+            description = "Accepted for compatibility with flake.config.mail (unused by tagger).";
+          };
+        };
+      });
+      default = (flake.config.mail or { }).tags or { };
+      description = "Tag definitions — one Gmail label per attr. Defaults to the canonical taxonomy in flake.config.mail.tags.";
+    };
+
+    tagScript = mkOption {
+      type = types.path;
+      internal = true;
+      readOnly = true;
+    };
+  };
+
+  # ── Python IMAP tagger ──────────────────────────────────────────────────────
+  # Generated entirely in the config block (cfg.tags only available after
+  # options are evaluated).  The full script is built as one Nix string to
+  # avoid the trap of ${...} Nix interpolation inside Python f-strings.
+  #
+  # INDENTATION CONTRACT (see GOTCHAS.md "Nix '' strings and ${} interpolation"):
+  #   Every literal line of the template below sits at source column 6+, and the
+  #   *only* two lines below that (the ${indentAll ...} line and the closing
+  #   '';) are also pinned to column 6.  That makes the template's minimum
+  #   indent exactly 6, so Nix strips 6: top-level Python lands at column 0,
+  #   the `try:`/`for:` bodies at 4/8.  The interpolated tag blocks keep their
+  #   own baked-in indent (site column 0), so they must be emitted pre-indented
+  #   to 8/12 to line up inside the `for uid in uids:` body.
+  config = lib.mkIf cfg.enable (let
+
+    # ── build the tag-match Python block as a Nix string ───────────────────────
+    pyEsc = s: builtins.replaceStrings [ "\\" "\"" ] [ "\\\\" "\\\"" ] s;
+
+    # For each tag with matchers, produce a Python `if` block.  Source columns
+    # 8/12 → after the template's 6-column strip these land at 8/12, i.e. inside
+    # the `for uid in uids:` body (for at 4, body at 8).
+    tagCodeBlocks = mapAttrsToList (name: tag:
+      let
+        matchers = tag.matchers or [ ];
+        escapedMatchers = map (m: "\"${pyEsc m}\"") matchers;
+        matcherList = concatStringsSep ", " escapedMatchers;
+        label = pyEsc (tag.path or name);
+      in
+      if matchers == [ ] then "" else ''
+        if any(m.lower() in h.lower() for h in (s, f, l) for m in [${matcherList}]):
+            tags += ["${label}"]'') cfg.tags;
+
+    # Filter out empty entries (tags with no matchers).
+    tagCode = concatStringsSep "\n" (lib.filter (x: x != "") tagCodeBlocks);
+
+    # Nix ${} only applies the template's stripped indent to the FIRST line of a
+    # multi-line interpolation.  Pre-indent every line so all land at the right
+    # column; the site indent here is 0, so this prefix is the final column.
+    indentAll = prefix: s: concatStringsSep "\n"
+      (map (line: if line == "" then "" else prefix + line) (lib.splitString "\n" s));
+
+    limitStr = toString cfg.limit;
+
+    # ── full Python script ─────────────────────────────────────────────────────
+    script = ''
+      #!/usr/bin/env python3
+      """Gmail IMAP label tagger - generated by my.services.mailFilter.
+      Labels messages in INBOX based on flake.config.mail.tags matchers.
+      Does not move or delete anything.  Safe to re-run (idempotent)."""
+      import imaplib, email.header, sys
+
+      host    = sys.argv[1]
+      user    = sys.argv[2]
+      pw_path = sys.argv[3]
+      dry     = "--dry-run" in sys.argv
+
+      # --- password ---
+      try:
+          pw = open(pw_path).read().strip()
+      except FileNotFoundError:
+          print("secret not found: " + pw_path, file=sys.stderr)
+          sys.exit(78)
+
+      def decode(raw):
+          parts = email.header.decode_header(raw or "")
+          out = []
+          for piece, cs in parts:
+              out.append(piece.decode(cs or "utf-8", errors="replace")
+                         if isinstance(piece, bytes) else piece)
+          return " ".join(out)
+
+      def decode_labels(meta):
+          """Pull the label list out of an IMAP FETCH meta line."""
+          txt = (meta.decode(errors="replace")
+                 if isinstance(meta, bytes) else str(meta or ""))
+          i = txt.find("X-GM-LABELS")
+          if i < 0:
+              return set()
+          rest = txt[i + len("X-GM-LABELS"):].lstrip()
+          if not rest.startswith("("):
+              return set()
+          depth, j, end, inq = 0, 0, None, False
+          while j < len(rest):
+              c = rest[j]
+              if inq:
+                  if c == "\\":
+                      j += 2
+                      continue
+                  if c == '"':
+                      inq = False
+              elif c == '"':
+                  inq = True
+              elif c == "(":
+                  depth += 1
+              elif c == ")":
+                  depth -= 1
+                  if depth == 0:
+                      end = j
+                      break
+              j += 1
+          if end is None:
+              return set()
+          inner, out, tok, k, inq = rest[1:end], [], "", 0, False
+          while k < len(inner):
+              c = inner[k]
+              if inq:
+                  if c == "\\" and k + 1 < len(inner):
+                      tok += inner[k + 1]
+                      k += 2
+                      continue
+                  if c == '"':
+                      out.append(tok)
+                      tok, inq = "", False
+                      k += 1
+                      continue
+                  tok += c
+                  k += 1
+                  continue
+              if c == '"':
+                  inq, tok = True, ""
+                  k += 1
+                  continue
+              if c in " \t\r\n":
+                  if tok:
+                      out.append(tok)
+                      tok = ""
+                  k += 1
+                  continue
+              tok += c
+              k += 1
+          if tok:
+              out.append(tok)
+          return {x.lower() for x in out}
+
+      def quote(label):
+          return '"%s"' % label.replace("\\", "\\\\").replace('"', '\\"')
+
+      try:
+          m = imaplib.IMAP4_SSL(host, 993, timeout=30)
+          m.login(user, pw)
+          # Read-write: STORE +X-GM-LABELS needs a non-readonly mailbox.
+          m.select("INBOX")
+
+          _, ids = m.uid("search", None, "ALL")
+          uids = ids[0].split()
+          uids = uids[-${limitStr}:] if len(uids) > ${limitStr} else uids
+          print("scanning %d of %d messages..." % (len(uids), len(ids[0].split())))
+
+          for uid in uids:
+              # One round trip: labels come back in the meta line, the headers
+              # in the literal that follows it.
+              _, data = m.uid(
+                  "fetch", uid,
+                  "(UID X-GM-LABELS BODY.PEEK[HEADER.FIELDS (FROM SUBJECT LIST-ID)])")
+              meta, literal = b"", b""
+              if data and data[0]:
+                  if isinstance(data[0], tuple):
+                      head, lit = data[0]
+                      if isinstance(head, bytes):
+                          meta = head
+                      if isinstance(lit, bytes):
+                          literal = lit
+                  elif isinstance(data[0], bytes):
+                      meta = data[0]
+
+              msg = email.message_from_bytes(literal)
+              uid_s = uid.decode()
+              s = decode(msg["subject"])
+              f = decode(msg["from"])
+              l = decode(msg["list-id"])
+
+              tags = []
+      ${indentAll "        " tagCode}
+
+              if not tags:
+                  continue
+
+              existing = decode_labels(meta)
+              new = [t for t in tags if t.lower() not in existing]
+              if not new:
+                  continue
+
+              shown = " ".join(new)
+              if dry:
+                  print("  [dry] UID %s: +%s" % (uid_s, shown))
+              else:
+                  m.uid("store", uid_s, "+X-GM-LABELS",
+                        "(%s)" % " ".join(quote(t) for t in new))
+                  print("  UID %s: +%s" % (uid_s, shown))
+
+          m.logout()
+          print("done")
+
+      except imaplib.IMAP4.error as exc:
+          print("IMAP error: %s" % exc, file=sys.stderr)
+          sys.exit(1)
+      '';
+
+  in
+  {
+    home.packages = [ pkgs.python3 ];
+    my.services.mailFilter.tagScript = pkgs.writeText "mail-tag.py" script;
+  });
+}

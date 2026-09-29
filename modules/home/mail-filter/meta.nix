@@ -1,8 +1,8 @@
 {
   name = "mail-filter";
-  description = "Sieve-based IMAP mail filtering: mbsync pull + pigeonhole sieve-filter driven by the mail taxonomy";
+  description = "Gmail IMAP label tagging: applies flake.config.mail.tags taxonomy as X-GM-LABELS in place (no moves, no local maildir)";
   category = "mail";
-  tags = [ "mail" "sieve" "mbsync" "imap" "gmail" "filtering" ];
+  tags = [ "mail" "imap" "gmail" "labels" "tagging" "x-gm-labels" ];
   provides = [ "my.services.mailFilter" ];
   expects = [ "flake.config.mail" "flake.config.me" ];
   complexity = "complex";

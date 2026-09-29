@@ -1,10 +1,8 @@
-{ ... }:
+{ lib, ... }:
 {
   imports = [
-    ./options.nix
-    ./config.nix
+    ./tag.nix
     ./services.nix
-    ./sieve.nix
     ./tests.nix
   ];
 }
