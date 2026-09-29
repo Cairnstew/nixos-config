@@ -5,4 +5,3 @@ bun.lock
 # Runtime-mutated model-fallback override (my.programs.opencode.modelFallback).
 # Intentionally imperative: rewritten by opencode-model-select before dispatch.
 ensemble.json
-.gitignore
