@@ -519,21 +519,53 @@ in
         cfg.pluginFiles);
     })
 
-    # Default permissions for NixOS paths & Ensemble worktrees
+    # Default permissions for NixOS paths, Ensemble worktrees, and user projects
     {
       programs.opencode.settings.permission = lib.mkDefault {
         external_directory = {
+          # NixOS system paths
           "/nix/*" = "allow";
           "/nix/store/**" = "allow";
           "/nix/var/nix/**" = "allow";
           "/run/current-system/**" = "allow";
           "/run/agenix/**" = "allow";
           "/etc/nixos/**" = "allow";
+
+          # Waybar config and profile binaries (waybar custom modules use absolute paths)
+          "/etc/xdg/waybar/**" = "allow";
+          "/etc/profiles/per-user/*/bin/*" = "allow";
+
+          # Temporary files
           "/tmp/*" = "allow";
+
+          # OpenCode Go usage snapshot (used by model-select, dashboard)
+          "~/.cache/opencode/go-usage.json" = "allow";
+
+          # OpenCode worktrees (ensemble plugin)
           "~/.local/share/opencode/worktree/**" = "allow";
+
+          # User project directories
+          "~/Projects/*" = "allow";
+          "~/Documents/*" = "allow";
         };
       };
     }
+
+    # Merge user-contributed allowed directories from my.programs.opencode.allowedDirs
+    (mkIf (cfg.allowedDirs != [ ]) {
+      programs.opencode.settings.permission.external_directory =
+        builtins.listToAttrs (map
+          (entry:
+            let
+              path = if builtins.isString entry then entry else entry.path;
+            in
+            {
+              name = path;
+              value = "allow";
+            }
+          )
+          cfg.allowedDirs);
+    })
 
     # ── Ollama: auto-select default model if one is tagged ──────────────────
     (mkIf (providers.defaultOllamaModel != null) {

@@ -760,6 +760,54 @@ in
       description = "Extra packages added to the PATH available to OpenCode.";
     };
 
+    # ── Directory access permissions ──────────────────────────────────────────
+    # Modules can contribute directories that agents should be allowed to access
+    # outside the project worktree. These are merged into the external_directory
+    # permission globs.
+
+    allowedDirs = mkOption {
+      type = types.listOf (types.either types.str (types.submodule {
+        options = {
+          path = mkOption {
+            type = types.str;
+            description = "Directory path or glob pattern to allow.";
+          };
+          description = mkOption {
+            type = types.nullOr types.str;
+            default = null;
+            description = "Human-readable description of why this directory is needed.";
+          };
+        };
+      }));
+      default = [ ];
+      example = lib.literalExpression ''
+        [
+          "~/Projects/*"
+          "~/Documents/work/**"
+          { path = "/data/models/*"; description = "ML model files"; }
+        ]
+      '';
+      description = ''
+        Directories that agents are allowed to access outside the project worktree.
+        Supports glob patterns. Each entry can be a plain string path/glob or an
+        attrset with `path` and optional `description`.
+
+        These are merged into `programs.opencode.settings.permission.external_directory`
+        as `"allow"` entries. Modules can contribute their own directories here
+        (e.g., `my.programs.opencode.allowedDirs = [ "~/my-project" ];`).
+
+        The following paths are always allowed by default:
+        - /nix/*, /nix/store/**, /nix/var/nix/**
+        - /run/current-system/**, /run/agenix/**
+        - /etc/nixos/**
+        - /etc/xdg/waybar/** (waybar config and menu files)
+        - /etc/profiles/per-user/*/bin/* (user profile binaries)
+        - /tmp/*
+        - ~/.cache/opencode/go-usage.json
+        - ~/.local/share/opencode/worktree/**
+      '';
+    };
+
     enableLsp = mkOption {
       type = types.bool;
       default = false;
