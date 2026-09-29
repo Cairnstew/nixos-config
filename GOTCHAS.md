@@ -1052,6 +1052,7 @@ When you discover a new problem and its solution:
 4. Include the specific error message or symptom pattern
 5. Prefix with `**[SUPERSEDED]**` when the fix references modules that no longer exist in this tree — retain the entry as history.
 6. Add a `> **RESOLVED** — <date> — <how it was resolved>` line directly beneath an entry when the fix has been verified applied — keep the original text intact, matching the `**[SUPERSEDED]**` marker style.
+7. **Append at the END of this file** (after the `---` below), *not* at the top of the file. Rules 1041/1049 above ("newest at the top") date from 2026-05-20 and no longer describe practice: the block at the top of the file is frozen at 2026-09-24 while every later entry (`5496fe3`, `cfc9e44`, `fce9cc5`, `89c3775`, …) was appended after this section. Newest is therefore the last entry in the file; leave the historical top block alone.
 
 ---
 
