@@ -1167,6 +1167,14 @@
 
     # GNOME-specific extras removed: host-info extension (broken/unused),
     # dconf shell settings, and gnome-monitor-config service (replaced by my.monitors)
+
+    # ── Sieve mail filtering (mbsync + pigeonhole sieve-filter) ───────────────
+    # Gmail app password comes from /run/agenix/mcp-better-email-password
+    # (verified working for IMAP 2026-09-29). Add the same block to laptop to
+    # enable there too.
+    my.services.mailFilter = {
+      enable = true;
+    };
   };
 
 }
