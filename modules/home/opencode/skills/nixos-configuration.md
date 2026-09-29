@@ -71,23 +71,26 @@ options.services.myservice = { ... };
 
 ### Adding a New Module
 
-1. Create directory: `mkdir modules/nixos/mymodule/`
-2. Create required files:
+1. Check it doesn't already exist: `nix-graph_search_nodes("<name>")`
+2. Create directory: `mkdir modules/nixos/mymodule/`
+3. Create required files:
    - `default.nix` - Import manifest
    - `meta.nix` - Machine-readable metadata
    - `options.nix` - Option declarations
    - `config.nix` - Implementation
    - `tests.nix` - Tests
    - `README.md` - Human docs
-3. Follow the module schema from `modules/AGENT.md`
+4. Follow the module schema from `modules/AGENT.md`
+5. Verify: `nix-graph_get_dependents("modules/nixos/mymodule")` shows expected importers
 
 ### Adding a New Host
 
-1. Create directory: `mkdir configurations/nixos/myhost/`
-2. Create `default.nix` with host configuration
-3. Import common: `flake.inputs.self.nixosModules.common`
-4. Set required: `networking.hostName`, `nixpkgs.hostPlatform`
-5. Enable appropriate profiles
+1. Check what profiles exist: `nix-graph_search_nodes("profile:")`
+2. Create directory: `mkdir configurations/nixos/myhost/`
+3. Create `default.nix` with host configuration
+4. Import common: `flake.inputs.self.nixosModules.common`
+5. Set required: `networking.hostName`, `nixpkgs.hostPlatform`
+6. Enable appropriate profiles
 
 ### Updating Inputs
 

@@ -198,6 +198,25 @@ Any caveats or upstream links.
 | No `home-manager.sharedModules` in NixOS | Wire at host level instead |
 | No `config.system.*` in Home Manager | Not safe in standalone HM |
 
+## Verify with nix-graph
+
+Before creating or migrating a module, use the nix-graph MCP tools to check
+the existing landscape:
+
+| Check | Tool | Example |
+|-------|------|---------|
+| Does this module/option already exist? | `nix-graph_search_nodes(query)` | `nix-graph_search_nodes("tailscale")` |
+| What imports this module? | `nix-graph_get_dependents(module_path)` | `nix-graph_get_dependents("modules/nixos/tailscale")` |
+| Where is this option declared? | `nix-graph_get_option_definers(option_path)` | `nix-graph_get_option_definers("my.services.tailscale.enable")` |
+| Are there namespace violations? | `nix-graph_find_namespace_violations` | Checks all options are under `my.*` |
+| Is there a circular import? | `nix-graph_find_path(source, target)` | `nix-graph_find_path("modules/nixos/a", "modules/nixos/b")` |
+
+After migration (flat file → directory), verify nothing broke:
+```
+nix-graph_graph_stats    # node/edge counts should be stable
+nix-graph_get_dependents("modules/nixos/<name>")  # importers unchanged
+```
+
 ## Splitting Guidelines
 
 Extract side-cars when:
