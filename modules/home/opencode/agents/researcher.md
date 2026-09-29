@@ -208,6 +208,12 @@ self-improvement checkpoint (a short, cheap structured self-check):
    happened this run or exists in the repo now — never aspirational. Do not
    balloon the file; do not edit outside this file without explicit human
    direction.
+
+   **Durable research facts** (API quirks, upstream behavior, verified gotchas)
+   can be persisted to the memory MCP knowledge graph for cross-session use:
+   `memory_create_entities([{"name": "...", "entityType": "research-finding", "observations": [...]}])`.
+   This is additive to the RUN LOG — the RUN LOG stays in this file; the memory
+   graph makes findings queryable by other agents/sessions.
 4. Do not call any `learning_*` tool — the goals MCP exposes none for
    self-improvement anymore.
 5. **Efficiency lens** (proposal-only, second part of the same pass — same

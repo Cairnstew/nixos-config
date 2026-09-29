@@ -161,7 +161,10 @@ nix run
 
 | Server | Purpose | API Key? |
 |--------|---------|----------|
-| `nix-graph` | Static analysis of NixOS config graph | No |
+| `nix-graph` | Static analysis of NixOS config graph (modules, options, imports) | No |
+| `memory` | Knowledge graph for persistent cross-session facts | No |
+| `github` | GitHub official: repos, file tree, issues, PRs, actions | Yes (`github-token`) |
+| `pdf-mcp` | PDF text extraction, search, and structural analysis | No |
 | `terraform` | Terraform/HCP provider + module registry | No |
 | `ieee` | IEEE Xplore academic paper search | Yes (`ieee-api-key`) |
 | `steam` | Steam game library management | Optional (`steam-api-key`) |
@@ -177,6 +180,22 @@ environment = {
   API_KEY = "{file:${config.age.secrets.my-key.path}}";
 };
 ```
+
+### Persisting facts to the memory graph
+
+Use `memory_create_entities` / `memory_add_observations` to store durable facts
+(architecture decisions, module ownership, verified gotchas) that future sessions
+can query with `memory_search_nodes`:
+
+```
+memory_create_entities([{
+  "name": "module:tailscale",
+  "entityType": "module",
+  "observations": ["Owned by seanc", "Depends on common.nix", "Has manager.nix for ACL policy"]
+}])
+```
+
+Query later: `memory_search_nodes("tailscale")` → returns entities + relations.
 
 ### Timeout guidance
 

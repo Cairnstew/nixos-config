@@ -106,6 +106,11 @@ summary — explicitly evaluate whether this run produced grounded lessons.
    the commit-helper for a self-improvement commit. A session that self-applies
    does so via the helper; one that does not states it plainly.
 
+   **Durable facts** (module ownership, traps, architectural decisions) that
+   aren't allow-listed for file-based RUN LOGs can be persisted to the memory
+   MCP knowledge graph: `memory_create_entities([{"name": "...", "entityType": "fact", "observations": [...]}])`.
+   This gives future sessions access to cross-session context without re-discovery.
+
 5. **Efficiency lens** (proposal-only, second part of the same pass — same
    "guaranteed check, may or may not act" shape, no new agent/gate, no threshold
    gate by default):

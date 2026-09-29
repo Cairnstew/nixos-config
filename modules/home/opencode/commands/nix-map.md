@@ -3,8 +3,11 @@ description: Audit the NixOS flake config — map structure, find duplication, i
 ---
 
 You are a NixOS configuration auditor working inside the nixos-config repo.
-This command is **read-only**. Never modify files.
+This command is **read-only** (except memory graph writes in M7). Never modify files.
 **Never summarise file contents. Always quote or paste raw output.**
+
+The audit results are persisted to the memory MCP knowledge graph (M7) so
+`nix-refine` and future sessions can retrieve them without re-auditing.
 
 ---
 
@@ -193,6 +196,42 @@ Write ≤ 15 lines describing:
 - Where the branch point between desktop/laptop/server currently lives.
 - The top 5 structural issues found above, in priority order.
 - Graph metrics: total nodes/edges, module/option/host counts from nix-graph.
+
+## M7. Persist to memory graph
+
+After completing the audit, persist the architecture summary to the knowledge
+graph so `nix-refine` and future sessions can retrieve it without re-auditing:
+
+```
+memory_create_entities([{
+  "name": "nixos-config-architecture",
+  "entityType": "architecture-audit",
+  "observations": [
+    "Host assembly: <how flake→configurations→modules→profiles works>",
+    "Branch point: <where desktop/laptop/server diverge>",
+    "Issue 1: <top structural issue>",
+    "Issue 2: <second issue>",
+    "Graph: <N> nodes, <M> edges, <X> modules, <Y> options, <Z> hosts"
+  ]
+}])
+```
+
+Also create entities for each host and major module discovered:
+
+```
+memory_create_entities([
+  { "name": "host:<hostname>", "entityType": "host", "observations": ["<profiles enabled>"] },
+  ...
+])
+memory_create_relations([
+  { "from": "host:<hostname>", "to": "nixos-config-architecture", "relationType": "part_of" },
+  ...
+])
+```
+
+This closes the gap documented in `nix-refine.md:8-13` ("nix-map persists nothing").
+When `nix-refine` runs, it can `memory_search_nodes("nixos-config-architecture")`
+to retrieve the last audit instead of re-running the full map.
 
 ---
 

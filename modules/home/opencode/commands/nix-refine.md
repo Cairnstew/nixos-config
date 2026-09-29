@@ -802,6 +802,20 @@ ported here):
 Each lesson must be grounded in something that actually happened this run (file:line or a concrete
 observed behavior). Do not invent lessons.
 
+Persist durable lessons to the memory graph for cross-session use:
+
+```
+memory_create_entities([{
+  "name": "lesson:<short-description>",
+  "entityType": "lesson",
+  "observations": ["<what happened>", "<what to do instead>"]
+}])
+```
+
+Known limitations of nix-graph (from lines 107-124) are also persisted in the
+memory graph — search `memory_search_nodes("nix-graph-limitation")` before relying
+on graph query results.
+
 ## 6.2 Audit this command file (meta-scout)
 
 Spawn **one** read-only scout (`general`, `worktree: false`, `claim_task: self-improve`) whose
