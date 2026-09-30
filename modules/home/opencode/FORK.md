@@ -28,7 +28,7 @@ stopgap-until-upstream.
 | | |
 |---|---|
 | Source | `https://github.com/Cairnstew/opencode-ensemble` |
-| Commit | **de091d148c7455e014f5ff332b9c3cebf0de2c81** |
+| Commit | **32bc13560d3e5bbf6e730ae573461bb3fc394681** |
 | Base package | `@hueyexe/opencode-ensemble` |
 | Version | **0.19.0** (from GitHub, vendored dist) |
 | Dist | single-file `dist/index.js` (node-core imports only; exports the plugin fn) |
@@ -68,7 +68,7 @@ re-asserts the post-conditions at nixtest time.
 ## How it's wired
 
 - `fork.nix` — uses the vendored dist/index.js from the local build of the
-  Cairnstew fork (commit de091d1), runs the patch, `node --check`s the result
+  Cairnstew fork (commit 32bc135), runs the patch, `node --check`s the result
   (ESM), outputs the patched file.
 - `vendor/opencode-ensemble-0.19.0-dist.js` — pre-built dist from the local
   build of the Cairnstew fork (includes Agent Spaces feature).

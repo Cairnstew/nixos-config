@@ -221,7 +221,13 @@ in
           # is never eligible above it), and the lead rung's pacing can only
           # tighten it further.
           modelFallback.enable = lib.mkDefault true;
-          modelFallback.syncEnsembleProjectFile = lib.mkDefault true;
+          # Ensemble model sync is DISABLED (2026-09-30): the ensemble plugin
+          # now inherits the lead session's model (inheritLeadModel default
+          # true), and the budget-sync would keep writing modelsByAgent pins
+          # that override that inheritance. The fallback chains below still
+          # route the MAIN agent's own model dispatch; only the ensemble
+          # spawn-side sync is off.
+          modelFallback.syncEnsembleProjectFile = lib.mkDefault false;
           modelFallback.chains = lib.mkDefault {
             default = [
               # Lead rung: monthly is budget-paced (pacing.mode = "budget"):
@@ -268,12 +274,13 @@ in
           };
 
           ensemble = lib.mkDefault {
-            defaultModel = "opencode-go/deepseek-v4-flash";
-            modelsByAgent = {
-              build = "opencode-go/deepseek-v4-flash";
-              explore = "opencode-go/deepseek-v4-flash";
-              plan = "opencode-go/deepseek-v4-flash";
-            };
+            # Model selection: the ensemble plugin now inherits the LEAD
+            # session's model by default (resolveModel: explicit arg >
+            # modelsByAgent > modelPool > lead model > defaultModel). No
+            # defaultModel/modelsByAgent pins here — teammates follow the
+            # main agent's model instead of a static config pin. Opt out per
+            # repo via ensemble.inheritLeadModel = false or an explicit
+            # model= on team_spawn.
             dashboardPort = 4747;
             mergeOnCleanup = true;
             spaces = {

@@ -96,11 +96,11 @@ def patch(input_path: str, output_path: str) -> None:
     # Site 3: team_broadcast delivery
     old3 = """deps.client.session.promptAsync({
       sessionID: recipient.sessionId,
-      parts: [{ type: "text", text: `[Team broadcast from ${senderName}]: ${args2.text}` }]
+      parts: [{ type: "text", text: `[Team broadcast from ${senderName}]: ${args.text}` }]
     })"""
     new3 = """deps.client.session.promptAsync(__ensembleWakeArgs(deps.db, {
       sessionID: recipient.sessionId,
-      parts: [{ type: "text", text: `[Team broadcast from ${senderName}]: ${args2.text}` }]
+      parts: [{ type: "text", text: `[Team broadcast from ${senderName}]: ${args.text}` }]
     }))"""
     if old3 in src:
         src = src.replace(old3, new3, 1)
@@ -111,17 +111,11 @@ def patch(input_path: str, output_path: str) -> None:
     # Site 4: team-shutdown nudge
     old4 = """deps.client.session.promptAsync({
       sessionID: member.session_id,
-      parts: [{
-        type: "text",
-        text: `[Shutdown requested]: The lead has requested you shut down. Finish your current task, send your final findings to the lead via team_message, then stop.`
-      }]
+      parts: [{ type: "text", text: shutdownText }]
     })"""
     new4 = """deps.client.session.promptAsync(__ensembleWakeArgs(deps.db, {
       sessionID: member.session_id,
-      parts: [{
-        type: "text",
-        text: `[Shutdown requested]: The lead has requested you shut down. Finish your current task, send your final findings to the lead via team_message, then stop.`
-      }]
+      parts: [{ type: "text", text: shutdownText }]
     }))"""
     if old4 in src:
         src = src.replace(old4, new4, 1)
@@ -130,11 +124,11 @@ def patch(input_path: str, output_path: str) -> None:
         print("  SKIP (not found): team-shutdown nudge")
 
     # Site 5: pending-messages lead wake
-    old5 = """client3.session.promptAsync({
+    old5 = """client.session.promptAsync({
                 sessionID,
                 parts: [{ type: "text", text: `[System: ${pending.c} new team message(s) available]` }]
               })"""
-    new5 = """client3.session.promptAsync(__ensembleWakeArgs(db, {
+    new5 = """client.session.promptAsync(__ensembleWakeArgs(db, {
                 sessionID,
                 parts: [{ type: "text", text: `[System: ${pending.c} new team message(s) available]` }]
               }))"""

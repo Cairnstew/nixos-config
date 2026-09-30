@@ -2,4 +2,4 @@
 # Regenerate ONLY via that script (it rewrites this file in the same operation
 # as the vendored dist). Hashes the banner-prefixed artifact in vendor/.
 filename=opencode-ensemble-0.19.0-dist.js
-sha256=9cbd6a4d7b1f79fceac448f9b2cf9ff35f3aab8abe25149acd36d546e4bf8b88
+sha256=8d2aef3b2efdc330473b21a883de449381e65758987be01d1743c136e91460a7

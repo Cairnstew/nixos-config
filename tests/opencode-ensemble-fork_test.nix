@@ -28,23 +28,29 @@ in
           path = sys.argv[1]
           src = open(path, encoding="utf-8", errors="replace").read()
 
-          # Every continuation prompt must be wrapped. Exactly 5 occurrences:
-          # the wake sites the patch wraps + the helper's own definition.
+          # Every continuation prompt must be wrapped. 6 occurrences:
+          # the 5 wake sites the patch wraps + the helper's own definition.
           # (The fork's Agent Spaces expansion — commit fd5555e — already fixed
           # the other sites upstream, so the patch now wraps 5, not the 10 of
-          # the older 0.17/0.16 fork. See fork.nix comment + patches log.)
+          # the older 0.17/0.16 fork. The 32bc135 re-vendor changed site forms
+          # — team_broadcast's arg rename args2→args, team-shutdown a
+          # shutdownText variable, pending-messages client3→client — and the
+          # anchors were re-derived in patches/opencode-ensemble.py. See
+          # fork.nix comment + patches log.)
           wraps = src.count("__ensembleWakeArgs(")
-          assert wraps == 5, f"expected 5 __ensembleWakeArgs( occurrences, found {wraps}"
+          assert wraps == 6, f"expected 6 __ensembleWakeArgs( occurrences, found {wraps}"
 
           # The bare promptAsync({ sites are the fork's OWN call sites (commit
-          # fd5555e Agent Spaces expansion), which already thread agent/model
-          # into most of them (spread `...model ? { model } : {}`) — that is
-          # exactly why the patch only has to wrap the 5 remaining un-modeled
-          # sites. 8 bare sites in the current patched bundle; the hash-guard
+          # fd5555e/32bc135 Agent Spaces expansion), which already thread
+          # agent/model into all of them (`getMemberModel(...)` /
+          # `...model ? { model } : {}`). That is exactly why the patch only
+          # has to wrap the 5 remaining un-modeled sites. 7 bare sites in the
+          # current patched bundle (was 8 pre-32bc135: one wake site per
+          # pending-messages gained a getMemberModel read); the hash-guard
           # (opencode-ensemble-vendor_test.nix) pins this exact bundle, so any
           # drift shows up there first as a hash mismatch.
           bare = src.count("promptAsync({")
-          assert bare == 8, f"expected 8 un-wrapped promptAsync({{ sites (fd5555e fork baseline), found {bare}"
+          assert bare == 7, f"expected 7 un-wrapped promptAsync({{ sites (32bc135 fork baseline), found {bare}"
 
           # The helper reads lead_agent/lead_model (2 references). The fd5555e fork
           # adds the snapshot column itself: `ALTER TABLE team ADD COLUMN

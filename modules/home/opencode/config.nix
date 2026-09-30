@@ -65,7 +65,13 @@ let
       # PRECONDITION: the ensemble plugin reads .opencode/ensemble.json ONCE
       # at process start, so the sync must complete BEFORE the exec below —
       # never run it concurrently with a dispatch.
-      if command -v opencode-model-select >/dev/null 2>&1; then
+      #
+      # The ensemble sync (--sync-ensemble) is gated on
+      # modelFallback.syncEnsembleProjectFile (default false since
+      # 2026-09-30): the plugin inherits the lead session's model, and the
+      # chain sync would re-pin modelsByAgent and override that.
+      if ${if cfg.modelFallback.syncEnsembleProjectFile then "true" else "false"} \
+         && command -v opencode-model-select >/dev/null 2>&1; then
         opencode-model-select --sync-ensemble || true
       fi
 
