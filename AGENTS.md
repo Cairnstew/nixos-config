@@ -6,6 +6,15 @@
 
 ---
 
+## Parallel work with ensemble teams
+
+When a task splits into **2-3+ independent slices with disjoint file ownership**, or is read-only
+fan-out (audit, research, doc review), spawn an ensemble team rather than working it serially. Load
+the `opencode-ensemble` skill first; the full rule set is the "Parallel work with ensemble teams"
+section of `modules/home/opencode/agents/build.md`. Not for a single-module edit or sequential steps.
+
+---
+
 ## Required Reading
 
 Before doing anything in this repo, read these files in order:
