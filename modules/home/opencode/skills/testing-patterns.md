@@ -1,3 +1,8 @@
+---
+name: testing-patterns
+description: "Use when writing or running tests in this NixOS config — the three-level test pyramid (Nix assertions, nixtest suites, VM smoke tests) and which level to use for what."
+---
+
 # Testing Patterns
 
 > Skill for writing and running tests in this NixOS configuration

@@ -1,3 +1,8 @@
+---
+name: docker-management
+description: "Use when managing Docker or Podman containers, the Ollama service running in Docker, GPU passthrough, or other OCI tooling in this config via my.virtualisation.docker."
+---
+
 # Docker Management
 
 > Skill for managing Docker/Podman containers, Ollama, and OCI tooling in this NixOS config

@@ -1,3 +1,8 @@
+---
+name: model-selection
+description: "Use when choosing which model to use for a task — comparing pricing, context/output limits and capabilities (tool calling, vision, reasoning) to pick the most cost-effective one, especially on OpenCode Go."
+---
+
 # Model Selection (OpenCode Go & LLM cost-effectiveness)
 
 > Skill for looking up LLM models by pricing, usage limits, and capabilities —

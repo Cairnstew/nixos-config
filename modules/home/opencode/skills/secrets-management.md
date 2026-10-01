@@ -1,3 +1,8 @@
+---
+name: secrets-management
+description: "Use when adding, rotating or consuming an agenix-encrypted secret in this config — the secrets-manifest.json catalog, committing .age blobs, decryption to /run/agenix at activation, and guarding access with the ? existence check."
+---
+
 # Secrets Management
 
 > Skill for managing agenix-encrypted secrets in this NixOS configuration

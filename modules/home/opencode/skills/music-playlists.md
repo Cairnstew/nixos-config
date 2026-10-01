@@ -1,3 +1,8 @@
+---
+name: music-playlists
+description: "Use when adding or updating a hash-pinned music playlist in this repo — playlists are declared in git, songs pinned in a committed checksums.json, built as fixed-output derivations, and installed into a data dir."
+---
+
 # Music Playlists (hash-pinned downloads)
 
 > Skill for adding/updating hash-pinned music playlists in this repo — "hashify songs like modpacks". Playlists are declared in git, pinned in a committed `checksums.json`, built as fixed-output derivations, and installed into a data dir.

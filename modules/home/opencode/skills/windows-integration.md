@@ -1,3 +1,8 @@
+---
+name: windows-integration
+description: "Use when managing Windows integration in this repo — GRUB dual-boot chainloading, DSC (Desired State Configuration) rendered to YAML, and unattended Windows installs via Ventoy answer files."
+---
+
 # Windows Integration
 
 > Skill for managing Windows dual-boot, DSC configuration, and unattended installs via Ventoy

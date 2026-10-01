@@ -1,3 +1,8 @@
+---
+name: network-security
+description: "Use when writing Tailscale ACL, tag, grant or SSH policy, or configuring the Caddy-based reverse-proxy module in this config."
+---
+
 # Network Security
 
 > Skill for Tailscale ACL/tag/grant policy and the Caddy-based reverse-proxy module in this NixOS configuration

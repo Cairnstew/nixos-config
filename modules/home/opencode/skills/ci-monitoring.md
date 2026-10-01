@@ -1,3 +1,8 @@
+---
+name: ci-monitoring
+description: "Use when monitoring GitHub Actions CI runs, watching a workflow to completion, or finding out why a run failed — the ci-monitor tool wraps gh into one blocking, JSON-returning call instead of manual polling and sleep-loops."
+---
+
 # CI Monitoring
 
 > Skill for monitoring GitHub Actions CI runs with structured JSON output

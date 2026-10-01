@@ -1,3 +1,8 @@
+---
+name: deploy-workflow
+description: "Use when deploying this NixOS config to a fresh or remote host via nixos-anywhere (nix run .#deploy-<host>), or building, deploying and debugging a Ventoy multi-boot USB."
+---
+
 # Deploy Workflow
 
 > Skill for deploying NixOS configurations via nixos-anywhere, Ventoy USB, and related tools

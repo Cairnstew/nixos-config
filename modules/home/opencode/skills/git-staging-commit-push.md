@@ -1,3 +1,8 @@
+---
+name: git-staging-commit-push
+description: "Use when staging, committing or pushing changes in nixos-config — writing properly formatted commit messages for the branch-per-host model, pushing to host branches, and monitoring the resulting CI run."
+---
+
 # Git Staging, Commit & Push Workflow
 
 > Skill for staging, committing, and pushing changes with proper formatting and CI monitoring in nixos-config

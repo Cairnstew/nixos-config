@@ -1,3 +1,8 @@
+---
+name: mcp-server-management
+description: "Use when adding or managing an MCP server in this opencode setup — servers are declared under my.programs.opencode.mcp and rendered into ~/.config/opencode/opencode.json at activation time."
+---
+
 # MCP Server Management
 
 > Skill for adding and managing MCP (Model Context Protocol) servers in this opencode configuration

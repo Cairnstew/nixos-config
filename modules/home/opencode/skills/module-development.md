@@ -1,3 +1,8 @@
+---
+name: module-development
+description: "Use when creating or editing a NixOS or Home Manager module in this repo — required directory layout (default.nix, options.nix, config.nix, meta.nix, tests.nix, README.md), the my.* option namespace, and meta.nix upstream blocks."
+---
+
 # Module Development
 
 > Skill for creating NixOS/Home Manager modules following this repo's conventions

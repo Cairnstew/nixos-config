@@ -1,3 +1,8 @@
+---
+name: git-repo-management
+description: "Use when managing git repositories declared in this NixOS config — the automated git-repo-sync service, the per-host branch layout, and common git workflows."
+---
+
 # Git Repository Management
 
 > Skill for managing git repositories in NixOS configurations

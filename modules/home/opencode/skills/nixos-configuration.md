@@ -1,3 +1,8 @@
+---
+name: nixos-configuration
+description: "Use when working in this NixOS/nix-darwin configuration repository — flake-parts flake structure, nixos-unified autowiring of modules and configurations, my.* system and home profiles, and where the hosts live."
+---
+
 # NixOS Configuration
 
 > Skill for working with this NixOS/nix-darwin configuration repository
