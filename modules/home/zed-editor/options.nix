@@ -4,6 +4,112 @@ let
   types = lib.types;
   prefs = flake.config.preferences or { };
   scheme = flake.config.me.colorScheme or { };
+
+  # Shared shape for one remote SSH connection. Declared once here so the
+  # explicit `sshConnections` list and the per-host `tailnetConnections.hosts`
+  # overrides cannot drift apart; `remote.nix` converts this one shape to Zed's
+  # snake_case JSON.
+  connectionSubmodule = types.submodule {
+    options = {
+      host = lib.mkOption {
+        type = types.nullOr types.str;
+        default = null;
+        description = ''
+          Hostname, IP, or SSH alias to dial. Leave null on a
+          `tailnetConnections.hosts` entry to derive it from the tailnet record
+          (see `tailnetConnections.hostField`); required on an explicit
+          `sshConnections` entry.
+        '';
+      };
+      projects = lib.mkOption {
+        type = types.listOf (types.submodule {
+          options = {
+            paths = lib.mkOption {
+              type = types.listOf types.str;
+              default = [ ];
+              description = "Paths to open on the remote machine.";
+            };
+          };
+        });
+        default = [ ];
+        description = "Project directories to open on the remote.";
+      };
+      username = lib.mkOption {
+        type = types.nullOr types.str;
+        default = null;
+        description = ''
+          SSH username for the remote connection. Defaults to
+          `flake.config.me.username` for tailnet-derived connections.
+        '';
+      };
+      port = lib.mkOption {
+        type = types.nullOr types.port;
+        default = null;
+        description = "SSH port for the remote connection. Defaults to 22.";
+      };
+      args = lib.mkOption {
+        type = types.listOf types.str;
+        default = [ ];
+        description = ''
+          Extra SSH arguments for the control-master process (e.g.
+          `"-o" "IdentitiesOnly=yes"`, or `"-J" "bastion"` to hop). Zed shells
+          out to `ssh` and inherits `~/.ssh/config`, so most hosts need nothing
+          here.
+        '';
+        example = [
+          "-J"
+          "bastion"
+        ];
+      };
+      nickname = lib.mkOption {
+        type = types.nullOr types.str;
+        default = null;
+        description = "Display name in Zed's remote projects dialog.";
+      };
+      uploadBinaryOverSsh = lib.mkOption {
+        type = types.bool;
+        default = false;
+        description = ''
+          Upload the Zed server binary over SSH instead of having the remote
+          download it from zed.dev. Required when the remote machine has no
+          internet access.
+        '';
+      };
+      portForwards = lib.mkOption {
+        type = types.listOf (types.submodule {
+          options = {
+            localPort = lib.mkOption {
+              type = types.port;
+              description = "Local port to forward.";
+            };
+            remotePort = lib.mkOption {
+              type = types.port;
+              description = "Remote port to forward.";
+            };
+            localHost = lib.mkOption {
+              type = types.nullOr types.str;
+              default = null;
+              description = ''
+                Local address to bind. Defaults to localhost; use `0.0.0.0` to
+                expose the forward on all local interfaces.
+              '';
+            };
+            remoteHost = lib.mkOption {
+              type = types.nullOr types.str;
+              default = null;
+              description = ''
+                Remote address the forward connects to. Defaults to localhost;
+                set it to e.g. `docker-host` when the service is bound on
+                another interface on the remote.
+              '';
+            };
+          };
+        });
+        default = [ ];
+        description = "Port forwarding rules for this connection.";
+      };
+    };
+  };
 in
 {
   options.my.programs.zed-editor = {
@@ -344,90 +450,25 @@ in
     # ── Remote Development ─────────────────────────────────────────────────
 
     sshConnections = lib.mkOption {
-      type = types.listOf (types.submodule {
-        options = {
-          host = lib.mkOption {
-            type = types.str;
-            description = "Hostname or SSH alias for the remote machine.";
-          };
-          projects = lib.mkOption {
-            type = types.listOf (types.submodule {
-              options = {
-                paths = lib.mkOption {
-                  type = types.listOf types.str;
-                  default = [ ];
-                  description = "Paths to open on the remote machine.";
-                };
-              };
-            });
-            default = [ ];
-            description = "Project directories to open on the remote.";
-          };
-          username = lib.mkOption {
-            type = types.nullOr types.str;
-            default = null;
-            description = "SSH username for the remote connection.";
-          };
-          port = lib.mkOption {
-            type = types.nullOr types.port;
-            default = null;
-            description = "SSH port for the remote connection.";
-          };
-          args = lib.mkOption {
-            type = types.listOf types.str;
-            default = [ ];
-            description = "Extra SSH arguments (e.g. identity file, custom config).";
-          };
-          nickname = lib.mkOption {
-            type = types.nullOr types.str;
-            default = null;
-            description = "Display name in Zed's remote projects dialog.";
-          };
-          uploadBinaryOverSsh = lib.mkOption {
-            type = types.bool;
-            default = false;
-            description = ''
-              Upload the Zed server binary over SSH instead of downloading it from zed.dev.
-              Required when the remote machine lacks internet access.
-            '';
-          };
-          portForwards = lib.mkOption {
-            type = types.listOf (types.submodule {
-              options = {
-                localPort = lib.mkOption {
-                  type = types.port;
-                  description = "Local port to forward.";
-                };
-                remotePort = lib.mkOption {
-                  type = types.port;
-                  description = "Remote port to forward.";
-                };
-                localHost = lib.mkOption {
-                  type = types.nullOr types.str;
-                  default = null;
-                  description = "Local address to bind (default: 127.0.0.1).";
-                };
-              };
-            });
-            default = [ ];
-            description = "Port forwarding rules for this connection.";
-          };
-        };
-      });
+      type = types.listOf connectionSubmodule;
       default = [ ];
       description = ''
         Zed remote SSH connection entries. Maps to ssh_connections in settings.json.
         These entries appear in Zed's remote projects dialog for one-click connections.
+
+        For hosts in `flake.config.tailnet`, prefer `tailnetConnections` — it
+        derives one of these automatically and this list is merged on top, with
+        explicit entries winning over generated ones for the same host.
 
         See https://zed.dev/docs/remote-development for the full format.
       '';
       example = lib.literalExpression ''
         [
           {
-            host = "server";
+            host = "bastion.example.com";
             username = "seanc";
             projects = [{ paths = [ "~/projects" "~/code" ]; }];
-            nickname = "Server";
+            nickname = "Bastion";
             uploadBinaryOverSsh = true;
             portForwards = [
               { localPort = 3000; remotePort = 3000; }
@@ -440,30 +481,128 @@ in
     tailnetConnections = {
       enable = lib.mkEnableOption "auto-generate SSH connections from tailnet host definitions in config.nix" // {
         description = ''
-          When enabled, automatically generates Zed ssh_connection entries for all
-          hosts defined in flake.config.tailnet. Each host appears in Zed's remote
-          projects dialog with its tailnet hostname and your default SSH username.
+          When enabled, automatically generates Zed ssh_connection entries for the
+          hosts declared in `flake.config.tailnet`. Each host appears in Zed's
+          remote projects dialog with its tailnet hostname and your default SSH
+          username.
+
+          Requires `my.services.ssh.enable` so Zed's spawned `ssh` resolves the
+          host through ~/.ssh/config (including the tailnet aliases generated by
+          `modules/nixos/tailscale`).
         '';
+      };
+
+      hostField = lib.mkOption {
+        type = types.enum [ "magicDnsName" "hostname" "ip" ];
+        default = "magicDnsName";
+        description = ''
+          Which `flake.config.tailnet` field is used as the connection host.
+
+          * `magicDnsName` (default) — the full MagicDNS name
+            (`host.tailXXXX.ts.net`). Resolves through the `Host` blocks that
+            `modules/nixos/tailscale` writes into `~/.ssh/config.d/tailscale`,
+            and survives the tailnet IP changing.
+          * `hostname` — the short MagicDNS name (`host`). Also covered by the
+            generated SSH config; use this if you prefer the shorter form.
+          * `ip` — the stable tailnet IP. Use as a fallback when MagicDNS is
+            unavailable on the network you are connecting from.
+        '';
+      };
+
+      include = lib.mkOption {
+        type = types.listOf types.str;
+        default = [ ];
+        description = ''
+          Tailnet host keys to include. When empty, every host in
+          `flake.config.tailnet` becomes a connection; when non-empty this acts
+          as a whitelist. `exclude` always wins over `include`.
+        '';
+        example = [
+          "server"
+          "desktop-dlstflt"
+        ];
       };
 
       exclude = lib.mkOption {
         type = types.listOf types.str;
         default = [ ];
         description = ''
-          Tailnet hostnames to exclude from auto-generated connections.
-          Useful when some hosts shouldn't appear as remote development targets.
+          Tailnet host keys to exclude from auto-generated connections. Useful
+          for hosts that should not be remote-development targets (e.g. this
+          machine itself, or a WSL instance you drive natively).
         '';
-        example = [ "wsl" "minimal" ];
+        example = [
+          "wsl"
+          "minimal"
+        ];
       };
 
       defaultProjects = lib.mkOption {
         type = types.listOf types.str;
         default = [ "~" ];
         description = ''
-          Default project paths to open on remote hosts.
-          These are added to every auto-generated connection entry.
+          Default project paths to open on remote hosts. Applied to every
+          auto-generated connection unless a per-host override sets its own
+          `projects`. Zed handles large home directories poorly, so prefer
+          specific project directories where practical.
         '';
-        example = [ "~/projects" "~/code" ];
+        example = [
+          "~/projects"
+          "~/code"
+        ];
+      };
+
+      uploadBinaryOverSsh = lib.mkOption {
+        type = types.bool;
+        default = true;
+        description = ''
+          Default for `upload_binary_over_ssh` on generated connections. True
+          (the default) uploads the Zed server binary over SSH, which works even
+          when the remote host has no internet access — the usual case for a
+          headless tailnet box.
+        '';
+      };
+
+      args = lib.mkOption {
+        type = types.listOf types.str;
+        default = [ ];
+        description = ''
+          Extra SSH arguments applied to every generated connection. Per-host
+          overrides take precedence when non-empty.
+        '';
+      };
+
+      hosts = lib.mkOption {
+        type = types.attrsOf (types.submodule {
+          options = {
+            enable = lib.mkOption {
+              type = types.bool;
+              default = true;
+              description = "Whether to generate a connection for this tailnet host.";
+            };
+          } // connectionSubmodule.options;
+        });
+        default = { };
+        description = ''
+          Per-tailnet-host overrides, keyed by the host's key in
+          `flake.config.tailnet`. Each unset field falls back to the
+          tailnet-wide default, and `host` may be left null so the address is
+          derived from the tailnet record.
+
+          A host key here that is not present in `flake.config.tailnet` is
+          rejected by an assertion, so a typo cannot silently do nothing.
+        '';
+        example = lib.literalExpression ''
+          {
+            server = {
+              projects = [{ paths = [ "~/git" ]; }];
+              portForwards = [
+                { localPort = 8080; remotePort = 80; }
+              ];
+            };
+            wsl = { enable = false; };
+          }
+        '';
       };
     };
 
