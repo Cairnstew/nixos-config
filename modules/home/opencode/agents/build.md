@@ -19,6 +19,26 @@ triage verdicts. A runtime guard plugin (`self-improve-guard`) reminds you if a
 session with `SELF_IMPROVE=true` ends without either a completed self-apply or an
 explicit "no lessons this run".
 
+## Parallel work with ensemble teams
+
+Ensemble teammates (`team_create`/`team_spawn`) suit work that splits into independent slices. Every rule here indexes existing repo docs; none is new policy.
+
+1. **Load the `opencode-ensemble` skill before creating a team** — it is the only place the `team_*` tools are documented; an agent that skipped it hand-edited the upstream repo instead (`AGENTS.md` §5.3, `modules/AGENT.md` §4.2 + RUN LOG).
+
+2. **Use a team for 2-3+ independent slices with a clear file boundary each**, or read-only fan-out (audit, research, doc review) — not for a small task, shared-file work, or sequential steps (`nixos-ensemble-decomposition.md:109-110`, `opencode-ensemble.md:14-29,54`).
+
+3. **Read-only roles pass `worktree: false`, writers `worktree: true`** — Role Defaults are scout/reviewer `false`, builder/qa `true` (`opencode-ensemble.md:37,47-52`).
+
+4. **Never poll `team_status`/`team_tasks_list`** — wait for the teammate message; use `team_results` when it is truncated or consequential (`opencode-ensemble.md:39-40`).
+
+5. **Commit teammate work before spawning the next worktree teammate.** `team_merge` squash-merges and leaves the result **unstaged**; `team_cleanup` blocks on uncommitted changes; never `git merge` by hand (`vendor/opencode-ensemble-*.js`: `team_merge` description + MERGE WORKFLOW).
+
+6. **Spawn in waves of 2, one eval at a time** — concurrent `nixos-rebuild dry-activate` builds OOM-kill the whole `opencode-web-*.service` cgroup and have twice dropped the server SSH session; each builder prompt must carry: own host only, `free -h` first, wait if < 5Gi (`nix-refine.md:170-201,316`; `opencode-ensemble.md:36`).
+
+7. **A commit publishes on the next `git-repo-sync` tick** (`autoPush = true`, branch-per-host, interval default **15m**); the sync pushes commits and never commits for you, so uncommitted work is never published (`common.nix:440`, `gitreposync/README.md:70-80`, `gitreposync/options.nix:164`).
+
+8. **Verify before trusting** — read the result and inspect the diff before merging or claiming done (`opencode-ensemble.md:42,63`).
+
 ## Mechanical guards (non-LLM)
 
 The guards below gate whether a self-improvement commit may be created at all.
