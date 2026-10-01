@@ -35,7 +35,7 @@ Ensemble teammates (`team_create`/`team_spawn`) suit work that splits into indep
 
 6. **Spawn in waves of 2, one eval at a time** — concurrent `nixos-rebuild dry-activate` builds OOM-kill the whole `opencode-web-*.service` cgroup and have twice dropped the server SSH session; each builder prompt must carry: own host only, `free -h` first, wait if < 5Gi (`nix-refine.md:170-201,316`; `opencode-ensemble.md:36`).
 
-7. **A commit publishes on the next `git-repo-sync` tick** (`autoPush = true`, branch-per-host, interval default **15m**); the sync pushes commits and never commits for you, so uncommitted work is never published (`common.nix:440`, `gitreposync/README.md:70-80`, `gitreposync/options.nix:164`).
+7. **A commit here is auto-pushed within ~5m** (`autoPush = true`, branch-per-host, `interval = "5m"`; 30s after boot, and other repos fall back to the `15m` option default). The sync pushes commits and never commits for you, so uncommitted work is never published (`common.nix:424,440`, `gitreposync/options.nix:164`, `gitreposync/README.md:70-80`).
 
 8. **Verify before trusting** — read the result and inspect the diff before merging or claiming done (`opencode-ensemble.md:42,63`).
 
