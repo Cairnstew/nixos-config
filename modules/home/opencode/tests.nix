@@ -66,6 +66,36 @@ let
     (e: (e.meta.upstream.mode or "") == "vendored" && (e.meta.upstream.space or "") == "")
     upstreamModules;
 
+  # ── skill frontmatter (opencode skill visibility) ─────────────────────────
+  # opencode only lists a skill in the model's <available_skills> block when
+  # its SKILL.md carries YAML frontmatter with a `description`. A skill whose
+  # body starts straight at its heading renders fine to
+  # ~/.config/opencode/skills/<name>/SKILL.md (home-manager's opencode.nix
+  # copies a string skill value verbatim — see :627-629) but the model never
+  # sees it, so the skill is silently invisible. That is how 20 of this repo's
+  # 24 global skills went missing. Assert the frontmatter on every source
+  # skill here so a new skill cannot ship invisible.
+  #
+  # Deliberately a first-line string comparison + a per-line prefix scan, NOT
+  # builtins.match: this Nix build's regex rejects `^---` and has no
+  # builtins.matchGroups/splitString, so a regex here would be both fragile
+  # and hard to read. lib.splitString "\n" + head/hasPrefix is exact.
+  #
+  # Scoped to THIS module's skills/ dir. The 6 houdini-* skills
+  # (modules/nixos/houdini/) still lack frontmatter for the same reason and
+  # are fixed in their own module — extend this list when that lands.
+  skillSourceDir = ./skills;
+  sourceSkillFiles =
+    lib.filter (n: lib.hasSuffix ".md" n) (builtins.attrNames (builtins.readDir skillSourceDir));
+  hasSkillFrontmatter = n:
+    let
+      lines = lib.splitString "\n" (builtins.readFile "${skillSourceDir}/${n}");
+    in
+      (lib.head lines) == "---"
+      && lib.any (l: lib.hasPrefix "name:" l) lines
+      && lib.any (l: lib.hasPrefix "description:" l) lines;
+  skillsMissingFrontmatter = lib.filter (n: !(hasSkillFrontmatter n)) sourceSkillFiles;
+
 in
 {
   config = mkIf cfg.enable {
@@ -212,6 +242,23 @@ in
           + builtins.concatStringsSep ", " (map (e: e.path) vendoredWithoutSpace)
           + ". The vendored artifact is hash-guarded — a local edit cannot be the change path; "
           + "see modules/home/opencode/FORK.md + tools/revendor-opencode-ensemble.sh.";
+      }
+      # ── skill frontmatter (opencode skill visibility) ────────────────────
+      # opencode only lists a skill in the model's <available_skills> block
+      # when its SKILL.md carries YAML frontmatter with a `description`. A
+      # skill whose body starts straight at its heading renders fine to
+      # ~/.config/opencode/skills/<name>/SKILL.md (home-manager's opencode.nix
+      # copies a string skill value verbatim) but the model never sees it, so
+      # the skill is silently invisible — that is how 20 of this repo's 24
+      # global skills went missing. Fail here instead, where the message can
+      # name the file, rather than shipping another invisible skill.
+      {
+        assertion = skillsMissingFrontmatter == [ ];
+        message = "modules/home/opencode/skills: every skill needs YAML frontmatter with `name:` and `description:` — "
+          + "opencode drops skills without it from the model's <available_skills> block. "
+          + "Missing or incomplete: "
+          + (if skillsMissingFrontmatter == [ ] then "<none>" else builtins.concatStringsSep ", " skillsMissingFrontmatter)
+          + ". Add '---\nname: <stem>\ndescription: \"Use when ...\"\n---' above the first heading.";
       }
       # ── Single-lineage self-improvement invariants (post-gated-pipeline) ──
       # The decommissioned promote tool (goals_learning_promote) no longer
