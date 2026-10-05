@@ -29,8 +29,20 @@ in
 
     frequency = mkOption {
       type = types.str;
-      default = "15min";
-      description = "systemd OnCalendar value for the tagging timer (see systemd.time(7)).";
+      # Must be a systemd *calendar* expression, not a duration. "15min" is a
+      # valid OnActiveSec value but OnCalendar= rejects it, which made the
+      # timer "lack value setting", so systemd refused to start it and every
+      # home-manager activation died on mail-tag.timer (exit 4 from
+      # switch-to-configuration). Verify any change with
+      # `systemd-analyze calendar '<expr>'`.
+      default = "*:0/15";
+      description = ''
+        systemd calendar expression for the tagging timer (see
+        systemd.time(7)). Calendar syntax, NOT a duration: `*:0/15`
+        (every 15 min), `minutely`, `hourly`, `daily`. A bare `15min` is
+        invalid here — `systemd-analyze calendar '15min'` fails and the
+        timer refuses to start.
+      '';
     };
 
     limit = mkOption {
@@ -277,7 +289,12 @@ in
 
     in
     {
-      home.packages = [ pkgs.python3 ];
+      # Use the empty `withPackages` env, not bare `pkgs.python3`. Both ship
+      # bin/idle3.14, so listing them together makes home-manager's buildEnv
+      # fail with "two given paths contain a conflicting subpath". The other
+      # home modules that expose a python (cv, goals, modpack) use the env
+      # form; this keeps exactly one python store path on the home PATH.
+      home.packages = [ (pkgs.python3.withPackages (ps: [ ])) ];
       my.services.mailFilter.tagScript = pkgs.writeText "mail-tag.py" script;
     }
   );

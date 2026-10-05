@@ -14,7 +14,7 @@ are layered on top, exactly like Gmail's own web UI would do.
 | `my.services.mailFilter.address` | `flake.config.me.email` | Gmail address (IMAP login) |
 | `my.services.mailFilter.secretName` | `mcp-better-email-password` | agenix secret holding the app password |
 | `my.services.mailFilter.dryRun` | **`true`** | Preview only — never writes labels |
-| `my.services.mailFilter.frequency` | `15min` | systemd `OnCalendar` for the timer |
+| `my.services.mailFilter.frequency` | `*:0/15` | systemd **calendar** expression for the timer |
 | `my.services.mailFilter.limit` | `500` | Only scan the N most recent UIDs (bounds backfill) |
 | `my.services.mailFilter.tags` | `flake.config.mail.tags` | Tag → label + matcher definitions |
 | `my.services.mailFilter.tagScript` | *(generated, read-only)* | The Python script written to the store |
@@ -37,7 +37,10 @@ my.homeManager.extraConfig.my.services.mailFilter = {
 
 ## How it works
 
-1. `mail-tag.timer` fires every `frequency`; `mail-tag.service` is `oneshot`.
+1. `mail-tag.timer` fires on `frequency` (a systemd calendar expression, e.g.
+   `*:0/15`); `mail-tag.service` is `oneshot`. Validate a change with
+   `systemd-analyze calendar '<expr>'` — an invalid expression does not fail
+   the build, it fails *activation* with `BadUnitSetting`.
 2. `ExecCondition = test -e /run/agenix/<secretName>` — the unit is **skipped
    silently** (not failed) when the agenix secret is absent, e.g. on a host
    that does not have this key.

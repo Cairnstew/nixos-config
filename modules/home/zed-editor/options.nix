@@ -1,9 +1,13 @@
-{ lib, pkgs, flake, ... }:
+{ lib, pkgs, config, flake, ... }:
 
 let
   types = lib.types;
   prefs = flake.config.preferences or { };
-  scheme = flake.config.me.colorScheme or { };
+
+  # Active scheme slug, from the shared theming infrastructure. Falls back to
+  # the catalog default if this module is evaluated outside the flake.
+  theme = config.my.theming.colors or { };
+  defaultSlug = theme.slug or "catppuccin-mocha";
 
   # Shared shape for one remote SSH connection. Declared once here so the
   # explicit `sshConnections` list and the per-host `tailnetConnections.hosts`
@@ -210,10 +214,10 @@ in
           };
         };
       });
-      default = scheme.slug or "catppuccin-mocha";
+      default = defaultSlug;
       description = ''
         Theme to use. Can be a string (single theme) or an attrset with dark/light variants.
-        Defaults from me.colorScheme.slug.
+        Defaults to the active scheme's slug (theming.scheme in config.nix).
       '';
     };
 
@@ -222,7 +226,8 @@ in
       default = { };
       description = ''
         Custom Zed theme definitions. A Catppuccin Mocha theme is auto-generated from
-        me.colorScheme when available. Add your own themes here or override the generated one.
+        my.theming.colors when available. Add your own themes here or
+        override the generated one.
       '';
     };
 

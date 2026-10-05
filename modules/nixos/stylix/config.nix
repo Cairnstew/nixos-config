@@ -4,30 +4,15 @@ let
   cfg = config.my.theming.stylix;
   me = flake.config.me;
   prefs = flake.config.preferences or { };
-  scheme = me.colorScheme or { };
 
-  strip = lib.removePrefix "#";
-
-  # Build base16 attrset without # prefix for Stylix
-  base16Scheme = lib.optionalAttrs (scheme ? base00) {
-    slug = scheme.slug or "custom";
-    base00 = strip scheme.base00;
-    base01 = strip scheme.base01;
-    base02 = strip scheme.base02;
-    base03 = strip scheme.base03;
-    base04 = strip scheme.base04;
-    base05 = strip scheme.base05;
-    base06 = strip scheme.base06;
-    base07 = strip scheme.base07;
-    base08 = strip scheme.base08;
-    base09 = strip scheme.base09;
-    base0A = strip scheme.base0A;
-    base0B = strip scheme.base0B;
-    base0C = strip scheme.base0C;
-    base0D = strip scheme.base0D;
-    base0E = strip scheme.base0E;
-    base0F = strip scheme.base0F;
-  };
+  # The resolved palette, from the shared theming infrastructure
+  # (modules/nixos/theming). `base16` is the hashless base00-base0F attrset
+  # plus slug/name/variant — exactly what stylix's `attrs` type wants, already
+  # converted. Previously this module rebuilt it by hand from
+  # `flake.config.me.colorScheme` with `lib.removePrefix "#"` on all sixteen
+  # slots; that conversion now lives in one place (lib/theming.nix). The
+  # `my.theming.colors` mirror of this module is the supported read API.
+  theme = config.my.theming.colors;
 in
 {
   config = mkIf cfg.enable {
@@ -35,7 +20,7 @@ in
       enable = true;
       autoEnable = true;
       polarity = cfg.polarity;
-      base16Scheme = base16Scheme;
+      base16Scheme = theme.base16;
       image = cfg.wallpaper;
 
       fonts = {
@@ -88,12 +73,14 @@ in
     #
     # Same channel for zed: the target option exists only in stylix's HM module.
     # Disable it so the dedicated zed home module (my.programs.zed-editor) is the
-    # single source of truth for settings.json — it generates a full dark
-    # Catppuccin Mocha theme from me.colorScheme. Stylix's zed target sets
-    # userSettings at normal priority, clobbering the module's mkDefault settings
-    # wholesale, and its generated theme is invalid for zed ("Base16 untitled",
-    # appearance "unspecified" — our base16Scheme lacks name/variant), so zed
-    # rejects it and falls back to the default LIGHT theme.
+    # single source of truth for settings.json — it generates a full theme from
+    # my.theming.colors. Stylix's zed target sets userSettings at normal
+    # priority, clobbering the module's mkDefault settings wholesale, and its
+    # generated theme is invalid for zed ("Base16 untitled", appearance
+    # "unspecified"), so zed rejects it and falls back to the default LIGHT
+    # theme. my.theming.colors.base16 now carries slug/name/variant, which is
+    # what zed wants — but leaving stylix's target enabled would still clobber
+    # the module's settings, so it stays off.
     home-manager.sharedModules = [
       {
         stylix.targets.firefox.profileNames = [ me.username ];

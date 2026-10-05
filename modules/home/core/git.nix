@@ -2,7 +2,12 @@
 let
   # Use flake config git settings
   flakeGit = flake.config.git or { };
-  scheme = flake.config.me.colorScheme or { };
+  # Resolved theme palette (modules/home/theming). Falls back to the catalog
+  # default when this module is evaluated standalone, so the border colours are
+  # never an empty string.
+  theme = config.my.theming.colors or { };
+  accent = theme.accent or "#89b4fa";
+  muted = theme.foregroundMuted or "#585b70";
   # Get aliases from flake config, with fallback to defaults
   gitAliases = flakeGit.aliases or {
     co = "checkout";
@@ -77,9 +82,9 @@ in
     settings = {
       gui.theme = {
         lightTheme = false;
-        activeBorderColor = [ (scheme.accent or "white") "bold" ];
-        inactiveBorderColor = [ (scheme.base04 or "white") ];
-        selectedLineBgColor = [ "reverse" (scheme.accent or "white") ];
+        activeBorderColor = [ accent "bold" ];
+        inactiveBorderColor = [ muted ];
+        selectedLineBgColor = [ "reverse" accent ];
       };
     };
   };

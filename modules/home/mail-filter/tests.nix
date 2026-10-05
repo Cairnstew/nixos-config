@@ -2,10 +2,29 @@
 let
   cfg = config.my.services.mailFilter;
   secretPath = "/run/agenix/${cfg.secretName}";
+
+  # OnCalendar= takes a systemd *calendar* expression, not a duration. Values
+  # like "15min" or "1h" are silently dropped by systemd ("Failed to parse
+  # calendar specification, ignoring"), the timer is then left with no
+  # trigger value ("Timer unit lacks value setting. Refusing."), and
+  # home-manager's activation aborts with BadUnitSetting. That failure only
+  # surfaces on `nixos-rebuild switch`, hours after the typo. Reject the
+  # common duration-shaped values at eval time instead.
+  looksLikeDuration = v: builtins.match "^([0-9]+(s|sec|min|h|hr|d|day|w|week|m|mon|y|year))$" v != null;
 in
 {
   config = lib.mkIf cfg.enable {
     assertions = [
+      {
+        assertion = !looksLikeDuration cfg.frequency;
+        message = ''
+          my.services.mailFilter.frequency = "${cfg.frequency}" looks like a
+          duration, but it is written to systemd OnCalendar=, which only
+          accepts calendar expressions. Use a calendar spec instead —
+          "*:0/15" (every 15 min), "minutely", "hourly", "daily" — and check
+          it with `systemd-analyze calendar '<expr>'` before switching.
+        '';
+      }
       {
         assertion = cfg.address != "";
         message = "my.services.mailFilter.address must not be empty (set flake.config.me.email or override).";

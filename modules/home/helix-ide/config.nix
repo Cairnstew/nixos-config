@@ -1,15 +1,16 @@
-{ config, lib, pkgs, flake, ... }:
+{ config, lib, ... }:
 
 let
   cfg = config.my.programs.helix-ide;
-  scheme = flake.config.me.colorScheme or { };
 in
 {
   config = lib.mkIf cfg.enable {
     programs.helix = {
       enable = true;
       settings = {
-        theme = lib.mkDefault (lib.replaceStrings [ "-" ] [ "_" ] (scheme.slug or "catppuccin_mocha"));
+        # Helix names its built-in themes with underscores, so the scheme slug
+        # is mapped rather than passed through raw.
+        theme = lib.mkDefault config.my.theming.schemeUnderscored;
 
         editor = {
           mouse = lib.mkDefault true;

@@ -1,16 +1,19 @@
-{ lib, flake, ... }:
-let
-  cfg = flake.config;
-  prefs = cfg.preferences or { };
-in
+{ lib, config, ... }:
+
 {
   options.my.theming.stylix = {
     enable = lib.mkEnableOption "Stylix theming framework (auto-themes apps via base16)";
 
     polarity = lib.mkOption {
       type = lib.types.enum [ "dark" "light" ];
-      default = if prefs.darkMode or true then "dark" else "light";
-      description = "Theme polarity. Defaults from preferences.darkMode.";
+      default = config.my.theming.polarity;
+      description = ''
+        Theme polarity.
+
+        Defaults to the polarity of the active scheme (my.theming.polarity),
+        so switching `theming.scheme` switches this too. Set it explicitly only
+        to disagree with the scheme on purpose.
+      '';
     };
 
     wallpaper = lib.mkOption {

@@ -4,7 +4,10 @@ let
   # Get preferences from flake config for defaults
   prefs = flake.config.preferences or { };
   defaults = flake.config.defaults or { };
-  scheme = flake.config.me.colorScheme or { };
+  # Resolved palette (modules/home/theming). Accent colours for the GNOME
+  # accent-colour scheme come from the shared theme rather than a local
+  # base16 read.
+  theme = config.my.theming.colors or { };
 in
 {
   options.my.desktop.gnome = {
@@ -193,8 +196,8 @@ in
       };
       "org/gnome/desktop/screensaver" = {
         picture-uri = cfg.screensaverImage;
-        primary-color = scheme.accent or "#3465a4";
-        secondary-color = scheme.background or "#000000";
+        primary-color = theme.accent or "#3465a4";
+        secondary-color = theme.background or "#000000";
         lock-enabled = cfg.lockEnabled;
         lock-delay = lib.hm.gvariant.mkUint32 cfg.lockDelay;
       };
@@ -216,7 +219,7 @@ in
       # ── Theming settings (disabled when Stylix is active) ──────────────
     } // lib.optionalAttrs (!(config.stylix.enable or false)) {
       "org/gnome/desktop/interface" = {
-        color-scheme = if (prefs.darkMode or true) then "prefer-dark" else "prefer-light";
+        color-scheme = if (config.my.theming.polarity or "dark") == "dark" then "prefer-dark" else "prefer-light";
         enable-hot-corners = cfg.enableHotCorners;
         can-change-accels = true;
         cursor-theme = cfg.cursorTheme;

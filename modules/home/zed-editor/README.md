@@ -16,7 +16,7 @@ All options live under `my.programs.zed-editor`.
 
 ### Appearance
 - `theme` — Theme name or `{ dark, light, mode }` attrset
-- `customThemes` — Custom theme definitions (auto-generates Catppuccin Mocha from me.colorScheme)
+- `customThemes` — Custom theme definitions (auto-generates a theme from `my.theming.colors`)
 - `fontFamily` / `fontSize` — Base font settings
 - `uiFontSize` / `bufferFontSize` — UI/buffer-specific font sizes
 - `terminalFontFamily` / `terminalFontSize` — Terminal panel font settings
