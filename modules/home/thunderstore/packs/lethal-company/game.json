@@ -1,0 +1,319 @@
+{
+  "community": "lethal-company",
+  "communityMeta": {
+    "discordUrl": "https://discord.gg/XeyYqRdRGC",
+    "displayName": "Lethal Company",
+    "listed": true,
+    "packageIndex": "https://thunderstore.io/c/lethal-company/api/v1/package-listing-index/",
+    "wikiUrl": "https://lethal.wiki/"
+  },
+  "fetchedAt": "2026-10-03T09:57:35Z",
+  "game": {
+    "distributions": [
+      {
+        "identifier": "1966720",
+        "platform": "steam"
+      }
+    ],
+    "label": "lethal-company",
+    "meta": {
+      "displayName": "Lethal Company",
+      "iconUrl": "lethal-company/lethal-company-cover-360x480.webp"
+    },
+    "r2modman": [
+      {
+        "additionalSearchStrings": [
+          "lc",
+          "致命公司"
+        ],
+        "dataFolderName": "Lethal Company_Data",
+        "distributions": [
+          {
+            "identifier": "1966720",
+            "platform": "steam"
+          }
+        ],
+        "exeNames": [
+          "Lethal Company.exe"
+        ],
+        "gameInstanceType": "game",
+        "gameSelectionDisplayMode": "visible",
+        "installRules": [
+          {
+            "defaultFileExtensions": [
+              ".dll"
+            ],
+            "isDefaultLocation": true,
+            "route": "BepInEx/plugins",
+            "subRoutes": [],
+            "trackingMethod": "subdir"
+          },
+          {
+            "defaultFileExtensions": [],
+            "isDefaultLocation": false,
+            "route": "BepInEx/core",
+            "subRoutes": [],
+            "trackingMethod": "subdir"
+          },
+          {
+            "defaultFileExtensions": [],
+            "isDefaultLocation": false,
+            "route": "BepInEx/patchers",
+            "subRoutes": [],
+            "trackingMethod": "subdir"
+          },
+          {
+            "defaultFileExtensions": [
+              ".mm.dll"
+            ],
+            "isDefaultLocation": false,
+            "route": "BepInEx/monomod",
+            "subRoutes": [],
+            "trackingMethod": "subdir"
+          },
+          {
+            "defaultFileExtensions": [],
+            "isDefaultLocation": false,
+            "route": "BepInEx/config",
+            "subRoutes": [],
+            "trackingMethod": "none"
+          }
+        ],
+        "internalFolderName": "LethalCompany",
+        "meta": {
+          "displayName": "Lethal Company",
+          "iconUrl": "lethal-company/lethal-company-cover-360x480.webp"
+        },
+        "packageIndex": "https://thunderstore.io/c/lethal-company/api/v1/package-listing-index/",
+        "packageLoader": "bepinex",
+        "relativeFileExclusions": null,
+        "settingsIdentifier": "LethalCompany",
+        "steamFolderName": "Lethal Company"
+      }
+    ],
+    "thunderstore": {
+      "categories": {
+        "ai-generated": {
+          "label": "AI Generated"
+        },
+        "asset-replacements": {
+          "label": "Asset Replacements"
+        },
+        "audio": {
+          "label": "Audio"
+        },
+        "bepinex": {
+          "label": "BepInEx"
+        },
+        "boombox": {
+          "label": "Boombox Music"
+        },
+        "bug-fixes": {
+          "label": "Bug Fixes"
+        },
+        "clientside": {
+          "label": "Client-side"
+        },
+        "cosmetics": {
+          "label": "Cosmetics"
+        },
+        "emotes": {
+          "label": "Emotes"
+        },
+        "equipment": {
+          "label": "Equipment"
+        },
+        "furniture": {
+          "label": "Furniture"
+        },
+        "hazards": {
+          "label": "Hazards"
+        },
+        "interiors": {
+          "label": "Interiors"
+        },
+        "items": {
+          "label": "Items"
+        },
+        "libraries": {
+          "label": "Libraries"
+        },
+        "melonloader": {
+          "label": "MelonLoader"
+        },
+        "misc": {
+          "label": "Misc"
+        },
+        "modpacks": {
+          "label": "Modpacks"
+        },
+        "mods": {
+          "label": "Mods"
+        },
+        "monsters": {
+          "label": "Monsters"
+        },
+        "moons": {
+          "label": "Moons"
+        },
+        "performance": {
+          "label": "Performance"
+        },
+        "poster": {
+          "label": "Posters"
+        },
+        "serverside": {
+          "label": "Server-side"
+        },
+        "suits": {
+          "label": "Suits"
+        },
+        "tools": {
+          "label": "Tools"
+        },
+        "translations": {
+          "label": "Translations"
+        },
+        "tweaks-and-quality-of-life": {
+          "label": "Tweaks & Quality Of Life"
+        },
+        "vehicles": {
+          "label": "Vehicles"
+        },
+        "video": {
+          "label": "TV Videos"
+        },
+        "weather": {
+          "label": "Weather"
+        }
+      },
+      "discordUrl": "https://discord.gg/XeyYqRdRGC",
+      "displayName": "Lethal Company",
+      "listed": true,
+      "meta": {
+        "background": "lethal-company/lethal-company-bg-1920x1080.webp",
+        "cover": "lethal-company/lethal-company-cover-360x480.webp",
+        "hero": "lethal-company/lethal-company-bg-1920x620.webp",
+        "icon": "lethal-company/lethal-company-icon-192x192.webp"
+      },
+      "sections": {
+        "asset-replacements": {
+          "excludeCategories": [
+            "modpacks"
+          ],
+          "name": "Asset Replacements",
+          "requireCategories": [
+            "asset-replacements"
+          ]
+        },
+        "libraries": {
+          "excludeCategories": [
+            "modpacks"
+          ],
+          "name": "APIs & Libraries",
+          "requireCategories": [
+            "libraries"
+          ]
+        },
+        "modpacks": {
+          "name": "Modpacks",
+          "requireCategories": [
+            "modpacks"
+          ]
+        },
+        "mods": {
+          "excludeCategories": [
+            "modpacks",
+            "asset-replacements"
+          ],
+          "name": "Mods"
+        }
+      },
+      "wikiUrl": "https://lethal.wiki/"
+    },
+    "uuid": "40c7d846-cff1-45fe-8679-4abe993abafb"
+  },
+  "instance": 0,
+  "model": {
+    "autolistPackageIds": [],
+    "community": "lethal-company",
+    "dataFolderName": "Lethal Company_Data",
+    "displayName": "Lethal Company",
+    "distributions": [
+      {
+        "identifier": "1966720",
+        "platform": "steam"
+      }
+    ],
+    "exeNames": [
+      "Lethal Company.exe"
+    ],
+    "installLoader": true,
+    "installRules": [
+      {
+        "defaultFileExtensions": [
+          ".dll"
+        ],
+        "isDefaultLocation": true,
+        "route": "BepInEx/plugins",
+        "subRoutes": [],
+        "trackingMethod": "subdir"
+      },
+      {
+        "defaultFileExtensions": [],
+        "isDefaultLocation": false,
+        "route": "BepInEx/core",
+        "subRoutes": [],
+        "trackingMethod": "subdir"
+      },
+      {
+        "defaultFileExtensions": [],
+        "isDefaultLocation": false,
+        "route": "BepInEx/patchers",
+        "subRoutes": [],
+        "trackingMethod": "subdir"
+      },
+      {
+        "defaultFileExtensions": [
+          ".mm.dll"
+        ],
+        "isDefaultLocation": false,
+        "route": "BepInEx/monomod",
+        "subRoutes": [],
+        "trackingMethod": "subdir"
+      },
+      {
+        "defaultFileExtensions": [],
+        "isDefaultLocation": false,
+        "route": "BepInEx/config",
+        "subRoutes": [],
+        "trackingMethod": "none"
+      }
+    ],
+    "instanceCount": 1,
+    "instanceIndex": 0,
+    "instanceType": "game",
+    "internalFolderName": "LethalCompany",
+    "label": "lethal-company",
+    "listed": true,
+    "loaderInstallRuleDriven": true,
+    "loaderPackRegistry": {
+      "loader": "bepinex",
+      "packageId": "BepInEx-BepInExPack",
+      "rootFolder": "BepInExPack"
+    },
+    "loaderPackage": "BepInEx-BepInExPack",
+    "loaderPackageRootFolder": "BepInExPack",
+    "loaderVersion": "5.4.2305",
+    "packageIndex": "https://thunderstore.io/c/lethal-company/api/v1/package-listing-index/",
+    "packageLoader": "bepinex",
+    "relativeFileExclusions": null,
+    "requiresDataFolder": true,
+    "schemaVersion": "0.3.0",
+    "steamAppId": "1966720",
+    "steamFolderName": "Lethal Company",
+    "uuid": "40c7d846-cff1-45fe-8679-4abe993abafb"
+  },
+  "schemaVersion": "0.3.0",
+  "source": "https://thunderstore.io/api/experimental/schema/dev/latest/"
+}

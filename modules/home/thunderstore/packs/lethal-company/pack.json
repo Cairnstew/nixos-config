@@ -1,0 +1,22 @@
+{
+  "name": "lethal-company",
+  "game": "lethal-company",
+  "instance": 0,
+  "installLoader": true,
+  "loaderPackage": "BepInEx-BepInExPack",
+  "loaderVersion": "5.4.2305",
+  "notes": [
+    "Reference pack: BepInEx 5 on Lethal Company (Steam appid 1966720).",
+    "Deliberately small — it exists to prove the pipeline and to be copied.",
+    "Deps are resolved transitively by thunderstore-checksums; BepInEx itself is",
+    "pinned separately by loaderPackage/loaderVersion because every mod depends on",
+    "some BepInEx 5.x version and we want ONE loader, not one per dependency."
+  ],
+  "mods": {
+    "notnotnotswipez-MoreCompany": "1.14.0",
+    "x753-Mimics": "2.7.4",
+    "x753-More_Suits": "1.5.4",
+    "FlipMods-TooManyEmotes": "2.3.17",
+    "Evaisa-LethalThings": "0.10.13"
+  }
+}

@@ -1,0 +1,146 @@
+{
+  "BepInEx-BepInExPack-5.4.2305": {
+    "dependencies": [],
+    "description": "BepInEx pack for Mono Unity games. Preconfigured and ready to use.",
+    "fileSize": 669238,
+    "id": "BepInEx-BepInExPack-5.4.2305",
+    "isLoader": true,
+    "name": "BepInExPack",
+    "namespace": "BepInEx",
+    "requestedAs": "BepInEx-BepInExPack",
+    "sha256": "sha256-+ZtjAra9ylurJvJ1wmHMpEiym7rDTqpcvrtCxCRvskQ=",
+    "sha256Hex": "f99b6302b6bdca5bab26f275c261cca448b29bbac34eaa5cbebb42c4246fb244",
+    "url": "https://thunderstore.io/package/download/BepInEx/BepInExPack/5.4.2305/",
+    "version": "5.4.2305"
+  },
+  "Evaisa-HookGenPatcher-0.0.5": {
+    "dependencies": [],
+    "description": "Generates MonoMod.RuntimeDetour.HookGen's MMHOOK file during the BepInEx preloader phase.",
+    "fileSize": 48862,
+    "id": "Evaisa-HookGenPatcher-0.0.5",
+    "isLoader": false,
+    "name": "HookGenPatcher",
+    "namespace": "Evaisa",
+    "requestedAs": "Evaisa-HookGenPatcher-0.0.5",
+    "sha256": "sha256-cIHIhF2vPNknaCEGwSiwbylIjWEphhaoyCkGMC2obGs=",
+    "sha256Hex": "7081c8845daf3cd927682106c128b06f29488d61298616a8c82906302da86c6b",
+    "url": "https://thunderstore.io/package/download/Evaisa/HookGenPatcher/0.0.5/",
+    "version": "0.0.5"
+  },
+  "Evaisa-LethalLib-0.11.2": {
+    "dependencies": [
+      "BepInEx-BepInExPack-5.4.2100",
+      "Evaisa-HookGenPatcher-0.0.5"
+    ],
+    "description": "My modding tools for Lethal Company",
+    "fileSize": 580083,
+    "id": "Evaisa-LethalLib-0.11.2",
+    "isLoader": false,
+    "name": "LethalLib",
+    "namespace": "Evaisa",
+    "requestedAs": "Evaisa-LethalLib-0.11.2",
+    "sha256": "sha256-Xck6iAFZNZuxzjkRFoAvogwc/Qc6WjVKW5Df3WzIgb8=",
+    "sha256Hex": "5dc93a880159359bb1ce391116802fa20c1cfd073a5a354a5b90dfdd6cc881bf",
+    "url": "https://thunderstore.io/package/download/Evaisa/LethalLib/0.11.2/",
+    "version": "0.11.2"
+  },
+  "Evaisa-LethalThings-0.10.13": {
+    "dependencies": [
+      "BepInEx-BepInExPack-5.4.2100",
+      "Evaisa-HookGenPatcher-0.0.5",
+      "Evaisa-LethalLib-0.11.2"
+    ],
+    "description": "Adds 11 scrap, 6 store items, 1 enemy, 4 decor, 1 map hazard, and 1 game mechanic.",
+    "fileSize": 32454474,
+    "id": "Evaisa-LethalThings-0.10.13",
+    "isLoader": false,
+    "name": "LethalThings",
+    "namespace": "Evaisa",
+    "requestedAs": "Evaisa-LethalThings",
+    "sha256": "sha256-NM3BTkjQ8gjKKt1b2QWtm/59lhAc1YWfkSlJwTxkaCw=",
+    "sha256Hex": "34cdc14e48d0f208ca2add5bd905ad9bfe7d96101cd5859f912949c13c64682c",
+    "url": "https://thunderstore.io/package/download/Evaisa/LethalThings/0.10.13/",
+    "version": "0.10.13"
+  },
+  "FlipMods-TooManyEmotes-2.3.17": {
+    "dependencies": [
+      "BepInEx-BepInExPack-5.4.2100",
+      "Rune580-LethalCompany_InputUtils-0.7.10"
+    ],
+    "description": "Adds over 300 new emotes! Includes emote wheel, allows Masked Enemies to emote, adds emote music (can be muted), implements a system for purchasing emotes on the store (optional), and much more!",
+    "fileSize": 124301815,
+    "id": "FlipMods-TooManyEmotes-2.3.17",
+    "isLoader": false,
+    "name": "TooManyEmotes",
+    "namespace": "FlipMods",
+    "requestedAs": "FlipMods-TooManyEmotes",
+    "sha256": "sha256-oZWnHpwCwCq1iqXuzyDvc1QkdT5tktpHz4SojrjL+Ro=",
+    "sha256Hex": "a195a71e9c02c02ab58aa5eecf20ef735424753e6d92da47cf84a88eb8cbf91a",
+    "url": "https://thunderstore.io/package/download/FlipMods/TooManyEmotes/2.3.17/",
+    "version": "2.3.17"
+  },
+  "Rune580-LethalCompany_InputUtils-0.7.10": {
+    "dependencies": [
+      "BepInEx-BepInExPack-5.4.2100"
+    ],
+    "description": "API/Library for creating Unity InputActions with in-game re-binding support. Provides an alternative UI that allows for supporting mods to have in-game re-bindable keybinds.",
+    "fileSize": 300141,
+    "id": "Rune580-LethalCompany_InputUtils-0.7.10",
+    "isLoader": false,
+    "name": "LethalCompany_InputUtils",
+    "namespace": "Rune580",
+    "requestedAs": "Rune580-LethalCompany_InputUtils-0.7.10",
+    "sha256": "sha256-tdsVdKM1poB1avsZ8nNXZ0JAW30+nzV0h4yqqyTK5s8=",
+    "sha256Hex": "b5db1574a335a680756afb19f273576742405b7d3e9f3574878caaab24cae6cf",
+    "url": "https://thunderstore.io/package/download/Rune580/LethalCompany_InputUtils/0.7.10/",
+    "version": "0.7.10"
+  },
+  "notnotnotswipez-MoreCompany-1.14.0": {
+    "dependencies": [
+      "BepInEx-BepInExPack-5.4.2100"
+    ],
+    "description": "A stable lobby player count expansion mod. With cosmetics!",
+    "fileSize": 10530391,
+    "id": "notnotnotswipez-MoreCompany-1.14.0",
+    "isLoader": false,
+    "name": "MoreCompany",
+    "namespace": "notnotnotswipez",
+    "requestedAs": "notnotnotswipez-MoreCompany",
+    "sha256": "sha256-26ERonREeM6SfPJJOs6HEhTBEznzpnaL3FUrHVVUodw=",
+    "sha256Hex": "dba111a2744478ce927cf2493ace871214c11339f3a6768bdc552b1d5554a1dc",
+    "url": "https://thunderstore.io/package/download/notnotnotswipez/MoreCompany/1.14.0/",
+    "version": "1.14.0"
+  },
+  "x753-Mimics-2.7.4": {
+    "dependencies": [
+      "BepInEx-BepInExPack-5.4.2100"
+    ],
+    "description": "Adds a dangerous new monster to the game. Can you figure out what's real or will you be devoured?",
+    "fileSize": 7099613,
+    "id": "x753-Mimics-2.7.4",
+    "isLoader": false,
+    "name": "Mimics",
+    "namespace": "x753",
+    "requestedAs": "x753-Mimics",
+    "sha256": "sha256-L4BGBxmaPTNsRFc1fU8RdH4J3rj2cHLqOQAMybqXyps=",
+    "sha256Hex": "2f804607199a3d336c4457357d4f11747e09deb8f67072ea39000cc9ba97ca9b",
+    "url": "https://thunderstore.io/package/download/x753/Mimics/2.7.4/",
+    "version": "2.7.4"
+  },
+  "x753-More_Suits-1.5.4": {
+    "dependencies": [
+      "BepInEx-BepInExPack-5.4.2100"
+    ],
+    "description": "Adds more suits to choose from, and can be used as a library to load your own suits!",
+    "fileSize": 10055646,
+    "id": "x753-More_Suits-1.5.4",
+    "isLoader": false,
+    "name": "More_Suits",
+    "namespace": "x753",
+    "requestedAs": "x753-More_Suits",
+    "sha256": "sha256-u4ldwD6oVxkSeK3M4cTd1gWB0iU0FW9bviPaqNqssKQ=",
+    "sha256Hex": "bb895dc03ea857191278adcce1c4ddd60581d22534156f5bbe23daa8daacb0a4",
+    "url": "https://thunderstore.io/package/download/x753/More_Suits/1.5.4/",
+    "version": "1.5.4"
+  }
+}
