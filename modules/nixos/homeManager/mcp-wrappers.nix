@@ -8,7 +8,7 @@
 #   - pkgs   (writeShellApplication, nodejs)
 #   - config (agenix secret paths read at runtime)
 #   - self   (keepa-mcp package shipped by this flake)
-#   - flake  (me.colorScheme used to derive the opencode theme)
+#   - flake  (the theming palette, resolved via flake.config.theming)
 { config, pkgs, flake, self }:
 {
   betterEmailPkg =
@@ -105,14 +105,24 @@
       meta.description = "MCP server: GitHub official (repos, issues, PRs, actions, file tree)";
     };
 
-  # Opencode theme derived from config.nix me.colorScheme
-  # Maps semantic UI roles to Base16 color definitions
+  # Opencode theme derived from the shared palette (theming.scheme).
+  #
+  # The `defs` block is the raw base16 palette; the `theme` block then maps
+  # opencode's own role names onto those slots by string reference, so the role
+  # names opencode requires are preserved while the colours come from the one
+  # resolved palette. The theme is keyed by the active scheme's slug, so it
+  # follows a scheme switch instead of always claiming to be Catppuccin Mocha.
+  opencodeThemeSlug = flake.config.theming.colors.slug;
+
   opencodeTheme =
     let
-      c = flake.config.me.colorScheme;
+      c = flake.config.theming.colors;
+      # Bound locally rather than referencing the sibling attribute above: this
+      # attrset is not `rec`, so a same-level reference would not resolve.
+      slug = c.slug;
     in
     {
-      catppuccin-mocha = {
+      "${slug}" = {
         defs = {
           inherit (c) base00 base01 base02 base03 base04 base05 base06 base07
             base08 base09 base0A base0B base0C base0D base0E base0F

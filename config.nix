@@ -32,35 +32,43 @@
     # Consumed by: programs.gh, git remote defaults.
     github_username = "Cairnstew";
 
-    # Catppuccin Mocha color palette
-    # All values with # prefix; consumers strip when needed.
-    colorScheme = {
-      slug = "catppuccin-mocha";
+    # Colours used to live here as `colorScheme` — a second, hand-maintained copy
+    # of the palette that every module read directly. It is now `theming.*`
+    # below: schemes are files in lib/schemes/, roles are derived centrally, and
+    # modules read `my.theming.colors.*`.
+  };
 
-      # Base16 00-0F palette
-      base00 = "#1e1e2e";
-      base01 = "#181825";
-      base02 = "#313244";
-      base03 = "#45475a";
-      base04 = "#585b70";
-      base05 = "#cdd6f4";
-      base06 = "#f5f5f5";
-      base07 = "#ffffff";
-      base08 = "#f38ba8";
-      base09 = "#fab387";
-      base0A = "#f9e2af";
-      base0B = "#a6e3a1";
-      base0C = "#94e2d5";
-      base0D = "#89b4fa";
-      base0E = "#f5c2e7";
-      base0F = "#cba6f7";
+  # ============================================================================
+  # Theming (theming.*)
+  # ============================================================================
+  # Which colour scheme the whole system uses, and any per-colour overrides.
+  # This is the single source of truth: the palette resolved from these two
+  # options is what every NixOS module, Home Manager module and flake-parts
+  # layer reads (via `my.theming.colors` / `flake.config.theming.colors`).
+  #
+  # Consumed by: modules/nixos/theming, modules/home/theming,
+  #              modules/nixos/stylix, and every module that reads
+  #              `my.theming.colors.*`.
+  # Schema:     modules/flake-parts/theming.nix
+  # Resolution: lib/theming.nix (adds a theme by dropping a file into
+  #             lib/schemes/ — see that directory for the scheme format).
+  #
+  # Available schemes: catppuccin-mocha (default), catppuccin-macchiato,
+  #   catppuccin-frappe, catppuccin-latte, nord, gruvbox-dark, tokyo-night,
+  #   dracula
+  # ============================================================================
+  theming = {
+    # Slug from lib/schemes/. `nix eval .#lib.theming.schemeNames` lists them.
+    scheme = "catppuccin-mocha";
 
-      # Semantic aliases
-      background = "#1e1e2e";
-      foreground = "#cdd6f4";
-      cursor = "#f5e0dc";
-      accent = "#89b4fa";
-    };
+    # Per-colour overrides layered on top of the scheme. Optional — most
+    # people never touch this. Two kinds of key are accepted:
+    #   base00 .. base0F  replaces the raw palette slot; every semantic role
+    #                     derived from it follows
+    #   <role name>       replaces that one role (accent, error, selection, ...)
+    #                     and nothing else
+    # Later always wins.
+    overrides = { };
   };
 
   # ============================================================================

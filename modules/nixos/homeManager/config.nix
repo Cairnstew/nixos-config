@@ -18,7 +18,8 @@ let
     secondhandMcpPkg
     shoppingscraperMcpPkg
     keepaMcpPkg
-    opencodeTheme;
+    opencodeTheme
+    opencodeThemeSlug;
 in
 {
   imports = [
@@ -304,11 +305,23 @@ in
                 agent = "build";
                 description = "Kraken Python API wrapper — historical data pipelines, pagination";
               };
+              project-zomboid-servers = {
+                path = "/home/seanc/Projects/nixos-projectzomboid-servers";
+                agent = "build";
+                description = "Project Zomboid dedicated servers: NixOS module + modpack catalogue";
+                # Consumed as a flake input (modules/nixos/projectzomboid-server
+                # wraps nixosModules.project-zomboid-servers). After a teammate
+                # pushes upstream work, re-pin this input automatically.
+                flakeInput = "project-zomboid-servers";
+                autoUpdateFlakeInput = true;
+              };
             };
           };
 
           themes = opencodeTheme;
-          tui.theme = lib.mkDefault "catppuccin-mocha";
+          # Follows the active scheme (theming.scheme) rather than a
+          # hardcoded name, which used to disagree with the generated theme.
+          tui.theme = lib.mkDefault opencodeThemeSlug;
 
           # Deny all providers except the ones we actually use
           policies = {

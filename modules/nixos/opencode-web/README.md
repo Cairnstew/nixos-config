@@ -36,11 +36,13 @@ without a terminal.
 | `my.services.opencodeWeb.memoryHigh` | `"4G"` | Soft memory cap (`MemoryHigh`) per unit — bounds a whole browser team |
 | `my.services.opencodeWeb.memoryMax` | `"8G"` | Hard memory cap (`MemoryMax`) per unit; kernel OOM-kills one teammate at a time when hit |
 | `my.services.opencodeWeb.memorySwapMax` | `"4G"` | Swap cap (`MemorySwapMax`) per unit; stops a team from tripping systemd-oomd's `SwapUsedLimit` (see GOTCHAS) |
-| `my.services.opencodeWeb.oomd.enable` | `true` | Opt units out of systemd-oomd wholesale kills (`ManagedOOMMemoryPressure=never` / `ManagedOOMSwap=never`) so the web server survives memory spikes |
+| `my.services.opencodeWeb.oomd.enable` | `true` | Opt units out of systemd-oomd wholesale kills (`ManagedOOMPreference=omit`) so the web server survives memory spikes |
 | `my.services.opencodeWeb.tailnetServe.enable` | `true` | Expose instances on the tailnet via `tailscale serve` |
 | `my.services.opencodeWeb.tailnetServe.basePort` | `8443` | First tailnet serve HTTPS port |
 | `my.services.opencodeWeb.dashboard.enable` | `true` | Add an OpenCode section to the proxy dashboard |
 | `my.services.opencodeWeb.dashboard.baseUrl` | `http://localhost` | Base URL for dashboard instance links |
+| `my.services.opencodeWeb.dashboard.ensemble.enable` | `true` | Register the ensemble teams browser UI section on the proxy dashboard |
+| `my.services.opencodeWeb.dashboard.ensemble.port` | `4747` | Backend port of the ensemble dashboard (matches `my.programs.opencode.ensemble.dashboardPort`) |
 
 ## Usage Example
 
@@ -65,6 +67,17 @@ current page's hostname, so clicking an instance card (or a session) from any
 tailnet device opens the right URL. When the dashboard is viewed locally
 (`http://localhost:8081`) it falls back to the direct `http://localhost:<port>/`
 link.
+
+The dashboard also gets an **Ensemble** section (enabled via
+`dashboard.ensemble.enable`, default on whenever the dashboard is): a card into
+the opencode-ensemble teams browser UI (proxied at `/ensemble/` on the same
+Caddy, so it works from any device that can reach the dashboard) plus a live
+one-line status — active teams, busy agents, active projects — from the
+ensemble `/api/state` endpoint. The underlying dashboard is a singleton served
+by whichever opencode process is running (this service counts), so the section
+shows "offline" only when no opencode is up. Note the ensemble page and its
+state/activity endpoints carry no built-in auth — on hosts whose dashboard is
+tailnet-exposed they inherit that exposure.
 
 ## Notes
 
