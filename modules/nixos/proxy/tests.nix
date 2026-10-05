@@ -27,6 +27,12 @@ in
         || lib.all (u: lib.hasPrefix "/" u.path) (builtins.attrValues enabledUpstreams);
       message = "my.services.proxy.upstreams.*.path must start with /.";
     }
+    # Ensemble dashboard apiPath must be a root-relative Caddy handle prefix
+    {
+      assertion = !cfg.enable || !cfg.dashboard.ensemble.enable
+        || lib.hasPrefix "/" cfg.dashboard.ensemble.apiPath;
+      message = "my.services.proxy.dashboard.ensemble.apiPath must start with /.";
+    }
     # Upstream host consistency: warn when an upstream uses autoBindTailscaleIp on its service
     # but the proxy host still points at 127.0.0.1 (the upstream won't be reachable).
     # This cannot be checked automatically (Tailscale IP is runtime-known), so this is a

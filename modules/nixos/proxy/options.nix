@@ -234,6 +234,42 @@ in
           description = "Same-origin path prefix proxied to the minecraft management API.";
         };
       };
+
+      # OpenCode ensemble teams browser UI section. The ensemble dashboard is
+      # served by the opencode-ensemble plugin inside any opencode process
+      # (terminal session or opencode-web service) on
+      # `my.programs.opencode.ensemble.dashboardPort` (default 4747), and is a
+      # singleton: the first running opencode owns the port, later processes
+      # detect it and skip. It is populated by the opencode-web module
+      # (<option>my.services.opencodeWeb.dashboard.ensemble</option>); enable
+      # it directly per-host when opencode runs only from the terminal.
+      # NOTE: the ensemble page and its /api/state + session-activity endpoints
+      # carry no built-in auth — on hosts whose dashboard is tailnet-exposed
+      # (tailscaleServe) the section inherits that exposure.
+      ensemble = {
+        enable = lib.mkEnableOption "OpenCode ensemble teams browser UI section on the dashboard";
+
+        host = lib.mkOption {
+          type = lib.types.str;
+          default = "127.0.0.1";
+          description = "Backend host of the ensemble dashboard.";
+        };
+
+        port = lib.mkOption {
+          type = lib.types.port;
+          default = 4747;
+          description = ''
+            Backend port of the ensemble dashboard. Must match
+            <literal>my.programs.opencode.ensemble.dashboardPort</literal>.
+          '';
+        };
+
+        apiPath = lib.mkOption {
+          type = lib.types.str;
+          default = "/ensemble";
+          description = "Same-origin path prefix proxied to the ensemble dashboard (e.g. /ensemble).";
+        };
+      };
     };
 
     systemMetrics = {

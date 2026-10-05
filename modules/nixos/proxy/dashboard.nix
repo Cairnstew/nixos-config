@@ -260,6 +260,40 @@ let
         </script>
         ''}
 
+        ${lib.optionalString cfg.dashboard.ensemble.enable ''
+        <h2 class="section-title">Ensemble</h2>
+        <div class="metrics-grid">
+          <div class="metric-card">
+            <div class="metric-label"><a href="${cfg.dashboard.ensemble.apiPath}/" style="color:#9db4ff;text-decoration:none">Teams browser UI</a></div>
+            <div class="metric-value" id="ensemble-summary">--</div>
+            <div class="metrics-info"><span id="ensemble-detail">loading…</span></div>
+          </div>
+        </div>
+        <script>
+        // OpenCode ensemble teams dashboard: a card into the live browser UI
+        // (served by the opencode-ensemble plugin on the user's
+        // ensemble.dashboardPort, proxied at dashboard.ensemble.apiPath) plus a
+        // one-line status from /api/state — active teams and busy agents. The
+        // dashboard only exists while an opencode process is running, so a
+        // failed fetch is the expected "offline" state, not an error.
+        function ensembleRefresh() {
+          fetch('${cfg.dashboard.ensemble.apiPath}/api/state').then(function (r) { return r.json(); }).then(function (d) {
+            var teams = d.teams || [];
+            var active = teams.filter(function (t) { return t.status === "active"; }).length;
+            var working = teams.reduce(function (n, t) { return n + (t.members || []).filter(function (m) { return m.status === "busy"; }).length; }, 0);
+            var projects = (d.projects || []).length;
+            document.getElementById("ensemble-summary").textContent = active + " active team" + (active === 1 ? "" : "s") + " · " + working + " agent" + (working === 1 ? "" : "s") + " working";
+            document.getElementById("ensemble-detail").textContent = projects + " project" + (projects === 1 ? "" : "s");
+          }).catch(function () {
+            document.getElementById("ensemble-summary").textContent = "offline";
+            document.getElementById("ensemble-detail").textContent = "start opencode to launch the teams dashboard";
+          });
+        }
+        ensembleRefresh();
+        setInterval(ensembleRefresh, 10000);
+        </script>
+        ''}
+
         ${lib.optionalString cfg.dashboard.minecraft.enable ''
         <h2 class="section-title">Minecraft</h2>
         <div class="metrics-grid" id="minecraft-servers">

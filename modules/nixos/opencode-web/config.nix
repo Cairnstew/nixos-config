@@ -135,8 +135,16 @@ let
       # the kernel cgroup OOM-killer (one process at a time), keeping the web
       # server — and therefore the browser session — alive under memory pressure.
       // (lib.optionalAttrs cfg.oomd.enable {
-        ManagedOOMMemoryPressure = "never";
-        ManagedOOMSwap = "never";
+        # Opt the unit out of systemd-oomd wholesale kills. This used to be
+        # ManagedOOMMemoryPressure/Swap = "never", but "never" is NOT a valid
+        # value for either setting (only `auto|kill`), so systemd logged
+        # "Invalid syntax, ignoring: never" on every switch and silently kept
+        # the unit a candidate — the opt-out never took effect. `auto` does not
+        # help either: with an ancestor slice set to `kill` (nixpkgs sets
+        # ManagedOOMMemoryPressure=kill on user.slice), a unit set to `auto`
+        # "can still be a candidate". ManagedOOMPreference=omit (systemd 257+)
+        # is the actual documented opt-out, and it parses cleanly.
+        ManagedOOMPreference = "omit";
       })
       # Session gate: refuse to start while a terminal opencode session holds
       # the lock (its PID). A stale lock (dead PID) is cleared so the service
@@ -236,8 +244,22 @@ in
     })
 
     # ── Dashboard section (consumed by my.services.proxy) ───────────────────
-    (mkIf cfg.dashboard.enable {
-      my.services.proxy.dashboard.opencode = dashboardInstances;
-    })
+    (mkIf cfg.dashboard.enable (mkMerge [
+      {
+        my.services.proxy.dashboard.opencode = dashboardInstances;
+      }
+      # Ensemble teams browser UI: the plugin's dashboard server (singleton on
+      # dashboard.ensemble.port) is proxied at the proxy's dashboard.ensemble
+      # apiPath so the proxy dashboard can render a same-origin card + live
+      # team status. Enabled whenever this module's own dashboard section is
+      # on and dashboard.ensemble.enable is not disabled.
+      (mkIf cfg.dashboard.ensemble.enable {
+        my.services.proxy.dashboard.ensemble = {
+          enable = true;
+          host = "127.0.0.1";
+          port = cfg.dashboard.ensemble.port;
+        };
+      })
+    ]))
   ]);
 }

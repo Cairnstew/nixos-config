@@ -10,7 +10,7 @@ let
   # systemd-oomd's global SwapUsedLimit (default 90%) kills the WHOLE unit when
   # a memory-stressed team pushes the cgroup deep into swap — the 2026-08-05
   # "blank browser / no messages" incident. The guards below (MemorySwapMax +
-  # ManagedOOMMemoryPressure/OOMSwap=never) exist to prevent that; if they're
+  # ManagedOOMPreference=omit) exist to prevent that; if they're
   # disabled the unit is one nix-refine away from taking the browser down.
   oomResilienceAssertions = [
     {

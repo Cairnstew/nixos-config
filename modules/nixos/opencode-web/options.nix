@@ -128,6 +128,28 @@ in
           current page's hostname instead.
         '';
       };
+
+      ensemble = {
+        enable = mkOption {
+          type = types.bool;
+          default = true;
+          description = ''
+            Also register the opencode ensemble teams browser UI section on the
+            proxy dashboard. The ensemble dashboard is a singleton served by
+            whichever opencode process is running (this web service counts), so
+            on a host with opencode-web enabled it is almost always live.
+          '';
+        };
+
+        port = mkOption {
+          type = types.port;
+          default = 4747;
+          description = ''
+            Backend port of the ensemble dashboard. Must match
+            <literal>my.programs.opencode.ensemble.dashboardPort</literal>.
+          '';
+        };
+      };
     };
 
     memoryHigh = mkOption {
@@ -177,8 +199,8 @@ in
         default = true;
         description = ''
           Opt each opencode web unit out of systemd-oomd's wholesale kills by
-          setting <literal>ManagedOOMMemoryPressure=never</literal> and
-          <literal>ManagedOOMSwap=never</literal>. Degradation then falls to
+          setting <literal>ManagedOOMPreference=omit</literal>.
+          Degradation then falls to
           the kernel cgroup OOM-killer (bounded by <option>memoryHigh</option> /
           <option>memoryMax</option> / <option>memorySwapMax</option>), which
           kills one process at a time — a teammate, not the web server — so the

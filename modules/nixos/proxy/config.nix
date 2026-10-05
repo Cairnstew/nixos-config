@@ -65,6 +65,12 @@ let
       }
       '') cfg.dashboard.opencode)}
 
+      ${lib.optionalString cfg.dashboard.ensemble.enable ''
+      handle_path ${cfg.dashboard.ensemble.apiPath}/* {
+        reverse_proxy ${cfg.dashboard.ensemble.host}:${toString cfg.dashboard.ensemble.port}
+      }
+      ''}
+
       ${lib.concatStringsSep "\n" (lib.mapAttrsToList handleBlock enabledUpstreams)}
 
       ${lib.concatStringsSep "\n" (lib.concatMap (u: u.extraLocations) (builtins.attrValues enabledUpstreams))}
