@@ -172,6 +172,15 @@
       url = "github:Cairnstew/Cairnstew.github.io";
     };
 
+    # Project Zomboid dedicated servers — NixOS module (services.project-zomboid-servers.*)
+    # + a modpack catalogue exposed as plain data (`self.modpacks`). Options live
+    # under the upstream namespace, not `my.*`; modules/nixos/projectzomboid-server/
+    # is a thin wrapper (dataDir, group membership, proxy upstreams, servers/).
+    project-zomboid-servers = {
+      url = "github:Cairnstew/nixos-projectzomboid-servers";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+
     # Spotify playlist manager — Python wrapper + CLI + Waybar/Hyprland widgets.
     # Developed via the ensemble space (spotify-playlist-manager); the home
     # spotify module installs its `spotify-playlist-manager` binary and points
@@ -184,7 +193,19 @@
   };
 
   # Wired using https://nixos-unified.org/autowiring.html
+  #
+  # `lib` is merged in after mkFlake because flake-parts only emits the output
+  # keys it knows about (packages, apps, checks, formatter, ...) — a part
+  # module cannot introduce an arbitrary `flake.<name>`. Exposing the pure
+  # theming helpers this way lets scripts and external tooling resolve the
+  # same palette the modules use, with no module system involved:
+  #
+  #   nix eval --impure --expr \
+  #     '(builtins.getFlake (toString ./.)).lib.theming.mkColors { scheme = "nord"; }'
   outputs = inputs@{ self, ... }:
+    let
+      themingLib = import ./lib/theming.nix { lib = inputs.nixpkgs.lib; };
+    in
     inputs.flake-parts.lib.mkFlake { inherit inputs; }
       ({ config, lib, ... }: {
         systems = [ "x86_64-linux" "aarch64-linux" "aarch64-darwin" ];
@@ -219,6 +240,12 @@
             config.allowUnfree = true;
           };
         };
-      });
+      })
+    // {
+      lib = {
+        color = themingLib.color;
+        theming = themingLib;
+      };
+    };
 }
  

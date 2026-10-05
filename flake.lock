@@ -1185,6 +1185,26 @@
         "type": "github"
       }
     },
+    "project-zomboid-servers": {
+      "inputs": {
+        "nixpkgs": [
+          "nixpkgs"
+        ]
+      },
+      "locked": {
+        "lastModified": 1791161640,
+        "narHash": "sha256-enyEo5kWOovV+JxH9pJ2e0C5nHhDW381KJmShx8dukM=",
+        "owner": "Cairnstew",
+        "repo": "nixos-projectzomboid-servers",
+        "rev": "eeb46add9b28acd8bc3c3e38e056bda43ae8a0e8",
+        "type": "github"
+      },
+      "original": {
+        "owner": "Cairnstew",
+        "repo": "nixos-projectzomboid-servers",
+        "type": "github"
+      }
+    },
     "pyproject-build-systems": {
       "inputs": {
         "nixpkgs": [
@@ -1359,6 +1379,7 @@
         "nuenv": "nuenv",
         "packwiz": "packwiz",
         "packwiz2nix": "packwiz2nix_2",
+        "project-zomboid-servers": "project-zomboid-servers",
         "sillytavern": "sillytavern",
         "spotify-playlist-manager": "spotify-playlist-manager",
         "stable-diffusion-webui-nix": "stable-diffusion-webui-nix",
