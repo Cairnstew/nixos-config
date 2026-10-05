@@ -280,6 +280,12 @@ in
           };
           researcher = {
             description = "In-depth web researcher — fetches and cross-references online docs, articles, and specifications";
+            # Pinned explicitly (rather than left to fall through to the
+            # parent/lead model) so research runs are reproducible and not
+            # silently reshuffled by whatever the lead session happens to be on.
+            # space-bunny-free: 1M context, tool-capable, $0 — a good fit for
+            # long multi-page fetches and cross-referencing.
+            model = "opencode-go/space-bunny-free";
             mode = "subagent";
             temperature = 0.2;
             prompt = builtins.readFile ./agents/researcher.md;
