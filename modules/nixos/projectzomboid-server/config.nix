@@ -1,74 +1,88 @@
-# Wires my.services.projectZomboid into a working set of data dirs, users, and
-# (via services.nix) per-server systemd units. This file handles the non-unit
-# plumbing: user/group, prepare-dirs, firewall, opencode wiring, and the shared
-# steamcmd server install.
-{ config, lib, flake, pkgs, ... }:
+# modules/nixos/projectzomboid-server/config.nix
+# Host-local wiring for the upstream nixos-projectzomboid-servers module.
+#
+# There are no `my.*` options here on purpose: the upstream module owns the whole
+# option surface under `services.project-zomboid-servers.*`, and re-exporting it
+# under `my.*` would mean duplicating every option and drifting out of sync on
+# each `nix flake update`. What legitimately stays local is the handful of
+# decisions that are about THIS config rather than about Project Zomboid: which
+# disk holds the data, who may read it, and how the consoles reach the proxy.
+{ config, flake, lib, ... }:
 
 let
-  inherit (lib) mkIf mkMerge mkDefault;
-  cfg = config.my.services.projectZomboid;
+  cfg = config.services.project-zomboid-servers;
   me = flake.config.me;
-  pz = import ./lib.nix { inherit lib; };
 
-  # Enabled servers, resolved (module-merged) with the helper.
-  enabledServers = lib.filterAttrs (_: srv: srv.enable) cfg.servers;
-  resolved = lib.mapAttrs (name: srv: pz.resolveServer cfg.modpacks name srv) enabledServers;
-
-  serverDir = "${cfg.dataDir}/server"; # shared app-380870 install
-  controlFifo = name: "${cfg.dataDir}/${name}/control.fifo";
-
-  # ── steamcmd update of the shared install (app 380870) ─────────────────────
-  mkUpdateScript = pkgs.writeShellScript "pz-update-server" ''
-    set -euo pipefail
-    export HOME="${cfg.dataDir}"
-    ${lib.getExe cfg.steamcmd} \
-      +force_install_dir ${serverDir} \
-      +login anonymous \
-      +app_update 380870 validate \
-      +quit
-    # Download the Workshop items referenced by enabled servers into the shared
-    # install so PZ finds them (PZ looks in the install's steamapps/workshop).
-    ${lib.concatStringsSep "\n" (builtins.map (name: ''
-      ${lib.concatStringsSep "\n" (map (id: ''
-        ${lib.getExe cfg.steamcmd} \
-          +force_install_dir ${serverDir} \
-          +login anonymous \
-          +workshop_download_item 108600 ${id} \
-          +quit
-      '') resolved.${name}.workshopItems)}
-    '') (builtins.attrNames resolved))}
-  '';
+  # Upstream deliberately knows about no reverse-proxy module — a standalone
+  # flake cannot depend on someone's private option namespace. It exposes plain
+  # data per web-console server instead (`webConsoleUpstreams`), and the
+  # consumer maps that into whatever proxy it uses. This is that mapping.
+  #
+  # Inert while `web.enable` is false (the default): the list is empty, so
+  # nothing is registered.
+  #
+  # NOTE the dynamic-key shape. `my.services.proxy.upstreams` is `attrsOf`, and
+  # mkMerge on an attrsOf option merges the list's elements AS the attrset — so
+  # each element must already be `{ <upstream name> = <definition>; }`.
+  # Two plausible-looking alternatives both register nothing, silently:
+  #   { inherit (u) port path …; name = u.name; }   # mkMerge splats port/path/
+  #                                               # name as top-level keys
+  #   lib.nameValuePair u.name { …; }              # yields { name = …; value = … }
+  # `nix eval` shows the difference: upstreams = [ "name" "value" ] vs
+  # upstreams = [ "pz-knox" ]. Upstream's README suggests the first form.
+  pzUpstreams = lib.mkMerge (map
+    (u: {
+      ${u.name} = {
+        inherit (u) port path stripPrefix displayName;
+        # ttyd listens on `web.bind`, so the proxy has to target that address.
+        # It must be an IP rather than an interface name.
+        host = cfg.web.bind;
+      };
+    })
+    cfg.webConsoleUpstreams);
 in
 {
-  config = mkMerge [
-    (mkIf cfg.enable {
-      # ── User / group ───────────────────────────────────────────────────────
-      users.users.${cfg.user} = {
-        isSystemUser = true;
-        inherit (cfg) group;
-        home = cfg.dataDir;
-        createHome = true;
-        description = "Project Zomboid dedicated server user";
-      };
-      users.groups.${cfg.group} = { };
+  config = lib.mkIf cfg.enable {
+    # Adopt the upstream catalogue wholesale. It is plain data (a flake output,
+    # not a module), so wiring it costs no extra options and no import — and
+    # packs stay versioned with the code that understands them instead of being
+    # forked here. Today that is `vanilla-plus` and `survival-hard`.
+    # mkDefault so a host can replace it or layer a local pack over it; to
+    # cherry-pick instead, assign e.g.
+    #   modpacks = { vanilla-plus = flake.inputs.project-zomboid-servers.modpacks.vanilla-plus; };
+    #
+    # dataDir: keep the server on the large SATA data disk instead of the NVMe
+    # root. The dedicated-server download is several GB and PZ saves grow
+    # without bound, so `/var` (upstream's default) would quietly fill the root
+    # filesystem on this host. mkDefault so a per-host override still wins.
+    services.project-zomboid-servers = {
+      modpacks = lib.mkDefault flake.inputs.project-zomboid-servers.modpacks;
+      dataDir = lib.mkDefault "/mnt/data/project-zomboid";
+    };
 
-      # Primary user in the group so they can reach the data dir / control fifos.
-      users.groups.${cfg.group}.members = [ me.username ];
+    # The PZ server runs as `project-zomboid` and the launcher reads
+    # pz-admin-password (servers/knox.nix → adminAccount.passwordFile) itself,
+    # so the decrypted /run/agenix file has to be group-readable by it.
+    #
+    # The manifest cannot say so directly: agenix runs an unconditional
+    # `chown owner:group` at activation, and the group only exists once
+    # services.project-zomboid-servers is enabled. Declaring `project-zomboid`
+    # in the manifest would therefore break `nixos-rebuild` on every host where
+    # PZ is off. Root ownership works everywhere (the feature is dormant), and
+    # this hands the group over the moment it matters.
+    age.secrets.pz-admin-password = {
+      group = lib.mkForce cfg.group;
+      mode = lib.mkForce "0440";
+    };
 
-      # ── Firewall: open each enabled server's two UDP ports ────────────────
-      networking.firewall.allowedUDPPorts = lib.concatMap
-        (s: lib.optionals s.openFirewall [ s.defaultPort s.udpPort ])
-        (lib.attrValues resolved);
-    })
+    # Upstream creates the system user and its group but never adds this repo's
+    # primary user, which leaves `seanc` unable to read the data dir or attach
+    # to the console sockets. Mirrors what the pre-upstream module did.
+    users.groups.${cfg.group}.members = [ me.username ];
 
-    # ── OpenCode integration — available wherever opencode is enabled ────────
-    (mkIf cfg.opencode.enable {
-      my.homeManager.extraConfig.my.programs.opencode = {
-        tools = {
-          pz-modpack-status = ./opencode/tools/pz-modpack-status.ts;
-        };
-        skills.pz-modpack = builtins.readFile ./opencode/skill.md;
-      };
-    })
-  ];
+    # Per-server ttyd consoles auto-register on the Caddy dashboard, e.g.
+    # https://<host>.<tailnet>.ts.net/pz/knox/. Replaces the pre-upstream
+    # `web.proxyUpstream` option, which upstream cannot express.
+    my.services.proxy.upstreams = pzUpstreams;
+  };
 }
