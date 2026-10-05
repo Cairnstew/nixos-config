@@ -12,11 +12,19 @@
 # patch to it.
 #
 # The patch (patches/opencode-ensemble.py):
-#   * Migration 12 — team.lead_model TEXT (plugin's own user_version machinery)
-#   * team_create — snapshots the lead's resolved model into
-#     team.lead_agent/lead_model (message-table read, one-off)
 #   * wraps FIVE remaining wake promptAsync sites that lack model handling
 #     with __ensembleWakeArgs(db, opts)
+#   * __ensembleWakeArgs reads the recipient's stored model (team.lead_model
+#     for the lead, team_member.model for a teammate) and, when the stored
+#     lead model is NULL, falls back to reading the lead session's CURRENT
+#     model from OpenCode's own SQLite DB (readSessionModel).
+#
+# The fallback is load-bearing, not defensive. The stock 0.19.0 dist ships no
+# writer for team.lead_model — team_create still inserts the pre-snapshot 8
+# columns — so the column is NULL on every team. Without the fallback the
+# helper returned opts unchanged, the wake fired a bare promptAsync, and
+# opencode answered the lead on its SERVER DEFAULT, silently undoing the
+# user's model selection the moment a teammate reported in.
 #
 # The patch script is fail-loud (patch-jar.nix convention): if any anchor in
 # the pinned dist is missing, the Nix build fails instead of shipping a

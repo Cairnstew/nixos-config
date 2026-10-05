@@ -52,14 +52,24 @@ in
           bare = src.count("promptAsync({")
           assert bare == 7, f"expected 7 un-wrapped promptAsync({{ sites (32bc135 fork baseline), found {bare}"
 
-          # The helper reads lead_agent/lead_model (2 references). The fd5555e fork
-          # adds the snapshot column itself: `ALTER TABLE team ADD COLUMN
-          # lead_agent TEXT` lives in its MIGRATIONS list. lead_model itself is
-          # only referenced by the helper, not created by any migration — a
-          # pre-existing fork schema gap whose failure mode is the documented
-          # safe degradation (helper returns opts unchanged on a missing
-          # column); fixing it is a fork change, not this test's concern.
-          assert src.count("lead_model") == 2, "lead_model helper references missing"
+          # The helper resolves a lead/member wake's model. It first reads the
+          # stored team.lead_agent/lead_model snapshot; the fd5555e fork adds
+          # the lead_agent column via `ALTER TABLE team ADD COLUMN lead_agent
+          # TEXT` in its MIGRATIONS list. The stock 0.19.0 dist ships NO writer
+          # that ever populates lead_model (team_create still inserts the
+          # pre-snapshot 8 columns), so the column stays NULL on every team.
+          #
+          # That gap used to mean the helper returned opts unchanged, the wake
+          # fired a bare promptAsync, and opencode answered the LEAD on its
+          # server default — silently undoing the user's model selection the
+          # moment a teammate reported in (the "main agent switches back to
+          # DeepSeek after a teammate responds" regression). The helper now
+          # falls back to reading the lead session's CURRENT model from
+          # OpenCode's own DB (readSessionModel) whenever the stored value is
+          # NULL. Assert that fallback is wired and the columns are read.
+          assert "SELECT lead_agent, lead_model FROM team" in src, "helper must read stored lead_agent/lead_model"
+          assert "model = lead.lead_model" in src, "helper must assign stored lead_model"
+          assert "readSessionModel(opts.sessionID)" in src, "helper must fall back to readSessionModel for a NULL stored model"
           assert src.count("ALTER TABLE team ADD COLUMN lead_agent TEXT") == 1, "team_create snapshot migration (lead_agent) missing"
 
           # Bundle must still be valid ESM (mirrors fork.nix's node --check).
@@ -68,7 +78,7 @@ in
           assert os.system(f"${pkgs.nodejs}/bin/node --check {tmp}") == 0, "node --check failed"
           os.unlink(tmp)
 
-          print("ok: 5/5 wake sites wrapped; spawn intact; lead_agent migration present; ESM parses")
+          print("ok: 5/5 wake sites wrapped; spawn intact; lead_model NULL-fallback to readSessionModel present; ESM parses")
           PYEOF
         '';
       }

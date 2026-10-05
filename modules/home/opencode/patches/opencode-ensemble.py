@@ -3,6 +3,17 @@
 opencode-ensemble.py — build-time patch for version 0.19.0 (Cairnstew fork).
 
 Patches the dist/index.js to fix the remaining wake-path defect sites.
+
+Wake-path model hand-off: every wake promptAsync must carry the recipient's
+model, or opencode answers the lead on its server default and silently undoes
+the user's model selection the moment a teammate reports in (issue: "main agent
+switches back to DeepSeek after a teammate responds").
+
+The stored team.lead_model column is NULL on every team in practice — the
+stock 0.19.0 dist ships no team_create writer for it — so the helper falls back
+to reading the lead session's CURRENT model from OpenCode's own SQLite DB, the
+same live read team_spawn already does. That makes the fix correct for new and
+pre-existing teams alike, with no schema change.
 """
 import sys
 
@@ -20,6 +31,19 @@ function __ensembleWakeArgs(db, opts) {
     if (lead) {
       agent = lead.lead_agent;
       model = lead.lead_model;
+      // lead_model is NULL for every team whose team_create predates the
+      // writer (and for all teams on a stock 0.19.0 dist, which has no such
+      // writer at all). Falling through here left the wake a bare
+      // promptAsync, and opencode answered it with its SERVER DEFAULT model —
+      // silently dragging the lead off the model the user selected the moment
+      // a teammate reported in. Read the lead session's CURRENT model straight
+      // from OpenCode's own DB instead: the same live read team_spawn already
+      // does via deps.leadModelReader. Never throws; undefined -> bare opts.
+      if (!model) {
+        try {
+          if (typeof readSessionModel === "function") model = readSessionModel(opts.sessionID);
+        } catch (err) { /* best effort */ }
+      }
     } else {
       const m = db.query("SELECT agent, model FROM team_member WHERE session_id = ?").get(opts.sessionID);
       if (m) {
