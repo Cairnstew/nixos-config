@@ -91,9 +91,9 @@ let
     let
       lines = lib.splitString "\n" (builtins.readFile "${skillSourceDir}/${n}");
     in
-      (lib.head lines) == "---"
-      && lib.any (l: lib.hasPrefix "name:" l) lines
-      && lib.any (l: lib.hasPrefix "description:" l) lines;
+    (lib.head lines) == "---"
+    && lib.any (l: lib.hasPrefix "name:" l) lines
+    && lib.any (l: lib.hasPrefix "description:" l) lines;
   skillsMissingFrontmatter = lib.filter (n: !(hasSkillFrontmatter n)) sourceSkillFiles;
 
 in
