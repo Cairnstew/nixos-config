@@ -46,7 +46,7 @@ in
 
     enableAgent = lib.mkOption {
       type = types.bool;
-      default = pkgs.stdenv.isLinux;
+      default = pkgs.stdenv.hostPlatform.isLinux;
       description = "Whether to enable the SSH agent service (Linux only).";
     };
 

@@ -16,16 +16,16 @@
       ${me.username} = {
         openssh.authorizedKeys.keys = myKeys;
         shell = pkgs.zsh;
-      } // lib.optionalAttrs pkgs.stdenv.isLinux {
+      } // lib.optionalAttrs pkgs.stdenv.hostPlatform.isLinux {
         isNormalUser = true;
         extraGroups = [ "networkmanager" "wheel" ];
       };
     };
 
-  programs.zsh.enable = lib.mkIf pkgs.stdenv.isLinux true;
+  programs.zsh.enable = lib.mkIf pkgs.stdenv.hostPlatform.isLinux true;
 
   # Make me a sudoer without password
-  security = lib.optionalAttrs pkgs.stdenv.isLinux {
+  security = lib.optionalAttrs pkgs.stdenv.hostPlatform.isLinux {
     sudo.execWheelOnly = true;
     sudo.wheelNeedsPassword = false;
   };
