@@ -21,6 +21,23 @@ Core flake and repository metadata files.
 
 Root scratch/artifact files (VM images, caches, ad-hoc reports) are intentionally not enumerated here.
 
+## lib/
+
+Pure Nix libraries with no flake or module dependency — importable from
+NixOS modules, Home Manager modules, flake-parts layers, and scripts. Not
+autowired; nothing here becomes a flake output.
+
+| File | Description |
+|------|-------------|
+| `lib/README.md` | Theming documentation: reading the palette, adding a scheme, colour maths |
+| `lib/color.nix` | Colour maths: parse, WCAG luminance/contrast, mix, lighten/darken, alpha, `ensureContrast`, `bestForeground` |
+| `lib/theming.nix` | Scheme resolution — base16 palette to semantic roles, 16-colour terminal palette, hashless base16 view |
+| `lib/schemes/` | One file per colour scheme (`base00`–`base0F` + metadata), auto-discovered by `schemes/default.nix` |
+
+The resolved palette reaches modules as `my.theming.colors.*` (see
+`modules/nixos/theming/` and `modules/home/theming/`), and to non-module
+consumers as `flake.lib.theming`.
+
 ## configurations/
 
 Host configurations for NixOS systems.
@@ -90,6 +107,7 @@ Flake-level modules for outputs, packages, and development tools. `flake.nix` au
 | `act.nix` | Local GitHub Actions testing via `nektos/act` |
 | `act-fixed.Dockerfile` | Custom act image replacing the `/var/run → /run` symlink (Docker 29+ `mkdirat` workaround) |
 | `caches.nix` | Binary cache substituters and public keys (Cachix, CUDA, personal) |
+| `theming.nix` | Flake-level `theming.*` schema — the single source of truth for the colour scheme (`theming.scheme`, `theming.overrides`) |
 | `cloud.nix` | Cloud IaC via terranix: `terranix.terranixConfigurations` (gcp/aws), OpenTofu wrappers, `tf`/`tf-plan`/`tf-apply`/`tf-destroy`/`tf-show-config` apps + `packages.tf-config` |
 | `config.nix` | Identity and preference option declarations consumed from `config.nix` |
 | `formatter.nix` | Treefmt/nixpkgs-fmt configuration for `nix fmt` |
@@ -149,7 +167,9 @@ NixOS system modules. Import `nixosModules.common` to get the base profile syste
 | `hyprland/` | Hyprland Wayland compositor with modular submodules (core, bar, launcher, notifications, lockscreen, screenshot, clipboard, portal, display-manager, audio, utilities, nvidia, idle, colorpicker, night-light, pyprland, wallpapers) <!-- standalone awww + singular wallpaper submodules removed, recon M3/M4 --> |
 | `monitors/` | Universal declarative monitor layout consumed by desktop environments |
 | `graphics/` | GPU and graphics driver configuration (NVIDIA, AMD, Mesa, Vulkan) |
-| `stylix/` | Stylix theming framework integration — wires `me.colorScheme` to stylix.base16Scheme |
+| `theming/` | Central colour infrastructure — `my.theming.colors`, the resolved role-based palette |
+| `theming/` | Central colour infrastructure — exposes the resolved palette as `my.theming.colors` / `my.theming.lib` |
+| `stylix/` | Stylix theming framework integration — feeds `my.theming.colors.base16` to stylix |
 | `mouse/` | Mouse acceleration via maccel kernel module with GNOME integration |
 | `hardening/` | zram swap, systemd-oomd, OOM-protected SSH |
 
@@ -206,6 +226,7 @@ NixOS system modules. Import `nixosModules.common` to get the base profile syste
 | `proton/` | GE-Proton + ProtonUp-Qt for Steam |
 | `game-servers/` | Dedicated game servers via steamcmd + systemd |
 | `minecraft-server/` | Declarative Minecraft servers via nix-minecraft (vanilla/fabric/neoforge/paper/velocity) + modpack support |
+| `projectzomboid-server/` | Project Zomboid servers — wraps the upstream `project-zomboid-servers` flake input (options under `services.project-zomboid-servers.*`, not `my.*`); local wiring is dataDir, group membership, proxy upstreams + `servers/` |
 | `ai/comfyui/` | ComfyUI diffusion GUI with node-based workflow editor |
 | `godot/` | Godot game engine — export templates, GDScript tools, MCP |
 | `houdini/` | SideFX Houdini 3D/VFX software |
@@ -363,6 +384,10 @@ Nix test suites.
 | File | Description |
 |------|-------------|
 | `core_test.nix` | Core nixtest suite |
+| `theming_test.nix` | Unit tests for `lib/color.nix` and `lib/theming.nix` — parsing, published WCAG contrast values, blending, legibility, catalog integrity, two-phase override behaviour |
+| `opencode-model-fallback_test.nix` | Regression tests for the opencode model-select resolver |
+| `opencode-ensemble-fork_test.nix` | Regression tests for the vendored ensemble plugin |
+| `opencode-ensemble-vendor_test.nix` | Verifies the vendored ensemble build matches its upstream revision |
 
 ## .github/
 

@@ -155,6 +155,27 @@ Quick reference for common maintenance tasks.Lists files to read and edit in ord
 
 ---
 
+## Change the system colour scheme
+
+**Read:**
+1. `lib/README.md` (the palette, the role mapping, the override rules)
+2. `modules/nixos/theming/README.md` (what modules read)
+
+**Edit:**
+1. `config.nix` → `theming.scheme = "<slug>";` (list them with
+   `nix eval --json .#lib.theming.schemeNames`)
+2. Optional per-colour tweaks in the same file → `theming.overrides`
+
+**Add a new scheme instead of overriding:** drop one file into `lib/schemes/`
+containing `polarity` and `base00`–`base0F`. Nothing else needs editing — the
+catalog is auto-discovered and the module tests will validate it.
+
+**Read colours from a module:** `config.my.theming.colors.<role>`
+(NixOS and Home Manager are identical), or `config.my.theming.lib.color.*`
+for contrast/mix/alpha maths.
+
+---
+
 # Option Registry
 
 All `my.*` options declared across module files.
@@ -494,7 +515,13 @@ All `my.*` options declared across module files.
 | `my.services.opencodeWeb.tailnetServe.basePort` | port | `8443` | First tailnet serve HTTPS port |
 | `my.services.opencodeWeb.dashboard.enable` | bool | `true` | Add an OpenCode section to the proxy dashboard |
 | `my.services.opencodeWeb.dashboard.baseUrl` | str | `"http://localhost"` | Base URL for dashboard instance links |
+| `my.services.opencodeWeb.dashboard.ensemble.enable` | bool | `true` | Register the opencode ensemble teams browser UI section on the proxy dashboard |
+| `my.services.opencodeWeb.dashboard.ensemble.port` | port | `4747` | Backend port of the ensemble dashboard (matches `my.programs.opencode.ensemble.dashboardPort`) |
 | `my.services.proxy.dashboard.opencode` | list | `[]` | OpenCode instances shown in the dashboard (populated by opencode-web) |
+| `my.services.proxy.dashboard.ensemble.enable` | bool | `false` | OpenCode ensemble teams browser UI section on the dashboard (populated by opencode-web) |
+| `my.services.proxy.dashboard.ensemble.host` | str | `"127.0.0.1"` | Backend host of the ensemble dashboard |
+| `my.services.proxy.dashboard.ensemble.port` | port | `4747` | Backend port of the ensemble dashboard |
+| `my.services.proxy.dashboard.ensemble.apiPath` | str | `"/ensemble"` | Same-origin path prefix proxied to the ensemble dashboard |
 | `my.services.proxy.systemMetrics.opencodeGo.usageJsonFile` | null/path | `null` | OpenCode Go usage snapshot merged into dashboard metrics.json and rendered as usage bars |
 | `my.services.xmltv.enable` | bool | `false` | XMLTV EPG grabber service for UK Freeview TV listings |
 | `my.services.xmltv.package` | package | `null` | XMLTV package to use |
@@ -581,6 +608,41 @@ All `my.*` options declared across module files.
 | `my.desktop.gnome.fontName` | str | — | UI font |
 | `my.desktop.gnome.fontMonospace` | str | — | Monospace font |
 | `my.desktop.gnome.numWorkspaces` | int | `4` | Number of workspaces |
+
+## my.theming.* (Central Colour / Theme Infrastructure)
+
+Single source of truth for the system palette. Set `theming.scheme` in the
+repo-root `config.nix`; every module reads `my.theming.colors.*`. Full docs:
+[`lib/README.md`](lib/README.md).
+
+NixOS (`modules/nixos/theming/`) and Home Manager (`modules/home/theming/`)
+declare the same read-only options; all are derived, never set by hand.
+
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `my.theming.colors` | attrs | derived | Resolved palette — roles, `terminal`, `base16`, `onBackground` |
+| `my.theming.lib` | raw | derived | Pure colour maths (`my.theming.lib.color.*`) |
+| `my.theming.scheme` | str | derived | Active scheme slug, e.g. `catppuccin-mocha` |
+| `my.theming.polarity` | `dark`/`light` | derived | Polarity of the active scheme |
+| `my.theming.schemes` | list | derived | Every available scheme slug |
+| `my.theming.schemeUnderscored` | str | derived | Slug with `-`→`_` (Home Manager only, for helix) |
+
+Selected `my.theming.colors` keys: `background`, `surface`,
+`backgroundPanel`, `backgroundElement`, `backgroundHover`,
+`backgroundSelected`, `foreground`, `foregroundMuted`, `foregroundSubtle`,
+`border`, `borderSubtle`, `borderStrong`, `borderActive`, `accent`,
+`accentAlt`, `accentMuted`, `success`, `warning`, `error`, `info`, `cursor`,
+`selection`, `selectionText`, `diffAdded`, `diffRemoved`, `diffModified`,
+`syntaxKeyword`, `syntaxFunction`, `syntaxString`, `syntaxNumber`,
+`syntaxType`, `syntaxComment`, `syntaxOperator`, `onBackground`, plus
+`terminal.{black,red,green,yellow,blue,magenta,cyan,white,bright*}`.
+
+Flake-level input (repo-root `config.nix`, not a `my.*` option):
+
+| Setting | Type | Default | Description |
+|---------|------|---------|-------------|
+| `theming.scheme` | str | `catppuccin-mocha` | Scheme to use, from `lib/schemes/` |
+| `theming.overrides` | attrs | `{}` | Per-slot / per-role colour overrides |
 
 ## my.secrets.* (Secrets Management)
 
