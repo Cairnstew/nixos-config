@@ -33,6 +33,11 @@ in
     name = "viewpoint"; # -> Zomboid/Server/viewpoint.ini, Saves/Multiplayer/viewpoint
     description = "Project Viewpoint Vanilla+ (OwenOasis modlist) on NixOS";
 
+    # Do not start at boot. Flip this to true (or `systemctl start
+    # project-zomboid-viewpoint`) when you want it up. The console FIFO socket
+    # still exists, so the web console can bring it up on demand.
+    autoStart = false;
+
     modpack = "viewpoint";
 
     # ── Java mods ────────────────────────────────────────────────────────────
