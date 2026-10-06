@@ -57,6 +57,12 @@ let
       }
       ''}
 
+      ${lib.optionalString cfg.dashboard.projectzomboid.enable ''
+      handle_path ${cfg.dashboard.projectzomboid.apiPath}/* {
+        reverse_proxy ${cfg.dashboard.projectzomboid.host}:${toString cfg.dashboard.projectzomboid.port}
+      }
+      ''}
+
       ${lib.concatStringsSep "\n" (map (i: ''
       handle_path ${i.apiPath}/* {
         reverse_proxy ${i.host}:${toString i.port} {

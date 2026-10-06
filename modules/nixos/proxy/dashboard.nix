@@ -344,6 +344,66 @@ let
         </script>
         ''}
 
+        ${lib.optionalString cfg.dashboard.projectzomboid.enable ''
+        <h2 class="section-title">Project Zomboid</h2>
+        <div class="metrics-grid" id="pz-servers">
+          <div class="oc-empty">Loading…</div>
+        </div>
+        <script>
+        // Project Zomboid server management: live status + start/stop/restart,
+        // plus a link to each server's ttyd console. Backed by the
+        // projectzomboid-server module's management API (proxied at
+        // dashboard.projectzomboid.apiPath), which reports per-server systemd
+        // state, uptime and memory, and accepts start/stop/restart POSTs.
+        //
+        // No player count: PZ's dedicated server exposes none without RCON, and
+        // the console link is the honest answer for "who is on".
+        var pzApi = '${cfg.dashboard.projectzomboid.apiPath}';
+        function pzDuration(sec) {
+          if (sec == null) return "";
+          var d = Math.floor(sec / 86400), h = Math.floor((sec % 86400) / 3600), m = Math.floor((sec % 3600) / 60);
+          return d ? d + 'd ' + h + 'h' : h ? h + 'h ' + m + 'm' : m + 'm';
+        }
+        function pzBytes(b) {
+          if (b == null) return '—';
+          var g = b / 1073741824;
+          return g >= 1 ? g.toFixed(1) + ' GiB' : (b / 1048576).toFixed(0) + ' MiB';
+        }
+        function pzCard(s) {
+          var pill = '<span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:' + (s.active ? '#4ade80' : '#ef4444') + ';margin-right:6px"></span>';
+          var btn = function (a, label) {
+            return '<button data-pz-action="' + a + '" data-pz-name="' + s.name + '" style="padding:4px 12px;margin-right:6px;border-radius:6px;border:1px solid #2a2a38;background:#14141d;color:#e0e0e0;cursor:pointer">' + label + '</button>';
+          };
+          return '<div class="metric-card">' +
+            '<div class="metric-label">' + pill + s.name + ' · ' + s.state + '</div>' +
+            '<div class="metric-value">' + pzBytes(s.memory) + '</div>' +
+            '<div class="metrics-info">' + (s.uptime ? 'up ' + pzDuration(s.uptime) : "") + '</div>' +
+            '<div style="margin-top:10px">' +
+              btn('start', 'Start') + btn('stop', 'Stop') + btn('restart', 'Restart') +
+              (s.console ? '<a href="' + s.console + '" style="padding:4px 12px;border-radius:6px;border:1px solid #2a2a38;background:#14141d;color:#5a8aff;text-decoration:none">Console</a>' : "") +
+            '</div></div>';
+        }
+        function pzRefresh() {
+          fetch(pzApi + '/status').then(function (r) { return r.json(); }).then(function (d) {
+            var servers = Array.isArray(d) ? d : [];
+            var box = document.getElementById('pz-servers');
+            if (!servers.length) { box.innerHTML = '<div class="oc-empty">No servers configured</div>'; return; }
+            box.innerHTML = servers.map(pzCard).join("");
+          }).catch(function (e) {
+            document.getElementById('pz-servers').innerHTML = '<div class="oc-empty">Unavailable (' + e.message + ')</div>';
+          });
+        }
+        document.addEventListener('click', function (ev) {
+          var el = ev.target.closest('[data-pz-action]');
+          if (!el) return;
+          fetch(pzApi + '/' + el.dataset.pzName + '/' + el.dataset.pzAction, { method: 'POST' })
+            .then(function () { setTimeout(pzRefresh, 2000); }).catch(function () {});
+        });
+        pzRefresh();
+        setInterval(pzRefresh, 10000);
+        </script>
+        ''}
+
         <p class="footer"><script>document.write(window.location.host)</script></p>
       </div>
     </body>

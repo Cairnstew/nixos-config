@@ -540,6 +540,14 @@
   services.project-zomboid-servers = {
     enable = true;
     servers.viewpoint.enable = true;
+
+    # ttyd web consoles — the actual admin surface. Gives each server with
+    # `webConsole = true` a console at /pz/<name>/ (proxied by Caddy via the
+    # module's webConsoleUpstreams, wired in modules/nixos/projectzomboid-server/
+    # config.nix), plus the web-console user holding scoped NOPASSWD systemctl
+    # rights on project-zomboid-* that the dashboard's start/stop/restart buttons
+    # reuse. The dashboard section is registered by the same wrapper.
+    web.enable = true;
   };
 
   # ── Docker ──────────────────────────────────────────────────────────────

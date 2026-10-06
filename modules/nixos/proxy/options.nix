@@ -235,6 +235,48 @@ in
         };
       };
 
+      # Project Zomboid server management section (populated by the
+      # projectzomboid-server module, which owns the API behind it). Mirrors the
+      # minecraft section: a small management API proxied by Caddy, rendered as
+      # live server cards with start/stop/restart buttons and a link to each
+      # server's ttyd console.
+      #
+      # The console itself is the upstream module's `web.enable`; this section
+      # only surfaces state and links to it, so enabling the section without the
+      # console yields cards with no Console link.
+      projectzomboid = {
+        enable = lib.mkEnableOption "Project Zomboid server management section on the dashboard";
+
+        host = lib.mkOption {
+          type = lib.types.str;
+          default = "127.0.0.1";
+          description = "Backend host of the Project Zomboid management API.";
+        };
+
+        port = lib.mkOption {
+          type = lib.types.port;
+          default = 7798;
+          description = "Backend port of the Project Zomboid management API.";
+        };
+
+        apiPath = lib.mkOption {
+          type = lib.types.str;
+          default = "/api/projectzomboid";
+          description = "Same-origin path prefix proxied to the Project Zomboid management API.";
+        };
+
+        consoleBase = lib.mkOption {
+          type = lib.types.str;
+          default = "/pz";
+          description = ''
+            URL prefix for the per-server ttyd consoles, matching the upstream
+            module's <literal>webConsoleUpstreams</literal> paths
+            (<literal>/pz/&lt;name&gt;/</literal>). The API builds each card's
+            console link from this.
+          '';
+        };
+      };
+
       # OpenCode ensemble teams browser UI section. The ensemble dashboard is
       # served by the opencode-ensemble plugin inside any opencode process
       # (terminal session or opencode-web service) on

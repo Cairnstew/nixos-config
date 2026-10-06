@@ -24,6 +24,9 @@
     # Host-local wiring: dataDir, group membership, reverse-proxy upstreams.
     ./config.nix
 
+    # Dashboard management API + its registration on the proxy dashboard.
+    ./services.nix
+
     # Repo-specific assertions + smoke test.
     ./tests.nix
 
