@@ -12,5 +12,6 @@
 {
   imports = [
     ./knox.nix
+    ./viewpoint.nix
   ];
 }

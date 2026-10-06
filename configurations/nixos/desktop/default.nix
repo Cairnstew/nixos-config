@@ -509,6 +509,39 @@
     options = [ "rw" "uid=1000" "gid=100" "umask=0022" "nofail" "x-systemd.automount" ];
   };
 
+  # ── Project Zomboid: Project Viewpoint Vanilla+ ───────────────────────────
+  # /mnt/data is 0710 root:root, so the `project-zomboid` service user is
+  # "other" with no `x` on it and cannot TRAVERSE the path to its own data dir.
+  # The module creates /mnt/data/project-zomboid itself (upstream
+  # modules/config.nix sets a tmpfiles rule "d '${dataDir}' 0770 <user> <group>",
+  # which runs as root and therefore succeeds), but traverse on every ancestor is
+  # required for any access — so the install unit dies at exec with
+  # `status=200/CHDIR`, before its script ever runs.
+  #
+  # 0711 grants traverse to all and still denies listing. That exposes nothing
+  # new: the sensitive subdirs already deny others `x` (docker 0710 root:root,
+  # project-zomboid 0770 project-zomboid, lost+found 0700 root:root), while the
+  # ones that are world-readable (ollama 0755, jupyter_projects 0775) already say
+  # so in their own modes. A per-user ACL would be tighter but is not expressible
+  # declaratively here without guessing at tmpfiles ACL syntax.
+  systemd.tmpfiles.rules = [
+    "d /mnt/data 0711 root root -"
+  ];
+
+  # The server ships disabled (modules/nixos/projectzomboid-server/servers/
+  # viewpoint.nix) — opt in per host here.
+  #
+  # Build drift: Project Viewpoint pins `versionMin=42.21 versionMax=42.21`, and
+  # the stable branch currently ships exactly 42.21.0. When PZ moves past 42.21
+  # the game HIDES Viewpoint rather than failing, so the server keeps running
+  # but loses the renderer. To freeze the install, set `updateOnStart = false`
+  # once it exists (that option never creates one) and bump deliberately after
+  # re-checking Viewpoint's mod.info.
+  services.project-zomboid-servers = {
+    enable = true;
+    servers.viewpoint.enable = true;
+  };
+
   # ── Docker ──────────────────────────────────────────────────────────────
   # Move Docker data to the dedicated 500GB SATA SSD (sdb) for space
   my.virtualisation.docker.dataRoot = "/mnt/data/docker";
