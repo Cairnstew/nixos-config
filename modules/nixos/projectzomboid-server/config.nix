@@ -142,6 +142,39 @@ in
         extraConfig = {
           home.packages = [ projectzomboidViewpoint ];
 
+          # Fetch the pack's Workshop mods and install them as LOCAL mods in
+          # `~/Zomboid/mods` — the only form PZ's client loads with no Steam
+          # subscription, since subscribing is not scriptable (see GOTCHAS.md).
+          #
+          # It is a systemd USER service, so Home Manager starts it through
+          # sd-switch *inside* activation (which runs under `set -eu`, and waits
+          # up to 120s for a unit to start). A first run that downloaded ~2.6G
+          # there would therefore land on the switch — so it is PRE-SEEDED once
+          # by hand, from the flake INPUT (this repo has no such app):
+          #
+          #   nix run ~/Projects/nixos-projectzomboid-servers#pz-client-mods -- viewpoint
+          #
+          # after which the service's run is a fast no-op (installed mods are
+          # skipped). Re-run that by hand, or `systemctl --user restart
+          # project-zomboid-client-mods`, whenever the pack changes.
+          #
+          # Run it from a real directory, never /tmp: steamcmd is wrapped in
+          # `steam-run`, whose sandbox has a PRIVATE /tmp, so bwrap cannot even
+          # chdir there and every item reports DOWNLOAD FAILED.
+          #
+          # steamLogin names the account whose cached steamcmd token is reused —
+          # the token is per-HOME, and this half uses the real one, so the
+          # one-time interactive `steamcmd +login` must have been run normally.
+          services.project-zomboid-servers.home = {
+            installMods = true;
+            steamLogin = "cairnsgerry";
+
+            # Off: the Steam-library symlinks were server-parity only (the client
+            # never scans there), and they would be in Steam's way if it ever
+            # subscribed. installMods is what actually loads.
+            linkSteamWorkshop = false;
+          };
+
           xdg.desktopEntries.projectzomboid-viewpoint = {
             name = "Project Zomboid (Viewpoint)";
             comment = "Project Viewpoint Vanilla+ with the ZombieBuddy JVM agent";
