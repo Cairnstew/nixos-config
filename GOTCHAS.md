@@ -1359,3 +1359,13 @@ Symptom (2026-10-07): after editing the `project-zomboid-servers` flake input, `
 **Cause:** with uncommitted changes Nix copies the working tree to a store path and the flake check's store-path bookkeeping can disagree with itself mid-evaluation, surfacing as a missing/!valid path on an unrelated derivation.
 
 Rules: (1) to tell a real failure from this artifact, **never debug on a dirty tree** — `cp -a` the repo to `/tmp`, commit there (`git -c user.email=t@t -c user.name=t commit -m wip`), and run the check on the committed copy; a failure that survives that is yours, one that vanishes is the artifact; (2) this is separate from the `--no-build` trap that the check *skips script bodies* — `--no-build` still evaluates everything, so evaluate-only failures are real, only *store path* errors are suspect; (3) `nix build .#checks.<system>.<name>` on the dirty tree is fine and is the faster loop for a single check — the artifact has only been seen on `flake check` itself.
+
+---
+
+**Home Manager's `osConfig` is a module ARGUMENT, not an option — so `options ? osConfig` is silently false**
+
+Symptom (2026-10-07): a new Home Manager module (the client-host half of the `project-zomboid-servers` input) guarded its work with `if options ? osConfig then … else null` and did nothing at all — while evaluating cleanly, with `my.homeManager.extraModules` correctly populated and `services.project-zomboid-servers.clientHosts` correctly non-empty. Every symptom pointed at the wiring, and the guard was the bug.
+
+**Cause:** Home Manager's NixOS integration supplies `osConfig` through `specialArgs` (home-manager's `nixos/common.nix`, reached here via `modules/nixos/homeManager/config.nix:26`), and the standalone case only defaults it in `_module.args` (`modules/misc/submodule-support.nix`). There is no **option** named `osConfig`, so `options ? osConfig` — and `config ? osConfig` — is always false. Reading `config.osConfig` is a different trap again: the value is the whole NixOS config, so a namespace that is absent reports `… does not provide attribute`, not an unknown-option error.
+
+Rules: (1) take it as a function argument — `{ config, lib, osConfig ? null, ... }:` — and read `osConfig.services.<ns>` from there, guarding on `osConfig == null` for standalone use; (2) **verify a Home Manager module by evaluating the consumer** (`nix eval .#nixosConfigurations.<host>.config.home-manager.users.<user>.…`), because a flake's own checks typically cover only its NixOS half and will happily pass while the HM side is inert; (3) `home.activation.<name>` evaluates to a DAG **node**, not a string — read `.data` or `nix eval` fails with `cannot coerce a set to a string`.
