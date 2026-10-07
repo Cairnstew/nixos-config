@@ -1442,3 +1442,18 @@ Symptom (2026-10-07): after pre-seeding the Project Zomboid pack with `pz-client
 22:13 is the tool's run; the rewrite follows minutes later. This is the high-impact instance of the older "ad-hoc steam/steamcmd clobbers Steam library config" entry — same mechanism, now reachable from a `home.activation`-adjacent service rather than one careless shell command.
 
 Rules: (1) a machine with a Steam CLIENT must not run steamcmd-bearing tooling under its real `HOME` — isolate `HOME` and carry just the token, which is what the server installer does; (2) back up `libraryfolders.vdf` before any such run, because the failure is silent until a game is launched; (3) `installMods` is therefore **`false`** in this repo (`modules/nixos/projectzomboid-server/config.nix:149`), and the mods are pre-seeded by hand instead — re-enable only when the tool isolates its HOME; (4) repair is re-adding the library (Steam → Settings → Storage → Add Drive); the files were never touched, so nothing re-downloads; (5) the tell-tale is a uniform "needs reinstall" across games that share a non-default library.
+
+---
+
+**`pz-workshop resolve`'s description-derived `Mods=` does not match the pack — draft with it, never paste it**
+
+Upstream's new `pz-workshop resolve {collection,pack} <id>` infers each item's internal mod folder name from its Workshop description's `Mod ID:` declaration and prints a paste-ready `Mods=`. Run against our own **viewpoint** pack (147 mods) it produced **148 ids**:
+
+```
+in its list but not in the pack : ['game', 'save']
+in the pack but not in its list : ['92amgeneralM998extra']
+```
+
+Both are the tool's documented failure modes, not a defect: some authors write `Mod ID:` about a *dependency* (so `game` and `save` are generic words caught in one item's prose), and an id named only in a *different* item's text is missed. The tool says so itself — resolution is "best-effort … the download-derived `mod.info` ids win" — and it deliberately never reads map folders from description text.
+
+Rule: the pack's `Mods=` is the `mod.info`-derived one — the running server's, or `ls ~/Zomboid/mods` for a pre-seeded install — and that is what the module renders (`modules/nixos/projectzomboid-server/servers/viewpoint.nix:38`). Use `resolve` to draft a list or to spot a *missing* item, then diff it against what actually installed. Never paste its output over a known-good list.
