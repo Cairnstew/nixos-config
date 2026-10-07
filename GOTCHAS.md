@@ -1411,3 +1411,17 @@ Symptom (2026-10-07): logged in as `cairnsgerry` with a `steamcmd +login` that r
 **Cause:** the PZ server installer runs with `export HOME="$PZ_DATA_DIR"` (`lib/prepare.nix:533` upstream) so its token must live under the data dir, and its own error says so ("its token is cached under HOME=$PZ_DATA_DIR (run the one-time +login there first)"). The client tool (`pz_client_mods.py`) deliberately does **not** override HOME, so it reads the real one. One `+login` therefore authenticates exactly one of the two, silently.
 
 Rules: (1) for the CLIENT, log in normally (real `$HOME`) — that is the cache `pz-client-mods` reads; for the SERVER, `HOME=<dataDir> steamcmd +login <account>`, or the install will keep answering `anonymous`; (2) a successful `+login` proves nothing about which path will use it — check `loginusers.vdf` *under the HOME the tool will run with*; (3) neither NixOS's `steamLogin` nor the client's `--login` stores a password — they only name the account whose cached token is reused, so the one-time interactive login is unavoidable and per-HOME.
+
+---
+
+**`steamcmd` runs under `steam-run` with a PRIVATE `/tmp`, so running it FROM `/tmp` fails every item — and reports it as a Steam gating problem**
+
+Symptom (2026-10-07): pre-seeding the Project Zomboid pack with `pz-client-mods` from a `/tmp` working directory downloaded **nothing** — all 122 items `DOWNLOAD FAILED` — and the tool's own hint pointed the wrong way: `NOTE: 1 item(s) need an account that owns Project Zomboid. Re-run with --login <your-steam-name>`. The real error, one line above the summary and easy to miss, was:
+
+```
+bwrap: Can't chdir to /tmp/opencode: No such file or directory
+```
+
+**Cause:** on NixOS `steamcmd` is wrapped with `steam-run`, whose bwrap sandbox has its own `/tmp`. A working directory inside `/tmp` therefore does not exist inside the sandbox, `bwrap` cannot chdir, steamcmd never starts — so every item fails identically. The account-based hint is emitted on *any* failure, not just gating, which makes it actively misleading here: it sends you to fix a login that was never the problem. Re-running the identical command from `$HOME` worked immediately (122/122, 0 failures, exit 0).
+
+Rules: (1) run `steamcmd`-backed tooling — and anything else using `steam-run` — from a real directory (`$HOME`, the repo), never `/tmp` or any transient dir; (2) a uniform "every item failed" is a wrapper/sandbox fault, not per-item gating — per-item gating fails *some* items and names them, while this fails all of them with the same shape; (3) read the line ABOVE a tool's summary, not the summary's own advice; (4) `nixos-config`'s own wrapper comment is at `modules/nixos/projectzomboid-server/config.nix:162`.
