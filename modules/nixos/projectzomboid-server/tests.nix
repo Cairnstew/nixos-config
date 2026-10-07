@@ -29,6 +29,13 @@ let
   enabledServers = filterAttrs (_: srv: srv.enable) cfg.servers;
   resolved = mapAttrs (name: srv: pz.resolveServer cfg.modpacks name srv) enabledServers;
 
+  # Client hosts are resolved independently of `enable` — on this fleet the
+  # dedicated server is OFF and the pack drives the game's own Host button, so
+  # without this the smoke test would report nothing at all.
+  clientResolved = mapAttrs (name: srv: pz.resolveServer cfg.modpacks name srv) (
+    filterAttrs (_: srv: srv.clientHost.enable) cfg.servers
+  );
+
   # Directories that cannot hold PZ data on this fleet: the root fs is NVMe and
   # PZ saves grow without bound. `/var` is upstream's own default and is wrong
   # here, which is exactly why config.nix mkDefaults the SATA data disk.
@@ -100,12 +107,26 @@ in
               echo "[smoke-test]   .ini:       ${cfg.dataDir}/${name}/Zomboid/Server/${srv.serverName}.ini"
               echo "[smoke-test]   unit:       project-zomboid-${name}.service"
             '';
+          # A client host is not a unit; what matters is that the pack rendered
+          # and that the script Home Manager runs exists.
+          checkClientHost = name: srv:
+            let
+              unit = "project-zomboid-${name}";
+            in
+            ''
+              echo "[smoke-test] client host '${name}' -> Zomboid/Server/${srv.clientHost.name}.ini"
+              echo "[smoke-test]   modpack:    ${if srv.modpack != null then srv.modpack else "(none)"}"
+              echo "[smoke-test]   workshop:   ${toString (builtins.length srv.workshopItems)} item(s)"
+              echo "[smoke-test]   local mods: ${toString (builtins.length srv.mods)}"
+              echo "[smoke-test]   prepare:    ${cfg.clientHosts.${name}.prepare}/bin/${unit}-client-host"
+            '';
         in
         ''
           set -uo pipefail
           echo "[smoke-test] dataDir:   ${cfg.dataDir}"
           echo "[smoke-test] serverDir: ${cfg.serverDir}  (SteamCMD app 380870 — cold until first fetch)"
           ${lib.concatStrings (mapAttrsToList checkServer resolved)}
+          ${lib.concatStrings (mapAttrsToList checkClientHost clientResolved)}
           echo "[smoke-test] ALL CHECKS PASSED"
         '';
     };

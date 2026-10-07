@@ -537,18 +537,43 @@
   # but loses the renderer. To freeze the install, set `updateOnStart = false`
   # once it exists (that option never creates one) and bump deliberately after
   # re-checking Viewpoint's mod.info.
+  # NO dedicated server on this host. The world is hosted from the game's own
+  # in-game Host button instead — see servers/viewpoint.nix → clientHost.
+  #
+  # The module stays ENABLED, and that is deliberate: it is what renders the
+  # client config and what keeps the shared Workshop download current. It is
+  # `servers.viewpoint.enable = false` that removes the server unit (and with it
+  # the 10.8 GB JVM).
   services.project-zomboid-servers = {
     enable = true;
-    servers.viewpoint.enable = true;
+    servers.viewpoint.enable = false;
 
-    # ttyd web consoles — the actual admin surface. Gives each server with
-    # `webConsole = true` a console at /pz/<name>/ (proxied by Caddy via the
-    # module's webConsoleUpstreams, wired in modules/nixos/projectzomboid-server/
-    # config.nix), plus the web-console user holding scoped NOPASSWD systemctl
-    # rights on project-zomboid-* that the dashboard's start/stop/restart buttons
-    # reuse. The dashboard section is registered by the same wrapper.
-    web.enable = true;
+    # ttyd consoles front a SERVER's console; with no server enabled there is
+    # nothing to front. Off, which also drops the `project-zomboid-web` user and
+    # its polkit rule.
+    web.enable = false;
   };
+
+  # Seed the CLIENT's Zomboid home from the same pack, so hosting from the game
+  # needs no mod list typed in by hand. Home Manager runs it because `~/Zomboid`
+  # is a user path no system module may own; the upstream module only renders.
+  #
+  # PZ_SERVER_DIR + PZ_CLIENT_WORKSHOP together make the script SYMLINK the mods
+  # out of the shared steamcmd download rather than let Steam download them a
+  # second time into this library — one 2.6 GB copy, not two. `seanc` reaches
+  # that tree via the `project-zomboid` group (modules/nixos/projectzomboid-server/
+  # config.nix), which a running session only picks up after a re-login.
+  #
+  # Drop PZ_CLIENT_WORKSHOP to hand the mods to Steam instead (subscribe to the
+  # workshop collection): simpler and self-updating, at the cost of the second
+  # copy — and then this repo's PZ module is not needed at all.
+  my.homeManager.extraConfig.home.activation.project-zomboid-client-host =
+    lib.mkIf (config.services.project-zomboid-servers.clientHosts ? viewpoint) ''
+      export PZ_CLIENT_ZOMBOID="$HOME/Zomboid"
+      export PZ_SERVER_DIR="${config.services.project-zomboid-servers.serverDir}"
+      export PZ_CLIENT_WORKSHOP="/mnt/media/SteamLibrary/steamapps/workshop/content/108600"
+      ${lib.getExe config.services.project-zomboid-servers.clientHosts.viewpoint.prepare}
+    '';
 
   # ── Docker ──────────────────────────────────────────────────────────────
   # Move Docker data to the dedicated 500GB SATA SSD (sdb) for space
