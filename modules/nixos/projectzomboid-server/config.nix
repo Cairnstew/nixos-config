@@ -7,11 +7,48 @@
 # each `nix flake update`. What legitimately stays local is the handful of
 # decisions that are about THIS config rather than about Project Zomboid: which
 # disk holds the data, who may read it, and how the consoles reach the proxy.
-{ config, flake, lib, ... }:
+{ config, flake, lib, pkgs, ... }:
 
 let
   cfg = config.services.project-zomboid-servers;
   me = flake.config.me;
+
+  # ── Client launcher ────────────────────────────────────────────────────────
+  # The pack's Java mods need ZombieBuddy attached to the CLIENT's JVM, and the
+  # only install path the mod documents is Steam's launch-options field:
+  # per-machine, un-versioned, and lost whenever Steam's localconfig is reset or
+  # the game moves to another machine. Keeping it here makes "launch the game"
+  # one reproducible action that a Hyprland bind (or the desktop entry below)
+  # can run.
+  #
+  # The delivery is `steam -applaunch`, which is exactly what the launch-options
+  # field feeds anyway: projectzomboid.sh forwards "$@" to ProjectZomboid64,
+  # which appends them to the JVM's own command line.
+  #
+  # POLICY is `prompt`, which is the agent's own default: one approval dialog per
+  # unknown JAR, remembered by SHA-256 in ~/.zombie_buddy/mod_approvals.json.
+  # `deny-new` is only correct AFTER that first approval pass — from a cold start
+  # nothing is approved, so it would silently skip every Java mod. `allow-all` is
+  # what the headless server must use (there is nobody to click); a desktop does
+  # not need it. `frontend` is left at `auto`, which picks a Swing dialog here;
+  # the server sets `frontend=console` for the same "who is there to answer"
+  # reason.
+  zombieBuddyJar = "${cfg.serverDir}/steamapps/workshop/content/108600/3619862853/mods/ZombieBuddy/libs/ZombieBuddy.jar";
+
+  projectzomboidViewpoint = pkgs.writeShellApplication {
+    name = "projectzomboid-viewpoint";
+    runtimeInputs = [ pkgs.steam ];
+    text = ''
+      agent="${zombieBuddyJar}"
+      if [ ! -r "$agent" ]; then
+        echo "projectzomboid-viewpoint: missing $agent" >&2
+        echo "The shared Workshop download is kept current by project-zomboid-install." >&2
+        exit 1
+      fi
+      exec steam -applaunch ${cfg.package.steamAppId or "108600"} \
+        "-javaagent:$agent=policy=prompt" -- "$@"
+    '';
+  };
 
   # Upstream deliberately knows about no reverse-proxy module — a standalone
   # flake cannot depend on someone's private option namespace. It exposes plain
@@ -84,5 +121,20 @@ in
     # https://<host>.<tailnet>.ts.net/pz/knox/. Replaces the pre-upstream
     # `web.proxyUpstream` option, which upstream cannot express.
     my.services.proxy.upstreams = pzUpstreams;
+
+    # The launcher, on the user's PATH so a Hyprland `exec` and the desktop entry
+    # both reach it by name. A desktop entry as well as a bind, because the game
+    # is not only launched from the keyboard.
+    my.homeManager.extraConfig = {
+      home.packages = [ projectzomboidViewpoint ];
+
+      xdg.desktopEntries.projectzomboid-viewpoint = {
+        name = "Project Zomboid (Viewpoint)";
+        comment = "Project Viewpoint Vanilla+ with the ZombieBuddy JVM agent";
+        exec = "projectzomboid-viewpoint";
+        categories = [ "Game" ];
+        terminal = false;
+      };
+    };
   };
 }

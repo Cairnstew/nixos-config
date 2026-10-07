@@ -181,6 +181,15 @@
 
       extraExecOnce = [ "playerctld daemon" ];
 
+      # Launch the Project Zomboid client host with the ZombieBuddy JVM agent.
+      # Steam's launch-options field is per-machine and un-versioned, so the
+      # agent lives in the repo instead — see
+      # modules/nixos/projectzomboid-server/config.nix, which also ships a
+      # desktop entry so this is reachable from wofi and not only the keybind.
+      extraBinds = [
+        "$mod, G, exec, projectzomboid-viewpoint"
+      ];
+
       debug.enable = true;
       accelProfile = "flat";
     };

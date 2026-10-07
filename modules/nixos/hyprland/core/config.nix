@@ -217,6 +217,10 @@ let
     bindl  = , XF86AudioPrev,  exec, playerctl previous
     bindl  = , XF86AudioStop,  exec, playerctl stop
 
+    # Host-local binds (my.desktop.hyprland.core.extraBinds). Emitted last so a
+    # host CAN intentionally shadow one of the binds above.
+    ${lib.concatMapStringsSep "\n" (b: "bind = ${b}") coreCfg.extraBinds}
+
     # Focus
     bind = $mod, left,  movefocus, l
     bind = $mod, right, movefocus, r

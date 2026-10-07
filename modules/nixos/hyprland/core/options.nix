@@ -118,6 +118,22 @@
       '';
     };
 
+    extraBinds = lib.mkOption {
+      type = lib.types.listOf lib.types.str;
+      default = [ ];
+      example = [
+        "$mod, G, exec, firefox"
+        "$mod SHIFT, G, exec, ghostty -e ssh server"
+      ];
+      description = ''
+        Additional keybind lines appended to the keybinds section of
+        hyprland.conf. Each entry is the part AFTER `bind = `, so the full
+        syntax applies: `$mod, G, exec, <command>`, `bindm`, `bindel`, and
+        friends. Use this rather than editing core/config.nix for a bind that
+        belongs to one host.
+      '';
+    };
+
     extraWindowRules = lib.mkOption {
       type = lib.types.listOf lib.types.str;
       default = [ ];
