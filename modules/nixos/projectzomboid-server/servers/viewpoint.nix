@@ -36,14 +36,21 @@ in
     # Also render this pack for the game's own in-game Host button, which runs
     # the server inside the CLIENT's process. Same pack, same .ini, same mod
     # list — so hosting from the game never means writing the 147 `Mods=` ids
-    # out a second time. The generated script is run from the player's Home
-    # Manager activation in configurations/nixos/desktop/default.nix, because
-    # `~/Zomboid` is a user path no system module may own.
+    # out a second time. The upstream module's Home Manager half writes those
+    # files into `~/Zomboid`; it is imported for every host in
+    # modules/nixos/projectzomboid-server/config.nix, because `~/Zomboid` is a
+    # user path no system module may own.
     #
     # Independent of `enable`: this host runs no dedicated server for this pack,
     # and the pack still has to render.
     clientHost.enable = true;
-    clientHost.name = "servertest"; # the name the game's Host screen uses
+
+    # Named to match `name` above, rather than left at the option's
+    # `servertest` default, so the world is recognisable in the game's Host and
+    # Load screens. Project Zomboid names BOTH the config and the save after
+    # this — `Server/viewpoint.ini` and `Saves/Multiplayer/viewpoint` — so it is
+    # the world's name, not just a filename.
+    clientHost.name = "viewpoint";
 
     # Do not start at boot. Flip this to true (or `systemctl start
     # project-zomboid-viewpoint`) when you want it up. The console FIFO socket
