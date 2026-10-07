@@ -120,20 +120,36 @@ in
     # Per-server ttyd consoles auto-register on the Caddy dashboard, e.g.
     # https://<host>.<tailnet>.ts.net/pz/knox/. Replaces the pre-upstream
     # `web.proxyUpstream` option, which upstream cannot express.
-    my.services.proxy.upstreams = pzUpstreams;
+    #
+    # Merged into ONE `my = { … }` rather than repeated `my.<path> = …` lines:
+    # statix's W20 warns on the repeat, and the upstream module's own checks are
+    # the only thing keeping the two in sync today.
+    my = {
+      services.proxy.upstreams = pzUpstreams;
 
-    # The launcher, on the user's PATH so a Hyprland `exec` and the desktop entry
-    # both reach it by name. A desktop entry as well as a bind, because the game
-    # is not only launched from the keyboard.
-    my.homeManager.extraConfig = {
-      home.packages = [ projectzomboidViewpoint ];
+      homeManager = {
+        # The Home Manager HALF of the upstream module. The NixOS module only
+        # renders `clientHosts`; this runs it, writing `~/Zomboid/Server/<name>.ini`
+        # and its SandboxVars into the client user's own home. It reads the pack
+        # back off `osConfig`, so it is inert on a host with no `clientHosts`,
+        # needs no activation hook, and writes no path down — the Steam library is
+        # discovered rather than named here.
+        extraModules = [ flake.inputs.project-zomboid-servers.homeModules.default ];
 
-      xdg.desktopEntries.projectzomboid-viewpoint = {
-        name = "Project Zomboid (Viewpoint)";
-        comment = "Project Viewpoint Vanilla+ with the ZombieBuddy JVM agent";
-        exec = "projectzomboid-viewpoint";
-        categories = [ "Game" ];
-        terminal = false;
+        # The launcher, on the user's PATH so a Hyprland `exec` and the desktop
+        # entry both reach it by name. A desktop entry as well as a bind, because
+        # the game is not only launched from the keyboard.
+        extraConfig = {
+          home.packages = [ projectzomboidViewpoint ];
+
+          xdg.desktopEntries.projectzomboid-viewpoint = {
+            name = "Project Zomboid (Viewpoint)";
+            comment = "Project Viewpoint Vanilla+ with the ZombieBuddy JVM agent";
+            exec = "projectzomboid-viewpoint";
+            categories = [ "Game" ];
+            terminal = false;
+          };
+        };
       };
     };
   };
