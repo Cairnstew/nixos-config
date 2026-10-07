@@ -1401,3 +1401,13 @@ Symptom (2026-10-07): evaluating whether enabling a heavy upstream user service 
 **What is NOT verified:** whether `sd-switch` returns non-zero when a unit's start fails or times out. A scratch harness with throwaway units produced "the calculated switch plan is empty" every time, so it was never exercised. Treat "a failing user service fails the switch" as an inference from the two facts above, not a measurement.
 
 Rules: (1) before enabling a user service that talks to the network or could be slow, assume its FIRST run happens during the switch and can block it — pre-seed by running the underlying command by hand once, so the service's first run is a fast no-op; (2) the message you get on failure is `sd-switch`/systemd's, not the service's own — the unit's stderr goes to `journalctl --user -u <unit>`, so look there, not at the switch output; (3) this is the same trap class as `installMods`'s own docs getting it backwards, so prefer the primary sources (`set -eu`, the `sd-switch` invocation, `sd-switch --help`) over a module's claims about its own side effects.
+
+---
+
+**A `steamcmd` login is cached per-`HOME`, and the two Project Zomboid paths use different ones**
+
+Symptom (2026-10-07): logged in as `cairnsgerry` with a `steamcmd +login` that reported OK and wrote `~/.steam/steam/config/loginusers.vdf` (`AccountName cairnsgerry`, `RememberPassword 1`) — and nothing used it. The account is genuinely logged in; it is in the wrong HOME for the job being asked of it.
+
+**Cause:** the PZ server installer runs with `export HOME="$PZ_DATA_DIR"` (`lib/prepare.nix:533` upstream) so its token must live under the data dir, and its own error says so ("its token is cached under HOME=$PZ_DATA_DIR (run the one-time +login there first)"). The client tool (`pz_client_mods.py`) deliberately does **not** override HOME, so it reads the real one. One `+login` therefore authenticates exactly one of the two, silently.
+
+Rules: (1) for the CLIENT, log in normally (real `$HOME`) — that is the cache `pz-client-mods` reads; for the SERVER, `HOME=<dataDir> steamcmd +login <account>`, or the install will keep answering `anonymous`; (2) a successful `+login` proves nothing about which path will use it — check `loginusers.vdf` *under the HOME the tool will run with*; (3) neither NixOS's `steamLogin` nor the client's `--login` stores a password — they only name the account whose cached token is reused, so the one-time interactive login is unavoidable and per-HOME.
