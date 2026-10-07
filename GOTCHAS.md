@@ -1425,3 +1425,20 @@ bwrap: Can't chdir to /tmp/opencode: No such file or directory
 **Cause:** on NixOS `steamcmd` is wrapped with `steam-run`, whose bwrap sandbox has its own `/tmp`. A working directory inside `/tmp` therefore does not exist inside the sandbox, `bwrap` cannot chdir, steamcmd never starts — so every item fails identically. The account-based hint is emitted on *any* failure, not just gating, which makes it actively misleading here: it sends you to fix a login that was never the problem. Re-running the identical command from `$HOME` worked immediately (122/122, 0 failures, exit 0).
 
 Rules: (1) run `steamcmd`-backed tooling — and anything else using `steam-run` — from a real directory (`$HOME`, the repo), never `/tmp` or any transient dir; (2) a uniform "every item failed" is a wrapper/sandbox fault, not per-item gating — per-item gating fails *some* items and names them, while this fails all of them with the same shape; (3) read the line ABOVE a tool's summary, not the summary's own advice; (4) `nixos-config`'s own wrapper comment is at `modules/nixos/projectzomboid-server/config.nix:162`.
+
+---
+
+**A `steamcmd` run with the REAL `HOME` rewrites Steam's library list, orphaning every installed game as "needs reinstall"**
+
+Symptom (2026-10-07): after pre-seeding the Project Zomboid pack with `pz-client-mods`, the Steam client showed **Project Zomboid and Overwatch as needing reinstall**, offering only one library. `~/.local/share/Steam/steamapps/libraryfolders.vdf` had lost its `/mnt/media/SteamLibrary` entry — 40 appmanifests and 1.5 TB of installed games, invisible to Steam but completely intact on disk.
+
+**Cause:** `steamcmd` registers its `+force_install_dir` in the `libraryfolders.vdf` of whatever `HOME` it runs under. `pz-client-mods` deliberately does NOT override `HOME` — its steamcmd login token lives in the real one — and it invokes steamcmd on **every** run, even when nothing is missing (`items` is the whole pack, not filtered against what is installed). So its staging directory replaced the real library list. Steam's own log is the trail:
+
+```
+[22:13:11] Loaded 0 apps from install folder "…/.cache/pz-client-mods/staging-…/steamapps\appmanifest_*.acf".
+[22:27:29] Loaded 6 apps from install folder "/home/seanc/.local/share/Steam/steamapps\appmanifest_*.acf".
+```
+
+22:13 is the tool's run; the rewrite follows minutes later. This is the high-impact instance of the older "ad-hoc steam/steamcmd clobbers Steam library config" entry — same mechanism, now reachable from a `home.activation`-adjacent service rather than one careless shell command.
+
+Rules: (1) a machine with a Steam CLIENT must not run steamcmd-bearing tooling under its real `HOME` — isolate `HOME` and carry just the token, which is what the server installer does; (2) back up `libraryfolders.vdf` before any such run, because the failure is silent until a game is launched; (3) `installMods` is therefore **`false`** in this repo (`modules/nixos/projectzomboid-server/config.nix:149`), and the mods are pre-seeded by hand instead — re-enable only when the tool isolates its HOME; (4) repair is re-adding the library (Steam → Settings → Storage → Add Drive); the files were never touched, so nothing re-downloads; (5) the tell-tale is a uniform "needs reinstall" across games that share a non-default library.
