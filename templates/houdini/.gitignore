@@ -1,0 +1,25 @@
+# Nix
+/result
+/result-*
+/.direnv/
+
+# Houdini scene backups, caches and generated data
+*.hip.bak
+*.hip.bak*
+backup/
+*.picnc
+*.sim
+*.vdb.bak
+hip/geo/
+hip/render/
+hip/.cache/
+houdini_temp/
+*.pyc
+__pycache__/
+
+# Editor / OS
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db

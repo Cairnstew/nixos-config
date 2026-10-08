@@ -46,6 +46,9 @@ in
     # Python with uv2nix
     uv2nix = mkTemplate "uv2nix" "Python project with uv2nix, uv, and modern tooling";
 
+    # 3D / VFX templates
+    houdini = mkTemplate "houdini" "Houdini project using the system-installed Houdini, with a dev shell and nix run apps";
+
     # Game development templates
     godot = mkTemplate "godot" "Godot game engine project with GDScript tooling, MCP integration, and .opencode config";
     foundation-mod = mkTemplate "foundation-mod" "Foundation (Timberborn) mod with flake and Lua scaffolding";
