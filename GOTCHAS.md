@@ -1457,3 +1457,13 @@ in the pack but not in its list : ['92amgeneralM998extra']
 Both are the tool's documented failure modes, not a defect: some authors write `Mod ID:` about a *dependency* (so `game` and `save` are generic words caught in one item's prose), and an id named only in a *different* item's text is missed. The tool says so itself — resolution is "best-effort … the download-derived `mod.info` ids win" — and it deliberately never reads map folders from description text.
 
 Rule: the pack's `Mods=` is the `mod.info`-derived one — the running server's, or `ls ~/Zomboid/mods` for a pre-seeded install — and that is what the module renders (`modules/nixos/projectzomboid-server/servers/viewpoint.nix:38`). Use `resolve` to draft a list or to spot a *missing* item, then diff it against what actually installed. Never paste its output over a known-good list.
+
+---
+
+**`game-servers` login credentials do nothing unless an update runs — `autoUpdate` defaults to `false`**
+
+Symptom: a `my.services.game-servers` server is given a Steam password via `login.passwordFile` (e.g. agenix) or `login.onepassword.reference` (a 1Password `op://` ref), yet the journal shows no `steamcmd`/`op read` step at all and the install keeps answering `anonymous` — the credential is never consulted.
+
+Cause: the steamcmd update script is attached to the server unit only when `autoUpdate = true` (`modules/nixos/game-servers/services.nix:73`), and `autoUpdate` is a `mkEnableOption` whose default is **false** (`modules/nixos/game-servers/options.nix:117`) — the README claimed `true` until it was corrected (`modules/nixos/game-servers/README.md:16`). With no `updateSchedule` either, no `ExecStartPre` update step is generated, so nothing ever reads the password source.
+
+Rules: (1) any server whose depots need a credentialed fetch must set `autoUpdate = true` and/or an `updateSchedule`; (2) before debugging `op`/agenix/`op://` resolution, confirm the unit actually has an update step (`systemctl cat game-server-<name>.service | grep ExecStartPre`, or inspect `config.systemd.services.game-server-<name>.serviceConfig.ExecStartPre`); (3) an empty `ExecStartPre` means "no update configured", not "credentials failed".
