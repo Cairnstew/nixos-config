@@ -173,6 +173,7 @@ nix run
 | `terraform` | Terraform/HCP provider + module registry | No |
 | `ieee` | IEEE Xplore academic paper search | Yes (`ieee-api-key`) |
 | `steam` | Steam game library management | Optional (`steam-api-key`) |
+| `apify` | Apify hosted actors — scoped to the Wattpad Story Scraper | OAuth (no token in config) |
 
 ## Common Patterns
 
@@ -261,3 +262,23 @@ mcp.my-server = {
 1. Ensure `enabled = true`
 2. Check opencode MCP status: in opencode, run `/mcp` or check settings
 3. Verify command args are correct (list of strings, not a single string)
+
+## RUN LOG
+
+### 2026-10-11 — remote + OAuth MCP was under-documented; `apify` added as the worked example
+- Lesson: every "Adding an MCP Server" path above is `type = "local"` (stdio) plus
+  an optional agenix API key; `type = "remote"` appears only in Gotcha 5 ("use
+  `url` instead of `command`") with no worked example. Adding a hosted MCP
+  (https://apify.com/easyapi/wattpad-story-scraper) needed the opencode MCP docs
+  to learn that remote servers take `url`/`headers`, and that opencode handles
+  OAuth automatically (`opencode mcp auth <name>`, tokens in
+  `~/.local/share/opencode/mcp-auth.json`) — so no secret or `.age` file is
+  needed. This skill implied a secret was always required.
+- Fix: added `mcp.apify` at `modules/home/opencode/config.nix:423` — a live
+  remote example: `type = "remote"`, `url = "https://mcp.apify.com/?tools=…"`,
+  `timeout = 30000`, no `environment`. Listed it in the table above. Verified the
+  endpoint: `/` returns 401 unauthenticated and
+  `/.well-known/oauth-authorization-server` returns the discovery document.
+- Record-only: the actor page itself ships the exact MCP snippet
+  (`{"type":"http","url":"https://mcp.apify.com/?tools=…"}`) — opencode's field
+  is `"remote"` not `"http"`, so copy the URL, not the `type`.
