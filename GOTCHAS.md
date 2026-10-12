@@ -587,6 +587,10 @@ Symptom (2026-10-12, `modules/nixos/houdini/README.md`): invoking `nixpkgs-fmt` 
 
 Symptom: `error: A definition for option 'systemd.services.<name>.script' is not of type 'strings concatenated with "\n"'` with the definition value shown as `<derivation mss-clamp>`. Cause: the `script` option's type is `str`, which does not auto-coerce a *derivation* to a store path (only plain `path`/`coercedTo` types do). Fix: assign `script = toString clampScript;` where `clampScript = pkgs.writeShellScript ...` — string interpolation of the derivation yields the store path. See `modules/nixos/mss-clamp/config.nix`.
 
+**`environment.sessionVariables` only reach sessions started AFTER the rebuild — env-critical program behavior needs a launcher fallback**
+
+Symptom (2026-10-12, `my.programs.houdini.labs.enable`): after the rebuild, `grep HOUDINI /etc/set-environment` showed `HOUDINI_PACKAGE_DIR` correctly exported and the package was in the system closure, but Houdini still showed no Labs menu. Cause: the GUI was launched from a shell/session that predated the rebuild — `environment.sessionVariables` is read at login, so an already-open terminal (or a Hyprland/DE session started before the switch) has a stale environment and the program never saw the variable. Rule: for an env var whose ABSENCE changes observable behavior (package discovery, plugin dirs, feature toggles), do not rely on session vars alone — the module's launcher wrapper should default the var itself. Fix (this incident): `modules/nixos/houdini/config.nix:193` — the `houdini` launcher now does `if [ -z "$HOUDINI_PACKAGE_DIR" ]; then export HOUDINI_PACKAGE_DIR="${cfg.labs.package}"; fi` when `labs.enable`, so any pre-rebuild or non-login launch still finds the Labs package. Immediate user-side unblock without a rebuild: `source /etc/set-environment` then relaunch. Same trap applies to any module that toggles behavior off an `environment.sessionVariables` value (`sesi_license`, `QML_IMPORT_PATH`, etc.) — verify with a fresh login, not the shell you rebuilt from.
+
 ---
 
 **`services.ttyd.user` is a plain `str` (default `"root"`), not nullable**
