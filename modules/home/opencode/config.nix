@@ -180,6 +180,14 @@ let
   allAuthProviders = lib.filter (p: p.keyFile != null) [
     # First-class providers
     { name = "opencode-go"; keyFile = cfg.opencode-go.keyFile; }
+    # Zen is written under BOTH keys on purpose. opencode resolves `opencode/<model>`
+    # model IDs through auth.json["opencode"] (the provider id in models.dev), NOT
+    # through the `opencode-zen` alias — verified 2026-10-13: with `opencode`
+    # poisoned and `opencode-zen` holding a valid key, the request failed with
+    # "Invalid credential". Writing only `opencode-zen` therefore leaves the
+    # credential opencode actually sends unmanaged (a stale manual `/connect`
+    # entry keeps working in its place).
+    { name = "opencode"; keyFile = cfg.opencode-zen.keyFile; }
     { name = "opencode-zen"; keyFile = cfg.opencode-zen.keyFile; }
     { name = "anthropic"; keyFile = cfg.anthropic.keyFile; }
     { name = "groq"; keyFile = cfg.groq.keyFile; }
