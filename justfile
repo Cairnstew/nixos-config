@@ -98,6 +98,22 @@ modpack-build modpack *args:
 modpack-update modpack *args:
     nix run "{{ justfile_directory() }}#modpack-update-{{ modpack }}" -- {{ args }}
 
+# ── Templates ────────────────────────────────────────────────────────────────
+
+# Interactive TUI picker: scaffold a new project from templates/<name>.
+# Run from the directory you want the project created in.
+# Equivalent to `nix-template-selector`, which is installed on every host.
+template:
+    nix-template-selector
+
+# List the available templates without the TUI
+template-list:
+    nix eval "{{ justfile_directory() }}#templates" --json | jq -r 'keys[]' | sort
+
+# Non-interactive scaffold: just template-init zig
+template-init name:
+    nix flake init --template "{{ justfile_directory() }}#{{ name }}"
+
 # ── Testing ──────────────────────────────────────────────────────────────────
 
 # Run all nixtest suites (unit, snapshot, script tests)

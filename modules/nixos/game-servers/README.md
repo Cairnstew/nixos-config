@@ -13,9 +13,14 @@ Declarative management of Steam (and generic) dedicated game servers via `steamc
 | `my.services.game-servers.servers.<name>.appId` | — | Steam App ID of the dedicated server |
 | `my.services.game-servers.servers.<name>.startCommand` | — | Server binary relative to `stateDir` |
 | `my.services.game-servers.servers.<name>.args` | `[]` | Extra server args |
-| `my.services.game-servers.servers.<name>.autoUpdate` | `true` | steamcmd update at every service start |
+| `my.services.game-servers.servers.<name>.autoUpdate` | `false` | steamcmd update at every service start (off by default) |
 | `my.services.game-servers.servers.<name>.validate` | `false` | `+app_update … validate` (full file check) |
 | `my.services.game-servers.servers.<name>.branch` | `null` | Steam beta branch |
+| `my.services.game-servers.servers.<name>.login.user` | `"anonymous"` | Steam account used for the update |
+| `my.services.game-servers.servers.<name>.login.passwordFile` | `null` | File with the Steam password (e.g. agenix); mutually exclusive with `onepassword.reference` |
+| `my.services.game-servers.servers.<name>.login.onepassword.reference` | `null` | 1Password `op://` reference for the Steam password, resolved with `op read` at run time |
+| `my.services.game-servers.servers.<name>.login.onepassword.tokenFile` | `null` | File with a 1Password service-account token (e.g. agenix), read into `OP_SERVICE_ACCOUNT_TOKEN` |
+| `my.services.game-servers.servers.<name>.login.onepassword.package` | `pkgs._1password-cli` | 1Password CLI (`op`) |
 | `my.services.game-servers.servers.<name>.stateDir` | `null` | Install dir (defaults to `dataDir/<name>`) |
 | `my.services.game-servers.servers.<name>.updateSchedule` | `null` | Optional timer (e.g. `"daily"`) for periodic updates |
 | `my.services.game-servers.servers.<name>.openFirewall` | `false` | Open `ports` in the firewall |
@@ -48,6 +53,33 @@ my.services.game-servers = {
 
 my.services.game-servers.monitoring.enable = true;
 ```
+
+## Login-required servers (1Password)
+
+Some depots only download for an account that owns the game. Give the server a
+Steam password from 1Password, resolved with `op read` on every update:
+
+```nix
+my.services.game-servers.servers.<name>.login = {
+  user = "my-steam-account";
+  onepassword = {
+    reference = "op://Private/Steam/password";
+    # A system service cannot `op signin` interactively, so hand it a
+    # service-account token. This is an agenix secret path.
+    tokenFile = "/run/agenix/onepassword-token";
+  };
+};
+```
+
+The token file must be readable by the `game-servers` service user, so its
+agenix manifest entry needs an appropriate owner/group/mode.
+
+**SteamCMD still needs a one-time interactive login per `HOME`.** The password
+above only re-authenticates on each run; the account's login token is cached in
+the server's `stateDir` (its `HOME`), and the *first* login from a machine also
+needs a Steam Guard code that cannot be automated. Log in once by hand
+(`HOME=<stateDir> steamcmd +login <account>`), after which the cached token is
+reused — see `GOTCHAS.md` ("A `steamcmd` login is cached per-`HOME`").
 
 ## Notes
 

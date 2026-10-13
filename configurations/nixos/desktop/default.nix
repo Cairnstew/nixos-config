@@ -327,6 +327,9 @@
   # Package from the houdini-nix flake (newer builds than nixpkgs' 21.0.559).
   my.programs.houdini.package =
     flake.inputs.houdini-nix.packages.x86_64-linux.houdini-22_0_368;
+  # SideFX Labs free toolset (shelves + HDAs) — installed declaratively like
+  # the Launcher's install-package, pinned to 22.0.459.
+  my.programs.houdini.labs.enable = true;
   # Auto-renew Apprentice (NC) license via SideFX License API.
   my.programs.houdini.redeemNonCommercial = {
     enable = true;
@@ -549,13 +552,27 @@
   # NO dedicated server on this host. The world is hosted from the game's own
   # in-game Host button instead — see servers/viewpoint.nix → clientHost.
   #
-  # The module stays ENABLED, and that is deliberate: it is what renders the
-  # client config and what keeps the shared Workshop download current. It is
-  # `servers.viewpoint.enable = false` that removes the server unit (and with it
-  # the 10.8 GB JVM).
+  # TEMPORARILY DISABLED (2026-10-08): with `enable = true` this runs
+  # project-zomboid-install.service (a steamcmd validate), which now fails the
+  # whole `nixos-rebuild switch` (exit 4): no `cairnsgerry` login token is cached
+  # under HOME=/mnt/data/project-zomboid ("Cached credentials not found"), and a
+  # systemd unit has no TTY to answer the password prompt it falls back to. To
+  # restore: run the one-time login (see `steamLogin` below) or drop it, then
+  # set `enable = true`. When enabled it renders the client config and keeps the
+  # shared Workshop download current; the server itself stays off via
+  # `servers.viewpoint.enable = false`.
   services.project-zomboid-servers = {
-    enable = true;
+    enable = false;
     servers.viewpoint.enable = false;
+
+    # Authenticate the shared steamcmd install as cairnsgerry instead of
+    # `anonymous`, so Workshop items anonymous cannot fetch (mature-content
+    # gated, or author-restricted) land. This names the account ONLY — the
+    # password is never stored. SteamCMD caches a login token under the data
+    # dir's HOME, so log in ONCE as the service user:
+    #   sudo -u project-zomboid env HOME=/mnt/data/project-zomboid \
+    #     <steamcmd> +login cairnsgerry
+    steamLogin = "cairnsgerry";
 
     # ttyd consoles front a SERVER's console; with no server enabled there is
     # nothing to front. Off, which also drops the `project-zomboid-web` user and

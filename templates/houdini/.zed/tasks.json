@@ -1,0 +1,41 @@
+[
+  {
+    // Run the current file inside Houdini's interpreter. Requires the dev
+    // shell (direnv) so `hython` is on PATH.
+    "label": "hython: run file",
+    "command": "hython",
+    "args": ["$ZED_FILE"],
+    "reveal": "always",
+    "allow_concurrent_runs": false,
+    "show_summary": true
+  },
+  {
+    // Type-check just the open file, the way Zed's basedpyright language
+    // server reports it — a fast CLI cross-check when a diagnostic looks off.
+    "label": "basedpyright: check file",
+    "command": "basedpyright",
+    "args": ["$ZED_FILE"],
+    "reveal": "no_focus",
+    "hide": "on_success",
+    "allow_concurrent_runs": false
+  },
+  {
+    // Type-check the whole project. Mirrors `nix run .#basedpyright`.
+    "label": "basedpyright: check project",
+    "command": "basedpyright",
+    "args": ["scripts"],
+    "reveal": "no_focus",
+    "hide": "on_success",
+    "allow_concurrent_runs": false
+  },
+  {
+    // Re-run only if Houdini was upgraded and the symlinks or the pinned
+    // pythonVersion look stale. Normally the direnv shell hook has already
+    // done this on entry.
+    "label": "houdini: refresh editor symlinks",
+    "command": "direnv",
+    "args": ["reload"],
+    "reveal": "always",
+    "allow_concurrent_runs": false
+  }
+]

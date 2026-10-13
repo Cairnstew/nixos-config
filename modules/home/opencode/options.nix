@@ -365,17 +365,9 @@ in
         OpenCode Zen is a first-class provider and must NOT appear in
         opencode.json's provider block.
 
-        NOTE: the credential is written to TWO auth.json keys — 'opencode' AND
-        'opencode-zen' (see writers in config.nix). opencode resolves
-        `opencode/<model>` model IDs via auth.json["opencode"] (the models.dev
-        provider id), NOT via the 'opencode-zen' alias — verified live
-        2026-10-13: poisoning 'opencode' while 'opencode-zen' held a valid key
-        fails with "Invalid credential". Writing only 'opencode-zen' therefore
-        leaves the token opencode actually sends unmanaged, and any stale manual
-        `/connect` entry under 'opencode' silently keeps winning.
-        Zen model IDs in config use the 'opencode/' prefix (e.g.
-        opencode/deepseek-v4-flash-free), per https://opencode.ai/docs/zen — do
-        not guess 'opencode-zen/model'.
+        NOTE: the auth.json key name is 'opencode-zen', but Zen model IDs in
+        config use the 'opencode/' prefix (e.g. opencode/deepseek-v4-flash-free),
+        per https://opencode.ai/docs/zen — do not guess 'opencode-zen/model'.
       '';
     };
 
@@ -935,7 +927,7 @@ in
             model = mkOption {
               type = types.nullOr types.str;
               default = null;
-              example = "opencode-go/ox-alpha-free";
+              example = "opencode-go/longcat-2.5-preview-free";
               description = ''
                 Model id in provider/model format. Mutually exclusive with
                 blockedTerminal: an entry is either a model rung (model set)
@@ -1065,7 +1057,7 @@ in
           default = [
             { model = "opencode-go/deepseek-v4-flash"; maxWeeklyPercent = 80; }
             { model = "opencode-go/mimo-v2.5"; maxWeeklyPercent = 95; }
-            { model = "opencode-go/ox-alpha-free"; }
+            { model = "opencode-go/longcat-2.5-preview-free"; }
           ];
           scout-skeptical = [
             { model = "opencode-go/deepseek-v4-flash"; maxRollingPercent = 50; maxWeeklyPercent = 60; }

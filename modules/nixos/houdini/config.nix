@@ -184,24 +184,20 @@ let
     # NOT suppress any other Python errors, dialogs, or functionality.
     export HOUDINI_NO_START_PAGE_SPLASH=1
 
+    # SideFX Labs: ensure the package dir is set even when this session was
+    # started before the rebuild (HOUDINI_PACKAGE_DIR lives in session vars,
+    # so a pre-rebuild shell won't have it). Fall back to the declaratively
+    # installed Labs package instead of failing to find the shelves/menus.
+    # Only emitted when labs.enable — see modules/nixos/houdini/labs.nix.
+    ${lib.optionalString cfg.labs.enable ''
+      if [ -z "''${HOUDINI_PACKAGE_DIR:-}" ]; then
+        export HOUDINI_PACKAGE_DIR="${cfg.labs.package}"
+      fi
+    ''}
     exec "$FHS_ROOTFS/usr/lib64/ld-linux-x86-64.so.2" "$HOUDINI_BIN" "$@"
     EOF
     chmod +x $out/bin/houdini
   '';
-
-  # Default opencode MCP command: healkeiser/fxhoudinimcp fetched on demand via
-  # uvx (mirrors the repo's npx-fetched MCP servers, e.g. comfyui-mcp). The
-  # wheel is pure Python with deps mcp/httpx/pydantic, so uvx needs no extra
-  # PATH setup. `python -m fxhoudinimcp` and the console script are equivalent.
-  mcpCommand =
-    if cfg.opencode.mcp.command != [ ]
-    then cfg.opencode.mcp.command
-    else [
-      "${pkgs.uv}/bin/uvx"
-      "--from"
-      "fxhoudinimcp"
-      "fxhoudinimcp"
-    ];
 in
 {
   config = mkIf cfg.enable {
@@ -245,29 +241,6 @@ in
       # Point Houdini at the local sesinetd for license checkout.
       sesi_license = "localhost:1715";
     } // cfg.extraEnv;
-
-    # ── opencode integration ────────────────────────────────────────────────
-    # Contribute the module's skills to the PRIMARY user's MAIN opencode config
-    # (my.homeManager.extraConfig is the documented NixOS→HM bridge, same as
-    # comfyui; skills render into ~/.config/opencode/skills/<name>/SKILL.md and
-    # load in any project). The MCP entry lands in the global opencode MCP set
-    # alongside the cv/goals/modpack modules' entries. All home modules are
-    # sharedModules, so the option always exists; opencode only consumes it
-    # when opencode itself is enabled.
-    my.homeManager.extraConfig.my.programs.opencode.skills =
-      lib.mkIf cfg.opencode.enable cfg.opencode.skills;
-
-    my.homeManager.extraConfig.my.programs.opencode.mcp.${cfg.opencode.mcp.name} =
-      lib.mkIf (cfg.opencode.enable && cfg.opencode.mcp.enable) {
-        enabled = true;
-        type = "local";
-        command = mcpCommand;
-        environment = {
-          HOUDINI_HOST = cfg.opencode.mcp.host;
-          HOUDINI_PORT = toString cfg.opencode.mcp.port;
-        } // cfg.opencode.mcp.environment;
-        timeout = cfg.opencode.mcp.timeout;
-      };
 
     # Render the agenix SideFX secret into the formats each consumer needs:
     #   - /var/lib/houdini/api-key        "<id> <secret>"  → HOUDINI_API_KEY_FILE (hkey/sesictrl)

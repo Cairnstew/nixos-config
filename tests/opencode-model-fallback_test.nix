@@ -286,7 +286,7 @@ in
           for cache in "$dir/nomonth.json" "$dir/badpct.json" "$dir/garbage.json"; do
             run default "$cache"
             [ "$(rc_of)" = "0" ] || { echo "FAIL default $cache: rc=$(rc_of)" >&2; exit 1; }
-            [ "$(stdout_of)" = "opencode-go/ox-alpha-free" ] || { echo "FAIL default degrade stdout: $(stdout_of)" >&2; exit 1; }
+            [ "$(stdout_of)" = "opencode-go/longcat-2.5-preview-free" ] || { echo "FAIL default degrade stdout: $(stdout_of)" >&2; exit 1; }
             stderr_of | grep -qi 'falling back to last chain entry' \
               || { echo "FAIL default degrade warning missing: $(stderr_of)" >&2; exit 1; }
           done
@@ -333,16 +333,17 @@ in
                                 OPENCODE_SELECT_CACHE="$dir/cache.json" OPENCODE_SELECT_SLICE="$dir/none.json" \
                                 OPENCODE_SELECT_LOG="$dir/log.jsonl" OPENCODE_SELECT_ENSEMBLE="$dir/ens.json"
 
-                              # Usable run: monthly 94 > deepseek static cap 90 -> skipped by static,
-                              # mimo chosen. The log line must contain the expected skipped entry.
+                              # Usable run: monthly 94 > deepseek-v4.1-flash static cap 90 ->
+                              # skipped by static, muse-spark chosen. The log line must contain
+                              # the expected skipped entry.
                               out=$(bash "$wrap" --agent default)
-                              [ "$out" = "opencode-go/mimo-v2.5" ] || { echo "FAIL: won model (got: $out)" >&2; exit 1; }
+                              [ "$out" = "opencode-go/muse-spark-1.3-contributor" ] || { echo "FAIL: won model (got: $out)" >&2; exit 1; }
                               [ -s "$dir/log.jsonl" ] || { echo "FAIL: no log line written" >&2; exit 1; }
-                              jq -e '(.chosen == "opencode-go/mimo-v2.5")
+                              jq -e '(.chosen == "opencode-go/muse-spark-1.3-contributor")
                                   and (.agent == "default")
                                   and (.degraded == false)
                                   and (.skipped | length) == 1
-                                  and (.skipped[0].model == "opencode-go/deepseek-v4-flash")
+                                  and (.skipped[0].model == "opencode-go/deepseek-v4.1-flash")
                                   and (.skipped[0].window == "monthly")
                                   and (.skipped[0].used == 94)
                                   and (.skipped[0].cap == 90)
@@ -354,7 +355,7 @@ in
                               mkdir -p "$dir/ro" && chmod 555 "$dir/ro"
                               out2=$(OPENCODE_SELECT_LOG="$dir/ro/log.jsonl" bash "$wrap" --agent default 2>/dev/null || echo "RC=$?")
                               case "$out2" in
-                                "opencode-go/mimo-v2.5") : ;;
+                                "opencode-go/muse-spark-1.3-contributor") : ;;
                                 *) echo "FAIL: unwritable log changed behaviour (got: $out2)" >&2; exit 1 ;;
                               esac
                               [ ! -e "$dir/ro/log.jsonl" ] || { echo "FAIL: unwritable log should not exist" >&2; exit 1; }
@@ -374,7 +375,7 @@ in
 
                               out3=$(OPENCODE_SELECT_LOG="$biglog" bash "$wrap" --agent default 2>/dev/null || echo "RC=$?")
                               case "$out3" in
-                                "opencode-go/mimo-v2.5") : ;;
+                                "opencode-go/muse-spark-1.3-contributor") : ;;
                                 *) echo "FAIL: log trim changed stdout (got: $out3)" >&2; exit 1 ;;
                               esac
 
@@ -387,7 +388,7 @@ in
                                 || { echo "FAIL: trimmed log not valid JSONL: $(head -c 200 "$biglog")" >&2; exit 1; }
                               # The newest resolution line must be the last line.
                               last1=$(tail -n 1 "$biglog")
-                              printf '%s' "$last1" | jq -e '.agent == "default" and .chosen == "opencode-go/mimo-v2.5"' >/dev/null \
+                              printf '%s' "$last1" | jq -e '.agent == "default" and .chosen == "opencode-go/muse-spark-1.3-contributor"' >/dev/null \
                                 || { echo "FAIL: newest resolution not kept as last line (got: $last1)" >&2; exit 1; }
 
                               # Read-only LOG_FILE: append + trim both fail silently; stdout and
@@ -398,7 +399,7 @@ in
                               before=$(sha256sum "$rolog" | cut -d' ' -f1)
                               out4=$(OPENCODE_SELECT_LOG="$rolog" bash "$wrap" --agent default 2>/dev/null || echo "RC=$?")
                               case "$out4" in
-                                "opencode-go/mimo-v2.5") : ;;
+                                "opencode-go/muse-spark-1.3-contributor") : ;;
                                 *) echo "FAIL: read-only log changed stdout (got: $out4)" >&2; exit 1 ;;
                               esac
                               after=$(sha256sum "$rolog" | cut -d' ' -f1)

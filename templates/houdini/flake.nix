@@ -45,6 +45,144 @@
             fi
           '';
 
+          # ── Python type stubs for `hou` ──────────────────────────────────
+          # `hou` is a compiled SWIG extension.  The *real* `hou.py` that
+          # Houdini ships is 124k lines of SWIG boilerplate whose signatures
+          # use C pointer types (`def pwd() -> "HOM_Node *"`), which no
+          # type-checker can resolve — so every `hou` call comes back
+          # `Unknown` and hover/autocomplete report nothing useful.
+          #
+          # `types-houdini` (LumaPictures/cg-stubs) publishes cleaned-up
+          # `.pyi` stubs generated from a real Houdini install, where the same
+          # signature reads `def pwd() -> Node`.  It is a stub-only
+          # (PEP 561) wheel whose entire layout is
+          #
+          #     hou-stubs/__init__.pyi    # ~97k annotated lines
+          #
+          # so all we need is the directory that *contains* `hou-stubs` —
+          # exactly what pyright's `stubPath` expects.  Not in nixpkgs, so it
+          # is pinned here; bump `version` and `hash` together.
+          #
+          # The stubs are *not* self-contained: `hou-stubs/__init__.pyi` starts
+          # with `from houcppportion import *`, so `.hou-libs` (below) still has
+          # to be on the path.
+          houdiniTypeStubs = pkgs.runCommand "houdini-type-stubs"
+            {
+              nativeBuildInputs = [ pkgs.unzip ];
+            }
+            ''
+              mkdir -p "$out"
+              ${pkgs.unzip}/bin/unzip -q ${pkgs.fetchurl {
+                url = "https://files.pythonhosted.org/packages/ee/ff/5f09bda5c91969e91fb8d71226f667ac2b9756125e97811ad912a240861d/types_houdini-21.0.512.3-py2.py3-none-any.whl";
+                hash = "sha256-+vLht7qD8GJ1N4B439mjP5MJeKc+OMYCxqXLd+zfLg0=";
+              }}
+              cp -r hou-stubs "$out/hou-stubs"
+
+              # Inside Houdini, `hou` is already imported in every Python SOP,
+              # wrangle, shelf tool and `hou.session` — scripts use it without
+              # an `import hou` line.  A `__builtins__.pyi` that re-imports it
+              # teaches the type-checker the same, so those files stop
+              # reporting `"hou" is not defined`.  It is purely additive:
+              # `print`/`len`/`str`/... still resolve through the real
+              # typeshed builtins, and an explicit `import hou` is unaffected.
+              printf '%s\n' 'import hou as hou' > "$out/__builtins__.pyi"
+            '';
+
+          # Point .hou-libs at Houdini's own Python library directory so
+          # editors/pyright can resolve `import hou` against the real SWIG
+          # module.  The directory is named after the bundled interpreter
+          # (python3.13libs) and lives under a content-addressed store path,
+          # both of which change on upgrade -- so resolve it by glob and
+          # refresh the symlink whenever its target has gone stale.
+          # Set `warn` to also report a missing Houdini runtime.
+          linkHouLibs =
+            warn:
+            ''
+              hou_libs=$(echo "''${HFS:-}"/houdini/python3.*libs 2>/dev/null)
+              if [ -d "$hou_libs" ] && [ ! -e .hou-libs/hou.py ]; then
+                ln -sfn "$hou_libs" .hou-libs
+              fi
+            ''
+            + pkgs.lib.optionalString warn ''
+              if [ ! -e .hou-libs/hou.py ]; then
+                echo "warning: could not find Houdini's python libs under ''${HFS:-<unset>}" >&2
+                echo "         'import hou' will not resolve in your editor." >&2
+              fi
+            '';
+
+          # `pxr` (USD) does *not* live under houdini/python3.XXlibs — it sits
+          # in Houdini's own site-packages, alongside ~150 unrelated
+          # third-party packages (aiohttp, attrs, bcrypt, build, certifi,
+          # cffi, click, …).  Adding that whole directory to `extraPaths`
+          # would shadow the nixpkgs interpreter's packages and slow indexing
+          # for no benefit, so link `pxr` alone into `.hou-site/`.
+          #
+          # Note this buys module resolution only: `pxr/__init__.py` is a
+          # one-line `__all__` and every real API lives in compiled
+          # `_usd.so` / `_tf.so`, so attribute access on `pxr` types stays
+          # "partially unknown".  (There is a separate `types-usd` package
+          # from the same cg-stubs project if that ever becomes limiting.)
+          linkHouSite =
+            warn:
+            ''
+              hou_site=$(echo "''${HFS:-}"/python/lib/python3.*/site-packages 2>/dev/null)
+              if [ -d "$hou_site/pxr" ] && [ ! -e .hou-site/pxr/__init__.py ]; then
+                rm -rf .hou-site
+                mkdir -p .hou-site
+                ln -sfn "$hou_site/pxr" .hou-site/pxr
+              fi
+            ''
+            + pkgs.lib.optionalString warn ''
+              if [ ! -e .hou-site/pxr/__init__.py ]; then
+                echo "warning: could not find Houdini's pxr (USD) modules under ''${HFS:-<unset>}" >&2
+                echo "         'import pxr' will not resolve in your editor." >&2
+              fi
+            '';
+
+          # Symlink the `hou` type stubs in at `.stubs`.  Unlike `.hou-libs`
+          # this target is a pinned, reproducible nix store path -- it cannot
+          # go stale, so it is refreshed unconditionally rather than guarded.
+          linkTypeStubs = ''
+            if [ "$(readlink .stubs 2>/dev/null)" != "${houdiniTypeStubs}" ]; then
+              rm -rf .stubs
+              ln -s "${houdiniTypeStubs}" .stubs
+            fi
+          '';
+
+          # Everything an editor (and `nix run .#pyright`) needs before a
+          # type-check can resolve `hou`.
+          setupEditor = ''
+            ${linkHouLibs false}
+            ${linkHouSite false}
+            ${linkTypeStubs}
+          '';
+
+          # Pin the type-checker to Houdini's *bundled* interpreter rather
+          # than whatever `python3` happens to be first on PATH.
+          #
+          # pyright reads `pythonVersion` but still resolves imports through
+          # the first `python3` it finds, which on NixOS is nixpkgs'
+          # (e.g. 3.14) -- so a bare `pythonVersion` leaves it mixing a 3.13
+          # language level with a 3.14 standard library.  Houdini's own
+          # `pythonVersion` is therefore derived from the same glob as the
+          # symlink above and written into pyrightconfig.json.
+          #
+          # The committed pyrightconfig.json is the fallback for the case
+          # where the shell hook has not run yet (an editor opened before
+          # `nix develop`); this regenerates it in place with the real
+          # version.  Editors pick it up on their next file save.
+          syncPyrightConfig = ''
+            hou_libs=$(readlink .hou-libs 2>/dev/null || true)
+            py_ver=$(echo "$hou_libs" | sed -n 's|.*/python3\.\([0-9]*\)libs.*|\1|p')
+            if [ -n "$py_ver" ] && [ -f pyrightconfig.json ]; then
+              if ! grep -q "\"pythonVersion\": \"3.$py_ver\"" pyrightconfig.json; then
+                sed -i.bak "s/\"pythonVersion\": \"[0-9.]*\"/\"pythonVersion\": \"3.$py_ver\"/" pyrightconfig.json
+                rm -f pyrightconfig.json.bak
+                echo "  pinned pythonVersion to 3.$py_ver (Houdini's bundled interpreter)"
+              fi
+            fi
+          '';
+
           # Project-local Houdini environment.  $JOB is the project root and
           # $HIP where scene files live; ./houdini is exposed as a Houdini
           # package ('&' expands to Houdini's default search path).
@@ -87,6 +225,39 @@
           hythonApp = mkApp "houdini-project-hython" ''
             exec ${hythonBin} "$@"
           '';
+
+          # Type-check with `hou` resolved against Houdini's own module.
+          # Targets default to the whole project; override like any pyright
+          # invocation: nix run .#pyright -- scripts/foo.py
+          pyrightApp =
+            let
+              bin = "${pkgs.pyright}/bin/pyright";
+            in
+            mkApp "houdini-project-pyright" ''
+              ${setupEditor}
+              ${syncPyrightConfig}
+              if [ $# -eq 0 ]; then
+                exec ${bin} scripts
+              else
+                exec ${bin} "$@"
+              fi
+            '';
+
+          # Same, but with basedpyright (what Zed's Python extension runs, so
+          # the editor and this app see the same diagnostics).
+          basedpyrightApp =
+            let
+              bin = "${pkgs.basedpyright}/bin/basedpyright";
+            in
+            mkApp "houdini-project-basedpyright" ''
+              ${setupEditor}
+              ${syncPyrightConfig}
+              if [ $# -eq 0 ]; then
+                exec ${bin} scripts
+              else
+                exec ${bin} "$@"
+              fi
+            '';
         in
         {
           devShells.default = pkgs.mkShell {
@@ -94,20 +265,33 @@
 
             packages = with pkgs; [
               python3 # for out-of-Houdini tooling / linting
+              pyright # type-checker; reads ./pyrightconfig.json
+              basedpyright # what Zed's Python extension uses; same config
               ruff
             ];
 
             shellHook = ''
               ${projectEnv}
               ${checkHostHoudini}
+              ${linkHouLibs true}
+              ${linkHouSite true}
+              ${linkTypeStubs}
+              ${syncPyrightConfig}
               echo "Houdini project shell"
               echo "  hython:    $(command -v ${hythonBin} || echo 'not found')"
               echo "  Houdini:   ''${HOUDINI_MAJOR_RELEASE:-unknown}"
               echo "  JOB:       $JOB"
               echo "  HIP:       $HIP"
+              echo "  hou libs:  $(readlink .hou-libs 2>/dev/null || echo 'unresolved')"
+              echo "  hou stubs: $(readlink .stubs 2>/dev/null || echo 'unresolved')"
+              echo "  pxr:       $(readlink .hou-site/pxr 2>/dev/null || echo 'unresolved')"
+              echo "  python:    $(sed -n 's/.*"pythonVersion": "\([0-9.]*\)".*/\1/p' pyrightconfig.json 2>/dev/null || echo unknown) (Houdini's hython)"
               echo ""
-              echo "  houdini    launch the GUI on this project   (nix run .#houdini)"
-              echo "  hython     run Python inside Houdini        (nix run .#hython -- script.py)"
+              echo "  houdini      launch the GUI on this project   (nix run .#houdini)"
+              echo "  hython       run Python inside Houdini        (nix run .#hython -- script.py)"
+              echo "  pyright      type-check with Houdini's hou    (pyright scripts/)"
+              echo "  basedpyright type-check as Zed does          (basedpyright scripts/)"
+              echo "  ruff         lint                             (ruff check .)"
             '';
           };
 
@@ -120,6 +304,14 @@
             # Run a Python script inside Houdini's interpreter:
             #   nix run .#hython -- scripts/example.py
             hython = hythonApp;
+
+            # Type-check with `import hou` resolved:
+            #   nix run .#pyright
+            pyright = pyrightApp;
+
+            # basedpyright (Zed's language server) from the CLI:
+            #   nix run .#basedpyright -- scripts/example.py
+            basedpyright = basedpyrightApp;
           };
         };
     };

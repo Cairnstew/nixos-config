@@ -160,7 +160,7 @@ in
             lib.mkDefault (config.age.secrets ? "opencode-token");
           groq.keyFile = config.age.secrets.groq-api-key.path;
 
-          model = lib.mkDefault "opencode-go/deepseek-v4-flash";
+          model = lib.mkDefault "opencode-go/deepseek-v4.1-flash";
           enableMcpIntegration = lib.mkDefault true;
 
           # Shopping MCP servers. Each is enabled only when its agenix secret
@@ -208,7 +208,7 @@ in
           # local file and an npm spec would BOTH load. See FORK.md.
           plugins = lib.mkDefault [ ];
 
-          # Ensemble plugin config — agents use the paid OpenCode Go DeepSeek V4
+          # Ensemble plugin config — agents use the paid OpenCode Go DeepSeek V4.1
           # Flash (opencode-go/ is the Go provider prefix; model id format per
           # https://opencode.ai/docs/go — "opencode-go/<model-id>"). Moved off the
           # free Zen tier (opencode-deepseek-v4-flash-free) to the normal flash for
@@ -233,15 +233,18 @@ in
           # spawn-side sync is off.
           modelFallback.syncEnsembleProjectFile = lib.mkDefault false;
           modelFallback.chains = lib.mkDefault {
+            # Main chain: DeepSeek V4.1 Flash (high reasoning, the main model)
+            # → Muse Spark 1.3 Contributor (medium reasoning, the researcher
+            # model) → LongCat 2.5 Preview Free (cap-free safety net).
             default = [
               # Lead rung: monthly is budget-paced (pacing.mode = "budget"):
               # the allowed monthly percent ratchets down the remaining budget
               # over the remaining slices of the fixed 30-day window, and the
               # static maxMonthlyPercent 90 is a hard backstop that pacing can
               # only tighten. Weekly/rolling stay static.
-              { model = "opencode-go/deepseek-v4-flash"; maxRollingPercent = 70; maxWeeklyPercent = 80; maxMonthlyPercent = 90; pacing = { enable = true; mode = "budget"; }; }
-              { model = "opencode-go/mimo-v2.5"; maxRollingPercent = 85; maxWeeklyPercent = 95; maxMonthlyPercent = 95; }
-              { model = "opencode-go/ox-alpha-free"; }
+              { model = "opencode-go/deepseek-v4.1-flash"; maxRollingPercent = 70; maxWeeklyPercent = 80; maxMonthlyPercent = 90; pacing = { enable = true; mode = "budget"; }; }
+              { model = "opencode-go/muse-spark-1.3-contributor"; maxRollingPercent = 85; maxWeeklyPercent = 95; maxMonthlyPercent = 95; }
+              { model = "opencode-go/longcat-2.5-preview-free"; }
             ];
             # Triage roles: tighter rolling cap — they fire in bursts of three.
             # Self-improvement pipeline (learning-promoter + triage roles).
@@ -304,7 +307,7 @@ in
                 description = "Spotify playlist manager tool";
               };
               kraken-python = {
-                path = "/home/seanc/Projects/kraken-python";
+                path = "/home/seanc/Projects/kraken/kraken-python";
                 agent = "build";
                 description = "Kraken Python API wrapper — historical data pipelines, pagination";
               };

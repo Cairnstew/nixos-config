@@ -1,0 +1,61 @@
+{
+  // Type-checking configuration for Houdini Python (hython) scripts.
+  //
+  // Read by: `pyright` / `basedpyright` (nix develop / nix run .#pyright /
+  // nix run .#basedpyright), Zed's Python extension, VS Code Pylance, and
+  // Neovim — all of them honour this file from the project root, so one
+  // config serves every editor.
+
+  // Pin the language level to Houdini's bundled interpreter, not to whatever
+  // `python3` is first on PATH (on NixOS that is usually nixpkgs', e.g. 3.14).
+  //
+  // The flake rewrites this value from the same glob it uses to create
+  // `.hou-libs` on every `nix develop` / `nix run .#pyright`, so it tracks
+  // Houdini upgrades instead of drifting. The committed value below is the
+  // fallback for an editor opened before the shell hook has run.
+  "pythonVersion": "3.13",
+
+  // "basic" rather than "strict" is deliberate. Even with the `types-houdini`
+  // stubs a large part of `hou` (and all of `pxr`) is declared through
+  // `Incomplete`/`from ... import *`, so strict mode produces a warning on
+  // essentially every `hou` call — drowning out real problems. "basic" still
+  // catches genuine mistakes: undefined names, wrong argument counts, bad
+  // attribute access.
+  "typeCheckingMode": "basic",
+
+  // Houdini's own Python library directory, symlinked to this by the flake.
+  // Supplies the real source for `toolutils`, `husd`, `hutil`, `viewerstate`,
+  // `houcppportion` (which the `hou` stubs re-export), and friends; plus its
+  // site-packages for `pxr` (USD), which is linked into `.hou-site` (only
+  // `pxr`, not the ~150 unrelated third-party packages next to it, which
+  // would shadow the nixpkgs interpreter).
+  "extraPaths": [".hou-libs", ".hou-site"],
+
+  // Directory holding the `hou-stubs` PEP 561 package published as
+  // `types-houdini`. Pyright prefers these hand-cleaned annotations over the
+  // SWIG-generated `hou.py` in `.hou-libs`, which is what makes hover and
+  // autocomplete return real types instead of `Unknown`.
+  //
+  // The stubs are generated from a specific Houdini version (see the version
+  // pinned in flake.nix). That lag is acceptable — the `hou` API is stable
+  // across point releases and anything genuinely new stays `Unknown` rather
+  // than wrong — but if you rely on freshly-added API, regenerate.
+  "stubPath": ".stubs",
+
+  // Houdini's bundled `husd`, `hutil` and `pxr` are importable but their
+  // `__init__.py` files deliberately re-export only a subset of what Houdini
+  // puts on the module at runtime: `husd/__init__.py` does three star-imports
+  // and so hides `husd.Stage`; `hutil/__init__.py` lists an `__all__` with no
+  // `glob` in it; `pxr/__init__.py` is a single `__all__` line and never
+  // imports its own submodules.  Pyright honestly reports those as unknown
+  // attributes.  Since there is no stub coverage for them, this is demoted to
+  // "warning" instead of "error" so it never masks a real problem — note it
+  // also catches genuine typos (`node.parmx()`), which surface as yellow
+  // warnings rather than red errors.
+  "reportAttributeAccessIssue": "warning",
+
+  // `houcppportion` and `pxr`'s compiled extension modules have no stub
+  // coverage of their own; suppress the resulting "stub file not found"
+  // noise. Their types still resolve through the real `.py` sources.
+  "reportMissingModuleSource": "none"
+}

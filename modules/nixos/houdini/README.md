@@ -15,16 +15,9 @@ SideFX Houdini — 3D animation, visual effects, and procedural generation softw
 | `my.programs.houdini.redeemNonCommercial.serverName` | `networking.hostName` | Server name sent to the License API |
 | `my.programs.houdini.redeemNonCommercial.version` | auto-detected | Houdini `major.minor` version for license generation |
 | `my.programs.houdini.redeemNonCommercial.products` | `["HOUDINI-NC" "RENDER-NC"]` | Non-commercial products to license |
+| `my.programs.houdini.labs.enable` | `false` | Install the SideFX Labs free toolset (hundreds of HDAs, shelves, and Python tools) |
+| `my.programs.houdini.labs.package` | *pinned 22.0.459* | SideFX Labs package (launcher layout) to install |
 | `my.programs.houdini.extraEnv` | `{}` | Extra environment variables |
-| `my.programs.houdini.opencode.enable` | `true` | Register MCP + skills into the primary user's opencode config |
-| `my.programs.houdini.opencode.skills` | 6 skills | name → SKILL.md (hou Python, VEX, HDAs, .hip, rendering, hscript) |
-| `my.programs.houdini.opencode.mcp.enable` | `true` | Add the MCP server entry |
-| `my.programs.houdini.opencode.mcp.name` | `fxhoudini` | opencode MCP config key |
-| `my.programs.houdini.opencode.mcp.host` | `127.0.0.1` | Houdini hwebserver host (must stay loopback) |
-| `my.programs.houdini.opencode.mcp.port` | `8100` | Houdini hwebserver port |
-| `my.programs.houdini.opencode.mcp.timeout` | `120000` | MCP startup timeout in ms |
-| `my.programs.houdini.opencode.mcp.command` | `[]` | Empty = `uvx --from fxhoudinimcp fxhoudinimcp` |
-| `my.programs.houdini.opencode.mcp.environment` | `{}` | Extra env vars (merged over `HOUDINI_HOST`/`HOUDINI_PORT`) |
 
 ## Usage Examples
 
@@ -32,18 +25,6 @@ SideFX Houdini — 3D animation, visual effects, and procedural generation softw
 
 ```nix
 my.programs.houdini.enable = true;
-```
-
-### opencode MCP + skills (default when enabled)
-
-Enabling the module also registers the `fxhoudinimcp` MCP server and six
-Houdini knowledge skills into the primary user's global opencode config
-(`my.programs.opencode`), exactly like the other module MCPs. To turn just
-this off:
-
-```nix
-my.programs.houdini.enable = true;
-my.programs.houdini.opencode.enable = false;  # skip MCP + skills
 ```
 
 ### With Remote License Server
@@ -97,6 +78,21 @@ my.programs.houdini.package =
 Available version suffixes are listed in the upstream README
 (e.g. `houdini-21_0_559`, `houdini-22_0_368`). Each build pins an exact
 installer tarball hash — see "Manual installer download" below.
+
+### With SideFX Labs (free toolset)
+
+```nix
+my.programs.houdini.enable = true;
+my.programs.houdini.labs.enable = true;
+```
+
+The module fetches the SideFX Labs source tarball at a pinned release tag
+(BSD-style license, freely redistributable), lays it out exactly like the
+Houdini Launcher's `install-package` command (`SideFXLabs22.0.json` next to a
+`SideFXLabs22.0/` contents directory), and points `HOUDINI_PACKAGE_DIR` at it
+so Houdini loads the Labs shelves, HDAs, menus, and Python tools on every
+launch. `HOUDINI_PACKAGE_DIR` is additive — `~/houdini<ver>/packages` and
+`$HFS/packages` are still scanned, so other packages keep working.
 
 ## Initial Setup for Apprentice Auto-Licensing
 
@@ -172,18 +168,12 @@ automatically.
   only activates when the agenix secret exists; sesinetd only starts when
   `localLicenseServer` or `redeemNonCommercial` is enabled; redemption only runs
   when both the secret and `redeemNonCommercial.enable` are present
-- **MCP requires a live Houdini.** `fxhoudinimcp` (healkeiser/fxhoudinimcp, MIT)
-  is a stdio bridge to a plugin loaded inside a *running* Houdini instance
-  (hwebserver on `127.0.0.1:8100`) — Houdini 20.5+; without Houdini running,
-  MCP calls fail, but the skills work anywhere. The skills are knowledge skills
-  (HOM/hou Python, hython, VEX, HDAs, .hip format, rendering, hscript) and
-  don't need Houdini installed.
-- **Installing the MCP plugin**: run the install from a shell where `uvx` is
-  on PATH (e.g. a devshell with `uv`, or using an absolute store path):
-  `uvx --from fxhoudinimcp python -m fxhoudinimcp install` — fetches
-  fxhoudinimcp on demand (same mechanism the MCP `command` uses), writes
-  `fxhoudinimcp.json` into `~/houdini<ver>/packages/`, and skips the Claude
-  client wiring (this module's opencode MCP already spawns the server).
-  Requires Houdini 20.5+; no API keys; binds loopback by default — the bridge
-  executes arbitrary Python inside Houdini, so never expose the hwebserver
-  beyond loopback.
+- SideFX Labs is pinned to the **22.0** production build and its package
+  `enable` guard only activates it for Houdini 22.0 – 22.4. When the Houdini
+  package moves to a new major/minor, update `labs.package` (bump the tag,
+  re-prefetch the hash) — the upstream release list is at
+  <https://github.com/sideeffects/SideFXLabs/releases>. To update the default
+  pin: `nix-prefetch-url --unpack https://github.com/sideeffects/SideFXLabs/archive/refs/tags/<tag>.tar.gz`
+  and paste the `sha256-…` result into `labs.nix`
+- Verify Labs loaded: launch Houdini — the **Labs** menu appears on the menu
+  bar, and `labs_toolset.shelf` shows in the shelf bar

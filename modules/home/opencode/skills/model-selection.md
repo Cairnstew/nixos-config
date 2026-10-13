@@ -86,7 +86,28 @@ Typical choices (verify with the tool — the list rotates):
 Set it with the `opencode-go/<model-id>` prefix:
 
 ```nix
-my.programs.opencode.model = "opencode-go/deepseek-v4-flash";
+my.programs.opencode.model = "opencode-go/deepseek-v4.1-flash";
+```
+
+## Reasoning effort (model- and provider-specific)
+
+Effort is **not** a free-form knob — the allowed values come from the model's
+models.dev `reasoning_options` (e.g. `deepseek-v4.1-flash` = `low|high|max`,
+`muse-spark-1.3-contributor` = `minimal|low|medium|high|xhigh`,
+`longcat-2.5-preview-free` = a plain toggle). The `opencode-models` table does
+**not** show them; read `https://models.dev/api.json` → `opencode-go.models.<id>.reasoning_options`.
+
+Set it **per model** (applies to every dispatch of that model, including
+fallback-chain rungs) via the model-level options block:
+
+```nix
+programs.opencode.settings.provider.opencode-go.models."deepseek-v4.1-flash".options.reasoningEffort = "high";
+```
+
+or **per agent** via `extraOptions` (overrides the model default for that agent):
+
+```nix
+my.programs.opencode.agents.build.extraOptions.reasoningEffort = "high";
 ```
 
 ## OpenCode Go economics (context for "cost")
@@ -116,13 +137,15 @@ caps (`~/.cache/opencode/go-usage.json`) plus pacing (see
 answering "which model will run":
 
 - **The lead rung is budget-paced on the monthly window.** The default chain
-  runs `opencode-go/deepseek-v4-flash` only while usage stays under the
+  runs `opencode-go/deepseek-v4.1-flash` only while usage stays under the
   slice cap; a heavy day can push it to the next rung
-  (`opencode-go/mimo-v2.5`) until the next slice starts (each 24h slice
-  re-seeds the ratchet from actual usage).
+  (`opencode-go/muse-spark-1.3-contributor`) and then the cap-free
+  `opencode-go/longcat-2.5-preview-free` until the next slice starts (each
+  24h slice re-seeds the ratchet from actual usage).
 - **A downgrade can happen mid-period, not just at a reset.** If a session
   starts on the lead rung and monthly usage crosses the slice cap, later
-  dispatches in the same period land on mimo/free. Check
+  dispatches in the same period land on the next rung (muse-spark/longcat).
+  Check
   `opencode-model-select --agent <agent>` (or the usage table,
   `opencode-go-usage`) before promising a specific model for a long piece of
   work.

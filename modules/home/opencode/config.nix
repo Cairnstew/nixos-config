@@ -77,13 +77,32 @@ let
 
       # Inject the chain-resolved model for this invocation unless the user
       # already chose one explicitly (-m/--model), or opted out entirely via
-      # OPENCODE_MODEL_SELECT_OFF=1.
+      # OPENCODE_MODEL_SELECT_OFF=1. Skip the injection for top-level
+      # subcommand invocations (mcp, run, web, serve, …): prepending `--model`
+      # makes yargs print the command help instead of dispatching the
+      # subcommand — `opencode mcp auth <name>` broke exactly this way
+      # ("model-fallback selected …" followed by usage text, nothing else).
       if [ -z "''${OPENCODE_MODEL_SELECT_OFF:-}" ] \
          && ! printf '%s\n' "$@" | grep -q -- '-m\|--model'; then
-        if m=$(opencode-model-select 2>/dev/null); then
-          set -- "$@" --model "$m"
-          echo "opencode: model-fallback selected $m" >&2
-        fi
+        # First positional arg (skip leading flags); if it is a known
+        # top-level subcommand, do not inject (default `[project]`/TUI keeps
+        # the fallback).
+        first=""
+        for a in "$@"; do
+          case "$a" in
+            -*) continue ;;
+            *) first="$a"; break ;;
+          esac
+        done
+        case " completion acp mcp attach run debug providers agent upgrade uninstall serve web models stats export import github pr session plugin db " in
+          *" $first "*) : ;;
+          *)
+            if m=$(opencode-model-select 2>/dev/null); then
+              set -- "$@" --model "$m"
+              echo "opencode: model-fallback selected $m" >&2
+            fi
+            ;;
+        esac
       fi
     ''}
 
@@ -180,14 +199,6 @@ let
   allAuthProviders = lib.filter (p: p.keyFile != null) [
     # First-class providers
     { name = "opencode-go"; keyFile = cfg.opencode-go.keyFile; }
-    # Zen is written under BOTH keys on purpose. opencode resolves `opencode/<model>`
-    # model IDs through auth.json["opencode"] (the provider id in models.dev), NOT
-    # through the `opencode-zen` alias — verified 2026-10-13: with `opencode`
-    # poisoned and `opencode-zen` holding a valid key, the request failed with
-    # "Invalid credential". Writing only `opencode-zen` therefore leaves the
-    # credential opencode actually sends unmanaged (a stale manual `/connect`
-    # entry keeps working in its place).
-    { name = "opencode"; keyFile = cfg.opencode-zen.keyFile; }
     { name = "opencode-zen"; keyFile = cfg.opencode-zen.keyFile; }
     { name = "anthropic"; keyFile = cfg.anthropic.keyFile; }
     { name = "groq"; keyFile = cfg.groq.keyFile; }
@@ -258,7 +269,7 @@ in
         agents = lib.mkDefault {
           plan = {
             description = "Analyze code and review suggestions without making changes";
-            model = "opencode-go/deepseek-v4-flash";
+            model = "opencode-go/deepseek-v4.1-flash";
             mode = "primary";
             temperature = 0.1;
             steps = 10;
@@ -266,14 +277,14 @@ in
           };
           explore = {
             description = "Quickly explore the codebase by searching files, patterns, and keywords (read-only)";
-            model = "opencode-go/deepseek-v4-flash";
+            model = "opencode-go/deepseek-v4.1-flash";
             mode = "subagent";
             temperature = 0.1;
             permission = { edit = "deny"; bash = "deny"; };
           };
           build = {
             description = "Standard development agent with full tool access";
-            model = "opencode-go/deepseek-v4-flash";
+            model = "opencode-go/deepseek-v4.1-flash";
             mode = "primary";
             permission = {
               edit = "allow";
@@ -291,9 +302,11 @@ in
             # Pinned explicitly (rather than left to fall through to the
             # parent/lead model) so research runs are reproducible and not
             # silently reshuffled by whatever the lead session happens to be on.
-            # space-bunny-free: 1M context, tool-capable, $0 — a good fit for
-            # long multi-page fetches and cross-referencing.
-            model = "opencode-go/space-bunny-free";
+            # muse-spark-1.3-contributor: ~1M context, tool-capable, multimodal
+            # (text/image/video/pdf/audio input) — a good fit for long
+            # multi-page fetches and cross-referencing. Its reasoning effort is
+            # pinned to "medium" by the model-level options block below.
+            model = "opencode-go/muse-spark-1.3-contributor";
             mode = "subagent";
             temperature = 0.2;
             prompt = builtins.readFile ./agents/researcher.md;
@@ -312,7 +325,7 @@ in
           };
         };
         # Individual key assignments (not lib.mkDefault on the whole attrset)
-        # so they merge correctly with per-module overrides (mc-*, houdini-*, etc.)
+        # so they merge correctly with per-module overrides (mc-*, cv-*, etc.)
         # that also set individual keys. Using mkDefault on the whole attrset
         # causes individual-key definitions from other modules to replace it entirely.
         tools.tailscale-manager = ./tools/tailscale-manager.ts;
@@ -423,6 +436,17 @@ in
           };
           timeout = 120000;
         };
+        # Apify hosted MCP server (https://mcp.apify.com), scoped to the
+        # Wattpad Story Scraper actor (easyapi/wattpad-story-scraper) plus the
+        # generic actor-details tool. Remote + OAuth: sign in on first use with
+        # `opencode mcp auth apify` — no API token belongs in config. Add more
+        # actors to the `tools=` query param as needed.
+        mcp.apify = {
+          enabled = true;
+          type = "remote";
+          url = "https://mcp.apify.com/?tools=fetch-actor-details,easyapi/wattpad-story-scraper";
+          timeout = 30000;
+        };
       };
     }
 
@@ -479,17 +503,35 @@ in
       };
     }
 
-    # ── Default model context window ────────────────────────────────────────
+    # ── Default model context window + reasoning effort ─────────────────────
     # opencode's `limit.context` caps how many context tokens are sent to the
-    # model; the schema requires `output` alongside it. Default applies to the
-    # shared default model (DeepSeek V4 via opencode-go); hosts override via
-    # my.programs.opencode.settings.
+    # model; the schema requires `output` alongside it. The same per-model
+    # block carries `options.reasoningEffort` — the model's default thinking
+    # effort everywhere it is dispatched (agents AND fallback-chain rungs),
+    # which per-agent config can override. Allowed effort values come from
+    # models.dev `reasoning_options`: deepseek-v4.1-flash is low|high|max,
+    # muse-spark-1.3-contributor is minimal|low|medium|high|xhigh. Hosts
+    # override via my.programs.opencode.settings.
     {
       programs.opencode.settings.provider.opencode-go.models."deepseek-v4-flash".limit =
         lib.mkDefault {
           context = 500000;
           output = 8192;
         };
+      programs.opencode.settings.provider.opencode-go.models."deepseek-v4.1-flash".limit =
+        lib.mkDefault {
+          context = 500000;
+          output = 8192;
+        };
+      programs.opencode.settings.provider.opencode-go.models."deepseek-v4.1-flash".options.reasoningEffort =
+        lib.mkDefault "high";
+      programs.opencode.settings.provider.opencode-go.models."muse-spark-1.3-contributor".limit =
+        lib.mkDefault {
+          context = 500000;
+          output = 8192;
+        };
+      programs.opencode.settings.provider.opencode-go.models."muse-spark-1.3-contributor".options.reasoningEffort =
+        lib.mkDefault "medium";
     }
 
     # ── Ensemble plugin config → ~/.config/opencode/ensemble.json ─────────

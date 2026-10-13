@@ -1,0 +1,32 @@
+{
+  // Zed project settings for a Houdini project.
+  //
+  // The type-checking setup deliberately lives in pyrightconfig.json at the
+  // project root: `.stubs`, `.hou-libs` and `.hou-site` are all resolved
+  // there, and basedpyright / pyright / Pylance / Neovim all read that same
+  // file. Nothing below is needed for `hou` to resolve.
+
+  // This template has no secrets and runs only the project's own dev-shell
+  // commands, so trust it and skip the per-workspace prompt. Without this,
+  // project settings are not applied until the worktree is trusted.
+  "session": {
+    "trust_all_worktrees": true
+  },
+
+  // `direnv` runs .envrc, which is `use flake` — that evaluates the
+  // devShell's shellHook, which exports JOB / HIP / HOUDINI_PATH / HFS and
+  // creates the `.hou-libs`, `.hou-site` and `.stubs` symlinks the type
+  // checker resolves `hou` through. Zed needs those on the environment it
+  // spawns language servers with, and this is also what puts `hython` /
+  // `basedpyright` on PATH for .zed/tasks.json.
+  "load_direnv": "direct",
+
+  "languages": {
+    "Python": {
+      "tab_size": 4,
+      // Leave formatting to `ruff format` from the dev shell, so the editor
+      // and the CLI cannot disagree about a file's formatting.
+      "format_on_save": "off"
+    }
+  }
+}

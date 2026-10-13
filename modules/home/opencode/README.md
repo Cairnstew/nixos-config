@@ -96,11 +96,11 @@ automatically instead of waiting for a fixed threshold.
 
 ```nix
 chains.default = [
-  { model = "opencode-go/deepseek-v4-flash";
+  { model = "opencode-go/deepseek-v4.1-flash";
     maxWeeklyPercent = 80;              # static hard ceiling — pacing can
                                         # never exceed this even with buffer
     pacing = { enable = true; }; }      # floor = 5, buffer = 10 defaults
-  { model = "opencode-go/ox-alpha-free"; }
+  { model = "opencode-go/longcat-2.5-preview-free"; }
 ];
 ```
 
@@ -223,8 +223,9 @@ paid model with no (or capped) enforcement. The degrade rule is:
   **cap-free** last entry (model set, no static caps) degrades to it (exit 0,
   one stderr warning — logged as `degraded: true`); a chain ending in
   `blockedTerminal` or a capped entry exits **5** with a distinct message.
-- The `default` chain ends in a cap-free model (`opencode-go/ox-alpha-free`) so
-  ordinary build/explore work never blocks — even with a dead cache.
+- The `default` chain ends in a cap-free model
+  (`opencode-go/longcat-2.5-preview-free`) so ordinary build/explore work never
+  blocks — even with a dead cache.
 - The **triage chains** are live in `modules/nixos/homeManager/config.nix`
   (`learning-promoter`, `scout-skeptical`, `qa-verification`, `adversarial`):
   they give scout/qa/reviewer subagents tighter caps and end in
@@ -240,8 +241,8 @@ Every resolution appends one JSON line to `~/.cache/opencode/model-select.log`
 (`modelFallback.logFile`):
 
 ```json
-{"ts": 1789933880, "agent": "default", "chosen": "opencode-go/mimo-v2.5",
- "skipped": [{"model": "opencode-go/deepseek-v4-flash", "window": "monthly",
+{"ts": 1789933880, "agent": "default", "chosen": "opencode-go/muse-spark-1.3-contributor",
+ "skipped": [{"model": "opencode-go/deepseek-v4.1-flash", "window": "monthly",
               "used": 94, "cap": 90, "by": "static"}], "degraded": false}
 ```
 
@@ -253,7 +254,7 @@ selector), contains no secrets, and the file is trimmed in batches to the last
 ~2000 lines (`modelFallback.logFile`).
 
 Per-day report — how often each model was chosen, and how often
-`opencode-go/deepseek-v4-flash` was skipped by `pace` vs `static`:
+`opencode-go/deepseek-v4.1-flash` was skipped by `pace` vs `static`:
 
 ```bash
 jq -r -s '
@@ -262,8 +263,8 @@ jq -r -s '
   | ($day[0].ts | todate | .[0:10]) as $d
   | ([$day[] | select(.chosen != "") | .chosen] | group_by(.) 
      | map("\(.[0])=\(length)") | join(", ")) as $picks
-  | (($day | map(.skipped[]) | map(select(.model == "opencode-go/deepseek-v4-flash" and .by == "pace")) | length)) as $pace
-  | (($day | map(.skipped[]) | map(select(.model == "opencode-go/deepseek-v4-flash" and .by == "static")) | length)) as $static
+  | (($day | map(.skipped[]) | map(select(.model == "opencode-go/deepseek-v4.1-flash" and .by == "pace")) | length)) as $pace
+  | (($day | map(.skipped[]) | map(select(.model == "opencode-go/deepseek-v4.1-flash" and .by == "static")) | length)) as $static
   | "\($d)  chosen: \($picks // "none")  deepseek-skips: pace=\($pace) static=\($static)"
 ' ~/.cache/opencode/model-select.log
 ```
@@ -289,9 +290,9 @@ build-agent sessions generally, and not manually launched workflows.
 my.programs.opencode.modelFallback = {
   enable = true;
   chains.default = [
-    { model = "opencode-go/deepseek-v4-flash"; maxWeeklyPercent = 80; }
-    { model = "opencode-go/mimo-v2.5"; maxWeeklyPercent = 95; }
-    { model = "opencode-go/ox-alpha-free"; }          # safety net, no caps
+    { model = "opencode-go/deepseek-v4.1-flash"; maxWeeklyPercent = 80; }
+    { model = "opencode-go/muse-spark-1.3-contributor"; maxWeeklyPercent = 95; }
+    { model = "opencode-go/longcat-2.5-preview-free"; }  # safety net, no caps
   ];
 };
 ```

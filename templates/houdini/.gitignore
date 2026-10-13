@@ -18,6 +18,9 @@ houdini_temp/
 __pycache__/
 
 # Editor / OS
+.hou-libs
+.hou-site
+.stubs
 *.swp
 *.swo
 *~

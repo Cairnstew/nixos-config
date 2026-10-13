@@ -2,7 +2,7 @@
   name = "game-servers";
   description = "Steam/generic dedicated game server management via steamcmd — declarative per-server systemd units, auto-updates, firewall, and A2S Prometheus monitoring";
   category = "games";
-  tags = [ "games" "steam" "steamcmd" "game-server" "gaming" "monitoring" "prometheus" "a2s" ];
+  tags = [ "games" "steam" "steamcmd" "game-server" "gaming" "monitoring" "prometheus" "a2s" "secrets" "1password" ];
   provides = [ "my.services.game-servers" ];
   expects = [ "my.networking.firewall" ];
   complexity = "complex";

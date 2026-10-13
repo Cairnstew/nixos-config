@@ -81,9 +81,7 @@ let
   # builtins.matchGroups/splitString, so a regex here would be both fragile
   # and hard to read. lib.splitString "\n" + head/hasPrefix is exact.
   #
-  # Scoped to THIS module's skills/ dir. The 6 houdini-* skills
-  # (modules/nixos/houdini/) still lack frontmatter for the same reason and
-  # are fixed in their own module — extend this list when that lands.
+  # Scoped to THIS module's skills/ dir.
   skillSourceDir = ./skills;
   sourceSkillFiles =
     lib.filter (n: lib.hasSuffix ".md" n) (builtins.attrNames (builtins.readDir skillSourceDir));

@@ -45,21 +45,10 @@ in
       '';
     }
     {
-      assertion = !cfg.opencode.enable || !cfg.opencode.mcp.enable ||
-        cfg.opencode.mcp.host == "127.0.0.1" || cfg.opencode.mcp.host == "localhost";
+      assertion = !cfg.labs.enable || cfg.enable;
       message = ''
-        `my.programs.houdini.opencode.mcp.host` must stay loopback
-        ("127.0.0.1" or "localhost"). The fxhoudinimcp bridge can execute
-        arbitrary Python in your Houdini session; exposing the hwebserver
-        beyond loopback would let any local process drive it.
-      '';
-    }
-    {
-      assertion = !cfg.opencode.mcp.enable ||
-        builtins.match "^[A-Za-z0-9_-]+$" cfg.opencode.mcp.name != null;
-      message = ''
-        `my.programs.houdini.opencode.mcp.name` must be a plain identifier
-        (alphanumerics, `-`, `_`). It becomes the opencode MCP config key.
+        `my.programs.houdini.labs.enable` requires the module itself to be
+        enabled (`my.programs.houdini.enable = true`).
       '';
     }
   ];
@@ -71,7 +60,11 @@ in
     # systemd units don't inherit the user's PATH; point at the package
     # directly (environment.systemPackages only affects login shells).
     path = [ cfg.package pkgs.coreutils ];
-    environment.HFS = "${cfg.package}";
+    environment = {
+      HFS = "${cfg.package}";
+    } // lib.optionalAttrs cfg.labs.enable {
+      HOUDINI_PACKAGE_DIR = "${cfg.labs.package}";
+    };
     script = ''
       set -euo pipefail
       echo "=== Houdini Smoke Test ==="
@@ -89,6 +82,20 @@ in
         exit 1
       fi
       echo "PASS: HFS = $HFS"
+
+      # SideFX Labs package: launcher layout (SideFXLabs22.0.json + dir).
+      if [ -n "''${HOUDINI_PACKAGE_DIR:-}" ]; then
+        if [ -f "$HOUDINI_PACKAGE_DIR/SideFXLabs22.0.json" ] && \
+           [ -d "$HOUDINI_PACKAGE_DIR/SideFXLabs22.0" ] && \
+           [ -d "$HOUDINI_PACKAGE_DIR/SideFXLabs22.0/toolbar" ]; then
+          echo "PASS: SideFX Labs package found ($HOUDINI_PACKAGE_DIR)"
+        else
+          echo "FAIL: SideFX Labs enabled but package layout missing in $HOUDINI_PACKAGE_DIR"
+          exit 1
+        fi
+      else
+        echo "INFO: SideFX Labs not enabled (HOUDINI_PACKAGE_DIR unset)"
+      fi
 
       # Check hkey (license tool) exists
       if command -v hkey >/dev/null 2>&1; then

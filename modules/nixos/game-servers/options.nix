@@ -137,8 +137,44 @@ in
               description = ''
                 Path to a file containing the Steam password (e.g. an agenix
                 secret). Only needed for games whose depots require login.
-                Leave null for anonymous downloads.
+                Leave null for anonymous downloads. Mutually exclusive with
+                <literal>login.onepassword.reference</literal>.
               '';
+            };
+
+            onepassword = {
+              reference = mkOption {
+                type = types.nullOr types.str;
+                default = null;
+                example = "op://Private/Steam/password";
+                description = ''
+                  A 1Password secret reference
+                  (<literal>op://vault/item/field</literal>) for the Steam
+                  password. When set, the update script resolves it with
+                  <literal>op read</literal> at run time instead of reading
+                  <literal>passwordFile</literal>. Mutually exclusive with
+                  <literal>passwordFile</literal>.
+                '';
+              };
+
+              tokenFile = mkOption {
+                type = types.nullOr types.path;
+                default = null;
+                description = ''
+                  Path to a file holding a 1Password service-account token
+                  (e.g. an agenix secret), read at run time into
+                  <literal>OP_SERVICE_ACCOUNT_TOKEN</literal>. A system service
+                  has no interactive <literal>op signin</literal>, so this is
+                  effectively required when <literal>reference</literal> is set.
+                '';
+              };
+
+              package = mkOption {
+                type = types.package;
+                default = pkgs._1password-cli;
+                defaultText = lib.literalExpression "pkgs._1password-cli";
+                description = "1Password CLI (<literal>op</literal>) used to resolve <literal>reference</literal>.";
+              };
             };
           };
 

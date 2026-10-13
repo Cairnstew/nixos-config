@@ -9,25 +9,43 @@ let
   displayName = name: server:
     if server.name != "" then server.name else name;
 
+  # Where the Steam password comes from for this server: a 1Password reference
+  # (resolved with `op read` at run time), a plain file (e.g. agenix), or
+  # nothing (anonymous). Returns shell text placed after `+login <user>`.
+  loginPassword = server:
+    if server.login.onepassword.reference != null then
+      "\"$(${lib.getExe server.login.onepassword.package} read ${
+        lib.escapeShellArg server.login.onepassword.reference
+      })\""
+    else if server.login.passwordFile != null then
+      "\"$(cat ${lib.escapeShellArg server.login.passwordFile})\""
+    else
+      "";
+
+  # A systemd service has no interactive `op signin`; the service-account token
+  # is read from an agenix secret (or similar) into op's own env var. Emitted
+  # only when configured, so anonymous and file-based servers never touch `op`.
+  opTokenEnv = server:
+    lib.optionalString (server.login.onepassword.tokenFile != null)
+      ''export OP_SERVICE_ACCOUNT_TOKEN="$(cat ${
+        lib.escapeShellArg server.login.onepassword.tokenFile
+      })"'';
+
   # Build the steamcmd install/update command as a self-contained script so
-  # password files and quoting are handled safely.
+  # password files, 1Password references and quoting are handled safely.
   mkUpdateScript = name: server:
     let
       stateDir = stateDirOf name server;
-      loginPassword =
-        if server.login.passwordFile != null then
-          "\"$(cat ${lib.escapeShellArg server.login.passwordFile})\""
-        else
-          "";
       branchArg = lib.optionalString (server.branch != null) "+beta ${server.branch}";
       validateArg = lib.optionalString server.validate "validate";
     in
     pkgs.writeShellScript "game-server-${name}-update" ''
       set -euo pipefail
       export HOME="${stateDir}"
+      ${opTokenEnv server}
       exec ${lib.getExe cfg.steamcmd} \
         +force_install_dir "${stateDir}" \
-        +login ${lib.escapeShellArg server.login.user} ${loginPassword} \
+        +login ${lib.escapeShellArg server.login.user} ${loginPassword server} \
         ${branchArg} \
         +app_update ${lib.escapeShellArg server.appId} ${validateArg} \
         +quit

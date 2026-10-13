@@ -9,6 +9,9 @@ let
   # Check that exporter ports are unique across monitored servers
   exporterPorts = lib.attrValues (lib.mapAttrs (_: s: s.monitoring.exporterPort) monitoredServers);
   uniqueExporterPorts = lib.unique exporterPorts;
+
+  # Servers that resolve their Steam password from 1Password at run time
+  opLoginServers = lib.filterAttrs (_: s: s.login.onepassword.reference != null) enabledServers;
 in
 {
   # ── L0: Nix Assertions ────────────────────────────────────────────────────
@@ -54,6 +57,16 @@ in
     {
       assertion = lib.all (s: !(s.extraServiceConfig ? NoNewPrivileges) || !s.extraServiceConfig.NoNewPrivileges) (lib.attrValues enabledServers);
       message = "Do not set NoNewPrivileges in extraServiceConfig for game servers — steam-run (bwrap) requires it to be disabled.";
+    }
+    # A server has at most one Steam password source
+    {
+      assertion = lib.all (s: s.login.passwordFile == null || s.login.onepassword.reference == null) (lib.attrValues enabledServers);
+      message = "Set at most one of login.passwordFile and login.onepassword.reference per game server — they are mutually exclusive.";
+    }
+    # A 1Password password source must be a real op:// reference
+    {
+      assertion = lib.all (s: lib.hasPrefix "op://" s.login.onepassword.reference) (lib.attrValues opLoginServers);
+      message = "login.onepassword.reference must be a 1Password secret reference (e.g. op://Private/Steam/password).";
     }
   ];
 
