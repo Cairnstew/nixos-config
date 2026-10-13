@@ -375,6 +375,15 @@
     development.enable = true;
   };
 
+  # ── nix-ld (run unpatched ELF binaries) ──────────────────────────────────
+  # Root fix for Zed's downloaded language servers. With no system `node` on
+  # PATH, Zed downloads its own generic-Linux Node (and ruff as a native
+  # binary); NixOS' stub-ld loader cannot exec either, so
+  # bash-language-server / json-language-server / ruff all fail to start.
+  # nix-ld replaces the stub loader and covers every current and future
+  # download, in every project. See modules/nixos/nix-ld/README.md.
+  my.system.nix-ld.enable = true;
+
   # ── Reverse Proxy ────────────────────────────────────────────────────────
   # Unified proxy module: services auto-register with my.services.proxy.upstreams.
   # Caddy serves the service dashboard at / and proxies subpaths to each backend.

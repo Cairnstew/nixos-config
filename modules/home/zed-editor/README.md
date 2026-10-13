@@ -40,6 +40,45 @@ All options live under `my.programs.zed-editor`.
 - `extraSettings` — Raw attrs merged on top of computed settings
 - `userKeymaps`, `userTasks`, `userDebug` — Raw JSON config files
 
+## Language servers on NixOS
+
+Zed **downloads** language servers it does not find on `PATH` into
+`~/.local/share/zed/languages` and `~/.local/share/zed/node` (its own generic
+Linux `node` when nothing provides one). Those are ordinary unpatched ELF
+binaries, and NixOS' default stub-ld loader cannot exec them — they die with
+`Could not start dynamically linked executable … stub-ld`, which shows up in
+`~/.local/share/zed/logs/Zed.log` as *bash-language-server / ruff /
+json-language-server fails to start*.
+
+The fix is a **system-level** one:
+[`my.system.nix-ld.enable = true`](../../nixos/nix-ld/README.md)
+(`modules/nixos/nix-ld`). It cures Zed's Node, ruff, and every future
+download, in every project — no per-server binary paths, no devShell changes.
+Enable it on the host (desktop and laptop already do); this module cannot set
+it itself because Home Manager modules must not touch system options.
+
+Notes / escape hatches:
+
+- **Nothing here pins Zed's Node.** nix-ld makes the downloaded Node work, so
+  there is no reason to. If you ever need to, `node.path` / `node.npm_path` go
+  through this module's settings (`extraSettings.node = { path = …; }`), and
+  because the settings file is generated, store paths are fine.
+- **`extraPackages`** (this module → `programs.zed-editor.extraPackages`) is the
+  way to hand Zed a Nix-packaged server instead of a download. It is off by
+  default: nix-ld makes the downloads work, and wrapping Zed in a `symlinkJoin`
+  only pays off when you want a pinned/patched server. Note this repo installs
+  **no** `nodejs`, `nixd`, or `nil` anywhere on `PATH`, so a server Zed cannot
+  download (nixd/nil) only works if you add it here.
+- **`settings.json` is a read-only store symlink** by default
+  (`mutableUserSettings = false`, Nix is the source of truth). Zed cannot save
+  settings edits through its UI; set
+  `my.programs.zed-editor.mutableUserSettings = true` if you want the mutable
+  file back.
+- **Python interpreter selection is Zed-local state.** Zed picks a uv-managed
+  toolchain per worktree and stores it in its own database, not in
+  `settings.json` (upstream issue #46754; no settings key overrides it), so
+  this repo cannot pin it. Nothing in this module sets anything Python-related.
+
 ### Remote development
 
 Zed runs its UI locally and the language servers, tasks, and terminal on a

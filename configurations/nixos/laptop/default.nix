@@ -53,6 +53,12 @@
   # ── SSH Access
   # F12: authorizedKeys inherited from common.nix mkDefault (single source of truth)
 
+  # ── nix-ld (run unpatched ELF binaries) ──────────────────────────────────
+  # Same reason as desktop: Zed downloads its own Node/ruff language servers
+  # (nothing puts a system node on PATH), and NixOS' stub-ld loader cannot exec
+  # them. See modules/nixos/nix-ld/README.md.
+  my.system.nix-ld.enable = true;
+
   # ── Eduroam (GCU WiFi) ─────────────────────────────────────────────────────
   # Declarative WPA2-Enterprise profile. Password stored in agenix secret.
   # On campus: eduroam auto-connects. Off campus: profile is inert.

@@ -592,6 +592,8 @@ All `my.*` options declared across module files.
 | `my.system.location.latitude` | float | — | Latitude for redshift |
 | `my.system.location.longitude` | float | — | Longitude for redshift |
 | `my.system.userDefaults.enable` | bool | `false` | User default applications |
+| `my.system.nix-ld.enable` | bool | `false` | nix-ld loader — run unpatched ELF binaries (Zed's downloaded language servers, ruff, generic Node) |
+| `my.system.nix-ld.libraries` | list | `[]` | Libraries *appended* to nixpkgs' default nix-ld set |
 
 ## my.desktop.gnome.* (GNOME Desktop)
 

@@ -84,6 +84,9 @@ in
     ./vscode-server.nix
     ./opencode-web
 
+    # ── ELF Compatibility ────────────────────────────────────────────────────
+    ./nix-ld
+
     # ── Utilities ───────────────────────────────────────────────────────────
     ./udisks2.nix
     ./ventoy
