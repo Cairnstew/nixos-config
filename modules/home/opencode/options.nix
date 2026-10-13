@@ -365,9 +365,17 @@ in
         OpenCode Zen is a first-class provider and must NOT appear in
         opencode.json's provider block.
 
-        NOTE: the auth.json key name is 'opencode-zen', but Zen model IDs in
-        config use the 'opencode/' prefix (e.g. opencode/deepseek-v4-flash-free),
-        per https://opencode.ai/docs/zen — do not guess 'opencode-zen/model'.
+        NOTE: the credential is written to TWO auth.json keys — 'opencode' AND
+        'opencode-zen' (see writers in config.nix). opencode resolves
+        `opencode/<model>` model IDs via auth.json["opencode"] (the models.dev
+        provider id), NOT via the 'opencode-zen' alias — verified live
+        2026-10-13: poisoning 'opencode' while 'opencode-zen' held a valid key
+        fails with "Invalid credential". Writing only 'opencode-zen' therefore
+        leaves the token opencode actually sends unmanaged, and any stale manual
+        `/connect` entry under 'opencode' silently keeps winning.
+        Zen model IDs in config use the 'opencode/' prefix (e.g.
+        opencode/deepseek-v4-flash-free), per https://opencode.ai/docs/zen — do
+        not guess 'opencode-zen/model'.
       '';
     };
 

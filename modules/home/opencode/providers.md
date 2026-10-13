@@ -92,9 +92,16 @@ OpenCode Zen is a **first-class provider**, not a custom provider.
 - **Model IDs use the `opencode/` prefix, NOT `opencode-zen/`** — the config
   model id format is `opencode/<model-id>`, e.g. `opencode/deepseek-v4-flash-free`.
   Do not guess `opencode-zen/model`; it will not resolve.
-- The auth.json key name is **`opencode-zen`** (matching the module option
-  `opencode-zen.keyFile`), while the model-ID prefix in config is **`opencode`**
-  — the two do not match, which is the common source of confusion.
+- **The credential is written to TWO auth.json keys — `opencode` and `opencode-zen`.**
+  opencode resolves `opencode/<model>` model IDs through `auth.json["opencode"]`
+  (the provider id in models.dev), **not** through the `opencode-zen` alias —
+  verified live 2026-10-13: poisoning `opencode` while `opencode-zen` held a valid
+  key fails with `Invalid credential`. A module that wrote only `opencode-zen`
+  would leave the token opencode actually sends unmanaged, and a stale manual
+  `/connect` entry under `opencode` would silently keep winning. The model-ID
+  prefix in config is **`opencode`** (`opencode/<model-id>`, e.g.
+  `opencode/deepseek-v4-flash-free`), per https://opencode.ai/docs/zen — do not
+  guess `opencode-zen/model`; it will not resolve.
 - Auth goes in `auth.json` only — no `provider` block in `opencode.json`
 
 **Known models (as of Aug 2026):**
