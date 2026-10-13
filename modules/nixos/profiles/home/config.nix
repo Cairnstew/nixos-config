@@ -2,7 +2,7 @@
 # Enable-logic for home-level profiles.
 # Extracted from default.nix so default.nix is a pure import manifest (F5).
 # Logic is behavior-identical to the original; moved comments are retained.
-{ lib, config, flake, ... }:
+{ config, flake, lib, pkgs, ... }:
 let
   cfg = config.my.homeProfiles;
   inherit (flake.config.me) username;
@@ -64,6 +64,16 @@ in
       obsidian.enable = lib.mkDefault true;
       "zed-editor".enable = lib.mkDefault true;
       "zed-editor".enableNotebooks = lib.mkDefault true;
+      # nixd drives the `nix` extension's LSP. It has to be on Zed's PATH:
+      # nothing on the system provides it (nixos-config installs no nixd/nil),
+      # so without this the extension fails with "The Nix language server
+      # (nixd) is not available in your environment". extraPackages is the
+      # module's own channel for that — it wraps Zed with --suffix PATH, so
+      # nixd stays off the user's general PATH. nixd (not nil) because the repo
+      # already ships nixd for opencode's LSP (modules/home/opencode/config.nix)
+      # and formats Nix with nixpkgs-fmt, which nixd can be pointed at.
+      # mkDefault so a host can swap in nil instead.
+      "zed-editor".extraPackages = lib.mkDefault [ pkgs.nixd ];
       opencode.commands.godot-refine = ../../../home/opencode/commands/godot-refine.md;
     })
 

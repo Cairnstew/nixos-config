@@ -594,6 +594,7 @@ All `my.*` options declared across module files.
 | `my.system.userDefaults.enable` | bool | `false` | User default applications |
 | `my.system.nix-ld.enable` | bool | `false` | nix-ld loader — run unpatched ELF binaries (Zed's downloaded language servers, ruff, generic Node) |
 | `my.system.nix-ld.libraries` | list | `[]` | Libraries *appended* to nixpkgs' default nix-ld set |
+| `my.programs.zed-editor.extraPackages` | list | `[ pkgs.nixd ]` | Packages on Zed's PATH only (dev profile default: nixd for the `nix` extension) |
 
 ## my.desktop.gnome.* (GNOME Desktop)
 

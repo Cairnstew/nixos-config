@@ -79,6 +79,36 @@ Notes / escape hatches:
   `settings.json` (upstream issue #46754; no settings key overrides it), so
   this repo cannot pin it. Nothing in this module sets anything Python-related.
 
+### Known issues (declared options that do nothing)
+
+- **`lspLogLevel`** and **`enableLspPolling`** are declared in `options.nix`
+  but **never applied to `settings.json`** — and those keys do not exist in
+  Zed 1.20.1 at all. Verified by grepping the Zed binary for the setting
+  names: `npm_path` / `ignore_system_version` are present, `lsp_log_level` and
+  `lsp_poll_interval` are absent (while keys this module really does write,
+  e.g. `ensure_final_newline_on_save`, are found). Left in place deliberately —
+  they are inert, not wrong — but don't reach for them expecting an effect.
+  Remove, or wire to a real key, if Zed ever adds them.
+
+### Nix LSP: nixd is provided, `nil` is not
+
+Zed's `nix` extension registers **two** language servers, `nixd` and `nil`,
+and tries both. `nixd` is on Zed's PATH via `extraPackages`
+(`my.profiles.development`; `pkgs.nixd`, matching what the opencode module
+already ships for its own LSP). `nil` is deliberately not installed, so you
+will still see one log line per project in `Zed.log`:
+
+```
+Failed to start language server "nil": from extension "Nix" version 0.1.5:
+nil must be installed manually.
+```
+
+That line is noise, not a failure — `nixd` serves Nix normally. Note that
+nixd formats through `nixfmt`, which is not on PATH here (this repo formats
+with `nixpkgs-fmt` via `nix fmt`), so format-in-place on a Nix file needs
+`lsp.nixd.settings`/`options.nixd.formatting.command` pointing at
+`nixpkgs-fmt` — a follow-up, not wired yet.
+
 ### Remote development
 
 Zed runs its UI locally and the language servers, tasks, and terminal on a
