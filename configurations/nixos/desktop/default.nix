@@ -110,18 +110,18 @@
 
   # ── Monitor Layout ─────────────────────────────────────────────────────────
   # DP-1: 2560×1440 @ 120Hz (center, primary)
-  # DP-3: 1920×1200 @ 60Hz (left, portrait) — Dell U2412M
-  # DP-2: 1920×1200 @ 60Hz (right, portrait) — Dell U2412M
+  # DP-3: 1920×1200 @ 60Hz (right, portrait) — Dell U2412M
+  # DP-2: 1920×1200 @ 60Hz (left, portrait) — Dell U2412M
   my.monitors = [
     {
       name = "DP-3";
       width = 1920;
       height = 1200;
       refreshRate = 60;
-      x = 0;
+      x = 3760;
       y = 0;
       transform = 1;
-      workspace = "2";
+      workspace = "3";
     }
     {
       name = "DP-1";
@@ -138,10 +138,10 @@
       width = 1920;
       height = 1200;
       refreshRate = 60;
-      x = 3760;
+      x = 0;
       y = 0;
       transform = 3;
-      workspace = "3";
+      workspace = "2";
     }
   ];
 
