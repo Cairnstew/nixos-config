@@ -120,7 +120,7 @@
       refreshRate = 60;
       x = 0;
       y = 0;
-      transform = 3;
+      transform = 1;
       workspace = "2";
     }
     {
@@ -140,7 +140,7 @@
       refreshRate = 60;
       x = 3760;
       y = 0;
-      transform = 1;
+      transform = 3;
       workspace = "3";
     }
   ];
