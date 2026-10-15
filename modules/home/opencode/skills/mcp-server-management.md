@@ -304,3 +304,32 @@ mcp.my-server = {
 - Record-only: `nix run .#app` was used so the config is self-contained in the
   project and needs no PATH assumption; the `timeout` field in the skill is a
   nixos-config-only option and is not valid in project `opencode.json`.
+
+### 2026-10-15 — a `"command"` MCP must not assume `nix` is on PATH
+- Lesson: an added MCP server passed every manual check and `nix flake check`,
+  yet failed the moment opencode (re)started, logging
+  `server unavailable key=houdini type=local status=failed`. Root cause: the
+  opencode **web service is started by systemd** (`opencode-web-*.service`) and
+  spawns MCP servers with its own restricted `PATH` — ripgrep, git, bash,
+  coreutils, findutils, gnugrep, gnused, systemd, and **no `nix`**. So a
+  project config command of `["nix", "run", ".#app"]` dies with
+  `env: 'nix': No such file or directory`, exit 127, which opencode reports
+  only as `status=failed` (no stderr detail). Manually re-running the same
+  command in a shell always works, because a login/interactive shell has the
+  full `PATH` — which is why the failure only appears after a restart and never
+  in a hand-run reproduction.
+- Fix: spell the interpreter out absolutely — `["/run/current-system/sw/bin/nix",
+  "run", ".#houdini-mcp"]` — verified by re-running the config's exact
+  `command` + `env` with the web server's real `PATH` copied straight out of
+  `/proc/<service-pid>/environ` (`env PATH="$SRVPATH" … `), which reproduces
+  exit 127 for the bare form and exit 0 for the absolute one.
+- How to diagnose this in general: `tr '\0' '\n' < /proc/$(pgrep -f 'opencode.*web')/environ | grep ^PATH=`
+  gives the exact PATH the MCP children inherit; compare it against the
+  server's absolute command. Also confirm **stdout stays empty** — any stray
+  stdout byte breaks the stdio JSON-RPC framing (`nix run` chatter goes to
+  stderr, so a 0-byte stdout is the success signal).
+- Record-only: this is why every *global* server in this repo's `mcp.*` blocks
+  already uses absolute `/nix/store/...` paths rather than bare `npx`/`nix` —
+  those are generated at activation time with no `PATH` dependency at all. The
+  project-level `.opencode/opencode.json` route is the one place the pattern
+  was missing.
