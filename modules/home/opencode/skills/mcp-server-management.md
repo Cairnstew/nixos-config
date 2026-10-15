@@ -333,3 +333,37 @@ mcp.my-server = {
   those are generated at activation time with no `PATH` dependency at all. The
   project-level `.opencode/opencode.json` route is the one place the pattern
   was missing.
+
+### 2026-10-15 — a `nix run .#app` MCP ref needs an *absolute* flake path
+- Lesson: after fixing the `PATH` problem above, the same server **still**
+  failed with the identical `server unavailable … status=failed`. Two more
+  traps, both invisible to a hand-run reproduction:
+  1. **cwd, not just PATH.** The opencode web daemon spawns MCP children from
+     its *own* cwd (its environ shows `PWD=/home/seanc/nixos-config`), never
+     from the project directory — so a bare `.#houdini-mcp` ref resolves
+     against the wrong directory and dies with
+     `error: could not find a flake.nix file`. Reproducing with the project as
+     cwd (the obvious thing to do) hides this completely.
+  2. **"It started" is not "it works".** A stdio server starts, sees stdin at
+     EOF, and exits 0 — so `exit 0` and a clean log look like success while
+     opencode reports failure. `status=failed` also carries no stderr detail,
+     so the log tells you nothing.
+- Fix: reference the flake by absolute path —
+  `["/run/current-system/sw/bin/nix", "run", "/abs/project#houdini-mcp"]` —
+  verified to work with cwd set to the *daemon's* cwd. For the `templates/houdini/`
+  template the scaffolded path is unknowable at commit time, so its flake's
+  shellHook regenerates `.opencode/opencode.json` on every `nix develop`
+  (idempotently, via `cmp` + atomic `mv`, resolving the root from
+  `git rev-parse --show-toplevel` like `mkApp` does) — the same pattern it
+  already uses for `pyrightconfig.json`. Do **not** bake in a build-time
+  `self.outPath`: it lands in `/nix/store/*-source`, is not a GC root, and
+  freezes the app at the revision current when the shell opened.
+- How to actually verify an MCP server: send a real JSON-RPC `initialize`
+  + `notifications/initialized` + `tools/list` over a pipe and assert you get
+  a tool count back. Run it with the child's `PATH` copied from
+  `/proc/<daemon-PID>/environ` **and** its cwd set to the daemon's cwd. A
+  `tools=43` response is the success signal; "the banner printed" is not.
+- Record-only: `nix flake check` on this repo currently fails with
+  `path '…-skills' is not valid` under `flake output 'checks'`. This is
+  pre-existing — reproduced with all local changes stashed — and is unrelated
+  to any `.opencode`/MCP work.
