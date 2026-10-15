@@ -282,3 +282,25 @@ mcp.my-server = {
 - Record-only: the actor page itself ships the exact MCP snippet
   (`{"type":"http","url":"https://mcp.apify.com/?tools=…"}`) — opencode's field
   is `"remote"` not `"http"`, so copy the URL, not the `type`.
+
+### 2026-10-15 — project-level `.opencode/opencode.json` was undocumented
+- Lesson: this skill only documents the nixos-config global path
+  (`my.programs.opencode.mcp` → `~/.config/opencode/opencode.json`). Tasking
+  "add this MCP to my project repo" (here: adding houdini-mcp to the `planet`
+  repo and to `templates/houdini/`, neither of which has an `mcp` block) had no
+  guidance to find — the project-local config lives in
+  `<repo>/.opencode/opencode.json` and is picked up automatically by opencode
+  when run from that directory. Different file, and different JSON shape: the
+  key is `"mcp"`, `"command"` is a **list**, `"type"` is
+  `"local"`/`"remote"`, and env vars go under `"env"` (not `"environment"` —
+  that is the nixos-config `my.*` spelling). The repo already follows this
+  pattern: `templates/godot/.opencode/opencode.json` is the worked example.
+- Fix: added `.opencode/opencode.json` to `templates/houdini/` and to the
+  `planet` repo with a `"houdini"` server (`nix run .#houdini-mcp`, stdio
+  transport, `HOUDINI_HOST`/`HOUDINI_PORT`/`MCP_TRANSPORT`), and documented
+  the MCP section in both READMEs. Verified both flakes still emit an app that
+  starts a working stdio MCP server (`mcp.run(transport="stdio")` logs
+  "Starting MCP server", no traceback).
+- Record-only: `nix run .#app` was used so the config is self-contained in the
+  project and needs no PATH assumption; the `timeout` field in the skill is a
+  nixos-config-only option and is not valid in project `opencode.json`.
