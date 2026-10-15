@@ -367,3 +367,43 @@ mcp.my-server = {
   `path '…-skills' is not valid` under `flake output 'checks'`. This is
   pre-existing — reproduced with all local changes stashed — and is unrelated
   to any `.opencode`/MCP work.
+
+### 2026-10-15 — `"env"` is not the opencode MCP env key; it is `"environment"`
+- Lesson: the RUN LOG entry above ("env vars go under `"env"` (not
+  `"environment"` — that is the nixos-config `my.*` spelling)") is **wrong**, and
+  it is the root cause of the houdini MCP failing with
+  `server unavailable key=houdini type=local status=failed`. opencode's MCP
+  client silently **ignores unknown keys** (`McpLocalConfig` has
+  `additionalProperties: false`), so `"env": {...}` is dropped without a warning.
+  The server then falls back to its own default — `MCP_TRANSPORT` unset means
+  **http** on :3055, so the child never speaks JSON-RPC on stdio and opencode
+  kills it with `Operation timed out after 30000ms`.
+- Evidence (measured this session, not inferred): `opencode mcp list` reported
+  the 30 s timeout; wrapping the configured `command` in a stdin/stdout tee
+  showed the banner `houdini-mcp: transport=http port=3055`, i.e. the env block
+  never landed; renaming `env` → `environment` flipped it to
+  `transport=stdio` and the same command reported `✓ houdini connected`. The
+  `templates/godot/.opencode/opencode.json` "worked example" cited above uses
+  `"environment"` — it was read past, not followed.
+- The correct key is **`environment`** (same spelling as the nixos-config
+  `my.*` option, and the only one that works in either file). Valid
+  `McpLocalConfig` keys: `type`, `command`, `cwd`, `environment`, `enabled`,
+  `timeout` — verify against the live schema `curl -s https://opencode.ai/config.json`
+  rather than trusting this file. The `timeout` field is **not** a
+  nixos-config-only option as claimed above: it is a valid local-MCP field
+  ("Timeout in ms for MCP server requests"), so it *is* honoured in a project
+  `opencode.json`.
+- How to diagnose this in general: `opencode mcp list <name>`-style status
+  output distinguishes the two failure modes — `Operation timed out after
+  30000ms` means the child started but never spoke JSON-RPC (wrong transport /
+  wrong interpreter / a banner on stdout), while an immediate failure means the
+  command itself could not run. Never trust a stderr banner: a stdio server that
+  sees stdin at EOF exits 0 and looks healthy.
+- Fix: renamed `env` → `environment` in `planet/.opencode/opencode.json`,
+  in `templates/houdini/.opencode/opencode.json`, and in the
+  `syncOpencodeConfig` shell hook of `templates/houdini/flake.nix` that
+  regenerates it on every `nix develop` (all three had to change, or the hook
+  would rewrite the two files back to the broken form).
+- Record-only: the 30 s MCP connect timeout is fixed in opencode and is not
+  configurable per server for the *connect* phase; `timeout` only scales the
+  per-request timeout.
