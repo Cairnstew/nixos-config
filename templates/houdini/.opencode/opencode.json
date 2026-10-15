@@ -1,0 +1,15 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "mcp": {
+    "houdini": {
+      "type": "local",
+      "command": ["/run/current-system/sw/bin/nix", "run", ".#houdini-mcp"],
+      "environment": {
+        "HOUDINI_HOST": "localhost",
+        "HOUDINI_PORT": "18811",
+        "MCP_TRANSPORT": "stdio"
+      },
+      "enabled": true
+    }
+  }
+}

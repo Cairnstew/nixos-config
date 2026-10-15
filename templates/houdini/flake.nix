@@ -183,6 +183,53 @@
             fi
           '';
 
+          # `.opencode/opencode.json` cannot name its own flake at commit
+          # time — a scaffolded project's absolute path is only known once it
+          # exists — and that path *must* be absolute: opencode spawns its MCP
+          # children from the web daemon's cwd (often `~/nixos-config`, never
+          # the project), so a `.#houdini-mcp` ref fails there with
+          # "could not find a flake.nix file".
+          #
+           # The project root is therefore resolved at shell-entry time, from
+           # git's toplevel like `mkApp` does, rather than captured as a
+           # build-time store path (which would also be GC-able and would freeze
+           # the app at whatever revision was current when the shell opened).
+           # Written idempotently so it does not dirty the tree on every entry.
+           #
+           # When editing the printf below, note the env key is **`environment`**,
+           # never `env`: opencode validates each MCP block against
+           # `McpLocalConfig` and silently drops unknown keys, so a `"env"` block
+           # loses `MCP_TRANSPORT=stdio`, the server falls back to HTTP on :3055
+           # and opencode reports only `status=failed` after a 30 s timeout.
+           syncOpencodeConfig = ''
+            mkdir -p .opencode
+            proj="$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
+            {
+              printf '%s\n' \
+                '{' \
+                '  "$schema": "https://opencode.ai/config.json",' \
+                '  "mcp": {' \
+                '    "houdini": {' \
+                '      "type": "local",' \
+                "      \"command\": [\"/run/current-system/sw/bin/nix\", \"run\", \"$proj#houdini-mcp\"]," \
+                '      "environment": {' \
+                '        "HOUDINI_HOST": "localhost",' \
+                '        "HOUDINI_PORT": "18811",' \
+                '        "MCP_TRANSPORT": "stdio"' \
+                '      },' \
+                '      "enabled": true' \
+                '    }' \
+                '  }' \
+                '}'
+            } > .opencode/opencode.json.new
+            if cmp -s .opencode/opencode.json.new .opencode/opencode.json; then
+              rm -f .opencode/opencode.json.new
+            else
+              mv .opencode/opencode.json.new .opencode/opencode.json
+              echo "  .opencode/opencode.json: MCP server pinned to \$proj"
+            fi
+          '';
+
           # Project-local Houdini environment.  $JOB is the project root and
           # $HIP where scene files live; ./houdini is exposed as a Houdini
           # package ('&' expands to Houdini's default search path).
@@ -258,8 +305,78 @@
                 exec ${bin} "$@"
               fi
             '';
+
+          # ── houdini-mcp: MCP server for Houdini ────────────────────────
+          # An MCP server (43 tools) that lets an AI assistant inspect and
+          # drive the *running* Houdini session over hrpyc, plus fetch SideFX
+          # documentation — wired up for this project by `.opencode/opencode.json`.
+          #
+          # Two things stop this simply being `python3Packages.houdini-mcp`:
+          #   1. upstream (github.com/oculairmedia/houdini-mcp) is not in
+          #      nixpkgs, so it is built from source here and pinned to a
+          #      commit — bump `rev`/`sha256` together when updating.
+          #   2. hrpyc (Houdini's RPyC server) speaks RPyC **5.x only**: the
+          #      6.x line changed the protocol, so rpyc 5.3.1 is built from
+          #      PyPI rather than taking `python3Packages.rpyc` (6.x).
+          rpyc5 = pkgs.python3Packages.buildPythonPackage rec {
+            pname = "rpyc";
+            version = "5.3.1";
+            src = pkgs.fetchurl {
+              url = "https://files.pythonhosted.org/packages/source/r/rpyc/rpyc-${version}.tar.gz";
+              sha256 = "0lmzrxc6f0sg6k0yvi6f2z44dkhiankdadv44sp1ibwzhxs328zj";
+            };
+            pyproject = true;
+            build-system = with pkgs.python3Packages; [ hatchling ];
+            dependencies = with pkgs.python3Packages; [ plumbum ];
+          };
+
+          houdiniMcp = pkgs.python3Packages.buildPythonPackage rec {
+            pname = "houdini-mcp";
+            version = "1.0.0";
+            src = pkgs.fetchFromGitHub {
+              owner = "oculairmedia";
+              repo = "houdini-mcp";
+              rev = "d7c2e0ea3e5711f417881d04d134c741c7415231";
+              sha256 = "sha256-g7qiJEKaO1EKyK5IP9srbz02LnLNoJK2tiAmQLwsrMA=";
+            };
+            pyproject = true;
+            build-system = with pkgs.python3Packages; [ setuptools wheel ];
+            dependencies = with pkgs.python3Packages; [
+              fastmcp
+              rpyc5
+              python-dotenv
+              requests
+              beautifulsoup4
+            ];
+          };
+
+          # Run the MCP server.  Invoked as `python -m houdini_mcp` rather than
+          # via the `houdini-mcp` console script because only the module reads
+          # `MCP_TRANSPORT` (the script calls run_server() with fixed HTTP
+          # defaults).  A dedicated python env is used so `houdini_mcp` and its
+          # dependencies (fastmcp, rpyc 5.x, …) are all importable.
+          #
+          #   nix run .#houdini-mcp                          # HTTP on :3055
+          #   nix run .#houdini-mcp -- ...                   # extra CLI args
+          #   MCP_TRANSPORT=stdio nix run .#houdini-mcp     # stdio, which is
+          #                                                   # what opencode uses
+          houdiniMcpEnv = pkgs.python3.withPackages (ps: [ houdiniMcp ]);
+
+          houdiniMcpApp = pkgs.writeShellApplication {
+            name = "houdini-mcp";
+            runtimeInputs = [ pkgs.nix ];
+            text = ''
+              echo "houdini-mcp: transport=''${MCP_TRANSPORT:-http} port=''${MCP_PORT:-3055}" \
+                   "-> Houdini ''${HOUDINI_HOST:-localhost}:''${HOUDINI_PORT:-18811}" >&2
+              echo "houdini-mcp: start hrpyc in Houdini's Python Shell first:" >&2
+              echo "houdini-mcp:   import hrpyc; hrpyc.start_server(port=18811)" >&2
+              exec ${houdiniMcpEnv}/bin/python3 -m houdini_mcp "$@"
+            '';
+          };
         in
         {
+          packages.houdini-mcp = houdiniMcp;
+
           devShells.default = pkgs.mkShell {
             name = "houdini-project";
 
@@ -277,6 +394,7 @@
               ${linkHouSite true}
               ${linkTypeStubs}
               ${syncPyrightConfig}
+              ${syncOpencodeConfig}
               echo "Houdini project shell"
               echo "  hython:    $(command -v ${hythonBin} || echo 'not found')"
               echo "  Houdini:   ''${HOUDINI_MAJOR_RELEASE:-unknown}"
@@ -292,6 +410,7 @@
               echo "  pyright      type-check with Houdini's hou    (pyright scripts/)"
               echo "  basedpyright type-check as Zed does          (basedpyright scripts/)"
               echo "  ruff         lint                             (ruff check .)"
+              echo "  houdini-mcp  MCP server for AI scene control  (nix run .#houdini-mcp)"
             '';
           };
 
@@ -312,6 +431,14 @@
             # basedpyright (Zed's language server) from the CLI:
             #   nix run .#basedpyright -- scripts/example.py
             basedpyright = basedpyrightApp;
+
+            # Scene control from an AI assistant:
+            #   nix run .#houdini-mcp
+            # Wired into opencode via .opencode/opencode.json (stdio).
+            houdini-mcp = {
+              type = "app";
+              program = "${houdiniMcpApp}/bin/houdini-mcp";
+            };
           };
         };
     };

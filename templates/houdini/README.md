@@ -64,6 +64,75 @@ On shell entry the flake exports:
 `&` expands to Houdini's default search path, so `./houdini` is *prepended*
 rather than replacing the built-in paths.
 
+## MCP server (AI scene control)
+
+The project ships an [MCP](https://modelcontextprotocol.io) server
+([oculairmedia/houdini-mcp](https://github.com/oculairmedia/houdini-mcp),
+43 tools) that lets an AI assistant inspect and drive the **running** Houdini
+session: read scene/node/parameter state, create and wire nodes, execute Python
+and HScript, render the viewport, capture pane screenshots, and fetch SideFX
+docs. It talks to Houdini over `hrpyc` (RPyC), so nothing is baked into the
+`.hip` file and the server can be restarted independently of the session.
+
+OpenCode picks it up automatically from `.opencode/opencode.json` (stdio
+transport, `localhost:18811`). Houdini itself must expose the RPC server first
+— in Houdini's **Python Shell**:
+
+```python
+import hrpyc
+hrpyc.start_server(port=18811)
+```
+
+Or add those two lines to `123.py` to start it with every scene.
+
+The server also runs on its own:
+
+```bash
+nix run .#houdini-mcp                      # HTTP on :3055 (health: /health)
+MCP_TRANSPORT=stdio nix run .#houdini-mcp # what opencode uses
+```
+
+> **Why the command is an absolute flake ref, and who writes it:** opencode
+> spawns MCP servers from its **web daemon's cwd** — in practice often
+> `~/nixos-config`, never the project — so a `.#houdini-mcp` ref dies there with
+> `error: could not find a flake.nix file` and opencode only reports
+> `server unavailable … status=failed`. The absolute path has to be known before
+> the file is committed, which is impossible for a scaffolded project, so the
+> **shell hook regenerates `.opencode/opencode.json` on every `nix develop`**
+> (idempotently — it only rewrites when the path actually changed), exactly as
+> it already regenerates `pyrightconfig.json`. Enter the shell once before
+> expecting opencode to find the server.
+>
+> `/run/current-system/sw/bin/nix` is likewise spelled out absolutely rather
+> than as bare `nix`: this service runs under systemd with a restricted `PATH`
+> (ripgrep, git, coreutils … — no `nix`), where a bare `nix` fails with
+> `env: 'nix': No such file or directory`, exit 127.
+>
+> **And the env block key is `"environment"`, not `"env"`.** This is the trap
+> that cost the most time: opencode validates an MCP block against
+> `McpLocalConfig` (`additionalProperties: false`) and **silently drops keys it
+> does not recognise** — a `"env": {...}` block is discarded with no warning, so
+> `MCP_TRANSPORT=stdio` never arrives and the server falls back to its default
+> of **HTTP on :3055**. It binds a socket, never speaks JSON-RPC on stdio, and
+> opencode kills it with `Operation timed out after 30000ms`, reported upstream
+> only as `status=failed`. The valid keys are `type`, `command`, `cwd`,
+> `environment`, `enabled`, `timeout` — `environment` is also the spelling the
+> nixos-config `my.*` module uses, so the two files never diverge. If a server
+> here ever stops working, check the transport first: `opencode mcp list`
+> distinguishes the failure modes (`Operation timed out after 30000ms` = the
+> child started but never spoke stdio; an immediate failure = the command could
+> not run at all).
+
+Configuration via environment variables: `HOUDINI_HOST` / `HOUDINI_PORT`
+(default `localhost:18811`), `MCP_TRANSPORT` / `MCP_PORT` (default `http`/`3055`).
+The tools only see the Houdini session, so `check_connection()` is the usual
+first call — it reports whether `hrpyc` answered.
+
+Two packaging notes: the upstream package is not in nixpkgs, so `flake.nix`
+pins it to a commit; and `hrpyc` speaks **RPyC 5.x only** (the 6.x line changed
+the protocol), so rpyc 5.3.1 is built from PyPI rather than taken from
+`python3Packages.rpyc`.
+
 ## Editor setup (Zed, VS Code, Neovim, …)
 
 > **First, once per machine: enter the shell, then restart the language server.**
@@ -289,6 +358,7 @@ ruff format .
 ├── flake.nix          # dev shell + `nix run` apps (system Houdini)
 ├── pyrightconfig.json # type-checking; resolves `hou` via .stubs/.hou-libs/.hou-site
 ├── .zed/              # Zed project settings + tasks
+├── .opencode/         # opencode config — the houdini MCP server (stdio)
 ├── hip/               # scene files ($HIP) — *.hip, *.hiplc
 ├── houdini/           # a Houdini package, auto-loaded via HOUDINI_PATH
 │   ├── otls/          #   digital assets (*.hda, *.otl)

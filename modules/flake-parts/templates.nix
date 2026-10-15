@@ -90,7 +90,7 @@ in
     '';
 
     # 3D / VFX templates
-    houdini = mkTemplate "houdini" "Houdini project using the system-installed Houdini, with a dev shell and nix run apps" ''
+    houdini = mkTemplate "houdini" "Houdini project using the system-installed Houdini, with a dev shell, nix run apps, and an MCP-integrated .opencode config" ''
       # Houdini project
 
       This template has **no** `houdini` package — SideFX Houdini is
@@ -102,6 +102,36 @@ in
 
       **Never add `$HFS/bin` to `PATH`.** That bypasses the module's FHS
       launcher and Houdini crashes on startup. Use the wrappers by name.
+
+      ## MCP server (AI scene control)
+
+      `.opencode/opencode.json` wires an MCP server (stdio, `localhost:18811`)
+      into opencode, so an AI assistant can inspect and drive the **running**
+      Houdini session — read scene state, create/wire nodes, run Python, render.
+
+      The MCP server only talks to a live session, so **start `hrpyc` in
+      Houdini first** (Python Shell, or add it to `123.py`):
+
+      ```python
+      import hrpyc
+      hrpyc.start_server(port=18811)
+      ```
+
+      Standalone (no opencode): `nix run .#houdini-mcp` — HTTP on `:3055`,
+      health check at `/health`.
+
+      `.opencode/opencode.json` has to reference this project by **absolute**
+      path: opencode spawns MCP servers from its web daemon's cwd, not the
+      project, so a `.#houdini-mcp` ref fails there with `could not find a
+      flake.nix file` (reported only as `server unavailable … status=failed`).
+      The path is unknowable until the project exists, so the shell hook
+      **regenerates `.opencode/opencode.json` on every `nix develop`** — enter
+      the shell once before expecting opencode to find the server. It uses
+      `/run/current-system/sw/bin/nix` for the same reason (`nix` is absent from
+      the daemon's restricted `PATH`). The env block is keyed `environment`,
+      not `env` — opencode silently drops unrecognised keys, and a dropped
+      `MCP_TRANSPORT=stdio` sends the server to HTTP :3055, where opencode
+      times it out after 30 s and only reports `status=failed`.
     '';
 
     # Game development templates
