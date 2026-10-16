@@ -39,8 +39,9 @@
   };
 
   # ── VS Code Server ──────────────────────────────────────────────────────
-  # Enables Remote-SSH on NixOS (patches dynamically linked Node binaries)
-  my.programs.vscode.server.enable = true;
+  # Enables Remote-SSH on NixOS (patches dynamically linked Node binaries).
+  # Disabled to trim build time/closure — flip back to true to use Remote-SSH.
+  my.programs.vscode.server.enable = false;
 
   # ── Home Profiles ────────────────────────────────────────────────────────
   my.homeProfiles = {
@@ -54,20 +55,20 @@
   # CV content MCP server — thin CRUD over the Cairnstew/CV sqlite store
   # (same host as goals; the always-on headless box with opencode-web).
   my.homeManager.extraConfig.my.programs.cv.enable = true;
-  # Prism Launcher (Minecraft client) — launcher defaults to prismlauncher,
-  # data dir on the large SATA drive to keep NVMe free.
+  # Prism Launcher (Minecraft client) — DISABLED to trim build time/closure.
+  # Pulls a large Qt/Java app; only needed for the remote-GUI Minecraft session
+  # below. Re-enable with `enable = true` (+ the remoteGui block) to restore.
   my.homeManager.extraConfig.my.programs.minecraft = {
-    enable = true;
+    enable = false;
     dataDir = "/mnt/data/prismlauncher";
   };
 
-  # ── Remote GUI (Prism Launcher on a virtual display) ──────────────────────
-  # Runs the launcher's GUI headlessly on Xvfb :10, shared via x11vnc so it can
-  # be viewed from the desktop host over the tailnet. No firewall change needed
-  # (tailscale0 is trusted). Connect with any VNC client:
-  #   vncviewer server.tail685690.ts.net:5900   (or GNOME Connections)
+  # ── Remote GUI (Prism Launcher on a virtual display) ────────────────────
+  # DISABLED to trim build time/closure — Prism Launcher/Openbox/Xvfb is a
+  # heavy GUI stack only needed for the remote Minecraft session. Re-enable to
+  # restore the browser VNC console at vncviewer server:5900.
   my.services.remoteGui = {
-    enable = true;
+    enable = false;
     windowManager = pkgs.openbox; # decorations + focus for the launcher window
     apps.prismlauncher = {
       command = "${pkgs.prismlauncher}/bin/prismlauncher --dir /mnt/data/prismlauncher";
@@ -457,13 +458,11 @@
     };
   };
 
-  # ── Neko (Remote Browser) — server-side Firefox session ─────────────────
-  # Re-enabled for the Civitai dashboard entry: browser session/profile lives
-  # on this US box (open from any machine at /neko/), auto-login to Civitai
-  # inside it, traffic egress via this server. natIp default = this box's
-  # tailscale IP (tailscale0 is a trusted firewall interface).
+  # ── Neko (Remote Browser) — DISABLED to trim build time/closure ──────────
+  # Was a server-side Firefox session for the Civitai dashboard. Pulls a full
+  # Firefox container; re-enable with `enable = true` to restore.
   my.services.neko = {
-    enable = true;
+    enable = false;
     adminPasswordFile = config.age.secrets."neko-admin-password".path;
     userPasswordFile = config.age.secrets."neko-user-password".path;
     # Persistent Firefox profile (named docker volume → survives container
@@ -486,15 +485,14 @@
   # types.listOf concatenation → [ me.sshKey "desktop-key" ].
   my.services.ssh.authorizedKeys = lib.mkDefault [ "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIGEp55lp8743MYUsvmZ4XXnhvJ7c5GQDQzIg9GQzWPbg sean.cairnsst@gmail.com" ]; # desktop
 
-  # ── Music Playlists (moved from desktop 2026-08-21) ─────────────────────
-  # Hash-pinned music playlists (modules/nixos/music/playlists/) installed
-  # into the media drive — songs declared in git, byte-pinned via
-  # checksums.json. `example` is a `direct` source (Nix FOD); `funky` is a
-  # yt-dlp source from a Spotify-CSV sync (runtime downloader outside the
-  # build sandbox — see config.nix).
-  my.services.music.enable = true;
-  my.services.music.playlists.example.enable = true;
-  my.services.music.playlists.funky.enable = true;
+  # ── Music Playlists — DISABLED to trim build time/closure ──────────────
+  # (moved from desktop 2026-08-21). Hash-pinned music playlists
+  # (modules/nixos/music/playlists/) installed into the media drive — songs
+  # declared in git, byte-pinned via checksums.json. `example` is a `direct`
+  # source (Nix FOD); `funky` is a yt-dlp source from a Spotify-CSV sync
+  # (runtime downloader outside the build sandbox). Re-enable with
+  # `enable = true` (+ the two playlists) to restore.
+  my.services.music.enable = false;
 
   # ── Unfree Software (allowUnfree set globally in flake.nix) ────────────
   nixpkgs.config = {
