@@ -40,6 +40,16 @@
   # comfy-ui is disabled too — every listed name must have a live ExecStart.
   my.system.hardening.cpuQuota = { };
 
+  # ── Jupyter — DISABLED 2026-10-16 ──────────────────────────────────────
+  # common.nix enables the development profile on every host (mkDefault true),
+  # and development.nix turns on Jupyter from it. On this headless server the
+  # JupyterLab closure (jupyter-server/lab/lsp/notebook) is heavy AND its
+  # upstream jupyter-server test suite is flaky — test_disconnect_resolves_
+  # orphaned_kernel_info_future fails with an asyncio TimeoutError, which fails
+  # the whole toplevel build. Override the universal default here; re-enable
+  # with `enable = true` if you want notebook projects on the server.
+  my.services.jupyter.enable = false;
+
   # ── VS Code Server ──────────────────────────────────────────────────────
   # Enables Remote-SSH on NixOS (patches dynamically linked Node binaries).
   # Disabled to trim build time/closure — flip back to true to use Remote-SSH.
