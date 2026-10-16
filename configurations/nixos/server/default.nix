@@ -23,7 +23,11 @@
     # GPU for image generation. Re-enable with `ai.enable = true` plus
     # `my.services.ollama.enable = true` (the ai profile asserts Ollama).
     ai.enable = false;
-    gpu.nvidia-headless.enable = true;
+    # NVIDIA headless + CUDA DISABLED 2026-10-16: the driver/CUDA closure is
+    # the single biggest build-time and disk consumer on this box and the AI/ML
+    # stack below (ComfyUI/Ollama) is now off. Flip both this and
+    # `my.services.comfyui.enable` back to true to restore GPU workloads.
+    gpu.nvidia-headless.enable = false;
     location.enable = true;
   };
 
@@ -32,11 +36,9 @@
   # jellyfin; hardening mapAttrs' CREATES a unit definition for every name in
   # the list, so with the AI stack paused it shipped a docker-ollama unit with
   # no ExecStart — systemd refused it and `nix run .#activate` exited 4
-  # ("Service has no ExecStart="). comfy-ui is kept: it is the live heavy
-  # service and the 400% cap keeps SSH responsive during image generation.
-  my.system.hardening.cpuQuota = {
-    "comfy-ui" = "400%";
-  };
+  # ("Service has no ExecStart="). Empty for the same reason now that
+  # comfy-ui is disabled too — every listed name must have a live ExecStart.
+  my.system.hardening.cpuQuota = { };
 
   # ── VS Code Server ──────────────────────────────────────────────────────
   # Enables Remote-SSH on NixOS (patches dynamically linked Node binaries).
@@ -238,23 +240,14 @@
     autoRollback.enable = true;
   };
 
-  # ── ComfyUI (AI Image Generation) ───────────────────────────────────────
-  # Primary GPU workload on this box (RTX 3060 12GB): node-based diffusion /
-  # image generation. Ollama + the AI LLM frontends are disabled above so
-  # ComfyUI has the GPU to itself. Accessible at
-  # https://server.tail685690.ts.net/comfyui/ (proxy upstream registered by
-  # the module) and directly on LAN :8188.
-  #
-  # ComfyUI-Manager is enabled as the `comfyui_manager` PYTHON PACKAGE (the
-  # only install method ComfyUI 0.25.x accepts — it checks find_spec and
-  # silently disables --enable-manager when the package is absent). The module
-  # builds it from the pinned 4.2.2 release tag (main lags at 3.41 and fails
-  # the frontend's >= 4.2.1 check) and injects it via PYTHONPATH. Do NOT list
-  # the Manager under `customNodes` — that path is legacy and fails to import
-  # on 4.x.
+  # ── ComfyUI (AI Image Generation) — DISABLED 2026-10-16 ────────────────
+  # Was the primary GPU workload (RTX 3060 12GB). Disabled to cut rebuild
+  # time and reclaim disk: the ComfyUI python/torch closure plus its 22
+  # curated custom-node packs is the largest build in this config. Re-enable
+  # with `enable = true` AND `gpu.nvidia-headless.enable = true` above.
   my.services.comfyui = {
     # enable is explicit now that profiles/system/ai.nix no longer supplies it
-    enable = true;
+    enable = false;
     listenHost = "0.0.0.0"; # tailscale-serve + LAN access
     port = 8188;
     dataDir = "/mnt/data/comfyui";
@@ -497,7 +490,8 @@
   # ── Unfree Software (allowUnfree set globally in flake.nix) ────────────
   nixpkgs.config = {
     # allowUnfree removed — globally set in flake.nix perSystem (M4d)
-    cuda.acceptLicense = true;
+    # cuda.acceptLicense removed 2026-10-16 — NVIDIA/CUDA disabled above, so
+    # accepting the CUDA licence would only drag the toolkit closure back in.
   };
 
 }
