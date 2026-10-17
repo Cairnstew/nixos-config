@@ -50,7 +50,6 @@ in
       deepinfra-key = { owner = lib.mkForce username; };
       opencode-token = { owner = lib.mkForce username; };
       opencode-token-2 = { owner = lib.mkForce username; };
-      laptop-opencode-key = { owner = lib.mkForce username; };
       opencodeWeb-password = { owner = lib.mkForce username; group = lib.mkForce "users"; };
       groq-api-key = { owner = lib.mkForce username; };
       openrouter-api-key = { owner = lib.mkForce username; };
@@ -148,12 +147,10 @@ in
           deepinfra.keyFile = config.age.secrets.deepinfra-key.path;
           opencode-go.keyFile = config.age.secrets.opencode-token.path;
           openrouter.keyFile = config.age.secrets.openrouter-api-key.path;
-          # OpenCode Zen key: uses the dedicated opencode-token-2 secret, while
-          # opencode-go above keeps the shared opencode-token. The laptop
-          # overrides this to its own laptop-opencode-key secret
-          # (see configurations/nixos/laptop/default.nix).
+          # OpenCode Zen key: temporarily using opencode-token (same as opencode-go)
+          # because opencode-token-2 is exhausted. Swap back when refreshed.
           opencode-zen.keyFile =
-            lib.mkDefault config.age.secrets."opencode-token-2".path;
+            lib.mkDefault config.age.secrets."opencode-token".path;
           # CLI + 5-min cache refresher for OpenCode Go usage (dashboard feeds
           # off ~/.cache/opencode/go-usage.json). Guarded on the secret existing.
           opencode-go.usage.enable =

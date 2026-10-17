@@ -126,8 +126,8 @@
   };
 
   # ── OpenCode Zen provider ────────────────────────────────────────────────
-  # The laptop uses a dedicated zen key (laptop-opencode-key) instead of the
-  # shared OpenCode token used by default on all other hosts.
+  # Uses the shared opencode-token (same as opencode-go). The old dedicated
+  # laptop-opencode-key secret was deleted; swap back if a new one is added.
   my.homeManager.extraConfig.my.programs.opencode.opencode-zen.keyFile =
-    config.age.secrets.laptop-opencode-key.path;
+    config.age.secrets.opencode-token.path;
 }
