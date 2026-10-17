@@ -112,7 +112,8 @@ in
       type = types.bool;
       default = false;
       description = ''
-        Enable the GNOME Shell native host connector.
+        Enable the GNOME Shell native host connector, by registering
+        `gnome-browser-connector` in `programs.firefox.nativeMessagingHosts`.
         Note: requires NixOS option `services.gnome.gnome-browser-connector.enable = true`.
       '';
     };

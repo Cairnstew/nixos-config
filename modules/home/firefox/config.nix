@@ -26,7 +26,10 @@ in
       enable = true;
       package = lib.mkDefault pkgs.firefox;
 
-      enableGnomeExtensions = cfg.enableGnomeExtensions;
+      # Home Manager removed `programs.firefox.enableGnomeExtensions` (it now
+      # fails the build with "no longer has any effect"). The supported route is
+      # to register the connector as a native messaging host directly.
+      nativeMessagingHosts = lib.optional cfg.enableGnomeExtensions pkgs.gnome-browser-connector;
 
       policies = {
         ExtensionSettings =
