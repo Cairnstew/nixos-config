@@ -302,7 +302,24 @@
       returnType = "json";
       tooltip = true;
       position = "right";
-      order = 90; # between tray and custom/gpu
+      order = 90; # right of custom/opencode-key, left of nothing (last)
+    };
+
+    # OpenCode general-provider token indicator + toggle. Shows OC1/OC2 for the
+    # live `opencode` credential in auth.json; clicking flips it between the
+    # opencode-token / opencode-token-2 agenix secrets without a rebuild.
+    # --click notifies + sends waybar SIGUSR2 so the label repaints at once
+    # rather than waiting out the interval. Absolute paths: waybar's unit PATH
+    # does NOT include /etc/profiles/per-user/<user>/bin (see the comment on
+    # spotify-now-playing above).
+    bar.customModules.opencode-key = {
+      exec = "/etc/profiles/per-user/${flake.config.me.username}/bin/opencode-key-toggle --json";
+      interval = 30;
+      returnType = "json";
+      tooltip = true;
+      position = "right";
+      order = 89; # just left of opencode-usage, both in the right cluster
+      on-click = "/etc/profiles/per-user/${flake.config.me.username}/bin/opencode-key-toggle --click";
     };
   };
 

@@ -293,6 +293,18 @@ let
     #custom-spotify-now-playing.playing { color: #1db954; }
     #custom-spotify-now-playing.paused { color: #6c7086; }
     #custom-spotify-now-playing.idle { color: #6c7086; }
+
+    /* OpenCode general-provider token indicator (OC1 / OC2). The text colour
+       comes from an inline <span> in the JSON (blue = token 1, green = token 2,
+       red = key matches neither), so only the chrome is styled here. */
+    #custom-opencode-key {
+      padding: 0 8px;
+      border-radius: 4px;
+      color: #cdd6f4;
+    }
+    #custom-opencode-key:hover {
+      background: rgba(137,180,250,0.18);
+    }
     /* Inline media-control buttons (left of the song info) — one visual cluster. */
     #custom-spotify-back, #custom-spotify-play, #custom-spotify-forward {
       padding: 0 6px;

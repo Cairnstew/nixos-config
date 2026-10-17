@@ -200,6 +200,7 @@ let
     # First-class providers
     { name = "opencode-go"; keyFile = cfg.opencode-go.keyFile; }
     { name = "opencode-zen"; keyFile = cfg.opencode-zen.keyFile; }
+    { name = "opencode"; keyFile = cfg.opencode-zen.keyFile; }
     { name = "anthropic"; keyFile = cfg.anthropic.keyFile; }
     { name = "groq"; keyFile = cfg.groq.keyFile; }
     { name = "openai"; keyFile = cfg.openai.keyFile; }
@@ -656,6 +657,24 @@ in
     # via sqlite3 CLI; without it the lens silently no-ops.
     {
       home.packages = [ pkgs.sqlite ];
+    }
+
+    # ── General-provider credential toggle ───────────────────────────────────
+    # opencode-zen.keyFile is a single static Nix option, so swapping between
+    # opencode-token / opencode-token-2 meant a full nixos-rebuild. auth.json is
+    # merged (not overwritten) by writeAuthJsonScript, so `opencode-key-toggle`
+    # can flip the `opencode` + `opencode-zen` entries in place.
+    {
+      home.packages = [
+        (pkgs.writeShellApplication {
+          name = "opencode-key-toggle";
+          # systemd for `systemctl --user show -p MainPID` (waybar repaint);
+          # procps is deliberately NOT used — see waybar_reload() in the script
+          # for why name/pgrep-based signalling does not work here.
+          runtimeInputs = with pkgs; [ jq coreutils systemd ];
+          text = builtins.readFile ./key-toggle.sh;
+        })
+      ];
     }
 
     # ── Self-improve commit-helper rate caps (mechanical, Decision 3) ────────
