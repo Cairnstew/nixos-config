@@ -40,7 +40,18 @@ in
       max-jobs = 4;
       cores = 0;
       min-free = lib.mkDefault (5 * 1024 * 1024 * 1024);
-      max-free = lib.mkDefault (30 * 1024 * 1024 * 1024);
+      # max-free is the free-space *ceiling* at which the daemon starts
+      # deleting store paths, NOT a "keep this much spare" target (that is
+      # min-free). Setting it to 30 GiB on a 379G disk meant that with 73 GiB
+      # actually free the auto-GC ran continuously, deleting freshly-built
+      # paths that were valid in the Nix DB but not yet referenced by a
+      # finished derivation. The symptom is a build failing on a path Nix
+      # insists is fine:
+      #   error: getting attributes of path "/nix/store/...-foo": No such file
+      # while `nix-store --realise <path>` still exits 0. See GOTCHAS.md.
+      # 100 GiB keeps the store bounded without firing on every rebuild;
+      # delete this line entirely if an unbounded store is preferred.
+      max-free = lib.mkDefault (100 * 1024 * 1024 * 1024);
       auto-optimise-store = true;
       experimental-features = [ "nix-command" "flakes" ];
       # I don't have an Intel mac.
