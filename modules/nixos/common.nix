@@ -24,6 +24,7 @@ in
   imports = [
     # ── Core System ────────────────────────────────────────────────────────
     ./nix.nix
+    ./build-workarounds
     ./primary-as-admin.nix
     ./self-ide.nix
     ./_1password

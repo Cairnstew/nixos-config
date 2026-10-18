@@ -74,15 +74,14 @@ self: super: {
     };
   });
 
-  # inline-snapshot 0.34.2: 3 of 1402 tests fail in the Nix sandbox (snapshot
-  # write-back + codegen tests that exercise file I/O). It's a build-time
-  # (not runtime) dep of fastapi → openapi-core → jupyterlab-server →
-  # jupyter.service. Disable tests so the build chain unblocks.
-  pythonPackagesExtensions = super.pythonPackagesExtensions ++ [
-    (pyfinal: pyprev: {
-      inline-snapshot = pyprev.inline-snapshot.overridePythonAttrs (old: {
-        doCheck = false;
-      });
-    })
-  ];
+  # inline-snapshot 0.34.2 (and anyio 4.14.2) both need a test-skipping
+  # override to build from source, but applying one unconditionally is not
+  # free: any override changes the derivation hash, which loses the
+  # cache.nixos.org hit for the package and its whole dependent closure
+  # (inline-snapshot → fastapi → openapi-core → jupyterlab-server;
+  # anyio → httpx/starlette → fastapi/jupyter).
+  #
+  # They are now opt-in via `my.nixpkgs.buildWorkarounds`, in
+  # modules/nixos/build-workarounds — see that module's options for when to
+  # enable each and why. See GOTCHAS.md.
 }
