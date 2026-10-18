@@ -660,6 +660,10 @@
 
   # ── LLM / AI ─────────────────────────────────────────────────────────────
   services.sillytavern = {
+    # Disabled on desktop: the entertainment profile turns it on via
+    # lib.mkDefault, and the declarative config below is kept for re-enabling.
+    enable = lib.mkForce false;
+
     # Data directory — use upstream default /var/lib/SillyTavern matching ST's XDG path
 
     # Server
