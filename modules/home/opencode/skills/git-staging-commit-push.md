@@ -333,3 +333,22 @@ gh pr merge <pr-number> --merge --repo Cairnstew/nixos-config
 - `skills/deploy-workflow.md` — Deployment and activation workflow
 - `AGENTS.md` §9 Style & Lint — Formatting rules and conventions
 - `.github/workflows/README.md` — Full CI pipeline documentation
+
+---
+
+## RUN LOG
+
+### 2026-10-20 — Pre-Commit Checks: `nix flake check --no-build` cannot validate this flake
+- Lesson: the Pre-Commit Checks section lists `nix flake check --no-build` as the
+  quick local check, so this session ran it twice (a few minutes plus a capped
+  OOM) before finding the repo's own notes. It cannot complete here: the flake
+  needs eval-time-only source paths realised, and `--no-build` refuses them.
+  The observed failures were `path '...-skills' is not valid` while evaluating a
+  host toplevel, and then `path '...-source' is not valid` while checking
+  `checks.x86_64-linux.build-desktop` — the same class as the `-secrets` entry
+  at `GOTCHAS.md:556`.
+- Fix: use the sequence CI actually runs instead of `--no-build` —
+  `nix eval .#nixosConfigurations.<host>.config.system.build.toplevel.drvPath`
+  per host, then `nix eval .#packages.x86_64-linux` / `.#checks.x86_64-linux` /
+  `.#nixosModules` / `.#overlays` with `--apply 'x: builtins.length
+  (builtins.attrNames x)'`. See `.github/workflows/smart-ci.yml:137`.
