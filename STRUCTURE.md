@@ -123,7 +123,7 @@ Flake-level modules for outputs, packages, and development tools. `flake.nix` au
 | `nixos-anywhere-deploy/` | Per-host nixos-anywhere deploy packages (`deploy-<host>`, `prepare-keys-<host>`) [→ packages.deploy-<host>] |
 | `secrets/` | Secrets CLI tools: `secrets-validate`, `secrets-set`, and the `.#secrets` devShell |
 | `live-iso/` | Custom NixOS live ISO builder — defines `live.isos` option [→ packages.live-iso-<name>] |
-| `ventoy/` | Ventoy multi-boot USB — options, answer-file generation, deploy script [→ packages.ventoy-deploy + packages.live-iso-ventoy] |
+| `ventoy/` | Ventoy multi-boot USB — options, answer-file generation, deploy script [→ flake outputs `ventoy-deploy` + `ventoy-bundle`, deliberately NOT `packages.*` so `nix flake check` does not force the Windows ISO closure] |
 | `vm/` | Per-host QEMU VM builder — `packages.<host>-vm` / `-vm-headless` |
 
 ### modules/nixos/

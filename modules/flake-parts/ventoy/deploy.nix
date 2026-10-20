@@ -1,4 +1,4 @@
-{ config, lib, inputs, ... }:
+{ config, lib, inputs, withSystem, ... }:
 let
   # flake-parts my.* namespace (renamed from config.ventoy)
   vCfg = config.my.ventoy;
@@ -68,104 +68,111 @@ let
 
 in
 {
-  config.perSystem = { pkgs, system, config, ... }:
-    let
-      # ── ventoy.json ───────────────────────────────────────────────
-      ventoyJson =
-        let
-          entries = lib.flatten (lib.forEach pluginNames (baseName:
-            lib.forEach modeSuffixes (suffix:
-              let
-                key = if suffix == "" then baseName else "${baseName}_${suffix}";
-                raw = vCfg.settings.${key} or null;
-                cleaned = cleanPluginValue baseName raw;
-              in
-              lib.optional (shouldInclude cleaned) {
-                name = key;
-                value = cleaned;
-              })
-          ));
-        in
-        builtins.listToAttrs entries // vCfg.extraConfig;
+  # ventoy-deploy / ventoy-bundle are exported as top-level flake outputs
+  # rather than as packages. `nix flake check` requires every
+  # packages.<system>.<name> to be a derivation, so it forces their entire
+  # closure — including the Windows ISO from the windows-iso-src input — and
+  # OOMs the evaluator on the server. An unknown flake output only produces a
+  # "warning: unknown flake output" line and is never forced, so a full check
+  # skips them while `nix run .#ventoy-deploy` keeps working unchanged.
+  flake = lib.optionalAttrs (builtins.elem "x86_64-linux" config.systems) (
+    withSystem "x86_64-linux" ({ pkgs, config, ... }:
+      let
+        # ── ventoy.json ───────────────────────────────────────────────
+        ventoyJson =
+          let
+            entries = lib.flatten (lib.forEach pluginNames (baseName:
+              lib.forEach modeSuffixes (suffix:
+                let
+                  key = if suffix == "" then baseName else "${baseName}_${suffix}";
+                  raw = vCfg.settings.${key} or null;
+                  cleaned = cleanPluginValue baseName raw;
+                in
+                lib.optional (shouldInclude cleaned) {
+                  name = key;
+                  value = cleaned;
+                })
+            ));
+          in
+          builtins.listToAttrs entries // vCfg.extraConfig;
 
-      ventoyJsonFile = pkgs.writeText "ventoy.json" (builtins.toJSON ventoyJson);
+        ventoyJsonFile = pkgs.writeText "ventoy.json" (builtins.toJSON ventoyJson);
 
-      # ── Auto-detect ventoy-tagged live ISOs ──────────────────────────
-      # Collected from NixOS host configs at the top level above.
-      ventoyLiveIsos = lib.mapAttrs'
-        (name: iso:
-          lib.nameValuePair "live-${name}" {
-            source = config.packages.${"live-iso-${name}"} or (throw "live-iso-${name} not found — is the live-iso module enabled?");
-            target = "/iso/linux/${name}.iso";
-          }
-        )
-        hostVentoyIsos;
+        # ── Auto-detect ventoy-tagged live ISOs ──────────────────────────
+        # Collected from NixOS host configs at the top level above.
+        ventoyLiveIsos = lib.mapAttrs'
+          (name: iso:
+            lib.nameValuePair "live-${name}" {
+              source = config.packages.${"live-iso-${name}"} or (throw "live-iso-${name} not found — is the live-iso module enabled?");
+              target = "/iso/linux/${name}.iso";
+            }
+          )
+          hostVentoyIsos;
 
-      # ── ISO mappings ──────────────────────────────────────────────
-      gpartedIso = pkgs.runCommand "gparted-live-1.6.0-1-amd64.iso" { } ''
-        cp ${inputs.gparted-iso} $out
-      '';
+        # ── ISO mappings ──────────────────────────────────────────────
+        gpartedIso = pkgs.runCommand "gparted-live-1.6.0-1-amd64.iso" { } ''
+          cp ${inputs.gparted-iso} $out
+        '';
 
-      allIsos = vCfg.isos // ventoyLiveIsos // {
-        gparted = {
-          source = gpartedIso;
-          target = "/iso/linux/gparted-live-1.6.0-1-amd64.iso";
+        allIsos = vCfg.isos // ventoyLiveIsos // {
+          gparted = {
+            source = gpartedIso;
+            target = "/iso/linux/gparted-live-1.6.0-1-amd64.iso";
+          };
         };
-      };
 
-      isoMappings = lib.mapAttrsToList
-        (name: iso:
-          ''"${iso.source}|${iso.target}|${storeHash iso.source}"''
-        )
-        allIsos;
+        isoMappings = lib.mapAttrsToList
+          (name: iso:
+            ''"${iso.source}|${iso.target}|${storeHash iso.source}"''
+          )
+          allIsos;
 
-      # ── File mappings ─────────────────────────────────────────────
-      # Answer-file packages are exported by answer-files.nix into the
-      # same perSystem evaluation. Reference via forward-reference:
-      # they are in config.packages because that module's perSystem has
-      # already merged.
-      fileMappings =
-        let
-          answerPkgNames = builtins.attrNames config.packages;
-          answerXmlPkgs = builtins.filter
-            (n: lib.hasPrefix "windows-answ-pro-" n)
-            answerPkgNames;
-        in
-        map
-          (name:
-            let
-              pkg = config.packages.${name};
-              profileName = lib.removePrefix "windows-answ-pro-" name;
-              target = "/ventoy/scripts/${profileName}.xml";
-            in
-            ''"${pkg}|${target}|${storeHash pkg}"'')
-          answerXmlPkgs;
+        # ── File mappings ─────────────────────────────────────────────
+        # Answer-file packages are exported by answer-files.nix into the
+        # same perSystem evaluation. Reference via forward-reference:
+        # they are in config.packages because that module's perSystem has
+        # already merged.
+        fileMappings =
+          let
+            answerPkgNames = builtins.attrNames config.packages;
+            answerXmlPkgs = builtins.filter
+              (n: lib.hasPrefix "windows-answ-pro-" n)
+              answerPkgNames;
+          in
+          map
+            (name:
+              let
+                pkg = config.packages.${name};
+                profileName = lib.removePrefix "windows-answ-pro-" name;
+                target = "/ventoy/scripts/${profileName}.xml";
+              in
+              ''"${pkg}|${target}|${storeHash pkg}"'')
+            answerXmlPkgs;
 
-      # ── ventoy-bundle ─────────────────────────────────────────────
-      ventoy-bundle = pkgs.runCommand "ventoy-bundle" { } ''
-        mkdir -p $out/ventoy
-        cp "${ventoyJsonFile}" $out/ventoy/ventoy.json
-        ${lib.optionalString (vCfg.grubConfig != null) ''
-          cp "${vCfg.grubConfig}" $out/ventoy/ventoy_grub.cfg
-        ''}
-        ${lib.concatStringsSep "\n" (lib.mapAttrsToList (name: iso: ''
-          TARGET="$out/${iso.target}"
-          mkdir -p "$(dirname "$TARGET")"
-          ln -s "${iso.source}" "$TARGET"
-        '') vCfg.isos)}
-        ${lib.concatStringsSep "\n" (lib.mapAttrsToList (name: pkg: let
-          profileName = lib.removePrefix "windows-answ-pro-" name;
-          target = "/ventoy/scripts/${profileName}.xml";
-        in ''
-          mkdir -p "$out/ventoy/scripts"
-          cp "${pkg}" "$out${target}"
-        '') (lib.filterAttrs (n: _: lib.hasPrefix "windows-answ-pro-" n) config.packages))}
-      '';
+        # ── ventoy-bundle ─────────────────────────────────────────────
+        ventoy-bundle = pkgs.runCommand "ventoy-bundle" { } ''
+          mkdir -p $out/ventoy
+          cp "${ventoyJsonFile}" $out/ventoy/ventoy.json
+          ${lib.optionalString (vCfg.grubConfig != null) ''
+            cp "${vCfg.grubConfig}" $out/ventoy/ventoy_grub.cfg
+          ''}
+          ${lib.concatStringsSep "\n" (lib.mapAttrsToList (name: iso: ''
+            TARGET="$out/${iso.target}"
+            mkdir -p "$(dirname "$TARGET")"
+            ln -s "${iso.source}" "$TARGET"
+          '') vCfg.isos)}
+          ${lib.concatStringsSep "\n" (lib.mapAttrsToList (name: pkg: let
+            profileName = lib.removePrefix "windows-answ-pro-" name;
+            target = "/ventoy/scripts/${profileName}.xml";
+          in ''
+            mkdir -p "$out/ventoy/scripts"
+            cp "${pkg}" "$out${target}"
+          '') (lib.filterAttrs (n: _: lib.hasPrefix "windows-answ-pro-" n) config.packages))}
+        '';
 
-      ventoyIso = config.packages.live-iso-deploy or null;
-    in
-    {
-      packages = {
+        ventoyIso = config.packages.live-iso-deploy or null;
+      in
+      {
         ventoy-deploy = pkgs.callPackage ./deploy-script {
           inherit (vCfg) device mountPoint;
           buildInstallerIso = ventoyIso != null;
@@ -180,9 +187,11 @@ in
           reserveSizeMb = vCfg.installOptions.reserveSizeMb;
         };
         ventoy-bundle = ventoy-bundle;
-      };
-      checks = {
-        ventoy-deploy-tests = pkgs.callPackage ./deploy-script/tests.nix { };
-      };
-    };
+      })
+  );
+
+  # The deploy-script smoke test needs no ISO, so it stays a real check.
+  perSystem = { pkgs, ... }: {
+    checks.ventoy-deploy-tests = pkgs.callPackage ./deploy-script/tests.nix { };
+  };
 }
