@@ -21,16 +21,29 @@ in
 
     virtualisation.oci-containers.containers."neko" = {
       image = cfg.image;
-      volumes = cfg.extraVolumes;
+      # Mount the secrets-derived /run/neko/neko.yaml over the image's baked
+      # config (which hardcodes admin/admin + user/neko) whenever passwords are
+      # configured — see neko-envfile in services.nix, which writes both files
+      # before the container starts.
+      volumes = cfg.extraVolumes
+        ++ lib.optionals (cfg.adminPasswordFile != null || cfg.userPasswordFile != null) [
+        "/run/neko/neko.yaml:/etc/neko/neko.yaml"
+      ];
       ports = [
         "${toString cfg.port}:8080/tcp"
         "${eprRange}:${eprRange}/udp"
+        # WebRTC ICE-TCP fallback (pion tcpmux): lets clients whose UDP to
+        # the server is blocked/NAT-ed still connect over TCP.
+        "${toString cfg.webRtcTcpMuxPort}:${toString cfg.webRtcTcpMuxPort}/tcp"
       ];
       environment = lib.filterAttrs (_: v: v != "") ({
         NEKO_SERVER_BIND = ":8080";
         NEKO_DESKTOP_SCREEN = cfg.desktopScreen;
         NEKO_WEBRTC_EPR = eprRange;
-        NEKO_WEBRTC_ICELITE = "1";
+        NEKO_WEBRTC_TCPMUX = toString cfg.webRtcTcpMuxPort;
+        # Full ICE (not lite): required so backend ICE servers / TCP mux
+        # candidates are offered (backend servers are ignored when icelite).
+        NEKO_WEBRTC_ICELITE = "false";
       } // lib.optionalAttrs (cfg.natIp != null) {
         NEKO_WEBRTC_NAT1TO1 = cfg.natIp;
       } // cfg.extraEnvironment);

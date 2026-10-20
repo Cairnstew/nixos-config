@@ -28,6 +28,21 @@
       };
     };
 
+    webRtcTcpMuxPort = lib.mkOption {
+      type = lib.types.port;
+      default = 52800;
+      description = ''
+        Host TCP port for Neko's WebRTC TCP mux (NEKO_WEBRTC_TCPMUX). Pion
+        listens for ICE-TCP candidates here, so clients whose UDP to the
+        server is blocked/NAT-ed (e.g. tailnet traffic relayed via DERP)
+        can still establish the peer connection over TCP — the browser
+        falls back to TCP candidates when UDP ICE fails. TCP to the
+        tailnet IP is always routable for tailnet members (direct or DERP),
+        unlike UDP. Also requires webrtc.icelite = false (backend ICE
+        servers are ignored in lite mode).
+      '';
+    };
+
     natIp = lib.mkOption {
       type = lib.types.nullOr lib.types.str;
       default = "100.78.102.28";
