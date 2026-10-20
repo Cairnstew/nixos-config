@@ -4,7 +4,7 @@ let
 in
 {
   options.my.system.hardening = {
-    enable = mkEnableOption "memory/CPU pressure hardening (zram swap, systemd-oomd, OOM-protected SSH-critical services)";
+    enable = mkEnableOption "memory/CPU pressure hardening (zram swap, systemd-oomd, earlyoom, cgroup caps, OOM-protected SSH-critical services)";
 
     # ── zram compressed swap ───────────────────────────────────────────────
     zram = {
@@ -73,24 +73,181 @@ in
       defaultMemoryPressureLimit = mkOption {
         type = types.str;
         default = "60%";
-        description = "oomd kills a cgroup when memory pressure exceeds this for the duration below.";
+        description = ''
+          oomd kills a cgroup when memory pressure exceeds this for the
+          duration below. Applied to `user.slice`/`system.slice` explicitly,
+          because NixOS otherwise sets `ManagedOOMMemoryPressureLimit=80%`
+          on those slices and the oomd.conf default never takes effect.
+        '';
       };
 
-      defaultMemoryPressureDurationUSec = mkOption {
+      defaultMemoryPressureDurationSec = mkOption {
         type = types.str;
         default = "30s";
-        description = "How long memory pressure must exceed the limit before oomd acts.";
+        description = ''
+          How long memory pressure must exceed the limit before oomd acts.
+          Maps to systemd-oomd's `DefaultMemoryPressureDurationSec=`. Note
+          the unit is `Sec`, not `USec`: systemd rejects
+          `DefaultMemoryPressureDurationUSec=` and silently falls back to
+          its built-in 20s.
+        '';
+      };
+    };
+
+    # ── earlyoom: fast global backstop ─────────────────────────────────────
+    earlyoom = {
+      enable = mkOption {
+        type = types.bool;
+        default = true;
+        description = ''
+          Enable earlyoom as a fast, global OOM backstop. Unlike systemd-oomd
+          (which reacts to PSI pressure after contention has built), earlyoom
+          watches MemAvailable/SwapFree and kills the largest offender before
+          the kernel OOM killer or swap-thrash can make SSH unreachable. Both
+          run by default; they complement each other.
+        '';
+      };
+
+      freeMemThreshold = mkOption {
+        type = types.ints.between 1 100;
+        default = 10;
+        description = "Send SIGTERM when available RAM falls below this percentage (earlyoom `-m`).";
+      };
+
+      freeMemKillThreshold = mkOption {
+        type = types.nullOr (types.ints.between 1 100);
+        default = null;
+        description = "Send SIGKILL when available RAM falls below this percentage. null = half of freeMemThreshold.";
+      };
+
+      freeSwapThreshold = mkOption {
+        type = types.ints.between 1 100;
+        default = 10;
+        description = "Send SIGTERM when free swap falls below this percentage (earlyoom `-s`).";
+      };
+
+      freeSwapKillThreshold = mkOption {
+        type = types.nullOr (types.ints.between 1 100);
+        default = null;
+        description = "Send SIGKILL when free swap falls below this percentage. null = half of freeSwapThreshold.";
+      };
+
+      avoid = mkOption {
+        type = types.listOf types.str;
+        default = [
+          "^(sshd|sshd-session|tailscaled|systemd|systemd-journald|systemd-logind|systemd-oomd|dbus-broker|earlyoom|bash|zsh|sh|dash|login)$"
+        ];
+        description = ''
+          Process-name regexes earlyoom must never kill. Joined into one
+          `--avoid` alternation. Keep sshd/tailscaled here so remote access
+          is the last thing sacrificed.
+        '';
+      };
+
+      prefer = mkOption {
+        type = types.listOf types.str;
+        default = [
+          "^(nix|nix-daemon|nix-store|nix-build|node|bun|opencode|java|python3?|dotnet|rustc|cc1plus|ld)$"
+        ];
+        description = ''
+          Process-name regexes earlyoom should prefer to kill. Joined into one
+          `--prefer` alternation — the memory hogs, not the daemons.
+        '';
+      };
+    };
+
+    # ── hard cgroup caps for untrusted/heavy workloads ─────────────────────
+    workloadLimits = {
+      enable = mkOption {
+        type = types.bool;
+        default = true;
+        description = ''
+          Cap the cgroups that run user sessions and Nix builds so one runaway
+          evaluation/build cannot consume all RAM and starve SSH. Percentages
+          are relative to physical RAM, so the same defaults fit a 13 GiB
+          server and a 64 GiB desktop.
+        '';
+      };
+
+      userSliceMemoryHigh = mkOption {
+        type = types.str;
+        default = "60%";
+        description = "MemoryHigh for `user.slice` — throttle point for all user sessions (including interactive `nix`).";
+      };
+
+      userSliceMemoryMax = mkOption {
+        type = types.str;
+        default = "65%";
+        description = ''
+          MemoryMax for `user.slice` — hard cap. Above this the kernel
+          cgroup-OOM killer picks the largest process (the runaway `nix`),
+          leaving the remainder of RAM for system.slice/SSH.
+        '';
+      };
+
+      nixDaemonMemoryHigh = mkOption {
+        type = types.str;
+        default = "35%";
+        description = "MemoryHigh for `nix-daemon.service` — throttle point for builds.";
+      };
+
+      nixDaemonMemoryMax = mkOption {
+        type = types.str;
+        default = "45%";
+        description = "MemoryMax for `nix-daemon.service` — hard cap for builds.";
+      };
+
+      systemSliceMemoryMin = mkOption {
+        type = types.str;
+        default = "10%";
+        description = ''
+          MemoryMin for `system.slice` — a reclaim floor reserved for
+          sshd/tailscaled/journald, so user pressure is reclaimed first.
+        '';
+      };
+    };
+
+    # ── out-of-band recovery ───────────────────────────────────────────────
+    magicSysRq = {
+      enable = mkOption {
+        type = types.bool;
+        default = true;
+        description = ''
+          Set `kernel.sysrq = 1` (enable all Magic SysRq functions). On a
+          remote box with a PiKVM/IPMI this allows `Alt+SysRq+F` (OOM-kill the
+          largest task) and `Alt+SysRq+B` (immediate reboot) when SSH is gone.
+          The kernel/NixOS default is `16`, which allows only sync.
+        '';
+      };
+    };
+
+    watchdog = {
+      runtimeSec = mkOption {
+        type = types.nullOr types.str;
+        default = null;
+        description = ''
+          systemd `RuntimeWatchdogSec`. When set (e.g. `"60s"`), systemd pets
+          the hardware watchdog; if PID 1 is starved for this long (hard
+          livelock, complete swap thrash) the machine hard-resets instead of
+          staying unreachable forever. `null` leaves the watchdog disabled —
+          enable it on remote hosts where a reboot is preferable to downtime.
+        '';
       };
     };
 
     # ── critical services that must never die ──────────────────────────────
     protectedUnits = mkOption {
       type = types.listOf types.str;
-      default = [ "sshd.service" "tailscaled.service" ];
+      default = [ "sshd" "tailscaled" ];
       description = ''
-        Systemd units that get OOMScoreAdjust=-1000 (never selected by the OOM
-        killer) and CPUWeight=1000 (maximum scheduling priority) so remote
-        access stays available even under extreme pressure.
+        Systemd units that get OOMScoreAdjust=-1000 (never selected by the
+        kernel OOM killer), ManagedOOMPreference=omit (never selected by
+        systemd-oomd) and CPUWeight=1000 (maximum scheduling priority) so
+        remote access stays available even under extreme pressure.
+
+        Unit names are merged into `systemd.services.<name>`, so do **not**
+        include the `.service` suffix (`"sshd"`, not `"sshd.service"`); a
+        suffix is accepted and stripped for backwards compatibility.
       '';
     };
 

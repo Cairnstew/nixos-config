@@ -40,6 +40,18 @@
   # comfy-ui is disabled too — every listed name must have a live ExecStart.
   my.system.hardening.cpuQuota = { };
 
+  # ── Remote availability: reboot rather than stay unreachable ────────────
+  # 2026-10-19: a raw `nix flake check` reached 10.5G anon-RSS and triggered a
+  # global OOM; the box was unreachable until it recovered. The hardening
+  # module now caps user.slice/nix-daemon and runs earlyoom (see
+  # modules/nixos/hardening/README.md). These two are the last resort: if PID 1
+  # is starved for 60s the hardware watchdog resets the machine, and the PiKVM
+  # can send Alt+SysRq+F/B (kernel.sysrq=1; the default 16 only allows sync).
+  my.system.hardening = {
+    watchdog.runtimeSec = "60s";
+    magicSysRq.enable = true;
+  };
+
   # ── Jupyter — DISABLED 2026-10-16 ──────────────────────────────────────
   # common.nix enables the development profile on every host (mkDefault true),
   # and development.nix turns on Jupyter from it. On this headless server the

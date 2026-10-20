@@ -55,6 +55,15 @@ let
   mkScript = inst: pkgs.writeShellScript "opencode-web-${inst.name}" ''
     set -euo pipefail
 
+    # systemd services with User= don't get a user-scope bus environment.
+    # The memory-capped nix tools (`nix-eval`, `nix-flake-check`) call
+    # `systemd-run --user --scope`, which needs XDG_RUNTIME_DIR and the bus
+    # address; without them the tool fails and the agent falls back to an
+    # uncapped raw `nix` command. Linger is enabled, so /run/user/<uid> and
+    # its bus exist even with no login session.
+    export XDG_RUNTIME_DIR="''${XDG_RUNTIME_DIR:-/run/user/$(id -u)}"
+    export DBUS_SESSION_BUS_ADDRESS="''${DBUS_SESSION_BUS_ADDRESS:-unix:path=$XDG_RUNTIME_DIR/bus}"
+
     ${optionalString (cfg.passwordFile != null) ''
       if [[ -r ${cfg.passwordFile} ]]; then
         export OPENCODE_SERVER_PASSWORD="$(cat ${cfg.passwordFile} | tr -d '[:space:]')"

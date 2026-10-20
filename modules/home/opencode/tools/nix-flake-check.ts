@@ -1,5 +1,6 @@
 import { execSync } from "node:child_process";
 import { readFileSync } from "node:fs";
+import { hostname } from "node:os";
 
 function bytesToGb(bytes: number): number {
   return Math.round(bytes / (1024 * 1024 * 1024) * 10) / 10;
@@ -39,11 +40,12 @@ function pickLimit(): number {
     cgroupLimit ?? Infinity,
   );
 
-  // use 75% of available for safety margin, clamped to [1 GiB, 12 GiB]
-  const bytes = Math.min(
-    Math.max(Math.round(raw * 0.75), 1024 ** 3),
-    12 * 1024 ** 3,
-  );
+  // Leave 1.5 GiB for sshd/tailscaled/journald, then use 85% of the rest.
+  // The old 75%-of-free value still let a 10.5G `nix` process OOM the 13G
+  // server when the command ran from a raw shell.
+  const headroom = 1.5 * 1024 ** 3;
+  const usable = Math.max(raw - headroom, 1024 ** 3);
+  const bytes = Math.min(Math.round(usable * 0.85), 11 * 1024 ** 3);
 
   // never exceed cgroup limit if one is set
   return cgroupLimit !== null ? Math.min(bytes, Math.round(cgroupLimit * 0.9)) : bytes;
@@ -51,7 +53,10 @@ function pickLimit(): number {
 
 function memoryLimitArg(bytes: number): string {
   const safe = Math.max(512 * 1024 * 1024, bytes);
-  return `systemd-run --user --scope -p MemoryMax=${safe} -p MemoryHigh=${safe} --same-dir`;
+  // MemorySwapMax=0 makes the eval die at MemoryMax instead of thrashing
+  // compressed zram for minutes — a killed eval is recoverable, a wedged
+  // host is not.
+  return `systemd-run --user --scope -p MemoryMax=${safe} -p MemoryHigh=${safe} -p MemorySwapMax=0 --same-dir`;
 }
 
 export default {
@@ -63,16 +68,26 @@ export default {
     },
     memoryLimitGB: {
       type: "number",
-      description: "Hard memory limit in GB via cgroup. When omitted, auto-detects available RAM (75% of free, clamped to [1G, 12G]).",
+      description: "Hard memory limit in GB via cgroup. When omitted, auto-detects available RAM (leaves 1.5G for system daemons, uses 85% of the rest, capped at 11G).",
     },
   },
   async execute(args: { allowWarnings?: boolean; memoryLimitGB?: number }) {
+    const avail = readMemAvailable();
+    if (avail < 3 * 1024 ** 3) {
+      return `✗ refusing to run nix flake check: only ${bytesToGb(avail)}G RAM available. `
+        + `Free memory first (another nix build / opencode team?) or run the check on the desktop.`;
+    }
+
     const limitBytes = args.memoryLimitGB
       ? Math.round(args.memoryLimitGB * 1024 ** 3)
       : pickLimit();
     const limitGb = bytesToGb(limitBytes);
     const prefix = memoryLimitArg(limitBytes);
     const cmd = `${prefix} nix flake check --no-build 2>&1`;
+    const serverNote = hostname() === "server"
+      ? "\n\nNOTE: this host has 13 GiB RAM — prefer full flake checks on the desktop. "
+        + "Scope to one host with `nix derivation show .#checks.x86_64-linux.build-server`."
+      : "";
 
     try {
       const flakeDir = process.env.PWD || ".";
@@ -91,7 +106,7 @@ export default {
       const combined = (stdout + stderr).trim();
 
       if (combined.includes("MemoryMax") || combined.includes("cgroup")) {
-        return `✗ nix flake check terminated — hit ~${limitGb}G memory limit. Increase with memoryLimitGB arg.\n\n${combined}`;
+        return `✗ nix flake check terminated — hit ~${limitGb}G memory limit. Increase with memoryLimitGB arg.${serverNote}\n\n${combined}`;
       }
 
       if (args.allowWarnings) {
@@ -101,7 +116,7 @@ export default {
         }
       }
 
-      return `✗ nix flake check failed\n\n${combined}`;
+      return `✗ nix flake check failed${serverNote}\n\n${combined}`;
     }
   },
 };
