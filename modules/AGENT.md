@@ -291,6 +291,20 @@ cheaply.
   upstream path is declared — local edits to a `vendored` artifact fail CI
   (hash-guard). If the line says "no space registered", work in the upstream
   repo directly.
+* **Re-read the upstream option surface after `nix flake update <input>`.** A
+  wrapped upstream **module** can be rewritten between pins, and then its
+  option names change wholesale: this repo's `sillytavern` input moved from a
+  `services.sillytavern.*` surface (`textCompletionPresets`,
+  `connectionProfiles`, `advancedFormatting`, `userSettings`,
+  `declaredExtensions`) to `services.sillytavern-nixos.*` (a different surface
+  entirely: `presets.*`, `settings.*`, `files.*`, pinned `extensions`/`plugins`)
+  in one upstream rewrite, and every consumer of the old names broke at eval
+  time. After updating the pin, list the upstream options BEFORE touching the
+  local wrapper or any host config — read the upstream's `modules/options.nix`,
+  or `nix eval --json .#nixosConfigurations.<host>.options.<namespace>`. The
+  fix is a migration of every consumer, not a rename, and a namespace change
+  can also mean the upstream now collides with (or must be separated from)
+  another module's namespace.
 
 ---
 
@@ -600,3 +614,15 @@ the current mechanism.
   passes.
 - Fix: added §13 pointing to the root `AGENTS.md` §11 protocol and a RUN LOG for
   dated entries.
+
+### 2026-10-19 — §4.2: re-read the upstream option surface after a pin update
+- Lesson: §4.2 said to check the `upstream:` line before editing a module, but
+  said nothing about the pin itself being a moving target for a wrapped
+  upstream *module*. `nix flake update sillytavern` moved the input from
+  `4c00ab2f` to `5ce6518`, an upstream rewrite whose module moved from
+  `services.sillytavern.*` to `services.sillytavern-nixos.*` and replaced the
+  whole option surface. The local wrapper and every host config that used the
+  old names then failed to evaluate — a migration, not a rename.
+- Fix: added the "re-read the upstream option surface after `nix flake update`"
+  bullet to §4.2, naming the concrete failure mode and the two ways to list
+  the upstream options before touching consumers.

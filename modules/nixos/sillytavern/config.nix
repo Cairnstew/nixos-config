@@ -1,144 +1,66 @@
+# modules/nixos/sillytavern/config.nix
+# Host-local wiring for the upstream SillyTavern flake module.
+#
+# There are no `my.*` options here on purpose: the upstream module owns the
+# whole option surface under `services.sillytavern-nixos.*`, and re-exporting
+# it under `my.*` would mean duplicating every option and drifting out of sync
+# on each `nix flake update`. What legitimately stays local is what is about
+# THIS config rather than about SillyTavern: how the reverse proxy reaches the
+# service, and which models are pulled before the server answers a request.
 { config, lib, pkgs, ... }:
+
 let
-  ucfg = config.services.sillytavern;
+  cfg = config.services.sillytavern-nixos;
+  inherit (import ../proxy/lib.nix) trustProxyEnv;
 
-  vectfoxSrc = pkgs.fetchFromGitHub {
-    owner = "KritBlade";
-    repo = "VectFox";
-    rev = "5784a427ebeb6bae213a64740218bdf4ad05f97e";
-    hash = "sha256-J3QflhhV2JgTS4Tb2lPcK9nxzbzLklgavYbIpKi7tA8=";
-  };
+  # The account's connection profiles, as SillyTavern keeps them in
+  # settings.json (`extension_settings.connectionManager.profiles`). Upstream
+  # models settings.json as free-form JSON, so the profiles are READ OUT of it
+  # rather than declared a second time.
+  connectionProfiles =
+    lib.attrByPath [ "extension_settings" "connectionManager" "profiles" ] [ ] cfg.settings.common;
 
-  similharitySrc = pkgs.fetchFromGitHub {
-    owner = "KritBlade";
-    repo = "VectFox";
-    rev = "9fdc29311ea3a5de60bf1f97536f900634254c2a";
-    hash = "sha256-reQ/I65i+T8bxFvYaBUDl7ob/aqEh2cXQhC08x5/sp8=";
-  };
-
-  similharityPlugin = pkgs.buildNpmPackage {
-    pname = "sillytavern-plugin-similharity";
-    version = "3.5.0";
-    src = similharitySrc;
-    npmDepsHash = "sha256-b8XfNMnoD0A3/CKnkMu64lhSddN4/ykoFCedxGk6Iv4=";
-    dontNpmBuild = true;
-    postPatch = ''
-      cp ${./similharity-package-lock.json} package-lock.json
-    '';
-    installPhase = ''
-      mkdir -p $out
-      cp -r node_modules $out/
-      cp index.js qdrant-backend.js stop-words.js package.json $out/
-    '';
-  };
-
-  extDir = "public/scripts/extensions/third-party/VectFox";
-  pluginDir = "plugins/similharity";
-
-  # Ollama model auto-pull via docker exec
-  modelPullCmds =
-    if ucfg.enable then
-      lib.concatStringsSep "\n"
-        (lib.mapAttrsToList
-          (_: profile:
-            let model = profile.model or "";
-            in lib.optionalString (model != "") ''
-              echo "sillytavern: pulling model ${model} via ollama..."
-              ${pkgs.docker}/bin/docker exec ollama ollama pull ${lib.escapeShellArg model} \
-                || echo "sillytavern: WARN: failed to pull ${model}"
-            ''
-          )
-          ucfg.connectionProfiles)
-    else
-      "";
+  # Only Ollama profiles name a model that lives on this host. Everything else
+  # (OpenAI, Claude, …) is a remote API and has nothing to pull.
+  ollamaModels = lib.unique (
+    lib.filter (m: m != "")
+      (
+        lib.map (p: p.model or "")
+          (lib.filter (p: (p.api or "") == "ollama") (lib.filter builtins.isAttrs connectionProfiles))
+      )
+  );
 
   ollamaPullScript = pkgs.writeShellScript "sillytavern-ollama-pull" ''
-    ${modelPullCmds}
-  '';
-
-  # VectFox is bundled into the package but hidden by the BindPaths mount
-  # that overlays the third-party dir. Copy it into the extensions dir
-  # so ST can see it.
-  copyVectfoxScript = pkgs.writeShellScript "sillytavern-copy-vectfox" ''
-    set -e
-    EXT_DIR="/var/lib/SillyTavern/extensions/VectFox"
-    PKG_VECTFOX="${ucfg.package}/lib/node_modules/sillytavern/${extDir}"
-    if [ -d "$PKG_VECTFOX" ] && [ ! -d "$EXT_DIR" ]; then
-      mkdir -p "$EXT_DIR"
-      cp -r "$PKG_VECTFOX"/* "$EXT_DIR/"
-      chown -R ${ucfg.user}:${ucfg.group} "$EXT_DIR" 2>/dev/null || true
-      echo "sillytavern: copied VectFox to extensions directory"
-    fi
+    ${lib.concatStringsSep "\n" (
+      lib.filter (m: m != "") (
+        lib.map (model: ''
+          echo "sillytavern: pulling ${model} via ollama..."
+          ${pkgs.docker}/bin/docker exec ollama ollama pull ${lib.escapeShellArg model} \
+            || echo "sillytavern: WARN: failed to pull ${model}"
+        '') ollamaModels
+      )
+    )}
   '';
 in
 {
-  config = lib.mkIf ucfg.enable {
-    # Package override: bundle VectFox, Similharity, and autoconnect patch
-    services.sillytavern.package = lib.mkDefault (pkgs.sillytavern.overrideAttrs (old: {
-      patches = (old.patches or [ ]) ++ [ ./connection-manager-autoconnect.patch ];
-      postInstall = (old.postInstall or "") + ''
-        echo "sillytavern: bundling VectFox extension..."
-        EXT="$out/lib/node_modules/sillytavern/${extDir}"
-        mkdir -p "$EXT"
-        cp ${vectfoxSrc}/index.js "$EXT/"
-        cp ${vectfoxSrc}/manifest.json "$EXT/"
-        cp ${vectfoxSrc}/vectfox.css "$EXT/"
-        for dir in backends core diagnostics providers styles ui utils; do
-          cp -r ${vectfoxSrc}/$dir "$EXT/$dir"
-        done
+  config = lib.mkIf cfg.enable {
+    # SillyTavern is an Express app behind Caddy: it has to trust the
+    # X-Forwarded-For header Caddy sets, or every request looks like it came
+    # from 127.0.0.1 (which also trips the private-address allowlist).
+    services.sillytavern-nixos.environment = trustProxyEnv "express";
 
-        echo "sillytavern: bundling Similharity server plugin..."
-        PLUGIN="$out/lib/node_modules/sillytavern/${pluginDir}"
-        mkdir -p "$PLUGIN"
-        cp -r ${similharityPlugin}/node_modules "$PLUGIN/node_modules"
-        chmod -R u+w "$PLUGIN/node_modules" 2>/dev/null || true
-        cp ${similharityPlugin}/index.js "$PLUGIN/"
-        cp ${similharityPlugin}/qdrant-backend.js "$PLUGIN/"
-        cp ${similharityPlugin}/stop-words.js "$PLUGIN/"
-        cp ${similharityPlugin}/package.json "$PLUGIN/"
-
-        echo "sillytavern: bundling Resemble.ai TTS provider..."
-        TTS="$out/lib/node_modules/sillytavern/public/scripts/extensions/tts"
-        cp ${./resemble.js} "$TTS/resemble.js"
-        chmod 644 "$TTS/resemble.js"
-        # Patch index.js to import and register the Resemble provider
-        if grep -q "ResembleTtsProvider" "$TTS/index.js"; then
-          echo "sillytavern: Resemble provider already registered, skipping patch"
-        else
-          sed -i "s|^import { VolcengineTtsProvider }|import { ResembleTtsProvider } from './resemble.js';\nimport { VolcengineTtsProvider }|" "$TTS/index.js"
-          sed -i "s|^    Volcengine: VolcengineTtsProvider,\$|    Resemble: ResembleTtsProvider,\n    Volcengine: VolcengineTtsProvider,|" "$TTS/index.js"
-          echo "sillytavern: patched index.js for Resemble TTS provider"
-        fi
-
-        echo "sillytavern: adding Resemble.ai server endpoint..."
-        SPEECH="$out/lib/node_modules/sillytavern/src/endpoints/speech.js"
-        if grep -q "resemble" "$SPEECH"; then
-          echo "sillytavern: Resemble endpoint already exists, skipping patch"
-        else
-          cat ${./resemble-server-endpoint.js} >> "$SPEECH"
-          echo "sillytavern: patched speech.js for Resemble server endpoint"
-        fi
-      '';
-    }));
-
-    # Enable server plugins (needed for VectFox/Similharity)
-    services.sillytavern.enableServerPlugins = lib.mkDefault true;
-    services.sillytavern.enableServerPluginsAutoUpdate = lib.mkDefault false;
-
-    # Ollama model auto-pull on startup
-    systemd.services.sillytavern.serviceConfig.ExecStartPre =
-      lib.mkAfter [ "+${ollamaPullScript}" "+${copyVectfoxScript}" ];
-
-    # Disable extension auto-update — extensions are managed declaratively
-    # and the Nix store is read-only, so git pull fails.
-    services.sillytavern.extensions.autoUpdate = lib.mkDefault false;
+    # Pull the Ollama models the account's profiles point at before the server
+    # starts, so a fresh activation does not serve a model that was never
+    # downloaded. A failed pull is a warning, not a start failure — the model
+    # may already be present, or Ollama may be down.
+    systemd.services.sillytavern.serviceConfig.ExecStartPre = lib.mkAfter [ "+${ollamaPullScript}" ];
 
     # Register with reverse proxy
     my.services.proxy.upstreams.sillytavern = {
-      port = ucfg.port;
+      port = cfg.config.port;
+      path = "/sillytavern/";
       displayName = "SillyTavern";
       trustProxy = "express";
-      path = "/sillytavern/";
       # Caddy's handle_path strips /sillytavern prefix automatically,
       # so no htmlBase / subs_filter needed. WebSocket is auto-detected.
       # Root-relative SPA paths are proxied via extraLocations below.
@@ -146,55 +68,55 @@ in
         # SPA frontend assets
         ''
           handle /assets/* {
-            reverse_proxy 127.0.0.1:${toString ucfg.port}
+            reverse_proxy 127.0.0.1:${toString cfg.config.port}
           }
         ''
         # Stylesheets
         ''
           handle /css/* {
-            reverse_proxy 127.0.0.1:${toString ucfg.port}
+            reverse_proxy 127.0.0.1:${toString cfg.config.port}
           }
         ''
         # JavaScript scripts
         ''
           handle /scripts/* {
-            reverse_proxy 127.0.0.1:${toString ucfg.port}
+            reverse_proxy 127.0.0.1:${toString cfg.config.port}
           }
         ''
         # REST API
         ''
           handle /api/* {
-            reverse_proxy 127.0.0.1:${toString ucfg.port}
+            reverse_proxy 127.0.0.1:${toString cfg.config.port}
           }
         ''
         # User content (avatars, uploads)
         ''
           handle /user/* {
-            reverse_proxy 127.0.0.1:${toString ucfg.port}
+            reverse_proxy 127.0.0.1:${toString cfg.config.port}
           }
         ''
         # Character card data
         ''
           handle /characters/* {
-            reverse_proxy 127.0.0.1:${toString ucfg.port}
+            reverse_proxy 127.0.0.1:${toString cfg.config.port}
           }
         ''
         # Chat history
         ''
           handle /chats/* {
-            reverse_proxy 127.0.0.1:${toString ucfg.port}
+            reverse_proxy 127.0.0.1:${toString cfg.config.port}
           }
         ''
         # Background images
         ''
           handle /backgrounds/* {
-            reverse_proxy 127.0.0.1:${toString ucfg.port}
+            reverse_proxy 127.0.0.1:${toString cfg.config.port}
           }
         ''
         # Notification sounds
         ''
           handle /sounds/* {
-            reverse_proxy 127.0.0.1:${toString ucfg.port}
+            reverse_proxy 127.0.0.1:${toString cfg.config.port}
           }
         ''
       ];

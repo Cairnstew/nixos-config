@@ -659,100 +659,74 @@
   };
 
   # ── LLM / AI ─────────────────────────────────────────────────────────────
-  services.sillytavern = {
+  # Options live under `services.sillytavern-nixos.*` — the upstream
+  # github:Cairnstew/SillyTavern flake module, wrapped by
+  # modules/nixos/sillytavern. The namespace is NOT `services.sillytavern`:
+  # that one belongs to nixpkgs' own module, and the two cannot be enabled at
+  # the same time (they share the unit, the account and the state directory).
+  services.sillytavern-nixos = {
     # Disabled on desktop: the entertainment profile turns it on via
     # lib.mkDefault, and the declarative config below is kept for re-enabling.
     enable = lib.mkForce false;
 
-    # Data directory — use upstream default /var/lib/SillyTavern matching ST's XDG path
+    # ── Server ──────────────────────────────────────────────────────────
+    config.port = 8000;
+    config.whitelistMode = false;
+    # Extensions are declarative from the Nix store, so the UI's "update
+    # extensions" button would fail against a read-only path. Upstream forces
+    # this off as well; it is spelled out here for the record.
+    config.extensions.autoUpdate = false;
 
-    # Server
-    port = 8000;
-    whitelistMode = false;
-
-    # Extensions: disable auto-update (extensions are declarative from Nix store, no .git)
-    extensions.autoUpdate = false;
-
-    # Text completion presets
-    # Settings from model card: https://huggingface.co/ArliAI/DS-R1-Qwen3-8B-ArliAI-RpR-v4-Small
-    # RpR models don't work well with repetition penalty samplers (XTC, DRY, rep_pen).
-    textCompletionPresets = {
-      Reasoning = {
-        temp = 1.0;
-        top_k = 40;
-        top_p = 1.0;
-        min_p = 0.02;
-        do_sample = true;
-        include_reasoning = true;
-        genamt = 2048;
-        rep_pen = 1.0;
-        default = true;
+    # ── Presets ──────────────────────────────────────────────────────────
+    # One JSON file per named item, seeded into every account's data root.
+    presets.common = {
+      # Text Completion presets — Settings → AI Response Configuration.
+      # Settings from the model card:
+      # https://huggingface.co/ArliAI/DS-R1-Qwen3-8B-ArliAI-RpR-v4-Small
+      # RpR models don't work well with repetition penalty samplers
+      # (XTC, DRY, rep_pen).
+      textGeneration.Reasoning = {
+        json = {
+          temp = 1.0;
+          top_k = 40;
+          top_p = 1.0;
+          min_p = 0.02;
+          do_sample = true;
+          include_reasoning = true;
+          genamt = 2048;
+          rep_pen = 1.0;
+        };
       };
-    };
 
-    # Connection profiles for Ollama models
-    connectionProfiles = {
-      "DeepSeek R1 Qwen3" = {
-        default = true;
-        mode = "tc";
-        api = "ollama";
-        preset = "Reasoning";
-        model = "hf.co/Lewdiculous/DS-R1-Qwen3-8B-ArliAI-RpR-v4-Small-GGUF-IQ-Imatrix:Q4_K_M-imat";
-        apiUrl = "http://127.0.0.1:11434";
-        sysprompt = "DS-R1-Qwen3-8B-ArliAI-RpR-v4-Small";
-        syspromptState = true;
-        context = "DS-R1-Qwen3-8B-ArliAI-RpR-v4-Small";
-        tokenizer = "best_match";
-        reasoningTemplate = "DS-R1-Qwen3-8B-ArliAI-RpR-v4-Small";
-        startReplyWith = "<think>";
-      };
-      InfinityRP = {
-        mode = "tc";
-        api = "ollama";
-        preset = "Default";
-        model = "hf.co/Lewdiculous/InfinityRP-v1-7B-GGUF-IQ-Imatrix:Q4_K_M-imat";
-        apiUrl = "http://127.0.0.1:11434";
-        sysprompt = "Neutral - Chat";
-        syspromptState = true;
-        context = "Default";
-        tokenizer = "best_match";
-        reasoningTemplate = "Think XML";
-      };
-    };
-
-    # Advanced formatting presets — named after the ArliAI RpR v4 model
-    # https://huggingface.co/ArliAI/DS-R1-Qwen3-8B-ArliAI-RpR-v4-Small
-    # Note: separator must match what the model actually outputs between </think> and response.
-    # The model outputs a single newline, so separator is "\n" (not "\n\n").
-    advancedFormatting = {
-      reasoning = {
-        "DS-R1-Qwen3-8B-ArliAI-RpR-v4-Small" = {
+      # Advanced Formatting templates — named after the ArliAI RpR v4 model.
+      # Note: separator must match what the model actually outputs between
+      # </think> and response. The model outputs a single newline, so
+      # separator is "\n" (not "\n\n").
+      reasoning."DS-R1-Qwen3-8B-ArliAI-RpR-v4-Small" = {
+        json = {
           prefix = "<think>";
           suffix = "</think>";
           separator = "\n";
-          default = true;
         };
       };
-      sysprompt = {
-        "DS-R1-Qwen3-8B-ArliAI-RpR-v4-Small" = {
+      sysprompt."DS-R1-Qwen3-8B-ArliAI-RpR-v4-Small" = {
+        json = {
           content = ''
             You are a roleplaying AI with deep reasoning capabilities, based on the ArliAI RpR v4 model. Use <think> </think> tags for internal reasoning before responding. Stay in character and write creatively, responding from {{char}}'s perspective. Follow the character description and scenario closely.'';
-          default = true;
         };
       };
-      context = {
-        "DS-R1-Qwen3-8B-ArliAI-RpR-v4-Small" = {
+      context."DS-R1-Qwen3-8B-ArliAI-RpR-v4-Small" = {
+        json = {
           story_string = "{{#if system}}{{system}}\n{{/if}}{{#if wiBefore}}{{wiBefore}}\n{{/if}}{{#if description}}{{description}}\n{{/if}}{{#if personality}}{{char}}'s personality: {{personality}}\n{{/if}}{{#if scenario}}Scenario: {{scenario}}\n{{/if}}{{#if wiAfter}}{{wiAfter}}\n{{/if}}{{#if persona}}{{persona}}\n{{/if}}";
           example_separator = "***";
           chat_start = "***";
           use_stop_strings = true;
           names_as_stop_strings = true;
           always_force_name2 = false;
-          default = true;
         };
       };
-      instruct = {
-        "DS-R1-Qwen3-8B-ArliAI-RpR-v4-Small" = {
+      instruct."DS-R1-Qwen3-8B-ArliAI-RpR-v4-Small" = {
+        json = {
           input_sequence = "<|im_start|>user";
           input_suffix = "<|im_end|>\n";
           output_sequence = "<|im_start|>assistant";
@@ -764,22 +738,27 @@
           macro = true;
           names_behavior = "none";
           sequences_as_stop_strings = true;
-          default = true;
         };
       };
     };
 
-    # User settings — power_user overrides applied on every service start
-    userSettings = {
-      enable = true;
-      user_prompt_bias = "<think>";
-      show_user_prompt_bias = true;
-      # Force runtime settings that ST doesn't pick up from template files alone
-      extraSettings = {
+    # ── Account state (settings.json) ───────────────────────────────────
+    # Seeded into every account's settings.json and deep-merged over whatever
+    # the server has already written.
+    settings.common = {
+      # power_user — the UI's "AI Response Configuration" overrides, applied
+      # on every service start.
+      power_user = {
+        user_prompt_bias = "<think>";
+        show_user_prompt_bias = true;
         always_force_name2 = false;
+        # Which advanced-formatting template is active.
+        context.preset = "DS-R1-Qwen3-8B-ArliAI-RpR-v4-Small";
         instruct = {
+          preset = "DS-R1-Qwen3-8B-ArliAI-RpR-v4-Small";
           names_behavior = "none";
         };
+        sysprompt.name = "DS-R1-Qwen3-8B-ArliAI-RpR-v4-Small";
         reasoning = {
           name = "DS-R1-Qwen3-8B-ArliAI-RpR-v4-Small";
           prefix = "<think>";
@@ -794,39 +773,56 @@
           };
         };
       };
-    };
 
-    # TTS settings — select Resemble provider with cluster and voices
-    extraExtensionSettings = {
-      tts = {
-        currentProvider = "Resemble";
-        Resemble = {
-          cluster = "p";
-          voices = [
-            { name = "Default"; voice_id = "8bc27ed9"; }
-            { name = "female"; voice_id = "8bc27ed9"; }
-            { name = "male"; voice_id = "8bc27ed9"; }
+      # extension_settings — per-extension state, plus the connection
+      # manager's profiles (the model dropdown in the UI).
+      extension_settings = {
+        connectionManager = {
+          profiles = [
+            {
+              id = "3f6b1c40-0f1a-4c62-9a2e-6d1f0a5b7c31";
+              name = "DeepSeek R1 Qwen3";
+              mode = "tc";
+              api = "ollama";
+              preset = "Reasoning";
+              model = "hf.co/Lewdiculous/DS-R1-Qwen3-8B-ArliAI-RpR-v4-Small-GGUF-IQ-Imatrix:Q4_K_M-imat";
+              api-url = "http://127.0.0.1:11434";
+              sysprompt = "DS-R1-Qwen3-8B-ArliAI-RpR-v4-Small";
+              sysprompt-state = "true";
+              context = "DS-R1-Qwen3-8B-ArliAI-RpR-v4-Small";
+              tokenizer = "best_match";
+              reasoning-template = "DS-R1-Qwen3-8B-ArliAI-RpR-v4-Small";
+              start-reply-with = "<think>";
+            }
+            {
+              id = "9b2d4e77-51c8-4a03-8f6d-0c7e2b1a4d58";
+              name = "InfinityRP";
+              mode = "tc";
+              api = "ollama";
+              preset = "Default";
+              model = "hf.co/Lewdiculous/InfinityRP-v1-7B-GGUF-IQ-Imatrix:Q4_K_M-imat";
+              api-url = "http://127.0.0.1:11434";
+              sysprompt = "Neutral - Chat";
+              sysprompt-state = "true";
+              context = "Default";
+              tokenizer = "best_match";
+              reasoning-template = "Think XML";
+            }
           ];
+          selectedProfile = "3f6b1c40-0f1a-4c62-9a2e-6d1f0a5b7c31";
         };
-      };
-    };
 
-    # Declared extensions
-    declaredExtensions = {
-      # VectFox is bundled into the package — just set its settings
-      vectfox = {
-        enable = true;
-        settings = {
+        # VectFox — the RAG extension. The extension itself is installed
+        # through `extensions` below; this is only its settings.
+        vectfox = {
           backend = "qdrant";
           qdrantUrl = "http://127.0.0.1:6333";
           qdrantGrpcUrl = "http://127.0.0.1:6334";
           embeddingProvider = "sillytavern";
         };
-      };
 
-      # Built-in extensions
-      idle = {
-        settings = {
+        # Built-in extensions
+        idle = {
           enabled = false;
           timer = "20";
           useContinuation = false;
@@ -839,9 +835,7 @@
           timeMin = 60;
           includePrompt = false;
         };
-      };
-      websearch = {
-        settings = {
+        websearch = {
           source = "google";
           cacheLifetime = 604800;
           budget = 2000;
@@ -852,9 +846,7 @@
           use_function_tool = false;
           searxng_url = "";
         };
-      };
-      vrm = {
-        settings = {
+        vrm = {
           enabled = true;
           follow_camera = true;
           tts_lips_sync = false;
@@ -862,50 +854,38 @@
           auto_send_hitbox_message = true;
           lock_models = false;
         };
-      };
-      accuweather = {
-        settings = {
+        accuweather = {
           provider = "accuweather";
           preferredLocation = "";
         };
       };
+    };
 
-      # Third-party extensions from GitHub
+    # ── Third-party extensions ───────────────────────────────────────────
+    # Installed as pinned store paths under the package's third-party
+    # directory; bump `rev` and rebuild to update.
+    extensions = {
+      # RAG / vector memory.
+      VectFox = {
+        url = "https://github.com/KritBlade/VectFox";
+        rev = "5784a427ebeb6bae213a64740218bdf4ad05f97e";
+      };
+
       "Extension-Idle" = {
-        enable = true;
-        source = pkgs.fetchFromGitHub {
-          owner = "SillyTavern";
-          repo = "SillyTavern";
-          rev = "4225ff5d5078e4fc583d3e92d3cf78f487da715c";
-          hash = "sha256-gaAUQhYnAHWMKH67gNxlwYkOsQPRKOvjtsS7QisUBOU=";
-        };
+        url = "https://github.com/SillyTavern/Extension-Idle";
+        rev = "4225ff5d5078e4fc583d3e92d3cf78f487da715c";
       };
       "Extension-WebSearch" = {
-        enable = true;
-        source = pkgs.fetchFromGitHub {
-          owner = "SillyTavern";
-          repo = "SillyTavern";
-          rev = "9c3aa6686289bdcf26e7664a4dc18a777215108b";
-          hash = "sha256-7TcR/cJUDnv5CIsSgwmSpFGG/lFeuMicXBdqCtVFH8c=";
-        };
+        url = "https://github.com/SillyTavern/Extension-WebSearch";
+        rev = "9c3aa6686289bdcf26e7664a4dc18a777215108b";
       };
       "Extension-VRM" = {
-        enable = true;
-        source = pkgs.fetchFromGitHub {
-          owner = "SillyTavern";
-          repo = "SillyTavern";
-          rev = "2b4c4d015a40d255a064e83ed70c408046d58049";
-          hash = "sha256-1WxCbkdt9k4JAF2+CNozDgZfdgoHF0vEzAjAyIHXUM0=";
-        };
+        url = "https://github.com/SillyTavern/Extension-VRM";
+        rev = "2b4c4d015a40d255a064e83ed70c408046d58049";
       };
       "Extension-Weather" = {
-        enable = true;
-        source = pkgs.fetchFromGitHub {
-          owner = "SillyTavern";
-          repo = "SillyTavern";
-          rev = "c169a3cacaefd032d2857417564e0330b516a1b3";
-          hash = "sha256-kLJW803iMsnZ4iLEviS22w0qEdXb40EejKbzmajfZi4=";
-        };
+        url = "https://github.com/SillyTavern/Extension-Weather";
+        rev = "c169a3cacaefd032d2857417564e0330b516a1b3";
       };
     };
   };

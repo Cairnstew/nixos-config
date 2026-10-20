@@ -197,7 +197,7 @@ NixOS system modules. Import `nixosModules.common` to get the base profile syste
 | `risuai/` | RisuAI LLM roleplay frontend as an OCI container |
 | `letta/` | Letta (MemGPT) stateful AI agent platform |
 | `jan/` | Jan open-source ChatGPT alternative with local LLM inference |
-| `sillytavern/` | SillyTavern LLM frontend (wraps the upstream Cairnstew/SillyTavern flake module — options under `services.sillytavern.*`) |
+| `sillytavern/` | SillyTavern LLM frontend (thin wrapper around the upstream Cairnstew/SillyTavern flake module — options under `services.sillytavern-nixos.*`) |
 | `chatterbox-tts/` | Chatterbox TTS server — OpenAI-compatible TTS API |
 | `suwayomi/` | Suwayomi manga reader server with HOCON config and sync |
 | `ttyd/` | ttyd web terminal for browser-based emergency SSH access |

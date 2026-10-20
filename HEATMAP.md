@@ -488,7 +488,6 @@ All `my.*` options declared across module files.
 | `my.services.jan.apiServer.enable` | bool | `false` | OpenAI-compatible API server |
 | `my.services.jan.apiServer.port` | port | `1337` | API server port |
 | `my.services.jan.ollama.enable` | bool | `false` | Auto-configure Ollama model source |
-| `my.services.sillytavern.enable` | bool | `false` | SillyTavern AI chat |
 | `my.services.chatterbox-tts.enable` | bool | `false` | Chatterbox TTS server |
 | `my.services.chatterbox-tts.port` | port | `8004` | API port |
 | `my.services.chatterbox-tts.host` | str | `"127.0.0.1"` | Listen address |
@@ -730,11 +729,22 @@ Flake-level input (repo-root `config.nix`, not a `my.*` option):
 | `my.programs.cline.package` | package | — | VSCode extension |
 | `my.programs.cline.settings` | attrs | `{}` | Extension settings |
 
-## my.services.sillytavern.presets.* (SillyTavern)
+## services.sillytavern-nixos.* (SillyTavern — upstream namespace)
+
+The SillyTavern module is a thin wrapper around the upstream
+`github:Cairnstew/SillyTavern` flake, so its options live in the UPSTREAM
+namespace `services.sillytavern-nixos.*`, not under `my.*`. (`services.sillytavern`
+belongs to nixpkgs' own module and is not enabled by this config.)
 
 | Option | Type | Default | Description |
 |--------|------|---------|-------------|
-| `my.services.sillytavern.presets.*` | attrs | — | Character presets |
+| `services.sillytavern-nixos.enable` | bool | `false` | SillyTavern AI chat |
+| `services.sillytavern-nixos.config.port` | port | `8000` | Listen port |
+| `services.sillytavern-nixos.users.<name>.passwordFile` | path | `null` | Password file for a seeded account |
+| `services.sillytavern-nixos.settings.common` | attrs | `{}` | `settings.json` seeded into every account |
+| `services.sillytavern-nixos.presets.common` | attrs | `{}` | Named presets (textgen, instruct, context, sysprompt, reasoning, themes…) |
+| `services.sillytavern-nixos.extensions.<name>` | attrs | `{}` | Third-party extension, pinned by `url` + `rev` |
+| `services.sillytavern-nixos.plugins.<name>` | attrs | `{}` | Server-side plugin, pinned by `url` + `rev` |
 
 ## my.programs.direnv.secretFiles.* (direnv Secrets)
 

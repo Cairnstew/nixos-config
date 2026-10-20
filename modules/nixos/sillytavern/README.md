@@ -1,82 +1,69 @@
 # SillyTavern
 
-LLM frontend with Ollama integration, declarative presets, and basic auth.
-
-This module wraps the upstream Cairnstew/SillyTavern flake — options live under `services.sillytavern.*`, not `my.*`. See [default.nix](default.nix) for the upstream import of `sillytavern.nixosModules.default`.
+Thin wrapper around the upstream `github:Cairnstew/SillyTavern` flake module.
 
 ## Options
 
-| Option | Type | Description |
-|--------|------|-------------|
-| `enable` | bool | Enable SillyTavern |
-| `port` | int | Listen port (default: 8000) |
-| `ollama.enable` | bool | Auto-configure Ollama connection |
-| `ollama.models` | attrset | Multi-model connection profiles (auto-wires to ollama) |
-| `personas` | attrset | User personas (`{name, avatar?, description?}`) |
+This module declares **no** options of its own. Everything lives upstream under
+`services.sillytavern-nixos.*`:
 
-### Presets
+| Option | Default | Description |
+|--------|---------|-------------|
+| `services.sillytavern-nixos.enable` | `false` | Enable the service |
+| `services.sillytavern-nixos.config.port` | `8000` | Listen port |
+| `services.sillytavern-nixos.config.whitelistMode` | `true` | Restrict access to the host whitelist |
+| `services.sillytavern-nixos.users` | `{}` | Accounts to seed (`passwordFile`, `admin`) |
+| `services.sillytavern-nixos.settings.common` | `{}` | `settings.json` seeded into every account |
+| `services.sillytavern-nixos.presets.common` | `{}` | Named presets (textgen, instruct, context, sysprompt, reasoning, themes…) |
+| `services.sillytavern-nixos.files.common` | `{}` | Extra JSON files seeded into the data root |
+| `services.sillytavern-nixos.extensions` | `{}` | Third-party UI extensions, pinned by `url` + `rev` |
+| `services.sillytavern-nixos.plugins` | `{}` | Server-side plugins, pinned by `url` + `rev` |
+| `services.sillytavern-nixos.proxyUpstreams` | `[]` | Reverse-proxy hints for a consumer's proxy |
 
-| Option | Directory | Description |
-|--------|-----------|-------------|
-| `presets.instruct` | `instruct/` | Instruct templates (38 built-in) |
-| `presets.context` | `context/` | Context templates (34 built-in) |
-| `presets.sysprompt` | `sysprompt/` | System prompts (13 built-in) |
-| `presets.textgen` | `TextGen Settings/` | TextGen sampler presets (6 built-in) |
-| `presets.reasoning` | `reasoning/` | Reasoning templates (prefix/suffix) |
-| `presets.kobold` | `Kobold AI Settings/` | KoboldAI sampler presets |
-| `presets.openai` | `OpenAI Settings/` | OpenAI/chat completion presets |
-| `presets.themes` | `themes/` | UI themes |
-| `presets.quickReplies` | `quick-replies/` | Quick reply button presets |
+The namespace is **not** `services.sillytavern` — that belongs to nixpkgs' own
+module, which this config does not enable (upstream asserts the two are never
+both enabled: they share the unit, the system account and the state directory).
 
-### Settings (via `SILLYTAVERN_*` env vars)
-
-| Option | Description |
-|--------|-------------|
-| `settings.ssl.enable` | SSL/TLS encryption |
-| `settings.logging.minLogLevel` | 0=DEBUG, 1=INFO, 2=WARN, 3=ERROR |
-| `settings.enableUserAccounts` | Multi-user mode |
-| `settings.performance.lazyLoadCharacters` | Lazy load character cards |
-| `settings.ollama.keepAlive` | Model keep-alive time (-1=forever) |
-
-## Usage
+## Usage Example
 
 ```nix
-services.sillytavern = {
+services.sillytavern-nixos = {
   enable = true;
-  ollama = {
-    enable = true;
-    models = {
-      "hf.co/Lewdiculous/InfinityRP-v1-7B-GGUF-IQ-Imatrix:Q4_K_M" = {
-        preset = "Roleplay";
-        sysprompt = "Creative Writing";
-        numCtx = 8192;
-        temperature = 0.9;
-      };
-    };
+  config.port = 8000;
+
+  users.seanc = {
+    passwordFile = config.age.secrets.sillytavern-seanc.path;
+    admin = true;
   };
-  personas.my-default = {
-    name = "Sean";
-    description = "A curious explorer.";
-  };
-  presets.themes.my-dark = {
-    main_text_color = "rgba(220, 220, 210, 1)";
-    blur_strength = 10;
-    font_scale = 1.1;
-  };
-  settings = {
-    enableUserAccounts = true;
-    logging.minLogLevel = 1;
+
+  presets.common.textGeneration.Reasoning.json = {
+    temp = 1.0;
+    top_k = 40;
+    include_reasoning = true;
   };
 };
 ```
 
 ## Notes
 
-- Settings injected as `SILLYTAVERN_*` env vars, override `config.yaml`
-- Preset files written on each activation (service start)
-- Models auto-populate `my.services.ollama.models` and auto-pull
-- L2 smoke test: `systemctl start sillytavern-smoke-test`
-
-## Related Modules
-
-- **Imported by** [`modules/nixos/common.nix`](../common.nix) — enabled on all hosts via `my.*` options.
+- **Upstream:** the implementation is upstream's; only the proxy wiring, the
+  `TRUST_PROXY` env var and the Ollama model pre-pull are local. Re-pin with
+  `nix flake update sillytavern`. No ensemble space is registered for it, so
+  implementation changes are made in the upstream repo directly.
+- **Reverse proxy:** the wrapper registers `my.services.proxy.upstreams.sillytavern`
+  at `/sillytavern/`, with the root-relative SPA paths (`/assets/`, `/api/`, …)
+  proxied separately.
+- **Ollama:** models named by the account's Ollama connection profiles
+  (`settings.common.extension_settings.connectionManager.profiles`) are pulled
+  before the service starts. A failed pull warns, it does not fail the unit.
+- **Health check:** upstream ships `sillytavern-healthcheck.service`
+  (`systemctl start sillytavern-healthcheck`).
+- **Not carried over from the old local wrapper:** the Similharity Qdrant
+  server plugin (it needs npm dependencies a plain git checkout cannot
+  provide) and the Resemble.ai TTS provider (it patched SillyTavern's own TTS
+  extension JS, which upstream's package owns now). VectFox survives as a
+  pinned `extensions` entry. Both are re-addable — upstream's `plugins`
+  option takes a git source, and a TTS provider is a small patch against
+  `services.sillytavern-nixos.package`.
+- **Docs:** `https://github.com/Cairnstew/SillyTavern` — `docs/options.md`,
+  `docs/installing.md`, `docs/users.md`.
