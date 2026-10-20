@@ -1,4 +1,4 @@
-{ config, lib, pkgs, ... }:
+{ config, lib, pkgs, flake, ... }:
 
 let
   inherit (lib) mkIf mkMerge;
@@ -82,7 +82,12 @@ let
   # and hard to read. lib.splitString "\n" + head/hasPrefix is exact.
   #
   # Scoped to THIS module's skills/ dir.
-  skillSourceDir = ./skills;
+  # Read through the flake source (not `./skills`) so the directory is already
+  # in the store: a bare path copy is only realised lazily, and
+  # `nix flake check --no-build` then dies with "path '...-skills' is not
+  # valid" after any GC (same class as the agenix secretsPath entry in
+  # GOTCHAS.md).
+  skillSourceDir = flake.inputs.self + /modules/home/opencode/skills;
   sourceSkillFiles =
     lib.filter (n: lib.hasSuffix ".md" n) (builtins.attrNames (builtins.readDir skillSourceDir));
   hasSkillFrontmatter = n:
