@@ -318,6 +318,17 @@ in
                 flakeInput = "project-zomboid-servers";
                 autoUpdateFlakeInput = true;
               };
+              sillytavern = {
+                path = "/home/seanc/Projects/SillyTavern";
+                agent = "build";
+                description = "SillyTavern for NixOS: the module, packaging, and the Breeze TTS / llama.cpp backends";
+                # Same contract as project-zomboid-servers: this repo consumes
+                # the fork as the `sillytavern` input (modules/nixos/sillytavern
+                # is only the host-local wrapper), so upstream work is done in
+                # the space and the input is re-pinned on clean shutdown.
+                flakeInput = "sillytavern";
+                autoUpdateFlakeInput = true;
+              };
             };
           };
 

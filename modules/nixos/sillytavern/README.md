@@ -47,9 +47,13 @@ services.sillytavern-nixos = {
 ## Notes
 
 - **Upstream:** the implementation is upstream's; only the proxy wiring, the
-  `TRUST_PROXY` env var and the Ollama model pre-pull are local. Re-pin with
-  `nix flake update sillytavern`. No ensemble space is registered for it, so
-  implementation changes are made in the upstream repo directly.
+  `TRUST_PROXY` env var and the Ollama model pre-pull are local. The fork is
+  registered as the `sillytavern` Agent Space
+  (`my.programs.opencode.ensemble.spaces`), so implementation changes are made
+  with `team_spawn(space="sillytavern", …)` in `/home/seanc/Projects/SillyTavern`
+  and the input is re-pinned automatically on a clean shutdown
+  (`autoUpdateFlakeInput`); `nix flake update sillytavern` remains the manual
+  path.
 - **Reverse proxy:** the wrapper registers `my.services.proxy.upstreams.sillytavern`
   at `/sillytavern/`, with the root-relative SPA paths (`/assets/`, `/api/`, …)
   proxied separately.
