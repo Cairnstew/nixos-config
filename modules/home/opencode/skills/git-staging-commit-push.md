@@ -352,3 +352,22 @@ gh pr merge <pr-number> --merge --repo Cairnstew/nixos-config
   per host, then `nix eval .#packages.x86_64-linux` / `.#checks.x86_64-linux` /
   `.#nixosModules` / `.#overlays` with `--apply 'x: builtins.length
   (builtins.attrNames x)'`. See `.github/workflows/smart-ci.yml:137`.
+
+### 2026-10-22 — self-improve RUN LOG appends make every master→host sync conflict
+
+- Lesson: syncing `server` with `master` conflicted in exactly one file — this
+  command's RUN LOG — because both branches had appended a 2026-10-22 entry
+  (`modules/home/opencode/commands/git-commit-push.md:279` on server,
+  `modules/home/opencode/commands/git-commit-push.md:284` on master). The same
+  conflict had already failed the auto-merge of the preceding self-improve push
+  (`39772128081` → `CONFLICT (content): Merge conflict in
+  modules/home/opencode/commands/git-commit-push.md`), so its three commits sat
+  unmerged on `origin/server` until this manual sync. Self-improve commits are
+  append-only but land on whichever host branch was active, so shared RUN LOG
+  files (`modules/home/opencode/{commands,skills}/*.md`) accumulate same-file
+  edits across host branches by design.
+- Fix: when a host branch falls behind master, expect a RUN LOG conflict in
+  those files (the rest of the tree auto-merges). Resolve by keeping **both**
+  entries — append-only, never drop the other branch's lesson — then `git add`
+  the file and `git commit --no-edit`; the merge commit carries both and the
+  auto-merge succeeds (verified: PR #211 merged, all five runs green).
