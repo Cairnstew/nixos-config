@@ -166,3 +166,21 @@ The deploy script verifies SHA-256 after copy. If verification fails:
 - Check Tailscale status: the deploy target may not have connected to tailnet yet
 - Use direct IP if available (Ethernet/WiFi on same LAN)
 - Or physically access the machine to check `tailscale status`
+
+## RUN LOG
+
+### 2026-10-22 — `just activate <host>` needs working SSH key auth first
+- Lesson: the Quick Reference lists `just activate <hostname>` (line 24) with no
+  mention of the SSH prerequisite. A deploy to `laptop` failed with
+  `Permission denied (publickey,keyboard-interactive)`: the only authorized key is
+  `flake.config.me.sshKey` (`config.nix:29`), and its private half is not on disk —
+  `~/.ssh/config` sets `IdentityAgent` to `~/.1password/agent.sock`, which did not
+  exist, so the systemd ssh-agent was bypassed. The build side is fine; only the
+  transfer/auth step is blocked.
+- Also: the target had no `known_hosts` entry. Its host key is committed as
+  `root@laptop` in `modules/nixos/common.nix:15`; `ssh-keyscan -t ed25519 laptop`
+  matched that key, so verifying against the repo before adding it avoids a blind
+  `StrictHostKeyChecking=accept-new`.
+- Fix for next time: before `just activate`, check `ssh-add -l` (with the
+  configured agent) and that the target's key is in `known_hosts`; if the 1P agent
+  socket is missing, enable the SSH agent in 1Password or unlock it first.
