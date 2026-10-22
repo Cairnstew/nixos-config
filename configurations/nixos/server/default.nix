@@ -706,6 +706,15 @@ in
     port = 8445;
     wsPort = 8446;
 
+    # `narrator` started life as a runtime voice (design -> register with
+    # POST /v1/voices, which wrote /var/lib/breeze-tts/voices/narrator.breeze).
+    # Declaring the pre-encoded blob instead makes it a build artifact: the unit
+    # installs it before the server scans the directory, validates the BRZV
+    # magic, and records it in a .nix-managed manifest so removing this line
+    # removes the file. The SillyTavern module unions declared names into
+    # available_voices, so the dropdown cannot drift from the backend.
+    voices.narrator.source = ./voices/narrator.breeze;
+
     # The static budget: model 3072 + headroom 768 + the LLM's reserve 7000
     # = 10840 <= 12288, so `nixos-rebuild` refuses a config that cannot fit.
     # The start-time probe still reads the driver's real free VRAM (3840 MiB
@@ -718,15 +727,14 @@ in
   # automatically (the SillyTavern module reads the Breeze port), so this only
   # flips `extension_settings.tts.enabled`.
   services.sillytavern-nixos.tts.enable = true;
-  # `available_voices` must not be empty: the TTS extension's Default Voice row
-  # only offers `disabled` when the provider lists no voices, so nothing would
-  # ever be spoken. `narrator` is a saved voice on the backend (a designed
-  # reference clip registered with POST /v1/voices; saved voices are files under
-  # /var/lib/breeze-tts/voices, so it survives restarts).
-  services.sillytavern-nixos.tts.voices = [ "narrator" ];
-  # And map it to [Default Voice], so a fresh chat speaks without a manual visit
-  # to the TTS settings page. Settings are deep-merged on every activation with
-  # the declared side winning, so this is the authoritative value.
+  # No `tts.voices` list: the declared voice above is unioned into
+  # `available_voices` by the module (managedTtsVoices), so the backend's
+  # voices directory is the single source of truth for ids.
+  #
+  # `available_voices` must still not end up empty: the TTS extension's Default
+  # Voice row only offers `disabled` when the provider lists no voices. That is
+  # why the declared voice exists at all, rather than relying on reference-free
+  # design.
   services.sillytavern-nixos.settingsExtra.extensionSettings.tts."OpenAI Compatible".voiceMap =
     "[Default Voice]:narrator";
 
