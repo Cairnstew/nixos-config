@@ -72,6 +72,31 @@ let
           '') enabledUpstreams)}
         </div>
 
+        ${lib.optionalString (cfg.dashboard.links != []) ''
+        <h2 class="section-title">Direct</h2>
+        <div class="grid">
+          ${lib.concatStringsSep "\n" (map (l: ''
+          <a href="${l.href}" class="card"${lib.optionalString (l.servePort != null) " data-serve-port=\"${toString l.servePort}\""}>
+            <h2>${l.label}</h2>
+            ${lib.optionalString (l.description != "") ''<div class="desc">${l.description}</div>''}
+          </a>
+          '') cfg.dashboard.links)}
+        </div>
+        <script>
+        // Same host rule as the opencode section: a card published on the
+        // tailnet links to https://<current-host>:<servePort>/, so one
+        // dashboard works both from the box and from another tailnet machine.
+        (function () {
+          var host = window.location.hostname;
+          var local = host === 'localhost' || host === '127.0.0.1' || host === '::1';
+          if (local) return;
+          document.querySelectorAll('a[data-serve-port]').forEach(function (a) {
+            a.href = 'https://' + host + ':' + a.dataset.servePort + '/';
+          });
+        })();
+        </script>
+        ''}
+
         ${lib.optionalString cfg.systemMetrics.enable ''
         <h2 class="section-title">System</h2>
         <div class="metrics-grid">

@@ -138,6 +138,53 @@ in
         description = "Short description shown below the title.";
       };
 
+      # Cards for services that are NOT behind this proxy: they have their own
+      # port and are usually published on the tailnet by a separate
+      # `tailscale serve` rule. `servePort` mirrors the opencode section below —
+      # when the dashboard is viewed from a non-local host the card links to
+      # https://<current-host>:<servePort>/, so a single card works both from
+      # the box and from another tailnet machine.
+      links = lib.mkOption {
+        type = lib.types.listOf (lib.types.submodule {
+          options = {
+            label = lib.mkOption {
+              type = lib.types.str;
+              description = "Card title.";
+            };
+
+            description = lib.mkOption {
+              type = lib.types.str;
+              default = "";
+              description = "Short line shown under the title.";
+            };
+
+            href = lib.mkOption {
+              type = lib.types.str;
+              description = ''
+                Fallback URL, used when the dashboard is viewed from localhost
+                or when <option>servePort</option> is null.
+              '';
+            };
+
+            servePort = lib.mkOption {
+              type = lib.types.nullOr lib.types.port;
+              default = null;
+              description = ''
+                Tailnet HTTPS port for this service. When set, non-local viewers
+                link to <literal>https://&lt;current-host&gt;:&lt;servePort&gt;/</literal>.
+              '';
+            };
+          };
+        });
+        default = [ ];
+        description = ''
+          Extra dashboard cards for services served on their own port instead of
+          a path under this proxy — for example a frontend that cannot live
+          under a path prefix (SillyTavern with accounts, the Breeze TTS UI).
+          Rendered in a "Direct" section below the proxied services.
+        '';
+      };
+
       opencode = lib.mkOption {
         type = lib.types.listOf (lib.types.submodule {
           options = {

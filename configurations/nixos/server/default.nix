@@ -582,7 +582,10 @@ in
     # `host-validation-middleware` strips the port before matching.
     config.hostWhitelist = {
       enabled = true;
-      hosts = [ "server.tail685690.ts.net" ];
+      # `localhost` is only reachable from the box itself (the server binds
+      # 127.0.0.1), and without it the dashboard's local card — href
+      # http://localhost:8000/ — is answered with 403 "untrusted host".
+      hosts = [ "server.tail685690.ts.net" "localhost" ];
     };
 
     # Point the account's Chat Completion at the local llama.cpp router and
@@ -648,6 +651,30 @@ in
   # wrapper's Caddy /sillytavern/ upstream (and its root-relative asset
   # handles) would only advertise a broken link on the dashboard.
   my.services.proxy.upstreams.sillytavern.enable = false;
+
+  # …so it, the TTS UI and opencode web are listed as direct cards instead. All
+  # three live on their own tailnet port; servePort makes the dashboard link to
+  # https://<current-host>:<port>/ unless it is being viewed from localhost.
+  my.services.proxy.dashboard.links = [
+    {
+      label = "SillyTavern";
+      description = "Roleplay frontend — local llama.cpp model (${lumimaidModel})";
+      href = "http://localhost:8000/";
+      servePort = 8444;
+    }
+    {
+      label = "Breeze TTS";
+      description = "Local speech: voice design/cloning and /v1/audio/speech";
+      href = "http://localhost:8445/";
+      servePort = 8445;
+    }
+    {
+      label = "opencode web";
+      description = "opencode web UI (nix-config instance)";
+      href = "http://localhost:4200/";
+      servePort = 8443;
+    }
+  ];
 
   # ── Breeze TTS 2 (local speech, Vulkan) ────────────────────────────────
   # OpenAI-compatible `/v1/audio/speech` on loopback, plus the bundled web UI
