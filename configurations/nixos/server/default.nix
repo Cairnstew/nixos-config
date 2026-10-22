@@ -18,6 +18,9 @@ in
     flake.inputs.self.nixosModules.common
     # llama.cpp inference backend for SillyTavern (services.llama-cpp-nixos).
     flake.inputs.sillytavern.nixosModules.llama-cpp
+    # Local speech backend (services.breeze-tts-nixos). Independent lifetime;
+    # the SillyTavern module notices it and points the TTS provider at it.
+    flake.inputs.sillytavern.nixosModules.breeze-tts
   ];
 
   # ── System Identity ──────────────────────────────────────────────────────
@@ -645,6 +648,86 @@ in
   # wrapper's Caddy /sillytavern/ upstream (and its root-relative asset
   # handles) would only advertise a broken link on the dashboard.
   my.services.proxy.upstreams.sillytavern.enable = false;
+
+  # ── Breeze TTS 2 (local speech, Vulkan) ────────────────────────────────
+  # OpenAI-compatible `/v1/audio/speech` on loopback, plus the bundled web UI
+  # at `/`. Separate unit from the LLM and the frontend: its own lifetime, its
+  # own GPU footprint.
+  services.breeze-tts-nixos = {
+    enable = true;
+
+    # The catalogue's small safe quant. Measured by upstream on this exact
+    # hardware class (RTX 3060 12 GiB + a Q4/Q6 8B resident): the file is
+    # 2.4 GiB and it claims ~3.0 GiB of VRAM while serving, leaving ~1.7 GiB
+    # free. q8_0 needs ~1 GiB more and only fits if the LLM stays under ~7 GiB.
+    model = "q4_k";
+    # Fetch into /var/lib/breeze-tts/models on start and verify the pinned
+    # sha256 every time. The alternative is a one-time curl by hand; this is
+    # self-healing (a mismatched file is discarded and re-fetched) and keeps
+    # the weights out of the store, where 2.4 GiB would stay pinned.
+    downloadModel = true;
+
+    # Serve the browser UI. It has NO authentication and NO rate limiting, so
+    # it stays on loopback and is published only to the tailnet (below).
+    webui = true;
+
+    # The UI's WebSocket URL is `wss://<page host>:<ws_port>` with `ws_port`
+    # reported by the server itself (webui/app.js), so the two ports are the
+    # tailnet-facing ones: tailscale serve maps 8445 -> UI and 8446 -> WS, and
+    # the reported ws_port is 8446, which is exactly what the browser (loaded
+    # from :8445) will dial. 8443/8444 are opencode-web/SillyTavern.
+    port = 8445;
+    wsPort = 8446;
+
+    # The static budget: model 3072 + headroom 768 + the LLM's reserve 7000
+    # = 10840 <= 12288, so `nixos-rebuild` refuses a config that cannot fit.
+    # The start-time probe still reads the driver's real free VRAM (3840 MiB
+    # required) — it currently sees ~4.7 GiB free with lumimaid-8b resident.
+    gpu.totalVramMiB = 12288;
+    gpu.reserveForOtherMiB = 7000;
+  };
+
+  # Speak assistant replies in the UI. The endpoint itself is wired
+  # automatically (the SillyTavern module reads the Breeze port), so this only
+  # flips `extension_settings.tts.enabled`.
+  services.sillytavern-nixos.tts.enable = true;
+  # `available_voices` must not be empty: the TTS extension's Default Voice row
+  # only offers `disabled` when the provider lists no voices, so nothing would
+  # ever be spoken. `narrator` is a saved voice on the backend (a designed
+  # reference clip registered with POST /v1/voices; saved voices are files under
+  # /var/lib/breeze-tts/voices, so it survives restarts).
+  services.sillytavern-nixos.tts.voices = [ "narrator" ];
+  # And map it to [Default Voice], so a fresh chat speaks without a manual visit
+  # to the TTS settings page. Settings are deep-merged on every activation with
+  # the declared side winning, so this is the authoritative value.
+  services.sillytavern-nixos.settingsExtra.extensionSettings.tts."OpenAI Compatible".voiceMap =
+    "[Default Voice]:narrator";
+
+  # Tailnet HTTPS for the TTS UI and its WebSocket. Both are HTTP backends on
+  # loopback; tailscale terminates TLS and forwards, same pattern as the two
+  # services above. Separate ports because the UI dials host:ws_port directly.
+  systemd.services.breeze-tts-tailnet-serve = {
+    description = "tailscale serve: Breeze TTS web UI (:8445) + WebSocket (:8446)";
+    wantedBy = [ "multi-user.target" ];
+    wants = [ "tailscaled.service" ];
+    after = [ "tailscaled.service" "breeze-tts-nixos.service" ];
+    serviceConfig = {
+      Type = "oneshot";
+      RemainAfterExit = true;
+      ExecStart = pkgs.writeShellScript "breeze-tts-tailnet-serve" ''
+        set -euo pipefail
+        ts=${lib.getExe pkgs.tailscale}
+        $ts serve --bg --https 8445 http://127.0.0.1:8445
+        $ts serve --bg --https 8446 http://127.0.0.1:8446
+      '';
+      ExecStop = pkgs.writeShellScript "breeze-tts-tailnet-unserve" ''
+        set -euo pipefail
+        ts=${lib.getExe pkgs.tailscale}
+        $ts serve --https 8445 off || true
+        $ts serve --https 8446 off || true
+      '';
+    };
+  };
 
   # Tailnet HTTPS endpoint for SillyTavern (same pattern as opencode-web's
   # per-instance tailscale serve): terminate TLS on the tailnet and forward to
