@@ -1,10 +1,23 @@
 { flake, lib, config, pkgs, ... }:
+let
+  # Served model id — the llama.cpp router's INI section name and the string
+  # SillyTavern sends as `model`. Both modules must agree; neither reads the
+  # other, so it is bound once here.
+  lumimaidModel = "lumimaid-8b";
+
+  # Llama-3-8B's trained context (LimaRP data was 8k). The GGUF page pairs a
+  # smaller Q4_K_M with 12288 on an 8 GB card; this host's 12 GB RTX 3060 runs
+  # Q6_K at the native 8192 with room for the KV cache.
+  lumimaidContext = 8192;
+in
 {
   imports = [
     ./configuration.nix
     ./hardware-configuration.nix
     ./disk-config.nix
     flake.inputs.self.nixosModules.common
+    # llama.cpp inference backend for SillyTavern (services.llama-cpp-nixos).
+    flake.inputs.sillytavern.nixosModules.llama-cpp
   ];
 
   # ── System Identity ──────────────────────────────────────────────────────
@@ -23,11 +36,12 @@
     # GPU for image generation. Re-enable with `ai.enable = true` plus
     # `my.services.ollama.enable = true` (the ai profile asserts Ollama).
     ai.enable = false;
-    # NVIDIA headless + CUDA DISABLED 2026-10-16: the driver/CUDA closure is
-    # the single biggest build-time and disk consumer on this box and the AI/ML
-    # stack below (ComfyUI/Ollama) is now off. Flip both this and
-    # `my.services.comfyui.enable` back to true to restore GPU workloads.
-    gpu.nvidia-headless.enable = false;
+    # NVIDIA headless + CUDA — ENABLED 2026-10-21 for the llama.cpp backend
+    # (services.llama-cpp-nixos with pkgs.llama-cpp-cuda) in SillyTavern.
+    # The driver/CUDA closure is the biggest build-time and disk consumer on
+    # this box; ComfyUI stays off (`my.services.comfyui.enable = false`) so the
+    # GPU has one workload.
+    gpu.nvidia-headless.enable = true;
     location.enable = true;
   };
 
@@ -178,7 +192,11 @@
   nix.settings.build-dir = "/mnt/data/nix-build";
 
   # Ensure the build directory exists before nix tries to use it
-  systemd.tmpfiles.rules = [ "d /mnt/data/nix-build 0755 root root -" ];
+  systemd.tmpfiles.rules = [
+    "d /mnt/data/nix-build 0755 root root -"
+    # GGUF weights for services.llama-cpp-nixos (operator-managed, on disk).
+    "d /mnt/data/llama 0755 root root -"
+  ];
 
   # ── Networking / VPN (Dual-Mesh for Headless Reliability) ──────────────
   # Both Tailscale and ZeroTier run simultaneously so you always have a
@@ -470,6 +488,177 @@
     settings = {
       ollamaThinkingMode = "on";
       strictJsonSchema = false;
+    };
+  };
+
+  # ── llama.cpp (LLM inference backend, CUDA) ────────────────────────────
+  # Upstream's separate NixOS module (services.llama-cpp-nixos, NOT nixpkgs'
+  # services.llama-cpp). Router mode: one port serves every declared model and
+  # the section name is the `model` id the API routes on.
+  services.llama-cpp-nixos = {
+    enable = true;
+    # nixpkgs builds the CUDA kernels for nine architectures
+    # (75;80;86;89;90;100;103;120a;121a), which is ~9x the nvcc work and none
+    # of it runs here: this box has exactly one GPU, an RTX 3060 (sm_86).
+    package = pkgs.llama-cpp-cuda.overrideAttrs (oa: {
+      cmakeFlags = (oa.cmakeFlags or [ ]) ++ [ "-DCMAKE_CUDA_ARCHITECTURES=86" ];
+    });
+    host = "127.0.0.1";
+    port = 9931;
+
+    models.${lumimaidModel} = {
+      # Weights are operator-managed on the data disk (6.6 GB would otherwise
+      # sit in the /nix store on a 116 GB root that is ~87% full). One-time
+      # fetch:
+      #   curl -L -o /mnt/data/llama/lumimaid-8b-Q6_K-imat.gguf \
+      #     https://huggingface.co/Lewdiculous/Llama-3-Lumimaid-8B-v0.1-OAS-GGUF-IQ-Imatrix/resolve/main/v2-Llama-3-Lumimaid-8B-v0.1-OAS-Q6_K-imat.gguf
+      # Quant choice from the GGUF card: Q4_K_M-imat is the 8 GB-VRAM pick for
+      # up to 12288 context; with 12 GB this Q6_K (6.6 GB) fits at 8192 with
+      # the KV cache (~1 GB) and compute buffers.
+      weights.path = "/mnt/data/llama/lumimaid-8b-Q6_K-imat.gguf";
+      ctxSize = lumimaidContext;
+      primary = true;
+      args = {
+        ngl = "all"; # 32/32 layers on the RTX 3060
+        "flash-attn" = "on";
+        # The card specifies Llama 3 prompting, and the GGUF's metadata does
+        # NOT agree: this conversion carries a ChatML template. Worse,
+        # `chat-template = "llama3"` does not resolve in llama.cpp 0.4.1 —
+        # the NAME is stored verbatim as a 6-character template, so every
+        # request's prompt became the literal string `llama3` (4 tokens) and
+        # the model free-associated ("I am a llama, but I am not a typical
+        # llama…" to "What is 2+2?"). `chat-template-file` renders the real
+        # jinja: prompt 4 -> 27 tokens and the answer is "4".
+        "chat-template-file" = "${./llama3-instruct.jinja}";
+      };
+    };
+  };
+
+  # The module's launcher is a writeShellApplication whose only job is to
+  # export LLAMA_ARG_API_KEY from a systemd credential. In nixpkgs 20b1ddd it
+  # builds: upstream split the assignment from the `export` (shellcheck could
+  # not model `set -a`, so SC2034 failed the build). The launcher now guards
+  # the credential read, so a keyless loopback instance works without an
+  # override. Host/port/models-preset come from the unit's environment
+  # (LLAMA_ARG_*), not the command line.
+
+  # ── SillyTavern (LLM Roleplay Frontend) ────────────────────────────────
+  # Options live under `services.sillytavern-nixos.*` — the upstream
+  # github:Cairnstew/SillyTavern flake module, wrapped by
+  # modules/nixos/sillytavern. The namespace is NOT `services.sillytavern`:
+  # that one belongs to nixpkgs' own module, and the two cannot be enabled at
+  # the same time (they share the unit, the account and the state directory).
+  # Served at https://server.tail685690.ts.net:8444/ (tailnet only, see the
+  # tailscale-serve unit below). NOT under the Caddy /sillytavern/ subpath:
+  # with accounts enabled SillyTavern 302s to a root-relative /login and its
+  # login JS sets pathname = "/" on success, so a path-prefixed install drops
+  # the user on the dashboard. Root-of-its-own-port has no such problem.
+  services.sillytavern-nixos = {
+    enable = true;
+
+    # The package's npm ci runs in the fixed-output node_modules build, where
+    # /etc/ssl is absent and nixpkgs' node has no system bundle to fall back
+    # to. Upstream now defaults `caCertFile` to nss-cacert's `ca-bundle.crt`
+    # (not the non-existent `ca-certificates.crt` the docs used to name), so
+    # the stock package builds without an override.
+
+    # Loopback-only (the default); tailscale serve terminates tailnet TLS and
+    # forwards to 127.0.0.1:8000.
+    config.port = 8000;
+
+    # Access control is SillyTavern's own account system — the module refuses
+    # to enable the service with no accounts configured (default-user is
+    # created with an EMPTY password, which is unloginable, and a declared
+    # user without a passwordFile would be PASSWORDLESS, not disabled).
+    # Accounts are the real gate, so the IP whitelist (which would otherwise
+    # see the tailscale-serve peer as 127.0.0.1 anyway) stays off.
+    config.enableUserAccounts = true;
+    config.whitelistMode = false;
+    # Host-header check: tailscale serve forwards the public name, and without
+    # this the server logs "Request from untrusted host" on every request.
+    # `host-validation-middleware` strips the port before matching.
+    config.hostWhitelist = {
+      enabled = true;
+      hosts = [ "server.tail685690.ts.net" ];
+    };
+
+    # Point the account's Chat Completion at the local llama.cpp router and
+    # select the seeded preset, so a fresh login is already on the GGUF rather
+    # than the OpenAI default.
+    settings.common.oai_settings = {
+      chat_completion_source = "custom";
+      custom_url = "http://127.0.0.1:9931/v1";
+      custom_model = lumimaidModel;
+      preset_settings_openai = lumimaidModel;
+      openai_max_context = lumimaidContext;
+      openai_max_tokens = 512;
+      stream_openai = true;
+      bind_preset_to_connection = true;
+    };
+
+    # Chat-completion wiring for the locally served GGUF. `contextSize` must
+    # match services.llama-cpp-nixos.models.<id>.ctxSize (the modules do not
+    # read each other); it becomes `openai_max_context` in the generated
+    # preset. Sampling is a Llama-3 RP baseline — the GGUF card points at
+    # Virt's SillyTavern presets for the author's tuned values, which are
+    # imported in the UI if wanted.
+    modelLayers = {
+      enable = true;
+      catalog.${lumimaidModel} = {
+        contextSize = lumimaidContext;
+        connection = {
+          url = "http://127.0.0.1:9931/v1";
+          model = lumimaidModel;
+        };
+        presets.openai = {
+          temp_openai = 0.9;
+          top_p_openai = 0.95;
+          top_k_openai = 40;
+          min_p_openai = 0.05;
+          top_a_openai = 0;
+          freq_pen_openai = 0;
+          pres_pen_openai = 0;
+          repetition_penalty_openai = 1.05;
+          openai_max_tokens = 512;
+        };
+      };
+    };
+    users.seanc = {
+      name = "Sean";
+      admin = true;
+      passwordFile = config.age.secrets."sillytavern-password".path;
+    };
+
+    # Extensions/plugins are pinned store paths; the UI's update button would
+    # fail against a read-only path. (Also forced off upstream when any are
+    # declared; spelled out for the record.)
+    config.extensions.autoUpdate = false;
+
+    # No `systemdOverrides` any more. Both raw-unit escapes were upstream
+    # defects, fixed in 6cee6f7: the hardening list no longer sets
+    # `MemoryDenyWriteExecute` (V8 JIT needs W+X pages; node died at isolate
+    # init with SIGTRAP), and `ExecStart` is one `escapeShellArgs` string
+    # instead of a list that rendered as three `ExecStart=` lines.
+  };
+
+  # SillyTavern is served at the root of its own tailnet HTTPS port, so the
+  # wrapper's Caddy /sillytavern/ upstream (and its root-relative asset
+  # handles) would only advertise a broken link on the dashboard.
+  my.services.proxy.upstreams.sillytavern.enable = false;
+
+  # Tailnet HTTPS endpoint for SillyTavern (same pattern as opencode-web's
+  # per-instance tailscale serve): terminate TLS on the tailnet and forward to
+  # the loopback listener. 8443 is opencode-web; 8444 is free.
+  systemd.services.sillytavern-tailnet-serve = {
+    description = "tailscale serve: SillyTavern on :8444";
+    wantedBy = [ "multi-user.target" ];
+    wants = [ "tailscaled.service" ];
+    after = [ "tailscaled.service" "sillytavern.service" ];
+    serviceConfig = {
+      Type = "oneshot";
+      RemainAfterExit = true;
+      ExecStart = "${pkgs.tailscale}/bin/tailscale serve --bg --https 8444 http://127.0.0.1:8000";
+      ExecStop = "${pkgs.tailscale}/bin/tailscale serve --https 8444 off";
     };
   };
 
