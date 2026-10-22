@@ -1716,3 +1716,25 @@ Do not "fix" this by dropping the flag: the GGUF's own metadata is whatever the 
 **Root-owned `.git/objects/xx` also breaks `git fetch`/`git pull`, not just `git add` — `failed to write object` / `unpack-objects failed`**
 
 Symptom (2026-10-22): after a successful `git push`, `git fetch origin` failed with `error: insufficient permission for adding an object to repository database .git/objects`, then `fatal: failed to write object` / `fatal: unpack-objects failed` — while the filesystem had 21 G free, so it reads like corruption or a full disk. Cause: the same root-owned fanout dirs as the entry above (`find .git/objects -maxdepth 2 ! -user "$(id -un)"` found a root:root `objects/45/` plus one tree object inside). That entry says this "breaks `git add` rather than `git pull`/`checkout`"; that understates it — any operation that *writes* objects fails when the target fanout dir is root-owned, and fetch/unpack is one. Fix is unchanged (`sudo chown -R seanc:users .git/objects/45`), after which the fetch fast-forwards the remote refs normally. Check ownership before suspecting disk space.
+
+---
+
+**Wiring Breeze TTS into SillyTavern: an empty voice list means silence, and a streamed WAV fed back OOMs the server** (2026-10-22, server)
+
+Two traps between "service is up" and "the replies are actually spoken". Both were hit while enabling `services.breeze-tts-nixos` at 8445 (UI + HTTP) / 8446 (WebSocket) with the web UI on `https://<host>:8445/`.
+
+1. **`available_voices = []` is not "design a voice", it is "no voice at all".** The fork's docs say an empty dropdown still works for reference-free voice design. In SillyTavern 1.19.0 the TTS extension's *Default Voice* row offers only `disabled` when the provider returns no voices (`public/scripts/extensions/tts/index.js` `VoiceMapEntry.addUI`), so `extension_settings.tts.enabled = true` speaks nothing, and a request that does get through dies on the server proxy, which substitutes `voice: 'alloy'` for a missing one — Breeze answers `404 {"error":{"message":"voice 'alloy' is not a saved voice…"}}`. Fix both halves: register a saved voice, list it in `services.sillytavern-nixos.tts.voices`, and map it to the default row with `settingsExtra.extensionSettings.tts."OpenAI Compatible".voiceMap = "[Default Voice]:narrator";` (string form, comma-separated `char:voice`; settings are deep-merged on every activation with the declared side winning).
+
+2. **Do not save a voice from a `response_format = "wav"` response.** `/v1/audio/speech` streams WAV with the length fields set to the maximum (documented, so players read to EOF), and `POST /v1/voices` trusts that header: uploading a 7.8 s clip made the unit allocate ~4.5 GiB and the kernel OOM-killed it (`MemoryMax` defaults to file size + 2 GiB = 4608M; journal: `The kernel OOM killer killed some processes in this unit`). The same clip encoded in 674 ms and 2.6 GiB peak once re-wrapped with a correct header. Bootstrap recipe that works:
+
+```
+# 1. design a clip, but take PCM and wrap it yourself
+curl -s -X POST localhost:8445/v1/audio/speech -H 'Content-Type: application/json' \
+  -d '{"input":"Hello. I am the voice you will hear…","instructions":"A warm, thoughtful young woman…","response_format":"pcm"}' -o ref.pcm
+python3 -c "import wave;w=wave.open('ref.wav','wb');w.setnchannels(1);w.setsampwidth(2);w.setframerate(24000);w.writeframes(open('ref.pcm','rb').read());w.close()"
+# 2. register it as a saved voice (persists as /var/lib/breeze-tts/voices/<name>.breeze)
+curl -s -X POST localhost:8445/v1/voices -F "ref_audio=@ref.wav" \
+  --form-string "ref_text=<exact transcript>" --form-string "name=narrator"
+```
+
+3. **The WebSocket port must be the tailnet-facing number.** `webui/app.js` dials `wss://<page host>:<ws_port>` using the `ws_port` the server reports from `/health`, so `wsPort = 8446` plus `tailscale serve --https 8446 http://127.0.0.1:8446` lines up; leaving the default (port+1 = 8138) means a remote browser dials an unpublished port and the UI's streaming panel silently falls back. Also note `curl` needs `--http1.1` to test the upgrade — HTTP/2 gets a misleading `502`, while a browser's dedicated upgrade connection works.
