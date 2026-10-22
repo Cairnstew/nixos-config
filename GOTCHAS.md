@@ -1710,3 +1710,9 @@ Diagnosis, in order: `curl localhost:<port>/props | jq -r .chat_template | wc -c
 Fix: point at the jinja file. `configurations/nixos/server/llama3-instruct.jinja` holds the official Llama-3 template and the model uses `"chat-template-file" = "${./llama3-instruct.jinja}";` — verified: `/props` 393 chars, `prompt_n` 4 → 28, and "Reply with exactly: upstream fixed." now returns exactly that.
 
 Do not "fix" this by dropping the flag: the GGUF's own metadata is whatever the converter baked in. The Lumimaid GGUF carries **ChatML** while its card specifies **Llama-3**, so the metadata is wrong for that model and only an explicit file gives the documented behaviour. Filed upstream as Cairnstew/SillyTavern#6 (the module's own docs/examples show `"chat-template" = "gemma"`).
+
+---
+
+**Root-owned `.git/objects/xx` also breaks `git fetch`/`git pull`, not just `git add` — `failed to write object` / `unpack-objects failed`**
+
+Symptom (2026-10-22): after a successful `git push`, `git fetch origin` failed with `error: insufficient permission for adding an object to repository database .git/objects`, then `fatal: failed to write object` / `fatal: unpack-objects failed` — while the filesystem had 21 G free, so it reads like corruption or a full disk. Cause: the same root-owned fanout dirs as the entry above (`find .git/objects -maxdepth 2 ! -user "$(id -un)"` found a root:root `objects/45/` plus one tree object inside). That entry says this "breaks `git add` rather than `git pull`/`checkout`"; that understates it — any operation that *writes* objects fails when the target fanout dir is root-owned, and fetch/unpack is one. Fix is unchanged (`sudo chown -R seanc:users .git/objects/45`), after which the fetch fast-forwards the remote refs normally. Check ownership before suspecting disk space.
