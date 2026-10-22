@@ -715,6 +715,16 @@ in
     # available_voices, so the dropdown cannot drift from the backend.
     voices.narrator.source = ./voices/narrator.breeze;
 
+    # Overwatch voices come from the overwatch-voice-lines flake, one
+    # `<character>-voice` package per packs/<character>/ directory, each a
+    # single `<Name>.breeze` named from the pack's voice.json. The attribute
+    # name is the id SillyTavern will see, so it must match that filename stem.
+    # Adding a character upstream takes effect here with no edit beyond an
+    # input bump plus one line here; `nix flake update overwatch-voice-lines`
+    # picks up new packs.
+    voices.Widowmaker.source =
+      flake.inputs.overwatch-voice-lines.packages.${pkgs.stdenv.hostPlatform.system}.widowmaker-voice;
+
     # The static budget: model 3072 + headroom 768 + the LLM's reserve 7000
     # = 10840 <= 12288, so `nixos-rebuild` refuses a config that cannot fit.
     # The start-time probe still reads the driver's real free VRAM (3840 MiB

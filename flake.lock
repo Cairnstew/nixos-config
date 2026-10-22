@@ -1096,6 +1096,26 @@
         "type": "github"
       }
     },
+    "overwatch-voice-lines": {
+      "inputs": {
+        "nixpkgs": [
+          "nixpkgs"
+        ]
+      },
+      "locked": {
+        "lastModified": 1792708148,
+        "narHash": "sha256-GmoIshOP2Idj7TuIRG34WNb6pycLIArIh27arXtulh0=",
+        "owner": "Cairnstew",
+        "repo": "overwatch_voice_lines",
+        "rev": "4580e25ed699eaab858744cdc37c7c705b3e2166",
+        "type": "github"
+      },
+      "original": {
+        "owner": "Cairnstew",
+        "repo": "overwatch_voice_lines",
+        "type": "github"
+      }
+    },
     "packwiz": {
       "inputs": {
         "nixpkgs": [
@@ -1338,6 +1358,7 @@
         "nixpkgs-stable": "nixpkgs-stable",
         "nixtest": "nixtest",
         "nuenv": "nuenv",
+        "overwatch-voice-lines": "overwatch-voice-lines",
         "packwiz": "packwiz",
         "packwiz2nix": "packwiz2nix_2",
         "project-zomboid-servers": "project-zomboid-servers",

@@ -113,6 +113,16 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
+    # Pre-encoded Breeze TTS voices (one `<character>-voice` package per
+    # packs/<character>/ directory, each a single `<Name>.breeze`). Consumed by
+    # services.breeze-tts-nixos.voices on the host running the speech backend.
+    # Audio is © Blizzard, personal/research use only — see the repo's packs
+    # README before reusing a voice anywhere but a private instance.
+    overwatch-voice-lines = {
+      url = "github:Cairnstew/overwatch_voice_lines";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+
     # M5: houdini-nix removed — unused flake input (zero references in modules/ or configurations/)
 
     # AI Image Generation — ComfyUI (+ SD WebUI Forge) packages & NixOS modules
