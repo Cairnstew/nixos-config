@@ -1213,6 +1213,21 @@
       # activation after this change the module removes the empty local dir and clones.
       obsidian = {
         defaultDirectory = "Documents/Obsidian Vault";
+
+        # Local REST API with MCP: backs the obsidian MCP server (declared in the
+        # vault's .opencode/opencode.json) and Obsidian's own /mcp/ endpoint.
+        # `.obsidian/` is gitignored in the vault, so the plugin is pinned here
+        # to keep the install reproducible. Bump version + all three hashes
+        # together; the manifest version mismatch triggers a reinstall.
+        plugins."obsidian-local-rest-api" = {
+          enable = true;
+          version = "5.5.2";
+          repo = "coddingtonbear/obsidian-local-rest-api";
+          mainJsHash = "sha256-kElLZETF/t5dEvlzRqq4OSZbXHoJUg/oe078IjYLbNg=";
+          manifestHash = "sha256-LORt+h7pthUN2N0NvMaGNu4V1UM/mj+iTptsyERuviU=";
+          stylesHash = "sha256-GZVt6vTRQUI4H4H9+SyugkH9CqCKGjpUZLDQB7rhkk0=";
+        };
+
         repo = {
           enable = true;
           url = "https://github.com/Cairnstew/Cairns-Notes";

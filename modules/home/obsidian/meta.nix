@@ -1,8 +1,8 @@
 {
   name = "obsidian";
-  description = "Obsidian note-taking app with vault management and optional git-backed vault cloning";
+  description = "Obsidian note-taking app with vault management, optional git-backed vault cloning, and hash-pinned community-plugin installation";
   category = "productivity";
-  tags = [ "obsidian" "notes" "knowledge-base" "markdown" "productivity" ];
+  tags = [ "obsidian" "notes" "knowledge-base" "markdown" "productivity" "plugins" ];
   provides = [ "my.programs.obsidian" ];
   expects = [ ];
   complexity = "medium";
