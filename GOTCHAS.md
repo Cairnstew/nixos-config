@@ -1738,3 +1738,17 @@ curl -s -X POST localhost:8445/v1/voices -F "ref_audio=@ref.wav" \
 ```
 
 3. **The WebSocket port must be the tailnet-facing number.** `webui/app.js` dials `wss://<page host>:<ws_port>` using the `ws_port` the server reports from `/health`, so `wsPort = 8446` plus `tailscale serve --https 8446 http://127.0.0.1:8446` lines up; leaving the default (port+1 = 8138) means a remote browser dials an unpublished port and the UI's streaming panel silently falls back. Also note `curl` needs `--http1.1` to test the upgrade — HTTP/2 gets a misleading `502`, while a browser's dedicated upgrade connection works.
+
+---
+
+**`ci-monitor watch` lists path-skipped jobs as failures — read the run's own conclusion** (2026-10-22, server)
+
+Symptom: after pushing to `server`, `ci-monitor` returned `"conclusion": "success"` together with
+
+```json
+"failed_jobs": ["build-packages (update)", "lint-scripts", "validate-secrets"]
+```
+
+and it looks like three CI failures on a green run. All three are false positives: `lint-scripts` and `validate-secrets` are gated by `needs.changes.outputs.*` (`.github/workflows/smart-ci.yml:379,401`) and legitimately report `skipped` for a commit that touches neither `scripts/` nor `secrets/`; `build-packages (update)` is the matrix *parent* row, which carries no `conclusion` at all (the real jobs are the per-package children).
+
+Reading `failed_jobs` alone therefore contradicts the `conclusion` field in the same payload. Trust `conclusion` (and `gh run view <id> --json jobs --jq '.jobs[] | select(.conclusion != "success")'`), which shows only `skipped` and the empty conclusion for the matrix parent. The "failed" label also reaches any agent that summarises JSON without filtering, so say "skipped" explicitly when reporting a run with path-gated jobs.
