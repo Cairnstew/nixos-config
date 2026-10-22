@@ -158,7 +158,16 @@ let
       # Session gate: refuse to start while a terminal opencode session holds
       # the lock (its PID). A stale lock (dead PID) is cleared so the service
       # recovers after a crash.
-      // (lib.optionalAttrs cfg.sessionGate.enable { ExecStartPre = sessionGateScript; });
+      #
+      # `ExecCondition`, NOT `ExecStartPre`. A gate that refuses is a normal
+      # outcome, not a failure: as an ExecStartPre the non-zero exit marked the
+      # unit failed and `Restart = "on-failure"` restart-looped it forever
+      # (RestartSec 5s never trips the default StartLimitBurst window), so every
+      # rebuild showed a failed unit and `switch-to-configuration` exited 4
+      # whenever a terminal opencode session was live. ExecCondition treats
+      # exit 1-254 as "skip this unit, not a failure" — the instance stays
+      # inactive until something starts it again.
+      // (lib.optionalAttrs cfg.sessionGate.enable { ExecCondition = sessionGateScript; });
     };
   };
 
