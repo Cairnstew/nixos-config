@@ -273,6 +273,30 @@ now, never aspirational. Record each applied change in the RUN LOG below.
 
 ---
 
+### 2026-10-22 — registering a space for an already-wrapped upstream is three edits, and the branch matters
+
+- Lesson: registering the SillyTavern fork as an Agent Space looked like a
+  one-line addition under `my.programs.opencode.ensemble.spaces`
+  (`modules/nixos/homeManager/config.nix`), but the repo has two more places
+  that assert the same fact and both were stale:
+  `modules/nixos/sillytavern/meta.nix` said "No ensemble space is registered
+  for this upstream", and its README repeated the sentence.
+  `modules/home/opencode/tests.nix` enforces `upstream.space ∈ ensemble.spaces`,
+  so the config entry alone would have left a module whose `meta.nix` still
+  claimed the opposite. The `space` key also has to be added to the `upstream`
+  block itself — without it the test has nothing to check.
+- Operational trap: `autoUpdateFlakeInput` runs
+  `nix flake lock --update-input <input>` in the LEAD's directory, and the
+  plugin only does it for a space whose tree is clean and fully pushed. A
+  `github:owner/repo` input resolves that repo's DEFAULT branch, and this fork
+  defaults to `release` — so upstream work must be merged into `release` (or
+  the pin moves to the old commit and the update silently does nothing).
+- Fix: registered the space with `flakeInput = "sillytavern"` +
+  `autoUpdateFlakeInput = true`, added `space = "sillytavern"` to meta.nix and
+  rewrote the README note. Verified the rendered
+  `~/.config/opencode/ensemble.json` lists the space; the plugin reads that
+  file once at process start, so only sessions started after the switch see it.
+
 ## See Also
 
 - `modules/nixos/gitreposync/` - Git repository sync service
