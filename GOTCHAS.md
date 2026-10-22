@@ -1696,3 +1696,17 @@ All three were hit in one session while confirming a `sillytavern-nixos` instanc
 3. **`/api/backends/chat-completions/generate` reads `model`, not `custom_model`.** `custom_url`/`custom_model` in the request body are ignored for the model id (the browser sends `model: oai_settings.custom_model`); omitting `model` forwards `model: undefined` and llama.cpp rejects it with `400 {"message":"model name is missing from the request"}`. Send `"model": "<id from the llama INI section>"`.
 
 Also: **a changed *generated* preset never reaches an existing account.** `modelLayers` presets are `policy = "missing"`, so upgrading the input leaves the account's old `OpenAI Settings/<preset>.json` untouched — after `6cee6f7` the generated body carries `chat_completion_source`/`custom_url`/`custom_model`, but the on-disk preset kept none of them until it was deleted and re-seeded. That is the intended "UI edits survive a rebuild" behaviour; it just looks like the upgrade did not apply. Delete the account's generated preset once after such a bump (only the derived manifest is `overwrite`).
+
+---
+
+**`chat-template` takes a FILE, not a name, with llama.cpp 0.4.1 — a name silently becomes the template** (2026-10-21, server)
+
+Symptom: the model answers gibberish — "What is 2+2?" returned `I am a llama, but I am not a typical llama…`, and a roleplay chat produced unrelated text. SillyTavern's request log looked correct (full `messages` array), and the llama slot logged `prompt eval time = 130 ms / 4 tokens` — a whole conversation cannot be four tokens.
+
+Cause: `services.llama-cpp-nixos.models.<id>.args."chat-template" = "llama3"` renders `chat-template = llama3` in the models INI, the router passes `--chat-template llama3` to the child, and llama.cpp 0.4.1 stores that **name verbatim as a 6-character jinja template**. The rendered prompt is the literal string `llama3` (4 tokens), so the model free-associates. The name IS in `llama-server --help`'s built-in list, and `--jinja --chat-template llama3` behaves the same, so the help text and the behaviour disagree.
+
+Diagnosis, in order: `curl localhost:<port>/props | jq -r .chat_template | wc -c` — a real template is hundreds of characters; `6` means the name was stored. Then `curl …/v1/chat/completions -d '{"cache_prompt":false,…}'` and read `timings.prompt_n`: 4 for a 30-token conversation is the tell.
+
+Fix: point at the jinja file. `configurations/nixos/server/llama3-instruct.jinja` holds the official Llama-3 template and the model uses `"chat-template-file" = "${./llama3-instruct.jinja}";` — verified: `/props` 393 chars, `prompt_n` 4 → 28, and "Reply with exactly: upstream fixed." now returns exactly that.
+
+Do not "fix" this by dropping the flag: the GGUF's own metadata is whatever the converter baked in. The Lumimaid GGUF carries **ChatML** while its card specifies **Llama-3**, so the metadata is wrong for that model and only an explicit file gives the documented behaviour. Filed upstream as Cairnstew/SillyTavern#6 (the module's own docs/examples show `"chat-template" = "gemma"`).
