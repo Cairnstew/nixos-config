@@ -725,6 +725,20 @@ in
     voices.Widowmaker.source =
       flake.inputs.overwatch-voice-lines.packages.${pkgs.stdenv.hostPlatform.system}.widowmaker-voice;
 
+    # Per-voice generation defaults, written to `Widowmaker.json` next to the
+    # blob and applied when a request selects the voice without setting the
+    # field itself (request > sidecar > GGUF default). For a cloned voice the
+    # reference owns timbre, so `instruction` steers delivery only.
+    #
+    # cfgScale is the one model knob worth moving: 1.25 follows the direction
+    # more closely than the default 1.0 without the real-time-factor cost of
+    # 1.5+. The sampling and splitting fields stay at the model defaults —
+    # they alter prosody/artifacts far more than they improve a cloned line.
+    voices.Widowmaker.generation = {
+      instruction = "Cold, aristocratic, clipped delivery; slow and deliberate, with a faintly contemptuous edge.";
+      cfgScale = 1.25;
+    };
+
     # The static budget: model 3072 + headroom 768 + the LLM's reserve 7000
     # = 10840 <= 12288, so `nixos-rebuild` refuses a config that cannot fit.
     # The start-time probe still reads the driver's real free VRAM (3840 MiB
