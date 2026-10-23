@@ -735,7 +735,7 @@ in
     # 1.5+. The sampling and splitting fields stay at the model defaults —
     # they alter prosody/artifacts far more than they improve a cloned line.
     voices.Widowmaker.generation = {
-      instruction = "Cold, aristocratic, clipped delivery; slow and deliberate, with a faintly contemptuous edge.";
+      instruction = "Cold and aristocratic, clipped, a touch quick; sharp-edged, dry and contemptuous.";
       cfgScale = 1.25;
     };
 
