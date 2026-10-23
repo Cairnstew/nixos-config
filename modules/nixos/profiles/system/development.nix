@@ -62,10 +62,12 @@ in
     # up ~/.config/opencode + auth.json) and serves the nixos-config repo by
     # default — the repo path comes from gitRepoSync, bridging the two modules.
     # Basic auth via the agenix opencodeWeb-password secret when declared.
-    # Override when: Only want opencode web on specific hosts, or a different
-    #                default repo / remote bind (see my.services.opencodeWeb).
+    # mkDefault false: off everywhere by default (2026-10-22).
+    # Override when: A host should expose the browser UI — set
+    #                my.services.opencodeWeb.enable = true there, plus a
+    #                different default repo / remote bind if needed.
     my.services.opencodeWeb = {
-      enable = lib.mkDefault true;
+      enable = lib.mkDefault false;
       user = lib.mkDefault flake.config.me.username;
       repos = lib.mkDefault [ "nix-config" ];
       passwordFile = lib.mkDefault (

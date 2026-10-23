@@ -1103,11 +1103,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1792708148,
-        "narHash": "sha256-GmoIshOP2Idj7TuIRG34WNb6pycLIArIh27arXtulh0=",
+        "lastModified": 1792762054,
+        "narHash": "sha256-TquaSF1ZyD9oXYgnoq5kNAhxYxIodqzEmV4p50K2Afo=",
         "owner": "Cairnstew",
         "repo": "overwatch_voice_lines",
-        "rev": "4580e25ed699eaab858744cdc37c7c705b3e2166",
+        "rev": "859256cfab53041ce90793ea89b16e2549e34693",
         "type": "github"
       },
       "original": {

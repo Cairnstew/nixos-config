@@ -706,38 +706,58 @@ in
     port = 8445;
     wsPort = 8446;
 
-    # `narrator` started life as a runtime voice (design -> register with
-    # POST /v1/voices, which wrote /var/lib/breeze-tts/voices/narrator.breeze).
-    # Declaring the pre-encoded blob instead makes it a build artifact: the unit
-    # installs it before the server scans the directory, validates the BRZV
-    # magic, and records it in a .nix-managed manifest so removing this line
-    # removes the file. The SillyTavern module unions declared names into
-    # available_voices, so the dropdown cannot drift from the backend.
-    voices.narrator.source = ./voices/narrator.breeze;
-
-    # Overwatch voices come from the overwatch-voice-lines flake, one
-    # `<character>-voice` package per packs/<character>/ directory, each a
-    # single `<Name>.breeze` named from the pack's voice.json. The attribute
-    # name is the id SillyTavern will see, so it must match that filename stem.
-    # Adding a character upstream takes effect here with no edit beyond an
-    # input bump plus one line here; `nix flake update overwatch-voice-lines`
-    # picks up new packs.
-    voices.Widowmaker.source =
-      flake.inputs.overwatch-voice-lines.packages.${pkgs.stdenv.hostPlatform.system}.widowmaker-voice;
-
-    # Per-voice generation defaults, written to `Widowmaker.json` next to the
-    # blob and applied when a request selects the voice without setting the
-    # field itself (request > sidecar > GGUF default). For a cloned voice the
-    # reference owns timbre, so `instruction` steers delivery only.
+    # Every voice is a pre-encoded blob, so it is a build artifact rather than a
+    # service action: the unit installs each file before the server scans the
+    # directory, validates the BRZV magic, and records it in a .nix-managed
+    # manifest so removing an entry deletes the file. The SillyTavern module
+    # unions declared names into available_voices, so the dropdown cannot drift
+    # from the backend.
     #
-    # cfgScale is the one model knob worth moving: 1.25 follows the direction
-    # more closely than the default 1.0 without the real-time-factor cost of
-    # 1.5+. The sampling and splitting fields stay at the model defaults —
-    # they alter prosody/artifacts far more than they improve a cloned line.
-    voices.Widowmaker.generation = {
-      instruction = "Cold and aristocratic, clipped, a touch quick; sharp-edged, dry and contemptuous.";
-      cfgScale = 1.25;
-    };
+    # `narrator` started life as a runtime voice (design -> POST /v1/voices,
+    # which wrote /var/lib/breeze-tts/voices/narrator.breeze); its blob is
+    # committed next to this file.
+    #
+    # The Overwatch voices come from the overwatch-voice-lines flake: one
+    # `<character>-voice` package per packs/<character>/ directory, each a
+    # single `<Name>.breeze` named from that pack's voice.json. The attribute
+    # name is the id SillyTavern sees, so it must match the filename stem, and
+    # the package name is that stem lowercased (Mercy -> mercy-voice). Upstream
+    # discovers packs from the directory, so a new character needs an input
+    # bump plus one name in this list — no flake.nix edit on either side.
+    voices =
+      lib.genAttrs
+        [ "Ana" "Cassidy" "Mercy" "Moira" "Reaper" "Sombra" "Tracer" ]
+        (name: {
+          source =
+            flake.inputs.overwatch-voice-lines.packages.${pkgs.stdenv.hostPlatform.system}
+            ."${lib.toLower name}-voice";
+        })
+      // {
+        narrator.source = ./voices/narrator.breeze;
+
+        # Widowmaker is spelled out rather than covered by the list above
+        # because it also carries per-voice generation defaults.
+        Widowmaker = {
+          source =
+            flake.inputs.overwatch-voice-lines.packages.${pkgs.stdenv.hostPlatform.system}
+            .widowmaker-voice;
+
+          # Written to `Widowmaker.json` next to the blob and applied when a
+          # request selects the voice without setting the field itself
+          # (request > sidecar > GGUF default). For a cloned voice the reference
+          # owns timbre, so `instruction` steers delivery only.
+          #
+          # cfgScale is the one model knob worth moving: 1.25 follows the
+          # direction more closely than the default 1.0 without the
+          # real-time-factor cost of 1.5+. The sampling and splitting fields
+          # stay at the model defaults — they alter prosody/artifacts far more
+          # than they improve a cloned line.
+          generation = {
+            instruction = "Cold and aristocratic, clipped, a touch quick; sharp-edged, dry and contemptuous.";
+            cfgScale = 1.25;
+          };
+        };
+      };
 
     # The static budget: model 3072 + headroom 768 + the LLM's reserve 7000
     # = 10840 <= 12288, so `nixos-rebuild` refuses a config that cannot fit.
