@@ -729,8 +729,7 @@ in
         [ "Ana" "Cassidy" "Mercy" "Moira" "Reaper" "Sombra" "Tracer" ]
         (name: {
           source =
-            flake.inputs.overwatch-voice-lines.packages.${pkgs.stdenv.hostPlatform.system}
-            ."${lib.toLower name}-voice";
+            flake.inputs.overwatch-voice-lines.packages.${pkgs.stdenv.hostPlatform.system}."${lib.toLower name}-voice";
         })
       // {
         narrator.source = ./voices/narrator.breeze;
@@ -739,8 +738,7 @@ in
         # because it also carries per-voice generation defaults.
         Widowmaker = {
           source =
-            flake.inputs.overwatch-voice-lines.packages.${pkgs.stdenv.hostPlatform.system}
-            .widowmaker-voice;
+            flake.inputs.overwatch-voice-lines.packages.${pkgs.stdenv.hostPlatform.system}.widowmaker-voice;
 
           # Written to `Widowmaker.json` next to the blob and applied when a
           # request selects the voice without setting the field itself
