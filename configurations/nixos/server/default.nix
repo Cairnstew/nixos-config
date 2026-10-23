@@ -508,6 +508,14 @@ in
     });
     host = "127.0.0.1";
     port = 9931;
+    # Measured with a 60 s timeout before choosing: waking a slept model costs
+    # 28.2 s on the next request (/mnt/data re-reads the 6.6 GB of weights),
+    # against ~3 s to load at unit start with a warm page cache. So sleeping
+    # only moves a cost the system already pays at startup onto the first chat
+    # message, and the static VRAM budget below already reserves room for both
+    # processes. Unload starts paying the day ComfyUI is re-enabled
+    # (my.services.comfyui is off on this host); then set 900 rather than null.
+    router.idleUnloadSeconds = null;
 
     models.${lumimaidModel} = {
       # Weights are operator-managed on the data disk (6.6 GB would otherwise
@@ -693,6 +701,11 @@ in
     # self-healing (a mismatched file is discarded and re-fetched) and keeps
     # the weights out of the store, where 2.4 GiB would stay pinned.
     downloadModel = true;
+    # Same measurement as the LLM above: a reload costs ~6-7 s (8.1 s for the
+    # first 1-line request) and skips the voice it was about to speak, so it is
+    # a mid-conversation stall rather than a background saving. Residency is
+    # already covered by the static budget below.
+    idleUnloadSeconds = null;
 
     # Serve the browser UI. It has NO authentication and NO rate limiting, so
     # it stays on loopback and is published only to the tailnet (below).
