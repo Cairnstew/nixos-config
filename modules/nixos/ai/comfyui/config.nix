@@ -12,6 +12,13 @@ let
     if cfg.package != null then cfg.package
     else import ./comfy { inherit pkgs flake; };
 
+  # Python the ComfyUI environment is built with (dist.nix pins python313).
+  # The injected PYTHONPATH envs below (manager, civitai socketio, gguf) MUST
+  # use the SAME version: a 3.14 env prepended to a 3.13 interpreter shadows
+  # the env's numpy with a cp314 build and ComfyUI dies at startup with
+  # "No module named 'numpy._core._multiarray_umath'".
+  comfyPython = pkgs.python313;
+
   # Curated, pre-pinned node catalog (url + rev + sha256, fetchSubmodules=true
   # to match the prefetch). `presets` selects names from it; an explicit
   # `customNodes` entry with the same attr name overrides the catalog pin.
@@ -56,13 +63,13 @@ let
             }
         else builtins.fetchGit { url = cfg.manager.url; };
     in
-    pkgs.python3.pkgs.buildPythonPackage {
+    comfyPython.pkgs.buildPythonPackage {
       pname = "comfyui-manager";
       version = cfg.manager.version;
       inherit src;
       format = "pyproject";
-      nativeBuildInputs = [ pkgs.python3.pkgs.setuptools pkgs.python3.pkgs.wheel ];
-      propagatedBuildInputs = with pkgs.python3.pkgs; [
+      nativeBuildInputs = [ comfyPython.pkgs.setuptools comfyPython.pkgs.wheel ];
+      propagatedBuildInputs = with comfyPython.pkgs; [
         gitpython
         pygithub
         toml
@@ -81,13 +88,13 @@ let
 
   managerEnv =
     if cfg.enableManager
-    then pkgs.python3.withPackages (ps: [ managerPkg ps.pip ])
+    then comfyPython.withPackages (ps: [ managerPkg ps.pip ])
     else null;
 
   # PYTHONPATH fragment pointing at the manager package + its propagated deps.
   managerPythonPath =
     if cfg.enableManager
-    then "${managerEnv}/${pkgs.python3.sitePackages}"
+    then "${managerEnv}/${comfyPython.sitePackages}"
     else "";
 
   # Writable site-packages for RUNTIME pip installs (custom-node requirements).
@@ -117,11 +124,11 @@ let
   hasCivitaiPack = lib.elem "civitai-comfy-nodes" (cfg.presets ++ lib.attrNames (lib.filterAttrs (_: n: n.enable) cfg.customNodes));
   civitaiEnv =
     if hasCivitaiPack
-    then pkgs.python3.withPackages (ps: [ ps.python-socketio ps.websocket-client ])
+    then comfyPython.withPackages (ps: [ ps.python-socketio ps.websocket-client ])
     else null;
   civitaiPythonPath =
     if civitaiEnv != null
-    then "${civitaiEnv}/${pkgs.python3.sitePackages}"
+    then "${civitaiEnv}/${comfyPython.sitePackages}"
     else "";
   civitaiLinkEnv =
     if hasCivitaiPack
@@ -138,11 +145,11 @@ let
   hasGgufPack = lib.elem "ComfyUI-GGUF" (cfg.presets ++ lib.attrNames (lib.filterAttrs (_: n: n.enable) cfg.customNodes));
   ggufEnv =
     if hasGgufPack
-    then pkgs.python3.withPackages (ps: [ ps.gguf ])
+    then comfyPython.withPackages (ps: [ ps.gguf ])
     else null;
   ggufPythonPath =
     if ggufEnv != null
-    then "${ggufEnv}/${pkgs.python3.sitePackages}"
+    then "${ggufEnv}/${comfyPython.sitePackages}"
     else "";
   ggufLinkEnv =
     if hasGgufPack
