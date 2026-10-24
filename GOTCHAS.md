@@ -1770,3 +1770,15 @@ The repo-local ComfyUI v0.29.2 package pins its interpreter to `pkgs.python313` 
 **Disabling a service that owns an agenix secret breaks activation with `chown: invalid user`** (2026-10-24, server)
 
 Turning off `services.sillytavern-nixos` removed the `sillytavern` system account, but `modules/nixos/secrets/secrets-manifest.json:183` still declares `sillytavern-password` with `owner/group = sillytavern`. The next `nixos-rebuild switch` therefore aborted in the `agenixChown` activation snippet with `chown: invalid user: 'sillytavern:sillytavern'` (after the units had already switched). Fix: while the service is disabled, keep the account defined with `lib.mkDefault` attrs (`configurations/nixos/server/default.nix:684`) so the upstream module's identical definition wins on re-enable, or change the manifest owner/group. Same applies to any service whose disabled state removes a user named by a manifest entry.
+
+---
+
+**ComfyUI node deps: nixpkgs `onnxruntime` is an hours-long source build — use the upstream CPU wheel** (2026-10-24, server)
+
+Adding `onnxruntime` to the ComfyUI node dependency set pulled nixpkgs' `onnxruntime` source build; under the flake's global `cudaSupport = true` it selects the CUDA variant (not in the binary cache), and the CPU-only nodes (WD14 tagger, rembg) stalled at ~27% after 25 minutes. Fix: override the package in `modules/nixos/ai/comfyui/node-deps.nix:33` to the self-contained manylinux CPU wheel via `pkgs.fetchurl` (not `fetchPypi`, whose URL 404s), `unpackPhase = ""` so `wheelUnpackHook` runs, `autoPatchelfHook` plus `stdenv.cc.cc.lib`/`zlib`, and `pythonImportsCheck = [ ]`. The wheel ships `libonnxruntime.so`; keep `onnxruntime` out of the `rembg`/`pymatting` CUDA paths so the closure stays CPU-only.
+
+---
+
+**`MemoryDenyWriteExecute = true` breaks numba JIT in ComfyUI custom nodes** (2026-10-24, server)
+
+With `numba` present in the ComfyUI node env, WAS Node Suite still failed at import with `[Errno 13] cannot allocate executable memory`: systemd's `MemoryDenyWriteExecute = true` (`modules/nixos/ai/comfyui/config.nix:671`) forbids the W+X mapping numba's JIT needs. Fix: set `MemoryDenyWriteExecute = lib.mkForce false` on `comfy-ui.service` (leave the rest of the sandbox intact). This is required for any node that imports `numba` (WAS, some Impact/LayerStyle paths), not merely for the dependency to be installed.
