@@ -11,11 +11,11 @@
 #   nix-prefetch-git --url <url> --fetch-submodules
 # and update rev + sha256 (+ the "pinned" comment).
 #
-# IMPORTANT runtime note: these are the SOURCE checkouts. Some packs (Impact,
-# WAS, ControlNet-Aux, WD14, Florence2, LayerStyle) also pip-install python
-# deps / download models on first use — with `enableManager` the runtime
-# installs go to `<dataDir>/python-site-packages` (writable PIP_TARGET) and
-# model downloads land in `<dataDir>`, both outside the store.
+# Python dependencies are declared per entry in `pythonDeps` and built into
+# the ComfyUI python environment (see `node-deps.nix` for packages not in
+# nixpkgs). This is the reproducible path: no runtime pip install for catalog
+# nodes. Runtime installs via ComfyUI-Manager still go to
+# `<dataDir>/python-site-packages` for nodes that are not in this catalog.
 {
   # ── Workflow / QoL essentials ────────────────────────────────────────────
   ComfyUI_Comfyroll_CustomNodes = {
@@ -41,6 +41,7 @@
     rev = "ea935d1044ae5a26efa54ebeb18fe9020af49a45";
     sha256 = "15qgg6ahbm9v08mnk72fsjyzccmsiyys8kniygxid4hc2d8si9py";
     description = "WAS Node Suite — 210+ nodes: text, image, video, process, ModelMerge, masking";
+    pythonDeps = [ "numba" "scikit-image" "scikit-learn" "imageio" "joblib" "rembg" "fairscale" "ffmpy" "pilgram" "img2texture" "cstr" ];
   };
   rgthree-comfy = {
     url = "https://github.com/rgthree/rgthree-comfy";
@@ -53,6 +54,7 @@
     rev = "1d2df13cfca0364fa28be3d40484cbeed33305ac";
     sha256 = "0kjvp6ccpqr5vja0x5f3c2waqv5mx0pyw49331f7fzfqhbszl74v";
     description = "Image Saver — save with Civitai-compatible generation metadata (PNG-Info, aesthetics)";
+    pythonDeps = [ "piexif" ];
   };
   ComfyUI-Lora-Auto-Trigger-Words = {
     url = "https://github.com/idrirap/ComfyUI-Lora-Auto-Trigger-Words";
@@ -67,18 +69,21 @@
     rev = "429d0159ad429e64d2b3916e6e7be9c22d025c3c";
     sha256 = "04nzrlasvza8a89jzva3440aikd5cgp1hj1wikhi17y00axbd2b6";
     description = "Impact Pack — Detector/Detailer (face & segment detail, SAM samplers, upscale pipes)";
+    pythonDeps = [ "segment-anything" "scikit-image" "piexif" "dill" ];
   };
   ComfyUI-Impact-Subpack = {
     url = "https://github.com/ltdrdata/ComfyUI-Impact-Subpack";
     rev = "50c7b71a6a224734cc9b21963c6d1926816a97f1";
     sha256 = "0h7d036wim5q74z1g93laj8vqp4kar21kapb4wgndbg3s4cjd9ps";
     description = "Impact Sub Pack — required companion for Impact-Pack (SAM, GroundingDINO, detection utils)";
+    pythonDeps = [ "ultralytics" "dill" ];
   };
   ComfyUI-Inspire-Pack = {
     url = "https://github.com/ltdrdata/ComfyUI-Inspire-Pack";
     rev = "d23db9aa544de9a6d4c609cb7005fa9e0d42031d";
     sha256 = "14w0cpjzd11983c39hiy6jhpd0l2fwg18jkvj9mdlhwp9kc7jday";
     description = "Inspire Pack — regional prompting, NoiseInjection, sampling selectors (from Impact author)";
+    pythonDeps = [ "webcolors" "cachetools" ];
   };
 
   # ── Upscale / layers / photo ────────────────────────────────────────────
@@ -93,6 +98,7 @@
     rev = "557d882e184c7b702208cc7805659b10dfa06c59";
     sha256 = "0kl8r5sfv22a8mhq8rfp8kqj5xq2qvldngqld8cw3kg19cr8bas4";
     description = "LayerStyle — Photoshop-like layer/composite node set";
+    pythonDeps = [ "scikit-image" "scikit-learn" "pymatting" "loguru" "colour-science" "blend-modes" ];
   };
 
   # ── ControlNet / conditioning ───────────────────────────────────────────
@@ -147,6 +153,7 @@
     rev = "9e0a6e700299182fc05c58b62e7ad9f72182a78b";
     sha256 = "0r7ifr3a7bbigbda59lbk23r6h5a5n1sb8m5akfr10krfjjwl3f3";
     description = "WD14 Tagger — booru-tag interrogation of images (captioning)";
+    pythonDeps = [ "onnxruntime" ];
   };
 
   # ── Model loading / quantization ────────────────────────────────────────

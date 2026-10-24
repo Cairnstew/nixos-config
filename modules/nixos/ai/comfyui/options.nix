@@ -180,6 +180,22 @@ in
             default = true;
             description = "Fetch git submodules recursively.";
           };
+          pythonDeps = mkOption {
+            type = types.listOf types.str;
+            default = [ ];
+            description = ''
+              Python packages required by this custom node. Names are resolved
+              from the repo-local `node-deps.nix` package set first (pinned
+              packages and ComfyUI-specific overrides), then from
+              `python313Packages`.
+
+              Declared dependencies are built into the ComfyUI python
+              environment, so the node works without a runtime pip install.
+              Leave empty only for nodes with no extra Python requirements or
+              nodes that intentionally use ComfyUI-Manager at runtime.
+            '';
+            example = [ "scikit-image" "piexif" ];
+          };
         };
       });
       default = { };

@@ -1,4 +1,4 @@
-{ config, lib, ... }:
+{ config, lib, pkgs, ... }:
 let
   cfg = config.my.services.comfyui;
 
@@ -42,6 +42,19 @@ let
     };
   resolved = lib.imap1 (i: e: { index = i; inherit e; urnInfo = if e.urn != null then parseCivitaiUrn e.urn else null; })
     (lib.attrValues enabledModels);
+
+  # Every declared node dependency must resolve either from node-deps.nix
+  # (pinned packages / ComfyUI-specific overrides) or the pinned python313 set.
+  nodeDeps = import ./node-deps.nix {
+    inherit pkgs;
+    python = pkgs.python313;
+    inherit (pkgs) lib;
+  };
+  unresolvedDeps = lib.concatMap
+    (n: lib.filter
+      (d: !(lib.hasAttr d nodeDeps) && !(lib.hasAttr d pkgs.python313.pkgs))
+      n.pythonDeps)
+    (lib.attrValues cfg.customNodes);
 in
 {
   assertions = [
@@ -78,6 +91,10 @@ in
         - both null     → builtins.fetchGit (convenience, impure)
         - both set      → pkgs.fetchgit (locked, pure) — values from `nix-prefetch-git <url> <rev>`
       '';
+    }
+    {
+      assertion = !cfg.enable || unresolvedDeps == [ ];
+      message = "my.services.comfyui: unknown pythonDeps: ${lib.concatStringsSep ", " unresolvedDeps}";
     }
     {
       assertion = !cfg.enable || cfg.civitaiApiKeyPath == null || lib.hasPrefix "/" (toString cfg.civitaiApiKeyPath);

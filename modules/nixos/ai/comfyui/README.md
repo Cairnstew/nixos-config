@@ -106,6 +106,15 @@ the opposite at runtime: install MORE custom nodes into `custom_nodes/` and
 download models straight into `models/` from the UI — both directories are
 writable by the service. Runtime-installed nodes (git clones in the writable
 dir) get updates through the Manager, exactly as in a manual install.
+- **Python dependencies for nodes**: each catalog/custom node may declare
+  `pythonDeps = [ ... ]`. Each name is resolved from `node-deps.nix` first
+  (repo-local pinned packages and ComfyUI-specific overrides), then
+  `pkgs.python313Packages`, and appended to the same locked ComfyUI python env
+  via `webui-python-env.override { extraLibs = ...; ignoreCollisions = true; }`.
+  This is the reproducible path — no runtime `pip install` for catalog nodes.
+  `node-deps.nix` also pins CPU builds of `onnxruntime`, `pymatting`, `numba`
+  and strips nixpkgs torch/opencv from `ultralytics`/`rembg` so node deps do
+  not pull a second CUDA closure.
 - **ComfyUI core version**: the module runs a repo-local **v0.29.2** package
   (`my.services.comfyui.package` option defaults to `./comfy/`'s builder) — the
   `stable-diffusion-webui-nix` input's `main` still pins v0.25.1 which has no

@@ -10,6 +10,7 @@
 # newer ComfyUI without forking the flake input.
 { pkgs
 , flake
+, extraPythonPackages ? [ ]
 }:
 let
   # The stable-diffusion-webui-nix flake input (pinned in flake.lock) provides
@@ -81,8 +82,19 @@ let
         ];
     });
   };
+  # Extend the SAME python env that ComfyUI runs with, rather than injecting a
+  # second PYTHONPATH env.  `ignoreCollisions = true` keeps the locked base
+  # package first on any file collision, so a node dependency can never shadow
+  # ComfyUI's pinned torch/numpy/etc.  New packages are appended by the
+  # `python.withPackages` wrapper.
   requirements = requirementsBase // {
-    requirementPkgs = requirementsBase.requirementPkgs.overrideScope extraFixups;
+    requirementPkgs = requirementsBase.requirementPkgs.overrideScope (final: prev:
+      (extraFixups final prev) // {
+        webui-python-env = prev.webui-python-env.override {
+          extraLibs = prev.allRequirements ++ extraPythonPackages;
+          ignoreCollisions = true;
+        };
+      });
   };
 
   # The runtime wrapper (vendored from the input's source/comfy/package.nix).

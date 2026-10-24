@@ -10,7 +10,7 @@ let
   # Override via `my.services.comfyui.package` (null = the repo-local default).
   comfyUiPackage =
     if cfg.package != null then cfg.package
-    else import ./comfy { inherit pkgs flake; };
+    else import ./comfy { inherit pkgs flake extraPythonPackages; };
 
   # Python the ComfyUI environment is built with (dist.nix pins python313).
   # The injected PYTHONPATH envs below (manager, civitai socketio, gguf) MUST
@@ -18,6 +18,22 @@ let
   # the env's numpy with a cp314 build and ComfyUI dies at startup with
   # "No module named 'numpy._core._multiarray_umath'".
   comfyPython = pkgs.python313;
+
+  # Packages required by custom nodes that are not in nixpkgs. Built here so
+  # every declared node dependency is part of the ComfyUI env closure instead
+  # of being pip-installed at runtime.
+  nodeDeps = import ./node-deps.nix {
+    inherit pkgs;
+    python = comfyPython;
+    inherit (pkgs) lib;
+  };
+
+  # Resolve a `pythonDeps` name: repo-local node-deps first (they may carry
+  # ComfyUI-specific overrides), then the pinned python package set.
+  resolvePythonDep = name:
+    if lib.hasAttr name nodeDeps then nodeDeps.${name}
+    else if lib.hasAttr name comfyPython.pkgs then comfyPython.pkgs.${name}
+    else throw "my.services.comfyui: unknown python dependency '${name}' (not in node-deps.nix or python313Packages)";
 
   # Curated, pre-pinned node catalog (url + rev + sha256, fetchSubmodules=true
   # to match the prefetch). `presets` selects names from it; an explicit
@@ -33,6 +49,7 @@ let
         rev = catalog.${name}.rev;
         sha256 = catalog.${name}.sha256;
         fetchSubmodules = true;
+        pythonDeps = catalog.${name}.pythonDeps or [ ];
       };
     })
     cfg.presets);
@@ -41,6 +58,12 @@ let
   allCustomNodes = presetNodes // cfg.customNodes;
 
   enabledNodes = lib.filterAttrs (_: n: n.enable) allCustomNodes;
+
+  # Deduplicated python packages for every enabled node, in catalog order.
+  # `lib.unique` keeps the first occurrence so a node-dep override wins over a
+  # plain nixpkgs package of the same name.
+  extraPythonPackages = map resolvePythonDep
+    (lib.unique (lib.concatMap (n: n.pythonDeps) (lib.attrValues enabledNodes)));
 
   # ComfyUI-Manager is NOT a legacy custom-nodes git clone anymore — ComfyUI
   # 0.25.x (main.py) checks `importlib.util.find_spec("comfyui_manager")` when
@@ -623,6 +646,10 @@ in
         # pip caches under ~/.cache — both fail with EROFS on /var/empty.
         export HOME="${cfg.dataDir}"
         export HF_HOME="$CACHE_DIRECTORY/huggingface/hub"
+        # WAS Node Suite writes was_suite_config.json / settings / history next
+        # to its own (store) package by default; point it at the writable data
+        # dir so it does not log EROFS at import.
+        export WAS_CONFIG_DIR="${cfg.dataDir}/was-suite"
         ${civitaiLinkEnv}
         ${ggufLinkEnv}
         ${managerPipEnv}
@@ -642,6 +669,10 @@ in
     systemd.services.comfy-ui.serviceConfig = {
       ProtectHome = lib.mkForce "tmpfs";
       PrivateMounts = lib.mkForce false;
+      # numba (required by WAS Node Suite) JIT-compiles machine code at import
+      # time; systemd's MemoryDenyWriteExecute makes that fail with EACCES and
+      # the whole pack then fails to load.
+      MemoryDenyWriteExecute = lib.mkForce false;
       # UMask 0007: dirs/files created by the service get group access so the
       # primary user (in the comfy-ui group below) can read outputs/workflows
       # and drop files into models/input without sudo.
@@ -713,7 +744,7 @@ in
         ${pkgs.coreutils}/bin/install -d -o comfy-ui -g comfy-ui -m 0770 ${cfg.dataDir}
         ${lib.concatStringsSep "\n" (map (d: ''
           ${pkgs.coreutils}/bin/install -d -o comfy-ui -g comfy-ui -m 0770 ${cfg.dataDir}/${d}
-        '') ([ "input" "temp" "user" "custom_nodes" "models" "models/checkpoints" "models/loras" "models/vae" "models/clip" "output" ] ++ modelDirs ++ workflowDirs ++ lib.optional cfg.enableManager "python-site-packages"))}
+        '') ([ "input" "temp" "user" "custom_nodes" "models" "models/checkpoints" "models/loras" "models/vae" "models/clip" "output" "was-suite" ] ++ modelDirs ++ workflowDirs ++ lib.optional cfg.enableManager "python-site-packages"))}
         # Self-heal group access on user-data files (workflows, settings, inputs);
         # models/ is excluded — could be GBs and the service only needs to read it.
         ${pkgs.coreutils}/bin/chmod -R g+rwX \
