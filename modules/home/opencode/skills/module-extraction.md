@@ -366,3 +366,19 @@ Check that the repo exists and is accessible: `gh repo view Cairnstew/nixos-<nam
   it is the same `registerProxy`/`mkIf` pattern used by `ttyd`. `docker` and `ssh`
   remain easy Tier 1 wins but are low-value standalone repos (thin wrappers around
   upstream nixpkgs services).
+
+### 2026-10-24 — ComfyUI is a Tier 3 candidate that the Quick Reference omits
+- Lesson: a fresh Phase-1 audit of `modules/nixos/ai/comfyui` (1,766 Nix LOC + a
+  177-line custom-node catalog + the vendored ComfyUI package builder) measured
+  **0** `inputs.self`, **2** `flake.config.me` (group membership + the
+  home-manager opencode gate), **1** `my.services.proxy.upstreams` registration
+  and **1** cross-flake dependency (`stable-diffusion-webui-nix`, used for its
+  requirements machinery). That is the same Tier 3 shape as
+  `projectzomboid-server` and `sillytavern`, both already extracted upstream
+  with thin local wrappers — but ComfyUI has no row in the Quick Reference table,
+  so every audit re-derives it.
+- Fix (grounded): treat it as package+service extraction — move
+  `options.nix`/`config.nix`/`tests.nix`/`catalog.nix`/`comfy/` upstream, keep
+  the host-specific bits local (dataDir + models + presets, CivitAI secret
+  path, proxy upstream, and the opencode skills/tools/plugin per the
+  minecraft-server precedent).
