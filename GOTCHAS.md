@@ -1782,3 +1782,9 @@ Adding `onnxruntime` to the ComfyUI node dependency set pulled nixpkgs' `onnxrun
 **`MemoryDenyWriteExecute = true` breaks numba JIT in ComfyUI custom nodes** (2026-10-24, server)
 
 With `numba` present in the ComfyUI node env, WAS Node Suite still failed at import with `[Errno 13] cannot allocate executable memory`: systemd's `MemoryDenyWriteExecute = true` (`modules/nixos/ai/comfyui/config.nix:671`) forbids the W+X mapping numba's JIT needs. Fix: set `MemoryDenyWriteExecute = lib.mkForce false` on `comfy-ui.service` (leave the rest of the sandbox intact). This is required for any node that imports `numba` (WAS, some Impact/LayerStyle paths), not merely for the dependency to be installed.
+
+---
+
+**WAS Node Suite writes `was_suite_config.json` next to its package — set `WAS_CONFIG_DIR`** (2026-10-24, server)
+
+After the numba fix let WAS import, it still logged `[Errno 30] Read-only file system: .../custom_nodes/was-node-suite-comfyui/was_suite_config.json`: `WAS_CONFIG_DIR` defaults to the node's store directory. Set `WAS_CONFIG_DIR = "${cfg.dataDir}/was-suite"` in the comfy-ui script (`modules/nixos/ai/comfyui/config.nix:652`) and create that directory in `comfy-ui-prepare-dirs` (`modules/nixos/ai/comfyui/config.nix:747`); WAS then creates its config and loads all 220 nodes. The remaining "no write access to custom_nodes" warning is expected (nodes are store symlinks) and non-fatal.
