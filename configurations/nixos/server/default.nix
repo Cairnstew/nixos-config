@@ -41,8 +41,8 @@ in
     ai.enable = false;
     # NVIDIA headless + CUDA — ENABLED 2026-10-21 for the llama.cpp backend
     # (services.llama-cpp-nixos with pkgs.llama-cpp-cuda) in SillyTavern.
-    # ComfyUI is enabled too (2026-10-24), so the two share the 12 GB GPU;
-    # the ai profile (Ollama et al.) stays off.
+    # Since 2026-10-24 the whole SillyTavern stack is off and ComfyUI owns the
+    # 12 GB GPU; the ai profile (Ollama et al.) stays off too.
     gpu.nvidia-headless.enable = true;
     location.enable = true;
   };
@@ -283,8 +283,8 @@ in
   };
 
   # ── ComfyUI (AI Image Generation) — ENABLED 2026-10-24 ─────────────────
-  # Primary GPU workload on the RTX 3060 (12GB), sharing it with the
-  # llama.cpp backend above. It was off from 2026-10-16 to cut rebuild time
+  # Sole GPU workload on the RTX 3060 (12GB) since the SillyTavern stack was
+  # disabled below. It was off from 2026-10-16 to cut rebuild time
   # and reclaim disk (the torch closure + 22 node packs is the largest build
   # in this config). Requires `gpu.nvidia-headless.enable = true` above.
   my.services.comfyui = {
@@ -409,6 +409,28 @@ in
     };
   };
 
+  # ── ComfyUI resource guards ──────────────────────────────────────────────
+  # ComfyUI is the largest RAM/GPU consumer on this box, and the 2026-10-19
+  # global OOM left the host unreachable. Cap the unit so a runaway workflow
+  # or node pack is killed instead of starving sshd; oomd/earlyoom remain the
+  # system-wide backstop (modules/nixos/hardening/README.md).
+  systemd.services.comfy-ui = {
+    unitConfig = {
+      StartLimitBurst = 5;
+      StartLimitIntervalSec = 300;
+    };
+    serviceConfig = {
+      MemoryHigh = "9G";
+      MemoryMax = "11G";
+      MemorySwapMax = "2G";
+      TasksMax = 1024;
+      LimitNOFILE = 65536;
+      OOMPolicy = "stop";
+      TimeoutStopSec = "30s";
+    };
+  };
+  my.system.hardening.cpuQuota.comfy-ui = "600%";
+
   # ── Manga Reader (sync library to config repo) ───────────────────────────
   my.services.suwayomi = {
     enable = true;
@@ -498,7 +520,9 @@ in
   # services.llama-cpp). Router mode: one port serves every declared model and
   # the section name is the `model` id the API routes on.
   services.llama-cpp-nixos = {
-    enable = true;
+    # Disabled 2026-10-24 with the SillyTavern stack; it was holding 7.1 GiB
+    # of the 12 GiB GPU.
+    enable = false;
     # nixpkgs builds the CUDA kernels for nine architectures
     # (75;80;86;89;90;100;103;120a;121a), which is ~9x the nvcc work and none
     # of it runs here: this box has exactly one GPU, an RTX 3060 (sm_86).
@@ -512,9 +536,8 @@ in
     # against ~3 s to load at unit start with a warm page cache. So sleeping
     # only moves a cost the system already pays at startup onto the first chat
     # message, and the static VRAM budget below already reserves room for both
-    # processes. ComfyUI is now enabled and shares the GPU; keep null so chat
-    # does not pay the 28 s wake, and switch to 900 if the two together
-    # exhaust VRAM.
+    # processes. ComfyUI now owns the GPU (this backend is disabled), so the
+    # 28 s wake cost is moot; leave null.
     router.idleUnloadSeconds = null;
 
     models.${lumimaidModel} = {
@@ -553,19 +576,17 @@ in
   # override. Host/port/models-preset come from the unit's environment
   # (LLAMA_ARG_*), not the command line.
 
-  # ── SillyTavern (LLM Roleplay Frontend) ────────────────────────────────
+  # ── SillyTavern (LLM Roleplay Frontend) — DISABLED 2026-10-24 ──────────
+  # Turned off with its llama.cpp and Breeze TTS backends so ComfyUI owns the
+  # RTX 3060 (the three together held ~10.2 GiB of 12 GiB). Flip all three
+  # `enable` flags back to true to restore; the configuration below is intact.
   # Options live under `services.sillytavern-nixos.*` — the upstream
   # github:Cairnstew/SillyTavern flake module, wrapped by
   # modules/nixos/sillytavern. The namespace is NOT `services.sillytavern`:
   # that one belongs to nixpkgs' own module, and the two cannot be enabled at
   # the same time (they share the unit, the account and the state directory).
-  # Served at https://server.tail685690.ts.net:8444/ (tailnet only, see the
-  # tailscale-serve unit below). NOT under the Caddy /sillytavern/ subpath:
-  # with accounts enabled SillyTavern 302s to a root-relative /login and its
-  # login JS sets pathname = "/" on success, so a path-prefixed install drops
-  # the user on the dashboard. Root-of-its-own-port has no such problem.
   services.sillytavern-nixos = {
-    enable = true;
+    enable = false;
 
     # The package's npm ci runs in the fixed-output node_modules build, where
     # /etc/ssl is absent and nixpkgs' node has no system bundle to fall back
@@ -655,27 +676,30 @@ in
     # instead of a list that rendered as three `ExecStart=` lines.
   };
 
+  # The agenix manifest still chowns sillytavern-password to the service
+  # account. Keep the account defined while the service is disabled so
+  # activation does not fail with "chown: invalid user"; when the stack is
+  # re-enabled the upstream module's identical definition merges in.
+  users.groups.sillytavern = { };
+  users.users.sillytavern = {
+    isSystemUser = lib.mkDefault true;
+    group = lib.mkDefault "sillytavern";
+    description = lib.mkDefault "SillyTavern LLM front-end server";
+    home = lib.mkDefault "/var/empty";
+    shell = lib.mkDefault "${pkgs.bash}/bin/bash";
+  };
+
   # SillyTavern is served at the root of its own tailnet HTTPS port, so the
   # wrapper's Caddy /sillytavern/ upstream (and its root-relative asset
   # handles) would only advertise a broken link on the dashboard.
   my.services.proxy.upstreams.sillytavern.enable = false;
 
-  # …so it, the TTS UI and opencode web are listed as direct cards instead. All
-  # three live on their own tailnet port; servePort makes the dashboard link to
+  # …so opencode web is listed as a direct card instead. It lives on its own
+  # tailnet port; servePort makes the dashboard link to
   # https://<current-host>:<port>/ unless it is being viewed from localhost.
   my.services.proxy.dashboard.links = [
-    {
-      label = "SillyTavern";
-      description = "Roleplay frontend — local llama.cpp model (${lumimaidModel})";
-      href = "http://localhost:8000/";
-      servePort = 8444;
-    }
-    {
-      label = "Breeze TTS";
-      description = "Local speech: voice design/cloning and /v1/audio/speech";
-      href = "http://localhost:8445/";
-      servePort = 8445;
-    }
+    # SillyTavern (:8444) and Breeze TTS (:8445) cards removed 2026-10-24 with
+    # the stack; opencode web is the only direct tailnet card left.
     {
       label = "opencode web";
       description = "opencode web UI (nix-config instance)";
@@ -689,7 +713,9 @@ in
   # at `/`. Separate unit from the LLM and the frontend: its own lifetime, its
   # own GPU footprint.
   services.breeze-tts-nixos = {
-    enable = true;
+    # Disabled 2026-10-24 with the SillyTavern stack; it was holding 3.1 GiB
+    # of the 12 GiB GPU.
+    enable = false;
 
     # The catalogue's small safe quant. Measured by upstream on this exact
     # hardware class (RTX 3060 12 GiB + a Q4/Q6 8B resident): the file is
@@ -781,7 +807,7 @@ in
   # Speak assistant replies in the UI. The endpoint itself is wired
   # automatically (the SillyTavern module reads the Breeze port), so this only
   # flips `extension_settings.tts.enabled`.
-  services.sillytavern-nixos.tts.enable = true;
+  services.sillytavern-nixos.tts.enable = false;
   # No `tts.voices` list: the declared voice above is unioned into
   # `available_voices` by the module (managedTtsVoices), so the backend's
   # voices directory is the single source of truth for ids.
@@ -797,6 +823,7 @@ in
   # loopback; tailscale terminates TLS and forwards, same pattern as the two
   # services above. Separate ports because the UI dials host:ws_port directly.
   systemd.services.breeze-tts-tailnet-serve = {
+    enable = false; # SillyTavern stack disabled 2026-10-24
     description = "tailscale serve: Breeze TTS web UI (:8445) + WebSocket (:8446)";
     wantedBy = [ "multi-user.target" ];
     wants = [ "tailscaled.service" ];
@@ -823,6 +850,7 @@ in
   # per-instance tailscale serve): terminate TLS on the tailnet and forward to
   # the loopback listener. 8443 is opencode-web; 8444 is free.
   systemd.services.sillytavern-tailnet-serve = {
+    enable = false; # SillyTavern stack disabled 2026-10-24
     description = "tailscale serve: SillyTavern on :8444";
     wantedBy = [ "multi-user.target" ];
     wants = [ "tailscaled.service" ];
