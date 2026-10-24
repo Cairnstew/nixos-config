@@ -41,9 +41,8 @@ in
     ai.enable = false;
     # NVIDIA headless + CUDA — ENABLED 2026-10-21 for the llama.cpp backend
     # (services.llama-cpp-nixos with pkgs.llama-cpp-cuda) in SillyTavern.
-    # The driver/CUDA closure is the biggest build-time and disk consumer on
-    # this box; ComfyUI stays off (`my.services.comfyui.enable = false`) so the
-    # GPU has one workload.
+    # ComfyUI is enabled too (2026-10-24), so the two share the 12 GB GPU;
+    # the ai profile (Ollama et al.) stays off.
     gpu.nvidia-headless.enable = true;
     location.enable = true;
   };
@@ -283,14 +282,14 @@ in
     autoRollback.enable = true;
   };
 
-  # ── ComfyUI (AI Image Generation) — DISABLED 2026-10-16 ────────────────
-  # Was the primary GPU workload (RTX 3060 12GB). Disabled to cut rebuild
-  # time and reclaim disk: the ComfyUI python/torch closure plus its 22
-  # curated custom-node packs is the largest build in this config. Re-enable
-  # with `enable = true` AND `gpu.nvidia-headless.enable = true` above.
+  # ── ComfyUI (AI Image Generation) — ENABLED 2026-10-24 ─────────────────
+  # Primary GPU workload on the RTX 3060 (12GB), sharing it with the
+  # llama.cpp backend above. It was off from 2026-10-16 to cut rebuild time
+  # and reclaim disk (the torch closure + 22 node packs is the largest build
+  # in this config). Requires `gpu.nvidia-headless.enable = true` above.
   my.services.comfyui = {
     # enable is explicit now that profiles/system/ai.nix no longer supplies it
-    enable = false;
+    enable = true;
     listenHost = "0.0.0.0"; # tailscale-serve + LAN access
     port = 8188;
     dataDir = "/mnt/data/comfyui";
@@ -513,8 +512,9 @@ in
     # against ~3 s to load at unit start with a warm page cache. So sleeping
     # only moves a cost the system already pays at startup onto the first chat
     # message, and the static VRAM budget below already reserves room for both
-    # processes. Unload starts paying the day ComfyUI is re-enabled
-    # (my.services.comfyui is off on this host); then set 900 rather than null.
+    # processes. ComfyUI is now enabled and shares the GPU; keep null so chat
+    # does not pay the 28 s wake, and switch to 900 if the two together
+    # exhaust VRAM.
     router.idleUnloadSeconds = null;
 
     models.${lumimaidModel} = {
