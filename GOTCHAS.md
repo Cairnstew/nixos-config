@@ -1812,3 +1812,9 @@ Hand-writing a version-0.4 workflow with `Power Lora Loader (rgthree)` needs onl
 **Declaring a Civitai LoRA: check `baseModel`, use the API key, convert the published SHA256** (2026-10-24, server)
 
 Three traps when adding a `my.services.comfyui.models` LoRA entry. (1) **Architecture**: `GET https://civitai.red/api/v1/models/<id>` reports `modelVersions[].baseModel`; model 769631 ("Selfie Aesthetic") is `Flux.1 D`, so declaring it puts the file in every lora dropdown but it is a silent no-op in the Krea 2 pipeline — the file name / renderer never checks compatibility. Verify `baseModel` matches the installed family first. (2) **Auth**: anonymous `GET /api/download/models/<versionId>?fileId=<fileId>` now returns `307` → `auth.civitai.com/login?...reason=download-auth`, even for public models, so download mode fails without `civitaiApiKeyPath` (the agenix `civitai-key`); with `Authorization: Bearer` it redirects to the CDN normally. (3) **Hash**: Civitai publishes uppercase hex (`files[].hashes.SHA256`) but the module's `sha256` option wants nix base32 (`modules/nixos/ai/comfyui/options.nix:313`) — convert with `nix hash convert --hash-algo sha256 --from hex --to base32 <hex>`, and the URN is `urn:air:<family>:lora:civitai:<modelId>@<versionId>+<fileId>`.
+
+---
+
+**Correction (2026-10-24) — `nix hash convert` uses `base16`, not `hex`**
+
+The Civitai LoRA entry above says `nix hash convert --from hex`; that fails with `error: unknown hash format 'hex', expect 'base16', 'base32', 'base64', or 'sri'`. Use `nix hash convert --hash-algo sha256 --from base16 --to base32 <HEX>` instead. `base32` still works but prints a deprecation warning — `nix32` is the canonical format name (the module's own option description calls it "nix base32", `modules/nixos/ai/comfyui/options.nix:313`).
