@@ -1818,3 +1818,21 @@ Three traps when adding a `my.services.comfyui.models` LoRA entry. (1) **Archite
 **Correction (2026-10-24) — `nix hash convert` uses `base16`, not `hex`**
 
 The Civitai LoRA entry above says `nix hash convert --from hex`; that fails with `error: unknown hash format 'hex', expect 'base16', 'base32', 'base64', or 'sri'`. Use `nix hash convert --hash-algo sha256 --from base16 --to base32 <HEX>` instead. `base32` still works but prints a deprecation warning — `nix32` is the canonical format name (the module's own option description calls it "nix base32", `modules/nixos/ai/comfyui/options.nix:313`).
+
+---
+
+**LayerStyle `RmBgUltra V2` reads `models/rmbg/RMBG-1.4/model.pth` — the model `type` must be the nested folder** (2026-10-24, server)
+
+Adding BRIA RMBG-1.4 as the auto subject mask, `type = "rmbg"` + file `model.pth` puts the weights at `models/rmbg/model.pth`, which the node never reads. `load_RMBG_model()` first tries `folder_paths.folder_names_and_paths['rmbg'][0][0]/model.pth` inside a bare `try/except`; LayerStyle never registers an `rmbg` folder, so that lookup always raises and it falls through to `models/rmbg/RMBG-1.4/model.pth` (`/nix/store/h0rymj2kiffrzbc5c0banldl2791ix5b-ComfyUI_LayerStyle-557d882/py/imagefunc.py:1493-1498`). Declare `type = "rmbg/RMBG-1.4"` — the module interpolates `type` verbatim into `models/<type>/` and mkdirs it (`modules/nixos/ai/comfyui/config.nix:493`, `:747`), so the nested path is created correctly (`configurations/nixos/server/default.nix:428`). Use `detail_method = GuidedFilter`: `VITMatte`/`VITMatte(local)` fetch extra matting weights on first use and `PyMatting` needs a package this env lacks. The 176,718,373-byte checkpoint loads under `torch.load(..., weights_only=True)` (798 tensors), so no conversion is needed.
+
+---
+
+**No inpaint-trained Krea 2 exists — masked inpainting uses `InpaintModelConditioning` + a composite** (2026-10-24, server)
+
+Krea 2 is `SingleStreamDiT` with `image_model: krea2` and `latent_format = Wan21` and declares no `concat_keys` (`/nix/store/66p53hhh2li5aprfa9nl9msw6k8rglix-ComfyUI/comfy/supported_models.py:1859-1877`), so no Krea2 Fill/inpaint checkpoint will appear — a dedicated infill model means a second model family. For masked inpainting on the Turbo UNet use `InpaintModelConditioning` (`/nix/store/66p53hhh2li5aprfa9nl9msw6k8rglix-ComfyUI/nodes.py:463-488`): it keeps `samples = vae.encode(orig_pixels)` and only sets `noise_mask`, so sampling runs inside the mask against real surrounding pixels, while the grey-filled `concat_latent` it also builds is ignored by models without concat inputs. `VAEEncodeForInpaint` is the wrong node here — it grey-fills the latent and is meant for inpaint-trained checkpoints (Flux Fill, Qwen-Image-Edit). Keep the background by compositing the decode over the original with `ImageCompositeMasked` at the end: the VAE roundtrip is lossy, so without it even unmasked pixels drift. Specialised infill is impractical on the 12 GB 3060 anyway — Qwen-Image-Edit 2509 fp8 is 20.4 GB plus a Qwen2.5-VL-7B encoder, and the Flux Fill repo is gated.
+
+---
+
+**ComfyUI v0.4 `inputs` lists sockets before widgets; `LoadImage` has a trailing upload value** (2026-10-24, server)
+
+When hand-writing a UI-format workflow, `node.inputs` is not `/object_info` declaration order: all socket inputs come first (declaration order), then all widget inputs (declaration order). `CLIPTextEncode` declares `text` then `clip` but saves `[clip, text]`, and `KSampler` saves `[model, positive, negative, latent_image, seed, steps, cfg, sampler_name, scheduler, denoise]`. Two saved values have no `/object_info` entry at all: `KSampler` inserts `control_after_generate` at `widgets_values[1]`, and `LoadImage` saves `["<file>", "image"]` (the upload-button value). A generator that follows object-info order alone produces a graph the frontend rejects; verified against saved files (`Test Workfloww.json`, `krea2SFWNSFWUncensoredImageTo_v10.json`) while building `krea2-inpaint.json`. See the `widgets_values` entry above (`GOTCHAS.md:1800`) for the value-index side of the same mapping; the UI-format basics are in `modules/nixos/ai/comfyui/opencode/commands/workflow.md:13`.
