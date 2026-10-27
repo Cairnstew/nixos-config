@@ -38,7 +38,7 @@ nix develop
 
 # Inside the shell, `hython` and `houdini` come from the system, and the
 # project environment below is already active.
-hython scripts/example.py
+hython scripts/hython_tour.py
 houdini hip/                                    # open the GUI here
 ```
 
@@ -46,7 +46,7 @@ Without entering a shell:
 
 ```bash
 nix run .#houdini            # launch the GUI with the project environment
-nix run .#hython -- scripts/example.py
+nix run .#hython -- scripts/hython_tour.py
 nix run .#basedpyright       # type-check scripts/ (what Zed's LSP runs)
 nix run .#pyright            # same, with pyright instead of basedpyright
 ```
@@ -150,6 +150,56 @@ Two packaging notes: the upstream package is not in nixpkgs, so `flake.nix`
 pins it to a commit; and `hrpyc` speaks **RPyC 5.x only** (the 6.x line changed
 the protocol), so rpyc 5.3.1 is built from PyPI rather than taken from
 `python3Packages.rpyc`.
+
+## Python SOP node (`python_from_file`)
+
+`houdini/otls/python_from_file.hdanc` is a Python SOP that runs an **external
+`.py` file on every cook**. The flake puts `./houdini` on `HOUDINI_PATH`, so the
+node is auto-loaded: it appears in the Tab menu under **Digital Assets → Python
+From File** and permits three inputs.
+
+Set its **Script Path** parm to `scripts/example.py` — an absolute path, or
+`../scripts/example.py` when the scene lives in `hip/` (bare names are searched
+for in `$HIP` and `$HIP/scripts`). **Cook Script** forces a re-cook.
+
+The external script defines one of:
+
+| Entry point | Called as |
+|-------------|-----------|
+| `main(node, geo, parms)` | 3-argument form |
+| `main(node, geo, parms, inputs)` | 4-argument form; `inputs` holds the declared extra inputs |
+| `run()` | no arguments; pull `hou.pwd()` yourself |
+
+`scripts/example.py` exercises the whole interface:
+
+- `PARM_SCHEMA` materialises real parms on the node: a folder, a static and a
+  dynamic menu, string/file/int/float (with ranges), toggle and buttons. Edit
+  the dict and the node's UI follows; delete an entry and the parm is pruned.
+- `INPUT_SCHEMA` materialises a "Use Input N (label)" toggle per extra input
+  and calls the 4-argument `main()`. An entry is `None` when its toggle is off
+  or its connector is empty.
+- It writes a quad grid (or displaces input 0), a `py_sop` point attribute, a
+  `Cd` colour from the selected palette, a point group, and a `python_sop`
+  detail attribute.
+
+Two details worth knowing: menu values in `parms` are **indices**, so read the
+token with `node.parm(name).evalAsString()`; and a Python SOP's `geo` is the
+*output* geometry — read input 0 with `node.inputGeometry(0)`.
+
+The mask input only appears once the node has a third connector (connect it);
+until then the node drops the surplus declaration with a warning. The script
+itself is cached by path + mtime, so editing it and re-cooking picks up the
+change without restarting Houdini.
+
+To edit the node as text, expand and re-collapse it with Houdini's `hotl`:
+
+```bash
+rm -rf /tmp/pyfromfile
+hotl -t /tmp/pyfromfile houdini/otls/python_from_file.hdanc
+#   edit /tmp/pyfromfile/Sop_1python__from__file/PythonCook
+hotl -l /tmp/pyfromfile /tmp/python_from_file.hdanc
+mv /tmp/python_from_file.hdanc houdini/otls/python_from_file.hdanc
+```
 
 ## Editor setup (Zed, VS Code, Neovim, …)
 
@@ -269,7 +319,7 @@ geo = node.geometry()        # Geometry | None
 A plain annotation (`node: hou.SopNode = hou.pwd()`) does **not** work — it is
 an unproven downcast and the type-checker is right to reject it.
 
-Two related gotchas, both handled in `scripts/example.py`:
+Two related gotchas, both handled in `scripts/hython_tour.py`:
 
 - `hou.node(path)` returns `Optional[hou.Node]` (the path may not exist), so it
   needs a `None` check first.
@@ -379,12 +429,12 @@ ruff format .
 ├── .opencode/         # opencode config — the houdini MCP server (stdio)
 ├── hip/               # scene files ($HIP) — *.hip, *.hiplc
 ├── houdini/           # a Houdini package, auto-loaded via HOUDINI_PATH
-│   ├── otls/          #   digital assets (*.hda, *.otl)
+│   ├── otls/          #   digital assets (*.hda, *.hdanc, *.otl) — python_from_file
 │   ├── python/        #   startup/module Python (importable as `houdini.*`)
 │   ├── scripts/       #   shelf/startup scripts (123.py, 456.py, ...)
 │   ├── vex/           #   VEX includes (.vfl), included from wrangles
 │   └── toolbar/       #   shelf definitions (.shelf)
-└── scripts/           # standalone hython tools (run with `nix run .#hython`)
+└── scripts/           # hython tools: example.py (node script) + hython_tour.py
 ```
 
 `.hou-libs`, `.hou-site` and `.stubs` are git-ignored: they are machine- and

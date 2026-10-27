@@ -133,6 +133,20 @@ in
       not `env` — opencode silently drops unrecognised keys, and a dropped
       `MCP_TRANSPORT=stdio` sends the server to HTTP :3055, where opencode
       times it out after 30 s and only reports `status=failed`.
+
+      ## Python SOP (`python_from_file`)
+
+      `houdini/otls/python_from_file.hdanc` is a Python SOP that runs an
+      external `.py` on every cook. It is auto-loaded from `HOUDINI_PATH` and
+      appears under **Digital Assets → Python From File** with three inputs.
+
+      Set its **Script Path** parm to `scripts/example.py` (absolute, or
+      `../scripts/example.py` for a scene in `hip/`), then press **Cook
+      Script**. The example demonstrates the whole contract: `PARM_SCHEMA`
+      (folder, static and dynamic menus, string/file/int/float/toggle/button),
+      `INPUT_SCHEMA` (extra inputs and their "Use Input N" toggles) and the
+      4-argument `main(node, geo, parms, inputs)`. Menu values in `parms` are
+      indices; use `node.parm(name).evalAsString()` for the token.
     '';
 
     # Game development templates

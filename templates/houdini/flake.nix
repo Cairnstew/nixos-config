@@ -432,7 +432,7 @@
             houdini = houdiniApp;
 
             # Run a Python script inside Houdini's interpreter:
-            #   nix run .#hython -- scripts/example.py
+            #   nix run .#hython -- scripts/hython_tour.py
             hython = hythonApp;
 
             # Type-check with `import hou` resolved:
