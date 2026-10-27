@@ -268,8 +268,18 @@
             exec ${houdiniBin} "$@"
           '';
 
+          # Houdini's bundled Python 3.13 with PIL and numpy available via
+          # PYTHONPATH.  Pin `python313` rather than `python3`: the latter
+          # follows nixpkgs (3.14 here) and its compiled extensions cannot be
+          # loaded by Houdini's 3.13 interpreter.
+          hythonPythonEnv = pkgs.python313.withPackages (ps: with ps; [
+            pillow
+            numpy
+          ]);
+
           # Run a Python script inside Houdini's interpreter.
           hythonApp = mkApp "houdini-project-hython" ''
+            export PYTHONPATH="${hythonPythonEnv}/lib/python${pkgs.python313.pythonVersion}/site-packages:''${PYTHONPATH:-}"
             exec ${hythonBin} "$@"
           '';
 
@@ -368,8 +378,9 @@
             text = ''
               echo "houdini-mcp: transport=''${MCP_TRANSPORT:-http} port=''${MCP_PORT:-3055}" \
                    "-> Houdini ''${HOUDINI_HOST:-localhost}:''${HOUDINI_PORT:-18811}" >&2
-              echo "houdini-mcp: start hrpyc in Houdini's Python Shell first:" >&2
-              echo "houdini-mcp:   import hrpyc; hrpyc.start_server(port=18811)" >&2
+              echo "houdini-mcp: Houdini starts that bridge itself via houdini/scripts/123.py" >&2
+              echo "houdini-mcp: (a session already running when 123.py was added needs a" >&2
+              echo "houdini-mcp:  restart, or: import hrpyc; hrpyc.start_server(port=18811))" >&2
               exec ${houdiniMcpEnv}/bin/python3 -m houdini_mcp "$@"
             '';
           };

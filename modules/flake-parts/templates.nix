@@ -109,13 +109,14 @@ in
       into opencode, so an AI assistant can inspect and drive the **running**
       Houdini session — read scene state, create/wire nodes, run Python, render.
 
-      The MCP server only talks to a live session, so **start `hrpyc` in
-      Houdini first** (Python Shell, or add it to `123.py`):
-
-      ```python
-      import hrpyc
-      hrpyc.start_server(port=18811)
-      ```
+      The MCP server only talks to a live session, and the project starts the
+      bridge itself: `houdini/scripts/123.py` runs from `HOUDINI_PATH` on every
+      GUI session and binds `127.0.0.1:18811` (`456.py` retries after each
+      scene load). Do not use the bare `hrpyc.start_server()` one-liner — it
+      binds `0.0.0.0`, and RPyC hands the caller a Python interpreter, so that
+      publishes remote code execution on every interface. A Houdini session
+      that was already open before the scaffold needs a restart, or the bridge
+      started once by hand from the Python Shell.
 
       Standalone (no opencode): `nix run .#houdini-mcp` — HTTP on `:3055`,
       health check at `/health`.

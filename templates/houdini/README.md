@@ -51,6 +51,11 @@ nix run .#basedpyright       # type-check scripts/ (what Zed's LSP runs)
 nix run .#pyright            # same, with pyright instead of basedpyright
 ```
 
+`nix run .#hython` puts a Nix `python3.13` environment with `pillow` and `numpy`
+on `PYTHONPATH`, so scripts can import them without installing into Houdini.
+Add packages to `hythonPythonEnv` in `flake.nix` if a script needs more; keep
+it on `python313` so the compiled extensions match Houdini's interpreter.
+
 ## Project environment
 
 On shell entry the flake exports:
@@ -75,15 +80,28 @@ docs. It talks to Houdini over `hrpyc` (RPyC), so nothing is baked into the
 `.hip` file and the server can be restarted independently of the session.
 
 OpenCode picks it up automatically from `.opencode/opencode.json` (stdio
-transport, `localhost:18811`). Houdini itself must expose the RPC server first
-— in Houdini's **Python Shell**:
+transport, `localhost:18811`). Houdini exposes the RPC server itself at
+startup, from `houdini/scripts/123.py` — since the flake puts `./houdini` on
+`HOUDINI_PATH`, that script runs with every session and no setup is needed. It
+prints `[houdini] mcp bridge: listening on 127.0.0.1:18811` to the Python Shell
+when it is up.
+
+That script deliberately does **not** call `hrpyc.start_server()`: the bundled
+version binds `0.0.0.0`, and RPyC hands the caller a Python interpreter, so the
+naive one-liner publishes remote code execution on every interface. `123.py`
+binds `127.0.0.1` only, probes the port first so a busy port is reported rather
+than silently swallowed, and skips `hython` and batch cooks so they don't squat
+it. `456.py` re-runs the same hook after every scene load as a backstop. Both
+are idempotent; `HOUDINI_MCP_PORT` moves the port and `HOUDINI_MCP_RPC=0` turns
+it off.
+
+For a session that was already open when `123.py` was added, start the bridge
+once by hand from Houdini's **Python Shell**:
 
 ```python
 import hrpyc
 hrpyc.start_server(port=18811)
 ```
-
-Or add those two lines to `123.py` to start it with every scene.
 
 The server also runs on its own:
 
