@@ -1174,9 +1174,13 @@
   };
 
   # ── AI Desktop App ──────────────────────────────────────────────────────────
+  # The API server is deliberately OFF: `jan serve` in Jan 0.8.4 launches the
+  # full GUI instead of binding :1337, so the module's ExecStartPost probe fails
+  # and `Restart=on-failure` reopens the Jan window every ~20 s. The app itself
+  # stays installed for manual use; remove this block entirely to drop it.
   my.services.jan = {
     enable = true;
-    apiServer.enable = true;
+    apiServer.enable = false;
     ollama.enable = true;
   };
 
