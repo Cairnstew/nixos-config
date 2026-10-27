@@ -290,3 +290,7 @@ just test
 # Run a VM test for a host (e.g. just vm-test laptop)
 just vm-test laptop
 ```
+
+## RUN LOG
+
+- 2026-10-27 — `nix flake check --no-build` (the "Check evaluation" command above) does not complete on this flake: it was SIGKILLed (rc=137) while evaluating `packages.server` under an 8 GiB cgroup, matching the OOM documented at `GOTCHAS.md:671`. For module work use the scoped CI-equivalent instead — `nix eval --raw .#nixosConfigurations.<host>.config.system.build.toplevel.drvPath` per affected host (what `.github/workflows/smart-ci.yml` `flake-check` does), plus `nix eval --impure --expr` over `config.home-manager.users.<user>.assertions` to confirm home-module assertions. New module dirs must be `git add`ed first since flake eval only sees tracked paths (`GOTCHAS.md:226`).
