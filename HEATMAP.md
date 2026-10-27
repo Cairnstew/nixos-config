@@ -246,6 +246,14 @@ All `my.*` options declared across module files.
 | `my.programs.thunderbird.email` | str | — | Email address |
 | `my.programs.thunderbird.username` | str | — | Username for email |
 | `my.programs.obsidian.enable` | bool | `false` | Obsidian note-taking |
+| `my.programs.obs-studio.enable` | bool | `false` | OBS Studio recording/streaming |
+| `my.programs.obs-studio.package` | package | `pkgs.obs-studio` | OBS Studio package |
+| `my.programs.obs-studio.plugins` | list of package | `[]` | OBS plugins wrapped into the package |
+| `my.programs.obs-studio.recordingPath` | nullOr str | `null` | Recording output directory written into OBS profiles |
+| `my.programs.losslesscut.enable` | bool | `false` | LosslessCut lossless clip trim/merge editor |
+| `my.programs.losslesscut.package` | package | `pkgs.losslesscut-bin` | LosslessCut package |
+| `my.programs.shotcut.enable` | bool | `false` | Shotcut non-linear video editor |
+| `my.programs.shotcut.package` | package | `pkgs.shotcut` | Shotcut package |
 | `my.programs.direnv.enable` | bool | `false` | direnv with nix-direnv |
 | `my.programs.firefox.enable` | bool | `false` | Firefox browser |
 | `my.programs.youtube-music.enable` | bool | `false` | YouTube Music client |

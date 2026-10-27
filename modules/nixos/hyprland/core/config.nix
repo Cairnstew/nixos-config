@@ -77,6 +77,13 @@ let
       (lib.concatStringsSep "\n" workspaceLines)}
 
     # ── Autostart ──────────────────────────────────────────────────────────
+    # Mark the compositor session in systemd. graphical-session.target is
+    # RefuseManualStart and is normally started by a display-manager session
+    # manager; greetd launches Hyprland directly, so nothing did — which left
+    # xdg-desktop-portal inactive (Requisite=graphical-session.target) and OBS
+    # without its PipeWire screen/window sources. Import the Wayland env first
+    # so the portal units see WAYLAND_DISPLAY.
+    exec-once = ${pkgs.dbus}/bin/dbus-update-activation-environment --systemd WAYLAND_DISPLAY XDG_CURRENT_DESKTOP && ${pkgs.systemd}/bin/systemctl --user start hyprland-session.target
     ${lib.optionalString cfg.idle.enable ''
     exec-once = systemctl --user start hypridle.service
     ''}
@@ -282,6 +289,17 @@ in
     ] ++ cfg.extraPackages;
 
     environment.etc."xdg/hypr/hyprland.conf".text = defaultHyprlandConf;
+
+    # Session target the compositor starts (see the autostart exec-once above).
+    # It pulls in graphical-session.target as a dependency — the only way to
+    # start that RefuseManualStart unit — so portals and every unit wired to
+    # hyprland-session.target (pyprland, waybar, wallpapers) actually run.
+    systemd.user.targets.hyprland-session = {
+      description = "Hyprland compositor session";
+      bindsTo = [ "graphical-session.target" ];
+      wants = [ "graphical-session.target" ];
+      after = [ "graphical-session.target" ];
+    };
 
     users.users.${cfg.user}.extraGroups = [ "video" "audio" "input" ];
   };

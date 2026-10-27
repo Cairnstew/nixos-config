@@ -548,22 +548,26 @@
   };
 
   # ── Project Zomboid: Project Viewpoint Vanilla+ ───────────────────────────
-  # /mnt/data is 0710 root:root, so the `project-zomboid` service user is
-  # "other" with no `x` on it and cannot TRAVERSE the path to its own data dir.
-  # The module creates /mnt/data/project-zomboid itself (upstream
-  # modules/config.nix sets a tmpfiles rule "d '${dataDir}' 0770 <user> <group>",
-  # which runs as root and therefore succeeds), but traverse on every ancestor is
-  # required for any access — so the install unit dies at exec with
-  # `status=200/CHDIR`, before its script ever runs.
+  # /mnt/data is 0771 root:users: the `users` group (which includes the primary
+  # user) gets full rwx so the user can list/read/create directly, while "other"
+  # keeps traverse-only (--x, no listing). "Other" traverse is required because
+  # the `project-zomboid` service user is not in `users` and must still TRAVERSE
+  # every ancestor to reach its own data dir. Deny it and the install unit dies
+  # at exec with `status=200/CHDIR`, before its script ever runs — the module
+  # creates /mnt/data/project-zomboid itself (upstream modules/config.nix sets a
+  # tmpfiles rule "d '${dataDir}' 0770 <user> <group>", which runs as root and
+  # therefore succeeds), but traverse on every ancestor is required for any
+  # access.
   #
-  # 0711 grants traverse to all and still denies listing. That exposes nothing
-  # new: the sensitive subdirs already deny others `x` (docker 0710 root:root,
-  # project-zomboid 0770 project-zomboid, lost+found 0700 root:root), while the
-  # ones that are world-readable (ollama 0755, jupyter_projects 0775) already say
-  # so in their own modes. A per-user ACL would be tighter but is not expressible
-  # declaratively here without guessing at tmpfiles ACL syntax.
+  # This exposes nothing new: the sensitive subdirs already deny others `x`
+  # (docker 0710 root:root, project-zomboid 0770 project-zomboid, lost+found
+  # 0700 root:root), while the ones that are world-readable (ollama 0755,
+  # jupyter_projects 0775) already say so in their own modes.
   systemd.tmpfiles.rules = [
-    "d /mnt/data 0711 root root -"
+    "d /mnt/data 0771 root users -"
+    # OBS recordings (my.programs.obs-studio.recordingPath below). /mnt/data is
+    # root-owned so tmpfiles can descend; the recording user needs write access.
+    "d /mnt/data/obs-recordings 0755 ${flake.config.me.username} users -"
   ];
 
   # The server ships disabled (modules/nixos/projectzomboid-server/servers/
@@ -1233,6 +1237,21 @@
           url = "https://github.com/Cairnstew/Cairns-Notes";
           tokenFile = config.age.secrets."github-token-obsidian".path;
         };
+      };
+
+      # Recordings go to the 500GB data SSD (374G free) instead of the home
+      # directory. OBS's Linux default is $HOME; the module patches the path
+      # into every profile on activation, so restart OBS to pick it up.
+      "obs-studio" = {
+        recordingPath = "/mnt/data/obs-recordings";
+
+        # OBS 32.2.2 SIGSEGVs in linux-pipewire's Screencast `start()` when the
+        # portal selection response arrives (upstream #13809; Hyprland/wlroots
+        # buffer path also hits #13318). wlrobs uses wlr-screencopy directly and
+        # bypasses the portal: add "Wayland output(scpy)" instead of the PipeWire
+        # sources. Use scpy, not dmabuf — dmabuf crashes in libwlrobs
+        # (`wl_proxy_marshal_constructor`; wlrobs-hg breaks on OBS 31.1.2+).
+        plugins = [ pkgs.obs-studio-plugins.wlrobs ];
       };
 
       squidProxyClient = {

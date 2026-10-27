@@ -39,6 +39,11 @@ in
         extensions = lib.mkDefault [ "ublock-origin" "1password" ];
       };
       obsidian.enable = lib.mkDefault true;
+      "obs-studio".enable = lib.mkDefault true;
+      # Record → clip workflow: LosslessCut trims without re-encoding,
+      # Shotcut handles the real edits (both Qt6/MLT, no KDE Frameworks).
+      losslesscut.enable = lib.mkDefault true;
+      shotcut.enable = lib.mkDefault true;
       thunderbird.enable = lib.mkDefault true;
       thunderbird.email = lib.mkDefault flake.config.me.email;
       thunderbird.username = lib.mkDefault username;
