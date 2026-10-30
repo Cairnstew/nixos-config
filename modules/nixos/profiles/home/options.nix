@@ -11,6 +11,7 @@
     development.enable = lib.mkEnableOption "development home profile (dev tools)";
     minimal.enable = lib.mkEnableOption "minimal home profile (essential only)";
     server.enable = lib.mkEnableOption "server home profile (SSH tools)";
-    balatro.enable = lib.mkEnableOption "Balatro card game with multiplayer mod support";
+    # balatro.enable removed — never assigned anywhere; real enablement is
+    # my.programs.balatro (gaming profile / desktop host) — G14
   };
 }

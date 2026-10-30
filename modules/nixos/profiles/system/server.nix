@@ -8,14 +8,10 @@ in
 {
   config = lib.mkIf cfg.enable {
     # ── SSH ────────────────────────────────────────────────────────────────
-    # mkDefault true: SSH is critical for headless server management
-    # Override when: Serial console or out-of-band management only
-    my.services.ssh.enable = lib.mkDefault true;
+    # Duplicate of common.nix my.services.ssh.enable (same mkDefault) — removed (G12)
 
     # ── Services ───────────────────────────────────────────────────────────
-    # mkDefault true: Tailscale for secure remote access
-    # Override when: On-premise only with no remote access needed
-    my.services.tailscale.enable = lib.mkDefault true;
+    # Duplicate of common.nix my.services.tailscale.enable (same mkDefault) — removed (G12)
 
     # ── IRQ Balance ─────────────────────────────────────────────────────────
     # Distribute hardware interrupts across all CPU cores. Prevents NIC

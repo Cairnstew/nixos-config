@@ -95,12 +95,7 @@ in
       # Everything else disabled
     })
 
-    # Balatro profile (requires Steam)
-    (lib.mkIf cfg.balatro.enable {
-      balatro = {
-        enable = lib.mkDefault true;
-        multiplayer.enable = lib.mkDefault false; # Opt-in: set true for multiplayer
-      };
-    })
+    # Balatro home-profile block removed — dead (the profile option was never
+    # assigned; real enablement is my.programs.balatro) — G14
   ]);
 }

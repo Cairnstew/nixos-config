@@ -271,7 +271,8 @@ in
     services.proxy.enable = lib.mkDefault true;
     services.proxy.systemMetrics.enable = lib.mkDefault true;
 
-    # Development profile enabled universally: all 5 hosts enable it (recon O1),
+    # Development profile enabled universally: all 6 hosts enable it (recon O1:
+    # desktop, laptop, minimal, oracle, server, wsl),
     # so it becomes a mkDefault in common instead of per-host duplication.
     # Override when: Host needs a minimal surface (set false explicitly).
     profiles.development.enable = lib.mkDefault true;

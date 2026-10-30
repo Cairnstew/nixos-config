@@ -8,10 +8,8 @@ in
 {
   config = lib.mkIf cfg.enable {
     # ── Core only ──────────────────────────────────────────────────────────
-    # mkDefault true: Even minimal systems need remote access
-    # Override when: Truly isolated system with physical access only
-    my.services.tailscale.enable = lib.mkDefault true;
-    my.services.ssh.enable = lib.mkDefault true;
+    # Duplicate of common.nix my.services.tailscale.enable (same mkDefault) — removed (G12)
+    # Duplicate of common.nix my.services.ssh.enable (same mkDefault) — removed (G12)
 
     # Note: This profile intentionally does NOT disable other services.
     # To create a truly minimal system, create a configuration that doesn't

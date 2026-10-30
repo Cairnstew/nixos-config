@@ -41,7 +41,7 @@ in
     my.services.spotify.enable = lib.mkDefault true;
     my.programs.tor-browser.enable = lib.mkDefault true;
     my.virtualisation.docker.enable = lib.mkDefault true;
-    my.services.tailscale.enable = lib.mkDefault true;
+    # Duplicate of common.nix my.services.tailscale.enable (same mkDefault) — removed (G12)
 
     # ── Home Manager program defaults ─────────────────────────────────────
     home-manager.users.${username}.my.programs = {
