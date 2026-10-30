@@ -8,7 +8,7 @@
 #   - pkgs   (writeShellApplication, nodejs)
 #   - config (agenix secret paths read at runtime)
 #   - self   (keepa-mcp package shipped by this flake)
-#   - flake  (the theming palette, resolved via flake.config.theming)
+#   - flake  (the theming palette, resolved via flake.config.my.theming)
 { config, pkgs, flake, self }:
 {
   betterEmailPkg =
@@ -105,18 +105,19 @@
       meta.description = "MCP server: GitHub official (repos, issues, PRs, actions, file tree)";
     };
 
-  # Opencode theme derived from the shared palette (theming.scheme).
+  # Opencode theme derived from the shared palette (my.theming.scheme).
   #
   # The `defs` block is the raw base16 palette; the `theme` block then maps
   # opencode's own role names onto those slots by string reference, so the role
   # names opencode requires are preserved while the colours come from the one
   # resolved palette. The theme is keyed by the active scheme's slug, so it
   # follows a scheme switch instead of always claiming to be Catppuccin Mocha.
-  opencodeThemeSlug = flake.config.theming.colors.slug;
+  # Flake-level option renamed to `my.theming` for namespacing (T1).
+  opencodeThemeSlug = flake.config.my.theming.colors.slug;
 
   opencodeTheme =
     let
-      c = flake.config.theming.colors;
+      c = flake.config.my.theming.colors;
       # Bound locally rather than referencing the sibling attribute above: this
       # attrset is not `rec`, so a same-level reference would not resolve.
       slug = c.slug;

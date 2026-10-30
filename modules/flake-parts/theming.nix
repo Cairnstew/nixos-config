@@ -7,14 +7,20 @@
 #          palette from here, so there is exactly one answer to "what colour is
 #          the accent on this system".
 #
-# Values are set in the repo-root `config.nix` under `theming = { ... };`;
+# Values are set in the repo-root `config.nix` under `my.theming = { ... };`;
 # this file only declares the schema and derives the result.
 #
+# Renamed from `theming` to `my.theming` for flake-parts namespace conformance:
+# every other flake-level module (caches, vm, ventoy, live, nixosAnywhereDeploy)
+# declares under `options.my.*`, and consumers already read the `flake.config.my`
+# prefix (e.g. modules/nixos/caches/config.nix). Consumers below therefore read
+# `config.my.theming` / `flake.config.my.theming`.
+#
 # Outputs (config, not perSystem — theming is host-independent):
-#   - config.theming.colors      resolved palette: roles + base16 + terminal
-#   - config.theming.lib         the pure color/theming helper functions
-#   - config.theming.schemes     names of every scheme in the catalog
-#   - config.theming.available   the raw catalog, keyed by name
+#   - config.my.theming.colors      resolved palette: roles + base16 + terminal
+#   - config.my.theming.lib         the pure color/theming helper functions
+#   - config.my.theming.schemes     names of every scheme in the catalog
+#   - config.my.theming.available   the raw catalog, keyed by name
 #   - flake.lib.color            the same helpers, for non-module consumers
 #   - flake.lib.theming
 #
@@ -33,7 +39,8 @@ let
   # be confused with the flake-parts `lib` — `inherit lib;` here would silently
   # expose flake-parts' library instead of the colour helpers.
   themingLib = import ../../lib/theming.nix { inherit lib; };
-  cfg = config.theming;
+  # Renamed `config.theming` → `config.my.theming` alongside the option move.
+  cfg = config.my.theming;
 
   # Resolved once and shared by every consumer below.
   colors = themingLib.mkColors {
@@ -42,7 +49,8 @@ let
   };
 in
 {
-  options.theming = {
+  # Namespaced declaration: flake-level options live under `my.*` (see header).
+  options.my.theming = {
     scheme = lib.mkOption {
       type = lib.types.str;
       default = "catppuccin-mocha";
@@ -52,7 +60,10 @@ in
 
         Adding a scheme means dropping one `.nix` file into `lib/schemes/` —
         there is no registry to update. Use
-        `nix eval .#theming.schemes` to list what is available.
+        `nix eval .#lib.theming.schemeNames` to list what is available.
+        (This replaces the previously documented `nix eval .#theming.schemes`,
+        which does not exist: the flake-level option is `config.my.theming`,
+        while the evaluable output is `flake.lib.theming.schemeNames`.)
       '';
     };
 
@@ -93,7 +104,7 @@ in
         - `onBackground` — a text colour guaranteed legible on `background`
         - identity: `slug`, `name`, `family`, `variant`, `polarity`, `isDark`
 
-        Example: `config.theming.colors.accent`
+        Example: `config.my.theming.colors.accent`
       '';
     };
 
@@ -126,7 +137,8 @@ in
     };
   };
 
-  config.theming = {
+  # Renamed `config.theming` → `config.my.theming` alongside the option move.
+  config.my.theming = {
     # `schemes` in lib/theming.nix is the catalog attrset; `schemeNames` is
     # the list of slugs, which is what this option's type calls for.
     schemes = themingLib.schemeNames;

@@ -39,12 +39,12 @@
   };
 
   # ============================================================================
-  # Theming (theming.*)
+  # Theming (my.theming.*)
   # ============================================================================
   # Which colour scheme the whole system uses, and any per-colour overrides.
   # This is the single source of truth: the palette resolved from these two
   # options is what every NixOS module, Home Manager module and flake-parts
-  # layer reads (via `my.theming.colors` / `flake.config.theming.colors`).
+  # layer reads (via `my.theming.colors` / `flake.config.my.theming.colors`).
   #
   # Consumed by: modules/nixos/theming, modules/home/theming,
   #              modules/nixos/stylix, and every module that reads
@@ -57,7 +57,11 @@
   #   catppuccin-frappe, catppuccin-latte, nord, gruvbox-dark, tokyo-night,
   #   dracula
   # ============================================================================
-  theming = {
+  # Renamed from top-level `theming` to `my.theming` so this flake-level option
+  # lives in the same `my.*` namespace as caches/vm/ventoy/live/nixosAnywhereDeploy
+  # (declared in modules/flake-parts/theming.nix). No other top-level `my` key
+  # exists in this file, so the merge is purely additive.
+  my.theming = {
     # Slug from lib/schemes/. `nix eval .#lib.theming.schemeNames` lists them.
     scheme = "catppuccin-mocha";
 

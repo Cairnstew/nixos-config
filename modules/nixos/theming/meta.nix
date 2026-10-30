@@ -18,7 +18,8 @@
     "my.theming.schemes"
   ];
   expects = [
-    "flake.config.theming"
+    # Renamed with the flake-level option (T1): `flake.config.my.theming`.
+    "flake.config.my.theming"
   ];
   complexity = "medium";
   tested = true;

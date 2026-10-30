@@ -12,7 +12,8 @@
 
 let
   cfg = config.my.theming;
-  theme = flake.config.theming;
+  # Flake-level option renamed to `my.theming` for namespacing (T1).
+  theme = flake.config.my.theming;
   colors = cfg.colors;
   color = cfg.lib.color;
 

@@ -13,7 +13,9 @@
 let
   themingLib = import ../../../lib/theming.nix { inherit lib; };
 
-  flakeTheme = if flake.config ? theming then flake.config.theming else null;
+  # Flake-level option renamed to `my.theming` for namespacing (T1), including
+  # the `?` existence guard, so a standalone HM config still short-circuits.
+  flakeTheme = if flake.config ? my.theming then flake.config.my.theming else null;
 
   # Same selection + overrides the NixOS side uses, so a standalone evaluation
   # lands on the identical palette rather than an arbitrary one.
