@@ -362,6 +362,10 @@ in
           shopping-research = ./commands/shopping-research.md;
           git-commit-push = ./commands/git-commit-push.md;
           git-pull-master = ./commands/git-pull-master.md;
+          # Repo-agnostic: audits and improves the data pipeline of whatever repo
+          # it is invoked in, in an isolated worktree. See the command's own
+          # hard rules for the base-branch and raw-data protections.
+          data-quality = ./commands/data-quality.md;
         };
         pluginFiles = lib.mkDefault {
           copylast = ./plugins/copylast.ts;
