@@ -8,7 +8,8 @@
 
   networking.hostName = "oracle";
   nixos-unified.sshTarget = "seanc@oracle";
-  nixpkgs.hostPlatform = "aarch64-linux"; # Oracle Always Free Ampere A1 (ARM64)
+  # nixpkgs.hostPlatform removed (H14): hardware-configuration.nix:22 already
+  # sets lib.mkDefault "aarch64-linux" (Oracle Always Free Ampere A1, ARM64).
 
   # ── System Profiles ──────────────────────────────────────────────────────
   # server profile: headless baseline (SSH + Tailscale + irqbalance, no GUI).
@@ -25,7 +26,7 @@
   # ── Location (uk-london-1) ───────────────────────────────────────────────
   my.system.location = {
     # enable = true — redundant: profile already sets via mkIf cfg.location.enable
-    timeZone = "Europe/London";
+    # timeZone removed (H15): current-location.nix:19 defaults to "Europe/London".
     latitude = 51.5074;
     longitude = -0.1278;
   };

@@ -25,7 +25,8 @@
   my.profiles = {
     # Role
     workstation.enable = true;
-    development.enable = true;
+    # development.enable removed (H12): common.nix:277 sets
+    # my.profiles.development.enable = lib.mkDefault true for every host.
 
     # Desktop — Hyprland
     desktop.choice = "hyprland";
