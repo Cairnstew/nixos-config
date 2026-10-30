@@ -2046,3 +2046,12 @@ Symptom: while auditing whether a host setting duplicated a default, `grep -rn "
 **`writeShellApplication`-built services have no evaluable `.script`/`.text` — how to diff the rendered script** (2026-10-30, desktop, refactor series T5)
 
 Symptom: to prove a refactor left a `pkgs.writeShellApplication` service's script byte-identical, `nix eval ...systemd.services.<name>.script` errors (the attribute is not set) and `nix build <drv>` only prints the derivation. Related trap: a `#` comment placed inside the shell `text = ''…''` changes the rendered script and silently breaks the invariant. Fix/practice: `nix eval --raw .#nixosConfigurations.<host>.config.systemd.services.<name>.serviceConfig.ExecStart`, take `builtins.getContext` of the result to get the `.drv`, `nix-store -r <drv>`, then read `<out>/bin/<name>` and compare with `cmp`/`sha256sum`; keep explanatory comments in the Nix `let` block, not inside the shell text. Evidence: `modules/nixos/boot-health/config.nix:13` (the derived path) and `modules/nixos/boot-alerting/config.nix:9` (the owning `${cfg.stateDir}`).
+
+---
+
+**A new file under `templates/` is invisible to Nix until it is `git add`ed — so `nix flake lock` inside a fresh template fails, and `nix flake init -t .#<name>` cannot see it either** (2026-10-30, desktop)
+
+Symptom: scaffolding `templates/jupyter-zed/` and running `nix flake lock` in it to ship a `flake.lock` failed with `error: Path 'templates/jupyter-zed/flake.nix' in the repository "/home/seanc/nixos-config" is not tracked by Git.` even though the file sat on disk. Cause: the parent flake's source is the git tree, so untracked files are not part of it — the same reason `nix flake init -t .#jupyter-zed` (and the `nix-template-selector` package, which reads `.#templates` from the same tree) cannot instantiate a brand-new template until the commit lands.
+
+Fix/practice: generate the lock outside the repo and copy it back — `cp -r templates/<name> /tmp/x && cd /tmp/x && nix flake lock`, then `cp flake.lock` into the template — and treat "template exists" as true only after the commit. `nix eval .#templates.<name>.description` still succeeds for an untracked template (it needs only the string attr from `modules/flake-parts/templates.nix`), so that check is not evidence the template's files are visible to Nix.
+
