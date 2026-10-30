@@ -951,4 +951,24 @@ is a separate decision.
   note to Merge pitfalls, and refreshed the SillyTavern + common.nix stale line refs. Kept the
   `checks.x86_64-linux.build-<host>` fallback (verified it exists: build-desktop/laptop/…).
 
+### 2026-10-30 — orphaned nix process held 11.5GB at R-pre; oracle is eval-only; planner file lists need grep
+
+- Lesson: (1) R-pre's `free -h` showed 9.4Gi available while swap sat at 13/15Gi — an orphaned
+  `nix flake check --no-build` (PPID 1, 3 days old, `R` state, 11.5GB RSS) was holding the memory.
+  Killing it took `available` to 20Gi. `free -h` alone cannot see this. (2) `oracle` is
+  `aarch64-linux`; on this x86_64 host `nixos-rebuild dry-activate` fails with `platform mismatch …
+  Required system: 'aarch64-linux'`, so its bar is `nix eval` — it belongs beside desktop's
+  SillyTavern-404 exception in the host-specific bars. (3) The planner's T1 file list named 4 files;
+  the real set was 7 (`modules/nixos/homeManager/mcp-wrappers.nix`, `modules/nixos/theming/tests.nix`,
+  `modules/nixos/theming/meta.nix` were missed) — a partial apply would have broken eval on all six
+  hosts, and only the lead's pre-spawn grep caught it. (4) A builder can go idle without committing
+  even when told to (b-t2), and its worktree was deleted mid-run while a full-toplevel dry-activate
+  ran; the copy-from-worktree recovery plus a lead-run before/after eval was the right safeguard.
+  (5) Full-toplevel dry-activate can exceed 15 minutes because every commit changes the `-source`
+  path (see the GOTCHAS `drvPath` entry) — eval-stage pass is the reliable gate.
+- Fix: record-only this run; no command-body edit was made (the append-only allow-list covers this
+  RUN LOG, not the command body). Candidate future edits, each grounded above: add a `ps` scan for
+  long-running/orphaned `nix` processes to R-pre; add oracle to the Phase 3/4 host-specific bars;
+  require the lead to grep-verify every planner file list before spawning.
+
 # END OF COMMAND
