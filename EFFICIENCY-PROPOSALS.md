@@ -212,6 +212,15 @@ Rules:
 
 ---
 
+## 2026-10-30 — `just validate-template <name>`: collapse the four cold-start `nix` invocations that validating one template costs
+
+- **Idea**: a `justfile` recipe (or `tools/validate-template.sh`) that, for `templates/<name>/`, does the whole gate in one process tree: copy to a scratch dir and `nix flake lock` (see the GOTCHAS entry on untracked paths), `nix flake show`/`nix eval .#devShells.…` to prove it evaluates, `nix fmt --check`, and a `nix develop -c` smoke run that asserts the shellHook actually produced what it promises (here: `.venv/bin/python` present, the kernelspec in `jupyter kernelspec list`, and the declared deps importable). Today those are four separate `nix` invocations, each paying its own eval + substitution cold start, plus a manual `cp -r` detour because the template is untracked.
+- **Evidence** (this session `ses_e71972416ffev0OTH320kUqdYJ` via `opencode.db`: cost $0.056 / 209,954 in / 14,218 out / 4,601,495 cache-read; **78 tool calls over 52 steps**): scaffolding one template ran `nix flake lock`, `nix eval`, `nix fmt --check` and `nix develop --command bash -c …` **as four separate invocations**, and then a fifth (`nix develop`) to re-test after a one-line `.python-version` change — because nothing bundles "lock → eval → format → smoke the hook". Two of those were re-runs of the same command after an edit, which is the pattern a recipe would absorb (`validate-template <name>` as the single post-edit gate).
+- **NOT built this session** (proposal-only). Adjacent but distinct from the older `hm-opt` and `nixtest` proposals: those target option evals and test suites; this one targets template scaffolding, whose failure modes (untracked path, kernelspec not registered, wheel-linkage `LD_LIBRARY_PATH`) only ever surface in `nix develop`, never in `nix eval`.
+
+
+---
+
 ## 2026-10-30 — `tools/merge-task.sh <member> <task-id> <expected-file…>`: collapse the per-task merge-verification cycle
 
 - **Idea**: one script that, for a finished ensemble builder, (a) asserts `git show --stat <sha>` equals the task's declared file list, (b) scans the diff for forbidden additions (`tested =`, `mkForce`, `secrets/`, `/run/agenix`), (c) runs `team_merge` + stages + commits with a supplied task-scoped message, and (d) prints the resulting commit hash. That replaces the repeated hand-run sequence `git show --stat --oneline <sha>` → read the diff → `grep -E "^\+.*(mkForce|tested|/run/agenix|secrets/)"` → `team_shutdown` → `team_merge` → `git add`/`git commit`, and makes the one-task-one-commit scope check mechanical instead of eyeballed.
