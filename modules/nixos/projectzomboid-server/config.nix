@@ -173,10 +173,9 @@ in
             installMods = false;
             steamLogin = "cairnsgerry";
 
-            # Off too: the Steam-library symlinks were server-parity only (the
-            # client never scans there), and they would be in Steam's way if it
-            # ever subscribed. The local mods are what actually load.
-            linkSteamWorkshop = false;
+            # `linkSteamWorkshop` no longer exists upstream: the client
+            # enumerates mods through Steam's subscription list and never scans
+            # the dedicated server's Workshop copy, so there is nothing to link.
           };
 
           xdg.desktopEntries.projectzomboid-viewpoint = {
