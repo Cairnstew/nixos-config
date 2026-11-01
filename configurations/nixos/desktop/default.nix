@@ -203,6 +203,10 @@
       };
     };
 
+    # Auto-suspend after 15 min idle. The desktop.hyprland profile sets this to
+    # lib.mkDefault 0 (never suspend), so a plain assignment here wins.
+    idle.suspendTimeout = 900;
+
     wallpapers = {
       images =
         let
