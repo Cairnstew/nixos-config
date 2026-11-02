@@ -1109,6 +1109,12 @@ in
         ensemble plugin spawns pick up chain-resolved modelsByAgent entries.
         The file is gitignored by design (intentional imperative exception,
         see GOTCHAS.md).
+
+        OpenCode 2 caveat: the ensemble plugin loads this file once when its
+        location starts inside the shared background service. Rewriting it
+        after that service is up has no effect until
+        `opencode service restart`; pass an explicit `model=` to team_spawn
+        for an immediate per-spawn override.
       '';
 
       repoDir = mkOption {

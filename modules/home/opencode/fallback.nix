@@ -14,7 +14,9 @@
 #   - Lever (ii): the selector rewrites <repoDir>/.opencode/ensemble.json
 #     (project-level override wins over the HM global per the ensemble
 #     plugin's src/config.ts merge order). The plugin reads that file ONCE
-#     per opencode process start, so this MUST run before dispatch.
+#     per opencode process start — under V2 that process is the shared
+#     background service, so a sync after service start is only seen after
+#     `opencode service restart` (or via an explicit team_spawn model=).
 
 { config, lib, pkgs, ... }:
 

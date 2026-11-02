@@ -62,9 +62,10 @@ let
 
     ${optionalString (cfg.modelFallback.chains != { }) ''
       # ── Usage-aware model fallback (my.programs.opencode.modelFallback) ──
-      # PRECONDITION: the ensemble plugin reads .opencode/ensemble.json ONCE
-      # at process start, so the sync must complete BEFORE the exec below —
-      # never run it concurrently with a dispatch.
+      # The ensemble plugin reads .opencode/ensemble.json ONCE when its
+      # location starts. Under V2 that location lives in the shared background
+      # service, so this pre-dispatch sync only reaches a service started
+      # afterwards; a running service needs `opencode service restart`.
       #
       # The ensemble sync (--sync-ensemble) is gated on
       # modelFallback.syncEnsembleProjectFile (default false since

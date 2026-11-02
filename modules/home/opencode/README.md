@@ -225,9 +225,13 @@ Two consumption paths:
   static global model.
 - The ensemble plugin reads its config **once at process start**
   (`loadConfig` in `src/index.ts`), so a synced override reaches only
-  processes started afterwards. Long-running `opencode serve --attach`
-  sessions need a restart to pick up new selections; within a live session,
-  pass an explicit `model=` argument to `team_spawn` instead (it outranks
+  processes started afterwards. Under OpenCode 2 the plugin runs inside the
+  shared background service, so writing `.opencode/ensemble.json` from the
+  wrapper after that service is already up does **not** take effect until
+  `opencode service restart` (or the next location start). Long-running
+  `opencode serve --attach` sessions need a restart to pick up new
+  selections; within a live session, pass an explicit `model=` argument to
+  `team_spawn` instead (it outranks
   `modelsByAgent` in the plugin's resolution order).
 - `.opencode/ensemble.json` being runtime-mutated inside a git-tracked
   directory is an intentional imperative exception — see GOTCHAS.md.
