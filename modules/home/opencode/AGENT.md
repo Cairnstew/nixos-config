@@ -324,6 +324,27 @@ now, never aspirational. Record each applied change in the RUN LOG below.
   service to `opencode serve`, write `cli.json` declaratively, and replace `enableLsp` with a
   formatter/check command or drop it.
 
+### 2026-11-02 — applied the OpenCode 2 migration
+
+- Applied: local plugins now default-export `{ id, setup(ctx) }`
+  (`plugins/copylast.ts:55`, `plugins/self-improve-guard.ts:115`); the generated
+  `nixos-tools` plugin registers the eight tools through `ctx.tool.transform`
+  (`config.nix:154`). Critical trap: the plugin is copied into the Nix store, so
+  a relative `../tools/x.ts` import resolves next to the *store copy* and fails;
+  resolve `$XDG_CONFIG_HOME/opencode/tools/x.ts` at runtime instead
+  (`config.nix:172`).
+- Also: `opencode-web` runs `opencode serve`
+  (`modules/nixos/opencode-web/config.nix:82`), the CLI reads
+  `cli.theme.name = "stylix"` (`modules/nixos/homeManager/config.nix:338`),
+  policies moved to the native top-level key (`config.nix:289`),
+  `update = "disable"` is the default for the Nix-managed binary, and
+  `enableLsp` is now inert.
+- Verified: the HM generation builds, an isolated V2 server loaded all four
+  plugins and registered all eight tools (including `nix-eval`), and
+  `opencode serve` starts the web/API server. The live shared service still
+  needs `opencode service restart` to load the new plugins/tools — it was
+  started before activation and its watcher tried the GC'd old store paths.
+
 ## See Also
 
 - `modules/nixos/gitreposync/` - Git repository sync service
