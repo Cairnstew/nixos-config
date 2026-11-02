@@ -18,8 +18,7 @@ let
     secondhandMcpPkg
     shoppingscraperMcpPkg
     keepaMcpPkg
-    opencodeTheme
-    opencodeThemeSlug;
+    opencodeTheme;
 in
 {
   imports = [
@@ -142,7 +141,6 @@ in
       {
         my.programs.opencode = {
           enable = lib.mkDefault true;
-          enableLsp = lib.mkDefault true;
           clarifai.patFile = config.age.secrets.clarifai-pat.path;
           deepinfra.keyFile = config.age.secrets.deepinfra-key.path;
           opencode-go.keyFile = config.age.secrets.opencode-token.path;
@@ -333,9 +331,11 @@ in
           };
 
           themes = opencodeTheme;
-          # Follows the active scheme (theming.scheme) rather than a
-          # hardcoded name, which used to disagree with the generated theme.
-          tui.theme = lib.mkDefault opencodeThemeSlug;
+          # OpenCode 2 reads cli.json, not tui.json. The repo's base16 theme
+          # (`opencodeTheme`, V1 `defs` shape) is not the V2 theme format; the
+          # stylix target writes a V2-compatible `stylix` theme from the same
+          # palette, so point the CLI at that.
+          cli.theme.name = lib.mkDefault "stylix";
 
           # Deny all providers except the ones we actually use
           policies = {

@@ -1,9 +1,9 @@
 # OpenCode Web
 
-Runs [`opencode web`](https://opencode.ai/docs/web/) as a systemd service —
-one instance per repo synced by [`gitreposync`](../gitreposync/) — so you get
-browser access to opencode for your NixOS config (and any other synced repos)
-without a terminal.
+Runs [`opencode serve`](https://opencode.ai/v2/docs/cli/web) as a systemd
+service — one instance per repo synced by [`gitreposync`](../gitreposync/) — so
+you get browser access to opencode for your NixOS config (and any other synced
+repos) without a terminal.
 
 ## How it works
 
@@ -13,9 +13,9 @@ without a terminal.
   checkout of its repo. The web UI opens on that repo by default.
 - The server runs as the configured user, so it picks up that user's opencode
   config, `auth.json`, skills, tools and MCP servers.
-- The browser-open the `web` command attempts is a no-op (`BROWSER=/bin/true`),
-  and the built-in `OPENCODE_SERVER_PASSWORD` basic auth is wired from an
-  optional `passwordFile`.
+- `opencode serve` runs the v2 API and web UI in the foreground and does not
+  open a browser. Basic auth is wired from an optional `passwordFile` via
+  `OPENCODE_PASSWORD` (`OPENCODE_SERVER_PASSWORD` remains supported).
 
 ## Options
 
@@ -28,11 +28,11 @@ without a terminal.
 | `my.services.opencodeWeb.instances.<repo>.servePort` | auto | Per-instance tailnet HTTPS port |
 | `my.services.opencodeWeb.instances.<repo>.hostname` | global | Per-instance bind address |
 | `my.services.opencodeWeb.instances.<repo>.openFirewall` | global | Open this port in the firewall |
-| `my.services.opencodeWeb.instances.<repo>.extraArgs` | `[]` | Extra `opencode web` args (e.g. `--cors`) |
+| `my.services.opencodeWeb.instances.<repo>.extraArgs` | `[]` | Extra `opencode serve` args (e.g. `--cors`) |
 | `my.services.opencodeWeb.basePort` | `4200` | First auto-allocated local port |
 | `my.services.opencodeWeb.hostname` | `127.0.0.1` | Default bind address |
 | `my.services.opencodeWeb.openFirewall` | `false` | Open instance ports in the firewall |
-| `my.services.opencodeWeb.passwordFile` | `null` | File with `OPENCODE_SERVER_PASSWORD` (basic auth) |
+| `my.services.opencodeWeb.passwordFile` | `null` | File with `OPENCODE_PASSWORD` (basic auth) |
 | `my.services.opencodeWeb.memoryHigh` | `"4G"` | Soft memory cap (`MemoryHigh`) per unit — bounds a whole browser team |
 | `my.services.opencodeWeb.memoryMax` | `"8G"` | Hard memory cap (`MemoryMax`) per unit; kernel OOM-kills one teammate at a time when hit |
 | `my.services.opencodeWeb.memorySwapMax` | `"4G"` | Swap cap (`MemorySwapMax`) per unit; stops a team from tripping systemd-oomd's `SwapUsedLimit` (see GOTCHAS) |

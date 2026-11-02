@@ -8,7 +8,9 @@
 #   - The OpenCode Go usage API exposes ONLY status/percent/resetsAt per
 #     window (rolling ~5h, weekly, monthly) — no dollar amounts — so chain
 #     caps are percent-based by construction.
-#   - Lever (i): the `opencode` wrapper injects --model from the selector.
+#   - Lever (i): the `opencode` wrapper injects --model from the selector
+#     into `opencode run` / `opencode mini` (v2 dropped the root --model flag;
+#     the TUI uses the configured model, see config.nix).
 #   - Lever (ii): the selector rewrites <repoDir>/.opencode/ensemble.json
 #     (project-level override wins over the HM global per the ensemble
 #     plugin's src/config.ts merge order). The plugin reads that file ONCE

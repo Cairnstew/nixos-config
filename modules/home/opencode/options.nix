@@ -686,7 +686,26 @@ in
         keybinds = { leader = "alt+b"; };
         scroll_speed = 3;
       };
-      description = "TUI-specific configuration written to \u0024XDG_CONFIG_HOME/opencode/tui.json.";
+      description = ''
+        Legacy OpenCode 1 TUI configuration written to
+        <filename>$XDG_CONFIG_HOME/opencode/tui.json</filename>.
+        OpenCode 2 no longer reads this file; use <option>cli</option>.
+      '';
+    };
+
+    cli = mkOption {
+      type = (pkgs.formats.json { }).type;
+      default = { };
+      example = {
+        theme = { name = "stylix"; };
+        tabs.mode = "auto";
+      };
+      description = ''
+        OpenCode 2 CLI configuration written to
+        <filename>$XDG_CONFIG_HOME/opencode/cli.json</filename>.
+        This is where theme, keybinds, tabs, diffs and session presentation
+        live in V2. See https://opencode.ai/v2/docs/cli/config.
+      '';
     };
 
     skills = mkOption {
@@ -719,14 +738,23 @@ in
         Local plugin JavaScript/TypeScript files. Each key becomes a file in
         <filename>$XDG_CONFIG_HOME/opencode/plugins/&lt;name&gt;.js</filename>
         (or .ts) and is auto-discovered by opencode at startup.
-        See https://opencode.ai/docs/plugins/.
+        OpenCode 2 requires a default export with `id` and `setup(ctx)`; V1
+        named-export hook objects are not executed.
+        See https://opencode.ai/v2/docs/build/plugins/server.
       '';
     };
 
     tools = mkOption {
       type = types.attrsOf (types.either types.lines types.path);
       default = { };
-      description = "Custom tools. See https://opencode.ai/docs/tools/.";
+      description = ''
+        Custom tools. OpenCode 2 no longer scans
+        <filename>$XDG_CONFIG_HOME/opencode/tools/</filename> directly, so the
+        module also generates a loader plugin (`nixos-tools`) that registers
+        every entry through `ctx.tool.transform`. Tool names are preserved
+        (the dash in `nix-eval` stays).
+        See https://opencode.ai/v2/docs/build/plugins/server.
+      '';
     };
 
     mcp = mkOption {
@@ -813,9 +841,10 @@ in
       default = false;
       example = true;
       description = ''
-        Enable Language Server Protocol (LSP) support in OpenCode.
-        When enabled, nixd is added to extraPackages for Nix LSP support.
-        See https://opencode.ai/docs/lsp/ for more information.
+        Deprecated and inert under OpenCode 2. V2 accepts an `lsp` config key
+        but does not run language servers or expose LSP tools/diagnostics.
+        The option is kept so existing host configs keep evaluating; it no
+        longer adds `nixd` or emits `lsp = true`.
       '';
     };
 
@@ -868,7 +897,9 @@ in
         selector falls back to the chain's LAST entry (the safe default).
 
         Two consumption paths:
-        - The `opencode` wrapper injects --model for top-level CLI invocations.
+        - The `opencode` wrapper injects --model into `opencode run` and
+          `opencode mini` (opencode v2 no longer accepts a root --model flag;
+          the full TUI uses the configured opencode.json model).
         - A project-level .opencode/ensemble.json is rewritten so ensemble
           plugin spawns resolve modelsByAgent from the same chains.
 

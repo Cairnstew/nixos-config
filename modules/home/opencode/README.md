@@ -11,6 +11,24 @@ the terminal, with support for 15+ LLM providers, custom skills, agents, and MCP
 - **MCP Integration**: Model Context Protocol servers for extended capabilities
 - **Agenix Integration**: Secure API key management
 
+## OpenCode 2 notes (2.2.x)
+
+Nixpkgs now ships OpenCode 2. The module keeps V1 config compatibility but the
+extensibility surfaces changed:
+
+- **CLI settings** live in `cli.json`, set with `my.programs.opencode.cli`.
+  `my.programs.opencode.tui` is V1-only (`tui.json` is ignored by V2).
+- **Local plugins** must default-export `{ id, setup(ctx) }`; V1 named-export
+  hook objects silently fail to load. See `plugins/self-improve-guard.ts` and
+  `plugins/copylast.ts` for the V2 shape.
+- **Custom tools**: V2 no longer scans `~/.config/opencode/tools/`. The module
+  generates the `nixos-tools` plugin, which imports every `tools/*.ts` entry
+  and registers it through `ctx.tool.transform`.
+- **`opencode web` was removed.** The `opencode-web` NixOS module runs
+  `opencode serve --hostname … --port …` instead.
+- **`lsp` is accepted but not executed** in V2; `enableLsp` is inert. Agent
+  `temperature`/`top_p` are also preserved but not sent — use model variants.
+
 ## Supported Providers
 
 | Provider | Type | Key mechanism |
@@ -189,9 +207,12 @@ in `/tmp/opencode/model-fallback-pacing/`.
 
 Two consumption paths:
 
-1. **Top-level invocations** — the `opencode` wrapper injects
-   `--model <resolved>` unless you already passed `-m/--model`, or set
-   `OPENCODE_MODEL_SELECT_OFF=1`.
+1. **`run` / `mini` invocations** — the `opencode` wrapper injects
+   `--model <resolved>` after the subcommand (`opencode run --model …`)
+   unless you already passed `-m/--model`, or set
+   `OPENCODE_MODEL_SELECT_OFF=1`. opencode v2 removed the root `--model`
+   flag, so the bare TUI (and `service`, `session`, …) is never injected;
+   the TUI uses the configured `opencode.json` model.
 2. **Ensemble spawns** — with `syncEnsembleProjectFile = true`, the selector
    rewrites `<repoDir>/.opencode/ensemble.json` (gitignored) with
    chain-resolved `modelsByAgent`. The ensemble plugin merges project config

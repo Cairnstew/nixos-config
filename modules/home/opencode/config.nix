@@ -37,7 +37,7 @@ let
   # and the PID in the lock is preserved (exec keeps the PID). Stale locks
   # (dead PIDs) are cleaned by the web service's ExecStartPre. OPENCODE_ALLOW_CONCURRENT=1
   # bypasses both directions.
-  opencodeGated = pkgs.writeShellScriptBin "opencode" ''
+  opencodeGated = (pkgs.writeShellScriptBin "opencode" ''
     set -euo pipefail
     export PATH="${pkgs.systemd}/bin:${pkgs.gnugrep}/bin:${pkgs.coreutils}/bin:$PATH"
 
@@ -75,30 +75,43 @@ let
         opencode-model-select --sync-ensemble || true
       fi
 
-      # Inject the chain-resolved model for this invocation unless the user
-      # already chose one explicitly (-m/--model), or opted out entirely via
-      # OPENCODE_MODEL_SELECT_OFF=1. Skip the injection for top-level
-      # subcommand invocations (mcp, run, web, serve, …): prepending `--model`
-      # makes yargs print the command help instead of dispatching the
-      # subcommand — `opencode mcp auth <name>` broke exactly this way
-      # ("model-fallback selected …" followed by usage text, nothing else).
-      if [ -z "''${OPENCODE_MODEL_SELECT_OFF:-}" ] \
-         && ! printf '%s\n' "$@" | grep -q -- '-m\|--model'; then
-        # First positional arg (skip leading flags); if it is a known
-        # top-level subcommand, do not inject (default `[project]`/TUI keeps
-        # the fallback).
+      # opencode v2 (2.2.1) removed the ROOT `--model` flag: yargs→effect-cli
+      # now rejects it with `Unrecognized flag: --model in command opencode`
+      # before dispatching anything, so appending it to every argv (the v1
+      # behaviour) broke bare `opencode`, `opencode service status`, etc.
+      # Model selection moved onto the subcommands that accept it:
+      # `opencode run -m …` and `opencode mini -m …`. The full TUI takes its
+      # model from opencode.json (agent/default model) plus its own picker.
+      #
+      # So inject ONLY for `run`/`mini`, and insert it AFTER the subcommand
+      # token (never at the root). The usage-aware selector still governs
+      # programmatic runs and, via lever (ii), ensemble spawns; the bare TUI
+      # keeps the configured model. Opt out with OPENCODE_MODEL_SELECT_OFF=1.
+      if [ -z "''${OPENCODE_MODEL_SELECT_OFF:-}" ]; then
+        # First positional arg (the subcommand) and its 1-based index,
+        # skipping leading global flags.
         first=""
+        first_idx=0
+        i=0
         for a in "$@"; do
+          i=$((i + 1))
           case "$a" in
             -*) continue ;;
-            *) first="$a"; break ;;
+            *) first="$a"; first_idx=$i; break ;;
           esac
         done
-        case " completion acp mcp attach run debug providers agent upgrade uninstall serve web models stats export import github pr session plugin db " in
-          *" $first "*) : ;;
-          *)
-            if m=$(opencode-model-select 2>/dev/null); then
-              set -- "$@" --model "$m"
+        # Skip when the user chose a model explicitly (-m / --model).
+        explicit_model=0
+        for a in "$@"; do
+          case "$a" in
+            -m|--model|--model=*|-m?*) explicit_model=1; break ;;
+          esac
+        done
+        case "$first" in
+          run|mini)
+            if [ "$explicit_model" = 0 ] && m=$(opencode-model-select 2>/dev/null); then
+              # Insert after the subcommand: `opencode run --model m …`
+              set -- "''${@:1:$first_idx}" --model "$m" "''${@:$((first_idx + 1))}"
               echo "opencode: model-fallback selected $m" >&2
             fi
             ;;
@@ -107,12 +120,94 @@ let
     ''}
 
     exec ${opencodeWrapped}/bin/opencode "$@"
-  '';
+  '') // {
+    # Home-manager detects the OpenCode major version via `lib.getVersion`.
+    # A bare writeShellScriptBin reports 0.0.0, which makes HM treat this as
+    # OpenCode 1 (warns that programs.opencode.cli is unsupported, and would
+    # choose the V1 env var if mutableSettings were enabled).
+    inherit (cfg.package) version;
+  };
 
   providers = import ./providers.nix { inherit lib cfg; };
 
   # Python environment with networkx for the nix-graph MCP server
   nixGraphPython = pkgs.python3.withPackages (ps: [ ps.networkx ]);
+
+  # ── OpenCode 2 custom-tool bridge ─────────────────────────────────────────
+  # OpenCode 2 no longer auto-loads home-manager's `~/.config/opencode/tools/`
+  # V1 tool files. It registers custom tools through a plugin's
+  # `ctx.tool.transform`. Generate a small loader plugin that imports each
+  # rendered tool (a sibling under config/opencode/tools/) and adapts the V1
+  # `{ description, args, execute }` export to the V2 `ToolInfo` shape.
+  #
+  # The generated plugin is rendered into ~/.config/opencode/plugins/ by the
+  # pluginFiles block below. It resolves the live tool files at runtime from
+  # $XDG_CONFIG_HOME/opencode/tools — the plugin itself is copied into the
+  # Nix store, so a relative import would resolve next to the store copy.
+  toolExt = _name: src:
+    if !(builtins.isString src)
+      && lib.hasSuffix ".js" (builtins.baseNameOf (builtins.toString src))
+    then "js"
+    else "ts";
+
+  toolPlugin = pkgs.writeTextFile {
+    name = "nixos-tools.ts";
+    text = ''
+      // Generated by modules/home/opencode/config.nix — do not edit.
+      //
+      // The plugin file is copied into the Nix store, so a relative import
+      // (`../tools/x.ts`) resolves next to the *store copy*, not the live
+      // config directory. Resolve the rendered tool files at runtime instead;
+      // this also keeps the plugin working under a custom XDG_CONFIG_HOME.
+      import { homedir } from "node:os";
+      import { join } from "node:path";
+      import { pathToFileURL } from "node:url";
+
+      const configDir = () =>
+        process.env.XDG_CONFIG_HOME
+          ? join(process.env.XDG_CONFIG_HOME, "opencode")
+          : join(homedir(), ".config", "opencode");
+
+      const loadTool = async (name: string, ext: string) =>
+        (await import(pathToFileURL(join(configDir(), "tools", `''${name}.''${ext}`)).href)).default;
+
+      const toInput = (args: Record<string, unknown> | undefined) => ({
+        type: "object",
+        properties: args ?? {},
+        additionalProperties: false,
+      });
+
+      export default {
+        id: "nixos.tools",
+        async setup(ctx: any) {
+          const tools: Record<string, any> = {
+            ${lib.concatStringsSep "\n" (lib.imap0
+              (i: name: ''  "${name}": await loadTool("${name}", "${toolExt name cfg.tools.${name}}"),'')
+              (lib.attrNames cfg.tools))}
+          };
+
+          await ctx.tool.transform((editor: any) => {
+            for (const [name, tool] of Object.entries(tools) as Array<[string, any]>) {
+              editor.add({
+                name,
+                description: tool.description ?? name,
+                input: toInput(tool.args),
+                async execute(input: any, context: any) {
+                  const result = await tool.execute(input, context);
+                  return {
+                    content:
+                      typeof result === "string"
+                        ? result
+                        : JSON.stringify(result, null, 2),
+                  };
+                },
+              });
+            }
+          });
+        },
+      };
+    '';
+  };
 
   # Transform agent config to opencode.json format
   # Omit null/false values so only relevant fields appear in the JSON
@@ -188,7 +283,9 @@ let
   ];
 
   policySettings = lib.optionalAttrs (policyRules != [ ]) {
-    experimental.policies = policyRules;
+    # Native V2 key (2.2.x). `experimental.policies` still works but is
+    # deprecated; V2 merges it into this list.
+    policies = policyRules;
   };
 
   # ── Auth.json entries for ALL providers ────────────────────────────────────
@@ -353,7 +450,6 @@ in
         skills.ci-monitoring = builtins.readFile ./skills/ci-monitoring.md;
         skills.module-extraction = builtins.readFile ./skills/module-extraction.md;
         commands = {
-          copy-last = ./commands/copylast.md;
           refactor-python = ./commands/refactor-python.md;
           nix-map = ./commands/nix-map.md;
           nix-refine = ./commands/nix-refine.md;
@@ -367,7 +463,7 @@ in
           # hard rules for the base-branch and raw-data protections.
           data-quality = ./commands/data-quality.md;
         };
-        pluginFiles = lib.mkDefault {
+        pluginFiles = lib.mkDefault ({
           copylast = ./plugins/copylast.ts;
           self-improve-guard = ./plugins/self-improve-guard.ts;
           # Vendored fork from https://github.com/Cairnstew/opencode-ensemble
@@ -376,7 +472,10 @@ in
           # opencode-ensemble.js (auto-discovered); the npm `plugins` entry in
           # modules/nixos/homeManager/config.nix must stay empty.
           opencode-ensemble = import ./fork.nix { inherit pkgs; };
-        };
+        } // lib.optionalAttrs (cfg.tools != { }) {
+          # V2 registers custom tools through a plugin (see toolPlugin above).
+          nixos-tools = toolPlugin;
+        });
         mcp.nix-graph = {
           enabled = true;
           type = "local";
@@ -498,15 +597,18 @@ in
         context = cfg.context;
         commands = cfg.commands;
         themes = cfg.themes;
-        tui = lib.mkDefault cfg.tui;
+        cli = lib.mkDefault cfg.cli;
         skills = cfg.skills;
         tools = cfg.tools;
         extraPackages = cfg.extraPackages
-          ++ lib.optionals cfg.enableLsp [ pkgs.nixd ]
           ++ [ pkgs.terraform-mcp-server pkgs.nodejs ];
-        settings = mergedSettings // lib.optionalAttrs cfg.enableLsp { lsp = true; };
+        settings = mergedSettings;
       };
     }
+
+    # OpenCode 2 installs are owned by Nix; the default "notify" update mode
+    # only ever tells the user about a release they cannot install in place.
+    { programs.opencode.settings.update = lib.mkDefault "disable"; }
 
     # ── Default model context window + reasoning effort ─────────────────────
     # opencode's `limit.context` caps how many context tokens are sent to the
