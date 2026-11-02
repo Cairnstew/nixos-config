@@ -120,6 +120,17 @@ let
       fi
     ''}
 
+    # OpenCode 2 reads the HM declarative layers via env vars. Home Manager
+    # sets these in home.sessionVariables, but non-login launches and the
+    # already-running service can miss them; export them here so the wrapper
+    # always loads the generated layers.
+    if [ -r "$HOME/.config/opencode/home-manager.json" ]; then
+      export OPENCODE_CONFIG="$HOME/.config/opencode/home-manager.json"
+    fi
+    if [ -r "$HOME/.config/opencode/home-manager-cli.json" ]; then
+      export OPENCODE_CLI_CONFIG_CONTENT="$(cat "$HOME/.config/opencode/home-manager-cli.json")"
+    fi
+
     exec ${opencodeWrapped}/bin/opencode "$@"
   '') // {
     # Home-manager detects the OpenCode major version via `lib.getVersion`.
