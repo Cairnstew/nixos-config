@@ -594,6 +594,14 @@ in
       programs.opencode = {
         enable = true;
         package = opencodeGated;
+
+        # OpenCode 2 writes cli.json/opencode.json itself. Let Home Manager
+        # write home-manager-*.json and inject them via OPENCODE_CONFIG /
+        # OPENCODE_CLI_CONFIG_CONTENT instead of managing the app-owned files;
+        # otherwise every switch tries to back up cli.json and collides on the
+        # existing cli.json.backup.
+        mutableSettings = lib.mkDefault true;
+
         enableMcpIntegration = cfg.enableMcpIntegration;
         context = cfg.context;
         commands = cfg.commands;
