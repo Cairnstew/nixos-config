@@ -1,12 +1,10 @@
 # modules/nixos/projectzomboid-server/servers/viewpoint.nix
-# Server: "viewpoint" — OwenOasis' "Project Viewpoint Vanilla+" modlist (the
-# Steam Workshop collection id 3812346398 plus a small QoL block), running
-# Project Viewpoint's first-person renderer via the ZombieBuddy Java-agent
-# framework.
+# Server: "viewpoint" — OwenOasis' "Project Viewpoint Vanilla+" modlist (Steam
+# Workshop collection id 3812346398), running Project Viewpoint's first-person
+# renderer via the ZombieBuddy Java-agent framework.
 #
 # Options are the upstream module's (services.project-zomboid-servers.*); the
-# pack itself lives upstream in modpacks/viewpoint.nix. See that file for why
-# ZombieBuddy Extensions and Fuel Side Indicator are excluded.
+# pack itself lives upstream in modpacks/viewpoint.nix.
 { config, lib, pkgs, ... }:
 let
   # ZombieBuddy — the JVM agent every Java mod in this pack requires.
@@ -36,7 +34,7 @@ in
 
     # Also render this pack for the game's own in-game Host button, which runs
     # the server inside the CLIENT's process. Same pack, same .ini, same mod
-    # list — so hosting from the game never means writing the 158 `Mods=` ids
+    # list — so hosting from the game never means writing the 170 `Mods=` ids
     # out a second time. The upstream module's Home Manager half writes those
     # files into `~/Zomboid`; it is imported for every host in
     # modules/nixos/projectzomboid-server/config.nix, because `~/Zomboid` is a
@@ -82,7 +80,7 @@ in
       args = "policy=allow-all,frontend=console,verbosity=1";
     };
 
-    # Heap for 132 Workshop items, including the Viewpoint asset pack. Must
+    # Heap for 142 Workshop items, including the Viewpoint asset pack. Must
     # stay BELOW hardware.memoryMax or the JVM is killed before it fills the heap.
     jvmOpts = "-Xmx10G -Xms4G -XX:+UseZGC -XX:-CreateCoredumpOnCrash";
 
@@ -121,7 +119,7 @@ in
 
     # Sandbox overrides for the GLOBAL vanilla knobs only. Per-mod sandbox
     # entries are deliberately NOT set: every mod ships its own defaults in
-    # media/sandbox-options.txt and the game applies them unaided, so writing 158
+    # media/sandbox-options.txt and the game applies them unaided, so writing 170
     # entries would be busywork that silently desyncs on each mod update.
     sandbox = {
       Zombies = 4; # Normal
