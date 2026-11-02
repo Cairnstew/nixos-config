@@ -32,6 +32,17 @@ let
         })
       ];
     };
+
+  pydanticMontyOverlay =
+    final: prev: {
+      pythonPackagesExtensions = prev.pythonPackagesExtensions ++ [
+        (pyfinal: pyprev: {
+          pydantic-monty = pyprev.pydantic-monty.overridePythonAttrs (old: {
+            doCheck = false;
+          });
+        })
+      ];
+    };
 in
 {
   # `lib.mkMerge` rather than an attrset `//` merge: the latter would force
@@ -41,5 +52,6 @@ in
   config = lib.mkMerge [
     { nixpkgs.overlays = lib.optionals cfg.inlineSnapshot [ inlineSnapshotOverlay ]; }
     { nixpkgs.overlays = lib.optionals cfg.anyio [ anyioOverlay ]; }
+    { nixpkgs.overlays = lib.optionals cfg.pydanticMonty [ pydanticMontyOverlay ]; }
   ];
 }

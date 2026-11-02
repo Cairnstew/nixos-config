@@ -59,5 +59,22 @@
         count drops.
       '';
     };
+
+    pydanticMonty = lib.mkOption {
+      type = lib.types.bool;
+      default = true;
+      defaultText = lib.literalExpression "true";
+      description = ''
+        Skip pydantic-monty's test suite. One test
+        (`tests/test_limits.py::test_keyboard_interrupt`) fails in the Nix
+        sandbox: it SIGINTs its own process and expects a KeyboardInterrupt,
+        which the builder's process group does not deliver. The package is a
+        dependency of fastmcp → mcp-nixos → opencode.
+
+        The override targets `doCheck` rather than `disabledTests` because the
+        package drives pytest through `pytestFlagsArray`, not
+        `pytestCheckHook`.
+      '';
+    };
   };
 }

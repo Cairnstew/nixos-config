@@ -15,6 +15,23 @@ let
 in
 {
   config = lib.mkIf cfg.enable {
+    # nixpkgs 1c89083e's aggregateModules assumes every module in modules.dep
+    # has a matching .ko.cer (kmodigest). maccel is out-of-tree and ships only
+    # maccel.ko, so the aggregator's `xargs cat >> modules.cer` dies with
+    # `cat: .../maccel.ko.cer: No such file`. Skip missing certs until nixpkgs
+    # filters them upstream.
+    nixpkgs.overlays = [
+      (final: prev: {
+        aggregateModules = modules:
+          (prev.aggregateModules modules).overrideAttrs (old: {
+            postBuild = lib.replaceStrings
+              [ "cat >> modules.cer" ]
+              [ "sh -c 'for f; do [ -e \"$f\" ] && cat \"$f\"; done; true' sh >> modules.cer" ]
+              old.postBuild;
+          });
+      })
+    ];
+
     hardware.maccel = {
       enable = true;
       enableCli = true;
