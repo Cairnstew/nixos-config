@@ -367,6 +367,7 @@ Flake templates for `nix flake init`.
 | `godot/` | Godot template |
 | `haskell/` | Haskell development template |
 | `home-module/` | Home Manager module template |
+| `jupyter-zed/` | Jupyter notebooks in Zed on a uv-managed venv (kernelspec wiring) |
 | `lib/` | Nix library template |
 | `nixos-module/` | NixOS module template |
 | `node/` | Node.js development template |
