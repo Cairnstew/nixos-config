@@ -142,35 +142,19 @@ in
         extraConfig = {
           home.packages = [ projectzomboidViewpoint ];
 
-          # Fetch the pack's Workshop mods and install them as LOCAL mods in
-          # `~/Zomboid/mods` — the only form PZ's client loads with no Steam
-          # subscription, since subscribing is not scriptable (see GOTCHAS.md).
+          # `home.installMods` is deprecated upstream: a client-hosted world
+          # gets its Workshop mods through the game's Host flow, which downloads
+          # `WorkshopItems=` through Steam. It is left at its default (false).
           #
-          # OFF, deliberately, and it is not just the switch-time risk below:
-          # steamcmd writes `libraryfolders.vdf` into the HOME it runs with, and
-          # this tool runs it with the REAL home on purpose (that is where its
-          # login token is). On a machine that also has a Steam CLIENT, that
-          # rewrites the client's library list — it did exactly that on
-          # 2026-10-07, replacing `/mnt/media/SteamLibrary` with its own staging
-          # dir and orphaning 40 installed apps (PZ and Overwatch among them)
-          # as "needs reinstall". GOTCHAS.md has the full trail.
+          # The shared dedicated-server download is still refreshed by hand with
+          # `pz-client-mods` (back up `libraryfolders.vdf` first; see
+          # GOTCHAS.md for the 2026-10-07 clobber):
           #
-          # The mods are PRE-SEEDED by hand instead, from the flake INPUT (this
-          # repo has no such app), and ONLY after backing the library list up:
-          #
-          #   cp ~/.local/share/Steam/steamapps/libraryfolders.vdf{,.bak}
           #   nix run ~/Projects/nixos-projectzomboid-servers#pz-client-mods -- viewpoint
-          #   # then re-add /mnt/media/SteamLibrary via Steam -> Settings -> Storage
           #
-          # Re-run that by hand when the pack changes. Run it from a real
-          # directory, never /tmp: steamcmd is wrapped in `steam-run`, whose
-          # sandbox has a PRIVATE /tmp, so bwrap cannot even chdir there and
-          # every item reports DOWNLOAD FAILED.
-          #
-          # Re-enabling this is safe only once the tool isolates steamcmd's HOME
-          # (carrying just the token) the way the server installer does.
+          # Run it from a real directory, never /tmp: steamcmd is wrapped in
+          # `steam-run`, whose sandbox has a PRIVATE /tmp.
           services.project-zomboid-servers.home = {
-            installMods = false;
             steamLogin = "cairnsgerry";
 
             # `linkSteamWorkshop` no longer exists upstream: the client
