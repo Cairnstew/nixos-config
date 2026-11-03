@@ -181,3 +181,18 @@ This pattern is ideal for:
 - Fix: description now includes "when a module's meta.nix declares upstream.space";
   "Use Ensemble When" section now lists meta.nix upstream.space as a primary trigger;
   root AGENTS.md §5.3 added a table mapping upstream.mode to actions.
+
+### 2026-11-02 — the Available Spaces table is stale; a `path` space clones, it does not edit in place
+- Lesson: a SillyTavern task routed to the upstream repo by
+  `modules/nixos/sillytavern/meta.nix:29` (`space = "sillytavern"`), but the
+  "Available Spaces" table (line 127) still listed only ensemble /
+  agenix-manager / spotify-playlist-manager. The live registry is
+  `modules/nixos/homeManager/config.nix:321`, which also carries
+  project-zomboid-servers and kraken-python. The skill's own Step 0 says the
+  registry is the source of truth, so the table is convenience only — read the
+  registry when it disagrees. Separately, `team_spawn(space=...)` clones a
+  `path` space into `~/.config/opencode/ensemble-spaces/<name>/`; it never
+  edits `~/Projects/<repo>` in place. When the request is explicitly "edit
+  ~/Projects/X, push, re-pin", working directly in that checkout (then
+  `nix flake lock --update-input`) is the shorter path and keeps the user's
+  working tree in sync.
