@@ -1234,8 +1234,9 @@ in
   # handles) would only advertise a broken link on the dashboard.
   my.services.proxy.upstreams.sillytavern.enable = false;
 
-  # …so SillyTavern, Breeze TTS and opencode web are listed as direct cards
-  # instead. servePort makes the dashboard link to
+  # …so SillyTavern and opencode web are listed as direct cards instead.
+  # The Breeze TTS card was dropped 2026-11-03 with the backend (see below).
+  # servePort makes the dashboard link to
   # https://<current-host>:<port>/ unless it is being viewed from localhost.
   my.services.proxy.dashboard.links = [
     {
@@ -1243,12 +1244,6 @@ in
       description = "Roleplay frontend — local Ollama model (${lumimaidModel})";
       href = "http://localhost:8000/";
       servePort = 8444;
-    }
-    {
-      label = "Breeze TTS";
-      description = "Local speech: voice design/cloning and /v1/audio/speech";
-      href = "http://localhost:8445/";
-      servePort = 8445;
     }
     {
       label = "opencode web";
@@ -1263,9 +1258,12 @@ in
   # at `/`. Separate unit from the LLM and the frontend: its own lifetime, its
   # own GPU footprint.
   services.breeze-tts-nixos = {
-    # Re-enabled 2026-10-31 with the rest of the SillyTavern stack (it holds
-    # 3.1 GiB of the 12 GiB GPU).
-    enable = true;
+    # Disabled 2026-11-03 on request (frees ~3.1 GiB of the 12 GiB GPU).
+    # Everything below — model pin, voices, GPU budget — is kept intact so a
+    # re-enable is a flag flip plus the tailnet unit further down. Remember
+    # the persistent `tailscale serve` mappings: a disabled unit does not
+    # reliably clear 8445/8446 (GOTCHAS.md, stack-shutdown entry).
+    enable = false;
 
     # The catalogue's small safe quant. Measured by upstream on this exact
     # hardware class (RTX 3060 12 GiB + a Q4/Q6 8B resident): the file is
@@ -1409,7 +1407,7 @@ in
   # Speak assistant replies in the UI. The endpoint itself is wired
   # automatically (the SillyTavern module reads the Breeze port), so this only
   # flips `extension_settings.tts.enabled`. Inert while the service is off.
-  services.sillytavern-nixos.tts.enable = true; # on 2026-10-31 with the stack
+  services.sillytavern-nixos.tts.enable = false; # off 2026-11-03 with the backend
   # No `tts.voices` list: the declared voice above is unioned into
   # `available_voices` by the module (managedTtsVoices), so the backend's
   # voices directory is the single source of truth for ids.
@@ -1420,12 +1418,19 @@ in
   # design.
   services.sillytavern-nixos.settingsExtra.extensionSettings.tts."OpenAI Compatible".voiceMap =
     "[Default Voice]:narrator";
+  # Turning the backend off removes the generated `extension_settings.tts`
+  # block (the module only writes it when it has an endpoint), so the accounts'
+  # saved `settings.json` would keep `enabled = true` and point at a dead
+  # endpoint. `settings.json` is the one seeded file that is DEEP-MERGED on
+  # every activation (scripts/st_seed_files.py), so declaring the off state here
+  # reaches existing accounts too, not just newly seeded ones.
+  services.sillytavern-nixos.settingsExtra.extensionSettings.tts.enabled = false;
 
   # Tailnet HTTPS for the TTS UI and its WebSocket. Both are HTTP backends on
   # loopback; tailscale terminates TLS and forwards, same pattern as the two
   # services above. Separate ports because the UI dials host:ws_port directly.
   systemd.services.breeze-tts-tailnet-serve = {
-    enable = true; # on 2026-10-31 with the SillyTavern stack
+    enable = false; # off 2026-11-03 with the backend
     description = "tailscale serve: Breeze TTS web UI (:8445) + WebSocket (:8446)";
     wantedBy = [ "multi-user.target" ];
     wants = [ "tailscaled.service" ];
