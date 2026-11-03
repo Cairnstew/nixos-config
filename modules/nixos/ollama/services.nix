@@ -91,6 +91,7 @@ in
             (lib.optionalString (mcfg.topK != null) "printf 'PARAMETER top_k %s\\n' '${toString mcfg.topK}' >> \"$MODELFILE\"\n")
             (lib.optionalString (mcfg.topP != null) "printf 'PARAMETER top_p %s\\n' '${toString mcfg.topP}' >> \"$MODELFILE\"\n")
             (lib.optionalString (mcfg.repeatPenalty != null) "printf 'PARAMETER repeat_penalty %s\\n' '${toString mcfg.repeatPenalty}' >> \"$MODELFILE\"\n")
+            (lib.optionalString (mcfg.repeatLastN != null) "printf 'PARAMETER repeat_last_n %s\\n' '${toString mcfg.repeatLastN}' >> \"$MODELFILE\"\n")
             (lib.optionalString (mcfg.numPredict != null) "printf 'PARAMETER num_predict %s\\n' '${toString mcfg.numPredict}' >> \"$MODELFILE\"\n")
             (lib.optionalString (mcfg.seed != null) "printf 'PARAMETER seed %s\\n' '${toString mcfg.seed}' >> \"$MODELFILE\"\n")
             (lib.optionalString (mcfg.think != null) "printf 'PARAMETER think %s\\n' '${if mcfg.think == true then "true" else "false"}' >> \"$MODELFILE\"\n")
@@ -98,8 +99,9 @@ in
 
           hasModelfile = mcfg:
             mcfg.numCtx != null || mcfg.temperature != null || mcfg.topK != null ||
-            mcfg.topP != null || mcfg.repeatPenalty != null || mcfg.numPredict != null ||
-            mcfg.seed != null || mcfg.think != null || mcfg.systemPrompt != null || mcfg.template != null;
+            mcfg.topP != null || mcfg.repeatPenalty != null || mcfg.repeatLastN != null ||
+            mcfg.numPredict != null || mcfg.seed != null || mcfg.think != null ||
+            mcfg.systemPrompt != null || mcfg.template != null || mcfg.ggufPath != null;
 
           pullCmd = tag: ''
             attempt=1
@@ -121,13 +123,17 @@ in
           modelCmds = lib.concatStringsSep "\n" (lib.mapAttrsToList
             (tag: mcfg:
               let safeName = builtins.replaceStrings [ ":" "/" ] [ "-" "-" ] tag;
+                  # ggufPath models skip the registry pull: `ollama create` reads
+                  # the file straight out of the container (mount it at the same
+                  # path via extraVolumes). fromRef is what goes after FROM.
+                  fromRef = if mcfg.ggufPath != null then mcfg.ggufPath else tag;
               in
-              ''echo "--- Pulling model: ${tag} ---"
-              ${pullCmd tag}
+              ''echo "--- Sourcing model: ${tag} ${if mcfg.ggufPath != null then "(local ${mcfg.ggufPath})" else "(registry pull)"} ---"
+              ${lib.optionalString (mcfg.ggufPath == null) (pullCmd tag)}
             '' + lib.optionalString (hasModelfile mcfg) ''
                 echo "Applying Modelfile for ${tag} -> '${safeName}'..."
                 MODELFILE=$(mktemp)
-                printf 'FROM %s\n' ${lib.escapeShellArg tag} > "$MODELFILE"
+                printf 'FROM %s\n' ${lib.escapeShellArg fromRef} > "$MODELFILE"
                 ${paramLines mcfg}
               '' + lib.optionalString (mcfg.systemPrompt != null) ''
                 printf 'SYSTEM """\n' >> "$MODELFILE"

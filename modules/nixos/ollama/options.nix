@@ -45,6 +45,13 @@
           cline_default = lib.mkOption { type = lib.types.bool; default = false; description = "Use as default model in Cline."; };
           numCtx = lib.mkOption { type = lib.types.nullOr lib.types.int; default = null; description = "Context window size (num_ctx)."; };
           temperature = lib.mkOption { type = lib.types.nullOr lib.types.float; default = null; description = "Sampling temperature."; };
+          repeatLastN = lib.mkOption { type = lib.types.nullOr lib.types.int; default = null; description = "Tokens back the penalties consider (repeat_last_n). Ollama defaults to 64, which cannot see echoes of older turns; 2048 covers whole conversations."; };
+          ggufPath = lib.mkOption {
+            type = lib.types.nullOr lib.types.str;
+            default = null;
+            example = "/mnt/data/llama/model-Q6_K.gguf";
+            description = "Local GGUF file to `ollama create` FROM instead of `ollama pull`ing the tag. Must exist when ollama-pull-models runs; mount it into the container at the SAME path via extraVolumes (e.g. \"/mnt/data/llama:/mnt/data/llama:ro\"). Skips the registry pull for this model.";
+          };
           think = lib.mkOption { type = lib.types.nullOr lib.types.bool; default = null; description = "Enable chain-of-thought reasoning."; };
           topK = lib.mkOption { type = lib.types.nullOr lib.types.int; default = null; };
           topP = lib.mkOption { type = lib.types.nullOr lib.types.float; default = null; };

@@ -1,14 +1,38 @@
 { flake, lib, config, pkgs, ... }:
 let
-  # Served model id — the llama.cpp router's INI section name and the string
-  # SillyTavern sends as `model`. Both modules must agree; neither reads the
-  # other, so it is bound once here.
+  # Served model id — the Ollama model name (and previously the llama.cpp
+  # router's INI section name) and the string SillyTavern sends as `model`.
+  # Both modules must agree; neither reads the other, so it is bound once here.
   lumimaidModel = "lumimaid-8b";
 
   # Llama-3-8B's trained context (LimaRP data was 8k). The GGUF page pairs a
   # smaller Q4_K_M with 12288 on an 8 GB card; this host's 12 GB RTX 3060 runs
   # Q6_K at the native 8192 with room for the KV cache.
   lumimaidContext = 8192;
+
+  # Canonical Ollama Go templates, used for every local model because GGUF
+  # metadata templates cannot be trusted here: lumimaid-8b v0.1 stores the
+  # bare name `llama3` (renders literally), while the newer quants carry full
+  # llama.cpp jinja (`{% %}`), which is not valid Go-template syntax and fails
+  # `ollama create` at parse time. Pinning these removes all metadata
+  # dependence; ST's per-request sampling (temp/top_p/penalties) is unaffected.
+  llama3OllamaTemplate = ''
+    {{- if .System }}<|start_header_id|>system<|end_header_id|>
+
+    {{ .System }}<|eot_id|>{{ end }}{{ if .Prompt }}<|start_header_id|>user<|end_header_id|>
+
+    {{ .Prompt }}<|eot_id|>{{ end }}<|start_header_id|>assistant<|end_header_id|>
+
+    {{ .Response }}<|eot_id|>
+  '';
+  # NOTE 2026-10-31: an earlier revision put `{{ .Response }}</s>` inside each
+  # branch; Ollama's template parser panicked at render time (`parse.Node is
+  # nil, not *parse.ListNode*, HTTP 500 on every generate) for all four
+  # Mistral-family models. Single `{{ .Response }}` outside the conditional
+  # matches Ollama's own mistral template shape and renders correctly.
+  mistralOllamaTemplate = ''
+    {{- if .System }}<s>[INST] {{ .System }} {{ .Prompt }} [/INST]{{ else }}<s>[INST] {{ .Prompt }} [/INST]{{ end }} {{ .Response }}</s>
+  '';
 in
 {
   imports = [
@@ -34,15 +58,16 @@ in
   # ── System Profiles ──────────────────────────────────────────────────────
   my.profiles = {
     server.enable = true;
-    # ai.enable disabled 2026-09-01 (ComfyUI priority): the AI LLM stack
-    # (Ollama, RisuAI, Open WebUI, Letta) is paused so ComfyUI gets the whole
-    # GPU for image generation. Re-enable with `ai.enable = true` plus
-    # `my.services.ollama.enable = true` (the ai profile asserts Ollama).
+    # ai.enable disabled 2026-09-01 (ComfyUI priority): the AI frontends
+    # (RisuAI, Open WebUI, Letta) stay paused. Ollama itself was re-enabled
+    # 2026-10-28 (see `my.services.ollama` below), but enabling the ai profile
+    # would also turn those frontends back on.
     ai.enable = false;
     # NVIDIA headless + CUDA — ENABLED 2026-10-21 for the llama.cpp backend
     # (services.llama-cpp-nixos with pkgs.llama-cpp-cuda) in SillyTavern.
-    # Since 2026-10-24 the whole SillyTavern stack is off and ComfyUI owns the
-    # 12 GB GPU; the ai profile (Ollama et al.) stays off too.
+    # Left enabled after the 2026-10-27 stack shutdown: it is what gives the
+    # Ollama container its GPU (--device=nvidia.com/gpu=all via CDI), and
+    # ComfyUI would need it too.
     gpu.nvidia-headless.enable = true;
     location.enable = true;
   };
@@ -52,8 +77,9 @@ in
   # jellyfin; hardening mapAttrs' CREATES a unit definition for every name in
   # the list, so with the AI stack paused it shipped a docker-ollama unit with
   # no ExecStart — systemd refused it and `nix run .#activate` exited 4
-  # ("Service has no ExecStart="). Empty for the same reason now that
-  # comfy-ui is disabled too — every listed name must have a live ExecStart.
+  # ("Service has no ExecStart="). Empty here; entries are added below only
+  # under the `lib.mkIf` of the service that creates the unit (comfy-ui,
+  # docker-ollama), so a disabled service cannot ship a unit with no ExecStart.
   my.system.hardening.cpuQuota = { };
 
   # ── Remote availability: reboot rather than stay unreachable ────────────
@@ -282,14 +308,17 @@ in
     autoRollback.enable = true;
   };
 
-  # ── ComfyUI (AI Image Generation) — ENABLED 2026-10-24 ─────────────────
-  # Sole GPU workload on the RTX 3060 (12GB) since the SillyTavern stack was
-  # disabled below. It was off from 2026-10-16 to cut rebuild time
-  # and reclaim disk (the torch closure + 22 node packs is the largest build
-  # in this config). Requires `gpu.nvidia-headless.enable = true` above.
+  # ── ComfyUI (AI Image Generation) — DISABLED 2026-10-26 ────────────────
+  # Turned off so the SillyTavern stack (llama.cpp + Breeze TTS) owns the
+  # RTX 3060 again. It was off from 2026-10-16 to cut rebuild time and reclaim
+  # disk (the torch closure + 22 node packs is the largest build in this
+  # config), re-enabled 2026-10-24, and is off again now. Flip `enable` back
+  # to true (with `gpu.nvidia-headless.enable = true` above) to restore; the
+  # presets/models below are intact. The resource guards further down are
+  # gated on the same flag so disabling cannot leave a unit with no ExecStart.
   my.services.comfyui = {
     # enable is explicit now that profiles/system/ai.nix no longer supplies it
-    enable = true;
+    enable = false;
     listenHost = "0.0.0.0"; # tailscale-serve + LAN access
     port = 8188;
     dataDir = "/mnt/data/comfyui";
@@ -335,6 +364,11 @@ in
       "ComfyUI-WD14-Tagger"
       "ComfyUI-GGUF"
       "civitai-comfy-nodes"
+      # Bjornulf LITE — text/list + looping helpers used by the krea2-grid
+      # workflow (LoopInteger/LoopAllLines drive ComfyUI's native list
+      # expansion so one Queue click renders every prompt combination, and
+      # CombineTexts composes the prompt in one node).
+      "Bjornulf_custom_nodes_LITE"
     ];
     # Civitai API key for the official civitai-comfy-nodes pack (registered
     # automatically on boot by comfy-ui-civitai-auth).
@@ -397,6 +431,37 @@ in
         urn = "urn:air:krea2:lora:civitai:1972981@3290120+3174557";
         sha256 = "0cl958w3vnaby3fib9ajw8qp8apyfkqi63wkrwa3y043vvnqhy3n";
       };
+      # "hot shot" (krea selfie aesthetic) — **Krea 2** LoRA (model 2999042,
+      # version 3401718, file 3314841; 218 MiB, nsfw). No trained trigger
+      # words. Base model matches the installed Krea 2 UNet, so unlike a Flux
+      # LoRA it applies to krea2-simple; add it as a row in the rgthree stack
+      # ("➕ Add Lora"). Anonymous civitai downloads 307 to a login page, so
+      # prepare-dirs sends civitaiApiKeyPath; download mode (data disk).
+      "hotShotKreaSelfie_v1.safetensors" = {
+        urn = "urn:air:krea2:lora:civitai:2999042@3401718+3314841";
+        sha256 = "0m2hgn27ci43i94kf9kf43w8gw33v5hj1kk8rrcfd7gbgcfmmwjd";
+      };
+      # "Selfie POV (Amateurstyle)" — Krea 2 LoRA (model 2226100, version
+      # 3390306, file 3279730; ~112 MiB, nsfw). Phone-shot selfie/POV
+      # aesthetic with no required trigger words; base model is Krea 2, so
+      # it stacks onto krea2-simple. Authenticated civitai download (same
+      # civitaiApiKeyPath handling as hot shot); download mode on the data disk.
+      "Krea2_Selfie_POV_v1.safetensors" = {
+        urn = "urn:air:krea2:lora:civitai:2226100@3390306+3279730";
+        sha256 = "0q20bhf7rcs05z7h4q9y12ghbnyj1n8s0pphkb2h0fl2i2rlwsra";
+      };
+      # "Realistic Snapshot" — **Krea 2** v1.0 LoRA (model 2268008, version
+      # 3371723, file 3260432; 1.49 GB, nsfw). Smartphone-snapshot realism;
+      # the safetensors metadata carries `ss_base_model_version: krea2`
+      # (ai-toolkit, 6000 steps), so it stacks onto krea2-simple. Recommended
+      # strength 1.5 (1.0 does little; up to 2.0 stays stable). NOTE: this
+      # model's *other* version (3417962, "MOSS-Image v1.0") is trained for
+      # MOSS Image — a separate OpenMOSS 5B DiT — and must not be used here.
+      # The file name says "V2" because the author renamed it; version is v1.0.
+      "RealisticSnapshotKrea2V2.safetensors" = {
+        urn = "urn:air:krea2:lora:civitai:2268008@3371723+3260432";
+        sha256 = "1g72a50pqkzshalrxxd4bynky2cin8884b9nzqjrz7jnvabl41mw";
+      };
       # Model 2738703 is a WORKFLOW, not a model (type "Workflows", file =
       # krea2SFWNSFWUncensoredImageTo_v10.json). The URN says <type> "unknown",
       # so the folder is set explicitly to "workflows" → lands in
@@ -406,6 +471,55 @@ in
         type = "workflows";
         sha256 = "1ys4pfhj13s3h7rnr3c7vpgl7xd47kkfqbv3b4lmxggbx2jgik99";
       };
+      # BRIA RMBG-1.4 (~177 MiB) — subject matte for LayerStyle's
+      # `LayerMask: RmBgUltra V2`, used by the krea2-inpaint workflow to mask
+      # the person so only the subject is regenerated. LayerStyle does NOT
+      # register an `rmbg` model folder, so `load_RMBG_model()` falls through
+      # to models/rmbg/RMBG-1.4/model.pth — hence the nested `type` (the module
+      # interpolates it verbatim into the folder path). Licence:
+      # bria-rmbg-1.4, non-commercial use only.
+      "model.pth" = {
+        url = "https://huggingface.co/briaai/RMBG-1.4/resolve/main/model.pth";
+        type = "rmbg/RMBG-1.4";
+        mode = "download";
+        sha256 = "132ypyp3rj4489bzhjci2yvsj38rji6plibq7v4szpdi831icg49";
+      };
+
+      # ── Wan 2.2 TI2V-5B — image→video (workflow: wan22-i2v-5b.json) ──────
+      # 5B hybrid TI2V: the only Wan 2.2 variant that fits this box. The 14B
+      # MoE pair is 14.3 GB *per expert* in fp8 and needs two UNets resident.
+      # It is the OFFICIAL fp16 repack (10.0 GB, UNETLoader weight_dtype
+      # "default"), not a GGUF: the 5B GGUFs in circulation (QuantStack
+      # `Wan2.2-TI2V-5B-Q6_K.gguf`, and unsloth's fp8 `.pt`) carry 5-D tensors,
+      # and the `gguf` python package pinned for ComfyUI-GGUF still has
+      # `GGML_MAX_DIMS = 4` — loading fails at UnetLoaderGGUF with
+      # "Tensor dimensions count 5 exceeds GGML_MAX_DIMS (4)". Verified
+      # 2026-10-25. Kijai's `Wan2_2-TI2V-5B_fp8_e4m3fn_scaled_KJ.safetensors`
+      # (5.28 GB) is the smaller option if fp16 ever thrashes, but it targets
+      # WanVideoWrapper, not core UNETLoader.
+      "wan2.2_ti2v_5B_fp16.safetensors" = {
+        url = "https://huggingface.co/Comfy-Org/Wan-2.2/resolve/main/split_files/diffusion_models/wan2.2_ti2v_5B_fp16.safetensors";
+        type = "diffusion_models";
+        mode = "download";
+        sha256 = "07nazvy6k6h4s3w5rji5lpl6i6ws20cvha1qxnysv7mx709r0vs5";
+      };
+      # Wan 2.2 VAE (1.4 GB, high-compression 48-channel — NOT the Wan 2.1 VAE,
+      # and NOT the qwen_image_vae Krea 2 uses). Required by both
+      # Wan22ImageToVideoLatent and VAEDecode in the video workflow.
+      "wan2.2_vae.safetensors" = {
+        url = "https://huggingface.co/Comfy-Org/Wan-2.2/resolve/main/split_files/vae/wan2.2_vae.safetensors";
+        type = "vae";
+        mode = "download";
+        sha256 = "0mnizrsjnvjbpklx70394xld2g9hmjs0wlz2va8rjw5r6syj20z4";
+      };
+      # umt5-xxl text encoder (fp8 scaled, 6.74 GB) — CLIPLoader(type="wan").
+      # Shared with every Wan model; Krea 2's qwen3vl encoder cannot be used.
+      "umt5_xxl_fp8_e4m3fn_scaled.safetensors" = {
+        url = "https://huggingface.co/Comfy-Org/Wan_2.1_ComfyUI_repackaged/resolve/main/split_files/text_encoders/umt5_xxl_fp8_e4m3fn_scaled.safetensors";
+        type = "text_encoders";
+        mode = "download";
+        sha256 = "0s2g418sdsk6d9gxlzb2dk79v079g80vlgyr4rmhc7qz34q5sdf3";
+      };
     };
   };
 
@@ -414,7 +528,10 @@ in
   # global OOM left the host unreachable. Cap the unit so a runaway workflow
   # or node pack is killed instead of starving sshd; oomd/earlyoom remain the
   # system-wide backstop (modules/nixos/hardening/README.md).
-  systemd.services.comfy-ui = {
+  # Gated on the enable flag: a bare `systemd.services.comfy-ui` (or a
+  # `cpuQuota.comfy-ui` entry, which the hardening module turns into a unit
+  # definition) with the service off has no ExecStart and fails activation.
+  systemd.services.comfy-ui = lib.mkIf config.my.services.comfyui.enable {
     unitConfig = {
       StartLimitBurst = 5;
       StartLimitIntervalSec = 300;
@@ -429,7 +546,12 @@ in
       TimeoutStopSec = "30s";
     };
   };
-  my.system.hardening.cpuQuota.comfy-ui = "600%";
+  my.system.hardening.cpuQuota.comfy-ui =
+    lib.mkIf config.my.services.comfyui.enable "600%";
+  # Same guard for the Ollama container: only define the quota when the unit
+  # actually exists (the module's default map is emptied above).
+  my.system.hardening.cpuQuota.docker-ollama =
+    lib.mkIf config.my.services.ollama.enable "400%";
 
   # ── Manga Reader (sync library to config repo) ───────────────────────────
   my.services.suwayomi = {
@@ -477,29 +599,119 @@ in
     servers.allthetech.enable = false;
   };
 
-  # ── Ollama (LLM Serving) — disabled 2026-09-01 ─────────────────────────
-  # Competed with ComfyUI for the GPU (12GB RTX 3060). dataDir/model kept so
-  # re-enabling is a one-flag flip back to true — pair with
-  # my.profiles.ai.enable = true above.
+  # ── Ollama (LLM Serving) — ENABLED 2026-10-31 ──────────────────────────
+  # Restored on request 2026-10-31 as the SOLE inference backend (the llama.cpp
+  # router below is off): all seven Personal Favorites GGUFs serve through the
+  # container's native multi-model handling (loads on demand, evicts LRU after
+  # keep_alive) instead of the router's manual sleep-swap. The model store
+  # (/mnt/data/ollama) is intact. Breeze TTS keeps its ~3 GB; the 12Bs fit
+  # alongside it when swapped in (~7.3 GB weights + ~1.5 GB KV).
   my.services.ollama = {
-    enable = false;
+    enable = true; # re-enabled 2026-10-31 (sole backend; replaces llama.cpp)
     dataDir = "/mnt/data/ollama";
     gpu.enable = true;
+    # Operator GGUFs must be visible INSIDE the container at the same path
+    # the models below name (ggufPath is a container path): bind-mount the
+    # weights dir read-only.
+    extraVolumes = [ "/mnt/data/llama:/mnt/data/llama:ro" ];
     models = {
       "hf.co/Lewdiculous/DS-R1-Qwen3-8B-ArliAI-RpR-v4-Small-GGUF-IQ-Imatrix:Q4_K_M-imat" = {
-        name = "ArliAI DS-R1-Qwen3-8B RpR v4";
-        numCtx = 16000;
-        temperature = 0.6;
+        name = "ArliAI DS-R1-Qwen3-8B RpR v4 (reasoning)";
+        numCtx = 16000; # card: 16K training sequence length
+        # Card "Recommended Samplers": temp 1.0 (was 0.6), topK 40 unchanged.
+        temperature = 1.0;
+        topP = 1.0; # desktop-proven for this model (was 0.95)
+        topK = 40;
+        # repeatPenalty 1.0 (= disabled): the card explicitly warns RpR v4
+        # degrades with repetition-penalty samplers (even XTC/DRY). Was 1.1;
+        # 1.0 rather than unset, because Ollama's own default is 1.1 and an
+        # unset Modelfile would silently keep penalising. repeatLastN stays:
+        # it only widens the window penalties would apply to.
+        repeatPenalty = 1.0;
+        repeatLastN = 2048;
+        # NO template override: verified live 2026-10-31 that Ollama renders
+        # this Qwen3 model correctly without one (native <think> reasoning
+        # blocks). A ChatML template here would be wrong for Qwen3's native
+        # CJK token format — do not add one without a generate roundtrip.
+      };
+      # Lumimaid-8B v0.1 (previous router primary). Local file: the repo holds
+      # BOTH v1 and v2 Q6_K quants, so an `hf.co/...:Q6_K-imat` pull tag is
+      # ambiguous — ggufPath pins the verified v2 file deterministically.
+      # Usable name in ST/opencode: `lumimaid-8b` (no registry prefix, so the
+      # safeName equals the tag and existing ST wiring keeps working).
+      "lumimaid-8b" = {
+        name = "Lumimaid 8B v0.1 (local v2 Q6_K)";
+        ggufPath = "/mnt/data/llama/lumimaid-8b-Q6_K-imat.gguf";
+        numCtx = lumimaidContext;
+        temperature = 0.9;
         topP = 0.95;
         topK = 40;
-        repeatPenalty = 1.1;
+        repeatLastN = 2048; # echo-fix parity with the old router flag
+        template = llama3OllamaTemplate; # metadata stores bare `llama3`
+      };
+      # The remaining six pull straight from HF (single file per quant —
+      # verified unambiguous 2026-10-31). Usable ST names are the
+      # slash-normalised safeNames (e.g. hf.co-Lewdiculous-...); see catalog.
+      "hf.co/Lewdiculous/L3-8B-Stheno-v3.1-GGUF-IQ-Imatrix:Q6_K-imat" = {
+        name = "Stheno 8B v3.1 (Sao10K RP)";
+        numCtx = 8192;
+        temperature = 0.9;
+        topP = 0.95;
+        topK = 40;
+        repeatLastN = 2048;
+        template = llama3OllamaTemplate; # metadata jinja is not Go syntax
+      };
+      "hf.co/Lewdiculous/Lumimaid-v0.2-8B-GGUF-IQ-Imatrix:Q6_K-imat" = {
+        name = "Lumimaid v0.2 8B (Llama 3.1)";
+        numCtx = 8192;
+        temperature = 0.8; # card note: lower temperatures for v0.2
+        topP = 0.95;
+        topK = 40;
+        repeatLastN = 2048;
+        template = llama3OllamaTemplate;
+      };
+      "hf.co/Lewdiculous/Kunoichi-DPO-v2-7B-GGUF-Imatrix:Q6_K-imatrix" = {
+        name = "Kunoichi DPO v2 7B";
+        numCtx = 8192;
+        temperature = 0.9;
+        topP = 0.95;
+        topK = 40;
+        repeatLastN = 2048;
+        template = mistralOllamaTemplate;
+      };
+      "hf.co/Lewdiculous/InfinityRP-v1-7B-GGUF-IQ-Imatrix:Q4_K_M-imat" = {
+        name = "InfinityRP v1 7B (anti-hallucination)";
+        numCtx = 8192; # card states 8192 supported (metadata claims 32768)
+        temperature = 0.9;
+        topP = 0.95;
+        topK = 40;
+        repeatLastN = 2048;
+        template = mistralOllamaTemplate;
+      };
+      "hf.co/Lewdiculous/Captain-Eris_Violet-V0.420-12B-GGUF-ARM-Imatrix:Q4_K_M-imat" = {
+        name = "Captain Eris Violet 12B (Mistral Nemo)";
+        numCtx = 8192;
+        temperature = 0.9;
+        topP = 0.95;
+        topK = 40;
+        repeatLastN = 2048;
+        template = mistralOllamaTemplate;
+      };
+      "hf.co/Lewdiculous/Lumimaid-v0.2-12B-GGUF-IQ-Imatrix:Q4_K_M-imat" = {
+        name = "Lumimaid v0.2 12B (Mistral Nemo)";
+        numCtx = 8192;
+        temperature = 0.9;
+        topP = 0.95;
+        topK = 40;
+        repeatLastN = 2048;
+        template = mistralOllamaTemplate;
       };
     };
   };
 
   # ── RisuAI (LLM Roleplay Frontend) — dormant 2026-09-01 ────────────────
-  # Disabled together with my.profiles.ai (Ollama paused for ComfyUI). Config
-  # kept for re-enabling; values are inert while the profile is off.
+  # Still off because my.profiles.ai stays off (Ollama itself is back up).
+  # Config kept for re-enabling; values are inert while the profile is off.
   my.services.risuai = {
     dataDir = "/mnt/data/risuai";
     ollama.enable = true;
@@ -520,8 +732,10 @@ in
   # services.llama-cpp). Router mode: one port serves every declared model and
   # the section name is the `model` id the API routes on.
   services.llama-cpp-nixos = {
-    # Disabled 2026-10-24 with the SillyTavern stack; it was holding 7.1 GiB
-    # of the 12 GiB GPU.
+    # Disabled 2026-10-31: serving moved to Ollama (native multi-model LRU),
+    # which owns the RTX 3060 now. The model declarations below are INERT
+    # while off (proven shape — ran like this Oct 24-28) and stay as the fast
+    # rollback path; weights remain on /mnt/data/llama.
     enable = false;
     # nixpkgs builds the CUDA kernels for nine architectures
     # (75;80;86;89;90;100;103;120a;121a), which is ~9x the nvcc work and none
@@ -531,14 +745,15 @@ in
     });
     host = "127.0.0.1";
     port = 9931;
-    # Measured with a 60 s timeout before choosing: waking a slept model costs
-    # 28.2 s on the next request (/mnt/data re-reads the 6.6 GB of weights),
-    # against ~3 s to load at unit start with a warm page cache. So sleeping
-    # only moves a cost the system already pays at startup onto the first chat
-    # message, and the static VRAM budget below already reserves room for both
-    # processes. ComfyUI now owns the GPU (this backend is disabled), so the
-    # 28 s wake cost is moot; leave null.
-    router.idleUnloadSeconds = null;
+    # Multi-model sleep-swap (changed 2026-10-31): six more models are declared
+    # below, so only lumimaid-8b stays resident. The rest load on first request
+    # and unload after 30 min idle — the 12 GB VRAM cannot hold a second
+    # resident model (lumimaid Q6_K ~7.6 GB active + Breeze ~3 GB leaves ~1.7 GB
+    # free). Cost: lumimaid now sleeps too. Measured 2026-10-21: waking a slept
+    # model costs 28.2 s on the next request (/mnt/data re-reads the weights)
+    # against ~3 s resident. Previously null (always resident) when lumimaid
+    # was the only model.
+    router.idleUnloadSeconds = 1800;
 
     models.${lumimaidModel} = {
       # Weights are operator-managed on the data disk (6.6 GB would otherwise
@@ -555,6 +770,12 @@ in
       args = {
         ngl = "all"; # 32/32 layers on the RTX 3060
         "flash-attn" = "on";
+        # Penalty window: llama-server only applies presence/frequency penalties
+        # to the last N tokens (`--repeat-last-n`, default 64). Group chats echo
+        # same-speaker turns from hundreds of tokens back, which a 64-token window
+        # never sees — widened 2026-10-31 after byte-identical replies repeated
+        # despite nonzero penalties (see GOTCHAS entry).
+        "repeat-last-n" = "2048";
         # The card specifies Llama 3 prompting, and the GGUF's metadata does
         # NOT agree: this conversion carries a ChatML template. Worse,
         # `chat-template = "llama3"` does not resolve in llama.cpp 0.4.1 —
@@ -564,6 +785,125 @@ in
         # llama…" to "What is 2+2?"). `chat-template-file` renders the real
         # jinja: prompt 4 -> 27 tokens and the answer is "4".
         "chat-template-file" = "${./llama3-instruct.jinja}";
+      };
+    };
+
+    # ── Personal Favorites (Lewdiculous collection) ──────────────────────
+    # Six more models from https://huggingface.co/collections/Lewdiculous/personal-favorites
+    # (the seventh entry is the lumimaid-8b above). Only lumimaid-8b is
+    # primary/resident; these load on first request and sleep after
+    # router.idleUnloadSeconds. Weights are operator-managed like lumimaid-8b
+    # (a 5–7 GB GGUF in /nix/store would pin root disk): curl each file to
+    # /mnt/data/llama/ once with the command in its comment, then rebuild.
+    # The service fails to start a model whose file is missing, so land the
+    # weights before flipping that model on in the UI.
+    # Serving moved to Ollama 2026-10-31 (see my.services.ollama above): the
+    # section ids below are INERT reference. To use a model in SillyTavern,
+    # type its Ollama name (safeName) into the connection profile's model field.
+    models.stheno-8b = {
+      # Sao10K RP specialist (Llama-3 8B; 98 likes, most-liked in the
+      # collection). Same VRAM class as lumimaid-8b. One-time fetch:
+      #   curl -L -o /mnt/data/llama/stheno-8b-Q6_K-imat.gguf \
+      #     https://huggingface.co/Lewdiculous/L3-8B-Stheno-v3.1-GGUF-IQ-Imatrix/resolve/main/L3-8B-Stheno-v3.1-Q6_K-imat.gguf
+      weights.path = "/mnt/data/llama/stheno-8b-Q6_K-imat.gguf";
+      ctxSize = 8192; # GGUF metadata context_length
+      loadOnStartup = false; # on demand; sleeps after idleUnloadSeconds
+      args = {
+        ngl = "all";
+        "flash-attn" = "on";
+        "repeat-last-n" = "2048"; # see lumimaid-8b above
+        # No chat-template-file override: unlike lumimaid-8b v0.1 (whose
+        # metadata stores the bare name `llama3`), this GGUF carries the full
+        # Llama-3 jinja in metadata. If replies degenerate to literal template
+        # text, copy the override pattern from lumimaid-8b.
+      };
+    };
+    models.lumimaid-v2-8b = {
+      # Llama-3.1 successor to lumimaid-8b (NeverSleep/Lumimaid-v0.2-8B). Card
+      # note: "recommended to use lower temperatures" — hence temp 0.8 in
+      # the catalog preset below. One-time fetch:
+      #   curl -L -o /mnt/data/llama/lumimaid-v2-8b-Q6_K-imat.gguf \
+      #     https://huggingface.co/Lewdiculous/Lumimaid-v0.2-8B-GGUF-IQ-Imatrix/resolve/main/Lumimaid-v0.2-8B-Q6_K-imat.gguf
+      weights.path = "/mnt/data/llama/lumimaid-v2-8b-Q6_K-imat.gguf";
+      # Metadata claims 131072 (Llama-3.1 native max) but it trained on 8k
+      # LimaRP data; KV cache at 131k would OOM instantly. 8192 = trained ctx.
+      ctxSize = 8192;
+      loadOnStartup = false;
+      args = {
+        ngl = "all";
+        "flash-attn" = "on";
+        "repeat-last-n" = "2048";
+        # Same as stheno-8b: full Llama-3 jinja ships in GGUF metadata.
+      };
+    };
+    models.kunoichi-7b = {
+      # Lewdiculous's own "recommended small model" (Mistral 7B DPO). Fastest
+      # of the set. NOTE the filename uses `-imatrix`, not `-imat`. Fetch:
+      #   curl -L -o /mnt/data/llama/kunoichi-7b-Q6_K-imatrix.gguf \
+      #     https://huggingface.co/Lewdiculous/Kunoichi-DPO-v2-7B-GGUF-Imatrix/resolve/main/Kunoichi-DPO-v2-7B-Q6_K-imatrix.gguf
+      weights.path = "/mnt/data/llama/kunoichi-7b-Q6_K-imatrix.gguf";
+      ctxSize = 8192; # GGUF metadata context_length
+      loadOnStartup = false;
+      args = {
+        ngl = "all";
+        "flash-attn" = "on";
+        "repeat-last-n" = "2048";
+        # Mistral instruct template ships in GGUF metadata ([INST]..[/INST]);
+        # no override file exists for this family — llama.cpp built-ins render
+        # it. Same fallback advice as above if output looks templated.
+      };
+    };
+    models.infinityrp-7b = {
+      # Anti-hallucination design (waits for user instead of deciding for them;
+      # Eris_Floramix_DPO × Datura merge, Mistral 7B). Matches the desktop's
+      # existing Ollama reference (same repo + quant). Fetch:
+      #   curl -L -o /mnt/data/llama/infinityrp-7b-Q4_K_M-imat.gguf \
+      #     https://huggingface.co/Lewdiculous/InfinityRP-v1-7B-GGUF-IQ-Imatrix/resolve/main/InfinityRP-v1-7B-Q4_K_M-imat.gguf
+      weights.path = "/mnt/data/llama/infinityrp-7b-Q4_K_M-imat.gguf";
+      # Card note states 8192 supported; metadata claims 32768. 8192 keeps KV
+      # small and matches the desktop profile.
+      ctxSize = 8192;
+      loadOnStartup = false;
+      args = {
+        ngl = "all";
+        "flash-attn" = "on";
+        "repeat-last-n" = "2048";
+        # Mistral merge; template from GGUF metadata as with kunoichi-7b.
+      };
+    };
+    models.eris-violet-12b = {
+      # Best-reviewed 12B in the collection (Mistral Nemo; "writes well, not
+      # sloppy"). Ships an in-repo ST formatting preset
+      # (SillyTavern-formatting-2024-12-19-by-Nitral-AI.json) plus linked ST
+      # presets in the collection note. NOT the `ARM-`-prefixed file (ARM-CPU
+      # specific) — the plain Q4_K_M. Fetch:
+      #   curl -L -o /mnt/data/llama/eris-violet-12b-Q4_K_M-imat.gguf \
+      #     https://huggingface.co/Lewdiculous/Captain-Eris_Violet-V0.420-12B-GGUF-ARM-Imatrix/resolve/main/Captain-Eris_Violet-V0.420-12B-Q4_K_M-imat.gguf
+      weights.path = "/mnt/data/llama/eris-violet-12b-Q4_K_M-imat.gguf";
+      # Nemo native max is huge; trained ctx unstated — 8192 is the safe pick
+      # (~1.5 GB KV at Q4, fits alongside Breeze's ~3 GB when swapped in).
+      ctxSize = 8192;
+      loadOnStartup = false;
+      args = {
+        ngl = "all";
+        "flash-attn" = "on";
+        "repeat-last-n" = "2048";
+        # Nemo Mistral template ships in GGUF metadata; no override file.
+      };
+    };
+    models.lumimaid-v2-12b = {
+      # 12B Mistral Nemo flavor; collection note: fewer refusals on extreme
+      # content than the 8B. Same VRAM math as eris-violet-12b. Fetch:
+      #   curl -L -o /mnt/data/llama/lumimaid-v2-12b-Q4_K_M-imat.gguf \
+      #     https://huggingface.co/Lewdiculous/Lumimaid-v0.2-12B-GGUF-IQ-Imatrix/resolve/main/Lumimaid-v0.2-12B-Q4_K_M-imat.gguf
+      weights.path = "/mnt/data/llama/lumimaid-v2-12b-Q4_K_M-imat.gguf";
+      ctxSize = 8192;
+      loadOnStartup = false;
+      args = {
+        ngl = "all";
+        "flash-attn" = "on";
+        "repeat-last-n" = "2048";
+        # Nemo Mistral template ships in GGUF metadata; no override file.
       };
     };
   };
@@ -576,17 +916,28 @@ in
   # override. Host/port/models-preset come from the unit's environment
   # (LLAMA_ARG_*), not the command line.
 
-  # ── SillyTavern (LLM Roleplay Frontend) — DISABLED 2026-10-24 ──────────
-  # Turned off with its llama.cpp and Breeze TTS backends so ComfyUI owns the
-  # RTX 3060 (the three together held ~10.2 GiB of 12 GiB). Flip all three
-  # `enable` flags back to true to restore; the configuration below is intact.
+  # ── SillyTavern (LLM Roleplay Frontend) — ENABLED 2026-10-31 ────────────
+  # Restored on request 2026-10-31 with the llama.cpp and Breeze TTS backends
+  # (was flipped to Ollama earlier the same day). To pause again flip off all
+  # four switches (this `enable`, services.llama-cpp-nixos.enable,
+  # services.breeze-tts-nixos.enable and the two tailscale-serve units) plus
+  # the dashboard links.
+  # Everything else (presets, model catalog, voices, secret wiring) is kept
+  # intact so a re-enable is a flag flip, not a rewrite.
+  # Previously: restored 2026-10-26 with its backends after ComfyUI was
+  # turned off (the three together held ~10.2 GiB of 12 GiB). Served at
+  # https://server.tail685690.ts.net:8444/ (tailnet only, see the tailscale
+  # serve unit below). NOT under the Caddy /sillytavern/ subpath: with
+  # accounts enabled SillyTavern 302s to a root-relative /login and its login
+  # JS sets pathname = "/" on success, so a path-prefixed install drops the
+  # user on the dashboard. Root-of-its-own-port has no such problem.
   # Options live under `services.sillytavern-nixos.*` — the upstream
   # github:Cairnstew/SillyTavern flake module, wrapped by
   # modules/nixos/sillytavern. The namespace is NOT `services.sillytavern`:
   # that one belongs to nixpkgs' own module, and the two cannot be enabled at
   # the same time (they share the unit, the account and the state directory).
   services.sillytavern-nixos = {
-    enable = false;
+    enable = true; # re-enabled 2026-10-31 with the whole LLM/TTS stack
 
     # The package's npm ci runs in the fixed-output node_modules build, where
     # /etc/ssl is absent and nixpkgs' node has no system bundle to fall back
@@ -617,12 +968,12 @@ in
       hosts = [ "server.tail685690.ts.net" "localhost" ];
     };
 
-    # Point the account's Chat Completion at the local llama.cpp router and
+    # Point the account's Chat Completion at the local Ollama endpoint and
     # select the seeded preset, so a fresh login is already on the GGUF rather
     # than the OpenAI default.
     settings.common.oai_settings = {
       chat_completion_source = "custom";
-      custom_url = "http://127.0.0.1:9931/v1";
+      custom_url = "http://127.0.0.1:11434/v1";
       custom_model = lumimaidModel;
       preset_settings_openai = lumimaidModel;
       openai_max_context = lumimaidContext;
@@ -631,30 +982,204 @@ in
       bind_preset_to_connection = true;
     };
 
-    # Chat-completion wiring for the locally served GGUF. `contextSize` must
-    # match services.llama-cpp-nixos.models.<id>.ctxSize (the modules do not
-    # read each other); it becomes `openai_max_context` in the generated
-    # preset. Sampling is a Llama-3 RP baseline — the GGUF card points at
-    # Virt's SillyTavern presets for the author's tuned values, which are
-    # imported in the UI if wanted.
+    # Chat-completion wiring for the locally served GGUFs (Ollama backend).
+    # `contextSize` must match my.services.ollama.models.<id>.numCtx (the
+    # modules do not read each other); it becomes `openai_max_context` in the
+    # generated preset. To use a non-default model, type its Ollama name
+    # (safeName for pulls, e.g. hf.co-Lewdiculous-...; plain id for the local
+    # lumimaid-8b) into the connection profile's model field. Sampling is a
+    # Llama-3 RP baseline — the GGUF card points at Virt's SillyTavern presets
+    # for the author's tuned values, which are imported in the UI if wanted.
     modelLayers = {
       enable = true;
       catalog.${lumimaidModel} = {
         contextSize = lumimaidContext;
         connection = {
-          url = "http://127.0.0.1:9931/v1";
+          url = "http://127.0.0.1:11434/v1";
           model = lumimaidModel;
         };
         presets.openai = {
-          temp_openai = 0.9;
-          top_p_openai = 0.95;
-          top_k_openai = 40;
-          min_p_openai = 0.05;
-          top_a_openai = 0;
-          freq_pen_openai = 0;
-          pres_pen_openai = 0;
-          repetition_penalty_openai = 1.05;
+          temperature = 0.9;
+          top_p = 0.95;
+          top_k = 40;
+          # 0.03 per the GGUF card's linked Poppy Porpoise preset (was 0.05).
+          min_p = 0.03;
+          top_a = 0;
+          frequency_penalty = 0;
+          presence_penalty = 0;
+          repetition_penalty = 1.05;
           openai_max_tokens = 512;
+        };
+      };
+      # Per-model presets for the Personal Favorites Ollama entries
+      # (my.services.ollama.models) above. contextSize must equal each model's
+      # numCtx; `model` is the Ollama safeName to type into the connection
+      # profile's model field.
+      # Sampling mirrors lumimaid-8b (temp 0.9 baseline) except where a card
+      # note says otherwise; the Poppy card values (top_p 1, top_k 0/disabled,
+      # min_p 0.03, no penalties) are tunable in the UI.
+      catalog.stheno-8b = {
+        contextSize = 8192;
+        connection = {
+          url = "http://127.0.0.1:11434/v1";
+          model = "hf.co-Lewdiculous-L3-8B-Stheno-v3.1-GGUF-IQ-Imatrix-Q6_K-imat";
+        };
+        presets.openai = {
+          temperature = 0.9;
+          top_p = 0.95;
+          top_k = 40;
+          min_p = 0.03;
+          top_a = 0;
+          frequency_penalty = 0;
+          presence_penalty = 0;
+          repetition_penalty = 1.05;
+          openai_max_tokens = 512;
+        };
+      };
+      catalog.lumimaid-v2-8b = {
+        contextSize = 8192;
+        connection = {
+          url = "http://127.0.0.1:11434/v1";
+          model = "hf.co-Lewdiculous-Lumimaid-v0.2-8B-GGUF-IQ-Imatrix-Q6_K-imat";
+        };
+        presets.openai = {
+          # Card note: "recommended to use lower temperatures".
+          temperature = 0.8;
+          top_p = 0.95;
+          top_k = 40;
+          min_p = 0.03;
+          top_a = 0;
+          frequency_penalty = 0;
+          presence_penalty = 0;
+          repetition_penalty = 1.05;
+          openai_max_tokens = 512;
+        };
+      };
+      catalog.kunoichi-7b = {
+        contextSize = 8192;
+        connection = {
+          url = "http://127.0.0.1:11434/v1";
+          model = "hf.co-Lewdiculous-Kunoichi-DPO-v2-7B-GGUF-Imatrix-Q6_K-imatrix";
+        };
+        presets.openai = {
+          temperature = 0.9;
+          top_p = 0.95;
+          top_k = 40;
+          min_p = 0.03;
+          top_a = 0;
+          frequency_penalty = 0;
+          presence_penalty = 0;
+          repetition_penalty = 1.05;
+          openai_max_tokens = 512;
+        };
+      };
+      catalog.infinityrp-7b = {
+        contextSize = 8192;
+        connection = {
+          url = "http://127.0.0.1:11434/v1";
+          model = "hf.co-Lewdiculous-InfinityRP-v1-7B-GGUF-IQ-Imatrix-Q4_K_M-imat";
+        };
+        presets.openai = {
+          temperature = 0.9;
+          top_p = 0.95;
+          top_k = 40;
+          min_p = 0.03;
+          top_a = 0;
+          frequency_penalty = 0;
+          presence_penalty = 0;
+          repetition_penalty = 1.05;
+          openai_max_tokens = 512;
+        };
+      };
+      catalog.eris-violet-12b = {
+        contextSize = 8192;
+        connection = {
+          url = "http://127.0.0.1:11434/v1";
+          model = "hf.co-Lewdiculous-Captain-Eris_Violet-V0.420-12B-GGUF-ARM-Imatrix-Q4_K_M-imat";
+        };
+        presets.openai = {
+          temperature = 0.9;
+          top_p = 0.95;
+          top_k = 40;
+          min_p = 0.03;
+          top_a = 0;
+          frequency_penalty = 0;
+          presence_penalty = 0;
+          repetition_penalty = 1.05;
+          openai_max_tokens = 512;
+        };
+      };
+      catalog.lumimaid-v2-12b = {
+        contextSize = 8192;
+        connection = {
+          url = "http://127.0.0.1:11434/v1";
+          model = "hf.co-Lewdiculous-Lumimaid-v0.2-12B-GGUF-IQ-Imatrix-Q4_K_M-imat";
+        };
+        presets.openai = {
+          temperature = 0.9;
+          top_p = 0.95;
+          top_k = 40;
+          min_p = 0.03;
+          top_a = 0;
+          frequency_penalty = 0;
+          presence_penalty = 0;
+          repetition_penalty = 1.05;
+          openai_max_tokens = 512;
+        };
+      };
+      # DS-R1 Qwen3-8B RpR v4 (reasoning). Sampling + reasoning setup per the
+      # model card "Recommended Samplers" + "How to use reasoning models
+      # correctly in ST" (ArliAI/DS-R1-Qwen3-8B-ArliAI-RpR-v4-Small): temp 1.0,
+      # min_p 0.02, top_k 40, 2048+ tokens, NO rep-penalty samplers (the card
+      # explicitly warns against them, so this preset sets none at all — not
+      # even 0.0); reasoning prefix/suffix exactly <think>/</think>; instruct
+      # pins names_behavior none (card: include-names must be never, no
+      # char-name appending — the remaining two toggles are global power_user
+      # UI settings, deliberately not forced here so the other models keep
+      # their behavior). contextSize must match the Modelfile numCtx above
+      # (16000, the card's 16K training length).
+      catalog.ds-r1 = {
+        contextSize = 16000;
+        connection = {
+          url = "http://127.0.0.1:11434/v1";
+          model = "hf.co-Lewdiculous-DS-R1-Qwen3-8B-ArliAI-RpR-v4-Small-GGUF-IQ-Imatrix-Q4_K_M-imat";
+        };
+        presets.openai = {
+          temperature = 1.0;
+          top_p = 1.0;
+          top_k = 40;
+          min_p = 0.02;
+          top_a = 0;
+          openai_max_tokens = 2048;
+        };
+        presets.reasoning = {
+          prefix = "<think>";
+          suffix = "</think>";
+          separator = "\n";
+        };
+        presets.sysprompt = {
+          content = ''You are a roleplaying AI with deep reasoning capabilities, based on the ArliAI RpR v4 model. Use <think> </think> tags for internal reasoning before responding. Stay in character and write creatively, responding from {{char}}'s perspective. Follow the character description and scenario closely.'';
+        };
+        presets.context = {
+          story_string = "{{#if system}}{{system}}\n{{/if}}{{#if wiBefore}}{{wiBefore}}\n{{/if}}{{#if description}}{{description}}\n{{/if}}{{#if personality}}{{char}}'s personality: {{personality}}\n{{/if}}{{#if scenario}}Scenario: {{scenario}}\n{{/if}}{{#if wiAfter}}{{wiAfter}}\n{{/if}}{{#if persona}}{{persona}}\n{{/if}}";
+          example_separator = "***";
+          chat_start = "***";
+          use_stop_strings = true;
+          names_as_stop_strings = true;
+          always_force_name2 = false;
+        };
+        presets.instruct = {
+          input_sequence = "<|im_start|>user";
+          input_suffix = "<|im_end|>\n";
+          output_sequence = "<|im_start|>assistant";
+          output_suffix = "<|im_end|>\n";
+          system_sequence = "<|im_start|>system";
+          system_suffix = "<|im_end|>\n";
+          stop_sequence = "<|im_end|>";
+          wrap = true;
+          macro = true;
+          names_behavior = "none";
+          sequences_as_stop_strings = true;
         };
       };
     };
@@ -669,6 +1194,21 @@ in
     # declared; spelled out for the record.)
     config.extensions.autoUpdate = false;
 
+    # ── Third-party extensions ───────────────────────────────────────────
+    # Installed as pinned store paths under the package's third-party
+    # directory; bump `rev` and rebuild to update.
+    extensions = {
+      # Agentic character memory (POV-aware, witness tracking, relationship
+      # dynamics). https://github.com/unkarelian/openvault
+      openvault = {
+        url = "https://github.com/unkarelian/openvault";
+        rev = "7138733193407de4e70e297a056fccff4eb1be1c";
+        # fetchgit is fixed-output: without a hash it builds with a fake hash
+        # and reports the real one (nix run failure 2026-10-31).
+        fetchgitExtra.hash = "sha256-oo/hzRzbNH0bXdME99UeyXok8wkQzowykOyAUiDfk8A=";
+      };
+    };
+
     # No `systemdOverrides` any more. Both raw-unit escapes were upstream
     # defects, fixed in 6cee6f7: the hardening list no longer sets
     # `MemoryDenyWriteExecute` (V8 JIT needs W+X pages; node died at isolate
@@ -676,10 +1216,10 @@ in
     # instead of a list that rendered as three `ExecStart=` lines.
   };
 
-  # The agenix manifest still chowns sillytavern-password to the service
-  # account. Keep the account defined while the service is disabled so
-  # activation does not fail with "chown: invalid user"; when the stack is
-  # re-enabled the upstream module's identical definition merges in.
+  # The agenix manifest chowns sillytavern-password to the service account.
+  # Kept as `mkDefault` definitions so they merge with the enabled upstream
+  # module's identical ones (and still exist while the service is off, which
+  # avoids "chown: invalid user" at activation).
   users.groups.sillytavern = { };
   users.users.sillytavern = {
     isSystemUser = lib.mkDefault true;
@@ -694,12 +1234,22 @@ in
   # handles) would only advertise a broken link on the dashboard.
   my.services.proxy.upstreams.sillytavern.enable = false;
 
-  # …so opencode web is listed as a direct card instead. It lives on its own
-  # tailnet port; servePort makes the dashboard link to
+  # …so SillyTavern, Breeze TTS and opencode web are listed as direct cards
+  # instead. servePort makes the dashboard link to
   # https://<current-host>:<port>/ unless it is being viewed from localhost.
   my.services.proxy.dashboard.links = [
-    # SillyTavern (:8444) and Breeze TTS (:8445) cards removed 2026-10-24 with
-    # the stack; opencode web is the only direct tailnet card left.
+    {
+      label = "SillyTavern";
+      description = "Roleplay frontend — local Ollama model (${lumimaidModel})";
+      href = "http://localhost:8000/";
+      servePort = 8444;
+    }
+    {
+      label = "Breeze TTS";
+      description = "Local speech: voice design/cloning and /v1/audio/speech";
+      href = "http://localhost:8445/";
+      servePort = 8445;
+    }
     {
       label = "opencode web";
       description = "opencode web UI (nix-config instance)";
@@ -713,9 +1263,9 @@ in
   # at `/`. Separate unit from the LLM and the frontend: its own lifetime, its
   # own GPU footprint.
   services.breeze-tts-nixos = {
-    # Disabled 2026-10-24 with the SillyTavern stack; it was holding 3.1 GiB
-    # of the 12 GiB GPU.
-    enable = false;
+    # Re-enabled 2026-10-31 with the rest of the SillyTavern stack (it holds
+    # 3.1 GiB of the 12 GiB GPU).
+    enable = true;
 
     # The catalogue's small safe quant. Measured by upstream on this exact
     # hardware class (RTX 3060 12 GiB + a Q4/Q6 8B resident): the file is
@@ -763,6 +1313,14 @@ in
     # the package name is that stem lowercased (Mercy -> mercy-voice). Upstream
     # discovers packs from the directory, so a new character needs an input
     # bump plus one name in this list — no flake.nix edit on either side.
+    #
+    # 2026-10-26: the remaining hero voices are committed blobs next to this
+    # file (built from wiki quote references with `ovl build` +
+    # `export-breeze --server`, then encoded by breeze-tts). They are local
+    # because the pinned overwatch-voice-lines input stops at the original
+    # eight packs. Bastion and Vendetta are omitted: Bastion's clips carry only
+    # context labels ("(allies)") instead of a transcript, and Vendetta yields
+    # 3.8 s of usable speech against Breeze's 5 s reference minimum.
     voices =
       lib.genAttrs
         [ "Ana" "Cassidy" "Mercy" "Moira" "Reaper" "Sombra" "Tracer" ]
@@ -770,6 +1328,50 @@ in
           source =
             flake.inputs.overwatch-voice-lines.packages.${pkgs.stdenv.hostPlatform.system}."${lib.toLower name}-voice";
         })
+      // lib.genAttrs
+        [
+          "Anran"
+          "Ashe"
+          "Baptiste"
+          "Brigitte"
+          "Doomfist"
+          "DVa"
+          "Echo"
+          "Emre"
+          "Freja"
+          "Genji"
+          "Hanzo"
+          "Hazard"
+          "Illari"
+          "JunkerQueen"
+          "Junkrat"
+          "Juno"
+          "Kiriko"
+          "Lifeweaver"
+          "Lucio"
+          "Mauga"
+          "Mei"
+          "Mizuki"
+          "Orisa"
+          "Pharah"
+          "Ramattra"
+          "Reinhardt"
+          "Roadhog"
+          "Shion"
+          "Sierra"
+          "Sigma"
+          "Sojourn"
+          "Soldier76"
+          "Symmetra"
+          "Torbjorn"
+          "Venture"
+          "Winston"
+          "WreckingBall"
+          "Wuyang"
+          "Zarya"
+          "Zenyatta"
+        ]
+        (name: { source = ./voices/${name}.breeze; })
       // {
         narrator.source = ./voices/narrator.breeze;
 
@@ -806,8 +1408,8 @@ in
 
   # Speak assistant replies in the UI. The endpoint itself is wired
   # automatically (the SillyTavern module reads the Breeze port), so this only
-  # flips `extension_settings.tts.enabled`.
-  services.sillytavern-nixos.tts.enable = false;
+  # flips `extension_settings.tts.enabled`. Inert while the service is off.
+  services.sillytavern-nixos.tts.enable = true; # on 2026-10-31 with the stack
   # No `tts.voices` list: the declared voice above is unioned into
   # `available_voices` by the module (managedTtsVoices), so the backend's
   # voices directory is the single source of truth for ids.
@@ -823,7 +1425,7 @@ in
   # loopback; tailscale terminates TLS and forwards, same pattern as the two
   # services above. Separate ports because the UI dials host:ws_port directly.
   systemd.services.breeze-tts-tailnet-serve = {
-    enable = false; # SillyTavern stack disabled 2026-10-24
+    enable = true; # on 2026-10-31 with the SillyTavern stack
     description = "tailscale serve: Breeze TTS web UI (:8445) + WebSocket (:8446)";
     wantedBy = [ "multi-user.target" ];
     wants = [ "tailscaled.service" ];
@@ -850,7 +1452,7 @@ in
   # per-instance tailscale serve): terminate TLS on the tailnet and forward to
   # the loopback listener. 8443 is opencode-web; 8444 is free.
   systemd.services.sillytavern-tailnet-serve = {
-    enable = false; # SillyTavern stack disabled 2026-10-24
+    enable = true; # on 2026-10-31 with the SillyTavern stack
     description = "tailscale serve: SillyTavern on :8444";
     wantedBy = [ "multi-user.target" ];
     wants = [ "tailscaled.service" ];

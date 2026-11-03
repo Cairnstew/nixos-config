@@ -49,6 +49,21 @@
     sha256 = "1rrmqmams3bvibnq8m6aqmjfip8mrnxgh279n0grqnwmxriqlz37";
     description = "rgthree — workflow UX: Reroute, Context/Bypass groups, Collect, multi-select";
   };
+  # The LITE fork, not upstream `Bjornulf_custom_nodes`: upstream pulls pydub /
+  # soundfile / ollama / openai / civitai-py / fal_client / sounddevice and
+  # `__init__.py` imports every module unconditionally (no try/except), so it
+  # would not import without that whole dependency set. LITE's only
+  # third-party imports are PIL, numpy, cv2, scipy, torchaudio, imageio and
+  # aiohttp — all already in the ComfyUI env — so `pythonDeps` stays empty.
+  # Key nodes: LoopAllLines / LoopInteger / LoopRandomSeed (OUTPUT_IS_LIST, i.e.
+  # ComfyUI's native list expansion), CombineTexts, LineSelector,
+  # ShowStringText, TextSplitin5/10, TextReplace.
+  Bjornulf_custom_nodes_LITE = {
+    url = "https://github.com/justUmen/Bjornulf_custom_nodes_LITE";
+    rev = "b71260477bd64de246daf3d784fd3332ce8fe93e";
+    sha256 = "1y3kjv9af4lfmv0vym5v9710330iyzb7pvf1h5pncd8j04zc9zny";
+    description = "Bjornulf LITE — text/list manipulation and looping helpers (LoopAllLines, LoopInteger, CombineTexts, LineSelector)";
+  };
   ComfyUI-Image-Saver = {
     url = "https://github.com/alexopus/ComfyUI-Image-Saver";
     rev = "1d2df13cfca0364fa28be3d40484cbeed33305ac";

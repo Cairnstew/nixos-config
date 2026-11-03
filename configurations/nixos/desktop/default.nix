@@ -64,6 +64,18 @@
     theming.stylix.enable = true;
   };
 
+  # ── Hardening CPU quotas — only list units that actually exist ──────────
+  # The hardening module's default cpuQuota map names docker-ollama,
+  # podman-ollama and comfy-ui. mapAttrs' CREATES a unit definition for every
+  # name in the map, so after disabling Ollama (and with ComfyUI never enabled
+  # here) those names became units with no ExecStart — systemd refuses them on
+  # activation (same trap documented in configurations/nixos/server). Start
+  # from an explicit set containing only real units; jellyfin is the only one
+  # this host runs.
+  my.system.hardening.cpuQuota = {
+    jellyfin = "300%";
+  };
+
   # ── Mouse ─────────────────────────────────────────────────────────────────
   # Kernel-level acceleration via maccel (enabled by gaming profile).
   # sensMultiplier 2.0 = 2× base sensitivity before acceleration.
@@ -1166,8 +1178,14 @@
     interfaces = [ "tailscale0" "zt6ntnehy5" ];
   };
 
+  # ── Ollama (LLM Serving) — DISABLED 2026-10-27 ──────────────────────────
+  # Kept declared (data/gpu settings intact) so flipping `enable` back to true
+  # restores the container; while false the module creates no unit, network,
+  # firewall rule or Caddy upstream. Jan's ollama engine entry below is inert
+  # (its apiServer is off), and SillyTavern's saved ollama profiles simply have
+  # no backend until this is re-enabled.
   my.services.ollama = {
-    enable = true;
+    enable = false;
     gpu.enable = true;
     gpu.type = "amd";
     dataDir = "/mnt/data/ollama";
