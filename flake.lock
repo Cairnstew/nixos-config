@@ -1441,11 +1441,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1793672997,
-        "narHash": "sha256-sABFKYz5/MCV0CoHrrYQF9WkPlAJsXlq/sgjCN/S2Vo=",
+        "lastModified": 1793675636,
+        "narHash": "sha256-OON7D4Vkvz3MrcGHmkgSkpHGizCi6ySymwOolOY8a54=",
         "owner": "Cairnstew",
         "repo": "SillyTavern",
-        "rev": "a4002d9664748b980d7050af135895b44ae783e1",
+        "rev": "c11da92ad96d8aa809f883d496d3d251695d2cea",
         "type": "github"
       },
       "original": {
