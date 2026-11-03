@@ -96,6 +96,13 @@
       maxLoadedModels = lib.mkOption { type = lib.types.nullOr lib.types.int; default = 1; };
       maxVram = lib.mkOption { type = lib.types.nullOr lib.types.int; default = null; };
       flashAttention = lib.mkOption { type = lib.types.bool; default = false; };
+      # Ollama KV-cache element type. "q8_0" roughly halves KV memory versus
+      # f16, which is what lets a larger context fit on a 12 GB card.
+      kvCacheType = lib.mkOption {
+        type = lib.types.enum [ "" "f16" "q8_0" "q4_0" ];
+        default = "";
+        description = "OLLAMA_KV_CACHE_TYPE; empty leaves Ollama's default (f16).";
+      };
     };
 
     pull = {

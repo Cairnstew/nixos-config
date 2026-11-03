@@ -604,12 +604,17 @@ in
   # router below is off): all seven Personal Favorites GGUFs serve through the
   # container's native multi-model handling (loads on demand, evicts LRU after
   # keep_alive) instead of the router's manual sleep-swap. The model store
-  # (/mnt/data/ollama) is intact. Breeze TTS keeps its ~3 GB; the 12Bs fit
-  # alongside it when swapped in (~7.3 GB weights + ~1.5 GB KV).
+  # (/mnt/data/ollama) is intact. Breeze TTS is disabled since 2026-11-03, so
+  # its ~3 GB of VRAM is back in the pool; the 12Bs fit comfortably when swapped
+  # in (~7.3 GB weights + ~1.5 GB f16 KV, less with the q8 cache below).
   my.services.ollama = {
     enable = true; # re-enabled 2026-10-31 (sole backend; replaces llama.cpp)
     dataDir = "/mnt/data/ollama";
     gpu.enable = true;
+    performance = {
+      flashAttention = true;
+      kvCacheType = "q8_0";
+    };
     # Operator GGUFs must be visible INSIDE the container at the same path
     # the models below name (ggufPath is a container path): bind-mount the
     # weights dir read-only.

@@ -43,6 +43,7 @@ in
         OLLAMA_MAX_LOADED_MODELS = lib.optionalString (cfg.performance.maxLoadedModels != null) (toString cfg.performance.maxLoadedModels);
         OLLAMA_MAX_VRAM = lib.optionalString (cfg.performance.maxVram != null) (toString cfg.performance.maxVram);
         OLLAMA_FLASH_ATTENTION = if cfg.performance.flashAttention then "1" else "";
+        OLLAMA_KV_CACHE_TYPE = cfg.performance.kvCacheType;
       } // cfg.environmentVariables);
       log-driver = cfg.logDriver;
       extraOptions = lib.flatten [
