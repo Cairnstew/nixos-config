@@ -610,6 +610,8 @@ in
   my.services.ollama = {
     enable = true; # re-enabled 2026-10-31 (sole backend; replaces llama.cpp)
     dataDir = "/mnt/data/ollama";
+    # Pin: Docker Hub `latest` is 0.40.14; a missing-image pull would silently upgrade.
+    image = "ollama/ollama:0.21.2";
     gpu.enable = true;
     performance = {
       flashAttention = true;
