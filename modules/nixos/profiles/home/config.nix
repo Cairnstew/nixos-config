@@ -36,8 +36,11 @@ in
       };
       firefox = {
         enable = lib.mkDefault true;
-        extensions = lib.mkDefault [ "ublock-origin" "1password" ];
+        extensions = lib.mkDefault [ "ublock-origin" "1password" "ai-exporter" ];
       };
+      # qutebrowser has no extension API; the module wires the 1Password CLI
+      # userscript instead (plus the Google sign-in User-Agent fix).
+      qutebrowser.enable = lib.mkDefault true;
       obsidian.enable = lib.mkDefault true;
       "obs-studio".enable = lib.mkDefault true;
       # Record → clip workflow: LosslessCut trims without re-encoding,
