@@ -553,6 +553,19 @@ style tool/skill/command injection from flake inputs.
 
 ## RUN LOG
 
+### 2026-11-06 — §8 flake visibility: stage NEW files only; `git add -A` is unsafe here
+- Lesson: §8 says to stage "new or modified files" before any `nix` command.
+  Only **new/untracked** files need it — Nix copies the working-tree content of
+  *tracked* files, so a modified host config evaluates without staging (verified
+  this run: `nix eval .#nixosConfigurations.server…` still saw the edit after
+  `git reset`). Following §8 verbatim with `git add -A` also sweeps whatever a
+  concurrent session left modified/staged — GOTCHAS.md:1760 records exactly that
+  incident, and this run's `git add <modified-file>` pulled another session's
+  edits into the index until they were unstaged.
+- Fix: stage only the new path (`git add path/to/new-file.nix`); never
+  `git add -A` in this checkout. §8's wording needs the same narrowing, but
+  self-improve commits are append-only, so this RUN LOG entry is the record.
+
 ### 2026-09-25 — §5.3: added upstream modules & ensemble spaces entry point
 - Lesson: agent read `meta.nix` declaring `upstream.space = "spotify-playlist-manager"`
   but didn't know to use `team_spawn(space=...)` because the root AGENTS.md had zero
