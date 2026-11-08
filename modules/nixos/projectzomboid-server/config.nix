@@ -77,6 +77,17 @@ let
       };
     })
     cfg.webConsoleUpstreams);
+
+  # The client-host ports to forward on the router. Read from the server
+  # definition so the mapping cannot drift from what the game binds.
+  pzHostPorts =
+    let
+      s = cfg.servers.viewpoint or { };
+    in
+    [
+      (s.defaultPort or 16261)
+      (s.udpPort or 16262)
+    ];
 in
 {
   config = lib.mkIf cfg.enable {
@@ -116,6 +127,80 @@ in
     # primary user, which leaves `seanc` unable to read the data dir or attach
     # to the console sockets. Mirrors what the pre-upstream module did.
     users.groups.${cfg.group}.members = [ me.username ];
+
+    # UPnP / SSDP. Project Zomboid's `upnp = true` asks the router to forward
+    # its two UDP ports, but discovery is broken without this rule: the router
+    # answers the SSDP `M-SEARCH` (sent from udp/1900 to 239.255.255.250) back
+    # to an ephemeral local port, and `nixos-fw` sees that reply as a NEW
+    # inbound packet — the outbound multicast is not a tracked flow — and drops
+    # it. `upnpc -l` then reports "No IGD UPnP Device found" on a router whose
+    # UPnP is in fact enabled, and no mapping is ever created.
+    #
+    # Restricted to this LAN's /24 and to SSDP's own source port, so it cannot
+    # be replayed to reach any other local UDP socket. The subnet is written
+    # down because the interface is DHCP (`networking.defaultGateway` is null),
+    # so it is not derivable at eval time.
+    networking.firewall.extraCommands = ''
+      iptables -A nixos-fw -p udp -s 192.168.1.0/24 --sport 1900 -j nixos-fw-accept
+    '';
+
+    # Router port mapping for the client-host ports, WITHOUT Project Zomboid.
+    #
+    # `upnp = true` in the server config would be the natural way to ask, but
+    # Build 42 has no UPnP implementation at all (the 42.21 jar contains no UPnP
+    # class; the upstream module warns if the option is set), so the mapping is
+    # kept here instead, with miniupnpc. The timer re-runs it because a mapping
+    # is still lost on a router reboot; `upnpc -a` is idempotent and costs one
+    # SSDP exchange.
+    systemd.services.pz-upnp-forward = {
+      description = "Forward the Project Zomboid client-host ports on the router (UPnP)";
+      wantedBy = [ "multi-user.target" ];
+      wants = [ "network-online.target" ];
+      after = [ "network-online.target" ];
+
+      serviceConfig = {
+        Type = "oneshot";
+        # The mappings outlive the unit; the timer is what re-establishes them.
+        RemainAfterExit = false;
+      };
+
+      script = ''
+        upnpc=${pkgs.miniupnpc}/bin/upnpc
+
+        # The firewall rule above is what makes SSDP replies reach this process.
+        # No IGD is a normal state (a router with UPnP off), not a failure.
+        if ! "$upnpc" -l >/dev/null 2>&1; then
+          echo "pz-upnp: no UPnP IGD on this network; skipping"
+          exit 0
+        fi
+
+        lan_ip="$(${pkgs.iproute2}/bin/ip -4 route get 1.1.1.1 2>/dev/null \
+          | ${pkgs.gnused}/bin/sed -nE 's/.* src ([0-9.]+).*/\1/p')"
+        if [ -z "$lan_ip" ]; then
+          echo "pz-upnp: no default-route source address; skipping"
+          exit 0
+        fi
+
+        for port in ${lib.concatMapStringsSep " " toString pzHostPorts}; do
+          # No description argument: this router rejects the whole request with
+          # error 600 (Argument Value Invalid) when one is supplied. 718 then
+          # means the mapping already exists, which is the steady state.
+          if "$upnpc" -a "$lan_ip" "$port" "$port" UDP >/dev/null 2>&1; then
+            echo "pz-upnp: $lan_ip:$port forwarded"
+          else
+            echo "pz-upnp: $port already mapped (or the router refused it)"
+          fi
+        done
+      '';
+    };
+
+    systemd.timers.pz-upnp-forward = {
+      wantedBy = [ "timers.target" ];
+      timerConfig = {
+        OnBootSec = "2min";
+        OnUnitActiveSec = "30min";
+      };
+    };
 
     # Per-server ttyd consoles auto-register on the Caddy dashboard, e.g.
     # https://<host>.<tailnet>.ts.net/pz/knox/. Replaces the pre-upstream
