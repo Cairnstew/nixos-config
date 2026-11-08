@@ -371,3 +371,31 @@ gh pr merge <pr-number> --merge --repo Cairnstew/nixos-config
   entries — append-only, never drop the other branch's lesson — then `git add`
   the file and `git commit --no-edit`; the merge commit carries both and the
   auto-merge succeeds (verified: PR #211 merged, all five runs green).
+
+### 2026-11-08 — Step 2's `nix fmt` is not a check: nixfmt rewrites in place (hit in the sibling PZ repo)
+
+- **`nix fmt` silently reformatted two files the task had not touched**
+  (`git-staging-commit-push.md:52`). In `nixos-projectzomboid-servers` it
+  reflowed `modpacks/viewpoint.nix` (1779 lines — every single-line
+  `{ id = …; title = …; }` expanded) and `examples/single-server/flake.nix`,
+  both byte-identical to `HEAD` before the run. Caught it in `git status` after
+  the format step, reverted with `git checkout --`, and shipped only the 12
+  intended files (`ee08a60`). A blind `git add -A` would have committed the
+  reformat.
+- **Why: `nixfmt` writes in place and prints nothing.** A probe file with a
+  formatter-visible change came back rewritten, empty stdout, exit 0. So
+  "is it formatted?" cannot be answered by "did the formatter print anything":
+  run it on a copy and `diff`, or hash before/after. The `nixpkgs-fmt` claim
+  (`git-staging-commit-push.md:55`) and the format-check row
+  (`git-staging-commit-push.md:200`) do not hold for a flake pinning
+  `pkgs.nixfmt-rfc-style`: `nixpkgs-fmt` is not installed there, and CI's own
+  job (`"$FMT" -- "$f"` then test for stdout) can never fail — running the
+  formatter is what *creates* a diff, not what detects one. Resolve the flake's
+  formatter first (`nix build .#formatter.<system> --no-link --print-out-paths`)
+  and diff its output.
+- **Step 7's "never push directly to `master`" is nixos-config-specific**
+  (`git-staging-commit-push.md:154`). The PZ repo has one `master`, CI on
+  `push: branches: [main, master]`, and no auto-PR job, so pushing `master` was
+  correct (5 commits; flake-check, formatting and links all green). Read the
+  target repo's `.github/workflows/` before treating branch-per-host as
+  portable.
