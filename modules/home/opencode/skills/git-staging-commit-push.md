@@ -399,3 +399,23 @@ gh pr merge <pr-number> --merge --repo Cairnstew/nixos-config
   correct (5 commits; flake-check, formatting and links all green). Read the
   target repo's `.github/workflows/` before treating branch-per-host as
   portable.
+
+### 2026-11-08 — Step 6b: `nix flake check` can fail with a store path that was never copied (`path '…-modpacks' is not valid`)
+
+- **Symptom** (`git-staging-commit-push.md:237`): `nix flake check --no-build`
+  dies with `error: path '<hash>-modpacks' is not valid`, while the trace points
+  at `builtins.toJSON self.modpacks` and `… while realising the context of path
+  '/nix/store/<hash>-modpacks/survival-hard.nix'`. It is deterministic for that
+  tree content (same hash every run) and `nix flake check --option lazy-trees
+  false` does not help, so it reads like a real eval error in the change.
+- **Cause:** the repo does `import ./modpacks` and `modpacks/default.nix` uses
+  `import "${dir}/${name}.nix"` with `dir = ./.`. Importing the directory copies
+  it to `<hash>-modpacks`, and the interpolated string carries that store path;
+  the copy was missing (new dirty-tree hash + concurrent nix activity elsewhere
+  on the machine), so the context cannot be realised.
+- **Fix:** recreate the exact path from the worktree, then re-run:
+  `nix store add-path ./modpacks --name modpacks` printed the *same*
+  `<hash>-modpacks` (identical NAR hash), and `nix flake check --no-build` then
+  passed with no source change. Do this before suspecting the diff — and check
+  `nix path-info <path>` first: "don't know how to build these paths" confirms it
+  is a store problem, not a Nix problem.
