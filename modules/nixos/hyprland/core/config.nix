@@ -7,262 +7,279 @@ let
     (lib.optionalString (img.output != null) "-o ${lib.escapeShellArg img.output} ")
     + "-i ${lib.escapeShellArg img.path}";
 
+  # Lua string literal (double-quoted). lib.escapeShellArg is shell quoting
+  # and is NOT valid here: it leaves simple words bare (a Lua variable
+  # reference) and single-quotes the rest.
+  luaStr = s:
+    "\"" + builtins.replaceStrings [ "\\" "\"" ] [ "\\\\" "\\\"" ] s + "\"";
+
   hasWallpaperContent = cfg.wallpapers.enable && (
     cfg.wallpapers.backend == "hyprpaper"
       || cfg.wallpapers.backend == "waypaper"
       || cfg.wallpapers.images != [ ]
   );
 
+  # Lua string literal for generated code. Nix ''...'' strings pass through
+  # literally except for ''${'' escapes, so Lua ${...} interpolation must be
+  # spelled ''${ in the Nix source (only the grim binds use it).
   monitorLines = builtins.map
     (m:
       let
         res = "${toString m.width}x${toString m.height}@${toString m.refreshRate}";
         pos = "${toString m.x}x${toString m.y}";
         scale = lib.removeSuffix ".000000" (toString m.scale);
-        disabled = if m.enabled then "" else ",disable";
       in
-      "monitor = ${m.name},${res},${pos},${scale}${disabled}"
+      if m.enabled then
+        ''hl.monitor({ output = "${m.name}", mode = "${res}", position = "${pos}", scale = ${scale}, transform = ${toString m.transform} })''
+      else
+        ''hl.monitor({ output = "${m.name}", disabled = true })''
     )
     (builtins.filter (m: m.name != "") config.my.monitors);
 
-  transformLines = builtins.map
-    (m:
-      "monitor = ${m.name},transform,${toString m.transform}"
-    )
-    (builtins.filter (m: m.name != "" && m.transform != 0 && m.enabled) config.my.monitors);
-
   workspaceLines = builtins.map
     (m:
-      "workspace = ${m.workspace}, monitor:${m.name}"
+      ''hl.workspace_rule({ workspace = "${m.workspace}", monitor = "${m.name}" })''
     )
     (builtins.filter (m: m.name != "" && m.enabled) config.my.monitors);
 
   mkWorkspaceExecOnce = entry:
     let
-      ws = "[workspace ${entry.workspace}${lib.optionalString entry.silent " silent"}]";
+      rules = "{ workspace = \"${entry.workspace}\""
+        + lib.optionalString entry.silent ", silent = true" + " }";
     in
-    "exec-once = ${ws} ${entry.command}";
+    ''hl.exec_cmd(${luaStr entry.command}, ${rules})'';
 
-  mkWorkspaceTarget = entry:
+  mkWorkspaceMatch = entry:
     let
-      parts = lib.optional (entry.class != null) "class:^(${entry.class})$"
-        ++ lib.optional (entry.title != null) "title:^(${entry.title})$";
+      parts = lib.optional (entry.class != null) ''class = "^(${entry.class})$"''
+        ++ lib.optional (entry.title != null) ''title = "^(${entry.title})$"'';
     in
     lib.concatStringsSep ", " parts;
 
   mkWindowRulesForEntry = entry:
     let
-      target = mkWorkspaceTarget entry;
+      match = mkWorkspaceMatch entry;
+      hasFloat = entry.floating || entry.size != null || entry.position != null;
     in
-    lib.optional (target != "" && (entry.floating || entry.size != null || entry.position != null)) "windowrule = float, ${target}"
-    ++ lib.optional (target != "" && entry.size != null) "windowrule = size ${toString entry.size.width} ${toString entry.size.height}, ${target}"
-    ++ lib.optional (target != "" && entry.position != null) "windowrule = move ${toString entry.position.x} ${toString entry.position.y}, ${target}";
+    lib.optional (match != "" && hasFloat)
+      ''hl.window_rule({ match = { ${match} }, float = true })''
+    ++ lib.optional (match != "" && entry.size != null)
+      ''hl.window_rule({ match = { ${match} }, size = "${toString entry.size.width} ${toString entry.size.height}" })''
+    ++ lib.optional (match != "" && entry.position != null)
+      ''hl.window_rule({ match = { ${match} }, move = "${toString entry.position.x} ${toString entry.position.y}" })'';
 
   workspaceExecOnceLines = builtins.map mkWorkspaceExecOnce cfg.core.workspaceStartup;
 
   workspaceWindowRuleLines = lib.concatLists (builtins.map mkWindowRulesForEntry cfg.core.workspaceStartup);
 
+  # Hyprland 0.57 dropped hyprlang (.conf) configs; this is now a Lua file
+  # (the `hl.*` API documented in the wiki and in the shipped hl.meta.lua
+  # stubs). Note Lua comments are `--`, not `#`.
   defaultHyprlandConf = ''
-    # ── Monitors ───────────────────────────────────────────────────────────
+    -- ── Monitors ───────────────────────────────────────────────────────────
     ${if config.my.monitors != [ ] && cfg.useMonitors then
-      (lib.concatStringsSep "\n" monitorLines)
-      + lib.optionalString (builtins.any (m: m.transform != 0 && m.enabled) config.my.monitors)
-        ("\n" + lib.concatStringsSep "\n" transformLines)
-      else
-      "monitor = ,preferred,auto,1"
+      lib.concatStringsSep "\n" monitorLines
+    else
+      ''hl.monitor({ output = "", mode = "preferred", position = "auto", scale = "auto" })''
     }
 
-    # ── Workspace assignments ─────────────────────────────────────────────
+    -- ── Workspace assignments ─────────────────────────────────────────────
     ${lib.optionalString (config.my.monitors != [ ] && cfg.useMonitors)
       (lib.concatStringsSep "\n" workspaceLines)}
 
-    # ── Autostart ──────────────────────────────────────────────────────────
-    # Mark the compositor session in systemd. graphical-session.target is
-    # RefuseManualStart and is normally started by a display-manager session
-    # manager; greetd launches Hyprland directly, so nothing did — which left
-    # xdg-desktop-portal inactive (Requisite=graphical-session.target) and OBS
-    # without its PipeWire screen/window sources. Import the Wayland env first
-    # so the portal units see WAYLAND_DISPLAY.
-    exec-once = ${pkgs.dbus}/bin/dbus-update-activation-environment --systemd WAYLAND_DISPLAY XDG_CURRENT_DESKTOP && ${pkgs.systemd}/bin/systemctl --user start hyprland-session.target
+    -- ── Autostart ──────────────────────────────────────────────────────────
+    -- Mark the compositor session in systemd. graphical-session.target is
+    -- RefuseManualStart and is normally started by a display-manager session
+    -- manager; greetd launches Hyprland directly, so nothing did — which left
+    -- xdg-desktop-portal inactive (Requisite=graphical-session.target) and OBS
+    -- without its PipeWire screen/window sources. Import the Wayland env first
+    -- so the portal units see WAYLAND_DISPLAY.
+    hl.on("hyprland.start", function()
+      hl.exec_cmd(${luaStr "${pkgs.dbus}/bin/dbus-update-activation-environment --systemd WAYLAND_DISPLAY XDG_CURRENT_DESKTOP && ${pkgs.systemd}/bin/systemctl --user start hyprland-session.target"})
     ${lib.optionalString cfg.idle.enable ''
-    exec-once = systemctl --user start hypridle.service
+      hl.exec_cmd(${luaStr "systemctl --user start hypridle.service"})
     ''}
     ${lib.optionalString cfg.notifications.enable ''
-    exec-once = mako
+      hl.exec_cmd(${luaStr "mako"})
     ''}
     ${lib.optionalString (cfg.wallpapers.enable && cfg.wallpapers.backend == "hyprpaper") ''
-    exec-once = hyprpaper -c /etc/xdg/hypr/hyprpaper.conf
+      hl.exec_cmd(${luaStr "hyprpaper -c /etc/xdg/hypr/hyprpaper.conf"})
     ''}
     ${lib.optionalString (cfg.wallpapers.enable && cfg.wallpapers.backend == "waypaper") ''
-    exec-once = waypaper --restore
+      hl.exec_cmd(${luaStr "waypaper --restore"})
     ''}
     ${lib.optionalString (cfg.wallpapers.enable && cfg.wallpapers.backend == "swaybg" && cfg.wallpapers.images != []) ''
-    exec-once = swaybg ${lib.concatStringsSep " " (builtins.map mkSwaybgFlag cfg.wallpapers.images)} -m fill
+      hl.exec_cmd(${luaStr "swaybg ${lib.concatStringsSep " " (builtins.map mkSwaybgFlag cfg.wallpapers.images)} -m fill"})
     ''}
     ${lib.optionalString cfg.bar.enable ''
-    exec-once = systemctl --user start waybar
+      hl.exec_cmd(${luaStr "systemctl --user start waybar"})
     ''}
     ${lib.optionalString config.my.system.bluetooth.enable ''
-    exec-once = blueman-applet
+      hl.exec_cmd(${luaStr "blueman-applet"})
     ''}
     ${lib.optionalString cfg.utilities.enable ''
-    exec-once = nm-applet
+      hl.exec_cmd(${luaStr "nm-applet"})
     ''}
-    exec-once = /run/current-system/sw/libexec/polkit-gnome-authentication-agent-1
-    ${lib.concatMapStringsSep "\n" (cmd: "exec-once = ${cmd}") cfg.core.extraExecOnce}
+      hl.exec_cmd(${luaStr "/run/current-system/sw/libexec/polkit-gnome-authentication-agent-1"})
+    ${lib.concatMapStringsSep "\n" (cmd: "  hl.exec_cmd(${luaStr cmd})") cfg.core.extraExecOnce}
     ${lib.concatStringsSep "\n" workspaceExecOnceLines}
+    end)
 
-    # ── Environment variables ───────────────────────────────────────────────
-    env = XDG_CURRENT_DESKTOP,Hyprland
-    env = XDG_SESSION_TYPE,wayland
-    env = XDG_SESSION_DESKTOP,Hyprland
-    env = GTK_THEME,Adwaita:dark
-    env = XCURSOR_THEME,Adwaita
-    env = XCURSOR_SIZE,24
+    -- ── Environment variables ───────────────────────────────────────────────
+    hl.env("XDG_CURRENT_DESKTOP", "Hyprland")
+    hl.env("XDG_SESSION_TYPE", "wayland")
+    hl.env("XDG_SESSION_DESKTOP", "Hyprland")
+    hl.env("GTK_THEME", "Adwaita:dark")
+    hl.env("XCURSOR_THEME", "Adwaita")
+    hl.env("XCURSOR_SIZE", "24")
     ${lib.optionalString cfg.nvidia.enable ''
-    env = LIBVA_DRIVER_NAME,nvidia
-    env = __GLX_VENDOR_LIBRARY_NAME,nvidia
-    env = WLR_NO_HARDWARE_CURSORS,1
+    hl.env("LIBVA_DRIVER_NAME", "nvidia")
+    hl.env("__GLX_VENDOR_LIBRARY_NAME", "nvidia")
+    hl.env("WLR_NO_HARDWARE_CURSORS", "1")
     ''}
 
-    # ── General ────────────────────────────────────────────────────────────
-    general {
-        gaps_in          = 4
-        gaps_out         = 8
-        border_size      = 2
-        col.active_border   = rgba(89b4faff) rgba(cba6f7ff) 45deg
-        col.inactive_border = rgba(313244ff)
-        layout           = dwindle
-        resize_on_border = true
-    }
+    -- ── General ────────────────────────────────────────────────────────────
+    hl.config({
+      general = {
+        gaps_in = 4,
+        gaps_out = 8,
+        border_size = 2,
+        col = {
+          active_border = { colors = {"rgba(89b4faff)", "rgba(cba6f7ff)"}, angle = 45 },
+          inactive_border = "rgba(313244ff)",
+        },
+        layout = "dwindle",
+        resize_on_border = true,
+      },
+    })
 
-    # ── Animations ─────────────────────────────────────────────────────────
-    animations {
-        enabled = true
-    }
+    -- ── Animations ─────────────────────────────────────────────────────────
+    hl.config({ animations = { enabled = true } })
 
-    # ── Input ──────────────────────────────────────────────────────────────
-    input {
-        kb_layout    = us
-        follow_mouse = 1
-        sensitivity  = 0
-        ${lib.optionalString (coreCfg.accelProfile != null) "accel_profile = ${coreCfg.accelProfile}"}
-        touchpad {
-            natural_scroll    = true
-            tap-to-click      = true
-            drag_lock         = true
-        }
-    }
+    -- ── Input ──────────────────────────────────────────────────────────────
+    hl.config({
+      input = {
+        kb_layout = "us",
+        follow_mouse = 1,
+        sensitivity = 0,
+        ${lib.optionalString (coreCfg.accelProfile != null) ''accel_profile = "${coreCfg.accelProfile}",''}
+        touchpad = {
+          natural_scroll = true,
+          tap_to_click = true,
+          drag_lock = true,
+        },
+      },
+    })
 
-    # ── Layout ─────────────────────────────────────────────────────────────
-    dwindle {
-        preserve_split = true
-    }
+    -- ── Layout ─────────────────────────────────────────────────────────────
+    hl.config({ dwindle = { preserve_split = true } })
+    hl.config({ master = { new_status = "master" } })
 
-    master {
-        new_status = master
-    }
-
-    # ── Misc ───────────────────────────────────────────────────────────────
-    misc {
-        ${lib.optionalString hasWallpaperContent "force_default_wallpaper = 0"}
-        disable_hyprland_logo   = true
-    }
+    -- ── Misc ───────────────────────────────────────────────────────────────
+    hl.config({
+      misc = {
+        ${lib.optionalString hasWallpaperContent "force_default_wallpaper = 0,"}
+        disable_hyprland_logo = true,
+      },
+    })
 
     ${lib.optionalString coreCfg.debug.enable ''
-    # ── Debug / Logging ─────────────────────────────────────────────────────
-    debug {
-        disable_logs   = ${if coreCfg.debug.disableLogs then "true" else "false"}
-        gl_debugging   = ${if coreCfg.debug.glDebugging then "true" else "false"}
-    }
+    -- ── Debug / Logging ─────────────────────────────────────────────────────
+    hl.config({
+      debug = {
+        disable_logs = ${if coreCfg.debug.disableLogs then "true" else "false"},
+        gl_debugging = ${if coreCfg.debug.glDebugging then "true" else "false"},
+      },
+    })
     ''}
 
-    # ── Window rules ───────────────────────────────────────────────────────
+    -- ── Window rules ───────────────────────────────────────────────────────
     ${lib.concatStringsSep "\n" workspaceWindowRuleLines}
-    ${lib.concatMapStringsSep "\n" (r: "windowrule = ${r}") cfg.core.extraWindowRules}
+    ${lib.concatStringsSep "\n" cfg.core.extraWindowRules}
 
-    # ── Keybinds ───────────────────────────────────────────────────────────
-    $mod = SUPER
+    -- ── Keybinds ───────────────────────────────────────────────────────────
+    local mainMod = "SUPER"
 
-    # Core
-    bind = $mod,       Return, exec, ${lib.getExe cfg.terminal}
-    bind = $mod,       Q,      killactive
-    bind = $mod SHIFT, E,      exit
-    bind = $mod,       F,      fullscreen, 0
-    bind = $mod SHIFT, F,      togglefloating
-    bind = $mod,       P,      pseudo
+    -- Core
+    hl.bind(mainMod .. " + Return", hl.dsp.exec_cmd(${luaStr (lib.getExe cfg.terminal)}))
+    hl.bind(mainMod .. " + Q", hl.dsp.window.close())
+    hl.bind(mainMod .. " + SHIFT + E", hl.dsp.exit())
+    hl.bind(mainMod .. " + F", hl.dsp.window.fullscreen(0))
+    hl.bind(mainMod .. " + SHIFT + F", hl.dsp.window.float({ action = "toggle" }))
+    hl.bind(mainMod .. " + P", hl.dsp.window.pseudo())
 
-    # Launcher / utilities
+    -- Launcher / utilities
     ${lib.optionalString cfg.launcher.enable ''
-    bind = $mod,       D,      exec, wofi --show drun
+    hl.bind(mainMod .. " + D", hl.dsp.exec_cmd(${luaStr "wofi --show drun"}))
     ''}
-    bind = $mod,       E,      exec, thunar
+    hl.bind(mainMod .. " + E", hl.dsp.exec_cmd(${luaStr "thunar"}))
     ${lib.optionalString cfg.lockscreen.enable ''
-    bind = $mod,       L,      exec, swaylock
+    hl.bind(mainMod .. " + L", hl.dsp.exec_cmd(${luaStr "swaylock"}))
     ''}
     ${lib.optionalString cfg.screenshot.enable ''
-    bind = $mod SHIFT, S,      exec, grim -g "$(slurp)" - | wl-copy
-    bind = ,           Print,  exec, grim ~/Pictures/screenshot-$(date +%F_%T).png
+    hl.bind(mainMod .. " + SHIFT + S", hl.dsp.exec_cmd(${luaStr ''grim -g "$(slurp)" - | wl-copy''}))
+    hl.bind("Print", hl.dsp.exec_cmd(${luaStr ''grim ~/Pictures/screenshot-$(date +%F_%T).png''}))
     ''}
     ${lib.optionalString cfg.colorpicker.enable ''
-    bind = $mod SHIFT, P,      exec, hyprpicker -a
+    hl.bind(mainMod .. " + SHIFT + P", hl.dsp.exec_cmd(${luaStr "hyprpicker -a"}))
     ''}
 
-    # Volume
-    bindel = , XF86AudioRaiseVolume,  exec, wpctl set-volume -l 1.5 @DEFAULT_AUDIO_SINK@ 5%+
-    bindel = , XF86AudioLowerVolume,  exec, wpctl set-volume @DEFAULT_AUDIO_SINK@ 5%-
-    bindl  = , XF86AudioMute,         exec, wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle
-    bindl  = , XF86AudioMicMute,      exec, wpctl set-mute @DEFAULT_AUDIO_SOURCE@ toggle
+    -- Volume
+    hl.bind("XF86AudioRaiseVolume", hl.dsp.exec_cmd(${luaStr "wpctl set-volume -l 1.5 @DEFAULT_AUDIO_SINK@ 5%+"}), { locked = true, repeating = true })
+    hl.bind("XF86AudioLowerVolume", hl.dsp.exec_cmd(${luaStr "wpctl set-volume @DEFAULT_AUDIO_SINK@ 5%-"}), { locked = true, repeating = true })
+    hl.bind("XF86AudioMute", hl.dsp.exec_cmd(${luaStr "wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle"}), { locked = true })
+    hl.bind("XF86AudioMicMute", hl.dsp.exec_cmd(${luaStr "wpctl set-mute @DEFAULT_AUDIO_SOURCE@ toggle"}), { locked = true })
 
-    # Brightness
-    bindel = , XF86MonBrightnessUp,   exec, brightnessctl set 5%+
-    bindel = , XF86MonBrightnessDown, exec, brightnessctl set 5%-
+    -- Brightness
+    hl.bind("XF86MonBrightnessUp", hl.dsp.exec_cmd(${luaStr "brightnessctl set 5%+"}), { locked = true, repeating = true })
+    hl.bind("XF86MonBrightnessDown", hl.dsp.exec_cmd(${luaStr "brightnessctl set 5%-"}), { locked = true, repeating = true })
 
-    # Media
-    bindl  = , XF86AudioPlay,  exec, playerctl play-pause
-    bindl  = , XF86AudioNext,  exec, playerctl next
-    bindl  = , XF86AudioPrev,  exec, playerctl previous
-    bindl  = , XF86AudioStop,  exec, playerctl stop
+    -- Media
+    hl.bind("XF86AudioPlay", hl.dsp.exec_cmd(${luaStr "playerctl play-pause"}), { locked = true })
+    hl.bind("XF86AudioNext", hl.dsp.exec_cmd(${luaStr "playerctl next"}), { locked = true })
+    hl.bind("XF86AudioPrev", hl.dsp.exec_cmd(${luaStr "playerctl previous"}), { locked = true })
+    hl.bind("XF86AudioStop", hl.dsp.exec_cmd(${luaStr "playerctl stop"}), { locked = true })
 
-    # Host-local binds (my.desktop.hyprland.core.extraBinds). Emitted last so a
-    # host CAN intentionally shadow one of the binds above.
-    ${lib.concatMapStringsSep "\n" (b: "bind = ${b}") coreCfg.extraBinds}
+    -- Host-local binds (my.desktop.hyprland.core.extraBinds). Emitted last so a
+    -- host CAN intentionally shadow one of the binds above. Each entry is a
+    -- complete Lua statement (e.g. an hl.bind call); `mainMod` is in scope.
+    ${lib.concatStringsSep "\n" coreCfg.extraBinds}
 
-    # Focus
-    bind = $mod, left,  movefocus, l
-    bind = $mod, right, movefocus, r
-    bind = $mod, up,    movefocus, u
-    bind = $mod, down,  movefocus, d
-    bind = $mod, H,     movefocus, l
-    bind = $mod, L,     movefocus, r
-    bind = $mod, K,     movefocus, u
-    bind = $mod, J,     movefocus, d
+    -- Focus
+    hl.bind(mainMod .. " + left", hl.dsp.focus({ direction = "left" }))
+    hl.bind(mainMod .. " + right", hl.dsp.focus({ direction = "right" }))
+    hl.bind(mainMod .. " + up", hl.dsp.focus({ direction = "up" }))
+    hl.bind(mainMod .. " + down", hl.dsp.focus({ direction = "down" }))
+    hl.bind(mainMod .. " + H", hl.dsp.focus({ direction = "left" }))
+    hl.bind(mainMod .. " + L", hl.dsp.focus({ direction = "right" }))
+    hl.bind(mainMod .. " + K", hl.dsp.focus({ direction = "up" }))
+    hl.bind(mainMod .. " + J", hl.dsp.focus({ direction = "down" }))
 
-    # Move
-    bind = $mod SHIFT, left,  movewindow, l
-    bind = $mod SHIFT, right, movewindow, r
-    bind = $mod SHIFT, up,    movewindow, u
-    bind = $mod SHIFT, down,  movewindow, d
+    -- Move
+    hl.bind(mainMod .. " + SHIFT + left", hl.dsp.window.move({ direction = "left" }))
+    hl.bind(mainMod .. " + SHIFT + right", hl.dsp.window.move({ direction = "right" }))
+    hl.bind(mainMod .. " + SHIFT + up", hl.dsp.window.move({ direction = "up" }))
+    hl.bind(mainMod .. " + SHIFT + down", hl.dsp.window.move({ direction = "down" }))
 
-    # Resize
-    binde = $mod CTRL, right, resizeactive,  20 0
-    binde = $mod CTRL, left,  resizeactive, -20 0
-    binde = $mod CTRL, up,    resizeactive,  0 -20
-    binde = $mod CTRL, down,  resizeactive,  0  20
+    -- Resize
+    hl.bind(mainMod .. " + CTRL + right", hl.dsp.window.resize({ x = 20, y = 0 }), { repeating = true })
+    hl.bind(mainMod .. " + CTRL + left", hl.dsp.window.resize({ x = -20, y = 0 }), { repeating = true })
+    hl.bind(mainMod .. " + CTRL + up", hl.dsp.window.resize({ x = 0, y = -20 }), { repeating = true })
+    hl.bind(mainMod .. " + CTRL + down", hl.dsp.window.resize({ x = 0, y = 20 }), { repeating = true })
 
-    # Workspaces 1-9
+    -- Workspaces 1-9
     ${lib.concatMapStringsSep "\n" (n: ''
-    bind = $mod,       ${toString n}, workspace,       ${toString n}
-    bind = $mod SHIFT, ${toString n}, movetoworkspace, ${toString n}
+    hl.bind(mainMod .. " + ${toString n}", hl.dsp.focus({ workspace = ${toString n} }))
+    hl.bind(mainMod .. " + SHIFT + ${toString n}", hl.dsp.window.move({ workspace = ${toString n} }))
     '') (lib.range 1 9)}
 
-    # Scratchpad
-    bind = $mod,       S, togglespecialworkspace, magic
-    bind = $mod SHIFT, S, movetoworkspace,        special:magic
+    -- Scratchpad
+    hl.bind(mainMod .. " + S", hl.dsp.workspace.toggle_special("magic"))
+    hl.bind(mainMod .. " + SHIFT + S", hl.dsp.window.move({ workspace = "special:magic" }))
 
-    # Mouse binds
-    bindm = $mod, mouse:272, movewindow
-    bindm = $mod, mouse:273, resizewindow
+    -- Mouse binds
+    hl.bind(mainMod .. " + mouse:272", hl.dsp.window.drag(), { mouse = true })
+    hl.bind(mainMod .. " + mouse:273", hl.dsp.window.resize(), { mouse = true })
   '';
 in
 {
@@ -273,7 +290,7 @@ in
     };
 
     environment.sessionVariables = {
-      HYPRLAND_CONFIG = "/etc/xdg/hypr/hyprland.conf";
+      HYPRLAND_CONFIG = "/etc/xdg/hypr/hyprland.lua";
       NIXOS_OZONE_WL = "1";
       MOZ_ENABLE_WAYLAND = "1";
       QT_QPA_PLATFORM = "wayland";
@@ -288,9 +305,9 @@ in
       cfg.terminal
     ] ++ cfg.extraPackages;
 
-    environment.etc."xdg/hypr/hyprland.conf".text = defaultHyprlandConf;
+    environment.etc."xdg/hypr/hyprland.lua".text = defaultHyprlandConf;
 
-    # Session target the compositor starts (see the autostart exec-once above).
+    # Session target the compositor starts (see the autostart hl.on above).
     # It pulls in graphical-session.target as a dependency — the only way to
     # start that RefuseManualStart unit — so portals and every unit wired to
     # hyprland-session.target (pyprland, waybar, wallpapers) actually run.

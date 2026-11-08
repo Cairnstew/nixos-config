@@ -141,11 +141,11 @@ in
 
             # 1. Config file
             echo "--- [1/6] Config file ---"
-            HYPR_CONF="/etc/xdg/hypr/hyprland.conf"
+            HYPR_CONF="/etc/xdg/hypr/hyprland.lua"
             if [ -f "$HYPR_CONF" ] && [ "$(stat -c%s "$HYPR_CONF")" -gt 100 ]; then
-              pass "hyprland.conf exists ($(stat -c%s "$HYPR_CONF") bytes)"
+              pass "hyprland.lua exists ($(stat -c%s "$HYPR_CONF") bytes)"
             else
-              fail "hyprland.conf missing or too small"
+              fail "hyprland.lua missing or too small"
             fi
 
             # Opacity: verify decoration settings (not bare windowrule)
@@ -154,14 +154,6 @@ in
                 pass "Opacity: decoration:active_opacity/inactive_opacity in config"
               else
                 fail "Opacity: decoration:active_opacity/inactive_opacity missing from config"
-              fi
-              if grep -q "^windowrule = opacity [0-9.]" "$HYPR_CONF" 2>/dev/null; then
-                if grep -q "^windowrule = opacity [0-9.].*, " "$HYPR_CONF" 2>/dev/null; then
-                  pass "Opacity: per-class windowrule overrides use class: targets (valid)"
-                fi
-                if grep -q "^windowrule = opacity [0-9.]* [0-9.]*$" "$HYPR_CONF" 2>/dev/null; then
-                  fail "Opacity: bare 'windowrule = opacity' without class target (silently ignored by Hyprland)"
-                fi
               fi
             fi
 
@@ -371,10 +363,10 @@ in
             echo "--- [6/6] Bluetooth ---"
             ${mkBluetoothBinCheck "blueman-applet" "${pkgs.blueman}/bin/blueman-applet"}
             ${mkBluetoothBinCheck "bluetoothctl" "${pkgs.bluez}/bin/bluetoothctl"}
-            if grep -q "exec-once = blueman-applet" "$HYPR_CONF" 2>/dev/null; then
-              pass "hyprland.conf includes exec-once = blueman-applet"
+            if grep -q 'hl.exec_cmd("blueman-applet")' "$HYPR_CONF" 2>/dev/null; then
+              pass "hyprland.lua includes hl.exec_cmd blueman-applet"
             else
-              fail "hyprland.conf missing exec-once = blueman-applet"
+              fail "hyprland.lua missing hl.exec_cmd blueman-applet"
             fi
             if systemctl is-active bluetooth >/dev/null 2>&1; then
               pass "bluetooth service is active"
@@ -414,16 +406,16 @@ in
 
             # ── 1. Config file ──
             echo "--- [1/9] Config ---"
-            HYPR_CONF="/etc/xdg/hypr/hyprland.conf"
+            HYPR_CONF="/etc/xdg/hypr/hyprland.lua"
             if [ -f "$HYPR_CONF" ]; then
               SIZE=$(stat -c%s "$HYPR_CONF")
               if [ "$SIZE" -gt 100 ]; then
-                pass "hyprland.conf is $SIZE bytes"
+                pass "hyprland.lua is $SIZE bytes"
               else
-                fail "hyprland.conf is only $SIZE bytes"
+                fail "hyprland.lua is only $SIZE bytes"
               fi
             else
-              fail "hyprland.conf not found"
+              fail "hyprland.lua not found"
             fi
 
             # Opacity: verify decoration settings (not bare windowrule)
@@ -432,11 +424,6 @@ in
                 pass "Opacity: decoration:active_opacity/inactive_opacity in config"
               else
                 fail "Opacity: decoration:active_opacity/inactive_opacity missing from config"
-              fi
-              if grep -q "^windowrule = opacity [0-9.]* [0-9.]*$" "$HYPR_CONF" 2>/dev/null; then
-                fail "Opacity: bare 'windowrule = opacity' without class target (silently ignored by Hyprland)"
-              elif grep -q "^windowrule = opacity [0-9.]" "$HYPR_CONF" 2>/dev/null; then
-                pass "Opacity: per-class windowrule overrides use class: targets (valid)"
               fi
             fi
 
@@ -650,10 +637,10 @@ in
             echo "--- [9/9] Bluetooth ---"
             ${mkBluetoothBinCheck "blueman-applet" "${pkgs.blueman}/bin/blueman-applet"}
             ${mkBluetoothBinCheck "bluetoothctl" "${pkgs.bluez}/bin/bluetoothctl"}
-            if grep -q "exec-once = blueman-applet" "$HYPR_CONF" 2>/dev/null; then
-              pass "hyprland.conf includes exec-once = blueman-applet"
+            if grep -q 'hl.exec_cmd("blueman-applet")' "$HYPR_CONF" 2>/dev/null; then
+              pass "hyprland.lua includes hl.exec_cmd blueman-applet"
             else
-              fail "hyprland.conf missing exec-once = blueman-applet"
+              fail "hyprland.lua missing hl.exec_cmd blueman-applet"
             fi
             if systemctl is-active bluetooth >/dev/null 2>&1; then
               pass "bluetooth service is active"
