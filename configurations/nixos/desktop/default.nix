@@ -179,7 +179,12 @@
         }
       ];
 
-      extraExecOnce = [ "playerctld daemon" ];
+      # Start the 1Password app so its CLI app integration and SSH agent work
+      # without a manual launch; --silent starts it minimised.
+      extraExecOnce = [
+        "playerctld daemon"
+        "1password --silent"
+      ];
 
       # Launch the Project Zomboid client host with the ZombieBuddy JVM agent.
       # Steam's launch-options field is per-machine and un-versioned, so the
@@ -586,17 +591,20 @@
   # NO dedicated server on this host. The world is hosted from the game's own
   # in-game Host button instead — see servers/viewpoint.nix → clientHost.
   #
-  # TEMPORARILY DISABLED (2026-10-08): with `enable = true` this runs
-  # project-zomboid-install.service (a steamcmd validate), which now fails the
-  # whole `nixos-rebuild switch` (exit 4): no `cairnsgerry` login token is cached
-  # under HOME=/mnt/data/project-zomboid ("Cached credentials not found"), and a
-  # systemd unit has no TTY to answer the password prompt it falls back to. To
-  # restore: run the one-time login (see `steamLogin` below) or drop it, then
-  # set `enable = true`. When enabled it renders the client config and keeps the
-  # shared Workshop download current; the server itself stays off via
-  # `servers.viewpoint.enable = false`.
+  # CLIENT-ONLY (2026-10-30): top-level `enable = true` renders `clientHosts`
+  # (~/Zomboid/Server/viewpoint.ini next to the servertest save) via the Home
+  # Manager half, but `updateOnStart = false` keeps the shared steamcmd install
+  # unit from running — no `cairnsgerry` token is cached under
+  # HOME=/mnt/data/project-zomboid and a unit has no TTY for the fallback
+  # prompt (exit 4, fails the whole switch). The server itself stays off via
+  # `servers.viewpoint.enable = false`. Mods stay pre-seeded by hand in
+  # ~/Zomboid/mods (`home.installMods = false`, libraryfolders.vdf clobber —
+  # see projectzomboid-server/config.nix); re-run pz-client-mods by hand when
+  # the pack changes. To restore the shared download: one-time login (see
+  # `steamLogin` below), then flip `updateOnStart` back to true.
   services.project-zomboid-servers = {
-    enable = false;
+    enable = true;
+    updateOnStart = false;
     servers.viewpoint.enable = false;
 
     # Authenticate the shared steamcmd install as cairnsgerry instead of

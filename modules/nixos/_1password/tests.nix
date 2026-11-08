@@ -5,8 +5,12 @@ in
 {
   assertions = [
     {
-      assertion = !cfg.enable || config.security.polkit.enable;
-      message = "1Password requires polkit to be enabled.";
+      assertion = !cfg.gui.enable || cfg.enable;
+      message = "my.programs._1password.gui.enable requires my.programs._1password.enable.";
+    }
+    {
+      assertion = !cfg.gui.enable || config.security.polkit.enable;
+      message = "The 1Password desktop app requires polkit to be enabled.";
     }
   ];
 }

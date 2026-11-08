@@ -305,6 +305,19 @@ in
           || cfg.selfImprove.efficiencyLensMinCost >= 0;
         message = "my.programs.opencode.selfImprove.efficiencyLensMinCost must be null or a non-negative number.";
       }
+      # ── stale-service guard state must be runtime state, not config ───────
+      # ~/.config/opencode is home-manager managed (every entry is a store
+      # symlink), so a marker written there would be clobbered on the next
+      # switch — or worse, make the tree dirty. Keep the fingerprint + marker
+      # under ~/.local/state/opencode.
+      {
+        assertion =
+          lib.hasPrefix "${config.home.homeDirectory}/.local/state/"
+            (toString cfg.serviceStaleGuard.statePath)
+          && lib.hasPrefix "${config.home.homeDirectory}/.local/state/"
+            (toString cfg.serviceStaleGuard.markerPath);
+        message = "my.programs.opencode.serviceStaleGuard: statePath and markerPath must live under ~/.local/state/… — ~/.config/opencode is home-manager managed and the marker/fingerprint are runtime state.";
+      }
     ] ++ (lib.concatLists (lib.mapAttrsToList
       (alias: ref: [
         {

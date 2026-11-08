@@ -163,6 +163,56 @@ in
       };
     };
 
+    serviceStaleGuard = {
+      enable = mkOption {
+        type = types.bool;
+        default = true;
+        description = ''
+          Mark the shared background service as stale when a home-manager
+          activation changes the files it loads at boot (local plugins, custom
+          tools, and the <filename>home-manager*.json</filename> /
+          <filename>ensemble.json</filename> / <filename>model-fallback.json</filename>
+          config layers), then restart it lazily on the next session start.
+
+          OpenCode 2 caches plugin modules for the life of the service. Because
+          home-manager renders those files as store symlinks, a switch retargets
+          them and the running service either keeps executing the old plugin
+          set or reports <literal>failed to load plugin: Cannot find module
+          '/nix/store/…'</literal> once the previous store path is garbage
+          collected. The marker makes the wrapper stop the old service before
+          dispatching a session, so the replacement loads the new files. The
+          rebuild itself never kills a running session (e.g. a
+          <command>nixos-rebuild</command> started from inside opencode); set
+          <literal>OPENCODE_SERVICE_STALE_GUARD_OFF=1</literal> to skip the
+          check for one invocation.
+        '';
+      };
+
+      statePath = mkOption {
+        type = types.path;
+        default = "${config.home.homeDirectory}/.local/state/opencode/service-payload.sha256";
+        description = ''
+          Record of the payload fingerprint the running service was last
+          started with. Runtime state only — never place this under
+          <filename>~/.config/opencode</filename>, which is home-manager
+          managed.
+        '';
+      };
+
+      markerPath = mkOption {
+        type = types.path;
+        default = "${config.home.homeDirectory}/.local/state/opencode/service-stale";
+        description = ''
+          Marker written by activation when the boot-time payload changed. The
+          <command>opencode</command> wrapper consumes it on the next session
+          start (bare TUI, <literal>run</literal>, <literal>mini</literal>,
+          <literal>serve</literal>, <literal>acp</literal>) by stopping the
+          stale service; explicit <command>opencode service …</command> commands
+          never consume it.
+        '';
+      };
+    };
+
     enableMcpIntegration = mkOption {
       type = types.bool;
       default = false;

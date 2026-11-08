@@ -151,6 +151,12 @@
         shellHook = ''
           export EDITOR=''${EDITOR:-nano}
 
+          # Prefer the NixOS setgid wrapper over the plain CLI in this shell's
+          # PATH: only the wrapper is in the onepassword-cli group, which the
+          # 1Password app-integration socket requires. Falls back to the
+          # packaged CLI on hosts without programs._1password.
+          export PATH="/run/wrappers/bin:$PATH"
+
           echo ""
           echo "=== Secrets DevShell ==="
           echo "Available commands:"

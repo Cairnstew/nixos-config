@@ -1,0 +1,20 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+.pytest_cache/
+.ruff_cache/
+*.egg-info/
+dist/
+build/
+
+# uv cache relocated into the project by the dev shell (flake.nix)
+.uv-cache/
+
+# Project-local Jupyter data dir, if tools/install_kernel.py is pointed at one
+.jupyter-data/
+
+# Nix
+result
+result-*
+/.direnv

@@ -284,6 +284,7 @@ Home Manager modules for user-level configuration.
 | `minecraft/` | Minecraft launcher (Prism Launcher or Modrinth App) with optional gamescope wrapper |
 | `obsidian/` | Obsidian note-taking with optional git-backed vault clone |
 | `opencode/` | OpenCode AI coding agent — providers, keyFiles, skills, commands, tools, MCP |
+| `qutebrowser/` | qutebrowser with 1Password CLI (`op`) userscript and Google sign-in User-Agent fix |
 | `rstudio/` | RStudio IDE with custom R packages and fonts |
 | `spotify/` | Spotify desktop or spotatui TUI client |
 | `squid-proxy-client/` | Squid proxy client — qutebrowser configured for the server forward-proxy |
@@ -341,7 +342,7 @@ Nixpkgs overlays for package modifications.
 
 | File | Description |
 |------|-------------|
-| `default.nix` | All overlays combined [→ overlays.default] |
+| `default.nix` | All overlays combined; also pins `qutebrowser` to the Cairnstew fork (native `:onepass`) [→ overlays.default] |
 
 ## cloud/
 
@@ -367,6 +368,7 @@ Flake templates for `nix flake init`.
 | `godot/` | Godot template |
 | `haskell/` | Haskell development template |
 | `home-module/` | Home Manager module template |
+| `jupyter-zed/` | Jupyter notebooks in Zed on a uv-managed venv (kernelspec wiring) |
 | `lib/` | Nix library template |
 | `nixos-module/` | NixOS module template |
 | `node/` | Node.js development template |
