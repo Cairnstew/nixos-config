@@ -51,6 +51,16 @@ in
     # the world's name, not just a filename.
     clientHost.name = "viewpoint";
 
+    # Open the two UDP ports for the client host. The server-level
+    # `openFirewall` above is wired from the ENABLED servers, and this one is
+    # `enable = false`, so without this the Host button binds 16261/16262 to a
+    # closed firewall and nobody can reach the world.
+    #
+    # Necessary but not sufficient: PZ also tells joining clients the host's
+    # PUBLIC address (`SERVER: server-address@<wan-ip>:16261`), so the router
+    # still has to forward the same two ports. See docs/troubleshooting.md.
+    clientHost.openFirewall = true;
+
     # Do not start at boot. Flip this to true (or `systemctl start
     # project-zomboid-viewpoint`) when you want it up. The console FIFO socket
     # still exists, so the web console can bring it up on demand.
@@ -104,6 +114,17 @@ in
     maxPlayers = 16;
 
     open = true; # anyone may join
+
+    # Join password, rendered into `~/Zomboid/Server/viewpoint.ini` by the
+    # client-host activation (the value is read from the agenix secret at that
+    # moment, so it never reaches the Nix store). One password for one friend;
+    # this is the only gate — `open = true` still means no account is needed.
+    passwordFile = config.age.secrets.pz-join-password.path;
+
+    # `upnp = true` is deliberately NOT set: Build 42 dropped UPnP (the 42.21 jar
+    # has no UPnP class, and the module warns if the option is set). The router
+    # mapping is maintained by `systemd.services.pz-upnp-forward` in
+    # modules/nixos/projectzomboid-server/config.nix instead.
 
     adminAccount = {
       username = "seanc";
