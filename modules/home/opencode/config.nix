@@ -41,6 +41,47 @@ let
     set -euo pipefail
     export PATH="${pkgs.systemd}/bin:${pkgs.gnugrep}/bin:${pkgs.coreutils}/bin:$PATH"
 
+    ${optionalString cfg.serviceStaleGuard.enable ''
+      # ── Stale-service guard (lazy half of my.programs.opencode.serviceStaleGuard) ──
+      # Home-manager activation fingerprints the boot-time payload (local
+      # plugins, custom tools, config layers) and drops a marker when it
+      # changed. OpenCode 2 caches plugin modules for the whole life of the
+      # background service and cannot re-resolve the retargeted store symlinks,
+      # so the old service would keep running the previous plugin set (or fail
+      # with "Cannot find module '/nix/store/…'" once that path is GC'd).
+      # Stop it here, before dispatch, and let this invocation spawn a fresh
+      # one — the rebuild itself never kills the session that ran it.
+      if [[ -z "''${OPENCODE_SERVICE_STALE_GUARD_OFF:-}" && -e ${cfg.serviceStaleGuard.markerPath} ]]; then
+        stale_first=""
+        for a in "$@"; do
+          case "$a" in
+            -*) continue ;;
+            *) stale_first="$a"; break ;;
+          esac
+        done
+        case "''${1:-}" in
+          -v|--version|-h|--help|--completions|--wizard)
+            # Informational invocations never need the service.
+            ;;
+          *)
+            if [ "$stale_first" = "service" ]; then
+              # Explicit service management supersedes the marker — but only a
+              # start/restart actually refreshes the payload.
+              case "''${2:-}" in
+                start|restart) rm -f ${cfg.serviceStaleGuard.markerPath} ;;
+              esac
+            elif [ -z "$stale_first" ] || [[ " run mini serve acp " == *" $stale_first "* ]]; then
+              if ${pkgs.procps}/bin/pgrep -f 'serve --service' >/dev/null 2>&1; then
+                ${pkgs.coreutils}/bin/timeout 10 ${opencodeWrapped}/bin/opencode service stop >/dev/null 2>&1 || true
+                echo "opencode: stopped the stale background service (plugins/config changed since it started)" >&2
+              fi
+              rm -f ${cfg.serviceStaleGuard.markerPath}
+            fi
+            ;;
+        esac
+      fi
+    ''}
+
     ${optionalString cfg.sessionGate.enable ''
       if [[ -z "''${OPENCODE_SESSION_GATED:-}" ]]; then
         export OPENCODE_SESSION_GATED=1
@@ -706,6 +747,66 @@ in
               else { text = src; };
           })
         cfg.pluginFiles);
+    })
+
+    # ── Stale background-service marker ─────────────────────────────────────
+    # OpenCode 2 loads plugins, custom tools and the config layers exactly once
+    # per background service, and caches plugin modules for that process's
+    # lifetime. Home-manager renders all of them as store symlinks, so a switch
+    # retargets them: the running service then keeps executing the previous
+    # plugin set, or (once the old store path is garbage collected) logs
+    # "failed to load plugin: Cannot find module '/nix/store/…'" and runs
+    # without nixos-tools/self-improve-guard entirely. It cannot recover from
+    # inside; only a new process loads the new files.
+    #
+    # Fingerprint the files the service reads at boot by content (an unchanged
+    # payload keeps the same fingerprint even though the rest of the tree
+    # moves) and drop a marker on change. The CLI wrapper (opencodeGated above)
+    # consumes it on the next session start. Deliberately NOT a
+    # stop-during-activation: `nixos-rebuild` is routinely run from inside an
+    # opencode session, and activation killing the service would kill that
+    # session (see AGENT.md's note on this trap).
+    (mkIf cfg.serviceStaleGuard.enable {
+      home.activation.opencodeServiceStaleMarker =
+        lib.hm.dag.entryAfter [ "writeBoundary" ] ''
+          verboseEcho "Checking OpenCode background-service payload..."
+
+          fingerprint=$(
+            {
+              # Hash contents, not resolved targets: a home-manager symlink and
+              # a hand-placed real file must both be detected when they change,
+              # and including the file name makes renames/additions visible.
+              for f in ${config.home.homeDirectory}/.config/opencode/plugins/* \
+                       ${config.home.homeDirectory}/.config/opencode/tools/*; do
+                [ -f "$f" ] || continue
+                printf '%s %s\n' "''${f##*/}" \
+                  "$(${pkgs.coreutils}/bin/sha256sum < "$f" | ${pkgs.coreutils}/bin/cut -d' ' -f1)"
+              done
+              for f in ${config.home.homeDirectory}/.config/opencode/home-manager.json \
+                       ${config.home.homeDirectory}/.config/opencode/home-manager-cli.json \
+                       ${config.home.homeDirectory}/.config/opencode/ensemble.json \
+                       ${config.home.homeDirectory}/.config/opencode/model-fallback.json \
+                       ${config.home.homeDirectory}/.config/opencode/self-improve.json; do
+                [ -f "$f" ] || continue
+                printf '%s %s\n' "''${f##*/}" \
+                  "$(${pkgs.coreutils}/bin/sha256sum < "$f" | ${pkgs.coreutils}/bin/cut -d' ' -f1)"
+              done
+            } | ${pkgs.coreutils}/bin/sort \
+              | ${pkgs.coreutils}/bin/sha256sum \
+              | ${pkgs.coreutils}/bin/cut -d' ' -f1
+          )
+
+          state=${cfg.serviceStaleGuard.statePath}
+          marker=${cfg.serviceStaleGuard.markerPath}
+          mkdir -p "$(dirname "$state")"
+          if [ "$fingerprint" != "$(cat "$state" 2>/dev/null || true)" ]; then
+            printf '%s\n' "$fingerprint" > "$state"
+            : > "$marker"
+            verboseEcho "  plugins/config changed since the service started:"
+            verboseEcho "  it will be restarted on the next opencode session start"
+            verboseEcho "  (or now with: opencode service restart)"
+          fi
+        '';
     })
 
     # Default permissions for NixOS paths, Ensemble worktrees, and user projects

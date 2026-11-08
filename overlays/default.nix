@@ -66,6 +66,24 @@ self: super: {
   # CI Resolve — Diagnose and fix CI/CD failures deterministically
   ci-resolve = self.callPackage "${packages}/ci-resolve" { };
 
+  # qutebrowser built from the personal fork, which adds a native 1Password
+  # component (`:onepass` — qutebrowser/components/onepassword.py, committed on
+  # the fork's `feature/onepassword` branch). The userscript module
+  # (`my.programs.qutebrowser.onePassword`, bound to `:1pass`) stays as the
+  # fallback for unmodified builds.
+  #
+  # To go back to nixpkgs' qutebrowser, delete this attribute (and revert
+  # `nix flake update` noise is not involved — the whole fork is pinned by the
+  # rev/hash below).
+  qutebrowser = super.qutebrowser.overrideAttrs (_old: {
+    src = super.fetchFromGitHub {
+      owner = "Cairnstew";
+      repo = "qutebrowser";
+      rev = "fcd8a31cefde63cff9b0cdeb60b0b5cc321cafe5";
+      hash = "sha256-SGHwPgWpxVXNF4aAwLrD5l746ubYGiWeblg+Xa4Ewvw=";
+    };
+  });
+
   # wimboot 2.8.0 fails with GCC -Werror=unterminated-string-initialization
   # Suppress the specific warning until upstream fixes it
   wimboot = super.wimboot.overrideAttrs (old: {

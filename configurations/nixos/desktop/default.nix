@@ -179,7 +179,12 @@
         }
       ];
 
-      extraExecOnce = [ "playerctld daemon" ];
+      # Start the 1Password app so its CLI app integration and SSH agent work
+      # without a manual launch; --silent starts it minimised.
+      extraExecOnce = [
+        "playerctld daemon"
+        "1password --silent"
+      ];
 
       # Launch the Project Zomboid client host with the ZombieBuddy JVM agent.
       # Steam's launch-options field is per-machine and un-versioned, so the

@@ -256,6 +256,11 @@ All `my.*` options declared across module files.
 | `my.programs.shotcut.package` | package | `pkgs.shotcut` | Shotcut package |
 | `my.programs.direnv.enable` | bool | `false` | direnv with nix-direnv |
 | `my.programs.firefox.enable` | bool | `false` | Firefox browser |
+| `my.programs.qutebrowser.enable` | bool | `false` | qutebrowser with 1Password userscript + Google sign-in UA fix |
+| `my.programs.qutebrowser.onePassword.enable` | bool | `true` | Install/bind the 1Password `op` userscript |
+| `my.programs.qutebrowser.onePassword.keybinding` | str | `<Ctrl-Shift-p>` | Key binding for the 1Password fill userscript |
+| `my.programs.qutebrowser.googleSignInFix.enable` | bool | `true` | Pin a Firefox UA for Google identity endpoints |
+| `my.programs.qutebrowser.googleSignInFix.userAgent` | str | Firefox 135 UA | UA used for accounts.google.com / accounts.youtube.com |
 | `my.programs.youtube-music.enable` | bool | `false` | YouTube Music client |
 | `my.programs.steam.enable` | bool | `false` | Steam gaming platform (32-bit, unfree, system-wide) |
 | `my.programs.godot.enable` | bool | `false` | Godot game engine and development tools |
@@ -348,6 +353,8 @@ All `my.*` options declared across module files.
 | `my.programs.vncviewer.connections.<name>.scale` | null/int | `null` | Scaling percentage (10–400) |
 | `my.programs.vncviewer.connections.<name>.extraArgs` | list | `[]` | Extra `vncviewer` args |
 | `my.programs.yazi.enable` | bool | `false` | Yazi terminal file manager |
+| `my.programs._1password.enable` | bool | `true` | 1Password CLI + setgid wrapper |
+| `my.programs._1password.gui.enable` | bool | `config.my.profiles.workstation.enable` | 1Password desktop app, polkit, SSH agent |
 | `my.programs.ssh-1password.enable` | bool | `false` | 1Password SSH agent |
 
 ## my.services.* (System Services)

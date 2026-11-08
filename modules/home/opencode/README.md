@@ -29,6 +29,39 @@ extensibility surfaces changed:
 - **`lsp` is accepted but not executed** in V2; `enableLsp` is inert. Agent
   `temperature`/`top_p` are also preserved but not sent — use model variants.
 
+## Background service lifecycle
+
+The TUI, `run`, `mini` and `serve` all talk to one long-lived background service
+per user. It loads local plugins, custom tools and the config layers **once**,
+and caches plugin modules for its whole lifetime.
+
+Because home-manager renders those files as `/nix/store` symlinks, every switch
+that changes them retargets the symlinks — and the running service cannot pick
+the change up. It either keeps executing the old plugin set or logs
+`failed to load plugin … Cannot find module '/nix/store/…'` once the previous
+store path is garbage collected (typically after a rebuild that also runs
+`nix-collect-garbage`). Nothing inside the service can recover; only a new
+process loads the new files.
+
+`my.programs.opencode.serviceStaleGuard` (default on) closes that gap:
+
+1. Activation fingerprints everything the service reads at boot — SHA-256 of
+   every file in `plugins/*` and `tools/*` plus `home-manager.json`,
+   `home-manager-cli.json`, `ensemble.json`, `model-fallback.json`,
+   `self-improve.json` — and stores it in
+   `~/.local/state/opencode/service-payload.sha256`.
+2. When the fingerprint changes it writes
+   `~/.local/state/opencode/service-stale` and prints a notice.
+3. The `opencode` wrapper consumes the marker on the next **session start**
+   (bare TUI, `run`, `mini`, `serve`, `acp`): it stops the stale service and lets
+   this invocation spawn a fresh one.
+
+Deliberately *not* a stop during activation: `nixos-rebuild switch` is
+routinely run from inside an opencode session (and from ensemble teammates), and
+an activation-time stop would kill the session that is running the rebuild.
+`opencode service start|restart` clears the marker itself, and
+`OPENCODE_SERVICE_STALE_GUARD_OFF=1` skips the check for one invocation.
+
 ## Supported Providers
 
 | Provider | Type | Key mechanism |

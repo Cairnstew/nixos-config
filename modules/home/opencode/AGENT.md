@@ -344,6 +344,9 @@ now, never aspirational. Record each applied change in the RUN LOG below.
   `opencode serve` starts the web/API server. The live shared service still
   needs `opencode service restart` to load the new plugins/tools — it was
   started before activation and its watcher tried the GC'd old store paths.
+  `my.programs.opencode.serviceStaleGuard` now handles that automatically for
+  future switches (fingerprint marker consumed on the next session start);
+  the one-off restart for the already-running service is still manual.
 
 ## See Also
 
