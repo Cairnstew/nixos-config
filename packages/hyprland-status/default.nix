@@ -99,7 +99,7 @@ writeShellApplication {
       echo "╔══════════════════════════════════════════════════════════════╗"
       echo "║  Config File                                               ║"
       echo "╚══════════════════════════════════════════════════════════════╝"
-      HYPR_CONF="/etc/xdg/hypr/hyprland.conf"
+      HYPR_CONF="/etc/xdg/hypr/hyprland.lua"
       if [ -f "$HYPR_CONF" ]; then
         STORE_PATH=$(readlink -f "$HYPR_CONF" 2>/dev/null || echo "$HYPR_CONF")
         SIZE=$(stat -c%s "$HYPR_CONF" 2>/dev/null || echo 0)
@@ -107,7 +107,7 @@ writeShellApplication {
         echo "  Path:   $STORE_PATH"
         echo "  Size:   $SIZE bytes, $LINES lines"
         echo "  Key sections:"
-        grep -E "^# ──" "$HYPR_CONF" 2>/dev/null | sed 's/^# ──/    ──/' | sed 's/ ──$//' || echo "    (no section markers)"
+        grep -E "^-- ──" "$HYPR_CONF" 2>/dev/null | sed 's/^-- ──/    ──/' | sed 's/ ──$//' || echo "    (no section markers)"
       else
         echo "  NOT FOUND: $HYPR_CONF"
         EXIT_CODE=1

@@ -20,19 +20,20 @@ in
     programs.gamemode.enable = lib.mkDefault cfg.gamemode.enable;
 
     # ── Hyprland window rules ────────────────────────────────────────────
-    # Inject Steam game monitor rules into Hyprland's extraWindowRules.
-    # Per-game rules are listed after the catch-all so they take precedence.
+    # Inject Steam game monitor rules into Hyprland's extraWindowRules (Lua
+    # hl.window_rule statements). Per-game rules are listed after the
+    # catch-all so they take precedence.
     my.desktop.hyprland.core.extraWindowRules = lib.mkIf cfg.hyprland.enable (
       let
         catchAll = lib.optional (cfg.hyprland.forceMonitor != null)
-          "monitor,class:^(steam_app_.*)$,${cfg.hyprland.forceMonitor}";
+          ''hl.window_rule({ match = { class = "^(steam_app_.*)$" }, monitor = "${cfg.hyprland.forceMonitor}" })'';
         perGame = lib.flatten (lib.mapAttrsToList
           (name: game:
             lib.optional (game.monitor != null) (
               let
                 windowClass = if game.windowClass != null then game.windowClass else "steam_app_${game.appId}";
               in
-              "monitor,class:^(${windowClass})$,${game.monitor}"
+              ''hl.window_rule({ match = { class = "^(${windowClass})$" }, monitor = "${game.monitor}" })''
             )
           )
           cfg.games);

@@ -192,7 +192,7 @@
       # modules/nixos/projectzomboid-server/config.nix, which also ships a
       # desktop entry so this is reachable from wofi and not only the keybind.
       extraBinds = [
-        "$mod, G, exec, projectzomboid-viewpoint"
+        ''hl.bind(mainMod .. " + G", hl.dsp.exec_cmd("projectzomboid-viewpoint"))''
       ];
 
       debug.enable = true;
