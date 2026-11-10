@@ -51,6 +51,14 @@ in
     # the world's name, not just a filename.
     clientHost.name = "viewpoint";
 
+    # Also merge the pack's ordered mod list into the client's own Mods menu as
+    # a preset (default name: `viewpoint`). The Host flow loads `Mods=` only for
+    # the hosted session; this is what enables Viewpoint's client-side code and
+    # the UI mods outside a hosted world. The merge preserves any presets the
+    # player made by hand, and missing mods are reported by the game's own
+    # "missed mods" window.
+    clientHost.preset.enable = true;
+
     # Open the two UDP ports for the client host. The server-level
     # `openFirewall` above is wired from the ENABLED servers, and this one is
     # `enable = false`, so without this the Host button binds 16261/16262 to a
