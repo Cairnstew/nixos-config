@@ -868,7 +868,9 @@ in
         selector falls back to the chain's LAST entry (the safe default).
 
         Two consumption paths:
-        - The `opencode` wrapper injects --model for top-level CLI invocations.
+        - The `opencode` wrapper injects --model into `opencode run` and
+          `opencode mini` (opencode v2 no longer accepts a root --model flag;
+          the full TUI uses the configured opencode.json model).
         - A project-level .opencode/ensemble.json is rewritten so ensemble
           plugin spawns resolve modelsByAgent from the same chains.
 

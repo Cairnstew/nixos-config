@@ -189,9 +189,12 @@ in `/tmp/opencode/model-fallback-pacing/`.
 
 Two consumption paths:
 
-1. **Top-level invocations** — the `opencode` wrapper injects
-   `--model <resolved>` unless you already passed `-m/--model`, or set
-   `OPENCODE_MODEL_SELECT_OFF=1`.
+1. **`run` / `mini` invocations** — the `opencode` wrapper injects
+   `--model <resolved>` after the subcommand (`opencode run --model …`)
+   unless you already passed `-m/--model`, or set
+   `OPENCODE_MODEL_SELECT_OFF=1`. opencode v2 removed the root `--model`
+   flag, so the bare TUI (and `service`, `session`, …) is never injected;
+   the TUI uses the configured `opencode.json` model.
 2. **Ensemble spawns** — with `syncEnsembleProjectFile = true`, the selector
    rewrites `<repoDir>/.opencode/ensemble.json` (gitignored) with
    chain-resolved `modelsByAgent`. The ensemble plugin merges project config

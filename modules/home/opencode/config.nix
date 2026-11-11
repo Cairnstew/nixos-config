@@ -75,30 +75,43 @@ let
         opencode-model-select --sync-ensemble || true
       fi
 
-      # Inject the chain-resolved model for this invocation unless the user
-      # already chose one explicitly (-m/--model), or opted out entirely via
-      # OPENCODE_MODEL_SELECT_OFF=1. Skip the injection for top-level
-      # subcommand invocations (mcp, run, web, serve, …): prepending `--model`
-      # makes yargs print the command help instead of dispatching the
-      # subcommand — `opencode mcp auth <name>` broke exactly this way
-      # ("model-fallback selected …" followed by usage text, nothing else).
-      if [ -z "''${OPENCODE_MODEL_SELECT_OFF:-}" ] \
-         && ! printf '%s\n' "$@" | grep -q -- '-m\|--model'; then
-        # First positional arg (skip leading flags); if it is a known
-        # top-level subcommand, do not inject (default `[project]`/TUI keeps
-        # the fallback).
+      # opencode v2 (2.2.1) removed the ROOT `--model` flag: yargs→effect-cli
+      # now rejects it with `Unrecognized flag: --model in command opencode`
+      # before dispatching anything, so appending it to every argv (the v1
+      # behaviour) broke bare `opencode`, `opencode service status`, etc.
+      # Model selection moved onto the subcommands that accept it:
+      # `opencode run -m …` and `opencode mini -m …`. The full TUI takes its
+      # model from opencode.json (agent/default model) plus its own picker.
+      #
+      # So inject ONLY for `run`/`mini`, and insert it AFTER the subcommand
+      # token (never at the root). The usage-aware selector still governs
+      # programmatic runs and, via lever (ii), ensemble spawns; the bare TUI
+      # keeps the configured model. Opt out with OPENCODE_MODEL_SELECT_OFF=1.
+      if [ -z "''${OPENCODE_MODEL_SELECT_OFF:-}" ]; then
+        # First positional arg (the subcommand) and its 1-based index,
+        # skipping leading global flags.
         first=""
+        first_idx=0
+        i=0
         for a in "$@"; do
+          i=$((i + 1))
           case "$a" in
             -*) continue ;;
-            *) first="$a"; break ;;
+            *) first="$a"; first_idx=$i; break ;;
           esac
         done
-        case " completion acp mcp attach run debug providers agent upgrade uninstall serve web models stats export import github pr session plugin db " in
-          *" $first "*) : ;;
-          *)
-            if m=$(opencode-model-select 2>/dev/null); then
-              set -- "$@" --model "$m"
+        # Skip when the user chose a model explicitly (-m / --model).
+        explicit_model=0
+        for a in "$@"; do
+          case "$a" in
+            -m|--model|--model=*|-m?*) explicit_model=1; break ;;
+          esac
+        done
+        case "$first" in
+          run|mini)
+            if [ "$explicit_model" = 0 ] && m=$(opencode-model-select 2>/dev/null); then
+              # Insert after the subcommand: `opencode run --model m …`
+              set -- "''${@:1:$first_idx}" --model "$m" "''${@:$((first_idx + 1))}"
               echo "opencode: model-fallback selected $m" >&2
             fi
             ;;
