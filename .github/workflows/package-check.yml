@@ -22,7 +22,7 @@ jobs:
       matrix:
         package:
           - act
-          - opencode
+          - opencode-models
           - update
           - localsend
     steps:
