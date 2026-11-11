@@ -37,9 +37,50 @@ let
   # and the PID in the lock is preserved (exec keeps the PID). Stale locks
   # (dead PIDs) are cleaned by the web service's ExecStartPre. OPENCODE_ALLOW_CONCURRENT=1
   # bypasses both directions.
-  opencodeGated = pkgs.writeShellScriptBin "opencode" ''
+  opencodeGated = (pkgs.writeShellScriptBin "opencode" ''
     set -euo pipefail
     export PATH="${pkgs.systemd}/bin:${pkgs.gnugrep}/bin:${pkgs.coreutils}/bin:$PATH"
+
+    ${optionalString cfg.serviceStaleGuard.enable ''
+      # ── Stale-service guard (lazy half of my.programs.opencode.serviceStaleGuard) ──
+      # Home-manager activation fingerprints the boot-time payload (local
+      # plugins, custom tools, config layers) and drops a marker when it
+      # changed. OpenCode 2 caches plugin modules for the whole life of the
+      # background service and cannot re-resolve the retargeted store symlinks,
+      # so the old service would keep running the previous plugin set (or fail
+      # with "Cannot find module '/nix/store/…'" once that path is GC'd).
+      # Stop it here, before dispatch, and let this invocation spawn a fresh
+      # one — the rebuild itself never kills the session that ran it.
+      if [[ -z "''${OPENCODE_SERVICE_STALE_GUARD_OFF:-}" && -e ${cfg.serviceStaleGuard.markerPath} ]]; then
+        stale_first=""
+        for a in "$@"; do
+          case "$a" in
+            -*) continue ;;
+            *) stale_first="$a"; break ;;
+          esac
+        done
+        case "''${1:-}" in
+          -v|--version|-h|--help|--completions|--wizard)
+            # Informational invocations never need the service.
+            ;;
+          *)
+            if [ "$stale_first" = "service" ]; then
+              # Explicit service management supersedes the marker — but only a
+              # start/restart actually refreshes the payload.
+              case "''${2:-}" in
+                start|restart) rm -f ${cfg.serviceStaleGuard.markerPath} ;;
+              esac
+            elif [ -z "$stale_first" ] || [[ " run mini serve acp " == *" $stale_first "* ]]; then
+              if ${pkgs.procps}/bin/pgrep -f 'serve --service' >/dev/null 2>&1; then
+                ${pkgs.coreutils}/bin/timeout 10 ${opencodeWrapped}/bin/opencode service stop >/dev/null 2>&1 || true
+                echo "opencode: stopped the stale background service (plugins/config changed since it started)" >&2
+              fi
+              rm -f ${cfg.serviceStaleGuard.markerPath}
+            fi
+            ;;
+        esac
+      fi
+    ''}
 
     ${optionalString cfg.sessionGate.enable ''
       if [[ -z "''${OPENCODE_SESSION_GATED:-}" ]]; then
@@ -62,9 +103,10 @@ let
 
     ${optionalString (cfg.modelFallback.chains != { }) ''
       # ── Usage-aware model fallback (my.programs.opencode.modelFallback) ──
-      # PRECONDITION: the ensemble plugin reads .opencode/ensemble.json ONCE
-      # at process start, so the sync must complete BEFORE the exec below —
-      # never run it concurrently with a dispatch.
+      # The ensemble plugin reads .opencode/ensemble.json ONCE when its
+      # location starts. Under V2 that location lives in the shared background
+      # service, so this pre-dispatch sync only reaches a service started
+      # afterwards; a running service needs `opencode service restart`.
       #
       # The ensemble sync (--sync-ensemble) is gated on
       # modelFallback.syncEnsembleProjectFile (default false since
@@ -119,13 +161,106 @@ let
       fi
     ''}
 
+    # OpenCode 2 reads the HM declarative layers via env vars. Home Manager
+    # sets these in home.sessionVariables, but non-login launches and the
+    # already-running service can miss them; export them here so the wrapper
+    # always loads the generated layers.
+    if [ -r "$HOME/.config/opencode/home-manager.json" ]; then
+      export OPENCODE_CONFIG="$HOME/.config/opencode/home-manager.json"
+    fi
+    if [ -r "$HOME/.config/opencode/home-manager-cli.json" ]; then
+      export OPENCODE_CLI_CONFIG_CONTENT="$(cat "$HOME/.config/opencode/home-manager-cli.json")"
+    fi
+
     exec ${opencodeWrapped}/bin/opencode "$@"
-  '';
+  '') // {
+    # Home-manager detects the OpenCode major version via `lib.getVersion`.
+    # A bare writeShellScriptBin reports 0.0.0, which makes HM treat this as
+    # OpenCode 1 (warns that programs.opencode.cli is unsupported, and would
+    # choose the V1 env var if mutableSettings were enabled).
+    inherit (cfg.package) version;
+  };
 
   providers = import ./providers.nix { inherit lib cfg; };
 
   # Python environment with networkx for the nix-graph MCP server
   nixGraphPython = pkgs.python3.withPackages (ps: [ ps.networkx ]);
+
+  # ── OpenCode 2 custom-tool bridge ─────────────────────────────────────────
+  # OpenCode 2 no longer auto-loads home-manager's `~/.config/opencode/tools/`
+  # V1 tool files. It registers custom tools through a plugin's
+  # `ctx.tool.transform`. Generate a small loader plugin that imports each
+  # rendered tool (a sibling under config/opencode/tools/) and adapts the V1
+  # `{ description, args, execute }` export to the V2 `ToolInfo` shape.
+  #
+  # The generated plugin is rendered into ~/.config/opencode/plugins/ by the
+  # pluginFiles block below. It resolves the live tool files at runtime from
+  # $XDG_CONFIG_HOME/opencode/tools — the plugin itself is copied into the
+  # Nix store, so a relative import would resolve next to the store copy.
+  toolExt = _name: src:
+    if !(builtins.isString src)
+      && lib.hasSuffix ".js" (builtins.baseNameOf (builtins.toString src))
+    then "js"
+    else "ts";
+
+  toolPlugin = pkgs.writeTextFile {
+    name = "nixos-tools.ts";
+    text = ''
+      // Generated by modules/home/opencode/config.nix — do not edit.
+      //
+      // The plugin file is copied into the Nix store, so a relative import
+      // (`../tools/x.ts`) resolves next to the *store copy*, not the live
+      // config directory. Resolve the rendered tool files at runtime instead;
+      // this also keeps the plugin working under a custom XDG_CONFIG_HOME.
+      import { homedir } from "node:os";
+      import { join } from "node:path";
+      import { pathToFileURL } from "node:url";
+
+      const configDir = () =>
+        process.env.XDG_CONFIG_HOME
+          ? join(process.env.XDG_CONFIG_HOME, "opencode")
+          : join(homedir(), ".config", "opencode");
+
+      const loadTool = async (name: string, ext: string) =>
+        (await import(pathToFileURL(join(configDir(), "tools", `''${name}.''${ext}`)).href)).default;
+
+      const toInput = (args: Record<string, unknown> | undefined) => ({
+        type: "object",
+        properties: args ?? {},
+        additionalProperties: false,
+      });
+
+      export default {
+        id: "nixos.tools",
+        async setup(ctx: any) {
+          const tools: Record<string, any> = {
+            ${lib.concatStringsSep "\n" (lib.imap0
+              (i: name: ''  "${name}": await loadTool("${name}", "${toolExt name cfg.tools.${name}}"),'')
+              (lib.attrNames cfg.tools))}
+          };
+
+          await ctx.tool.transform((editor: any) => {
+            for (const [name, tool] of Object.entries(tools) as Array<[string, any]>) {
+              editor.add({
+                name,
+                description: tool.description ?? name,
+                input: toInput(tool.args),
+                async execute(input: any, context: any) {
+                  const result = await tool.execute(input, context);
+                  return {
+                    content:
+                      typeof result === "string"
+                        ? result
+                        : JSON.stringify(result, null, 2),
+                  };
+                },
+              });
+            }
+          });
+        },
+      };
+    '';
+  };
 
   # Transform agent config to opencode.json format
   # Omit null/false values so only relevant fields appear in the JSON
@@ -201,7 +336,9 @@ let
   ];
 
   policySettings = lib.optionalAttrs (policyRules != [ ]) {
-    experimental.policies = policyRules;
+    # Native V2 key (2.2.x). `experimental.policies` still works but is
+    # deprecated; V2 merges it into this list.
+    policies = policyRules;
   };
 
   # ── Auth.json entries for ALL providers ────────────────────────────────────
@@ -366,7 +503,6 @@ in
         skills.ci-monitoring = builtins.readFile ./skills/ci-monitoring.md;
         skills.module-extraction = builtins.readFile ./skills/module-extraction.md;
         commands = {
-          copy-last = ./commands/copylast.md;
           refactor-python = ./commands/refactor-python.md;
           nix-map = ./commands/nix-map.md;
           nix-refine = ./commands/nix-refine.md;
@@ -380,7 +516,7 @@ in
           # hard rules for the base-branch and raw-data protections.
           data-quality = ./commands/data-quality.md;
         };
-        pluginFiles = lib.mkDefault {
+        pluginFiles = lib.mkDefault ({
           copylast = ./plugins/copylast.ts;
           self-improve-guard = ./plugins/self-improve-guard.ts;
           # Vendored fork from https://github.com/Cairnstew/opencode-ensemble
@@ -389,7 +525,10 @@ in
           # opencode-ensemble.js (auto-discovered); the npm `plugins` entry in
           # modules/nixos/homeManager/config.nix must stay empty.
           opencode-ensemble = import ./fork.nix { inherit pkgs; };
-        };
+        } // lib.optionalAttrs (cfg.tools != { }) {
+          # V2 registers custom tools through a plugin (see toolPlugin above).
+          nixos-tools = toolPlugin;
+        });
         mcp.nix-graph = {
           enabled = true;
           type = "local";
@@ -507,19 +646,30 @@ in
       programs.opencode = {
         enable = true;
         package = opencodeGated;
+
+        # OpenCode 2 writes cli.json/opencode.json itself. Let Home Manager
+        # write home-manager-*.json and inject them via OPENCODE_CONFIG /
+        # OPENCODE_CLI_CONFIG_CONTENT instead of managing the app-owned files;
+        # otherwise every switch tries to back up cli.json and collides on the
+        # existing cli.json.backup.
+        mutableSettings = lib.mkDefault true;
+
         enableMcpIntegration = cfg.enableMcpIntegration;
         context = cfg.context;
         commands = cfg.commands;
         themes = cfg.themes;
-        tui = lib.mkDefault cfg.tui;
+        cli = lib.mkDefault cfg.cli;
         skills = cfg.skills;
         tools = cfg.tools;
         extraPackages = cfg.extraPackages
-          ++ lib.optionals cfg.enableLsp [ pkgs.nixd ]
           ++ [ pkgs.terraform-mcp-server pkgs.nodejs ];
-        settings = mergedSettings // lib.optionalAttrs cfg.enableLsp { lsp = true; };
+        settings = mergedSettings;
       };
     }
+
+    # OpenCode 2 installs are owned by Nix; the default "notify" update mode
+    # only ever tells the user about a release they cannot install in place.
+    { programs.opencode.settings.update = lib.mkDefault "disable"; }
 
     # ── Default model context window + reasoning effort ─────────────────────
     # opencode's `limit.context` caps how many context tokens are sent to the
@@ -597,6 +747,66 @@ in
               else { text = src; };
           })
         cfg.pluginFiles);
+    })
+
+    # ── Stale background-service marker ─────────────────────────────────────
+    # OpenCode 2 loads plugins, custom tools and the config layers exactly once
+    # per background service, and caches plugin modules for that process's
+    # lifetime. Home-manager renders all of them as store symlinks, so a switch
+    # retargets them: the running service then keeps executing the previous
+    # plugin set, or (once the old store path is garbage collected) logs
+    # "failed to load plugin: Cannot find module '/nix/store/…'" and runs
+    # without nixos-tools/self-improve-guard entirely. It cannot recover from
+    # inside; only a new process loads the new files.
+    #
+    # Fingerprint the files the service reads at boot by content (an unchanged
+    # payload keeps the same fingerprint even though the rest of the tree
+    # moves) and drop a marker on change. The CLI wrapper (opencodeGated above)
+    # consumes it on the next session start. Deliberately NOT a
+    # stop-during-activation: `nixos-rebuild` is routinely run from inside an
+    # opencode session, and activation killing the service would kill that
+    # session (see AGENT.md's note on this trap).
+    (mkIf cfg.serviceStaleGuard.enable {
+      home.activation.opencodeServiceStaleMarker =
+        lib.hm.dag.entryAfter [ "writeBoundary" ] ''
+          verboseEcho "Checking OpenCode background-service payload..."
+
+          fingerprint=$(
+            {
+              # Hash contents, not resolved targets: a home-manager symlink and
+              # a hand-placed real file must both be detected when they change,
+              # and including the file name makes renames/additions visible.
+              for f in ${config.home.homeDirectory}/.config/opencode/plugins/* \
+                       ${config.home.homeDirectory}/.config/opencode/tools/*; do
+                [ -f "$f" ] || continue
+                printf '%s %s\n' "''${f##*/}" \
+                  "$(${pkgs.coreutils}/bin/sha256sum < "$f" | ${pkgs.coreutils}/bin/cut -d' ' -f1)"
+              done
+              for f in ${config.home.homeDirectory}/.config/opencode/home-manager.json \
+                       ${config.home.homeDirectory}/.config/opencode/home-manager-cli.json \
+                       ${config.home.homeDirectory}/.config/opencode/ensemble.json \
+                       ${config.home.homeDirectory}/.config/opencode/model-fallback.json \
+                       ${config.home.homeDirectory}/.config/opencode/self-improve.json; do
+                [ -f "$f" ] || continue
+                printf '%s %s\n' "''${f##*/}" \
+                  "$(${pkgs.coreutils}/bin/sha256sum < "$f" | ${pkgs.coreutils}/bin/cut -d' ' -f1)"
+              done
+            } | ${pkgs.coreutils}/bin/sort \
+              | ${pkgs.coreutils}/bin/sha256sum \
+              | ${pkgs.coreutils}/bin/cut -d' ' -f1
+          )
+
+          state=${cfg.serviceStaleGuard.statePath}
+          marker=${cfg.serviceStaleGuard.markerPath}
+          mkdir -p "$(dirname "$state")"
+          if [ "$fingerprint" != "$(cat "$state" 2>/dev/null || true)" ]; then
+            printf '%s\n' "$fingerprint" > "$state"
+            : > "$marker"
+            verboseEcho "  plugins/config changed since the service started:"
+            verboseEcho "  it will be restarted on the next opencode session start"
+            verboseEcho "  (or now with: opencode service restart)"
+          fi
+        '';
     })
 
     # Default permissions for NixOS paths, Ensemble worktrees, and user projects

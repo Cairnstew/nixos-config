@@ -14,4 +14,9 @@
     guid = "copyplaintext@eros.man";
     shortId = "copy-plaintext";
   };
+  # "AI Exporter" — exports ChatGPT/Gemini/Claude/etc. conversations to PDF.
+  "ai-exporter" = {
+    guid = "{eb8aee6c-8239-4f5f-beed-9a4c55c76e32}";
+    shortId = "ai-exporter-chatgpt-to-pdf";
+  };
 }

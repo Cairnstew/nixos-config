@@ -51,7 +51,7 @@ let
   instances = map mkInstance sortedRepos;
 
   # Runtime wrapper: optional password injection + first-boot wait for the
-  # gitRepoSync clone, then exec opencode web in the repo's working directory.
+  # gitRepoSync clone, then exec opencode serve in the repo's working directory.
   mkScript = inst: pkgs.writeShellScript "opencode-web-${inst.name}" ''
     set -euo pipefail
 
@@ -66,7 +66,8 @@ let
 
     ${optionalString (cfg.passwordFile != null) ''
       if [[ -r ${cfg.passwordFile} ]]; then
-        export OPENCODE_SERVER_PASSWORD="$(cat ${cfg.passwordFile} | tr -d '[:space:]')"
+        # V2 prefers OPENCODE_PASSWORD; OPENCODE_SERVER_PASSWORD still works.
+        export OPENCODE_PASSWORD="$(cat ${cfg.passwordFile} | tr -d '[:space:]')"
       else
         echo "opencode-web: warning: password file not readable: ${cfg.passwordFile}" >&2
       fi
@@ -78,7 +79,7 @@ let
       sleep 2
     done
 
-    exec ${opencodeWrapped}/bin/opencode web \
+    exec ${opencodeWrapped}/bin/opencode serve \
       --hostname ${inst.hostname} \
       --port ${toString inst.port} \
       ${concatStringsSep " " inst.extraArgs}
@@ -122,11 +123,9 @@ let
         WorkingDirectory = inst.path;
         Restart = "on-failure";
         RestartSec = "5s";
-        # The `open` npm call the web command makes respects $BROWSER; point it
-        # at a no-op so headless start doesn't try to spawn a browser.
+        # `opencode serve` does not open a browser; no BROWSER shim needed.
         Environment = [
           "HOME=${config.users.users.${cfg.user}.home or "/home/${cfg.user}"}"
-          "BROWSER=${pkgs.coreutils}/bin/true"
           "GIT_TERMINAL_PROMPT=0"
         ];
         ExecStart = mkScript inst;

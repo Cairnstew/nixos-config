@@ -114,8 +114,9 @@ in
 
   # ── VS Code Server ──────────────────────────────────────────────────────
   # Enables Remote-SSH on NixOS (patches dynamically linked Node binaries).
-  # Disabled to trim build time/closure — flip back to true to use Remote-SSH.
-  my.programs.vscode.server.enable = false;
+  # Kept off to trim build time/closure — flip to true here to use Remote-SSH.
+  # No `enable = false;` line: the option is lib.mkEnableOption (default false),
+  # so setting false was dead and has been removed.
 
   # ── Home Profiles ────────────────────────────────────────────────────────
   my.homeProfiles = {
@@ -1578,10 +1579,10 @@ in
   my.services.music.enable = false;
 
   # ── Unfree Software (allowUnfree set globally in flake.nix) ────────────
-  nixpkgs.config = {
-    # allowUnfree removed — globally set in flake.nix perSystem (M4d)
-    # cuda.acceptLicense removed 2026-10-16 — NVIDIA/CUDA disabled above, so
-    # accepting the CUDA licence would only drag the toolkit closure back in.
-  };
+  # The empty `nixpkgs.config = { };` wrapper was removed — it set nothing and
+  # the global perSystem config is merged in from flake.nix.
+  # allowUnfree removed — globally set in flake.nix perSystem (M4d)
+  # cuda.acceptLicense removed 2026-10-16 — NVIDIA/CUDA disabled above, so
+  # accepting the CUDA licence would only drag the toolkit closure back in.
 
 }

@@ -2,12 +2,15 @@
 let
   cfg = config.my.services.bootHealth;
 
+  # boot-alerting owns the emergency flag; read its path from the owning option
+  # (my.services.bootAlerting.stateDir, declared in boot-alerting/options.nix)
+  # rather than hard-coding it, so changing stateDir cannot desync the modules.
   healthPkg = pkgs.writeShellApplication {
     name = "boot-health";
     runtimeInputs = with pkgs; [ coreutils systemd nix ];
     text = ''
       ROLLBACK_FLAG="${cfg.stateDir}/rollback-attempted"
-      EMERGENCY_FLAG="/var/lib/boot-alerting/emergency-flag"
+      EMERGENCY_FLAG="${config.my.services.bootAlerting.stateDir}/emergency-flag"
       LAST_BOOT_OK="${cfg.stateDir}/last-boot-ok"
 
       # Step 1: Always clear any previous rollback marker (fresh boot)

@@ -37,7 +37,8 @@ in
         idle = {
           enable = true;
           dpmsTimeout = 180;
-          suspendTimeout = 0;
+          # mkDefault so a host can enable auto-suspend with a plain assignment.
+          suspendTimeout = lib.mkDefault 0;
         };
 
         # ── Visual features ─────────────────────────────────────────────────

@@ -31,6 +31,8 @@ in
         (ExtensionSettings). Available names:
         - "ublock-origin" - uBlock Origin ad blocker
         - "1password" - 1Password password manager
+        - "copy-plaintext" - copy text without formatting
+        - "ai-exporter" - export AI chat conversations (ChatGPT, Gemini, Claude, …) to PDF
 
         Extensions are downloaded and managed by Firefox itself; no manual
         XPI fetching or hash pinning is required.

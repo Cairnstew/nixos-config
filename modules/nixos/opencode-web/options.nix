@@ -34,7 +34,7 @@ let
       type = types.listOf types.str;
       default = [ ];
       example = [ "--cors" "https://app.example.com" ];
-      description = "Extra CLI arguments passed to <literal>opencode web</literal> for this instance.";
+      description = "Extra CLI arguments passed to <literal>opencode serve</literal> for this instance.";
     };
   };
 in

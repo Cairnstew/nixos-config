@@ -297,6 +297,57 @@ now, never aspirational. Record each applied change in the RUN LOG below.
   `~/.config/opencode/ensemble.json` lists the space; the plugin reads that
   file once at process start, so only sessions started after the switch see it.
 
+### 2026-11-02 — opencode 2.2.1: V1 config still loads, but plugins, custom tools and `opencode web` do not
+
+- Lesson: nixpkgs moved to opencode 2.2.1. V2 keeps reading V1 `agent`/`provider`/`permission`/`mcp`
+  shapes (so the rendered `opencode.json` still loads), but three V1 surfaces this module
+  relies on are silently dead:
+  (1) local plugin entrypoints — `plugins/self-improve-guard.ts:116` and
+  `plugins/copylast.ts:3` still named-export a V1 `Plugin = async …`; the server log says
+  "Plugin must export a default definition with an id and an effect or setup function".
+  `opencode plugin list` still lists them, so only the log reveals the failure. The vendored
+  ensemble plugin works because it default-exports `{...define({id:"ensemble",setup}), server}`.
+  (2) custom tools — `tools.opencode-models` (`config.nix:351`) and the other seven
+  `~/.config/opencode/tools/*.ts` files no longer appear in the model tool catalog (verified by
+  asking a `run` session to enumerate its tools). V2 registers tools via a plugin's
+  `ctx.tool.transform`, not by scanning HM's `tools/` directory.
+  (3) `opencode web` — the subcommand is gone in V2 (exit 1 + root help), so the
+  `opencode-web` unit (`modules/nixos/opencode-web/config.nix:81`) restart-loops under
+  `Restart=on-failure`. Use `opencode serve --hostname … --port …` instead;
+  `OPENCODE_SERVER_PASSWORD` still works as the password (or use `OPENCODE_PASSWORD`).
+- Also verified: V2 ignores `tui.json` (repo still sets `tui.theme` at
+  `modules/nixos/homeManager/config.nix:338`; home-manager now has `programs.opencode.cli`),
+  accepts but does not run `lsp` (so `enableLsp`/`nixd` no longer buys diagnostics), and keeps
+  agent `temperature`/`top_p` but does not send them (use model variants with `#id` instead).
+- Fix/next: port both local plugins to the default-export V2 shape (ensemble fork is the
+  template), move the eight tools into a plugin using `ctx.tool.transform`, switch the web
+  service to `opencode serve`, write `cli.json` declaratively, and replace `enableLsp` with a
+  formatter/check command or drop it.
+
+### 2026-11-02 — applied the OpenCode 2 migration
+
+- Applied: local plugins now default-export `{ id, setup(ctx) }`
+  (`plugins/copylast.ts:55`, `plugins/self-improve-guard.ts:115`); the generated
+  `nixos-tools` plugin registers the eight tools through `ctx.tool.transform`
+  (`config.nix:154`). Critical trap: the plugin is copied into the Nix store, so
+  a relative `../tools/x.ts` import resolves next to the *store copy* and fails;
+  resolve `$XDG_CONFIG_HOME/opencode/tools/x.ts` at runtime instead
+  (`config.nix:172`).
+- Also: `opencode-web` runs `opencode serve`
+  (`modules/nixos/opencode-web/config.nix:82`), the CLI reads
+  `cli.theme.name = "stylix"` (`modules/nixos/homeManager/config.nix:338`),
+  policies moved to the native top-level key (`config.nix:289`),
+  `update = "disable"` is the default for the Nix-managed binary, and
+  `enableLsp` is now inert.
+- Verified: the HM generation builds, an isolated V2 server loaded all four
+  plugins and registered all eight tools (including `nix-eval`), and
+  `opencode serve` starts the web/API server. The live shared service still
+  needs `opencode service restart` to load the new plugins/tools — it was
+  started before activation and its watcher tried the GC'd old store paths.
+  `my.programs.opencode.serviceStaleGuard` now handles that automatically for
+  future switches (fingerprint marker consumed on the next session start);
+  the one-off restart for the already-running service is still manual.
+
 ## See Also
 
 - `modules/nixos/gitreposync/` - Git repository sync service

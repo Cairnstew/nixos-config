@@ -11,6 +11,57 @@ the terminal, with support for 15+ LLM providers, custom skills, agents, and MCP
 - **MCP Integration**: Model Context Protocol servers for extended capabilities
 - **Agenix Integration**: Secure API key management
 
+## OpenCode 2 notes (2.2.x)
+
+Nixpkgs now ships OpenCode 2. The module keeps V1 config compatibility but the
+extensibility surfaces changed:
+
+- **CLI settings** live in `cli.json`, set with `my.programs.opencode.cli`.
+  `my.programs.opencode.tui` is V1-only (`tui.json` is ignored by V2).
+- **Local plugins** must default-export `{ id, setup(ctx) }`; V1 named-export
+  hook objects silently fail to load. See `plugins/self-improve-guard.ts` and
+  `plugins/copylast.ts` for the V2 shape.
+- **Custom tools**: V2 no longer scans `~/.config/opencode/tools/`. The module
+  generates the `nixos-tools` plugin, which imports every `tools/*.ts` entry
+  and registers it through `ctx.tool.transform`.
+- **`opencode web` was removed.** The `opencode-web` NixOS module runs
+  `opencode serve --hostname … --port …` instead.
+- **`lsp` is accepted but not executed** in V2; `enableLsp` is inert. Agent
+  `temperature`/`top_p` are also preserved but not sent — use model variants.
+
+## Background service lifecycle
+
+The TUI, `run`, `mini` and `serve` all talk to one long-lived background service
+per user. It loads local plugins, custom tools and the config layers **once**,
+and caches plugin modules for its whole lifetime.
+
+Because home-manager renders those files as `/nix/store` symlinks, every switch
+that changes them retargets the symlinks — and the running service cannot pick
+the change up. It either keeps executing the old plugin set or logs
+`failed to load plugin … Cannot find module '/nix/store/…'` once the previous
+store path is garbage collected (typically after a rebuild that also runs
+`nix-collect-garbage`). Nothing inside the service can recover; only a new
+process loads the new files.
+
+`my.programs.opencode.serviceStaleGuard` (default on) closes that gap:
+
+1. Activation fingerprints everything the service reads at boot — SHA-256 of
+   every file in `plugins/*` and `tools/*` plus `home-manager.json`,
+   `home-manager-cli.json`, `ensemble.json`, `model-fallback.json`,
+   `self-improve.json` — and stores it in
+   `~/.local/state/opencode/service-payload.sha256`.
+2. When the fingerprint changes it writes
+   `~/.local/state/opencode/service-stale` and prints a notice.
+3. The `opencode` wrapper consumes the marker on the next **session start**
+   (bare TUI, `run`, `mini`, `serve`, `acp`): it stops the stale service and lets
+   this invocation spawn a fresh one.
+
+Deliberately *not* a stop during activation: `nixos-rebuild switch` is
+routinely run from inside an opencode session (and from ensemble teammates), and
+an activation-time stop would kill the session that is running the rebuild.
+`opencode service start|restart` clears the marker itself, and
+`OPENCODE_SERVICE_STALE_GUARD_OFF=1` skips the check for one invocation.
+
 ## Supported Providers
 
 | Provider | Type | Key mechanism |
@@ -207,9 +258,13 @@ Two consumption paths:
   static global model.
 - The ensemble plugin reads its config **once at process start**
   (`loadConfig` in `src/index.ts`), so a synced override reaches only
-  processes started afterwards. Long-running `opencode serve --attach`
-  sessions need a restart to pick up new selections; within a live session,
-  pass an explicit `model=` argument to `team_spawn` instead (it outranks
+  processes started afterwards. Under OpenCode 2 the plugin runs inside the
+  shared background service, so writing `.opencode/ensemble.json` from the
+  wrapper after that service is already up does **not** take effect until
+  `opencode service restart` (or the next location start). Long-running
+  `opencode serve --attach` sessions need a restart to pick up new
+  selections; within a live session, pass an explicit `model=` argument to
+  `team_spawn` instead (it outranks
   `modelsByAgent` in the plugin's resolution order).
 - `.opencode/ensemble.json` being runtime-mutated inside a git-tracked
   directory is an intentional imperative exception — see GOTCHAS.md.

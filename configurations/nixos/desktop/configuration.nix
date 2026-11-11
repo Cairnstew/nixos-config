@@ -1,9 +1,10 @@
 # Minimal host-specific config — profiles handle most settings.
-# Bootloader, networking, locale, and user groups that differ from defaults.
+# Bootloader, locale, and user groups that differ from defaults.
 { config, pkgs, ... }:
 
 {
-  networking.networkmanager.enable = true;
+  # networking.networkmanager.enable removed (H3): profiles/system/config.nix:24
+  # sets it under mkIf desktop.hyprland, which desktop/default.nix:108 enables.
 
   # F14: defaultLocale is current-location.nix:47 mkDefault "en_GB.UTF-8" — redundant (recon F14)
   i18n.extraLocaleSettings = {

@@ -1,4 +1,3 @@
-import type { Plugin } from "@opencode-ai/plugin";
 import { homedir } from "node:os";
 import { join } from "node:path";
 import { existsSync, readFileSync } from "node:fs";
@@ -113,71 +112,86 @@ function checkpointSatisfied(db: any, kind: string, sessionID: string): boolean 
   return false;
 }
 
-export const SelfImproveGuardPlugin: Plugin = async ({ client, directory }) => {
-  return {
-    event: async ({ event }) => {
-      // session.idle fires when the agent loop finishes a turn and the session
-      // goes quiet — the natural point to check whether the final-summary
-      // self-improvement pass was skipped.
-      if (event.type !== "session.idle") return;
-      const sessionID = (event as any).properties?.sessionID;
-      if (!sessionID) return;
+export default {
+  id: "nixos.self-improve-guard",
+  async setup(ctx: any) {
+    // OpenCode 2 loads plugins through a default export with `id` + `setup`.
+    // The V1 named-export hook object is no longer executed; this is the
+    // functional equivalent of the old `event: async ({event}) => …` hook.
+    const directory: string = ctx.location?.directory ?? process.cwd();
+    const controller = new AbortController();
 
-      // Only guard the checkpoint-carrying agents (build, researcher).
-      let agent: string | null = null;
-      try {
-        const open = await openDb(opencodeDbPath());
+    void (async () => {
+      for await (const event of ctx.event.subscribe({
+        types: ["session.idle"],
+        signal: controller.signal,
+      })) {
+        // session.idle fires when the agent loop finishes a turn and the
+        // session goes quiet — the natural point to check whether the
+        // final-summary self-improvement pass was skipped. The payload shape
+        // changed across V2 builds; accept the documented `properties` form
+        // and the flat form.
+        const sessionID =
+          (event as any)?.properties?.sessionID ??
+          (event as any)?.data?.sessionID ??
+          (event as any)?.sessionID;
+        if (!sessionID) continue;
+
+        // Only guard the checkpoint-carrying agents (build, researcher).
+        let agent: string | null = null;
         try {
-          agent = queryGet(open.db, open.kind, "SELECT agent FROM session WHERE id = ?", sessionID)?.agent ?? null;
-        } finally {
-          open.db.close();
+          const open = await openDb(opencodeDbPath());
+          try {
+            agent = queryGet(open.db, open.kind, "SELECT agent FROM session WHERE id = ?", sessionID)?.agent ?? null;
+          } finally {
+            open.db.close();
+          }
+        } catch {
+          continue;
         }
-      } catch {
-        return;
-      }
-      if (!agent || !CHECKPOINT_AGENTS.includes(agent as any)) return;
+        if (!agent || !CHECKPOINT_AGENTS.includes(agent as any)) continue;
 
-      // Honour the live toggle: read the current value from the repo rather
-      // than trusting a stale baked copy (exactly what the prompt tells the
-      // agent to do).
-      if (!selfImproveEnabled(directory, agent)) return;
+        // Honour the live toggle: read the current value from the repo rather
+        // than trusting a stale baked copy (exactly what the prompt tells the
+        // agent to do).
+        if (!selfImproveEnabled(directory, agent)) continue;
 
-      // If the checkpoint already ran (a "no lessons this run" statement or a
-      // "Self-Improve:" self-apply report), nothing to do.
-      let alreadyRan = false;
-      try {
-        const open = await openDb(opencodeDbPath());
+        // If the checkpoint already ran (a "no lessons this run" statement or
+        // a "Self-Improve:" self-apply report), nothing to do.
+        let alreadyRan = false;
         try {
-          alreadyRan = checkpointSatisfied(open.db, open.kind, sessionID);
-        } finally {
-          open.db.close();
+          const open = await openDb(opencodeDbPath());
+          try {
+            alreadyRan = checkpointSatisfied(open.db, open.kind, sessionID);
+          } finally {
+            open.db.close();
+          }
+        } catch {
+          continue;
         }
-      } catch {
-        return;
-      }
-      if (alreadyRan) return;
+        if (alreadyRan) continue;
 
-      try {
-        await client.session.prompt({
-          sessionID,
-          parts: [
-            {
-              type: "text",
-              text:
-                "Reminder (self-improve-guard): this session's agent has SELF_IMPROVE=true " +
-                "but neither a self-improvement commit (a 'Self-Improve:' trailer via " +
-                "tools/self-improve-commit.sh) nor an explicit 'no lessons this run' statement " +
-                "was recorded. Before your final summary, complete the checkpoint: capture any " +
-                "grounded lesson against an allow-listed target through the commit-helper, or " +
-                "explicitly state 'no lessons this run' if the checkpoint produced nothing " +
-                "concrete.",
-              synthetic: true,
-            },
-          ],
-        });
-      } catch {
-        // Non-fatal — opencode may reject injecting into an idle session.
+        try {
+          // `synthetic` injects a message without starting a model turn.
+          await ctx.session.synthetic({
+            sessionID,
+            text:
+              "Reminder (self-improve-guard): this session's agent has SELF_IMPROVE=true " +
+              "but neither a self-improvement commit (a 'Self-Improve:' trailer via " +
+              "tools/self-improve-commit.sh) nor an explicit 'no lessons this run' statement " +
+              "was recorded. Before your final summary, complete the checkpoint: capture any " +
+              "grounded lesson against an allow-listed target through the commit-helper, or " +
+              "explicitly state 'no lessons this run' if the checkpoint produced nothing " +
+              "concrete.",
+          });
+        } catch {
+          // Non-fatal — opencode may reject injecting into an idle session.
+        }
       }
-    },
-  };
+    })().catch(() => {
+      // The subscription ends with the plugin/abort; never crash the server.
+    });
+
+    return () => controller.abort();
+  },
 };

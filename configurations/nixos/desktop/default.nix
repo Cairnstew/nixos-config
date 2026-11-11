@@ -11,6 +11,22 @@
   networking.hostName = "desktop";
   nixos-unified.sshTarget = "seanc@desktop";
 
+  # ── Memory profile: gaming desktop, not a build box ────────────────────────
+  # The hardening defaults cap the interactive user session at 60% high /
+  # 65% max of RAM (modules/nixos/hardening/options.nix:172-180). On this 31 GiB
+  # box that is ~18.8/20.3 GiB, which the PZ client (~9 GiB) + the in-game
+  # hosted server (~5 GiB) + desktop apps (~4 GiB) reach. At MemoryHigh the
+  # kernel starts reclaiming and swapping inside the session even while the box
+  # still has free RAM; that is what made Viewpoint shrink its caches
+  # (terrain relief 96 -> 64 MiB, far cells 64 MiB) and stall chunk/vehicle
+  # streaming. Raise the ceiling well clear of the game's working set while
+  # keeping the system.slice floor (10%, 3.1 GiB) for sshd/journald/kernel and
+  # zram. 80%/85% = ~25.0/26.6 GiB.
+  my.system.hardening.workloadLimits = {
+    userSliceMemoryHigh = "80%";
+    userSliceMemoryMax = "85%";
+  };
+
   # ── VM Builder ──────────────────────────────────────────────────────────────
   # Build VM packages for testing before deploying to real hardware.
   # The extraConfig strips GPU/gaming/battery config that doesn't work in QEMU
@@ -191,7 +207,12 @@
         }
       ];
 
-      extraExecOnce = [ "playerctld daemon" ];
+      # Start the 1Password app so its CLI app integration and SSH agent work
+      # without a manual launch; --silent starts it minimised.
+      extraExecOnce = [
+        "playerctld daemon"
+        "1password --silent"
+      ];
 
       # Launch the Project Zomboid client host with the ZombieBuddy JVM agent.
       # Steam's launch-options field is per-machine and un-versioned, so the
@@ -199,7 +220,7 @@
       # modules/nixos/projectzomboid-server/config.nix, which also ships a
       # desktop entry so this is reachable from wofi and not only the keybind.
       extraBinds = [
-        "$mod, G, exec, projectzomboid-viewpoint"
+        ''hl.bind(mainMod .. " + G", hl.dsp.exec_cmd("projectzomboid-viewpoint"))''
       ];
 
       debug.enable = true;
@@ -214,6 +235,10 @@
         unfocused = 0.80;
       };
     };
+
+    # Auto-suspend after 15 min idle. The desktop.hyprland profile sets this to
+    # lib.mkDefault 0 (never suspend), so a plain assignment here wins.
+    idle.suspendTimeout = 900;
 
     wallpapers = {
       images =
@@ -599,17 +624,20 @@
   # NO dedicated server on this host. The world is hosted from the game's own
   # in-game Host button instead — see servers/viewpoint.nix → clientHost.
   #
-  # TEMPORARILY DISABLED (2026-10-08): with `enable = true` this runs
-  # project-zomboid-install.service (a steamcmd validate), which now fails the
-  # whole `nixos-rebuild switch` (exit 4): no `cairnsgerry` login token is cached
-  # under HOME=/mnt/data/project-zomboid ("Cached credentials not found"), and a
-  # systemd unit has no TTY to answer the password prompt it falls back to. To
-  # restore: run the one-time login (see `steamLogin` below) or drop it, then
-  # set `enable = true`. When enabled it renders the client config and keeps the
-  # shared Workshop download current; the server itself stays off via
-  # `servers.viewpoint.enable = false`.
+  # CLIENT-ONLY (2026-10-30): top-level `enable = true` renders `clientHosts`
+  # (~/Zomboid/Server/viewpoint.ini next to the servertest save) via the Home
+  # Manager half, but `updateOnStart = false` keeps the shared steamcmd install
+  # unit from running — no `cairnsgerry` token is cached under
+  # HOME=/mnt/data/project-zomboid and a unit has no TTY for the fallback
+  # prompt (exit 4, fails the whole switch). The server itself stays off via
+  # `servers.viewpoint.enable = false`. Mods stay pre-seeded by hand in
+  # ~/Zomboid/mods (`home.installMods = false`, libraryfolders.vdf clobber —
+  # see projectzomboid-server/config.nix); re-run pz-client-mods by hand when
+  # the pack changes. To restore the shared download: one-time login (see
+  # `steamLogin` below), then flip `updateOnStart` back to true.
   services.project-zomboid-servers = {
-    enable = false;
+    enable = true;
+    updateOnStart = false;
     servers.viewpoint.enable = false;
 
     # Authenticate the shared steamcmd install as cairnsgerry instead of

@@ -2,6 +2,19 @@
 let
   inherit (lib) mkIf;
   cfg = config.my.programs.squidProxyClient;
+
+  # The proxy profile is a separate qutebrowser basedir, so it needs its own
+  # copy of the settings the main qutebrowser module generates (1Password
+  # userscript binding + Google sign-in User-Agent fix).
+  qb = config.my.programs.qutebrowser;
+  sharedPy = import ../qutebrowser/lib.nix {
+    inherit lib;
+    onePassword = qb.onePassword.enable;
+    keybinding = qb.onePassword.keybinding;
+    googleUserAgent =
+      if qb.googleSignInFix.enable then qb.googleSignInFix.userAgent else null;
+  };
+
   pwdFile =
     if cfg.proxyPasswordFile != null then cfg.proxyPasswordFile
     else "/run/agenix/squid-htpasswd";
@@ -34,7 +47,17 @@ in
           with open(pwd_file) as f:
               password = f.read().strip()
           c.content.proxy = "http://${cfg.proxyUsername}:" + password + "@${cfg.serverAddress}:${toString cfg.proxyPort}"
+
+      ${sharedPy}
     '';
+
+    # Userscripts live in `<basedir>/config/userscripts` for a --basedir
+    # profile (standarddir.config() is `<basedir>/config`).
+    xdg.configFile."qutebrowser-proxy/config/userscripts/qute-1pass.py" =
+      lib.mkIf qb.onePassword.enable {
+        source = ../qutebrowser/userscripts/qute-1pass.py;
+        executable = true;
+      };
 
     home.shellAliases."proxy-browser-persist" = ''
       qutebrowser --basedir ~/.config/qutebrowser-proxy

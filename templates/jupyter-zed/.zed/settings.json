@@ -1,0 +1,41 @@
+{
+  // Jupyter settings. Shape verified against zed-industries/zed
+  // assets/settings/default.json:
+  //   "jupyter": { "enabled": bool, "kernel_selections": { <language>: <kernel> } }
+  // There is no `jupyter.kernel` object and no `jupyter.auto_open` — the
+  // top-level `auto_open` is unrelated (on_create / on_paste / on_drop).
+  //
+  // The kernel name below must match [project].name in pyproject.toml, which is
+  // what tools/install_kernel.py registers the kernelspec under. Rename one and
+  // you must rename the other, or every notebook cell offers "no kernel".
+  "jupyter": {
+    "enabled": true,
+    "kernel_selections": {
+      "python": "my-project"
+    }
+  },
+
+  // The kernelspec is created by the flake's shellHook, so Zed has to run
+  // .envrc (`use flake`) before it looks for kernels. Without this the project
+  // must be entered with `nix develop` first and Zed launched from that shell.
+  "load_direnv": "direct",
+
+  // This template has no secrets and runs only the project's own dev-shell
+  // commands, so trust it and skip the per-workspace prompt. Until a worktree
+  // is trusted, project settings are not applied at all.
+  "session": {
+    "trust_all_worktrees": true
+  },
+
+  // Per-language settings live under `languages`, NOT under `file_types` —
+  // that maps a language to an array of glob patterns, and a map there fails
+  // with "invalid type: map, expected a set".
+  "languages": {
+    "Python": {
+      "tab_size": 4,
+      // Leave formatting to `ruff format` from the dev shell so the editor and
+      // the CLI cannot disagree about a file's formatting.
+      "format_on_save": "off"
+    }
+  }
+}

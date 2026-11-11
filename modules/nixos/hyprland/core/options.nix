@@ -4,7 +4,7 @@
     enable = lib.mkOption {
       type = lib.types.bool;
       default = false;
-      description = "Enable the Hyprland compositor core (programs.hyprland, env vars, hyprland.conf).";
+      description = "Enable the Hyprland compositor core (programs.hyprland, env vars, hyprland.lua).";
     };
 
     workspaceStartup = lib.mkOption {
@@ -122,15 +122,15 @@
       type = lib.types.listOf lib.types.str;
       default = [ ];
       example = [
-        "$mod, G, exec, firefox"
-        "$mod SHIFT, G, exec, ghostty -e ssh server"
+        ''hl.bind(mainMod .. " + G", hl.dsp.exec_cmd("firefox"))''
+        ''hl.bind(mainMod .. " + SHIFT + G", hl.dsp.exec_cmd("ghostty -e ssh server"))''
       ];
       description = ''
         Additional keybind lines appended to the keybinds section of
-        hyprland.conf. Each entry is the part AFTER `bind = `, so the full
-        syntax applies: `$mod, G, exec, <command>`, `bindm`, `bindel`, and
-        friends. Use this rather than editing core/config.nix for a bind that
-        belongs to one host.
+        hyprland.lua. Each entry is a complete Lua statement (usually an
+        `hl.bind` call); the `mainMod` local defined at the top of the
+        generated file is in scope. Use this rather than editing
+        core/config.nix for a bind that belongs to one host.
       '';
     };
 
@@ -138,25 +138,25 @@
       type = lib.types.listOf lib.types.str;
       default = [ ];
       example = [
-        "float, class:^(pavucontrol)$"
-        "tile, class:^(firefox)$"
+        ''hl.window_rule({ match = { class = "^(pavucontrol)$" }, float = true })''
+        ''hl.window_rule({ match = { class = "^(firefox)$" }, tile = true })''
       ];
       description = ''
-        Additional windowrule lines appended to the window rules section of
-        hyprland.conf. Supports all Hyprland window rule directives (float,
-        tile, size, move, center, opacity, etc). Each entry becomes a
-        `windowrule = <entry>` line.
+        Additional window rules appended to the window rules section of
+        hyprland.lua. Each entry is a complete Lua statement (usually an
+        `hl.window_rule` call), e.g.
+        `hl.window_rule({ match = { class = "^(pavucontrol)$" }, float = true })`.
       '';
     };
 
     debug = {
-      enable = lib.mkEnableOption "debug logging section in hyprland.conf (debug.disable_logs, debug.gl_debugging)";
+      enable = lib.mkEnableOption "debug logging section in hyprland.lua (debug.disable_logs, debug.gl_debugging)";
 
       disableLogs = lib.mkOption {
         type = lib.types.bool;
         default = false;
         description = ''
-          debug.disable_logs in hyprland.conf. Set to true to disable logging,
+          debug.disable_logs in hyprland.lua. Set to true to disable logging,
           false to enable. Defaults to false (logs on) to match Hyprland's own
           default. Only written to config when debug.enable is true.
         '';
@@ -166,7 +166,7 @@
         type = lib.types.bool;
         default = false;
         description = ''
-          debug.gl_debugging in hyprland.conf. Enables OpenGL error messages.
+          debug.gl_debugging in hyprland.lua. Enables OpenGL error messages.
           Disabled by default due to performance impact. Only written to config
           when debug.enable is true.
         '';

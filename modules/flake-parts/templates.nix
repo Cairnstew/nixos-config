@@ -76,6 +76,38 @@ in
     cli = mkSimpleTemplate "cli" "Command-line tool with argument parsing";
     lib = mkSimpleTemplate "lib" "Nix library with functions and tests";
 
+    # Notebooks / editor
+    jupyter-zed = mkTemplate "jupyter-zed" "Jupyter notebooks in Zed on a uv-managed venv, with kernelspec wiring and LD_LIBRARY_PATH" ''
+      # Jupyter + Zed project
+
+      The kernelspec is **not** created by `uv sync` — it is created by the dev
+      shell's `shellHook`. Enter the shell once before expecting Zed to offer a
+      kernel:
+
+      ```bash
+      direnv allow     # or: nix develop
+      jupyter kernelspec list
+      ```
+
+      Zed runs `.envrc` because `.zed/settings.json` sets
+      `load_direnv: "direct"`, but that needs `direnv` installed and allowed for
+      this directory. Without it, launch Zed from inside `nix develop`.
+
+      ## Renaming the project
+
+      The kernel name is `[project].name` in `pyproject.toml`. Renaming it
+      requires the same string in `.zed/settings.json`, or every notebook cell
+      offers "no kernel":
+
+      ```bash
+      grep -rn "my-project" pyproject.toml .zed/settings.json README.md
+      ```
+
+      `pkgs.zed-editor` is in the shell so `zeditor .` works without Zed
+      installed system-wide; drop that line if `my.programs.zed-editor`
+      already provides it.
+    '';
+
     # Python with uv2nix
     uv2nix = mkTemplate "uv2nix" "Python project with uv2nix, uv, and modern tooling" ''
       # uv2nix project

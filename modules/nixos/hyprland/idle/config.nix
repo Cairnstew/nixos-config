@@ -55,9 +55,15 @@ in
     systemd.user.services.hypridle = {
       description = "Hyprland's idle daemon";
       documentation = [ "https://wiki.hyprland.org/Hypr-Ecosystem/hypridle" ];
-      partOf = [ "graphical-session.target" ];
-      after = [ "graphical-session.target" ];
-      wantedBy = [ "graphical-session.target" ];
+      # Bound to hyprland-session.target (like waybar/pyprland/wallpapers), NOT
+      # graphical-session.target: the exec-once that starts hyprland-session.target
+      # is also what imports WAYLAND_DISPLAY into the systemd user environment
+      # (core/config.nix). Ordering off graphical-session.target let hypridle start
+      # before that import, fail wl_display_connect, and burn its 6 retries into
+      # start-limit-hit — dead for the rest of the session.
+      partOf = [ "hyprland-session.target" ];
+      after = [ "hyprland-session.target" ];
+      wantedBy = [ "hyprland-session.target" ];
       path = [
         config.programs.hyprland.package
         config.programs.hyprlock.package

@@ -49,14 +49,18 @@ configurations/nixos/
 │   ├── default.nix
 │   ├── disk-config.nix
 │   └── hardware-configuration.nix
+├── oracle/                    # Oracle Always Free VM (ARM64)
+│   ├── configuration.nix
+│   ├── default.nix
+│   ├── disk-config.nix
+│   └── hardware-configuration.nix
 ├── server/                    # Headless server
 │   ├── configuration.nix
 │   ├── default.nix
 │   ├── disk-config.nix
 │   └── hardware-configuration.nix
 └── wsl/                       # WSL instance
-    ├── configuration.nix
-    └── default.nix
+    └── default.nix            # Host config (configuration.nix inlined)
 ```
 
 ---

@@ -163,6 +163,56 @@ in
       };
     };
 
+    serviceStaleGuard = {
+      enable = mkOption {
+        type = types.bool;
+        default = true;
+        description = ''
+          Mark the shared background service as stale when a home-manager
+          activation changes the files it loads at boot (local plugins, custom
+          tools, and the <filename>home-manager*.json</filename> /
+          <filename>ensemble.json</filename> / <filename>model-fallback.json</filename>
+          config layers), then restart it lazily on the next session start.
+
+          OpenCode 2 caches plugin modules for the life of the service. Because
+          home-manager renders those files as store symlinks, a switch retargets
+          them and the running service either keeps executing the old plugin
+          set or reports <literal>failed to load plugin: Cannot find module
+          '/nix/store/…'</literal> once the previous store path is garbage
+          collected. The marker makes the wrapper stop the old service before
+          dispatching a session, so the replacement loads the new files. The
+          rebuild itself never kills a running session (e.g. a
+          <command>nixos-rebuild</command> started from inside opencode); set
+          <literal>OPENCODE_SERVICE_STALE_GUARD_OFF=1</literal> to skip the
+          check for one invocation.
+        '';
+      };
+
+      statePath = mkOption {
+        type = types.path;
+        default = "${config.home.homeDirectory}/.local/state/opencode/service-payload.sha256";
+        description = ''
+          Record of the payload fingerprint the running service was last
+          started with. Runtime state only — never place this under
+          <filename>~/.config/opencode</filename>, which is home-manager
+          managed.
+        '';
+      };
+
+      markerPath = mkOption {
+        type = types.path;
+        default = "${config.home.homeDirectory}/.local/state/opencode/service-stale";
+        description = ''
+          Marker written by activation when the boot-time payload changed. The
+          <command>opencode</command> wrapper consumes it on the next session
+          start (bare TUI, <literal>run</literal>, <literal>mini</literal>,
+          <literal>serve</literal>, <literal>acp</literal>) by stopping the
+          stale service; explicit <command>opencode service …</command> commands
+          never consume it.
+        '';
+      };
+    };
+
     enableMcpIntegration = mkOption {
       type = types.bool;
       default = false;
@@ -686,7 +736,26 @@ in
         keybinds = { leader = "alt+b"; };
         scroll_speed = 3;
       };
-      description = "TUI-specific configuration written to \u0024XDG_CONFIG_HOME/opencode/tui.json.";
+      description = ''
+        Legacy OpenCode 1 TUI configuration written to
+        <filename>$XDG_CONFIG_HOME/opencode/tui.json</filename>.
+        OpenCode 2 no longer reads this file; use <option>cli</option>.
+      '';
+    };
+
+    cli = mkOption {
+      type = (pkgs.formats.json { }).type;
+      default = { };
+      example = {
+        theme = { name = "stylix"; };
+        tabs.mode = "auto";
+      };
+      description = ''
+        OpenCode 2 CLI configuration written to
+        <filename>$XDG_CONFIG_HOME/opencode/cli.json</filename>.
+        This is where theme, keybinds, tabs, diffs and session presentation
+        live in V2. See https://opencode.ai/v2/docs/cli/config.
+      '';
     };
 
     skills = mkOption {
@@ -719,14 +788,23 @@ in
         Local plugin JavaScript/TypeScript files. Each key becomes a file in
         <filename>$XDG_CONFIG_HOME/opencode/plugins/&lt;name&gt;.js</filename>
         (or .ts) and is auto-discovered by opencode at startup.
-        See https://opencode.ai/docs/plugins/.
+        OpenCode 2 requires a default export with `id` and `setup(ctx)`; V1
+        named-export hook objects are not executed.
+        See https://opencode.ai/v2/docs/build/plugins/server.
       '';
     };
 
     tools = mkOption {
       type = types.attrsOf (types.either types.lines types.path);
       default = { };
-      description = "Custom tools. See https://opencode.ai/docs/tools/.";
+      description = ''
+        Custom tools. OpenCode 2 no longer scans
+        <filename>$XDG_CONFIG_HOME/opencode/tools/</filename> directly, so the
+        module also generates a loader plugin (`nixos-tools`) that registers
+        every entry through `ctx.tool.transform`. Tool names are preserved
+        (the dash in `nix-eval` stays).
+        See https://opencode.ai/v2/docs/build/plugins/server.
+      '';
     };
 
     mcp = mkOption {
@@ -813,9 +891,10 @@ in
       default = false;
       example = true;
       description = ''
-        Enable Language Server Protocol (LSP) support in OpenCode.
-        When enabled, nixd is added to extraPackages for Nix LSP support.
-        See https://opencode.ai/docs/lsp/ for more information.
+        Deprecated and inert under OpenCode 2. V2 accepts an `lsp` config key
+        but does not run language servers or expose LSP tools/diagnostics.
+        The option is kept so existing host configs keep evaluating; it no
+        longer adds `nixd` or emits `lsp = true`.
       '';
     };
 
@@ -1080,6 +1159,12 @@ in
         ensemble plugin spawns pick up chain-resolved modelsByAgent entries.
         The file is gitignored by design (intentional imperative exception,
         see GOTCHAS.md).
+
+        OpenCode 2 caveat: the ensemble plugin loads this file once when its
+        location starts inside the shared background service. Rewriting it
+        after that service is up has no effect until
+        `opencode service restart`; pass an explicit `model=` to team_spawn
+        for an immediate per-spawn override.
       '';
 
       repoDir = mkOption {
