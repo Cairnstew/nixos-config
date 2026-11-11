@@ -98,17 +98,20 @@ in
       args = "policy=allow-all,frontend=console,verbosity=1";
     };
 
-    # Heap for 142 Workshop items, including the Viewpoint asset pack. Must
-    # stay BELOW hardware.memoryMax or the JVM is killed before it fills the heap.
-    jvmOpts = "-Xmx10G -Xms4G -XX:+UseZGC -XX:-CreateCoredumpOnCrash";
+    # Heap for 438 Workshop items, including the Viewpoint asset pack. The
+    # in-game Host ran this same pack at 5G with ~2.3G of the heap committed,
+    # so 6G leaves headroom for 16 players. Must stay BELOW hardware.memoryMax
+    # or the JVM is killed before it fills the heap.
+    jvmOpts = "-Xmx6G -Xms3G -XX:+UseZGC -XX:-CreateCoredumpOnCrash";
 
-    # Tuned for a desktop that is also running GNOME, Docker and Ollama
-    # (31 GiB total). memoryHigh throttles with reclaim pressure before
-    # memoryMax is a hard wall.
+    # Tuned for the dedicated `server` host (13 GiB total, no game client).
+    # memoryHigh throttles with reclaim pressure before memoryMax is a hard
+    # wall. If the box gets tight, stop docker-ollama for the session rather
+    # than shrinking the heap below 5G.
     hardware = {
-      memoryHigh = "12G";
-      memoryMax = "14G";
-      memorySwapMax = "4G";
+      memoryHigh = "8G";
+      memoryMax = "10G";
+      memorySwapMax = "2G";
       nice = 5;
     };
 

@@ -608,6 +608,31 @@ in
     servers.allthetech.enable = false;
   };
 
+  # ── Project Zomboid dedicated server (Viewpoint) ────────────────────────
+  # The world moved here from desktop's in-game Host on 2026-11-11.
+  #
+  # Stage A: `updateOnStart = false` and no `servers.*` yet, so this only
+  # creates the `project-zomboid` user/group and /mnt/data/project-zomboid.
+  # The world is copied in before the install unit and the server first run,
+  # because the server's prep creates a fresh .ini (and therefore a fresh
+  # Seed/ResetID) if the desktop's ini is not already in place.
+  # Stage B: flip `updateOnStart`, `servers.viewpoint.enable`,
+  # `autoStart` and `steamLogin` on after the copy.
+  services.project-zomboid-servers = {
+    enable = true;
+    updateOnStart = false;
+  };
+
+  # The dedicated server's prep script runs as `project-zomboid` and reads the
+  # join password to merge `Password=` into viewpoint.ini. The manifest's
+  # 0400 seanc:users is correct for the desktop's Home Manager render, but the
+  # service user cannot read it, so hand it over on this host.
+  age.secrets.pz-join-password = {
+    owner = lib.mkForce "root";
+    group = lib.mkForce config.services.project-zomboid-servers.group;
+    mode = lib.mkForce "0440";
+  };
+
   # ── Ollama (LLM Serving) — ENABLED 2026-10-31 ──────────────────────────
   # Restored on request 2026-10-31 as the SOLE inference backend (the llama.cpp
   # router below is off): all seven Personal Favorites GGUFs serve through the
