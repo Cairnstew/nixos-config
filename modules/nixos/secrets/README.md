@@ -47,6 +47,7 @@ Then add to `secrets-manifest.json`.
 | aws-ssh-key | AWS SSH private key |
 | aws-ssh-pub-key | AWS SSH public key |
 | clarifai-pat | Clarifai personal access token |
+| dashboard-basic-auth | Dashboard HTTP basic-auth password (hashed at boot by Caddy) |
 | deepinfra-key | DeepInfra API key |
 | discord-auth | Discord token for Endcord profiles |
 | gcloud-auth | GCloud authentication |
@@ -83,7 +84,7 @@ Then add to `secrets-manifest.json`.
 - Ownership overrides are set in consuming modules via `config.age.secrets.<name>.owner`
 - Always check `config.age.secrets ? "name"` before referencing a secret path
 - CI package builds do **not** disable agenix-manager. `modules/flake-parts/packages.nix` only forces `services.tailscale.enable = false` and `services.tailscale-manager.enable = false` so package builds evaluate without tailscale. The committed `.age` files evaluate fine in CI.
-- `secrets-manifest.json` is the source of truth (42 secrets). `onepassword-token` has an `.age` file but is **not** listed in the manifest — it is not wired to `age.secrets.*`.
+- `secrets-manifest.json` is the source of truth for the secret list and scopes. `onepassword-token` has an `.age` file but is **not** listed in the manifest — it is not wired to `age.secrets.*`.
 
 ## Related Modules
 

@@ -421,6 +421,11 @@
   my.services.proxy = {
     listenAddresses = [ "100.121.125.58" "127.0.0.1" ];
     tailscaleServe.enable = true;
+
+    # OpenCode Go usage on the dashboard — reads the cached snapshot written
+    # by seanc's opencode-go-usage systemd user timer (~5 min).
+    systemMetrics.opencodeGo.usageJsonFile =
+      "/home/seanc/.cache/opencode/go-usage.json";
   };
 
   # ── Location ────────────────────────────────────────────────────────────

@@ -28,6 +28,16 @@ let
   dashboard = import ./dashboard.nix {
     inherit cfg enabledUpstreams lib pkgs;
   };
+
+  # Caddy basic_auth block for the dashboard page + metrics API. The
+  # credentials come from environment variables supplied by the
+  # dashboard-auth-env unit (see services.nix); Caddy expands {$VAR} at config
+  # load time. Empty when auth is disabled.
+  dashboardAuthBlock = lib.optionalString cfg.dashboard.auth.enable ''
+    basic_auth {
+      {$DASHBOARD_AUTH_USER} {$DASHBOARD_AUTH_HASH}
+    }
+  '';
   # Dashboard directory (index.html) — aliased so the Caddyfile template
   # below keeps the original dashboardDir reference verbatim.
   dashboardDir = dashboard.dashboardDir;
@@ -47,6 +57,9 @@ let
       ${lib.optionalString cfg.systemMetrics.enable ''
       handle_path /api/metrics/* {
         root * /run/metrics
+        ${dashboardAuthBlock}
+        # Metrics are point-in-time: never serve a cached copy to the browser.
+        header Cache-Control "no-store"
         file_server
       }
       ''}
@@ -84,10 +97,12 @@ let
       ${lib.optionalString cfg.dashboard.enable ''
       handle /index.html {
         root * ${dashboardDir}
+        ${dashboardAuthBlock}
         file_server
       }
       handle {
         root * ${dashboardDir}
+        ${dashboardAuthBlock}
         file_server
       }
       ''}
@@ -107,7 +122,7 @@ let
   # collection service/timer, tmpfiles, and tailscale serve, built from the
   # Caddyfile, metrics script, and shared values above.
   services = import ./services.nix {
-    inherit cfg tailscaleUrl tailscaleExpectedMtuJson lib pkgs;
+    inherit cfg tailscaleUrl tailscaleExpectedMtuJson lib pkgs config;
   };
 in
 {

@@ -122,73 +122,175 @@ let
           <span id="metrics-procs">--</span>
           <span id="metrics-load">--</span>
           <span id="metrics-network">--</span>
+          <span id="metrics-temps"></span>
           <span id="metrics-latency">--</span>
           <span id="metrics-tailscale">--</span>
           <span id="metrics-ssh">--</span>
         </div>
+
+        <h2 class="section-title">GPU</h2>
+        <div class="metrics-grid" id="gpu-cards">
+          <div class="oc-empty">Loading…</div>
+        </div>
+
         <script>
         function fmtBytes(b) {
-          if (b < 1024) return b + 'B';
+          if (b < 1024) return b.toFixed(0) + 'B';
           if (b < 1048576) return (b / 1024).toFixed(1) + 'KB';
           if (b < 1073741824) return (b / 1048576).toFixed(1) + 'MB';
           return (b / 1073741824).toFixed(1) + 'GB';
         }
-        function fetchMetrics() {
+        function fmtRate(bps) { return fmtBytes(bps) + '/s'; }
+
+        // One poller for the whole page: each section registers a handler via
+        // onMetrics() instead of opening its own fetch loop.
+        var metricsSubs = [];
+        function onMetrics(fn) { metricsSubs.push(fn); }
+        function metricsPoll() {
           var t0 = performance.now();
-          fetch('/api/metrics/metrics.json').then(function(r) { return r.json(); }).then(function(d) {
-            var latency = (performance.now() - t0).toFixed(0);
-            document.getElementById('metrics-latency').textContent = latency + 'ms';
-            var cpuPct = ((d.cpu.total - d.cpu.idle) / d.cpu.total * 100).toFixed(1);
-            document.getElementById('cpu-bar').style.width = Math.min(cpuPct, 100) + '%';
-            document.getElementById('cpu-value').textContent = cpuPct + '%';
-
-            var memPct = ((d.memory.totalKb - d.memory.availKb) / d.memory.totalKb * 100).toFixed(1);
-            document.getElementById('mem-bar').style.width = Math.min(memPct, 100) + '%';
-            document.getElementById('mem-value').textContent = memPct + '%';
-
-            var diskPct = (d.disk.used / d.disk.total * 100).toFixed(1);
-            document.getElementById('disk-bar').style.width = Math.min(diskPct, 100) + '%';
-            document.getElementById('disk-value').textContent = diskPct + '%';
-
-            document.getElementById('metrics-hostname').textContent = d.hostname;
-            var up = d.uptime;
-            var upDays = Math.floor(up / 86400);
-            var upHours = Math.floor((up % 86400) / 3600);
-            var upMins = Math.floor((up % 3600) / 60);
-            document.getElementById('metrics-uptime').textContent = 'Up ' + upDays + 'd ' + upHours + 'h ' + upMins + 'm';
-            document.getElementById('metrics-procs').textContent = d.procs + ' procs';
-            document.getElementById('metrics-load').textContent = 'Load: ' + d.load['1min'].toFixed(2);
-            document.getElementById('metrics-network').textContent = 'RX: ' + fmtBytes(d.network.rxBytes) + ' | TX: ' + fmtBytes(d.network.txBytes);
-
-            var ts = d.tailscale || {};
-            var tsUp = !!ts.up;
-            var tsMtu = ts.mtu != null ? ts.mtu : 'n/a';
-            var tsExpected = ts.expectedMtu != null ? ts.expectedMtu : null;
-            var tsOk = tsExpected == null || ts.mtu === tsExpected;
-            var tsEl = document.getElementById('metrics-tailscale');
-            var tsInfo = 'TS MTU: ' + tsMtu + ' (' + (tsUp ? 'up' : 'down');
-            if (tsExpected != null) { tsInfo += (tsOk ? ' ok' : ' !=' + tsExpected); }
-            tsInfo += ')';
-            tsEl.textContent = tsInfo;
-            tsEl.style.color = tsUp && tsOk ? '#4ade80' : '#ef4444';
-
-            var sshUp = d.ssh && d.ssh.listening;
-            var sshEl = document.getElementById('metrics-ssh');
-            sshEl.textContent = 'SSH: ' + (sshUp ? 'up' : 'down');
-            sshEl.style.color = sshUp ? '#4ade80' : '#ef4444';
-          }).catch(function() {});
+          fetch('/api/metrics/metrics.json').then(function (r) { return r.json(); }).then(function (d) {
+            document.getElementById('metrics-latency').textContent = (performance.now() - t0).toFixed(0) + 'ms';
+            metricsSubs.forEach(function (fn) { try { fn(d); } catch (e) {} });
+          }).catch(function () {});
         }
-        fetchMetrics();
-        setInterval(fetchMetrics, 10000);
+
+        var prevNet = null;
+        function updateSystem(d) {
+          var cpuPct = ((d.cpu.total - d.cpu.idle) / d.cpu.total * 100).toFixed(1);
+          document.getElementById('cpu-bar').style.width = Math.min(cpuPct, 100) + '%';
+          document.getElementById('cpu-value').textContent = cpuPct + '%';
+
+          var memPct = ((d.memory.totalKb - d.memory.availKb) / d.memory.totalKb * 100).toFixed(1);
+          document.getElementById('mem-bar').style.width = Math.min(memPct, 100) + '%';
+          document.getElementById('mem-value').textContent = memPct + '%';
+
+          var diskPct = (d.disk.used / d.disk.total * 100).toFixed(1);
+          document.getElementById('disk-bar').style.width = Math.min(diskPct, 100) + '%';
+          document.getElementById('disk-value').textContent = diskPct + '%';
+
+          document.getElementById('metrics-hostname').textContent = d.hostname;
+          var up = d.uptime;
+          document.getElementById('metrics-uptime').textContent = 'Up ' + Math.floor(up / 86400) + 'd ' +
+            Math.floor((up % 86400) / 3600) + 'h ' + Math.floor((up % 3600) / 60) + 'm';
+          document.getElementById('metrics-procs').textContent = d.procs + ' procs';
+          document.getElementById('metrics-load').textContent = 'Load: ' + d.load['1min'].toFixed(2);
+
+          // Network throughput: per-second rate derived from consecutive
+          // cumulative-counter samples (reset on reboot -> clamp at 0).
+          var netEl = document.getElementById('metrics-network');
+          if (prevNet && d.timestamp > prevNet.t) {
+            var dt = d.timestamp - prevNet.t;
+            netEl.textContent = 'RX ' + fmtRate(Math.max(0, d.network.rxBytes - prevNet.rx) / dt) +
+              ' · TX ' + fmtRate(Math.max(0, d.network.txBytes - prevNet.tx) / dt);
+          } else {
+            netEl.textContent = 'RX ' + fmtBytes(d.network.rxBytes) + ' · TX ' + fmtBytes(d.network.txBytes);
+          }
+          prevNet = { t: d.timestamp, rx: d.network.rxBytes, tx: d.network.txBytes };
+
+          // CPU / SSD temperatures from hwmon (max sensor per chip).
+          var temps = d.temps || [];
+          var findTemp = function (names) {
+            for (var i = 0; i < temps.length; i++) {
+              if (names.indexOf(temps[i].name) >= 0) return temps[i].tempC;
+            }
+            return null;
+          };
+          var parts = [];
+          var cpuT = findTemp(['k10temp', 'coretemp', 'zenpower', 'cpu_thermal', 'acpitz']);
+          var nvmeT = findTemp(['nvme']);
+          if (cpuT != null) parts.push('CPU ' + cpuT + '°C');
+          if (nvmeT != null) parts.push('NVMe ' + nvmeT + '°C');
+          document.getElementById('metrics-temps').textContent = parts.join(' · ');
+
+          var ts = d.tailscale || {};
+          var tsUp = !!ts.up;
+          var tsMtu = ts.mtu != null ? ts.mtu : 'n/a';
+          var tsExpected = ts.expectedMtu != null ? ts.expectedMtu : null;
+          var tsOk = tsExpected == null || ts.mtu === tsExpected;
+          var tsEl = document.getElementById('metrics-tailscale');
+          var tsInfo = 'TS MTU: ' + tsMtu + ' (' + (tsUp ? 'up' : 'down');
+          if (tsExpected != null) { tsInfo += (tsOk ? ' ok' : ' !=' + tsExpected); }
+          tsInfo += ')';
+          tsEl.textContent = tsInfo;
+          tsEl.style.color = tsUp && tsOk ? '#4ade80' : '#ef4444';
+
+          var sshUp = d.ssh && d.ssh.listening;
+          var sshEl = document.getElementById('metrics-ssh');
+          sshEl.textContent = 'SSH: ' + (sshUp ? 'up' : 'down');
+          sshEl.style.color = sshUp ? '#4ade80' : '#ef4444';
+        }
+
+        // GPU cards: built once per detected GPU set, then updated in place
+        // so the CSS width transitions keep animating between polls.
+        var gpuSig = "";
+        function gpuCard(g, i) {
+          return '<div class="metric-card">' +
+            '<div class="metric-label">' + g.name + ' <span style="color:#555">' + (g.driver || "") + '</span></div>' +
+            '<div class="metric-bar-bg"><div id="gpu-' + i + '-bar" class="metric-bar-fill" style="background:linear-gradient(90deg,#a855f7,#7c3aed)"></div></div>' +
+            '<div class="metric-value" id="gpu-' + i + '-value">--</div>' +
+            '<div class="metric-bar-bg" style="margin-top:6px"><div id="gpu-' + i + '-mem" class="metric-bar-fill" style="background:linear-gradient(90deg,#38bdf8,#2563eb);opacity:0"></div></div>' +
+            '<div style="font-size:0.75rem;color:#777;margin-top:0.4rem" id="gpu-' + i + '-meta"></div>' +
+            '</div>';
+        }
+        function updateGpus(gpus) {
+          var box = document.getElementById('gpu-cards');
+          if (!box) return;
+          gpus = gpus || [];
+          if (!gpus.length) {
+            box.innerHTML = '<div class="oc-empty">No GPU detected</div>';
+            gpuSig = "";
+            return;
+          }
+          var sig = gpus.map(function (g) { return g.name + '|' + g.driver; }).join(';');
+          if (sig !== gpuSig) {
+            gpuSig = sig;
+            box.innerHTML = gpus.map(gpuCard).join("");
+          }
+          gpus.forEach(function (g, i) {
+            var util = g.utilization == null ? null : Number(g.utilization);
+            var bar = document.getElementById('gpu-' + i + '-bar');
+            var val = document.getElementById('gpu-' + i + '-value');
+            var memBar = document.getElementById('gpu-' + i + '-mem');
+            var meta = document.getElementById('gpu-' + i + '-meta');
+            if (bar) bar.style.width = (util == null ? 0 : Math.min(util, 100)) + '%';
+            if (val) val.textContent = util == null ? 'n/a' : util + '%';
+            var pct = (g.memoryTotalMiB && g.memoryUsedMiB != null) ? (g.memoryUsedMiB / g.memoryTotalMiB * 100) : 0;
+            if (memBar) {
+              memBar.style.width = Math.min(pct, 100) + '%';
+              memBar.style.opacity = pct ? '1' : '0';
+            }
+            var bits = [];
+            if (g.memoryTotalMiB && g.memoryUsedMiB != null) bits.push(fmtBytes(g.memoryUsedMiB * 1048576) + ' / ' + fmtBytes(g.memoryTotalMiB * 1048576) + ' VRAM');
+            if (g.temperatureC != null) bits.push(g.temperatureC + '°C');
+            if (g.powerW != null) bits.push(g.powerW + 'W' + (g.powerLimitW != null ? ' / ' + g.powerLimitW + 'W' : ""));
+            if (meta) meta.textContent = bits.join(' · ');
+          });
+        }
+
+        onMetrics(updateSystem);
+        onMetrics(function (d) { updateGpus(d.gpus); });
+        metricsPoll();
+        setInterval(metricsPoll, 10000);
         </script>
         ''}
 
         ${lib.optionalString (cfg.systemMetrics.enable && cfg.systemMetrics.opencodeGo.usageJsonFile != null) ''
-        <h2 class="section-title">OpenCode Go Usage</h2>
+        <h2 class="section-title">OpenCode Go</h2>
         <div class="metrics-grid">
-          ${lib.concatStringsSep "\n" (map (w: ''
+          <div class="metric-card" style="grid-column: 1 / -1;">
+            <div class="metric-label">Go usage</div>
+            <div class="metric-bar-bg" style="height:10px"><div id="oc-hero-bar" class="metric-bar-fill"></div></div>
+            <div style="display:flex;align-items:baseline;justify-content:space-between;gap:1rem;margin-top:0.4rem;flex-wrap:wrap">
+              <div class="metric-value" id="oc-hero-value">--</div>
+              <div style="font-size:0.85rem;color:#888" id="oc-hero-meta">--</div>
+            </div>
+            <div style="font-size:0.8rem;color:#777;margin-top:0.25rem" id="oc-hero-pace"></div>
+          </div>
+          ${lib.concatStringsSep "\n" (map (w: let
+            label = if w == "rolling" then "Rolling (5h)" else if w == "weekly" then "Weekly" else "Monthly";
+          in ''
           <div class="metric-card">
-            <div class="metric-label">${w}</div>
+            <div class="metric-label">${label}</div>
             <div class="metric-bar-bg"><div id="oc-${w}-bar" class="metric-bar-fill"></div></div>
             <div class="metric-value" id="oc-${w}-value">--</div>
             <div style="font-size:0.75rem;color:#777;margin-top:0.3rem" id="oc-${w}-reset"></div>
@@ -196,34 +298,82 @@ let
           '') [ "rolling" "weekly" "monthly" ])}
         </div>
         <script>
+        function ocFmtReset(iso) {
+          if (!iso) return "";
+          var ms = new Date(iso) - Date.now();
+          if (isNaN(ms)) return "";
+          var mins = Math.max(0, Math.round(ms / 60000));
+          var d = Math.floor(mins / 1440), h = Math.floor((mins % 1440) / 60), m = mins % 60;
+          if (d > 0) return d + "d " + h + "h";
+          return (h > 0 ? h + "h " : "") + m + "m";
+        }
+        function ocFmtDate(iso) {
+          if (!iso) return "";
+          var dt = new Date(iso);
+          if (isNaN(dt)) return "";
+          return dt.toLocaleDateString(undefined, { month: "short", day: "numeric" });
+        }
+        function ocBarColor(pct) {
+          return pct >= 90 ? "#ef4444" : pct >= 70 ? "#f59e0b" : "linear-gradient(90deg, #5a8aff, #7c6aff)";
+        }
         function ocUsageUpdate(d) {
           var oc = d.opencodeGo;
           if (!oc) return;
-          ['rolling', 'weekly', 'monthly'].forEach(function (w) {
+          ["rolling", "weekly", "monthly"].forEach(function (w) {
             var win = oc[w];
             if (!win) return;
-            var bar = document.getElementById('oc-' + w + '-bar');
-            var val = document.getElementById('oc-' + w + '-value');
-            var reset = document.getElementById('oc-' + w + '-reset');
+            var bar = document.getElementById("oc-" + w + "-bar");
+            var val = document.getElementById("oc-" + w + "-value");
+            var reset = document.getElementById("oc-" + w + "-reset");
             if (!bar || !val) return;
-            bar.style.width = Math.min(win.percent, 100) + '%';
-            bar.style.background = win.percent >= 90 ? '#ef4444'
-              : win.percent >= 70 ? '#f59e0b' : 'linear-gradient(90deg, #5a8aff, #7c6aff)';
-            val.textContent = win.percent + '%';
-            if (reset && win.resetsAt) {
-              var mins = Math.max(0, Math.round((new Date(win.resetsAt) - Date.now()) / 60000));
-              var hrs = Math.floor(mins / 60);
-              reset.textContent = 'resets in ' + (hrs > 0 ? hrs + 'h ' : String()) + (mins % 60) + 'm';
+            var pct = Number(win.percent);
+            if (isNaN(pct)) pct = 0;
+            bar.style.width = Math.min(pct, 100) + "%";
+            bar.style.background = ocBarColor(pct);
+            val.textContent = pct + "% used";
+            if (reset) {
+              var bits = [];
+              if (win.resetsAt) bits.push("Resets in " + ocFmtReset(win.resetsAt));
+              if (win.status && win.status !== "ok") bits.push(win.status);
+              reset.textContent = bits.join(" · ");
             }
           });
+          var m = oc.monthly || {};
+          var mp = Number(m.percent);
+          if (isNaN(mp)) mp = 0;
+          var hbar = document.getElementById("oc-hero-bar");
+          var hval = document.getElementById("oc-hero-value");
+          var hmeta = document.getElementById("oc-hero-meta");
+          var hpace = document.getElementById("oc-hero-pace");
+          if (hbar) { hbar.style.width = Math.min(mp, 100) + "%"; hbar.style.background = ocBarColor(mp); }
+          if (hval) hval.textContent = mp + "% used";
+          if (hmeta) {
+            var meta = [];
+            if (m.resetsAt) meta.push("Renews " + ocFmtDate(m.resetsAt) + " · resets in " + ocFmtReset(m.resetsAt));
+            if (oc.fetchedAt) meta.push("Updated " + new Date(oc.fetchedAt).toLocaleTimeString());
+            hmeta.textContent = meta.join("  ");
+          }
+          if (hpace) {
+            // Rough pace hint only when monthly reset is known; avoids inventing history.
+            if (m.resetsAt) {
+              var remainMs = new Date(m.resetsAt) - Date.now();
+              var remainDays = remainMs / 86400000;
+              if (remainDays > 0 && mp > 0 && mp < 100) {
+                var left = 100 - mp;
+                hpace.textContent = left.toFixed(1) + "% headroom over ~" + remainDays.toFixed(1) + " days";
+              } else if (mp >= 100) {
+                hpace.textContent = "Monthly limit reached";
+              } else {
+                hpace.textContent = "";
+              }
+            } else {
+              hpace.textContent = "";
+            }
+          }
         }
-        // own poll — the system-metrics setInterval captured the original
-        // fetchMetrics reference, so wrapping/reassigning it here would never run.
-        function ocUsageFetch() {
-          fetch('/api/metrics/metrics.json').then(function (r) { return r.json(); }).then(ocUsageUpdate).catch(function () {});
-        }
-        ocUsageFetch();
-        setInterval(ocUsageFetch, 10000);
+        // Register with the shared poller defined in the System section —
+        // the whole page now makes one metrics.json request per interval.
+        onMetrics(ocUsageUpdate);
         </script>
         ''}
 

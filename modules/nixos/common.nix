@@ -270,6 +270,10 @@ in
     # Override when: Host needs port 8081 for something else.
     services.proxy.enable = lib.mkDefault true;
     services.proxy.systemMetrics.enable = lib.mkDefault true;
+    # Basic auth on the dashboard page + metrics API (the proxied service paths
+    # are unaffected). The agenix secret is scope "main", so every host can
+    # decrypt it; override per-host if a dashboard should stay open.
+    services.proxy.dashboard.auth.enable = lib.mkDefault true;
 
     # Development profile enabled universally: all 6 hosts enable it (recon O1:
     # desktop, laptop, minimal, oracle, server, wsl),

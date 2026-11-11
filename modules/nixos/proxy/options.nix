@@ -1,4 +1,4 @@
-{ lib, ... }:
+{ lib, flake, ... }:
 let
   upstreamType = lib.types.submodule {
     options = {
@@ -136,6 +136,31 @@ in
         type = lib.types.lines;
         default = "Browse available services";
         description = "Short description shown below the title.";
+      };
+
+      # Basic auth for the dashboard page and its /api/metrics endpoint only.
+      # Service paths registered as upstreams are NOT covered — they keep
+      # whatever auth the backend provides. The password lives in agenix and
+      # is hashed at boot by a systemd oneshot, so the plaintext never enters
+      # the Nix store (only the bcrypt hash reaches the Caddy EnvironmentFile).
+      auth = {
+        enable = lib.mkEnableOption "HTTP basic auth on the dashboard page and metrics API";
+
+        username = lib.mkOption {
+          type = lib.types.str;
+          default = flake.config.me.username;
+          description = "Basic-auth username (defaults to the primary user).";
+        };
+
+        passwordSecret = lib.mkOption {
+          type = lib.types.str;
+          default = "dashboard-basic-auth";
+          description = ''
+            agenix secret holding the dashboard password in plaintext. The
+            secret must exist on any host with auth enabled; a
+            <literal>nixos-rebuild</literal> assertion enforces it.
+          '';
+        };
       };
 
       # Cards for services that are NOT behind this proxy: they have their own

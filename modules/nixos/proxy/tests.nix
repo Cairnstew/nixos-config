@@ -33,6 +33,13 @@ in
         || lib.hasPrefix "/" cfg.dashboard.ensemble.apiPath;
       message = "my.services.proxy.dashboard.ensemble.apiPath must start with /.";
     }
+    # Dashboard auth needs its agenix secret on the host; otherwise the Caddy
+    # EnvironmentFile would be missing and Caddy would fail to load.
+    {
+      assertion = !cfg.enable || !cfg.dashboard.auth.enable
+        || lib.hasAttr cfg.dashboard.auth.passwordSecret config.age.secrets;
+      message = "my.services.proxy.dashboard.auth: agenix secret '${cfg.dashboard.auth.passwordSecret}' must exist on this host when dashboard auth is enabled.";
+    }
     # Upstream host consistency: warn when an upstream uses autoBindTailscaleIp on its service
     # but the proxy host still points at 127.0.0.1 (the upstream won't be reachable).
     # This cannot be checked automatically (Tailscale IP is runtime-known), so this is a
