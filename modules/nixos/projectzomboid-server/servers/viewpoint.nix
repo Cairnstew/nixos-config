@@ -154,6 +154,21 @@ in
       Zombies = 4; # Normal
       MultiHitZombies = true;
       StarterKit = true;
+
+      # Zombie respawn: ON, but only in cells nobody has seen for 30 in-game
+      # days. Project Zomboid has no per-safehouse zombie-respawn exclusion —
+      # `RespawnUnseenHours` is the native lever, and it protects a base simply
+      # because the base is loaded/seen whenever anyone is there or nearby.
+      #
+      # The values below are the vanilla "Normal" respawn rate (72h between
+      # pulses, 10% of a cell's target per pulse) with only the unseen gate
+      # raised from 16h to 720h. A base visited at least once a month in-game
+      # therefore never respawns; the rest of the map refills after a long
+      # absence. Raise 720 to 8760 (a full in-game year) for a hard guarantee.
+      ZombieRespawn = 2; # Normal preset; overridden below
+      "ZombieConfig.RespawnHours" = 72;
+      "ZombieConfig.RespawnUnseenHours" = 720; # 30 in-game days
+      "ZombieConfig.RespawnMultiplier" = 0.1;
     };
   };
 }
