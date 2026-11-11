@@ -157,3 +157,22 @@ If everything is clean, confirm the sync succeeded. If there are uncommitted cha
 - **Rebase vs merge:** This command uses `pull --rebase` to avoid creating a merge commit. If the user prefers a merge commit, use `git pull origin master` instead.
 - **Detached HEAD after abort:** If you abort a rebase mid-way, you may end up on a detached HEAD. Run `git checkout <branch>` to return to your branch.
 - **The stash now includes untracked files** (`--include-untracked`), so nothing in the working tree survives into the sync window that could collide with incoming file names.
+
+## RUN LOG
+
+### 2026-11-11 — step 5: a conflicted `stash pop` keeps the stash entry, and `git add` alone leaves a staged result
+- Lesson: on branch `desktop`, `git stash pop` (line 112) conflicted in
+  `configurations/nixos/server/default.nix` because master had appended a new
+  Ollama section at the same anchor the local work appended a Project Zomboid
+  block to. Git then printed "The stash entry is kept in case you need it
+  again" — step 5 never says what to do about that, so the run ends with
+  `stash@{0}` still holding a duplicate of the restored work (and could be
+  popped twice on a later run). Separately, the source stash was fully staged
+  (both files under "Changes to be committed"), so `git add <resolved-file>`
+  (line 124) only clears the unmerged state and leaves the work staged, while
+  line 127 asks for an **unstaged** result: `git reset -q` after the add is what
+  actually reaches it. Neither is a doc fix in place (append-only), so it is
+  recorded here.
+- Resolution pattern that worked: both sides had inserted at the same anchor, so
+  keep the local host-specific block and the incoming master block, and drop only
+  the stash's stale duplicate of the section header upstream had rewritten.
