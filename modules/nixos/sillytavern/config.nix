@@ -44,6 +44,17 @@ let
 in
 {
   config = lib.mkIf cfg.enable {
+    # Chub Search ships in the upstream fork (github:Cairnstew/SillyTavern):
+    # `plugins/chub-search/` is a server-side proxy for ro.chub.ai (Cloudflare
+    # requires an Origin header a browser cannot set) and the vendored
+    # `public/scripts/extensions/third-party/SillyTavern-Chub-Search/` UI
+    # extension calls that same-origin route. Server plugins are opt-in, so
+    # turn them on for the two directories the package ships.
+    services.sillytavern-nixos.config.enableServerPlugins = true;
+    # The plugin is a read-only store path, not a git checkout: auto-update
+    # would only log "Git is not installed" and skip it every start.
+    services.sillytavern-nixos.config.enableServerPluginsAutoUpdate = false;
+
     # SillyTavern is an Express app behind Caddy: it has to trust the
     # X-Forwarded-For header Caddy sets, or every request looks like it came
     # from 127.0.0.1 (which also trips the private-address allowlist).

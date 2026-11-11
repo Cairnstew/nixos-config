@@ -19,6 +19,10 @@ This module declares **no** options of its own. Everything lives upstream under
 | `services.sillytavern-nixos.extensions` | `{}` | Third-party UI extensions, pinned by `url` + `rev` |
 | `services.sillytavern-nixos.plugins` | `{}` | Server-side plugins, pinned by `url` + `rev` |
 | `services.sillytavern-nixos.proxyUpstreams` | `[]` | Reverse-proxy hints for a consumer's proxy |
+| `services.sillytavern-nixos.charGen.enable` | `false` | Install the guided card generator CLI (`sillytavern-mkchar`) |
+| `services.sillytavern-nixos.charGen.endpoint` | `null` | Completions base URL; `null` = llama.cpp router in-system, else Ollama |
+| `services.sillytavern-nixos.charGen.model` | `"llama3.1"` | Model id sent in the completions request |
+| `services.sillytavern-nixos.charGen.apiKeyFile` | `null` | File with the endpoint's bearer token (unneeded for Ollama) |
 
 The namespace is **not** `services.sillytavern` — that belongs to nixpkgs' own
 module, which this config does not enable (upstream asserts the two are never

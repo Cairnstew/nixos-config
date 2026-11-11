@@ -10,6 +10,14 @@ let
   # Q6_K at the native 8192 with room for the KV cache.
   lumimaidContext = 8192;
 
+  # Default model selected in SillyTavern. One of the HuggingFace-pulled
+  # Personal Favorites: use the Ollama safeName (slashes normalised) that
+  # `my.services.ollama.models` and `modelLayers.catalog` both name, not the
+  # local `lumimaid-8b` alias. `defaultModelPreset` is the catalog key, which
+  # is also the generated Chat Completion preset name.
+  defaultModel = "hf.co-Lewdiculous-Lumimaid-v0.2-8B-GGUF-IQ-Imatrix-Q6_K-imat";
+  defaultModelPreset = "lumimaid-v2-8b";
+
   # Canonical Ollama Go templates, used for every local model because GGUF
   # metadata templates cannot be trusted here: lumimaid-8b v0.1 stores the
   # bare name `llama3` (renders literally), while the newer quants carry full
@@ -981,12 +989,47 @@ in
     settings.common.oai_settings = {
       chat_completion_source = "custom";
       custom_url = "http://127.0.0.1:11434/v1";
-      custom_model = lumimaidModel;
-      preset_settings_openai = lumimaidModel;
-      openai_max_context = lumimaidContext;
+      custom_model = defaultModel;
+      preset_settings_openai = defaultModelPreset;
+      openai_max_context = 8192;
       openai_max_tokens = 512;
       stream_openai = true;
       bind_preset_to_connection = true;
+    };
+
+    # Choices extension (`/cyoa`). Its settings live in
+    # `extension_settings.sillytavern_choices`; define them here so the prompt
+    # is versioned and survives rebuilds (the UI textarea shows this text).
+    # Edit here, not in the UI: `settingsPolicy = "merge"` re-applies it.
+    settings.common.extension_settings.sillytavern_choices = {
+      enabled = true;
+      num_responses = 5;
+      response_length = 500;
+      apply_wi_an = true;
+      # One suggestion per LLM call: the extension loops `num_responses`
+      # times with a per-slot intent/person, so the whole response is the
+      # suggestion and there is no list format to parse. The extension fills
+      # {{intent}}/{{person}}; SillyTavern substitutes {{user}}. Groups use
+      # "any other character" rather than {{char}}, which names only one member.
+      # Varying person avoids a wall of "I ..."; forbidding second person and
+      # internal states keeps the buttons actionable.
+      llm_prompt = ''
+        Write one suggestion for what {{user}} could do or say next.
+
+        Intent: {{intent}}.
+        Write in {{person}} person.
+
+        One sentence under 25 words: a concrete action, line of dialogue, or decision {{user}} could send. Never a thought, an internal question, or a description of the scene.
+
+        If first person, use "I ..." as {{user}}. If third person, name {{user}} ("{{user}} ...") rather than using "he" or "she". Never use second person ("you", "your").
+
+        Do not describe {{user}}'s feelings or physical sensations. Do not write any other character's dialogue, thoughts, or reactions, and do not have them act or react.
+
+        Output only the suggestion, with no quotes, backticks, or commentary.
+      '';
+      # The old default wrapped the chosen suggestion in backticks, which
+      # reads as code/quoted text to the model. Send it as a plain user turn.
+      llm_prompt_impersonate = "{{suggestionText}}";
     };
 
     # Chat-completion wiring for the locally served GGUFs (Ollama backend).
@@ -1196,6 +1239,19 @@ in
       passwordFile = config.age.secrets."sillytavern-password".path;
     };
 
+    # ── Character-card generator (sillytavern-mkchar) ────────────────────
+    # Guided CLI that drafts a TavernCard v2 from a fixed questionnaire.
+    # `charGen.endpoint = null` resolves at build time: llama.cpp's router
+    # when services.llama-cpp-nixos.enable is set (it is not — Ollama owns
+    # the GPU), else Ollama at http://127.0.0.1:11434/v1. `model` must name
+    # an Ollama tag/safeName; the upstream default `llama3.1` is not pulled
+    # on this host, so bind it to the same Lumimaid v0.2 the chat profile
+    # uses. No apiKeyFile: the loopback Ollama endpoint takes no token.
+    charGen = {
+      enable = true;
+      model = defaultModel;
+    };
+
     # Extensions/plugins are pinned store paths; the UI's update button would
     # fail against a read-only path. (Also forced off upstream when any are
     # declared; spelled out for the record.)
@@ -1214,6 +1270,14 @@ in
         # and reports the real one (nix run failure 2026-10-31).
         fetchgitExtra.hash = "sha256-oo/hzRzbNH0bXdME99UeyXok8wkQzowykOyAUiDfk8A=";
       };
+
+      # CHUB card search ships with the upstream fork (its server-side proxy
+      # plugin + vendored third-party extension), not through this list.
+
+      # Story suggestions (/cyoa) ship with the upstream fork too: the
+      # vendored copy fixes a positional generateQuietPrompt call that had
+      # apply_wi_an inverted and response_length ignored.
+      # https://github.com/RPFiend/SillyTavern-Choices
     };
 
     # No `systemdOverrides` any more. Both raw-unit escapes were upstream
