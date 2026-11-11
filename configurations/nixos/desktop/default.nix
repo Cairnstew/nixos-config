@@ -11,6 +11,22 @@
   networking.hostName = "desktop";
   nixos-unified.sshTarget = "seanc@desktop";
 
+  # ── Memory profile: gaming desktop, not a build box ────────────────────────
+  # The hardening defaults cap the interactive user session at 60% high /
+  # 65% max of RAM (modules/nixos/hardening/options.nix:172-180). On this 31 GiB
+  # box that is ~18.8/20.3 GiB, which the PZ client (~9 GiB) + the in-game
+  # hosted server (~5 GiB) + desktop apps (~4 GiB) reach. At MemoryHigh the
+  # kernel starts reclaiming and swapping inside the session even while the box
+  # still has free RAM; that is what made Viewpoint shrink its caches
+  # (terrain relief 96 -> 64 MiB, far cells 64 MiB) and stall chunk/vehicle
+  # streaming. Raise the ceiling well clear of the game's working set while
+  # keeping the system.slice floor (10%, 3.1 GiB) for sshd/journald/kernel and
+  # zram. 80%/85% = ~25.0/26.6 GiB.
+  my.system.hardening.workloadLimits = {
+    userSliceMemoryHigh = "80%";
+    userSliceMemoryMax = "85%";
+  };
+
   # ── VM Builder ──────────────────────────────────────────────────────────────
   # Build VM packages for testing before deploying to real hardware.
   # The extraConfig strips GPU/gaming/battery config that doesn't work in QEMU
