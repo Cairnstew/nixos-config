@@ -122,11 +122,12 @@ in
 
           modelCmds = lib.concatStringsSep "\n" (lib.mapAttrsToList
             (tag: mcfg:
-              let safeName = builtins.replaceStrings [ ":" "/" ] [ "-" "-" ] tag;
-                  # ggufPath models skip the registry pull: `ollama create` reads
-                  # the file straight out of the container (mount it at the same
-                  # path via extraVolumes). fromRef is what goes after FROM.
-                  fromRef = if mcfg.ggufPath != null then mcfg.ggufPath else tag;
+              let
+                safeName = builtins.replaceStrings [ ":" "/" ] [ "-" "-" ] tag;
+                # ggufPath models skip the registry pull: `ollama create` reads
+                # the file straight out of the container (mount it at the same
+                # path via extraVolumes). fromRef is what goes after FROM.
+                fromRef = if mcfg.ggufPath != null then mcfg.ggufPath else tag;
               in
               ''echo "--- Sourcing model: ${tag} ${if mcfg.ggufPath != null then "(local ${mcfg.ggufPath})" else "(registry pull)"} ---"
               ${lib.optionalString (mcfg.ggufPath == null) (pullCmd tag)}
