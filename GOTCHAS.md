@@ -1987,6 +1987,8 @@ Symptom: while checking whether `templates/*/flake.lock` were up to date with th
 
 Symptom: from a session whose cwd was `/home/seanc/Documents/planet`, `nix-eval` with `attr = "templates"` failed with `flake 'git+file:///home/seanc/Documents/planet' does not provide attribute ... 'templates'`, even though the nixos-config flake does provide it. Cause: the tool derives `flakeDir` from `process.env.PWD || "."` (`modules/home/opencode/tools/nix-eval.ts:77`), then runs `nix eval ${flakeDir}#…` with `cwd: flakeDir` (`modules/home/opencode/tools/nix-eval.ts:105`); it has no workdir/ref argument. Fix: for a different repo use the Bash tool with `workdir` (or `cd <repo> && nix eval …`); reserve `nix-eval` for the current flake. The cgroup RAM cap is applied only inside the nix-eval tool, so a raw `nix eval` elsewhere loses that protection — scope the expression down.
 
+Confirmed 2026-11-12 (desktop): do not infer the tool's PWD from the session's reported `Working directory:`. A session whose env block said `/home/seanc/nixos-config` had `nix-eval` evaluate `flake 'git+file:///home/seanc/Projects/python-tofu'`, i.e. the PWD of the long-lived opencode *service* process, not the session's — so "reserve `nix-eval` for the current flake" is only safe when the returned flake path (or a successful eval) proves which flake it picked. When it names a different repo, re-run the same expression through the Bash tool with `workdir=/home/seanc/nixos-config` rather than debugging the attribute.
+
 ---
 
 **Houdini bundles Python 3.13 — `pkgs.python3` is 3.14, so a `withPackages` env put on `PYTHONPATH` must use `python313` and a derived path, never `python3` with a hardcoded `python3.13`** (2026-10-27, desktop)
