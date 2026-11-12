@@ -302,3 +302,21 @@ If `ci-monitor action=watch` returns a `timeout` error, check the `url` field ma
 ### 2026-11-11 — Step 8: a `server`→`master` conflict is fixed by merging `origin/master` into the host branch, not rebasing
 
 - **`Merge Per-Host Branch` failed with conflicts in `GOTCHAS.md`, `EFFICIENCY-PROPOSALS.md`, `configurations/nixos/server/default.nix`, and `modules/home/opencode/commands/git-commit-push.md`** (`git-commit-push.md:247`). The fix table says `git pull --rebase origin <branch>`, but that does nothing when you are already on the host branch and the conflict is with `master`, and rebasing an already-pushed host branch would rewrite published history. Correct fix: `git fetch origin && git merge origin/master` on the host branch, resolve conflicts (keep both sides for append-only files like GOTCHAS/EFFICIENCY/RUN LOGs; keep the owning host branch's version for its own config file, e.g. `server/default.nix`), push, and the auto-merge job then fast-forwards master. Verified: after pushing the merge commit, `Merge Per-Host Branch` and every other workflow went green and `origin/master` advanced to the merge.
+
+### 2026-11-12 — a clean tree is a terminal state, not a reason to "not skip steps"
+
+- **"Do not skip steps" has no clean-tree exit** (`git-commit-push.md:5`), and
+  Step 1's only stop condition is a dirty in-progress tree
+  (`git-commit-push.md:16`). This run started clean (`git status` → "nothing to
+  commit", 0 staged, 0 untracked, `0 0` vs `origin/desktop`), so steps 2-8 had
+  nothing to act on — `nix fmt` / `git add -A` are no-ops and Step 5 would abort
+  with "nothing to commit". State that and stop after Step 1 rather than burning
+  the flake-check gate on an empty changeset.
+- With no new commit, the useful report is the already-pushed HEAD's health:
+  `gh run list --json ... --jq 'select(.headSha=="<sha>")'` showed every
+  workflow `success` for `5f9a7c7e`, so nothing needed monitoring.
+- Step 1b's snippet (`git-commit-push.md:54`) **and** Step 6d's
+  (`git-commit-push.md:183`) still ship the broken
+  `git ls-files -i --exclude-standard`; `-c` is required. The 2026-10-18 entry
+  records only Step 1b, and append-only self-apply cannot fix either body —
+  this needs a real edit of both blocks.
