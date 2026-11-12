@@ -111,6 +111,14 @@ let
       (s.defaultPort or 16261)
       (s.udpPort or 16262)
     ];
+
+  # A router mapping only means something when THIS host binds the ports: either
+  # the game's own Host button (client host) or the dedicated server. Both are
+  # per-host, so a host that merely plays on someone else's world (desktop since
+  # 2026-11-12) must not keep asking the router for forwards to a closed port.
+  # The dedicated-server flag alone is not enough: a client-host-only setup is
+  # exactly the case where `enable = false` and the Host button binds the ports.
+  pzExposePorts = lib.any (s: s.clientHost.enable || s.enable) (lib.attrValues cfg.servers);
 in
 {
   config = lib.mkIf cfg.enable {
@@ -163,11 +171,13 @@ in
     # be replayed to reach any other local UDP socket. The subnet is written
     # down because the interface is DHCP (`networking.defaultGateway` is null),
     # so it is not derivable at eval time.
-    networking.firewall.extraCommands = ''
+    networking.firewall.extraCommands = lib.mkIf pzExposePorts ''
       iptables -A nixos-fw -p udp -s 192.168.1.0/24 --sport 1900 -j nixos-fw-accept
     '';
 
     # Router port mapping for the client-host ports, WITHOUT Project Zomboid.
+    # Rendered only where something binds those ports (`pzExposePorts`), so the
+    # desktop stops poking the router now that the world lives on `server`.
     #
     # `upnp = true` in the server config would be the natural way to ask, but
     # Build 42 has no UPnP implementation at all (the 42.21 jar contains no UPnP
@@ -175,7 +185,7 @@ in
     # kept here instead, with miniupnpc. The timer re-runs it because a mapping
     # is still lost on a router reboot; `upnpc -a` is idempotent and costs one
     # SSDP exchange.
-    systemd.services.pz-upnp-forward = {
+    systemd.services.pz-upnp-forward = lib.mkIf pzExposePorts {
       description = "Forward the Project Zomboid client-host ports on the router (UPnP)";
       wantedBy = [ "multi-user.target" ];
       wants = [ "network-online.target" ];
@@ -217,7 +227,7 @@ in
       '';
     };
 
-    systemd.timers.pz-upnp-forward = {
+    systemd.timers.pz-upnp-forward = lib.mkIf pzExposePorts {
       wantedBy = [ "timers.target" ];
       timerConfig = {
         OnBootSec = "2min";

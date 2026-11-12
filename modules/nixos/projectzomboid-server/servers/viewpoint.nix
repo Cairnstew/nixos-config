@@ -40,8 +40,11 @@ in
     # modules/nixos/projectzomboid-server/config.nix, because `~/Zomboid` is a
     # user path no system module may own.
     #
-    # Independent of `enable`: this host runs no dedicated server for this pack,
-    # and the pack still has to render.
+    # Independent of `enable`: the common case is a host with no dedicated
+    # server for this pack that still has to render. NOTE every host currently
+    # forces this OFF (`configurations/nixos/desktop/default.nix` and `server`,
+    # 2026-11-12) because the dedicated server on `server` owns the world now;
+    # the option stays for a host that wants the in-game Host flow again.
     clientHost.enable = true;
 
     # Named to match `name` above, rather than left at the option's

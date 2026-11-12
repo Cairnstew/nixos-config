@@ -641,24 +641,37 @@
   # but loses the renderer. To freeze the install, set `updateOnStart = false`
   # once it exists (that option never creates one) and bump deliberately after
   # re-checking Viewpoint's mod.info.
-  # NO dedicated server on this host. The world is hosted from the game's own
-  # in-game Host button instead — see servers/viewpoint.nix → clientHost.
+  # NO dedicated server on this host. The world moved to `server` on
+  # 2026-11-11 (dedicated, schedule-only) — see configurations/nixos/server.
   #
-  # CLIENT-ONLY (2026-10-30): top-level `enable = true` renders `clientHosts`
-  # (~/Zomboid/Server/viewpoint.ini next to the servertest save) via the Home
-  # Manager half, but `updateOnStart = false` keeps the shared steamcmd install
-  # unit from running — no `cairnsgerry` token is cached under
-  # HOME=/mnt/data/project-zomboid and a unit has no TTY for the fallback
-  # prompt (exit 4, fails the whole switch). The server itself stays off via
-  # `servers.viewpoint.enable = false`. Mods stay pre-seeded by hand in
-  # ~/Zomboid/mods (`home.installMods = false`, libraryfolders.vdf clobber —
-  # see projectzomboid-server/config.nix); re-run pz-client-mods by hand when
-  # the pack changes. To restore the shared download: one-time login (see
-  # `steamLogin` below), then flip `updateOnStart` back to true.
+  # NO CLIENT-HOST FILES EITHER (2026-11-12): `clientHosts` is forced empty, so
+  # the Home Manager half no longer re-renders `~/Zomboid/Server/viewpoint.ini`
+  # or `viewpoint_SandboxVars.lua` on this host. Those files stay on disk
+  # untouched (the old world's config; nothing deletes them), and the client
+  # joins the `server` world over ZeroTier, where the server's own `Mods=` /
+  # `WorkshopItems=` drive the mods. This removes the last writer of the world
+  # config so the desktop cannot drift from — or silently clobber — the copy the
+  # dedicated server now owns.
+  #
+  # The pack's Mods-menu preset (`~/Zomboid/Lua/pz_modlist_settings.cfg`) is
+  # also left in place but stops being refreshed: upstream gates the preset on
+  # `clientHost.enable` (modules/services/client-host.nix filters
+  # `clientResolved` before rendering it), so there is no preset-without-server-
+  # files mode yet. Re-rendering just the preset needs an upstream option.
+  #
+  # `updateOnStart = false` keeps the shared steamcmd install unit from running
+  # — no `cairnsgerry` token is cached under HOME=/mnt/data/project-zomboid and a
+  # unit has no TTY for the fallback prompt (exit 4, fails the whole switch).
+  # Mods stay pre-seeded by hand in ~/Zomboid/mods (`home.installMods = false`,
+  # libraryfolders.vdf clobber — see projectzomboid-server/config.nix); re-run
+  # pz-client-mods by hand when the pack changes. To restore the shared
+  # download: one-time login (see `steamLogin` below), then flip
+  # `updateOnStart` back to true.
   services.project-zomboid-servers = {
     enable = true;
     updateOnStart = false;
     servers.viewpoint.enable = false;
+    servers.viewpoint.clientHost.enable = lib.mkForce false;
 
     # Authenticate the shared steamcmd install as cairnsgerry instead of
     # `anonymous`, so Workshop items anonymous cannot fetch (mature-content
@@ -675,9 +688,10 @@
     web.enable = false;
   };
 
-  # The client's Zomboid home is seeded by the upstream module's Home Manager
-  # half, imported for every host in modules/nixos/projectzomboid-server/. All
-  # that is left here is the world itself.
+  # The client's Zomboid home has nothing left to seed here: with
+  # `clientHost.enable` off, `clientHosts` is empty, so the upstream Home
+  # Manager half's `home.enable` default (`clientHosts != {}`) is false and its
+  # activation does not run at all.
 
   # ── Docker ──────────────────────────────────────────────────────────────
   # Move Docker data to the dedicated 500GB SATA SSD (sdb) for space

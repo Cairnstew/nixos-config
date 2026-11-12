@@ -29,9 +29,13 @@ let
   enabledServers = filterAttrs (_: srv: srv.enable) cfg.servers;
   resolved = mapAttrs (name: srv: pz.resolveServer cfg.modpacks name srv) enabledServers;
 
-  # Client hosts are resolved independently of `enable` — on this fleet the
-  # dedicated server is OFF and the pack drives the game's own Host button, so
-  # without this the smoke test would report nothing at all.
+  # Client hosts are resolved independently of `enable` — that independence is
+  # upstream's design (a client-host-only host runs no dedicated server, and the
+  # pack must still render). On this fleet only `servers.viewpoint.clientHost`
+  # decides it, and every host currently forces it OFF: the world is hosted by
+  # the dedicated server on `server`, so the smoke test usually reports no client
+  # host at all. Keep the filter: it is what re-enables the report when a host
+  # turns rendering back on.
   clientResolved = mapAttrs (name: srv: pz.resolveServer cfg.modpacks name srv) (
     filterAttrs (_: srv: srv.clientHost.enable) cfg.servers
   );
