@@ -159,11 +159,15 @@ Hardware configs should be separate and minimal:
 Don't reference secrets directly. Use conditional guards:
 
 ```nix
-# Good: Check if secret exists first
-my.services.cachix-push.enable = config.age.secrets ? "cache-token";
+# Good: guard the whole cache-push block on the secret existing
+my.caches.personal.push = lib.mkIf (config.age.secrets ? "nixos-config-cache-token") {
+  enable = true;
+  tokenFile = config.age.secrets."nixos-config-cache-token".path;
+  postBuildHook = true;
+};
 
 # Bad: Will fail if secret missing
-my.services.cachix-push.tokenFile = config.age.secrets.cache-token.path;
+my.caches.personal.push.tokenFile = config.age.secrets."nixos-config-cache-token".path;
 ```
 
 ---

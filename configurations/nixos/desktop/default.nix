@@ -11,6 +11,21 @@
   networking.hostName = "desktop";
   nixos-unified.sshTarget = "seanc@desktop";
 
+  # ── Binary cache (push) ────────────────────────────────────────────────────
+  # Desktop is the box that builds most often, so it is what fills the personal
+  # Cachix cache for every other host to substitute from. Two filters keep the
+  # free tier small: `push.excludePatterns` (defaults in
+  # modules/nixos/caches/config.nix: nvidia/cuda/kernel-modules/firmware) drops
+  # host-specific outputs, and `cachix push` itself skips anything already
+  # served by cache.nixos.org — so only self-built paths are uploaded.
+  my.caches.personal.push = lib.mkIf (config.age.secrets ? "nixos-config-cache-token") {
+    enable = true;
+    tokenFile = config.age.secrets."nixos-config-cache-token".path;
+    onCalendar = "*-*-* 04:00:00";
+    # The real win: publish each path as soon as this host builds it.
+    postBuildHook = true;
+  };
+
   # ── Memory profile: gaming desktop, not a build box ────────────────────────
   # The hardening defaults cap the interactive user session at 60% high /
   # 65% max of RAM (modules/nixos/hardening/options.nix:172-180). On this 31 GiB
