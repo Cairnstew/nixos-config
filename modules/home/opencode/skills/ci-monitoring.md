@@ -148,3 +148,23 @@ The tool matches runs by commit SHA, not "latest run on branch," to avoid pickin
 
 - `skills/git-staging-commit-push.md` — Full git workflow including CI monitoring steps
 - `skills/git-repo-management.md` — Branch-per-host model
+
+## RUN LOG
+
+### 2026-11-12 — auto-detection fails when the tool is called from the agent's tool runtime; pass `repo` + `run_id`
+
+- Lesson: this file's summary claims the tool "auto-detects the repo and run ID
+  from the current git state" (`ci-monitoring.md:16`). In a real session those
+  two detections both failed: `{"error":"repo_detection_failed","message":"Could
+  not detect repo from git remote. Pass 'repo' explicitly …"}` with no `repo`
+  argument, then `{"error":"git_error","message":"Could not determine HEAD SHA:
+  fatal: not a git repository (or any of the parent directories): .git"}` once
+  `repo` was supplied — the MCP server process has no git checkout as its cwd, so
+  neither the remote nor `HEAD` is visible. That burns two calls before every
+  watch.
+- Fix: when watching from the agent (not a shell in the repo), pass **both**
+  `repo` (e.g. `"Cairnstew/nixos-config"`) and `run_id` (from
+  `gh run list --branch=<branch> --limit=5`), never rely on auto-detection. The
+  plain-shell fallback that worked immediately:
+  `gh run watch <run-id> --exit-status` inside the checkout. The `ci-monitor`
+  CLI (`ci-monitor list|watch|view`) is unaffected — it really does run in cwd.
