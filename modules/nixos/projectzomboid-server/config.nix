@@ -89,6 +89,15 @@ let
       stripPrefix = true;
       displayName = "Project Zomboid dashboard";
       host = cfg.manage.bind;
+      # The dashboard UI can start/stop servers and ban players, so it gets the
+      # same basic auth as the dashboard itself. Caddy expands these env vars
+      # from the dashboard-auth-env unit; when auth is off, the tailnet ACL is
+      # the only gate — which is why it is not exposed outside the tailnet.
+      extraConfig = lib.optionalString config.my.services.proxy.dashboard.auth.enable ''
+        basic_auth {
+          {$DASHBOARD_AUTH_USER} {$DASHBOARD_AUTH_HASH}
+        }
+      '';
     };
   };
 
