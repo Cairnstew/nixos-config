@@ -1,10 +1,15 @@
 { config, lib, pkgs, flake, ... }:
 let
   inherit (import ./cache-type.nix { inherit lib; })
-    mkSubstituters mkPublicKeys mkPushServices mkPushAssertions mkPostBuildHook;
+    mkSubstituters mkPublicKeys mkPushServices mkPushAssertions mkPostBuildHook mkScopeServices;
 
   # Post-build hook publishing to every cache that opted in; null if none did.
   hook = mkPostBuildHook config.my.caches pkgs;
+
+  # Cross-host scoping job (evaluates every host's toplevel derivation).
+  # `inputs.self.outPath` is the source this generation was built from, so the
+  # derivations it sees match the running system.
+  scoped = mkScopeServices config.my.caches pkgs flake.inputs.self.outPath;
 
   # Flake defaults must be inherited *per leaf*. Wrapping a whole cache
   # submodule value in `mkDefault` (the old behaviour) meant any normal-priority
@@ -52,8 +57,8 @@ in
       post-build-hook = lib.mkIf (hook != null) hook;
     };
 
-    systemd.services = (mkPushServices config.my.caches pkgs).services;
-    systemd.timers = (mkPushServices config.my.caches pkgs).timers;
+    systemd.services = (mkPushServices config.my.caches pkgs).services // scoped.services;
+    systemd.timers = (mkPushServices config.my.caches pkgs).timers // scoped.timers;
 
     assertions = mkPushAssertions config.my.caches;
   };

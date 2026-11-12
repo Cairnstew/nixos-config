@@ -73,6 +73,50 @@ let
           leave the machine.
         '';
       };
+
+      autoScope = lib.mkEnableOption ''
+        deriving an exclusion list from cross-host closures instead of
+        hand-written patterns.
+
+        A scheduled job evaluates every `nixosConfigurations` host's toplevel
+        derivation, collects the set of derivation *names* per host, and writes
+        a pattern file holding every name that appears in exactly one host.
+        Names — not store hashes — are compared on purpose: hashes change with
+        every revision, so a hash-based list would silently stop matching after
+        a rebuild, whereas a name such as `nvidia-x11-595.112.07` stays stable.
+        The name-level rule is also collision-safe: if two hosts both have a
+        derivation called `source`, `source` is shared and never excluded.
+
+        The generated file is read by both the timer push and the post-build
+        hook, in addition to `excludePatterns`.
+      '';
+
+      autoScopeFlake = lib.mkOption {
+        type = lib.types.nullOr lib.types.str;
+        default = null;
+        example = "/home/seanc/nixos-config";
+        description = ''
+          Flake reference the scoping job evaluates. `null` (default) uses the
+          running system's own flake source, so the derivations it sees are the
+          ones this generation was built from. Point it at a worktree to iterate
+          on host definitions without a rebuild.
+        '';
+      };
+
+      autoScopeOnCalendar = lib.mkOption {
+        type = lib.types.str;
+        default = "*-*-* 03:30:00";
+        description = "When to regenerate the auto-scope exclusion list.";
+      };
+
+      autoScopeFile = lib.mkOption {
+        type = lib.types.str;
+        default = "";
+        description = ''
+          Where the generated exclusion patterns are written. Empty means
+          `/var/lib/cachix-push/<cacheName>-auto-exclude`.
+        '';
+      };
     };
   };
 
@@ -127,6 +171,10 @@ let
       cname = if cache.cacheName != "" then cache.cacheName else name;
       patternFile = pkgs'.writeText "cachix-push-excludes-${name}"
         (lib.concatMapStrings (pattern: pattern + "\n") p.excludePatterns);
+      # Written by the auto-scope job; absent until it has run once.
+      autoFile =
+        if p.autoScopeFile != "" then p.autoScopeFile
+        else "/var/lib/cachix-push/${cname}-auto-exclude";
     in
     pkgs'.writeShellScript "cachix-push-${name}" ''
       set -uo pipefail
@@ -152,6 +200,19 @@ let
       ''}
       ${lib.optionalString (p.excludePatterns == [ ]) ''
         cp "$work/all" "$work/keep"
+      ''}
+
+      ${lib.optionalString p.autoScope ''
+        # Host-exclusive derivations, derived nightly by cachix-auto-scope-*.
+        # The file is anchored patterns of the form `-<name>$`.
+        if [ -s ${autoFile} ]; then
+          before=$(wc -l < "$work/keep")
+          grep -E -v -f ${autoFile} "$work/keep" > "$work/keep-auto" || true
+          mv "$work/keep-auto" "$work/keep"
+          echo "cachix-push-${cname}: auto-scope dropped $((before - $(wc -l < "$work/keep"))) path(s)"
+        else
+          echo "cachix-push-${cname}: no auto-scope list yet (${autoFile})"
+        fi
       ''}
 
       ${lib.optionalString (p.maxPathSizeMiB != null) ''
@@ -186,6 +247,69 @@ let
       # uploader's memory (jobs × chunks × chunk-size) polite on an interactive box.
       xargs -r -n 200 cachix push --omit-deriver --jobs 2 ${cname} < "$work/keep"
     '';
+  # Derive the exclusion list from cross-host closures: every derivation name
+  # that appears in exactly one host's toplevel closure. Returns a script that
+  # writes the pattern file atomically; it refuses to publish a partial result.
+  mkScopeScript = name: cache: pkgs': flakeRef:
+    let
+      cname = if cache.cacheName != "" then cache.cacheName else name;
+      outFile =
+        if cache.push.autoScopeFile != "" then cache.push.autoScopeFile
+        else "/var/lib/cachix-push/${cname}-auto-exclude";
+    in
+    pkgs'.writeShellScript "cachix-auto-scope-${name}" ''
+      set -euo pipefail
+      export PATH=${lib.makeBinPath [ pkgs'.coreutils pkgs'.gnugrep pkgs'.gnused pkgs'.gawk pkgs'.jq pkgs'.nix ]}:"$PATH"
+
+      flake=${lib.escapeShellArg flakeRef}
+      out=${lib.escapeShellArg outFile}
+
+      work="$(mktemp -d)"
+      trap 'rm -rf "$work"' EXIT
+
+      # Host roster comes from the flake itself so adding a host needs no edit.
+      nix eval --json "$flake#nixosConfigurations" --apply builtins.attrNames \
+        | jq -r '.[]' > "$work/hosts"
+
+      total=0
+      ok=0
+      failed=""
+      while read -r host; do
+        total=$((total + 1))
+        # One eval at a time on purpose: concurrent host evals have OOM-killed
+        # this box's session repeatedly.
+        if drv="$(nix eval --raw "$flake#nixosConfigurations.$host.config.system.build.toplevel.drvPath" 2>"$work/err-$host")"; then
+          nix-store -qR "$drv" \
+            | sed -e 's|^/nix/store/[a-z0-9]\{32\}-||' -e 's|\.drv$||' \
+            | sort -u > "$work/names-$host"
+          ok=$((ok + 1))
+        else
+          failed="$failed $host"
+        fi
+      done < "$work/hosts"
+
+      if [ -n "$failed" ]; then
+        # A missing host would make its names look exclusive and over-exclude
+        # shared derivations, so keep the previous list untouched.
+        echo "cachix-auto-scope-${cname}: refusing to publish, could not evaluate:$failed" >&2
+        sed -n '1,5p' "$work"/err-* >&2 || true
+        exit 1
+      fi
+
+      cat "$work"/names-* | sort | uniq -c \
+        | awk '$1 == 1 { sub(/^ *[0-9]+ /, ""); print }' \
+        | sort > "$work/exclusive-names"
+
+      # Store paths are <hash>-<name>, so anchor the name at the end of the
+      # line: a shorter name that merely prefixes another one cannot match.
+      sed -e 's/[][\.*^$(){}+?|\\]/\\&/g' "$work/exclusive-names" \
+        | sed -e 's/^/-/' -e 's/$/$/' > "$work/patterns"
+
+      install -D -m 0644 "$work/patterns" "$out"
+
+      echo "cachix-auto-scope-${cname}: $ok/$total hosts, $(wc -l < "$work/exclusive-names") single-host names -> $out"
+      echo "cachix-auto-scope-${cname}: e.g. $(head -3 "$work/exclusive-names" | paste -sd ' ' -)"
+    '';
 in
 {
   inherit cacheOpts pushOpts;
@@ -207,6 +331,53 @@ in
     in
     map (c: c.publicKey) (lib.attrValues enabled);
 
+  # Regenerate the auto-scope list on a schedule (and before each push).
+  mkScopeServices = caches: pkgs': flakeRef:
+    let
+      scoped = lib.filterAttrs (n: v: v.push.enable && v.push.autoScope) caches;
+    in
+    {
+      services = lib.mapAttrs'
+        (name: cache:
+          let
+            cname = if cache.cacheName != "" then cache.cacheName else name;
+          in
+          {
+            name = "cachix-auto-scope-${name}";
+            value = {
+              description = "Derive host-exclusive cache exclusions for ${cname}";
+              after = [ "network-online.target" ];
+              wants = [ "network-online.target" ];
+              serviceConfig = {
+                Type = "oneshot";
+                TimeoutStartSec = "2h";
+                Nice = 19;
+                IOSchedulingClass = "idle";
+                PrivateTmp = true;
+                ExecStart = mkScopeScript name cache pkgs' flakeRef;
+              };
+            };
+          })
+        scoped;
+      timers = lib.mapAttrs'
+        (name: cache:
+          let
+            cname = if cache.cacheName != "" then cache.cacheName else name;
+          in
+          {
+            name = "cachix-auto-scope-${name}";
+            value = {
+              description = "Timer for host-exclusive cache exclusions: ${cname}";
+              wantedBy = [ "timers.target" ];
+              timerConfig = {
+                OnCalendar = cache.push.autoScopeOnCalendar;
+                Persistent = true;
+              };
+            };
+          })
+        scoped;
+    };
+
   # Build systemd push services for caches with push enabled
   mkPushServices = caches: pkgs':
     let
@@ -225,8 +396,10 @@ in
             name = "cachix-push-${name}";
             value = {
               description = "Push to Cachix cache: ${cname}";
-              after = [ "network-online.target" ];
-              wants = [ "network-online.target" ];
+              after = [ "network-online.target" ] ++ lib.optional cache.push.autoScope "cachix-auto-scope-${name}.service";
+              # Not Requires: a failed scoping run must not block the push, it
+              # just leaves the previous exclusion list in place.
+              wants = [ "network-online.target" ] ++ lib.optional cache.push.autoScope "cachix-auto-scope-${name}.service";
               path = [
                 pkgs'.coreutils
                 pkgs'.findutils

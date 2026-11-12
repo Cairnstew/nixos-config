@@ -24,6 +24,8 @@
     onCalendar = "*-*-* 04:00:00";
     # The real win: publish each path as soon as this host builds it.
     postBuildHook = true;
+    # Derive host-exclusive exclusions nightly instead of hand-listing them.
+    autoScope = true;
   };
 
   # ── Memory profile: gaming desktop, not a build box ────────────────────────

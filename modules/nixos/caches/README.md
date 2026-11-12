@@ -20,6 +20,39 @@ rest of that cache's defaults.
 | `push.excludePatterns` | `grep -E -v` patterns dropped before upload |
 | `push.maxPathSizeMiB` | Drop single paths whose own NAR is larger than this |
 | `push.postBuildHook` | Also push paths the local daemon just built |
+| `push.autoScope` | Derive the exclusion list from cross-host closures nightly |
+| `push.autoScopeFlake` | Flake to evaluate (default: this generation's source) |
+| `push.autoScopeOnCalendar` | Regeneration schedule (default `03:30`) |
+
+## Auto-scoping (`push.autoScope`)
+
+Instead of hand-maintaining "this is host-specific" patterns, a nightly job
+(`cachix-auto-scope-<name>`) evaluates **every** `nixosConfigurations` host's
+toplevel derivation, collects the set of derivation *names* per host, and writes
+the names that appear in **exactly one** host to
+`/var/lib/cachix-push/<cacheName>-auto-exclude`. Both the timer push and the
+post-build hook read that file in addition to `excludePatterns`.
+
+Two deliberate choices:
+
+- **Names, not store hashes.** Hashes change with every revision, so a
+  hash-based allowlist silently stops matching after a rebuild (the eval'd
+  desktop toplevel drv and the installed one already differ in this repo). A
+  name like `houdini-22.0.368` is revision-stable.
+- **Name-level uniqueness, not path-level.** If two hosts both contain *some*
+  derivation called `source`, `source` counts as shared and is never excluded —
+  which kills the collision problem that plagues ad-hoc "exclude by name" lists.
+  Patterns are anchored (`-<name>$`) so a shorter name cannot match a longer one.
+
+It refuses to publish a partial list: if any host fails to evaluate, the
+previous file is left untouched (a missing host would make its names look
+exclusive and over-exclude shared paths).
+
+Measured on 6 hosts / 27,933 unique drvs: 12,069 drvs are single-host, and the
+generated list (3,428 names) matches 620 paths of the desktop closure. Note this
+mostly removes paths that would never upload anyway (`cachix push` already skips
+anything upstream-substitutable) — its real targets are locally built
+single-host derivations such as the Houdini toolchain.
 
 ## How a push is filtered
 
