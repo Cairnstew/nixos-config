@@ -625,6 +625,21 @@ in
     enable = true;
     updateOnStart = true;
     steamLogin = "cairnsgerry";
+
+    # The pz-manage dashboard (upstream) and its backup timer. Loopback only:
+    # Caddy proxies /pz-admin/ (see modules/nixos/projectzomboid-server/
+    # config.nix) and the tailnet/ZeroTier network is the authentication.
+    manage = {
+      enable = true;
+      port = 27080;
+    };
+    backup = {
+      enable = true;
+      directory = "/mnt/data/backup/project-zomboid";
+      schedule = "*-*-* 04:30:00";
+      keep = 7;
+    };
+
     servers.viewpoint = {
       enable = true;
       # The shared definition sets these plainly, so a per-host override needs
@@ -640,6 +655,14 @@ in
   # 0400 seanc:users is correct for the desktop's Home Manager render, but the
   # service user cannot read it, so hand it over on this host.
   age.secrets.pz-join-password = {
+    owner = lib.mkForce "root";
+    group = lib.mkForce config.services.project-zomboid-servers.group;
+    mode = lib.mkForce "0440";
+  };
+
+  # The dashboard and the prep script both read the RCON password, so the
+  # server group needs it too (the web-console user is a member).
+  age.secrets.pz-rcon-password = {
     owner = lib.mkForce "root";
     group = lib.mkForce config.services.project-zomboid-servers.group;
     mode = lib.mkForce "0440";

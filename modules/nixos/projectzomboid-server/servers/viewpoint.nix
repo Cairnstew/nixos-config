@@ -119,6 +119,11 @@ in
     udpPort = 16262; # UDP, direct connection — PZ binds two per instance
     # 27017, not 27015 (Minecraft's default RCON) or 27016 (the `knox` server).
     rconPort = 27017;
+
+    # The dashboard reads this through the same file (the service user is in
+    # the server group). RCON stays on loopback: it is plaintext TCP and
+    # `openFirewall` only opens the two UDP game ports.
+    secretFiles.RCONPassword = config.age.secrets.pz-rcon-password.path;
     openFirewall = true;
     public = true;
     publicName = "Project Viewpoint Vanilla+";

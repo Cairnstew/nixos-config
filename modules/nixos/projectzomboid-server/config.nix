@@ -78,6 +78,20 @@ let
     })
     cfg.webConsoleUpstreams);
 
+  # The dashboard UI and API. Same shape as the console upstreams: a plain
+  # loopback target registered on Caddy. The prefix is stripped, so the
+  # service sees `/api/...` and its relative asset URLs resolve under
+  # `/pz-admin/`.
+  pzManageUpstream = lib.optionalAttrs cfg.manage.enable {
+    pz-admin = {
+      inherit (cfg.manage) port;
+      path = "/pz-admin/";
+      stripPrefix = true;
+      displayName = "Project Zomboid dashboard";
+      host = cfg.manage.bind;
+    };
+  };
+
   # The client-host ports to forward on the router. Read from the server
   # definition so the mapping cannot drift from what the game binds.
   pzHostPorts =
@@ -210,7 +224,7 @@ in
     # statix's W20 warns on the repeat, and the upstream module's own checks are
     # the only thing keeping the two in sync today.
     my = {
-      services.proxy.upstreams = pzUpstreams;
+      services.proxy.upstreams = lib.mkMerge [ pzUpstreams pzManageUpstream ];
 
       homeManager = {
         # The Home Manager HALF of the upstream module. The NixOS module only

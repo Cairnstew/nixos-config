@@ -18,20 +18,25 @@ let
 
   # The console URL prefix the upstream module emits for its ttyd consoles —
   # `webConsoleUpstreams` gives each server `path = "/pz/<name>/"`.
-  consoleBase = "/pz";
+  consoleBase = if cfg.web.enable then "/pz" else "";
 
   # The API needs the web-console user: the upstream module grants that user a
   # polkit rule for `manage-units` on project-zomboid-* (see its config.nix),
-  # which is what authorises start/stop/restart. It also needs `web.enable` for
-  # the consoles to exist at all, so the API is gated on both rather than
-  # inventing a second privilege path.
-  apiEnable = cfg.enable && cfg.web.enable && servers != [ ];
-
-  apiPort = 7798; # loopback; 7799 is the minecraft dashboard API
+  # which is what authorises start/stop/restart. It is gated on `web.enable`
+  # (for the console links) or `manage.enable` (which creates the same user for
+  # the dashboard), rather than inventing a second privilege path.
+  #
+  # `pz-manage` (upstream `manage.enable`) serves the same `/status` and
+  # `/<name>/<action>` shapes as api.py, plus players/logs/config/backups. When
+  # it is enabled we reuse it rather than run two control planes; api.py stays
+  # for hosts that have not opted in.
+  apiEnable = cfg.enable && servers != [ ] && (cfg.web.enable || cfg.manage.enable);
+  useManage = cfg.manage.enable;
+  apiPort = if useManage then cfg.manage.port else 7798; # loopback; 7799 is the minecraft dashboard API
 in
 {
   config = lib.mkIf apiEnable {
-    systemd.services.project-zomboid-dashboard-api = {
+    systemd.services.project-zomboid-dashboard-api = lib.mkIf (!useManage) {
       description = "Project Zomboid dashboard management API";
       after = [ "network.target" ];
       wants = [ "network.target" ];
