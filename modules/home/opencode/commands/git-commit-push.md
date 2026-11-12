@@ -320,3 +320,8 @@ If `ci-monitor action=watch` returns a `timeout` error, check the `url` field ma
   `git ls-files -i --exclude-standard`; `-c` is required. The 2026-10-18 entry
   records only Step 1b, and append-only self-apply cannot fix either body —
   this needs a real edit of both blocks.
+
+### 2026-11-12 — a red `Merge Per-Host Branch` on the *previous* HEAD is a live blocker Steps 1-8 never surface; preview it with `merge-tree`
+
+- **Lesson:** on a clean tree (Step 1 terminal state, `git-commit-push.md:306`) Steps 2-8 are no-ops, yet the branch can still be unpublishable. `gh run list -L 20 --json databaseId,name,status,conclusion,headSha --jq '.[] | select(.headSha|startswith("<sha>"))'` on HEAD `38d8837a` showed `Merge Per-Host Branch` = **failure** while the other four workflows were green: desktop→master conflicted in `GOTCHAS.md` because both branches appended at EOF. No step reports this, and every later push keeps failing that same job until the conflict is fixed on the host branch — so "clean tree, stop after Step 1" is not the end of the job, it is the point to check the existing HEAD's auto-merge.
+- **Fix/practice:** preview the conflict set read-only *before* mutating the worktree with the 2026-11-11 recipe (`git-commit-push.md:304`): `git merge-tree --write-tree origin/master HEAD` listed exactly one conflicted file (`GOTCHAS.md`), matching the CI log, so the resolution was known in advance. Then `git fetch origin && git merge origin/master`, keep both appended sections, `git add GOTCHAS.md`, commit the merge, push — `Merge Per-Host Branch` went green and `origin/master` fast-forwarded to the merge commit (`0 0` vs `origin/desktop`).
