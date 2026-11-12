@@ -236,9 +236,12 @@
       };
     };
 
-    # Auto-suspend after 15 min idle. The desktop.hyprland profile sets this to
-    # lib.mkDefault 0 (never suspend), so a plain assignment here wins.
-    idle.suspendTimeout = 900;
+    # Never auto-suspend: the desktop must stay awake and SSH/Tailscale
+    # reachable. Screens still power off (profile dpmsTimeout = 180s) and the
+    # session still locks (lockTimeout = 300s) — only the `systemctl suspend`
+    # listener is dropped. Pinned explicitly (profile default is mkDefault 0)
+    # so the intent survives a future profile change.
+    idle.suspendTimeout = 0;
 
     wallpapers = {
       images =
