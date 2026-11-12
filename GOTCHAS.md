@@ -2251,3 +2251,11 @@ Symptom: the first dedicated Viewpoint start logged `*** SERVER STARTED ****` bu
 Cause: the upstream launcher set `HOME=<dataDir>/<name>` but Java's `user.home` comes from the passwd entry, so PZ wrote a fresh default world under the service user's home (`/mnt/data/project-zomboid/Zomboid`) and never read the prep script's `<dataDir>/<name>/Zomboid/Server/viewpoint.ini`. `HOME` also locates Steam's token, so it cannot simply be moved to the per-server home.
 
 Fix/practice: the launcher now passes `-Duser.home="$PZ_SERVER_HOME"` and the unit sets `HOME=<dataDir>` plus `PZ_SERVER_HOME=<dataDir>/<name>`. When a PZ server ignores its rendered config, check `tr '\0' ' ' < /proc/<pid>/cmdline` for `-Duser.home`, then `showoptions` via the console FIFO — a default `PublicName` means it read the wrong `Zomboid` tree. The same run also showed `systemd-tmpfiles` refusing the `/mnt/data` (seanc) → `/mnt/data/backup` (root) ownership transition (`unsafe path transition`, resetup exit 65), so the PZ backup directory (`configurations/nixos/server/default.nix:638`) is created by a root oneshot (`project-zomboid-backup-dir`), not a tmpfiles rule.
+
+**The PZ input prints an `installMods` deprecation warning on every eval — it is upstream noise, not your config** (2026-11-12, server)
+
+Symptom: any `nix eval` of a host that includes the PZ modules (`server`, `desktop`) emits `evaluation warning: services.project-zomboid-servers.home.installMods is deprecated: a client-hosted world gets its mods through the game's Host flow …`. It reads like this repo sets `installMods = true` — it does not (`modules/nixos/projectzomboid-server/config.nix:253` says it is deliberately left at the default `false`).
+
+Cause: upstream wraps the deprecation in `lib.warn` **outside** the `mkIf` (`mkIf (cfg.home.installMods && hosts != { }) (lib.warn … { … })` in upstream `modules/home.nix`), so the message is forced while the module content is constructed regardless of the condition. Present since the input was updated to `a9007d38c78f018d04c45877dc96a5ad77cf48a2` (`flake.lock:1204`).
+
+Fix/practice: ignore it. Do not "fix" it by setting `home.installMods = false` (that is already the default and would only add a redundant assignment) — the only real fix is upstream moving the `lib.warn` inside the `mkIf`, which belongs in the `nixos-projectzomboid-servers` repo.
