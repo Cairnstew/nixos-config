@@ -1227,6 +1227,15 @@
   my.services.zerotier = {
     enable = true;
     networks = [ "1c33c1ced07e2ece" "363c67c55ab5da47" ];
+    # ZeroTier advertises 2800 regardless of the path. Over the relayed WAN
+    # path to the game server only ~1300-byte payloads survive (measured: 1300
+    # OK, 1372/1400 fail, ~155 ms relayed RTT), so the server's single large
+    # `connection-details` packet (whole server description + 438 Workshop /
+    # 480 mod ids) was silently dropped while the 7–24 byte control packets
+    # kept flowing — the Project Zomboid join stalled forever on a connection
+    # that looked healthy on both ends. Clamp both ends; fragments die on the
+    # way out of the oversized sender. See modules/nixos/zerotier/README.md.
+    mtu = 1300;
   };
 
   # Trust the ZeroTier interface so LAN-style gaming sessions (e.g. the

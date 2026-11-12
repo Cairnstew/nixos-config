@@ -6,6 +6,14 @@ in
   # ── L0: Nix assertions ──────────────────────────────────────────────────────
   # No hard assertion on networks being non-empty — ZeroTier can be pre-installed
   # and networks joined later via `zerotier-cli join <network-id>`.
+  assertions = [
+    {
+      # Anything below 576 is not a usable IPv4 MTU and anything above 65535
+      # cannot be expressed; a typo here would blackhole the mesh interface.
+      assertion = cfg.mtu == null || (cfg.mtu >= 576 && cfg.mtu <= 65535);
+      message = "my.services.zerotier.mtu must be null or a valid MTU (576-65535).";
+    }
+  ];
 
   # ── L2: Smoke test service ─────────────────────────────────────────────────
   systemd.services.zerotier-smoke-test = lib.mkIf cfg.enable {
