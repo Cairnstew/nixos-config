@@ -609,18 +609,30 @@ in
   };
 
   # ── Project Zomboid dedicated server (Viewpoint) ────────────────────────
-  # The world moved here from desktop's in-game Host on 2026-11-11.
+  # The world moved here from desktop's in-game Host on 2026-11-11. Its save,
+  # viewpoint.ini, db/viewpoint.db and Zomboid/Lua were copied into
+  # /mnt/data/project-zomboid/viewpoint/Zomboid BEFORE this block was enabled,
+  # so the prep script merges into the existing ini and preserves
+  # Seed/ResetID/ServerPlayerID instead of generating a new world.
   #
-  # Stage A: `updateOnStart = false` and no `servers.*` yet, so this only
-  # creates the `project-zomboid` user/group and /mnt/data/project-zomboid.
-  # The world is copied in before the install unit and the server first run,
-  # because the server's prep creates a fresh .ini (and therefore a fresh
-  # Seed/ResetID) if the desktop's ini is not already in place.
-  # Stage B: flip `updateOnStart`, `servers.viewpoint.enable`,
-  # `autoStart` and `steamLogin` on after the copy.
+  # `public = false`: this host is behind T-Mobile CGNAT, so it cannot
+  # advertise a reachable address. Players join the PPextendo ZeroTier network
+  # (363c67c55ab5da47) and connect to 172.23.49.211:16261 directly.
+  #
+  # `steamLogin`: the token is cached once under HOME=/mnt/data/project-zomboid
+  # (see GOTCHAS.md); some Workshop items answer Access Denied anonymously.
   services.project-zomboid-servers = {
     enable = true;
-    updateOnStart = false;
+    updateOnStart = true;
+    steamLogin = "cairnsgerry";
+    servers.viewpoint = {
+      enable = true;
+      # The shared definition sets these plainly, so a per-host override needs
+      # mkForce rather than a same-priority assignment.
+      autoStart = lib.mkForce true;
+      public = lib.mkForce false;
+      clientHost.enable = lib.mkForce false;
+    };
   };
 
   # The dedicated server's prep script runs as `project-zomboid` and reads the
