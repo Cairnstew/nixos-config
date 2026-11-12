@@ -2259,3 +2259,11 @@ Symptom: any `nix eval` of a host that includes the PZ modules (`server`, `deskt
 Cause: upstream wraps the deprecation in `lib.warn` **outside** the `mkIf` (`mkIf (cfg.home.installMods && hosts != { }) (lib.warn … { … })` in upstream `modules/home.nix`), so the message is forced while the module content is constructed regardless of the condition. Present since the input was updated to `a9007d38c78f018d04c45877dc96a5ad77cf48a2` (`flake.lock:1204`).
 
 Fix/practice: ignore it. Do not "fix" it by setting `home.installMods = false` (that is already the default and would only add a redundant assignment) — the only real fix is upstream moving the `lib.warn` inside the `mkIf`, which belongs in the `nixos-projectzomboid-servers` repo.
+
+**The PZ dashboard origin serves `/`, not `/pz-admin/` — a 404 on the raw port is not a fault; probe it through Caddy** (2026-11-12, server)
+
+Symptom: after bumping the PZ input, `curl http://127.0.0.1:27080/pz-admin/` returned **404** while `http://127.0.0.1:27080/` returned 200 (on the previous rev it was the reverse, 200/404), which reads like the dashboard or the proxy broke in the update.
+
+Cause: the origin's base path is upstream's own and is not this repo's contract. Our Caddy upstream registers `path = "/pz-admin/"` with `stripPrefix = true` (`modules/nixos/projectzomboid-server/config.nix:88`), so Caddy strips the prefix and the service always sees `/`, whatever it happens to serve at its root that release. The browser-facing route is the generated `handle_path /pz-admin/*` block (`sudo grep pz-admin /etc/static/caddy/caddy_config`).
+
+Fix/practice: verify through the proxy, not the origin port — `curl -sO /dev/null -w '%{http_code}' http://127.0.0.1:8081/api/projectzomboid/status` should be **200** with a JSON array carrying `active`, `state`, `schedule.nextStart` and `idleStop`, and `http://127.0.0.1:8081/pz-admin/` should be **401** when dashboard auth is on (any 404 there is real). Note caddy does not restart on `nix run` when the generated Caddyfile hash is unchanged (`/etc/caddy/caddy_config` symlink), so the running process can predate the switch and still be correct.
