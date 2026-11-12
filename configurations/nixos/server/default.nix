@@ -254,6 +254,14 @@ in
     # HomeServer (mesh fallback) + Gaming (LAN-style game sessions).
     # These are joined by zerotierone-joinNetworks on service start.
     networks = [ "1c33c1ced07e2ece" "363c67c55ab5da47" ];
+    # ZeroTier advertises 2800 no matter what the path carries; the relayed
+    # path to the desktop only delivers ~1300-byte payloads (measured: 1272 OK,
+    # 1372/1400 fail, ~165 ms relayed RTT). The oversized Project Zomboid
+    # `connection-details` datagram was dropped while small control packets
+    # still flowed, hanging the join on an apparently healthy connection.
+    # Both ends must be clamped — fragments are dropped by the sender's path.
+    # See modules/nixos/zerotier/README.md.
+    mtu = 1300;
   };
 
   # Email alerts: provides send-alert command for system notifications
