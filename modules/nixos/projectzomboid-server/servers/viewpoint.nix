@@ -149,6 +149,11 @@ in
 
     # Server .ini overrides (win over the pack's defaultSettings).
     settings = {
+      # The world clock and simulations stop when nobody is online. The
+      # viewpoint pack already sets this; keep it explicit here so the
+      # no-progression guarantee is visible at the host level and survives a
+      # pack change. It is independent of `idleStop`, which stops the JVM.
+      PauseEmpty = true;
       GlobalChat = true;
       AnnounceDeath = true;
       ShowFirstAndLastName = false;
