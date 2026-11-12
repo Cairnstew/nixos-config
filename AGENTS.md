@@ -652,3 +652,17 @@ style tool/skill/command injection from flake inputs.
 - Fix: added §11 Self-Improvement and this RUN LOG. Added matching pointer
   sections + RUN LOGs to `modules/AGENT.md`, `configurations/AGENT.md`, and
   `modules/home/opencode/AGENT.md`.
+
+### 2026-11-12 — efficiency lens: `part` has no `type` column, and the session row can be absent mid-run
+- Lesson: §11.4 / `agents/build.md` describe the lens as counting "`part`-table
+  tool calls" (`AGENTS.md:517`, then filtered by `type='tool'`). The live schema
+  has no such column — `part` is `(id, message_id, session_id, time_created,
+  time_updated, data)`, tool calls live inside the `data` JSON — so
+  `... and type='tool'` is a hard `no such column: type` error. Separately, this
+  run's own session (`$OPENCODE_SESSION_ID`) had **zero** rows in both `session`
+  and `part` while it was still running (`opencode.db` was ~6 h stale at
+  08:14), so `cost`/`tokens_*`/call counts were simply unavailable, not zero.
+- Fix: query `part` with `json_extract(data,'$.type')='tool'` (or count
+  `message` rows) and treat an absent session row as "efficiency lens
+  unavailable this run" — report that plainly instead of inferring cost or
+  inventing a proposal from partial data.
