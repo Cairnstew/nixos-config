@@ -419,3 +419,16 @@ gh pr merge <pr-number> --merge --repo Cairnstew/nixos-config
   passed with no source change. Do this before suspecting the diff — and check
   `nix path-info <path>` first: "don't know how to build these paths" confirms it
   is a store problem, not a Nix problem.
+
+### 2026-11-12 — Step 4 / Quick Reference `git add -A` contradicts the repo rule
+
+- Lesson: this skill says `git add -A` (Step 4 at
+  `git-staging-commit-push.md:76`, Quick Reference at `:24`), while the root
+  policy says the opposite for this checkout — stage only the paths you touched,
+  never `git add -A`, because a concurrent session's edits sit in the same tree
+  (`AGENTS.md:565-566`, with the incident recorded in `GOTCHAS.md`). Following
+  the skill blindly is what sweeps them in; this run followed `AGENTS.md` and
+  staged the single changed file both times.
+- Fix: prefer `git add <path>` (or `git commit -- <path>`) for every commit in
+  nixos-config; `git add -A` is only defensible in a single-session tree, which
+  this branch-per-host, auto-pushed checkout is not.
