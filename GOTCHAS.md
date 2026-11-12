@@ -2333,3 +2333,13 @@ Fix/practice: treat `exits 0` + `Permission denied` + `not stopping` as a no-op 
 Symptom: a self-apply `edit` against `GOTCHAS.md` returned `{"error":{"type":"tool.execution","message":"Unable to edit /home/seanc/nixos-config/GOTCHAS.md"}}` with no permission detail, while the file is tracked, allow-listed (`tools/self-improve-commit.sh:40`) and the rest of the repo is writable as `seanc`. Cause: `ls -l GOTCHAS.md` shows `-rw-r--r-- 1 root root` — an earlier session wrote it through `sudo`, so uid 1000 cannot replace the inode. It is not a deny-list hit, not a size problem and not the helper refusing — the write never reaches git.
 
 Fix/practice: append with `sudo tee -a GOTCHAS.md <<'EOF' … EOF` (that keeps the pure-insertion diff shape the helper validates), then run `tools/self-improve-commit.sh --file GOTCHAS.md --commit-trailer … --evidence …` exactly as usual — staging and committing only need write access to `.git`, which `seanc` has. Check `ls -l` on the guidance file before assuming an edit-tool failure is policy.
+
+---
+
+**Hyprland 0.57 here runs a Lua config, so `hyprctl keyword monitor …` is gone — change a mode live with `hyprctl eval 'hl.monitor({…})'`** (2026-11-12, desktop)
+
+Symptom: putting a monitor back to its configured mode after a DP link failure, `hyprctl keyword monitor "DP-1,2560x1440@120,1200x240,1"` answered `unknown request`, and `hyprctl dispatch dpms off DP-1` answered `error: … hl.dispatch: expected a dispatcher (e.g. hl.dsp.window.close()) or a lua function`. Nothing points at "Lua"; both read like a version/`hyprctl` mismatch.
+
+Cause: the session is configured from `/etc/xdg/hypr/hyprland.lua` (`modules/nixos/hyprland/core/config.nix:308`, with `HYPRLAND_CONFIG` pinned at `:293`), generated as Lua (`hl.monitor(...)`, `modules/nixos/hyprland/core/config.nix:33`); 0.57 dropped the legacy keyword/dispatch string forms, and `hyprctl dispatch` now parses its entire argument as Lua. A stale `~/.config/hypr/hyprland.lua` from June also sits in the home dir and is ignored (`HYPRLAND_CONFIG` wins), so reading it to learn the live config gives the wrong answer — read `/etc/xdg/hypr/hyprland.lua` (`:3` holds the DP-1 rule).
+
+Fix/practice: `hyprctl eval 'hl.monitor({ output = "DP-1", mode = "2560x1440@120", position = "1200x240", scale = 1, transform = 0 })'` returns `ok` and applies immediately — the same table shape the generated config uses, so a live change can be made to match the file exactly; `hyprctl eval 'return 1+1'` is the cheap liveness check. Verify with `hyprctl monitors`, and `systemctl --user restart waybar` if the bars were laid out during a transitional geometry (waybar bar widths on the rotated DP-2/DP-3 outputs settle over a couple of configure events).
