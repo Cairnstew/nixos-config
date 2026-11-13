@@ -20,6 +20,7 @@ in
       ghostty.enable = lib.mkDefault true;
       just.enable = lib.mkDefault true;
       yazi.enable = lib.mkDefault true;
+      superfile.enable = lib.mkDefault true;
     })
 
     # Desktop profile
