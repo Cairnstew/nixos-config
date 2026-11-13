@@ -6,7 +6,10 @@
   tags = [ "email" "thunderbird" "communication" "gui" ];
 
   # What this module provides (option paths it owns)
-  provides = [ "my.programs.thunderbird" ];
+  provides = [
+    "my.programs.thunderbird"
+    "my.programs.thunderbird.theme"
+  ];
 
   # What this module expects to exist (soft dependencies for agent reasoning)
   expects = [ ];
@@ -15,6 +18,11 @@
   complexity = "simple";
 
   # Test coverage
+  theme = {
+    kind = "gui";
+    mechanism = "css-inject";
+    file = "theme.nix";
+  };
   tested = true;
 
   # Optional: link to upstream docs
