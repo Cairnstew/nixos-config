@@ -2525,3 +2525,22 @@ trusting the green: evaluate the same walk and count the hits (9 `theme.nix`
 files before the fix, 16 after). Any "expected = [ ] / actual = filtered list"
 test passes vacuously when the filter's input is empty, so assert or print the
 discovered set at least once when you extend the scan.
+
+---
+
+**An indented string is re-anchored to its least-indented line — inserting an interpolation at column 0 re-indents the whole body** (2026-11-13, desktop)
+
+Symptom: moving the proxy dashboard's ~70-line CSS block out of
+`modules/nixos/proxy/dashboard.nix` into `theme.nix`, the replacement put
+`${theme.css}` at column 0 inside the page string. `nix fmt` then reported
+"1 / 22 have been reformatted" and the file diff jumped to 1064 lines
+(513+/551−) for a change `git diff -w` measured at 26+/64−: the formatter
+re-indents an indented string so its body starts at the string's **minimum**
+content indentation, and that minimum had just become 0
+(`modules/nixos/proxy/dashboard.nix:21`).
+
+Fix/practice: when adding an interpolation to a large `''` string, keep it at
+the same indentation as the surrounding body (here `      ${theme.css}`, the
+body's 6 spaces). Then `git diff --stat` and `git diff -w --stat` agree — if
+they diverge by hundreds of lines, a string got re-anchored and the real change
+is buried under whitespace.
