@@ -5,6 +5,7 @@
   tags = [ "ai" "llm" "coding" "opencode" "skills" "mcp" "nix" "deploy" "secrets" "testing" "docker" "windows" ];
   provides = [
     "my.programs.opencode"
+    "my.programs.opencode.theme"
     "my.programs.opencode.skills"
     "my.programs.opencode.agents"
     "my.programs.opencode.mcp"
@@ -20,6 +21,11 @@
   ];
   expects = [ ];
   complexity = "medium";
+  theme = {
+    kind = "tui";
+    mechanism = "generated";
+    file = "theme.nix";
+  };
   tested = true; # validated live 2026-08-23: wrapper dispatch selected ox-alpha-free under weekly=100%, sync wrote triage modelsByAgent; 2026-08-26: pacing.enable gate fix live-verified against real cache (rolling 1%/weekly 55%/monthly 45% — all four pipeline agents BLOCKED before, resolve opencode-go/mimo-v2.5 after), nixtest regression 5/5, server switched to gen 246
 
   # External upstream this module consumes as a VENDORED fork — see

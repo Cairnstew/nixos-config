@@ -6,10 +6,10 @@ let
   cfg = config.my.homeManager;
   mcpServersPkgs = inputs.mcp-servers-nix.packages.${pkgs.system};
 
-  # MCP wrapper packages + opencode theme live in ./mcp-wrappers.nix (recon M11).
+  # MCP wrapper packages live in ./mcp-wrappers.nix (recon M11).
   # Values are byte-identical to the block that previously lived here.
   mcpWrappers = import ./mcp-wrappers.nix {
-    inherit config pkgs flake self;
+    inherit config pkgs self;
   };
   inherit (mcpWrappers)
     betterEmailPkg
@@ -17,8 +17,7 @@ let
     githubMcpPkg
     secondhandMcpPkg
     shoppingscraperMcpPkg
-    keepaMcpPkg
-    opencodeTheme;
+    keepaMcpPkg;
 in
 {
   imports = [
@@ -330,11 +329,10 @@ in
             };
           };
 
-          themes = opencodeTheme;
-          # OpenCode 2 reads cli.json, not tui.json. The repo's base16 theme
-          # (`opencodeTheme`, V1 `defs` shape) is not the V2 theme format; the
-          # stylix target writes a V2-compatible `stylix` theme from the same
-          # palette, so point the CLI at that.
+          # OpenCode 2 reads cli.json, not tui.json. The repo's theme
+          # (modules/home/opencode/theme.nix, V1 `defs` shape) is not the V2
+          # theme format; the stylix target writes a V2-compatible `stylix`
+          # theme from the same palette, so point the CLI at that.
           cli.theme.name = lib.mkDefault "stylix";
 
           # Deny all providers except the ones we actually use

@@ -105,6 +105,13 @@ in
     # ── L0: Nix assertions ──────────────────────────────────────────────────
     assertions = [
       {
+        assertion =
+          !cfg.theme.enable
+            || (config.my.programs.opencode.themes ? ${cfg.theme.palette.slug});
+        message = "opencode theme: the generated theme was not added to my.programs.opencode.themes.";
+      }
+
+      {
         assertion = cfg.model != null -> (lib.length activeProviders > 0);
         message = "my.programs.opencode: model is set but no providers are configured. "
           + "Enable at least one provider by setting its keyFile.";
