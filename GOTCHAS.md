@@ -2500,3 +2500,28 @@ Symptom: the upstream site advertises "plugin support — extend with community 
 Second trap: the compiled default for `dir_editor` is `vi` (`editor` falls back to `$EDITOR` then `nano`). No vim/vi is installed on this host, so `E` (open directory with editor) silently only logs — `modules/home/superfile/merge.nix:23` therefore always writes `dir_editor` from `flake.config.preferences.editor`.
 
 Fix/practice: when mirroring upstream numeric ranges into L0 assertions, remember they are "0 **or** N–M", not a range starting at 0 — `isIntIn 0 1` silently accepted `file_preview_width = 1` and `sidebar_width = 3`, both invalid upstream; the predicate must be `v == 0 || isIntIn 2 10 v` (`modules/home/superfile/tests.nix:37`).
+
+---
+
+**A recursive coverage test must prove what it discovered, not just stay green** (2026-11-13, desktop)
+
+Symptom: extending `tests/theme-coverage_test.nix` to also cover nested
+submodules, the first version of the walk was
+
+```nix
+walk = rel: if isModuleDir rel then [ rel ] ++ lib.concatMap (n: walk "${rel}/${n}") (subdirs rel) else [ ];
+```
+
+All four invariants stayed green — but `modules/nixos` itself has no
+`default.nix`, so `walk "modules/nixos"` returned `[]` and none of the six new
+`modules/nixos/hyprland/<sub>/theme.nix` files were ever scanned. The suite was
+green because it saw nothing, not because the contract held.
+
+Fix/practice: recurse unconditionally and make the module test a filter inside
+the recursion, not a gate around it —
+`(if isModuleDir rel then [ rel ] else [ ]) ++ lib.concatMap …`
+(`tests/theme-coverage_test.nix:51`). Then prove the population instead of
+trusting the green: evaluate the same walk and count the hits (9 `theme.nix`
+files before the fix, 16 after). Any "expected = [ ] / actual = filtered list"
+test passes vacuously when the filter's input is empty, so assert or print the
+discovered set at least once when you extend the scan.
