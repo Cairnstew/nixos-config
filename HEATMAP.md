@@ -353,6 +353,15 @@ All `my.*` options declared across module files.
 | `my.programs.vncviewer.connections.<name>.scale` | null/int | `null` | Scaling percentage (10–400) |
 | `my.programs.vncviewer.connections.<name>.extraArgs` | list | `[]` | Extra `vncviewer` args |
 | `my.programs.yazi.enable` | bool | `false` | Yazi terminal file manager |
+| `my.programs.superfile.enable` | bool | `false` | superfile TUI file manager (SUPER+E target) |
+| `my.programs.superfile.package` | pkg | `pkgs.superfile` | superfile package (binary is `superfile`, not `spf`) |
+| `my.programs.superfile.settings` | attrs | `{}` | Extra `config.toml` keys, merged over module defaults |
+| `my.programs.superfile.themes` | attrs | `{}` | Extra theme files → `superfile/theme/<name>.toml` |
+| `my.programs.superfile.editor` | str | `""` | File editor (`e`); empty = `$EDITOR` then `nano` |
+| `my.programs.superfile.dirEditor` | str | `preferences.editor` | Directory editor (`E`); upstream's `vi` is absent on NixOS |
+| `my.programs.superfile.previews.pdf` | bool | `true` | Install `poppler-utils` for first-page PDF thumbnails |
+| `my.programs.superfile.previews.video` | bool | `false` | Install `ffmpeg` for video thumbnails |
+| `my.programs.superfile.extraPackages` | list | `[]` | Extra PATH packages |
 | `my.programs._1password.enable` | bool | `true` | 1Password CLI + setgid wrapper |
 | `my.programs._1password.gui.enable` | bool | `config.my.profiles.workstation.enable` | 1Password desktop app, polkit, SSH agent |
 | `my.programs.ssh-1password.enable` | bool | `false` | 1Password SSH agent |

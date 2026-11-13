@@ -45,6 +45,18 @@ All read-only; there is no `enable`, for the same reason as the NixOS twin.
 configuration with no flake input: it falls back to resolving the catalog
 default from `lib/theming.nix` directly. The option surface never disappears.
 
+## Theming an application
+
+Per-application theming does not live here. A module with a GUI/TUI/Web surface
+ships its own `theme.nix`, declares `my.<namespace>.theme` with
+[`lib/theme.nix`](../../../lib/theme.nix)'s `mkAppTheme`, and applies
+`config.my.theming.colors` to that application's own format. This module stays a
+read-only palette mirror on purpose.
+
+See [`modules/AGENT.md` §2.2](../../AGENT.md) for the contract and
+[`docs/decisions/2026-11-13-theme-nix.md`](../../../docs/decisions/2026-11-13-theme-nix.md)
+for the rollout plan.
+
 ## Tests
 
 `tests.nix` asserts the palette is complete (roles and all 16 ANSI slots), the
