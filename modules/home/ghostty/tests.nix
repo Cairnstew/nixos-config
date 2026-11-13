@@ -19,8 +19,18 @@ in
         message = "my.programs.ghostty.windowHeight must be positive.";
       }
       {
-        assertion = cfg.theme != "";
-        message = "my.programs.ghostty.theme must not be empty.";
+        assertion = !cfg.theme.enable || cfg.theme.name != "";
+        message = "my.programs.ghostty.theme.name must not be empty.";
+      }
+      {
+        assertion = !cfg.theme.enable || (cfg.theme.palette ? background && cfg.theme.palette ? foreground);
+        message = "ghostty theme: the resolved palette is missing background/foreground.";
+      }
+      {
+        assertion =
+          !cfg.theme.enable
+          || (cfg.theme.palette ? terminal && cfg.theme.palette.terminal ? black);
+        message = "ghostty theme: the resolved palette is missing the terminal/ANSI slots.";
       }
     ];
   };

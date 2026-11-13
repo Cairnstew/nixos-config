@@ -45,12 +45,6 @@ in
       description = "Default window height in rows";
     };
 
-    theme = lib.mkOption {
-      type = types.nullOr types.str;
-      default = null;
-      description = "Theme name to use. Null lets Stylix (or Ghostty built-in) handle colors.";
-    };
-
     gtkTitlebar = lib.mkOption {
       type = types.bool;
       default = true;
@@ -90,12 +84,6 @@ in
       default = [ ];
       description = "Additional keybindings to append to defaults";
       example = [ "ctrl+shift+t=new_tab" ];
-    };
-
-    customThemes = lib.mkOption {
-      type = types.attrsOf types.attrs;
-      default = { };
-      description = "Custom theme definitions. Empty by default — Stylix handles theming when enabled.";
     };
 
     extraSettings = lib.mkOption {

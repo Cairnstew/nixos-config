@@ -1,13 +1,8 @@
-{ lib, pkgs, config, flake, ... }:
+{ lib, pkgs, flake, ... }:
 
 let
   types = lib.types;
   prefs = flake.config.preferences or { };
-
-  # Active scheme slug, from the shared theming infrastructure. Falls back to
-  # the catalog default if this module is evaluated outside the flake.
-  theme = config.my.theming.colors or { };
-  defaultSlug = theme.slug or "catppuccin-mocha";
 
   # Shared shape for one remote SSH connection. Declared once here so the
   # explicit `sshConnections` list and the per-host `tailnetConnections.hosts`
@@ -195,41 +190,8 @@ in
     '';
 
     # ── Appearance ────────────────────────────────────────────────────────────
-
-    theme = lib.mkOption {
-      type = types.either types.str (types.submodule {
-        options = {
-          dark = lib.mkOption {
-            type = types.str;
-            description = "Theme name for dark mode.";
-          };
-          light = lib.mkOption {
-            type = types.str;
-            description = "Theme name for light mode.";
-          };
-          mode = lib.mkOption {
-            type = types.enum [ "dark" "light" "system" ];
-            default = if prefs.darkMode or true then "dark" else "light";
-            description = "Which theme mode to use.";
-          };
-        };
-      });
-      default = defaultSlug;
-      description = ''
-        Theme to use. Can be a string (single theme) or an attrset with dark/light variants.
-        Defaults to the active scheme's slug (theming.scheme in config.nix).
-      '';
-    };
-
-    customThemes = lib.mkOption {
-      type = types.attrsOf types.raw;
-      default = { };
-      description = ''
-        Custom Zed theme definitions. A Catppuccin Mocha theme is auto-generated from
-        my.theming.colors when available. Add your own themes here or
-        override the generated one.
-      '';
-    };
+    # Theme options live in ./theme.nix (my.programs.zed-editor.theme), so all
+    # colour code and the generated theme file stay in one place.
 
 
 

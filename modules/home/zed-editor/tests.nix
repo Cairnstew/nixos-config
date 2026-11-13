@@ -123,10 +123,46 @@ let
       sshConnections = [ ];
       tailnetConnections = fixtureBase;
     } == fixtureConnections;
+  # ── Theming (theme.nix) ────────────────────────────────────────────────────
+  # Zed wants bare six-digit hex, which is exactly what `base16` carries. A
+  # missing or "#"-prefixed slot renders a broken theme instead of failing, so
+  # assert the contract in the module that consumes it.
+  theme = cfg.theme;
+  palette = theme.palette;
+  base16Slots =
+    lib.genList (i: "base0" + builtins.toString i) 6
+    ++ [ "base0A" "base0B" "base0C" "base0D" "base0E" "base0F" ];
+  missingSlots = builtins.filter (k: !(palette.base16 ? ${k})) base16Slots;
+  hashedSlots = builtins.filter
+    (k: palette.base16 ? ${k} && lib.hasPrefix "#" palette.base16.${k})
+    base16Slots;
+  generatedThemes = config.programs.zed-editor.themes or { };
 in
 {
   config = lib.mkIf cfg.enable {
     assertions = [
+      # ── Theming ────────────────────────────────────────────────────────────
+      {
+        assertion = !theme.enable || missingSlots == [ ];
+        message = "zed theme: my.theming.colors.base16 is missing slots: "
+          + lib.concatStringsSep ", " missingSlots;
+      }
+
+      {
+        assertion = !theme.enable || hashedSlots == [ ];
+        message = "zed theme: base16 slots must be hashless 6-digit hex, but these carry '#': "
+          + lib.concatStringsSep ", " hashedSlots;
+      }
+
+      {
+        assertion = !theme.enable || (generatedThemes ? ${palette.slug});
+        message = "zed theme: no generated theme keyed by '${palette.slug}' — theme.nix did not apply the palette.";
+      }
+
+      {
+        assertion = lib.isString theme.name || (theme.name ? dark && theme.name ? light);
+        message = "zed theme.name must be a string or an attrset with dark/light.";
+      }
       {
         assertion = cfg.fontSize > 0;
         message = "my.programs.zed-editor.fontSize must be positive.";

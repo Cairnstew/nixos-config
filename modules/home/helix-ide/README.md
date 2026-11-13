@@ -22,6 +22,7 @@ Then run `ide` from your terminal.
 
 ## Notes
 
-- Helix theme is set to `catppuccin_mocha` with mouse and bufferline enabled.
+- Helix uses a theme generated from `my.theming.colors` (`my.programs.helix-ide.theme`),
+  so it follows `theming.scheme` instead of only working for built-in theme names.
 - Zellij `mouse_mode` is enabled.
 - The `ide` shell alias launches Zellij with the IDE layout, placing Helix as the default pane.

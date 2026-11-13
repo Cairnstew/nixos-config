@@ -88,6 +88,24 @@ in
       {
         stylix.targets.zed.enable = lib.mkDefault false;
       }
+
+      # Ghostty / Helix: their theme.nix files generate a theme from
+      # my.theming.colors, so their stylix targets must not also claim the
+      # same settings. Read the HM options lazily; when a module is absent the
+      # fallback keeps stylix in charge.
+      (
+        { config, ... }:
+        {
+          stylix.targets.ghostty.enable =
+            lib.mkDefault (!(config.my.programs.ghostty.theme.enable or false));
+          stylix.targets.helix.enable =
+            lib.mkDefault (!(config.my.programs.helix-ide.theme.enable or false));
+          # Opt-in (default off): when firefox's theme.nix is disabled,
+          # stylix keeps owning the browser theme.
+          stylix.targets.firefox.enable =
+            lib.mkDefault (!(config.my.programs.firefox.theme.enable or false));
+        }
+      )
     ];
 
     qt.platformTheme = lib.mkDefault "adwaita";

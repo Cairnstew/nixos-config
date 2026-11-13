@@ -8,10 +8,6 @@ in
     programs.helix = {
       enable = true;
       settings = {
-        # Helix names its built-in themes with underscores, so the scheme slug
-        # is mapped rather than passed through raw.
-        theme = lib.mkDefault config.my.theming.schemeUnderscored;
-
         editor = {
           mouse = lib.mkDefault true;
           bufferline = lib.mkDefault "multiple";

@@ -17,10 +17,8 @@ in
         window-width = cfg.windowWidth;
         window-height = cfg.windowHeight;
         keybind = cfg.keybindings ++ cfg.additionalKeybindings;
-      } // lib.optionalAttrs (cfg.theme != null) { theme = cfg.theme; }
-      // cfg.extraSettings;
+      } // cfg.extraSettings;
       clearDefaultKeybinds = cfg.clearDefaultKeybinds;
-      themes = lib.mkDefault cfg.customThemes;
     };
   };
 }
