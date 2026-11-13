@@ -2403,3 +2403,14 @@ nix eval --impure --json --expr \
 ```
 
 `p ? "cosmic-files"` is the existence check; `p.dolphin` no longer exists in current nixpkgs (it moved to `p.kdePackages.dolphin`), so absence of a top-level attribute means "renamed", not "unsupported".
+
+---
+
+**nixpkgs ships `superfile`, but every upstream doc says `spf` — and `mkEnableOption` on an existing behaviour defaults to *off*** (2026-11-13, desktop)
+
+Symptom: wiring superfile as the `SUPER+E` file manager meant translating upstream's `spf` into Nix. Upstream's install script creates an `spf` symlink; the nixpkgs derivation does not — `pkgs/su/superfile/package.nix` has no `postInstall`/`installPhase`, only `meta.mainProgram = "superfile"`. A bind written as `spf` evaluates fine and breaks only when pressed. Superfile also ships **no `.desktop` file**, so it can never be the `inode/directory` handler (`flake.config.defaults.fileManager` must stay a GUI file manager), and its `z` (zoxide) hotkey is dead here because `zoxide` is not installed anywhere in this repo.
+
+Second trap, in the same edit: replacing a hardcoded behaviour (`SUPER+E → thunar`) with `lib.mkEnableOption` silently deletes it — `mkEnableOption` defaults to `false`, so the keybind vanishes on every host with no eval error. Option-ifying existing behaviour needs `lib.mkOption { type = types.bool; default = true; }` (see `modules/nixos/hyprland/options.nix:32`).
+
+Fix/practice: run `lib.getExe cfg.<pkg>` in binds rather than a bare command name, and verify a Hyprland bind by evaluating the generated Lua —
+`nix eval --impure --raw --expr '…config.environment.etc."xdg/hypr/hyprland.lua".text'` and grepping for the bind; that prints the resolved store paths, so `spf`-style mistakes show up before activation.
