@@ -2363,3 +2363,13 @@ Symptom: a returning player (`gooper`, steamid `76561198189928969`) was rejected
 Cause, from the shipped bytecode (`zombie/network/ServerWorldDatabase.authClient` and `zombie/savefile/ServerPlayerDB` in `projectzomboid.jar`): the empty-password gate is `if (isNullOrEmpty(suppliedPassword) && ServerOptions.open && authType != 2) → UserPasswordRequired` — it tests the *client-supplied* value, so no DB state can waive it. An existing row's stored password is only compared when it is non-empty (`isNullOrEmpty(password)` skips the compare), so `password = ''` means "accept any non-empty password". Whitelist lookup is `LOWER(username) = LOWER(?)` (case-insensitive), but the character is found by `SELECT … FROM networkPlayers WHERE steamid=? AND world=? AND playerIndex=?` with an exact `username=?` fallback — so the SteamID decides which survivor loads, not the typed account name.
 
 Fix/practice: do not invent passwords in the DB to "restore" a player. Stop the service, keep exactly one `whitelist` row for their SteamID, set `password = ''` (they can then type anything), delete the duplicate rows, back up `db/viewpoint.db` first, and never edit it while the server runs. A stored `$2a$` bcrypt value is the opposite choice: it pins the account to that exact password (the `ppextendo` and `gooper` rows are in that state now).
+
+---
+
+**`PZcrypt.hash` is bcrypt with a *fixed* salt, so a Project Zomboid account password can be written offline — any random-salt hash will never match** (2026-11-13, desktop)
+
+Symptom: needing to set a PZ account password by hand (the `whitelist.password` column holds `$2a$…`, 60 chars) and assuming bcrypt's per-hash salt makes that impossible.
+
+Cause: `zombie/core/secure/PZcrypt.hash(String)` is literally `BCrypt.hashpw(pw, "$2a$12$O/BFHoDFPrfFaNPAACmWpu")` — one hard-coded, cost-12 salt for every account, so the function is deterministic. Login compares the stored string to the client-supplied hash with `.equals`, which is why a re-salted `$2b$` or random-salt value can never authenticate. `PZcrypt.hashSalt` (random salt) exists but is not what the login path stores.
+
+Fix/practice: generate the value with the game's own function or an equivalent, then write it into the row with the server stopped: `printf '%s' "$pw" | mkpasswd -m bcrypt -S '$2a$12$O/BFHoDFPrfFaNPAACmWpu' -s`. Verified identical to `PZcrypt.hash` by running both on the same input (`java -cp projectzomboid.jar …`), so no Java needed. Leaving the column empty is the other valid state — it means "accept any non-empty password".
