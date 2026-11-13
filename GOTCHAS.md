@@ -2446,6 +2446,43 @@ name, so it cannot sweep another session's files.
 
 ---
 
+**Handing a Home Manager app's theming over from stylix: the opt-out must live in `home-manager.sharedModules`, and a lambda in that list needs parentheses** (2026-11-13, desktop)
+
+Symptom: adding `theme.nix` to `modules/home/ghostty` and gating the stylix
+opt-out with `stylix.targets.ghostty.enable = lib.mkDefault false;` from the app
+module did not work in two different ways. On the stylix host it worked; on
+`server` (no stylix) evaluation failed with ``The option
+`home-manager.users.seanc.stylix' does not exist`` — a `lib.mkIf false`
+definition of an undefined option path is still checked. Trying
+`lib.optionalAttrs (config.stylix.enable or false) { … }` at the module's top
+level instead recursed: reading `config` while the module's own `config`
+attrset is being built is the classic knot. Separately, adding the HM module as
+`{ config, ... }: { … }` directly inside `home-manager.sharedModules = [ … ]`
+is a Nix syntax error — list elements that are lambdas need parentheses
+(`[{ config, ... }: …]` parses `{` as an attrset).
+
+Fix/practice: put per-app stylix ownership in
+`modules/nixos/stylix/config.nix`'s `home-manager.sharedModules` block, where
+stylix's options are guaranteed to exist, as a parenthesised lambda
+(`modules/nixos/stylix/config.nix:97`) that reads the HM app option lazily and
+sets `stylix.targets.<app>.enable = lib.mkDefault (!(config.my.programs.<app>.theme.enable or false))`
+(`modules/nixos/stylix/config.nix:99`). Keep the `theme.enable` default `true`
+for well-supported surfaces and `defaultEnable = false` for unsupported ones
+(`modules/home/firefox/theme.nix:86`, thunderbird) so a fragile CSS injection is
+opt-in. Verify a module no host enables without editing a host config:
+
+```
+nix eval --json .#nixosConfigurations.desktop.extendModules --apply 'f:
+  let c = f { modules = [{ home-manager.users.seanc.my.programs.helix-ide.enable = true; }]; };
+  h = c.config.home-manager.users.seanc.programs.helix;
+  in { theme = h.settings.theme; themes = builtins.attrNames h.themes; }'
+```
+
+`extendModules` is present on `nixosConfigurations.<host>` and evaluates the
+real host with the extra module, which is how helix/firefox were checked here.
+
+---
+
 **superfile v1.6.0: mouse is always on but wheel-only, there is no markdown renderer, and `config.toml` is only written when absent** (2026-11-13, desktop)
 
 Symptom: asking for "mouse support" and "markdown/PDF preview" as if both were config keys. Neither is. `config.toml` has no mouse key at all, and the only preview keys are `default_open_file_preview`, `show_image_preview`, `code_previewer` and `file_preview_width`.
