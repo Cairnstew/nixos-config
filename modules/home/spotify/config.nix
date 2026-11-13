@@ -87,8 +87,12 @@ in
     # switch-time unit restarts — a ~/.config/waybar home-manager file is
     # created too late and waybar's one-shot menu build would miss it).
 
-    home.file.".config/spotatui/config.yml" = lib.mkIf (isTui && cfg.tui.settings != { }) {
-      source = yamlFormat.generate "spotatui-config" cfg.tui.settings;
-    };
+    home.file.".config/spotatui/config.yml" =
+      lib.mkIf (isTui && (cfg.tui.settings != { } || (cfg.theme.enable && cfg.theme.settings != { })))
+        {
+          # Generated theme first, user settings win on conflict.
+          source = yamlFormat.generate "spotatui-config"
+            (lib.recursiveUpdate (if cfg.theme.enable then cfg.theme.settings else { }) cfg.tui.settings);
+        };
   };
 }

@@ -22,7 +22,6 @@ in
     extensions = lib.mkOption {
       type = lib.types.listOf lib.types.package;
       default = with pkgs.vscode-extensions; [
-        dracula-theme.theme-dracula
         ms-python.python
         ms-toolsai.jupyter
         bbenoist.nix
@@ -81,7 +80,6 @@ in
             "other" = "on";
           };
         };
-        "workbench.preferredDarkColorTheme" = "Dracula Theme";
         "workbench.iconTheme" = "vs-minimal";
       };
       description = "VS Code user settings (settings.json).";

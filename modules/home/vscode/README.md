@@ -8,7 +8,8 @@ Visual Studio Code editor configuration with extensions and Continue AI integrat
 |--------|---------|-------------|
 | `my.programs.vscode.enable` | `false` | Enable VS Code |
 | `my.programs.vscode.server.enable` | `false` | Enable VS Code server (NixOS only) |
-| `my.programs.vscode.extensions` | `[dracula, python, jupyter, nix, remote]` | Default extensions |
+| `my.programs.vscode.extensions` | `[python, jupyter, nix, remote]` | Default extensions |
+| `my.programs.vscode.theme` | generated | Palette-derived workbench + token colours (`enable`, `overrides`, `baseTheme`) |
 | `my.programs.vscode.additionalExtensions` | `[]` | Extra extensions to install |
 | `my.programs.vscode.userSettings` | _(see options.nix)_ | VS Code user settings (settings.json) |
 | `my.programs.vscode.continue.enable` | `false` | Enable Continue AI assistant |

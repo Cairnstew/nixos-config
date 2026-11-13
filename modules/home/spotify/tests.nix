@@ -22,6 +22,14 @@ in
         assertion = cfg.player.upvote.enable -> cfg.player.upvote.package != null;
         message = "my.programs.spotify.player.upvote.package must not be null when upvote is enabled.";
       }
+      {
+        assertion = !cfg.theme.enable || (cfg.theme.palette ? accent && cfg.theme.palette ? background);
+        message = "spotify theme: the resolved palette is missing accent/background.";
+      }
+      {
+        assertion = !cfg.theme.enable || (cfg.theme.settings.theme or { }) ? active;
+        message = "spotify theme: the generated spotatui theme block is missing the active colour.";
+      }
     ];
   };
 }

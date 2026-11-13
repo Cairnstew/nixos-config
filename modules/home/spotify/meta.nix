@@ -3,9 +3,20 @@
   description = "Spotify desktop client, spotatui TUI client, or Waybar now-playing widget with optional configuration";
   category = "music";
   tags = [ "spotify" "spotatui" "music" "tui" "gui" "audio" "waybar" "now-playing" ];
-  provides = [ "my.programs.spotify" "my.programs.spotify.tui" "my.programs.spotify.player" "my.programs.spotify.player.upvote" ];
-  expects = [ ];
+  provides = [
+    "my.programs.spotify"
+    "my.programs.spotify.theme"
+    "my.programs.spotify.tui"
+    "my.programs.spotify.player"
+    "my.programs.spotify.player.upvote"
+  ];
+  expects = [ "my.theming.colors" ];
   complexity = "simple";
+  theme = {
+    kind = "tui";
+    mechanism = "native";
+    file = "theme.nix";
+  };
   tested = false;
   homepage = "https://open.spotify.com";
   maintainer = "seanc";

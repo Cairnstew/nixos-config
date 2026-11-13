@@ -14,6 +14,17 @@ in
         assertion = !cfg.googleSignInFix.enable || cfg.googleSignInFix.userAgent != "";
         message = "my.programs.qutebrowser.googleSignInFix.userAgent must not be empty.";
       }
+      {
+        assertion = !cfg.theme.enable || (cfg.theme.palette ? background && cfg.theme.palette ? accent);
+        message = "qutebrowser theme: the resolved palette is missing background/accent.";
+      }
+      {
+        assertion =
+          !cfg.theme.enable
+          || lib.hasInfix "c.colors.statusbar.normal.bg"
+            config.xdg.configFile."qutebrowser/theme.py".text;
+        message = "qutebrowser theme: theme.py does not contain the generated colours.";
+      }
     ];
   };
 }

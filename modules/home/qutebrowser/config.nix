@@ -33,6 +33,9 @@ in
       config.load_autoconfig()
 
       ${sharedPy}
+
+      # Generated palette (modules/home/qutebrowser/theme.nix).
+      config.source("theme.py")
     '';
 
     # Userscripts are looked up in <config dir>/userscripts, i.e.

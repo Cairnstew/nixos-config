@@ -11,7 +11,8 @@ in
           ++ cfg.additionalExtensions
           ++ lib.optional cfg.continue.enable pkgs.vscode-extensions.continue.continue;
       };
-      profiles.default.userSettings = cfg.userSettings;
+      # Generated palette first, user settings win on conflict.
+      profiles.default.userSettings = lib.recursiveUpdate cfg.theme.settings cfg.userSettings;
     };
 
     home.file.".continue/config.yaml" = lib.mkIf cfg.continue.enable {
