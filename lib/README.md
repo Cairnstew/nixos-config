@@ -8,11 +8,13 @@ own:
 | Colour maths | `color.nix` | `lib` only | anything |
 | Schemes | `schemes/*.nix` | nothing | `theming.nix` |
 | Resolution | `theming.nix` | `lib` only | modules, scripts, `flake.lib` |
+| App adapters | `theme.nix` | `lib` only | UI modules, `flake.lib.theme` |
 
 ```
 lib/
 ├── color.nix          parse / luminance / contrast / mix / alpha
 ├── theming.nix        base16 -> semantic roles, terminal palette
+├── theme.nix          per-app option shape, overrides, CSS/ANSI adapters
 ├── schemes/           one file per scheme, auto-discovered
 │   └── default.nix
 └── README.md
@@ -37,6 +39,41 @@ Inside a NixOS module:
 ```
 
 Inside a Home Manager module: identical, via `my.theming.colors`.
+
+## Theming an application
+
+A module with a GUI/TUI/Web UI surface does not map colours by hand. It ships a
+`theme.nix` that declares one standard option and applies the derived palette:
+
+```nix
+{ config, lib, ... }:
+
+let
+  cfg = config.my.programs.<app>;
+  themeLib = import ../../../lib/theme.nix { inherit lib; };
+  p = cfg.theme.palette;
+in
+{
+  options.my.programs.<app>.theme = themeLib.mkAppTheme {
+    base = config.my.theming.colors;
+  };
+
+  config = lib.mkIf (cfg.enable && cfg.theme.enable) {
+    programs.<app>.settings = {
+      background = p.background;
+      accent = p.accent;
+    };
+  };
+}
+```
+
+Every such option exposes `enable`, `overrides` and a read-only `palette`
+(global palette + per-app overrides, re-derived — so overriding `base00` moves
+`onBackground`, `selection` and the terminal slots with it). Shared adapters:
+`cssVars`, `ansi16`, `ansi16Values`, `xterm`.
+
+Full contract and migration plan:
+[`docs/decisions/2026-11-13-theme-nix.md`](../docs/decisions/2026-11-13-theme-nix.md).
 
 Outside the module system:
 
@@ -160,13 +197,18 @@ strings and `findFirst` for lookups instead.
 ## Tests
 
 ```console
-$ nix run .#nixtests-run          # runs tests/theming_test.nix
+$ nix run .#nixtests-run          # tests/theming_test.nix + theme-coverage_test.nix
 ```
 
-38 unit tests covering parsing, round-tripping, the WCAG reference values,
-blending, legibility helpers, catalog integrity, and the two-phase override
-behaviour. They are pure eval-time comparisons against `lib/` directly, so they
-cannot drift from what the system uses.
+43 unit tests covering parsing, round-tripping, the WCAG reference values,
+blending, legibility helpers, catalog integrity, the two-phase override
+behaviour, and `recolor` (the per-app override path). They are pure eval-time
+comparisons against `lib/` directly, so they cannot drift from what the system
+uses.
+
+`tests/theme-coverage_test.nix` enforces the `theme.nix` contract: a module that
+ships one must declare it in `meta.nix`, must import it from its entrypoint, and
+a module recorded as `mechanism = "none"` must not ship one.
 
 Module-level assertions live in `modules/nixos/theming/tests.nix` and
 `modules/home/theming/tests.nix`, and run on every host build.

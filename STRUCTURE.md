@@ -31,12 +31,14 @@ autowired; nothing here becomes a flake output.
 |------|-------------|
 | `lib/README.md` | Theming documentation: reading the palette, adding a scheme, colour maths |
 | `lib/color.nix` | Colour maths: parse, WCAG luminance/contrast, mix, lighten/darken, alpha, `ensureContrast`, `bestForeground` |
-| `lib/theming.nix` | Scheme resolution — base16 palette to semantic roles, 16-colour terminal palette, hashless base16 view |
+| `lib/theming.nix` | Scheme resolution — base16 palette to semantic roles, 16-colour terminal palette, hashless base16 view, `recolor` for per-app overrides |
+| `lib/theme.nix` | Per-application theming toolkit — `mkAppTheme` option shape, CSS variables, ANSI/xterm adapters |
 | `lib/schemes/` | One file per colour scheme (`base00`–`base0F` + metadata), auto-discovered by `schemes/default.nix` |
 
 The resolved palette reaches modules as `my.theming.colors.*` (see
 `modules/nixos/theming/` and `modules/home/theming/`), and to non-module
-consumers as `flake.lib.theming`.
+consumers as `flake.lib.theming` / `flake.lib.theme`. UI modules apply it
+through their own `theme.nix` (see `modules/AGENT.md` §2.2).
 
 ## configurations/
 
@@ -386,7 +388,8 @@ Nix test suites.
 | File | Description |
 |------|-------------|
 | `core_test.nix` | Core nixtest suite |
-| `theming_test.nix` | Unit tests for `lib/color.nix` and `lib/theming.nix` — parsing, published WCAG contrast values, blending, legibility, catalog integrity, two-phase override behaviour |
+| `theming_test.nix` | Unit tests for `lib/color.nix` and `lib/theming.nix` — parsing, published WCAG contrast values, blending, legibility, catalog integrity, two-phase override behaviour, `recolor` |
+| `theme-coverage_test.nix` | Enforces the `theme.nix` contract: declared in `meta.theme`, imported by the module entrypoint, absent when `mechanism = "none"` |
 | `opencode-model-fallback_test.nix` | Regression tests for the opencode model-select resolver |
 | `opencode-ensemble-fork_test.nix` | Regression tests for the vendored ensemble plugin |
 | `opencode-ensemble-vendor_test.nix` | Verifies the vendored ensemble build matches its upstream revision |

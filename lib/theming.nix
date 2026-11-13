@@ -195,25 +195,17 @@ let
       palette = schemes.${if schemes ? ${requested} then requested else fallback};
     };
 
-  mkColors =
-    { scheme ? "catppuccin-mocha"
+  # Assemble a resolved palette from raw base16 slots + metadata. Shared by
+  # `mkColors` (look a catalog scheme up by name) and `recolor` (re-derive an
+  # already resolved palette after per-app overrides), so the two paths cannot
+  # drift: exactly one place decides how a base16 palette becomes roles.
+  assemble =
+    { raw
+    , meta
     , overrides ? { }
     ,
     }:
     let
-      sel = resolveScheme scheme;
-      raw = sel.palette;
-
-      # Metadata with sane fallbacks, so a hand-written scheme file only has
-      # to get `base00`-`base0F` right.
-      meta = {
-        slug = raw.slug or sel.resolvedKey;
-        name = raw.name or sel.resolvedKey;
-        family = raw.family or "custom";
-        variant = raw.variant or "default";
-        polarity = raw.polarity or (if color.isDark raw.base00 then "dark" else "light");
-      };
-
       # Pass 1 — base overrides replace the raw palette; roles re-derive.
       palette' = raw // onlyBaseKeys overrides;
 
@@ -251,19 +243,81 @@ let
           color
           base16Keys
           ;
-        requested = sel.requested;
-        resolvedKey = sel.resolvedKey;
-        didFallback = sel.didFallback;
         isDark = color.isDark roles.background;
         oppositeKey = oppositeVariant meta;
       }
     ];
+
+  # Metadata with sane fallbacks, so a hand-written scheme file only has to get
+  # `base00`-`base0F` right.
+  mkMeta =
+    { raw
+    , fallbackSlug
+    }:
+    {
+      slug = raw.slug or fallbackSlug;
+      name = raw.name or fallbackSlug;
+      family = raw.family or "custom";
+      variant = raw.variant or "default";
+      polarity = raw.polarity or (if color.isDark raw.base00 then "dark" else "light");
+    };
+
+  mkColors =
+    { scheme ? "catppuccin-mocha"
+    , overrides ? { }
+    ,
+    }:
+    let
+      sel = resolveScheme scheme;
+      raw = sel.palette;
+      meta = mkMeta {
+        inherit raw;
+        fallbackSlug = sel.resolvedKey;
+      };
+    in
+    (assemble { inherit raw meta overrides; })
+    // {
+      requested = sel.requested;
+      resolvedKey = sel.resolvedKey;
+      didFallback = sel.didFallback;
+    };
+
+  # Re-derive a palette from an already resolved one — the per-application
+  # extension point (`lib/theme.nix` → `mkAppTheme`). A module can override a
+  # role or a base16 slot for its own app without forking a scheme, and every
+  # dependent role moves with it (override `base00` and `onBackground`,
+  # `selection` and the whole terminal palette follow).
+  #
+  # `palette` must be a resolved palette (top-level `base00`-`base0F` with
+  # `#`, as returned by `mkColors` / `my.theming.colors`).
+  recolor =
+    { palette
+    , overrides ? { }
+    ,
+    }:
+    let
+      raw = onlyBaseKeys palette;
+      # Identity comes from the resolved palette (`slug`/`name`/`family`/…),
+      # not from the base16 slots alone — otherwise every recolour would
+      # forget which scheme it came from.
+      meta = mkMeta {
+        raw = palette;
+        fallbackSlug = palette.slug or "custom";
+      };
+    in
+    (assemble { inherit raw meta overrides; })
+    // {
+      requested = palette.requested or meta.slug;
+      resolvedKey = palette.resolvedKey or meta.slug;
+      didFallback = palette.didFallback or false;
+    };
 in
 {
   inherit
     color
     schemes
     mkColors
+    recolor
     base16Keys
     resolveScheme
     ;

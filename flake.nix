@@ -215,6 +215,7 @@
   outputs = inputs@{ self, ... }:
     let
       themingLib = import ./lib/theming.nix { lib = inputs.nixpkgs.lib; };
+      themeLib = import ./lib/theme.nix { lib = inputs.nixpkgs.lib; };
     in
     inputs.flake-parts.lib.mkFlake { inherit inputs; }
       ({ config, lib, ... }: {
@@ -255,6 +256,7 @@
       lib = {
         color = themingLib.color;
         theming = themingLib;
+        theme = themeLib;
       };
     };
 }

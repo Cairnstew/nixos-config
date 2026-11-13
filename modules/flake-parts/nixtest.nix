@@ -25,7 +25,7 @@
       allSuites = builtins.foldl'
         (acc: f:
           let
-            mod = import "${testDir}/${f}" { inherit pkgs lib realChains; };
+            mod = import "${testDir}/${f}" { inherit pkgs lib realChains; repoRoot = inputs.self; };
           in
           acc // (mod.suites or { })
         )

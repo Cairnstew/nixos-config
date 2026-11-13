@@ -57,6 +57,21 @@ See [`modules/AGENT.md` §2.2](../../AGENT.md) for the contract and
 [`docs/decisions/2026-11-13-theme-nix.md`](../../../docs/decisions/2026-11-13-theme-nix.md)
 for the rollout plan.
 
+## Themed applications
+
+| App | Option | Surface |
+|---|---|---|
+| zed | `my.programs.zed-editor.theme` | generated theme extension |
+| ghostty | `my.programs.ghostty.theme` | generated `themes.<slug>` |
+| helix | `my.programs.helix-ide.theme` | generated Helix TOML theme |
+| qutebrowser | `my.programs.qutebrowser.theme` | generated `c.colors.*` (`theme.py`) |
+| vscode | `my.programs.vscode.theme` | workbench + token colour customizations |
+| opencode | `my.programs.opencode.theme` | `themes.<slug>` (V1 `defs` shape) |
+| spotify | `my.programs.spotify.theme` | spotatui `theme:` block |
+| firefox | `my.programs.firefox.theme` | opt-in `userChrome`/`userContent` |
+| thunderbird | `my.programs.thunderbird.theme` | opt-in `userChrome` |
+
+
 ## Tests
 
 `tests.nix` asserts the palette is complete (roles and all 16 ANSI slots), the

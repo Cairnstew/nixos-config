@@ -422,6 +422,65 @@ in
           let ratio = color.contrast mocha.background mocha.foreground;
           in ratio != null && ratio >= 4.5;
       }
+
+      # ── recolor: the per-application override path (lib/theme.nix) ───────
+      {
+        name = "recolor-without-overrides-is-identity";
+        type = "unit";
+        expected = {
+          inherit (mocha) background foreground accent onBackground slug polarity;
+        };
+        actual =
+          let r = theming.recolor { palette = mocha; };
+          in {
+            inherit (r) background foreground accent onBackground slug polarity;
+          };
+      }
+
+      {
+        name = "recolor-role-override-does-not-move-other-roles";
+        type = "unit";
+        expected = true;
+        actual =
+          let r = theming.recolor { palette = mocha; overrides.accent = "#ff0055"; };
+          in r.accent == "#ff0055" && r.background == mocha.background;
+      }
+
+      {
+        name = "recolor-base16-override-rederives-dependent-roles";
+        type = "unit";
+        expected = true;
+        # base0D drives accent, so selection (mixed from accent) and the
+        # terminal's blue must follow instead of keeping the old scheme colour.
+        actual =
+          let r = theming.recolor { palette = mocha; overrides.base0D = "#ff0055"; };
+          in r.accent == "#ff0055"
+            && r.selection != mocha.selection
+            && r.terminal.blue == "#ff0055";
+      }
+
+      {
+        name = "recolor-preserves-scheme-identity";
+        type = "unit";
+        expected = {
+          inherit (mocha) slug family polarity;
+        };
+        actual =
+          let r = theming.recolor { palette = mocha; overrides.accent = "#ff0055"; };
+          in {
+            inherit (r) slug family polarity;
+          };
+      }
+
+      {
+        name = "recolor-terminal-follows-a-base16-override";
+        type = "unit";
+        expected = "#000000";
+        actual = (theming.recolor {
+          palette = mocha;
+          overrides.base00 = "#000000";
+        }).terminal.black;
+      }
     ];
   };
 }

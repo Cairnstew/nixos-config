@@ -46,6 +46,7 @@ modules/<category>/<name>/
 ├── README.md        # Human documentation (Section 6)
 ├── options.nix      # Option declarations under `my.*`
 ├── config.nix       # Main config implementation (`config = lib.mkIf cfg.enable { … }`)
+├── theme.nix        # Theming side-car for GUI/TUI/Web modules (Section 2.2)
 ├── services.nix     # systemd / launchd units, timers, sockets
 ├── packages.nix     # `environment.systemPackages` or `home.packages`
 ├── hardware.nix     # Kernel modules, firmware, udev rules (NixOS only)
@@ -95,6 +96,7 @@ and nothing else.  All implementation lives in side-cars.
 | `meta.nix` | Machine-readable metadata | Must evaluate to an attrset (Section 4). |
 | `options.nix` | Declare `my.*` options | Never declare outside `my.*` (with one exception — see Section 3.4). |
 | `config.nix` | Main implementation | Use `lib.mkIf cfg.enable`. Keep under 150 lines; split if larger. |
+| `theme.nix` | Theming for this app | Owns `my.<namespace>.theme`; no colour code elsewhere. (Section 2.2) |
 | `services.nix` | systemd / launchd units | Only service-related config. |
 | `packages.nix` | Package lists | Keep `environment.systemPackages` or `home.packages` here. |
 | `hardware.nix` | Kernel, firmware, udev (NixOS) | Anything that touches `boot`, `hardware`, or `services.udev`. |
@@ -110,6 +112,53 @@ and nothing else.  All implementation lives in side-cars.
 * **Mixing system + home config** → extract `home.nix`.
 * **Secrets referenced** → extract `secrets.nix`.
 * **More than one systemd / launchd unit** → extract `services.nix`.
+* **Any GUI/TUI/Web UI surface** → extract `theme.nix` (Section 2.2).
+
+### 2.2 `theme.nix` — application theming (UI modules only)
+
+Every module that renders a GUI, TUI or Web UI and has a real declarative
+theming surface gets exactly one `theme.nix`. It is imported by `default.nix`
+(or by `home.nix` for the Home-Manager side of a NixOS module), declares the
+app's `theme` option, and applies the repo palette:
+
+```nix
+{ config, lib, ... }:
+
+let
+  cfg = config.my.programs.<app>;
+  themeLib = import ../../../lib/theme.nix { inherit lib; };
+  theme = cfg.theme;
+  p = theme.palette;
+in
+{
+  # Declared here, not in options.nix: all theming lives in one file.
+  options.my.programs.<app>.theme = themeLib.mkAppTheme {
+    base = config.my.theming.colors;     # my.theming.colors in both NixOS + HM
+    # extraOptions = { … };             # app-specific knobs (opacity, extraCss…)
+  };
+
+  config = lib.mkIf (cfg.enable && theme.enable) {
+    # map p.* onto this app's own theme format
+  };
+}
+```
+
+Hard rules:
+
+* `theme.enable` defaults to `true`; it is the per-app escape hatch, never the
+  app's own `enable`.
+* `theme.nix` never enables the program and never writes colours that are not
+  derived from `theme.palette` (documented brand colours excepted).
+* `options.nix` must not declare `theme`; `config.nix` must not contain colour
+  code.
+* No hex literals: use roles (`p.accent`, `p.foregroundMuted`, …).
+* Works on hosts without stylix (server/wsl): never read `config.stylix.*`.
+* If stylix already targets the app, one owner only — disable the stylix target
+  in the same commit (see `modules/nixos/stylix/config.nix` zed target).
+
+A UI module with **no** declarative surface records
+`meta.theme = { kind = …; mechanism = "none"; reason = …; }` instead of shipping
+a no-op file. `tests/theme-coverage_test.nix` enforces both directions.
 
 ---
 
@@ -239,6 +288,16 @@ cheaply.
   # Test coverage
   tested      = true;              # true if tests.nix has meaningful coverage
 
+  # Optional: theming surface (GUI/TUI/Web modules only — see §2.2).
+  # `file` is omitted when mechanism = "none"; `reason` then records why a UI
+  # module has no declarative theming surface, so it is not re-investigated.
+  theme = {
+    kind      = "gui";             # gui | tui | web
+    mechanism = "generated";       # native | generated | css-inject | stylix | none
+    file      = "theme.nix";       # omit when mechanism = "none"
+    # reason  = "no supported custom-CSS hook";  # required for "none"
+  };
+
   # Optional: link to upstream docs
   homepage    = "https://docs.docker.com";
 
@@ -280,6 +339,11 @@ cheaply.
   renamed, update `provides`.
 * **Must not** contain executable logic, `import`s, or references to `pkgs` /
   `config`.
+* **`theme` must match the tree.** If `meta.nix` declares
+  `theme.file = "theme.nix"`, that file exists, is imported by `default.nix`
+  (or `home.nix`), and owns the module's `theme` option. A module with
+  `mechanism = "none"` must not ship `theme.nix`. Enforced by
+  `tests/theme-coverage_test.nix`.
 * **Check `upstream` FIRST before editing any module.** Before opening a
   module's implementation, run `nix-modules` (or read its `meta.nix`) and
   look at the `upstream:` line. If it names an ensemble `space`, **load the
