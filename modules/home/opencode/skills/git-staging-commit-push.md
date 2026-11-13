@@ -432,3 +432,20 @@ gh pr merge <pr-number> --merge --repo Cairnstew/nixos-config
 - Fix: prefer `git add <path>` (or `git commit -- <path>`) for every commit in
   nixos-config; `git add -A` is only defensible in a single-session tree, which
   this branch-per-host, auto-pushed checkout is not.
+
+### 2026-11-13 — an unscoped `git commit` takes everything staged, not the module you meant
+
+- Lesson: after a theming phase, two commits had absorbed files that belonged to
+  the next one. The cause was the workflow this file recommends — stage a change,
+  stage the next change, then commit (`git-staging-commit-push.md:221`,
+  `git-staging-commit-push.md:225`): the first `git commit` had no pathspec, so
+  it took every staged path, including the two files staged for the *later*
+  commit. With `autoPush` here the mis-attribution is published within minutes,
+  and in a shared checkout an unscoped commit can also publish work another
+  session staged (same class as `GOTCHAS.md:1760`).
+- Fix: in this repo always pass an explicit pathspec —
+  `git commit -m … -- <module dir> …` — or unstage what belongs later
+  (`git restore --staged <path>`) before committing. Check `git show --stat`
+  before moving on: a stat listing files from another module is the symptom.
+  Both incidents here were recovered with `git reset --soft <base>` while the
+  commits were still unpushed.
