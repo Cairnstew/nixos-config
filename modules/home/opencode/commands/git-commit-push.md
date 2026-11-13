@@ -325,3 +325,33 @@ If `ci-monitor action=watch` returns a `timeout` error, check the `url` field ma
 
 - **Lesson:** on a clean tree (Step 1 terminal state, `git-commit-push.md:306`) Steps 2-8 are no-ops, yet the branch can still be unpublishable. `gh run list -L 20 --json databaseId,name,status,conclusion,headSha --jq '.[] | select(.headSha|startswith("<sha>"))'` on HEAD `38d8837a` showed `Merge Per-Host Branch` = **failure** while the other four workflows were green: desktop→master conflicted in `GOTCHAS.md` because both branches appended at EOF. No step reports this, and every later push keeps failing that same job until the conflict is fixed on the host branch — so "clean tree, stop after Step 1" is not the end of the job, it is the point to check the existing HEAD's auto-merge.
 - **Fix/practice:** preview the conflict set read-only *before* mutating the worktree with the 2026-11-11 recipe (`git-commit-push.md:304`): `git merge-tree --write-tree origin/master HEAD` listed exactly one conflicted file (`GOTCHAS.md`), matching the CI log, so the resolution was known in advance. Then `git fetch origin && git merge origin/master`, keep both appended sections, `git add GOTCHAS.md`, commit the merge, push — `Merge Per-Host Branch` went green and `origin/master` fast-forwarded to the merge commit (`0 0` vs `origin/desktop`).
+
+### 2026-11-13 — a diverged host branch whose remote holds an obsolete duplicate: merge `-s ours`, never rebase
+
+- **Lesson:** this run opened with `desktop` diverged 8 local / 3 remote, and the
+  remote three were not other people's work — they were an *earlier attempt at the
+  same theming series*, reset at 12:28:36 and redone locally as a superset
+  (`origin/desktop..HEAD` showed "Theme the proxy dashboard, ttyd and Grafana",
+  the remote side showed the separate "Generate the proxy dashboard" / "Theme ttyd
+  and Grafana" pair). `git diff HEAD origin/desktop -- modules/nixos/{proxy,ttyd,monitoring}`
+  was **empty**: identical implementation, and the remote's only unique content was
+  content local had deliberately superseded (pre-ratchet `#89b4fa` fallbacks in
+  `home/core/git.nix`, the superfile placeholder, older doc status). `origin/master`
+  was already at the old tip, so the duplicate was published *and* merged.
+- **Why the command's own remedy is wrong here:** Step 1 stops only on a dirty tree
+  (`git-commit-push.md:16`), so a clean-but-diverged branch proceeds; Step 7 then
+  says a non-fast-forward means "rebased first" (`git-commit-push.md:210`,
+  `git-commit-push.md:213`), and the gotcha repeats "Always `git pull --rebase`
+  before pushing" (`git-commit-push.md:257`). Replaying the 8 local commits onto the
+  3 obsolete duplicates would conflict against work local had already rewritten,
+  and it rewrites a published host branch — the same reasoning the 2026-11-11 entry
+  applied to host-vs-`master` conflicts.
+- **Fix/practice:** when the remote-only commits are an obsolete attempt at work
+  local has redone, resolve with `git merge -s ours origin/<branch>` (tree stays
+  exactly local HEAD — verified `git diff --stat HEAD^1 HEAD` empty) and push. Because
+  the merge brings the remote tip into local history, `Merge Per-Host Branch` runs
+  as a fast-forward instead of a duplicate replay. Verified: all five workflows green
+  and `origin/master` became the merge commit. Confirm the "obsolete" call first —
+  compare the two tips per-file (`git diff -s --stat <base>..HEAD` vs
+  `<base>..origin/<branch>` and diff the shared trees); if the remote holds *any*
+  unique change, this is the 2026-11-11 merge-with-resolution case, not `-s ours`.
