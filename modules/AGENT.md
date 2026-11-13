@@ -160,6 +160,13 @@ A UI module with **no** declarative surface records
 `meta.theme = { kind = …; mechanism = "none"; reason = …; }` instead of shipping
 a no-op file. `tests/theme-coverage_test.nix` enforces both directions.
 
+Nested submodules (`modules/nixos/hyprland/bar/`, …) follow the same contract:
+their own `theme.nix` plus a **minimal** `meta.nix` theme record — identity
+(`name`/`provides`) stays in the parent module's `meta.nix`, because the parent
+is the flake output. The coverage test walks the tree recursively, so a nested
+`theme.nix` is enforced exactly like a top-level one; put shared assertions in
+the parent module's `tests.nix`.
+
 ---
 
 ## 3. Per-Category Directives
@@ -291,6 +298,8 @@ cheaply.
   # Optional: theming surface (GUI/TUI/Web modules only — see §2.2).
   # `file` is omitted when mechanism = "none"; `reason` then records why a UI
   # module has no declarative theming surface, so it is not re-investigated.
+  # A nested submodule (hyprland/bar, …) declares this block in its own
+  # meta.nix and nothing else; its identity stays in the parent's meta.nix.
   theme = {
     kind      = "gui";             # gui | tui | web
     mechanism = "generated";       # native | generated | css-inject | stylix | none

@@ -97,6 +97,23 @@ Set `parent.enable = true` to enable all default submodules. Each can be overrid
      and legacy hyprpaper-daemon submodules were deleted; awww is configured via
      wallpapers.backend = "awww" and wallpapers owns all wallpaper backends. -->
 
+## Theming
+
+Every UI submodule owns `my.desktop.hyprland.<module>.theme` (the shared
+`mkAppTheme` shape: `enable`, `overrides`, read-only `palette`) and keeps all of
+its colour code in `./<module>/theme.nix` — see `modules/AGENT.md` §2.2.
+
+| Submodule | Generated artefact | Notes |
+|---|---|---|
+| `bar` | `/etc/xdg/waybar/style.css` | `backgroundOpacity`/`borderOpacity`/`hoverOpacity`/`popupOpacity`; `bar.style` is appended last |
+| `notifications` | `/etc/xdg/mako/config` | `theme.settings` is the generated file |
+| `lockscreen` | `/etc/xdg/swaylock/config` or `/etc/xdg/hypr/hyprlock.conf` | one of the two, per `useHyprlock` |
+| `appearance` | — | sets the default of `shadow.color` (palette background @ 80% alpha) |
+| `utilities` | `/etc/xdg/gtk-3.0/settings.ini` | polarity + fonts + cursor; theme/icon names are omitted while stylix owns GTK |
+| `displayManager` | SDDM theme package | Catppuccin flavour/accent follow the scheme |
+
+Spotify's brand green (`#1db954`) in the bar stylesheet is deliberately fixed.
+
 ## Per-Monitor Configuration
 
 Use the `my.monitors` option (defined in `modules/nixos/monitors/`) for display layout:

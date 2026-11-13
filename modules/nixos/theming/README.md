@@ -84,3 +84,19 @@ for the rollout plan.
 - **Resolution** [`lib/theming.nix`](../../../lib/theming.nix)
 - **Schemes** [`lib/schemes/`](../../../lib/schemes/)
 - **Imported by** [`modules/nixos/common.nix`](../common.nix)
+
+## Themed NixOS modules
+
+Each of these owns a `my.desktop.*.theme` option (the same `mkAppTheme` shape
+as the Home-Manager modules) and is the only file in the module with colour
+code. See `modules/AGENT.md` §2.2 for the contract.
+
+| Module | Option | Surface |
+|---|---|---|
+| `nixos/hyprland/bar` | `my.desktop.hyprland.bar.theme` | generated waybar `style.css` |
+| `nixos/hyprland/notifications` | `…notifications.theme` | generated mako config |
+| `nixos/hyprland/lockscreen` | `…lockscreen.theme` | generated swaylock / hyprlock config |
+| `nixos/hyprland/appearance` | `…appearance.theme` | `shadow.color` default |
+| `nixos/hyprland/utilities` | `…utilities.theme` | GTK3 `settings.ini` (theme names skipped when stylix owns GTK) |
+| `nixos/hyprland/display-manager` | `…displayManager.theme` | SDDM theme package/name, cursor |
+| `nixos/gnome` | `my.desktop.gnome.theme` | dconf colour-scheme + screensaver accent + GTK names (skipped when stylix owns GTK) |

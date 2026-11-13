@@ -41,15 +41,15 @@ let
       "options.nix"
     ];
 
+  # Recurse unconditionally: `modules/nixos` itself has no entrypoint, so
+  # stopping at non-module directories would never reach the modules below it.
   moduleDirs =
     root:
     let
       walk =
         rel:
-        if isModuleDir rel then
-          [ rel ] ++ lib.concatMap (n: walk "${rel}/${n}") (subdirs rel)
-        else
-          [ ];
+        (if isModuleDir rel then [ rel ] else [ ])
+        ++ lib.concatMap (n: walk "${rel}/${n}") (subdirs rel);
     in
     walk root;
 

@@ -50,6 +50,55 @@ let
     )
     cfg.core.extraWindowRules;
 
+  # ── Theming (per-submodule theme.nix) ──────────────────────────────────
+  # Each UI submodule owns `my.desktop.hyprland.<sub>.theme`; these assertions
+  # check the palette resolved and that the generated artefact is non-empty, so
+  # a broken generator fails evaluation instead of shipping an unthemed surface.
+  hasPalette = t: t.palette ? background && t.palette ? accent;
+  themeAssertions = [
+    {
+      assertion = hasPalette cfg.bar.theme;
+      message = "hyprland bar theme: the resolved palette is missing background/accent.";
+    }
+    {
+      assertion = !cfg.bar.enable || !cfg.bar.theme.enable || lib.hasInfix "window#waybar" cfg.bar.theme.style;
+      message = "hyprland bar theme: the generated style.css has no window#waybar rule.";
+    }
+    {
+      assertion = hasPalette cfg.notifications.theme;
+      message = "hyprland notifications theme: the resolved palette is missing background/accent.";
+    }
+    {
+      assertion = !cfg.notifications.enable || !cfg.notifications.theme.enable
+        || lib.hasInfix "background-color=" cfg.notifications.theme.settings;
+      message = "hyprland notifications theme: the generated mako config has no background-color.";
+    }
+    {
+      assertion = hasPalette cfg.lockscreen.theme;
+      message = "hyprland lockscreen theme: the resolved palette is missing background/accent.";
+    }
+    {
+      assertion = !cfg.lockscreen.enable || !cfg.lockscreen.theme.enable
+        || (if cfg.lockscreen.useHyprlock
+      then cfg.lockscreen.theme.hyprlockConfig != ""
+      else cfg.lockscreen.theme.swaylockConfig != "");
+      message = "hyprland lockscreen theme: the config for the selected locker is empty.";
+    }
+    {
+      assertion = !cfg.appearance.enable || cfg.appearance.shadow.color != "";
+      message = "hyprland appearance: shadow.color must not be empty.";
+    }
+    {
+      assertion = !cfg.utilities.enable || !cfg.utilities.theme.enable
+        || lib.hasInfix "[Settings]" cfg.utilities.theme.settings;
+      message = "hyprland utilities theme: the generated GTK settings.ini has no [Settings] section.";
+    }
+    {
+      assertion = !cfg.displayManager.enable || cfg.displayManager.sddm.themeName != "";
+      message = "hyprland display-manager: sddm.themeName must not be empty.";
+    }
+  ];
+
   mkBluetoothBinCheck = name: bin: lib.optionalString btEnabled ''
     if [ -x "${bin}" ]; then
       pass "${name} binary found"
@@ -116,7 +165,7 @@ in
         (e.g. gamescope -f) works natively with Hyprland.
       '';
     }
-  ] ++ overrideAssertions;
+  ] ++ overrideAssertions ++ themeAssertions;
 
   # ── L1: Health check (manual trigger, also detectable by test-runner) ─
   systemd.services.hyprland-health-check = mkIf cfg.enable {
