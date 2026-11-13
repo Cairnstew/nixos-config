@@ -2414,3 +2414,32 @@ Second trap, in the same edit: replacing a hardcoded behaviour (`SUPER+E → thu
 
 Fix/practice: run `lib.getExe cfg.<pkg>` in binds rather than a bare command name, and verify a Hyprland bind by evaluating the generated Lua —
 `nix eval --impure --raw --expr '…config.environment.etc."xdg/hypr/hyprland.lua".text'` and grepping for the bind; that prints the resolved store paths, so `spf`-style mistakes show up before activation.
+
+---
+
+**Testing a change in this repo's pure `lib/*.nix` — `builtins.getFlake` on the repo is not the fast path; import the file and take `lib` from `NIX_PATH`** (2026-11-13, desktop)
+
+Symptom: while adding `lib/theme.nix` (the per-app theming toolkit) I tried
+`nix eval --impure --expr 'let f = builtins.getFlake "path:/home/seanc/nixos-config"; lib = f.inputs.nixpkgs.lib; …'`
+and the command hit the 120 s timeout with no output. The flake-level module
+system (flake-parts + `nixos-unified` autowiring) is evaluated even though only
+`lib/` was needed. The same expression also needs `--impure`, so it is only
+appropriate for whole-flake questions.
+
+Fix/practice: import the helper directly and take `lib` from `NIX_PATH` (set here
+to a nixpkgs store path) — the same shape the modules and
+`tests/theming_test.nix:20` already use:
+
+```
+nix eval --impure --json --expr '
+  let lib = import <nixpkgs/lib>;
+      theming = import /home/seanc/nixos-config/lib/theming.nix { inherit lib; };
+      theme = import /home/seanc/nixos-config/lib/theme.nix { inherit lib; };
+  in { vars = theme.cssVars { palette = theming.mkColors { }; }; }'
+```
+
+That evaluates in ~1 s. To exercise an option factory (`mkAppTheme`) without a
+host, wrap it in `lib.evalModules` with a stub `options.my.theming.colors`; for
+the flake output itself use `nix eval .#lib.theme.toKebab --apply 'f: f
+"backgroundAlt"'`. Pass `nix fmt -- <files>` too — it only formats the paths you
+name, so it cannot sweep another session's files.
