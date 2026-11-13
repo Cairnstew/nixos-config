@@ -2544,3 +2544,26 @@ the same indentation as the surrounding body (here `      ${theme.css}`, the
 body's 6 spaces). Then `git diff --stat` and `git diff -w --stat` agree — if
 they diverge by hundreds of lines, a string got re-anchored and the real change
 is buried under whitespace.
+
+---
+
+**A stylix target and your own settings silently *concatenate* list-valued keys** (2026-11-13, desktop)
+
+Symptom: `programs.lazygit.settings.gui.theme.activeBorderColor` evaluated to
+`[ accent "bold" accent "bold" ]` and `inactiveBorderColor` carried two different
+greys. Two owners were active for the same keys: stylix's lazygit target and
+`modules/home/core/git.nix`. `settings` uses `yamlFormat.type`, whose merge for
+lists is **concatenation**, not replacement — so instead of one theme you get
+duplicated/contradictory entries, and nothing fails. It is invisible in
+`lazygit` itself until a colour looks wrong.
+
+Fix/practice: the Phase-1 rule "one owner per app" also covers targets that are
+enabled by default in stylix, not just the ones you explicitly wire. Pick an
+owner per host and gate the other. Here stylix wins where it is enabled and the
+module's block is the fallback —
+`gui.theme = lib.mkIf (!(config.stylix.enable or false)) { … }`
+(`modules/home/core/git.nix:89`, alongside the zed opt-out at
+`modules/nixos/stylix/config.nix:89`). `lib.mkIf` works inside a plain attrset
+value: the module system pushes the property down, so no `_type = "if"` reaches
+the YAML generator. Verify by evaluating the option with `--apply` and checking
+the list length, not just the rendered config file.
