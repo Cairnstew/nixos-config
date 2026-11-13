@@ -2373,3 +2373,13 @@ Symptom: needing to set a PZ account password by hand (the `whitelist.password` 
 Cause: `zombie/core/secure/PZcrypt.hash(String)` is literally `BCrypt.hashpw(pw, "$2a$12$O/BFHoDFPrfFaNPAACmWpu")` — one hard-coded, cost-12 salt for every account, so the function is deterministic. Login compares the stored string to the client-supplied hash with `.equals`, which is why a re-salted `$2b$` or random-salt value can never authenticate. `PZcrypt.hashSalt` (random salt) exists but is not what the login path stores.
 
 Fix/practice: generate the value with the game's own function or an equivalent, then write it into the row with the server stopped: `printf '%s' "$pw" | mkpasswd -m bcrypt -S '$2a$12$O/BFHoDFPrfFaNPAACmWpu' -s`. Verified identical to `PZcrypt.hash` by running both on the same input (`java -cp projectzomboid.jar …`), so no Java needed. Leaving the column empty is the other valid state — it means "accept any non-empty password".
+
+---
+
+**`systemctl stop project-zomboid-<name>` ends `failed (Result=timeout)` after 90 s — and `pgrep -f ProjectZomboid64` over ssh counts the ssh command itself** (2026-11-13, server)
+
+Symptom: stopping the unit to edit `db/viewpoint.db` printed `active=failed`, `Result=timeout`, `ExecMainStatus=9`, which reads like a crash, and the follow-up `pgrep -f ProjectZomboid64` reported two live processes.
+
+Cause: the unit runs `ExecStop=…-stop` (an RPC to the game server) and `KillMode=mixed` with the default `TimeoutStopSec=90`; when the RPC outlasts that, systemd SIGKILLs the JVM — journal shows `Killing process … (ProjectZomboid6) with signal SIGKILL.` then `Failed with result 'timeout'`, while the stop itself succeeded and the DB stayed consistent (`pragma integrity_check` → `ok`). The "two processes" were the `ssh` invocation and its shell, whose command *string* contains `ProjectZomboid64`, matched by `pgrep -f`.
+
+Fix/practice: after a manual stop, treat `Result=timeout` as *stopped*, not crashed, and verify with `ps -eo comm | grep -c '[P]rojectZomboid64'` (`comm` is truncated to 15 chars, so `ProjectZomboid6`, and the bracketed pattern stops grep matching itself). Check `pragma integrity_check` before editing, and prefer the console/RCON `quit` (or a raised `TimeoutStopSec`) for a large world — SIGKILL mid-save is the only real risk.
