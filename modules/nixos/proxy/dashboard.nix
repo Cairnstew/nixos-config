@@ -2,8 +2,13 @@
 # proxy root. Extracted verbatim from the former config.nix monolith.
 # Plain function file (same pattern as modules/home/opencode/providers.nix) —
 # imported from config.nix, NOT a module, so it stays out of default.nix imports.
-{ cfg, enabledUpstreams, lib, pkgs, ... }:
+#
+# No colour code lives here: the stylesheet and the colour names the inline
+# JS/HTML interpolate come from ./theme.nix (`my.services.proxy.dashboard.theme`).
+{ cfg, enabledUpstreams, lib, pkgs, theme, ... }:
 let
+  c = theme.colors;
+
   # Dashboard HTML page
   dashboardHtml = pkgs.writeText "dashboard.html" ''
     <!DOCTYPE html>
@@ -13,50 +18,7 @@ let
       <meta name="viewport" content="width=device-width, initial-scale=1.0">
       <title>${cfg.dashboard.title}</title>
       <style>
-        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-        body {
-          font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-          background: #0f0f14;
-          color: #e0e0e0;
-          min-height: 100vh;
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-          padding: 3rem 1rem;
-        }
-        .container { max-width: 800px; width: 100%; }
-        h1 { font-size: 1.75rem; font-weight: 600; margin-bottom: 0.5rem; }
-        p.subtitle { color: #888; margin-bottom: 2rem; font-size: 0.95rem; }
-        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 1rem; }
-        a.card {
-          display: block;
-          background: #1a1a24;
-          border: 1px solid #2a2a38;
-          border-radius: 10px;
-          padding: 1.25rem;
-          text-decoration: none;
-          color: inherit;
-          transition: border-color 0.2s, transform 0.15s;
-        }
-        a.card:hover { border-color: #4a4a6a; transform: translateY(-2px); }
-        a.card h2 { font-size: 1.1rem; font-weight: 500; margin-bottom: 0.25rem; }
-        a.card .path { font-family: "SF Mono", monospace; font-size: 0.8rem; color: #5a8aff; }
-        a.card .desc { font-size: 0.8rem; color: #777; margin-top: 0.4rem; }
-        .footer { margin-top: 3rem; font-size: 0.75rem; color: #555; }
-        .section-title { font-size: 1.1rem; font-weight: 600; margin: 2rem 0 1rem; color: #aaa; text-transform: uppercase; letter-spacing: 0.05em; }
-        .metrics-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 1rem; margin-bottom: 1rem; }
-        .metric-card { background: #1a1a24; border: 1px solid #2a2a38; border-radius: 10px; padding: 1rem; }
-        .metric-label { font-size: 0.8rem; color: #888; margin-bottom: 0.4rem; text-transform: uppercase; letter-spacing: 0.04em; }
-        .metric-bar-bg { height: 8px; background: #2a2a38; border-radius: 4px; overflow: hidden; }
-        .metric-bar-fill { height: 100%; border-radius: 4px; transition: width 1s ease; background: linear-gradient(90deg, #5a8aff, #7c6aff); }
-        .metric-value { font-size: 1.3rem; font-weight: 700; margin-top: 0.4rem; }
-        .metrics-info { display: flex; flex-wrap: wrap; gap: 1.5rem; font-size: 0.85rem; color: #777; margin-top: 1rem; padding: 1rem; background: #1a1a24; border: 1px solid #2a2a38; border-radius: 10px; }
-        .metrics-info span { white-space: nowrap; }
-        .oc-instance { background: #1a1a24; border: 1px solid #2a2a38; border-radius: 10px; padding: 1rem; display: flex; flex-direction: column; gap: 0.6rem; }
-        .oc-instance .oc-sessions { display: flex; flex-direction: column; gap: 0.25rem; }
-        .oc-session { font-size: 0.8rem; color: #9db4ff; text-decoration: none; padding: 0.2rem 0.4rem; border-radius: 6px; background: #14141d; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-        .oc-session:hover { background: #1e1e2e; color: #c3d0ff; }
-        .oc-empty { font-size: 0.8rem; color: #555; }
+      ${theme.css}
       </style>
     </head>
     <body>
@@ -107,12 +69,12 @@ let
           </div>
           <div class="metric-card">
             <div class="metric-label">Memory</div>
-            <div class="metric-bar-bg"><div id="mem-bar" class="metric-bar-fill" style="background:linear-gradient(90deg,#4ade80,#22c55e)"></div></div>
+            <div class="metric-bar-bg"><div id="mem-bar" class="metric-bar-fill" style="background:${c.memGradient}"></div></div>
             <div class="metric-value" id="mem-value">--</div>
           </div>
           <div class="metric-card">
             <div class="metric-label">Disk</div>
-            <div class="metric-bar-bg"><div id="disk-bar" class="metric-bar-fill" style="background:linear-gradient(90deg,#f59e0b,#ef4444)"></div></div>
+            <div class="metric-bar-bg"><div id="disk-bar" class="metric-bar-fill" style="background:${c.diskGradient}"></div></div>
             <div class="metric-value" id="disk-value">--</div>
           </div>
         </div>
@@ -212,12 +174,12 @@ let
           if (tsExpected != null) { tsInfo += (tsOk ? ' ok' : ' !=' + tsExpected); }
           tsInfo += ')';
           tsEl.textContent = tsInfo;
-          tsEl.style.color = tsUp && tsOk ? '#4ade80' : '#ef4444';
+          tsEl.style.color = tsUp && tsOk ? '${c.success}' : '${c.error}';
 
           var sshUp = d.ssh && d.ssh.listening;
           var sshEl = document.getElementById('metrics-ssh');
           sshEl.textContent = 'SSH: ' + (sshUp ? 'up' : 'down');
-          sshEl.style.color = sshUp ? '#4ade80' : '#ef4444';
+          sshEl.style.color = sshUp ? '${c.success}' : '${c.error}';
         }
 
         // GPU cards: built once per detected GPU set, then updated in place
@@ -225,11 +187,11 @@ let
         var gpuSig = "";
         function gpuCard(g, i) {
           return '<div class="metric-card">' +
-            '<div class="metric-label">' + g.name + ' <span style="color:#555">' + (g.driver || "") + '</span></div>' +
-            '<div class="metric-bar-bg"><div id="gpu-' + i + '-bar" class="metric-bar-fill" style="background:linear-gradient(90deg,#a855f7,#7c3aed)"></div></div>' +
+            '<div class="metric-label">' + g.name + ' <span style="color:${c.faint}">' + (g.driver || "") + '</span></div>' +
+            '<div class="metric-bar-bg"><div id="gpu-' + i + '-bar" class="metric-bar-fill" style="background:${c.gpuGradient}"></div></div>' +
             '<div class="metric-value" id="gpu-' + i + '-value">--</div>' +
-            '<div class="metric-bar-bg" style="margin-top:6px"><div id="gpu-' + i + '-mem" class="metric-bar-fill" style="background:linear-gradient(90deg,#38bdf8,#2563eb);opacity:0"></div></div>' +
-            '<div style="font-size:0.75rem;color:#777;margin-top:0.4rem" id="gpu-' + i + '-meta"></div>' +
+            '<div class="metric-bar-bg" style="margin-top:6px"><div id="gpu-' + i + '-mem" class="metric-bar-fill" style="background:${c.gpuMemGradient};opacity:0"></div></div>' +
+            '<div style="font-size:0.75rem;color:${c.subtle};margin-top:0.4rem" id="gpu-' + i + '-meta"></div>' +
             '</div>';
         }
         function updateGpus(gpus) {
@@ -282,9 +244,9 @@ let
             <div class="metric-bar-bg" style="height:10px"><div id="oc-hero-bar" class="metric-bar-fill"></div></div>
             <div style="display:flex;align-items:baseline;justify-content:space-between;gap:1rem;margin-top:0.4rem;flex-wrap:wrap">
               <div class="metric-value" id="oc-hero-value">--</div>
-              <div style="font-size:0.85rem;color:#888" id="oc-hero-meta">--</div>
+              <div style="font-size:0.85rem;color:${c.muted}" id="oc-hero-meta">--</div>
             </div>
-            <div style="font-size:0.8rem;color:#777;margin-top:0.25rem" id="oc-hero-pace"></div>
+            <div style="font-size:0.8rem;color:${c.subtle};margin-top:0.25rem" id="oc-hero-pace"></div>
           </div>
           ${lib.concatStringsSep "\n" (map (w: let
             label = if w == "rolling" then "Rolling (5h)" else if w == "weekly" then "Weekly" else "Monthly";
@@ -293,7 +255,7 @@ let
             <div class="metric-label">${label}</div>
             <div class="metric-bar-bg"><div id="oc-${w}-bar" class="metric-bar-fill"></div></div>
             <div class="metric-value" id="oc-${w}-value">--</div>
-            <div style="font-size:0.75rem;color:#777;margin-top:0.3rem" id="oc-${w}-reset"></div>
+            <div style="font-size:0.75rem;color:${c.subtle};margin-top:0.3rem" id="oc-${w}-reset"></div>
           </div>
           '') [ "rolling" "weekly" "monthly" ])}
         </div>
@@ -314,7 +276,7 @@ let
           return dt.toLocaleDateString(undefined, { month: "short", day: "numeric" });
         }
         function ocBarColor(pct) {
-          return pct >= 90 ? "#ef4444" : pct >= 70 ? "#f59e0b" : "linear-gradient(90deg, #5a8aff, #7c6aff)";
+          return pct >= 90 ? "${c.error}" : pct >= 70 ? "${c.warning}" : "${c.cpuGradient}";
         }
         function ocUsageUpdate(d) {
           var oc = d.opencodeGo;
@@ -439,7 +401,7 @@ let
         <h2 class="section-title">Ensemble</h2>
         <div class="metrics-grid">
           <div class="metric-card">
-            <div class="metric-label"><a href="${cfg.dashboard.ensemble.apiPath}/" style="color:#9db4ff;text-decoration:none">Teams browser UI</a></div>
+            <div class="metric-label"><a href="${cfg.dashboard.ensemble.apiPath}/" style="color:${c.accentSoft};text-decoration:none">Teams browser UI</a></div>
             <div class="metric-value" id="ensemble-summary">--</div>
             <div class="metrics-info"><span id="ensemble-detail">loading…</span></div>
           </div>
@@ -483,9 +445,9 @@ let
         function mcCard(s) {
           var ok = s.active;
           var state = ok ? 'online' : 'offline';
-          var pill = '<span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:' + (ok ? '#4ade80' : '#ef4444') + ';margin-right:6px"></span>';
+          var pill = '<span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:' + (ok ? '${c.success}' : '${c.error}') + ';margin-right:6px"></span>';
           var btn = function (a, label) {
-            return '<button data-mc-action="' + a + '" data-mc-name="' + s.name + '" style="padding:4px 12px;margin-right:6px;border-radius:6px;border:1px solid #2a2a38;background:#14141d;color:#e0e0e0;cursor:pointer">' + label + '</button>';
+            return '<button data-mc-action="' + a + '" data-mc-name="' + s.name + '" style="padding:4px 12px;margin-right:6px;border-radius:6px;border:1px solid ${c.border};background:${c.surfaceSunken};color:${c.foreground};cursor:pointer">' + label + '</button>';
           };
           return '<div class="metric-card">' +
             '<div class="metric-label">' + pill + s.name + ' · ' + state + '</div>' +
@@ -493,7 +455,7 @@ let
             '<div class="metrics-info">' + (s.uptime ? 'up ' + s.uptime : "") + '</div>' +
             '<div style="margin-top:10px">' +
               btn('start', 'Start') + btn('stop', 'Stop') + btn('restart', 'Restart') +
-              (s.console ? '<a href="' + s.console + '" style="padding:4px 12px;border-radius:6px;border:1px solid #2a2a38;background:#14141d;color:#5a8aff;text-decoration:none">Console</a>' : "") +
+              (s.console ? '<a href="' + s.console + '" style="padding:4px 12px;border-radius:6px;border:1px solid ${c.border};background:${c.surfaceSunken};color:${c.accent};text-decoration:none">Console</a>' : "") +
             '</div></div>';
         }
         function mcRefresh() {
@@ -545,9 +507,9 @@ let
           return g >= 1 ? g.toFixed(1) + ' GiB' : (b / 1048576).toFixed(0) + ' MiB';
         }
         function pzCard(s) {
-          var pill = '<span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:' + (s.active ? '#4ade80' : '#ef4444') + ';margin-right:6px"></span>';
+          var pill = '<span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:' + (s.active ? '${c.success}' : '${c.error}') + ';margin-right:6px"></span>';
           var btn = function (a, label) {
-            return '<button data-pz-action="' + a + '" data-pz-name="' + s.name + '" style="padding:4px 12px;margin-right:6px;border-radius:6px;border:1px solid #2a2a38;background:#14141d;color:#e0e0e0;cursor:pointer">' + label + '</button>';
+            return '<button data-pz-action="' + a + '" data-pz-name="' + s.name + '" style="padding:4px 12px;margin-right:6px;border-radius:6px;border:1px solid ${c.border};background:${c.surfaceSunken};color:${c.foreground};cursor:pointer">' + label + '</button>';
           };
           return '<div class="metric-card">' +
             '<div class="metric-label">' + pill + s.name + ' · ' + s.state + '</div>' +
@@ -555,7 +517,7 @@ let
             '<div class="metrics-info">' + (s.uptime ? 'up ' + pzDuration(s.uptime) : "") + '</div>' +
             '<div style="margin-top:10px">' +
               btn('start', 'Start') + btn('stop', 'Stop') + btn('restart', 'Restart') +
-              (s.console ? '<a href="' + s.console + '" style="padding:4px 12px;border-radius:6px;border:1px solid #2a2a38;background:#14141d;color:#5a8aff;text-decoration:none">Console</a>' : "") +
+              (s.console ? '<a href="' + s.console + '" style="padding:4px 12px;border-radius:6px;border:1px solid ${c.border};background:${c.surfaceSunken};color:${c.accent};text-decoration:none">Console</a>' : "") +
             '</div></div>';
         }
         function pzRefresh() {
