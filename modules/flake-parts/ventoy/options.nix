@@ -67,7 +67,7 @@ let
       ventoy_color = mkOption {
         type = types.nullOr types.str;
         default = null;
-        description = "Color of version info (e.g. #0000ff).";
+        description = "Color of version info (a six-digit hex RGB value).";
       };
       fonts = mkOption {
         type = types.listOf types.str;

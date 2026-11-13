@@ -2,12 +2,13 @@
 let
   # Use flake config git settings
   flakeGit = flake.config.git or { };
-  # Resolved theme palette (modules/home/theming). Falls back to the catalog
-  # default when this module is evaluated standalone, so the border colours are
-  # never an empty string.
-  theme = config.my.theming.colors or { };
-  accent = theme.accent or "#89b4fa";
-  muted = theme.foregroundMuted or "#585b70";
+  # Resolved theme palette (modules/home/theming). When this module is
+  # evaluated standalone (no `my.theming`), resolve the catalog default from
+  # lib/theming.nix instead of spelling a hex here — same palette, no literal.
+  themingLib = import ../../../lib/theming.nix { inherit lib; };
+  theme = config.my.theming.colors or (themingLib.mkColors { });
+  inherit (theme) accent;
+  muted = theme.foregroundMuted;
   # Get aliases from flake config, with fallback to defaults
   gitAliases = flakeGit.aliases or {
     co = "checkout";
@@ -79,8 +80,13 @@ in
 
   programs.lazygit = {
     enable = true;
+    # One owner for lazygit's theme. stylix's lazygit target sets the same
+    # `gui.theme` keys from the same palette, and `yamlFormat.type` merges lists
+    # by concatenation — with both active, `activeBorderColor` came out as the
+    # accent/"bold" pair repeated twice. stylix wins where it is enabled (it maps
+    # more keys, including lightTheme); this block is the non-stylix fallback.
     settings = {
-      gui.theme = {
+      gui.theme = lib.mkIf (!(config.stylix.enable or false)) {
         lightTheme = false;
         activeBorderColor = [ accent "bold" ];
         inactiveBorderColor = [ muted ];

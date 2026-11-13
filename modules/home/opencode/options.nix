@@ -622,10 +622,11 @@ in
           color = mkOption {
             type = types.nullOr types.str;
             default = null;
-            example = "#ff6b6b";
+            example = config.my.theming.colors.accent;
             description = ''
-              Custom color for the agent in the UI. Use a hex color (#FF5733) or
-              a theme color name (primary, secondary, accent, success, warning, error, info).
+              Custom color for the agent in the UI. Use a theme color name
+              (primary, secondary, accent, success, warning, error, info) or a
+              six-digit hex colour.
             '';
           };
           permission = mkOption {

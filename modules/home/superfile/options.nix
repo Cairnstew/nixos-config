@@ -61,9 +61,12 @@ in
         {
           "my-palette" = {
             code_syntax_highlight = "catppuccin-mocha";
-            full_screen_fg = "#a6adc8";
-            full_screen_bg = "#1e1e2e";
-            gradient_color = [ "#89b4fa" "#cba6f7" ];
+            full_screen_fg = config.my.theming.colors.foreground;
+            full_screen_bg = config.my.theming.colors.background;
+            gradient_color = [
+              config.my.theming.colors.accent
+              config.my.theming.colors.accentAlt
+            ];
           };
         }
       '';

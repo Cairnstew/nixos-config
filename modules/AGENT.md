@@ -152,6 +152,10 @@ Hard rules:
 * `options.nix` must not declare `theme`; `config.nix` must not contain colour
   code.
 * No hex literals: use roles (`p.accent`, `p.foregroundMuted`, …).
+  `tests/theme-literals_test.nix` enforces this repo-wide — a `#rrggbb` under
+  `modules/` fails the nixtest suite unless it is in a `theme.nix`, a
+  `*/theming/` module, `modules/flake-parts/theming.nix`, or the documented
+  brand allow-list.
 * Works on hosts without stylix (server/wsl): never read `config.stylix.*`.
 * If stylix already targets the app, one owner only — disable the stylix target
   in the same commit (see `modules/nixos/stylix/config.nix` zed target).
