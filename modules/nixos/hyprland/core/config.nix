@@ -212,7 +212,9 @@ let
     ${lib.optionalString cfg.launcher.enable ''
     hl.bind(mainMod .. " + D", hl.dsp.exec_cmd(${luaStr "wofi --show drun"}))
     ''}
-    hl.bind(mainMod .. " + E", hl.dsp.exec_cmd(${luaStr "thunar"}))
+    ${lib.optionalString cfg.fileManager.enable ''
+    hl.bind(mainMod .. " + E", hl.dsp.exec_cmd(${luaStr "${lib.getExe cfg.terminal} -e ${lib.getExe cfg.fileManager.package} ${cfg.fileManager.startDirectory}"}))
+    ''}
     ${lib.optionalString cfg.lockscreen.enable ''
     hl.bind(mainMod .. " + L", hl.dsp.exec_cmd(${luaStr "swaylock"}))
     ''}
@@ -303,7 +305,7 @@ in
 
     environment.systemPackages = with pkgs; [
       cfg.terminal
-    ] ++ cfg.extraPackages;
+    ] ++ lib.optional cfg.fileManager.enable cfg.fileManager.package ++ cfg.extraPackages;
 
     environment.etc."xdg/hypr/hyprland.lua".text = defaultHyprlandConf;
 
