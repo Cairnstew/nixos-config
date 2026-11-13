@@ -1,17 +1,15 @@
 { config, pkgs, lib, flake, ... }:
 let
   cfg = config.my.desktop.gnome;
-  # Get preferences from flake config for defaults
-  prefs = flake.config.preferences or { };
   defaults = flake.config.defaults or { };
-  # Resolved palette (modules/home/theming). Accent colours for the GNOME
-  # accent-colour scheme come from the shared theme rather than a local
-  # base16 read.
-  theme = config.my.theming.colors or { };
 in
 {
-  # Option declarations live in ./home-options.nix (module-layout conformance, M2/M3).
-  imports = [ ./home-options.nix ];
+  # Option declarations live in ./home-options.nix (module-layout conformance,
+  # M2/M3); every colour lives in ./theme.nix.
+  imports = [
+    ./home-options.nix
+    ./theme.nix
+  ];
 
   config = lib.mkIf cfg.enable {
     # Use the default file manager from config
@@ -37,8 +35,6 @@ in
       };
       "org/gnome/desktop/screensaver" = {
         picture-uri = cfg.screensaverImage;
-        primary-color = theme.accent or "#3465a4";
-        secondary-color = theme.background or "#000000";
         lock-enabled = cfg.lockEnabled;
         lock-delay = lib.hm.gvariant.mkUint32 cfg.lockDelay;
       };
@@ -57,16 +53,11 @@ in
         sleep-inactive-battery-type = cfg.sleepInactiveBatteryType;
       };
 
-      # ── Theming settings (disabled when Stylix is active) ──────────────
-    } // lib.optionalAttrs (!(config.stylix.enable or false)) {
       "org/gnome/desktop/interface" = {
-        color-scheme = if (config.my.theming.polarity or "dark") == "dark" then "prefer-dark" else "prefer-light";
+        # Non-theming interface preferences only; colour-scheme, fonts and the
+        # cursor live in ./theme.nix (which stylix overrides when enabled).
         enable-hot-corners = cfg.enableHotCorners;
         can-change-accels = true;
-        cursor-theme = cfg.cursorTheme;
-        cursor-size = cfg.cursorSize;
-        font-name = cfg.fontName;
-        monospace-font-name = cfg.fontMonospace;
         clock-show-date = cfg.clockShowDate;
         clock-show-weekday = cfg.clockShowWeekday;
         enable-animations = cfg.enableAnimations;
@@ -74,18 +65,6 @@ in
       "org/gnome/desktop/background" = {
         picture-uri = cfg.backgroundImage;
         picture-uri-dark = cfg.backgroundImageDark;
-      };
-    };
-
-    # GTK theming (disabled when Stylix is active)
-    gtk = lib.mkIf (!(config.stylix.enable or false)) {
-      enable = true;
-      gtk3.extraConfig.gtk-application-prefer-dark-theme = prefs.darkMode or true;
-      iconTheme.name = cfg.iconTheme;
-      theme.name = cfg.gtkTheme;
-      cursorTheme = {
-        name = cfg.cursorTheme;
-        size = cfg.cursorSize;
       };
     };
   };
