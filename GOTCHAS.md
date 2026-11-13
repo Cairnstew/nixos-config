@@ -2443,3 +2443,13 @@ host, wrap it in `lib.evalModules` with a stub `options.my.theming.colors`; for
 the flake output itself use `nix eval .#lib.theme.toKebab --apply 'f: f
 "backgroundAlt"'`. Pass `nix fmt -- <files>` too — it only formats the paths you
 name, so it cannot sweep another session's files.
+
+---
+
+**superfile v1.6.0: mouse is always on but wheel-only, there is no markdown renderer, and `config.toml` is only written when absent** (2026-11-13, desktop)
+
+Symptom: asking for "mouse support" and "markdown/PDF preview" as if both were config keys. Neither is. `config.toml` has no mouse key at all, and the only preview keys are `default_open_file_preview`, `show_image_preview`, `code_previewer` and `file_preview_width`.
+
+Cause, read from the v1.6.0 source: `View()` sets `v.MouseMode = tea.MouseModeCellMotion` unconditionally (`src/internal/model.go:498`), so there is nothing to enable — but `handleMouseMsg` (`src/internal/model.go:114`) only branches on `wheelup`/`wheeldown` and logs everything else as "mouse event of type that is not handled". Clicks/drags do nothing, in `main` too. For previews, `RenderWithPath` (`src/internal/ui/preview/render.go`) goes thumbnail-generator → image → **plain text**: a PDF is rendered as a first-page image via `pdftoppm` (poppler), and markdown is only ever syntax-highlighted text, so `code_previewer = "bat"` is the whole of the "markdown support" available.
+
+Fix/practice: install `poppler-utils` (not `poppler_utils` — renamed in current nixpkgs) for PDF thumbnails and `bat` for the previewer; both are on PATH-sensitive lookups, not wrapped by the nixpkgs package. `show_image_preview = false` disables the PDF path entirely (the panel prints "Image preview is disabled"). A Nix-managed `~/.config/superfile/config.toml` is safe because `writeConfigFile` (`src/cmd/main.go:219`) skips existing files — so set `ignore_missing_fields = true` to silence warnings about the ~60 keys you omit, and never run `superfile --fix-config-file` against the store symlink.
