@@ -91,12 +91,8 @@
         description = "Shadow render power (1-4). Higher = sharper shadow.";
       };
 
-      color = lib.mkOption {
-        type = lib.types.str;
-        default = "rgba(1a1a2ecc)";
-        example = "rgba(000000aa)";
-        description = "Shadow color in RGBA format.";
-      };
+      # `shadow.color` lives in ./theme.nix — its default is derived from the
+      # palette.
     };
   };
 }

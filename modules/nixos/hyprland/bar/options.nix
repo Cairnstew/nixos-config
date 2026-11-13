@@ -1,4 +1,4 @@
-{ lib, ... }:
+{ lib, config, ... }:
 let
   customModuleSubmodule = lib.types.submodule {
     options = {
@@ -23,7 +23,9 @@ let
       format = lib.mkOption {
         type = lib.types.str;
         default = "{}";
-        example = "<span color='#89b4fa'>{}</span>";
+        # Waybar formats take literal colours; interpolate a palette role so the
+        # example follows `theming.scheme` instead of spelling a hex here.
+        example = "<span color='${config.my.theming.colors.accent}'>{}</span>";
         description = "Output format string. {} is replaced with exec output.";
       };
       returnType = lib.mkOption {
@@ -124,7 +126,10 @@ in
       example = ''
         #custom-bar { background: red; }
       '';
-      description = "Extra CSS injected into waybar's style.css on top of the default theme.";
+      description = ''
+        Extra CSS appended to waybar's style.css after the generated theme
+        (`bar.theme.style`, see ./theme.nix), so it can override any rule.
+      '';
     };
     position = lib.mkOption {
       type = lib.types.enum [ "top" "bottom" ];
@@ -164,7 +169,7 @@ in
         updates = {
           exec = "~/.config/waybar/scripts/arch-updates.sh";
           interval = 3600;
-          format = " <span color='#f5c2e7'>{}</span>";
+          format = " <span color='${config.my.theming.colors.terminal.magenta}'>{}</span>";
           on-click = "kitty -e sudo pacman -Syu";
         };
       };

@@ -21,7 +21,7 @@ in
           Autologin.Session = "";
           General.HaltCommand = "${pkgs.systemd}/bin/systemctl poweroff";
           General.RebootCommand = "${pkgs.systemd}/bin/systemctl reboot";
-          Theme.CursorTheme = "Adwaita";
+          Theme.CursorTheme = dmCfg.theme.cursorTheme;
         }
         // lib.optionalAttrs dmCfg.sddm.numlock {
           General.Numlock = "on";

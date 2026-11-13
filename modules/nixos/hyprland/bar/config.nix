@@ -223,134 +223,9 @@ let
     tray = { spacing = 8; };
   } // amdgpuModuleConfig // customModulesConfig);
 
-  customModuleCSS = lib.concatStringsSep "\n" (map
-    (name: ''
-      #custom-${name} {
-        padding: 0 10px;
-      }
-    '')
-    customModNames);
-
-  defaultWaybarStyle = ''
-    * {
-      border: none;
-      border-radius: 0;
-      font-family: "JetBrainsMono Nerd Font", monospace;
-      font-size: 13px;
-      min-height: 0;
-    }
-
-    window#waybar {
-      background: rgba(26,27,38,0.92);
-      color: #cdd6f4;
-      border-bottom: 2px solid rgba(137,180,250,0.5);
-    }
-
-    #workspaces button {
-      padding: 0 6px;
-      color: #6c7086;
-    }
-    #workspaces button.active {
-      color: #89b4fa;
-      border-bottom: 2px solid #89b4fa;
-    }
-    #workspaces button.urgent {
-      color: #f38ba8;
-    }
-
-    #custom-submap {
-      padding: 0 8px;
-      color: #a6e3a1;
-    }
-
-    #window {
-      padding: 0 10px;
-      color: #cdd6f4;
-    }
-
-    #pulseaudio { padding: 0 10px; color: #cdd6f4; }
-    #network     { padding: 0 10px; color: #cdd6f4; }
-    #cpu         { padding: 0 10px; color: #89b4fa; }
-    #memory      { padding: 0 10px; color: #a6e3a1; }
-    #disk        { padding: 0 10px; color: #f5c2e7; }
-    #temperature { padding: 0 10px; color: #fab387; }
-    #custom-gpu  { padding: 0 10px; color: #94e2d5; }
-    #clock       { padding: 0 10px; color: #cdd6f4; }
-    #battery     { padding: 0 10px; color: #cdd6f4; }
-    #tray        { padding: 0 10px; }
-
-    #battery.warning  { color: #fab387; }
-    #battery.critical { color: #f38ba8; }
-    #battery.charging { color: #a6e3a1; }
-    #battery.plugged  { color: #a6e3a1; }
-    #battery.full     { color: #a6e3a1; }
-    #temperature.critical { color: #f38ba8; }
-
-    #pulseaudio.muted { color: #6c7086; }
-    #network.disconnected { color: #f38ba8; }
-
-    #custom-spotify-now-playing { padding: 0 10px; color: #1db954; }
-    #custom-spotify-now-playing.playing { color: #1db954; }
-    #custom-spotify-now-playing.paused { color: #6c7086; }
-    #custom-spotify-now-playing.idle { color: #6c7086; }
-
-    /* OpenCode general-provider token indicator (OC1 / OC2). The text colour
-       comes from an inline <span> in the JSON (blue = token 1, green = token 2,
-       red = key matches neither), so only the chrome is styled here. */
-    #custom-opencode-key {
-      padding: 0 8px;
-      border-radius: 4px;
-      color: #cdd6f4;
-    }
-    #custom-opencode-key:hover {
-      background: rgba(137,180,250,0.18);
-    }
-    /* Inline media-control buttons (left of the song info) — one visual cluster. */
-    #custom-spotify-back, #custom-spotify-play, #custom-spotify-forward {
-      padding: 0 6px;
-      color: #cdd6f4;
-    }
-    #custom-spotify-back:hover, #custom-spotify-play:hover, #custom-spotify-forward:hover {
-      color: #1db954;
-    }
-
-    /* Upvote button */
-    #custom-spotify-upvote { padding: 0 6px; color: #6c7086; }
-    #custom-spotify-upvote.not-upvoted { color: #6c7086; }
-    #custom-spotify-upvote.upvoted { color: #f38ba8; }
-    #custom-spotify-upvote:hover { color: #f38ba8; }
-
-    ${customModuleCSS}
-
-    tooltip {
-      background: rgba(26,27,38,0.95);
-      border: 1px solid rgba(137,180,250,0.5);
-      border-radius: 6px;
-    }
-    tooltip label {
-      padding: 6px 10px;
-    }
-
-    /* Waybar popup menu (widget control panes, e.g. custom module `menu`).
-       Themed to match the bar; nerd font so glyph item labels render. */
-    menu {
-      background: rgba(26,27,38,0.97);
-      border: 1px solid rgba(137,180,250,0.5);
-      border-radius: 6px;
-      padding: 4px;
-      font-family: "JetBrainsMono Nerd Font", monospace;
-    }
-    menuitem {
-      border-radius: 4px;
-      color: #cdd6f4;
-      padding: 3px 12px;
-    }
-    menuitem:hover {
-      background: rgba(137,180,250,0.18);
-      color: #89b4fa;
-    }
-    ${barCfg.style}
-  '';
+  # The stylesheet itself is generated in ./theme.nix (all colour code lives
+  # there); `bar.style` is the user's extra CSS, appended last so it wins.
+  waybarStyle = lib.concatStringsSep "\n" [ barCfg.theme.style barCfg.style ];
 in
 {
   config = lib.mkMerge [
@@ -359,7 +234,7 @@ in
 
       environment.etc = {
         "xdg/waybar/config".text = waybarConfigJSON;
-        "xdg/waybar/style.css".text = defaultWaybarStyle;
+        "xdg/waybar/style.css".text = waybarStyle;
       } // lib.mapAttrs' (name: text: lib.nameValuePair "xdg/waybar/${name}" { inherit text; }) barCfg.menuFiles;
     })
     (mkIf (cfg.enable && barCfg.enable && hasAmdGpu) {
@@ -381,7 +256,7 @@ in
         # small and unchanged rebuilds don't restart (same hash).
         restartTriggers = [
           (builtins.hashString "sha256"
-            (waybarConfigJSON + defaultWaybarStyle + builtins.toJSON barCfg.menuFiles))
+            (waybarConfigJSON + waybarStyle + builtins.toJSON barCfg.menuFiles))
         ];
         serviceConfig = {
           Type = "simple";

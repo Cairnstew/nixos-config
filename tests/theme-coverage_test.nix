@@ -7,6 +7,9 @@
 #   * a module that declares theme.nix in meta.nix must actually have the file
 #   * theme.nix must be reachable from the module entrypoint (default.nix, or
 #     home.nix for the Home-Manager side of a NixOS module)
+#
+# The scan is recursive: nested submodules (e.g. modules/nixos/hyprland/bar)
+# ship their own theme.nix and their own minimal meta.nix theme record.
 #   * a module recorded as `mechanism = "none"` must not ship theme.nix
 #
 # It runs against the flake source (`inputs.self`), so files must be staged
@@ -20,17 +23,37 @@ let
     "modules/home"
   ];
 
+  dirPath = rel: repoRoot + "/${rel}";
+
+  entriesOf = rel: builtins.readDir (dirPath rel);
+
+  subdirs = rel:
+    builtins.filter
+      (n: (entriesOf rel).${n} == "directory")
+      (builtins.attrNames (entriesOf rel));
+
+  # A directory is a module directory when it has an entrypoint or an option
+  # declaration. Nested submodules (hyprland/bar, …) count too: their theme.nix
+  # carries the same contract as a top-level module's.
+  isModuleDir = rel:
+    builtins.any (f: builtins.pathExists (dirPath rel + "/${f}")) [
+      "default.nix"
+      "options.nix"
+    ];
+
   moduleDirs =
     root:
     let
-      entries = builtins.readDir (repoRoot + "/${root}");
-      names = builtins.filter (n: entries.${n} == "directory") (builtins.attrNames entries);
+      walk =
+        rel:
+        if isModuleDir rel then
+          [ rel ] ++ lib.concatMap (n: walk "${rel}/${n}") (subdirs rel)
+        else
+          [ ];
     in
-    map (n: "${root}/${n}") names;
+    walk root;
 
   dirs = lib.concatMap moduleDirs roots;
-
-  dirPath = rel: repoRoot + "/${rel}";
 
   hasTheme = rel: builtins.pathExists (dirPath rel + "/theme.nix");
 

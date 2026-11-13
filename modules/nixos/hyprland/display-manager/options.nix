@@ -37,18 +37,8 @@ in
     };
 
     sddm = {
-      theme = lib.mkOption {
-        type = types.package;
-        default = pkgs.catppuccin-sddm;
-        defaultText = lib.literalExpression "pkgs.catppuccin-sddm";
-        description = "SDDM theme package.";
-      };
-
-      themeName = lib.mkOption {
-        type = types.str;
-        default = "catppuccin-mocha-mauve";
-        description = "Theme directory name inside the package's share/sddm/themes/.";
-      };
+      # `sddm.theme` / `sddm.themeName` live in ./theme.nix — both are derived
+      # from the active scheme there.
 
       background = lib.mkOption {
         type = types.nullOr types.path;

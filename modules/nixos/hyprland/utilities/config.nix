@@ -47,14 +47,7 @@ in
       gtk3
     ];
 
-    environment.etc."xdg/gtk-3.0/settings.ini".text = ''
-      [Settings]
-      gtk-application-prefer-dark-theme=true
-      gtk-cursor-theme-name=Adwaita
-      gtk-cursor-theme-size=24
-      gtk-font-name=Noto Sans 11
-      gtk-icon-theme-name=Adwaita
-      gtk-theme-name=Adwaita-dark
-    '';
+    # `xdg/gtk-3.0/settings.ini` is written by ./theme.nix (all theming lives
+    # there).
   };
 }
