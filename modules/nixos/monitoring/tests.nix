@@ -20,5 +20,10 @@ in
       assertion = !cfg.grafana.enable || config.my.services.proxy.enable;
       message = "my.services.monitoring: grafana.enable requires my.services.proxy.enable (Grafana is exposed at /grafana through Caddy).";
     }
+    {
+      assertion = !cfg.grafana.enable || !cfg.theme.enable
+        || cfg.theme.grafanaTheme == (if cfg.theme.palette.polarity == "dark" then "dark" else "light");
+      message = "my.services.monitoring.theme: grafanaTheme must follow the palette polarity (dark/light).";
+    }
   ];
 }

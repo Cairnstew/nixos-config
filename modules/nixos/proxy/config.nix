@@ -27,6 +27,7 @@ let
   # upstreams and dashboard options; returns the buildable dashboard dir.
   dashboard = import ./dashboard.nix {
     inherit cfg enabledUpstreams lib pkgs;
+    theme = cfg.dashboard.theme;
   };
 
   # Caddy basic_auth block for the dashboard page + metrics API. The

@@ -19,5 +19,13 @@ in
       assertion = !cfg.enable || cfg.port >= 1024 || cfg.user == null;
       message = "my.services.ttyd.port must be >= 1024 when running as root.";
     }
+    {
+      assertion = !cfg.enable || !cfg.theme.enable || cfg.theme.clientOptions ? theme;
+      message = "my.services.ttyd.theme: no xterm.js `theme` client option was generated.";
+    }
+    {
+      assertion = !cfg.enable || !cfg.theme.enable || (cfg.theme.palette ? terminal && cfg.theme.palette.terminal ? red);
+      message = "my.services.ttyd.theme: the resolved palette is missing the terminal/ANSI slots.";
+    }
   ];
 }

@@ -23,6 +23,8 @@ to get a Tailscale-independent path.
 | `my.services.ttyd.maxClients` | `2` | Max concurrent clients |
 | `my.services.ttyd.openFirewall` | `false` | Open the port in the firewall |
 | `my.services.ttyd.proxyUpstream` | `true` | Register with the reverse proxy |
+| `my.services.ttyd.theme.enable` | `true` | Generate the xterm.js palette from `my.theming.colors` |
+| `my.services.ttyd.theme.overrides` | `{ }` | Per-app colour overrides |
 
 ## Usage Example
 
@@ -41,3 +43,10 @@ my.services.ttyd = {
 - Basic auth + binding to a mesh interface + writeable shell = treat the
   password as a real credential.
 - Available at `https://server.tailnet/.../ttyd/` via the reverse proxy too.
+
+## Theming
+
+`theme.nix` sets `services.ttyd.clientOptions.theme` to the xterm.js ITheme
+built by `lib/theme.nix` (`themeLib.xterm`), so the browser console uses the
+same ANSI palette as the local terminal. The generated value is introspectable
+as `my.services.ttyd.theme.clientOptions.theme`.

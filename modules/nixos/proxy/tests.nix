@@ -40,6 +40,16 @@ in
         || lib.hasAttr cfg.dashboard.auth.passwordSecret config.age.secrets;
       message = "my.services.proxy.dashboard.auth: agenix secret '${cfg.dashboard.auth.passwordSecret}' must exist on this host when dashboard auth is enabled.";
     }
+    # ── Dashboard theming (theme.nix) ─────────────────────────────────────
+    {
+      assertion = !cfg.enable || cfg.dashboard.theme.colors ? background;
+      message = "my.services.proxy.dashboard.theme: the colour map is missing `background`.";
+    }
+    {
+      assertion = !cfg.enable || !cfg.dashboard.theme.enable
+        || lib.hasInfix "body {" cfg.dashboard.theme.css;
+      message = "my.services.proxy.dashboard.theme: the generated stylesheet has no `body {` rule.";
+    }
     # Upstream host consistency: warn when an upstream uses autoBindTailscaleIp on its service
     # but the proxy host still points at 127.0.0.1 (the upstream won't be reachable).
     # This cannot be checked automatically (Tailscale IP is runtime-known), so this is a
