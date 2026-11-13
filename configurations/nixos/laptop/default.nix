@@ -44,6 +44,12 @@
     theming.stylix.enable = true;
   };
 
+  # ── Hyprland idle: screen off at 15 min, then suspend ────────────────────
+  # dpmsTimeout (900s) comes from the desktop.hyprland profile; auto-suspend is
+  # opt-in per host because the profile mkDefaults suspendTimeout to 0 (the
+  # desktop pins 0 to stay reachable over SSH/Tailscale).
+  my.desktop.hyprland.idle.suspendTimeout = 900;
+
   # ── Home Profiles ──────────────────────────────────────────────────────
   my.homeProfiles = {
     common.enable = true;

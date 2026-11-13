@@ -254,7 +254,7 @@
     };
 
     # Never auto-suspend: the desktop must stay awake and SSH/Tailscale
-    # reachable. Screens still power off (profile dpmsTimeout = 180s) and the
+    # reachable. Screens still power off (profile dpmsTimeout = 900s) and the
     # session still locks (lockTimeout = 300s) — only the `systemctl suspend`
     # listener is dropped. Pinned explicitly (profile default is mkDefault 0)
     # so the intent survives a future profile change.

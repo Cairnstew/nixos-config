@@ -36,7 +36,8 @@ in
         # ── Idle / power management ─────────────────────────────────────────
         idle = {
           enable = true;
-          dpmsTimeout = 180;
+          # 15 minutes: displays power off (DPMS off) after a quarter hour idle.
+          dpmsTimeout = 900;
           # mkDefault so a host can enable auto-suspend with a plain assignment.
           suspendTimeout = lib.mkDefault 0;
         };

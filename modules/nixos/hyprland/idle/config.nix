@@ -5,6 +5,19 @@ let
 
   lockCmd = if cfg.lockscreen.useHyprlock then "hyprlock" else "swaylock";
 
+  # Hyprland 0.57 parses the config as Lua, and `hyprctl dispatch` now parses its
+  # whole argument as Lua as well — the legacy `hyprctl dispatch dpms off` fails
+  # with "')' expected near 'off'" (GOTCHAS.md:2339). `hl.dsp.*` only *builds* a
+  # dispatcher object, so it must be handed to `hl.dispatch()` to actually run:
+  # `hyprctl eval 'hl.dsp.dpms("off")'` returns `ok` and does nothing.
+  # The action must be a TABLE: the bare-string form `hl.dsp.dpms("off")` silently
+  # toggles DPMS instead of setting it, so `off` flipped the screens back on
+  # (verified 2026-11-13: string form alternated ON/OFF on every call, table form
+  # set the requested state every time).
+  luaDispatch = expr: "hyprctl eval \"hl.dispatch(${expr})\"";
+
+  dpmsAction = action: luaDispatch "hl.dsp.dpms({ action = '${action}' })";
+
   listenerBlocks = lib.concatStringsSep "\n" (builtins.map
     (l: ''
       listener {
@@ -20,8 +33,8 @@ let
       })
       (lib.optionalAttrs (idleCfg.dpmsTimeout > 0) {
         timeout = idleCfg.dpmsTimeout;
-        on-timeout = "hyprctl dispatch dpms off";
-        on-resume = "hyprctl dispatch dpms on";
+        on-timeout = dpmsAction "off";
+        on-resume = dpmsAction "on";
       })
       (lib.optionalAttrs (idleCfg.suspendTimeout > 0) {
         timeout = idleCfg.suspendTimeout;
@@ -34,7 +47,7 @@ let
         lock_cmd = pidof ${lockCmd} || ${lockCmd}
         unlock_cmd = pidof ${lockCmd} && killall ${lockCmd} || true
         before_sleep_cmd = loginctl lock-session
-        after_sleep_cmd = hyprctl dispatch dpms on
+        after_sleep_cmd = ${dpmsAction "on"}
     }
 
     ${listenerBlocks}
@@ -67,8 +80,20 @@ in
       path = [
         config.programs.hyprland.package
         config.programs.hyprlock.package
+        # `lock_cmd` below execs this exact binary (swaylock by default), and the
+        # unit's PATH is *only* this list — it does not include
+        # /run/current-system/sw/bin, so an uninstalled-from-here lock command
+        # failed with "swaylock: command not found" (seen 2026-11-13).
+        cfg.lockscreen.package
         pkgs.procps
       ];
+
+      # hypridle reads its listeners once at startup; without this a rebuild that
+      # changes hypridle.conf leaves the daemon on the previous timers forever
+      # (seen 2026-11-13: rebuilt at 17:52, daemon still on pre-rebuild rules).
+      # The trigger is the content-addressed etc source, so it only fires when
+      # the generated config actually changes.
+      restartTriggers = [ config.environment.etc."hypr/hypridle.conf".source ];
 
       serviceConfig = {
         Type = "simple";
