@@ -2567,3 +2567,13 @@ module's block is the fallback —
 value: the module system pushes the property down, so no `_type = "if"` reaches
 the YAML generator. Verify by evaluating the option with `--apply` and checking
 the list length, not just the rendered config file.
+
+---
+
+**A host toplevel's narinfo 404s on the personal Cachix cache by design — auto-scope excludes every single-host derivation name, so "`<current-system>`.narinfo is 404" is not evidence the cache is empty** (2026-11-13, desktop)
+
+Symptom: checking the personal cache's status the obvious way — `curl -o /dev/null -w '%{http_code}' https://cairnstew-nixos-config-cache.cachix.org/$(readlink -f /run/current-system | sed 's#/nix/store/##;s#-.*##').narinfo` — returns **404**, which reads as "nothing is cached here" and reproduces the stale closing sentence of the 2026-11-12 cache entry above ("the personal cache is empty in practice … nothing pushes to it"). That sentence no longer holds on this host: `cachix-push-personal.{service,timer}` and `cachix-auto-scope-personal.{service,timer}` are loaded and active, `/run/agenix/nixos-config-cache-token` is decrypted (20-byte-readable root secret), and the last push (`2026-11-13 04:59`) exited 0 with "Nothing to push - all store paths are already on Cachix".
+
+Cause: the nightly auto-scope job writes the names that appear in exactly **one** host to `/var/lib/cachix-push/<cacheName>-auto-exclude` as anchored `-<name>$` patterns (`modules/nixos/caches/cache-type.nix:207`, generated from the per-host drv-name sets at `:301-310`), and every `<host>` toplevel is by definition single-host — `grep -c nixos-system-desktop /var/lib/cachix-push/cairnstew-nixos-config-cache-auto-exclude` matches `-nixos-system-desktop-26\.11\.20261105\.f9a75f4$`, so the toplevel is filtered out before upload even though the push as a whole works.
+
+Fix/practice: judge the cache by **sampled shared/self-built paths**, not the toplevel. `nix-store -qR /run/current-system | shuf -n 40`, strip each hash, and HEAD `<hash>.narinfo` — on this host 9/40 were present (e.g. `qz6nz2wy…-system-generators`, `xbjrsvd2…-initrd-linux-6.18.60` are 200) because `cachix push` skips everything already substitutable, so only nixos-rebuild's own outputs ever upload. `/nix-cache-info` (200, `Priority: 41`) proves reachability only; the Cachix API `https://cachix.org/api/v1/cache/<name>` with the agenix token proves auth/permission (`"permission":"Write"`, `isPublic:true`) but exposes no usage/size counters, so storage-quota status still has to come from the web dashboard.
