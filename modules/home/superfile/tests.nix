@@ -69,6 +69,19 @@ in
           directory with editor) would only log an error.
         '';
       }
+      # ── Theming (theme.nix) ──────────────────────────────────────────────
+      {
+        assertion = !cfg.theme.enable || (cfg.themes ? ${cfg.theme.name});
+        message = "superfile theme: the generated theme was not added to my.programs.superfile.themes.";
+      }
+      {
+        assertion = !cfg.theme.enable || (cfg.settings.theme or "") == cfg.theme.name;
+        message = "superfile theme: settings.theme was not pointed at the generated theme.";
+      }
+      {
+        assertion = !cfg.theme.enable || (cfg.theme.settings ? file_panel_bg && cfg.theme.settings ? gradient_color);
+        message = "superfile theme: the generated theme table is missing file_panel_bg/gradient_color.";
+      }
     ];
   };
 }

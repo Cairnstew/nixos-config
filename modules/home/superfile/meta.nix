@@ -10,6 +10,7 @@
   ];
   provides = [
     "my.programs.superfile"
+    "my.programs.superfile.theme"
     "my.programs.superfile.settings"
     "my.programs.superfile.themes"
     "my.programs.superfile.previews"
@@ -19,15 +20,12 @@
   ];
   complexity = "medium";
   tested = true;
+  # A theme TOML generated from my.theming.colors and selected via
+  # settings.theme; user themes in my.programs.superfile.themes still win.
   theme = {
     kind = "tui";
-    mechanism = "none";
-    reason = ''
-      Theme TOML is written verbatim from my.programs.superfile.themes and
-      superfile ships 21 embedded themes; generating one from my.theming.colors
-      is deferred until docs/decisions/2026-11-13-theme-nix.md lands, so this
-      module holds no colour code.
-    '';
+    mechanism = "generated";
+    file = "theme.nix";
   };
   homepage = "https://superfile.dev";
   maintainer = "seanc";
