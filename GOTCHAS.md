@@ -2383,3 +2383,23 @@ Symptom: stopping the unit to edit `db/viewpoint.db` printed `active=failed`, `R
 Cause: the unit runs `ExecStop=…-stop` (an RPC to the game server) and `KillMode=mixed` with the default `TimeoutStopSec=90`; when the RPC outlasts that, systemd SIGKILLs the JVM — journal shows `Killing process … (ProjectZomboid6) with signal SIGKILL.` then `Failed with result 'timeout'`, while the stop itself succeeded and the DB stayed consistent (`pragma integrity_check` → `ok`). The "two processes" were the `ssh` invocation and its shell, whose command *string* contains `ProjectZomboid64`, matched by `pgrep -f`.
 
 Fix/practice: after a manual stop, treat `Result=timeout` as *stopped*, not crashed, and verify with `ps -eo comm | grep -c '[P]rojectZomboid64'` (`comm` is truncated to 15 chars, so `ProjectZomboid6`, and the bracketed pattern stops grep matching itself). Check `pragma integrity_check` before editing, and prefer the console/RCON `quit` (or a raised `TimeoutStopSec`) for a large world — SIGKILL mid-save is the only real risk.
+
+---
+
+**The `nix-eval` MCP tool is pure-eval, so `builtins.getFlake "<local path>"` is refused — use `nix eval --impure` in the shell to read the *pinned* nixpkgs** (2026-11-13, desktop)
+
+Symptom: answering "does our pin have package X, and at what version?" burned four failed `nix-eval` calls, all ending in `error: cannot call 'getFlake' on unlocked flake reference '/home/seanc/nixos-config', at «none»:0 (use --impure to override)` — which reads like a repo problem, not a tool-mode problem.
+
+Cause: the tool shells out to `nix eval --no-write-lock-file` (`.opencode/tools/nix-eval.ts:43`) with no `--impure`, so flake evaluation is pure and `builtins.getFlake` on a path is rejected. The same session hit a second, unrelated wall: `p.cosmic-files` / `p.pcmanfm-qt` is a **Nix syntax error** (the hyphen parses as subtraction), so hyphenated attributes must be written `p."cosmic-files"`.
+
+Fix/practice: `nix-eval` handles this flake's own outputs (`nixosConfigurations.<host>`, `packages.*`, `.#inputs...`) fine — keep using it there. For pin-vs-unstable package questions, use the shell:
+
+```
+nix eval --impure --json --expr \
+  'let f = builtins.getFlake (toString ./.);
+       p = f.inputs.nixpkgs.legacyPackages.x86_64-linux;
+       v = a: a.version or "ABSENT";
+   in { yazi = v p.yazi; cosmic = v p."cosmic-files"; }'
+```
+
+`p ? "cosmic-files"` is the existence check; `p.dolphin` no longer exists in current nixpkgs (it moved to `p.kdePackages.dolphin`), so absence of a top-level attribute means "renamed", not "unsupported".
