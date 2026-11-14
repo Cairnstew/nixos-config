@@ -348,6 +348,43 @@ now, never aspirational. Record each applied change in the RUN LOG below.
   future switches (fingerprint marker consumed on the next session start);
   the one-off restart for the already-running service is still manual.
 
+### 2026-11-14 — config canonicalized to native V2 shapes; build-time schema validation
+
+- Why: opencode 2.3.0 (2026-11-13) landed with the same deprecated-key set the
+  pinned 2.2.5 already carried (`$out/share/config.json`, 19 deprecated
+  top-level keys). The module still emitted `agent`, `provider`, `permission`,
+  `plugin`, `mcp.<name>` and the `autoupdate`/`small_model`/`snapshot`
+  singletons — V1 aliases that are "supported but quiet" and will age out.
+- Emitted shapes now: `agents` (`system`/`disabled`/`permissions`),
+  `providers` (`package = "aisdk:…"`, `settings`), `plugins`, `mcp.servers`
+  (`disabled` + `{catalog,execution}` timeout), `snapshots`, and one ordered
+  `permissions` array built by `mkPermissionRules` (`config.nix:285`) with the
+  V1 action renames bash→shell, task→subagent, write/patch→edit.
+- Dead config removed: agent `temperature`/`top_p` are never sent by V2 (agent
+  `request.body` is kept but unused — docs migrate-v1 §agents), so the five
+  default agents no longer set them and `mkAgentConfig` drops the keys; the
+  options remain documented as inert. `autoupdate` now maps onto `update`
+  (`true`→`"notify"`, never `"auto"` — the install is Nix-owned), which also
+  fixes the old bug where `settings.update = "disable"` silently overrode it.
+  `smallModel` → `agents.title.model`; `snapshot` → `snapshots`.
+- Validation gap closed: `opencodeGated` is a `writeShellScriptBin` and dropped
+  `passthru`, so HM's `programs.opencode.validateFiles` could never be enabled.
+  The wrapper now re-exports `passthru.jsonschema` (`config.nix:176`) and the
+  module turns on `validateFiles.{config,cli}` — `check-jsonschema` runs at
+  build time against the schema shipped by the configured package.
+- `session.verbosity` pinned to `medium` in the `cli` layer (`config.nix:747`):
+  2.3.0 defaults it to `low`, collapsing each tool/thought run into one row.
+- Verified: rendered settings for desktop/laptop/minimal/oracle/server/wsl all
+  validate against the 2.2.5 schema with `check-jsonschema`; the generated
+  `home-manager.json` derivation builds (validation included); nixtests 63/63.
+  `tests.nix` assertions/smoke script now read `providers.*.settings`,
+  `mcp.servers`, `agents.title.model` and `snapshots`, and a shape guard fails
+  the eval if a V1 `agent`/`permission` key reappears.
+- Not done here: the 2.3.0 binary itself waits for the nixpkgs bump (HEAD had
+  2.2.6 on 2026-11-14; a local override needs a new src hash **and** a new
+  fixed-output `node_modules` hash). On that bump, re-run FORK.md §3
+  (ensemble plugin API smoke + live spawn) and the `part`-table smoke test.
+
 ## See Also
 
 - `modules/nixos/gitreposync/` - Git repository sync service

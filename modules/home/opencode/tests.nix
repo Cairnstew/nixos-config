@@ -190,7 +190,7 @@ in
       # Verify clarifai provider is properly configured when patFile is set
       {
         assertion = cfg.clarifai.patFile != null ->
-          (lib.hasPrefix "{file:" (opencodeCfg.settings.provider.clarifai.options.apiKey or ""));
+          (lib.hasPrefix "{file:" (opencodeCfg.settings.providers.clarifai.settings.apiKey or ""));
         message = "my.programs.opencode: clarifai provider not properly configured. Check that settings are being merged correctly.";
       }
       # Verify MCP integration is enabled if set
@@ -205,7 +205,7 @@ in
       }
       # Verify shorthand options are passed through correctly
       {
-        assertion = cfg.smallModel != null -> opencodeCfg.settings.small_model == cfg.smallModel;
+        assertion = cfg.smallModel != null -> opencodeCfg.settings.agents.title.model == cfg.smallModel;
         message = "my.programs.opencode: smallModel shorthand not passed through correctly.";
       }
       {
@@ -217,8 +217,21 @@ in
         message = "my.programs.opencode: shell shorthand not passed through correctly.";
       }
       {
-        assertion = cfg.snapshot != null -> opencodeCfg.settings.snapshot == cfg.snapshot;
+        assertion = cfg.snapshot != null -> opencodeCfg.settings.snapshots == cfg.snapshot;
         message = "my.programs.opencode: snapshot shorthand not passed through correctly.";
+      }
+      # ── V2 native shape guards ───────────────────────────────────────────
+      # Agents must be emitted under `agents` (never the deprecated V1 `agent`
+      # map) with `system`/`disabled`/`permissions` — V1 `prompt`, `permission`,
+      # `temperature`, `top_p` and `disable` are dropped or ignored by V2.
+      {
+        assertion =
+          !(opencodeCfg.settings ? agent)
+            && !(opencodeCfg.settings ? permission)
+            && builtins.all
+            (a: !(a ? prompt) && !(a ? permission) && !(a ? temperature) && !(a ? top_p) && !(a ? disable))
+            (builtins.attrValues (opencodeCfg.settings.agents or { }));
+        message = "my.programs.opencode: agents must use the V2 `agents` shape (system/disabled/permissions); V1 `agent`/`permission`/`prompt`/`temperature`/`top_p`/`disable` must not be emitted.";
       }
       # Verify plugins are passed through to settings correctly
       {
@@ -397,7 +410,7 @@ in
         #!/usr/bin/env bash
         set -euo pipefail
 
-        CONFIG_FILE="$HOME/.config/opencode/opencode.json"
+        CONFIG_FILE="$HOME/.config/opencode/home-manager.json"
 
         if [ ! -f "$CONFIG_FILE" ]; then
           echo "ERROR: opencode config file not found at $CONFIG_FILE"
@@ -414,9 +427,9 @@ in
 
         ${lib.optionalString (cfg.clarifai.patFile != null) ''
           # Check clarifai provider
-          if ${pkgs.jq}/bin/jq -e '.provider.clarifai' "$CONFIG_FILE" > /dev/null 2>&1; then
+          if ${pkgs.jq}/bin/jq -e '.providers.clarifai' "$CONFIG_FILE" > /dev/null 2>&1; then
             echo "✓ clarifai provider configured"
-            API_KEY=$(${pkgs.jq}/bin/jq -r '.provider.clarifai.options.apiKey // empty' "$CONFIG_FILE")
+            API_KEY=$(${pkgs.jq}/bin/jq -r '.providers.clarifai.settings.apiKey // empty' "$CONFIG_FILE")
             if [[ "$API_KEY" == {file:* ]]; then
               echo "✓ clarifai apiKey uses file substitution: $API_KEY"
             else
@@ -431,7 +444,7 @@ in
 
         ${lib.optionalString cfg.enableMcpIntegration ''
           # Check MCP configuration
-          if ${pkgs.jq}/bin/jq -e '.mcp' "$CONFIG_FILE" > /dev/null 2>&1; then
+          if ${pkgs.jq}/bin/jq -e '.mcp.servers' "$CONFIG_FILE" > /dev/null 2>&1; then
             echo "✓ MCP configuration present"
           else
             echo "WARNING: MCP configuration not found"
@@ -450,11 +463,11 @@ in
         ''}
 
         ${lib.optionalString (cfg.smallModel != null) ''
-          SMALL_MODEL=$(${pkgs.jq}/bin/jq -r '.small_model // empty' "$CONFIG_FILE")
+          SMALL_MODEL=$(${pkgs.jq}/bin/jq -r '.agents.title.model // empty' "$CONFIG_FILE")
           if [ "$SMALL_MODEL" = "${cfg.smallModel}" ]; then
-            echo "✓ small_model setting is correct: $SMALL_MODEL"
+            echo "✓ title agent model is correct: $SMALL_MODEL"
           else
-            echo "ERROR: small_model setting mismatch (expected: ${cfg.smallModel}, got: $SMALL_MODEL)"
+            echo "ERROR: title agent model mismatch (expected: ${cfg.smallModel}, got: $SMALL_MODEL)"
             exit 1
           fi
         ''}
@@ -480,11 +493,11 @@ in
         ''}
 
         ${lib.optionalString (cfg.snapshot != null) ''
-          SNAPSHOT=$(${pkgs.jq}/bin/jq -r '.snapshot // empty' "$CONFIG_FILE")
+          SNAPSHOT=$(${pkgs.jq}/bin/jq -r '.snapshots // empty' "$CONFIG_FILE")
           if [ "$SNAPSHOT" = "${lib.boolToString cfg.snapshot}" ]; then
             echo "✓ snapshot setting is correct: $SNAPSHOT"
           else
-            echo "ERROR: snapshot setting mismatch (expected: ${lib.boolToString cfg.snapshot}, got: $SNAPSHOT)"
+            echo "ERROR: snapshots setting mismatch (expected: ${lib.boolToString cfg.snapshot}, got: $SNAPSHOT)"
             exit 1
           fi
         ''}

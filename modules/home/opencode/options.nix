@@ -115,8 +115,10 @@ let
         default = null;
         description = ''
           Per-tool permission overrides keyed by exact tool name, merged into the
-          agent's rendered `permission` object. Use to scope MCP tools per agent,
-          e.g. `{ "nix_graph_graph_stats" = "deny"; }`. opencode names MCP tools
+          agent's rendered V2 `permissions` ruleset (as
+          <literal>{ action = "&lt;tool&gt;"; resource = "*"; effect = …; }</literal>).
+          Use to scope MCP tools per agent, e.g.
+          `{ "nix_graph_graph_stats" = "deny"; }`. opencode names MCP tools
           as `<server>_<tool>` (verified against live tool-call data).
         '';
       };
@@ -501,14 +503,26 @@ in
       type = types.nullOr (types.either types.bool (types.enum [ "notify" ]));
       default = null;
       example = "notify";
-      description = "Shorthand for \u003coption\u003esettings.autoupdate\u003c/option\u003e. Set to false to disable, \"notify\" to be notified without auto-installing.";
+      description = ''
+        Shorthand for <option>settings.update</option> (V2 renamed
+        <literal>autoupdate</literal>). <literal>false</literal> maps to
+        <literal>"disable"</literal>; <literal>true</literal> and
+        <literal>"notify"</literal> map to <literal>"notify"</literal> — never
+        <literal>"auto"</literal>, because this install is Nix-owned. The module
+        default is <literal>"disable"</literal>.
+      '';
     };
 
     smallModel = mkOption {
       type = types.nullOr types.str;
       default = null;
       example = "anthropic/claude-haiku-4-5";
-      description = "Shorthand for \u003coption\u003esettings.small_model\u003c/option\u003e. A cheaper model for lightweight tasks like title generation.";
+      description = ''
+        Shorthand for the built-in <literal>title</literal> agent's model
+        (<option>settings.agents.title.model</option>), which V2 uses for
+        lightweight tasks like title generation in place of V1
+        <literal>small_model</literal>.
+      '';
     };
 
     defaultAgent = mkOption {
@@ -528,7 +542,7 @@ in
     snapshot = mkOption {
       type = types.nullOr types.bool;
       default = null;
-      description = "Shorthand for \u003coption\u003esettings.snapshot\u003c/option\u003e. Whether to track file changes during agent operations (enables undo/revert).";
+      description = "Shorthand for <option>settings.snapshots</option> (V2 renamed the V1 `snapshot` key). Whether to track file changes during agent operations (enables undo/revert).";
     };
 
     # ── Pass-throughs ────────────────────────────────────────────────────────
@@ -595,13 +609,20 @@ in
             type = types.nullOr types.float;
             default = null;
             example = 0.1;
-            description = "Temperature for the agent. Lower values produce more focused responses.";
+            description = ''
+              Inert under OpenCode V2: agent request bodies are kept but never
+              sent, so this value is not emitted. Set sampling on a model
+              variant (`providers.<p>.models.<m>.variants[].body`) instead.
+            '';
           };
           top_p = mkOption {
             type = types.nullOr types.float;
             default = null;
             example = 0.9;
-            description = "Alternative to temperature for controlling response diversity.";
+            description = ''
+              Inert under OpenCode V2 (same reason as <option>temperature</option>);
+              not emitted.
+            '';
           };
           steps = mkOption {
             type = types.nullOr types.ints.positive;

@@ -1,9 +1,9 @@
 # programs.opencode — Home Manager Options
 
 > Source: https://mynixos.com/home-manager/options/programs.opencode  
-> Config schema: https://opencode.ai/docs/config/  
-> Providers: https://opencode.ai/docs/providers/  
-> Total: 13 options (10 top-level + 3 under `web`)
+> Config schema: https://opencode.ai/v2/docs/config  
+> Providers: https://opencode.ai/v2/docs/providers  
+> Option registry: see `HEATMAP.md` (`my.programs.opencode.*`). This page documents the OpenCode JSON keys, not the full Nix option list.
 
 ---
 
@@ -34,7 +34,7 @@
 
 ## programs.opencode.settings
 
-**Description:** Configuration written to `$XDG_CONFIG_HOME/opencode/config.json`. Note: `"$schema": "https://opencode.ai/config.json"` is automatically added.
+**Description:** Configuration written to `$XDG_CONFIG_HOME/opencode/opencode.json` — or `home-manager.json` when the module's `mutableSettings` is on (the default; OpenCode 2 owns `opencode.json`). Note: `"$schema": "https://opencode.ai/config.json"` is automatically added, and the generated file is schema-validated at build time when the package ships `passthru.jsonschema`.
 
 **Type:** `JSON value`  
 **Default:** `{ }`
@@ -57,9 +57,9 @@ Variable substitution is supported: `{env:VAR_NAME}` and `{file:path/to/file}`.
 The primary model to use. Format: `"provider/model-id"`.  
 **Example:** `"anthropic/claude-sonnet-4-5"`
 
-#### `small_model`
+#### `small_model` → `agents.title.model`
 **Type:** `string`  
-A cheaper model for lightweight tasks like title generation. Falls back to main model if unset.  
+V2 replaced `small_model` with the built-in `title` agent's model. A cheaper model for lightweight tasks like title generation; falls back to the main model if unset.  
 **Example:** `"anthropic/claude-haiku-4-5"`
 
 #### `default_agent`
@@ -72,14 +72,14 @@ Default agent to use when none is specified. Must be a primary agent (not a suba
 Shell used for the interactive terminal and agent tool calls. If unset, auto-detects based on OS (e.g. `pwsh`/`cmd.exe` on Windows, `zsh`/`bash` on Linux/macOS).  
 **Example:** `"pwsh"`
 
-#### `autoupdate`
-**Type:** `boolean | "notify"`  
-Controls automatic updates on startup. Set to `false` to disable, `"notify"` to be notified without auto-installing. Only applies if not installed via a package manager.  
-**Default:** `true`
+#### `autoupdate` → `update`
+**Type:** `boolean | "notify"` (Nix option) → `"disable" | "notify" | "auto"` (JSON)  
+V2 renamed this key. `false` → `"disable"`, `true`/`"notify"` → `"notify"` (this module never emits `"auto"`: the install is Nix-owned).  
+**Default in this module:** `"disable"`
 
-#### `snapshot`
+#### `snapshot` → `snapshots`
 **Type:** `boolean`  
-Whether to track file changes during agent operations (enables undo/revert). Disable for large repos or projects with many submodules to avoid slow indexing and disk usage.  
+V2 renamed the key to `snapshots`. Whether to track file changes during agent operations (enables undo/revert). Disable for large repos or projects with many submodules to avoid slow indexing and disk usage.  
 **Default:** `true`
 
 #### `share`
@@ -156,23 +156,25 @@ Control which tools the LLM can use. Map of tool name to `false` to disable.
 
 ---
 
-#### `permission`
-Default is to allow all operations. Use `"ask"` to require user approval.
+#### `permissions`
+V2 replaced the per-tool `permission` map with one ordered array of `{ action, resource, effect }` rules (`allow` | `deny` | `ask`), last match wins. v1 action names were renamed: `bash` → `shell`, `task` → `subagent`, `write`/`patch` → `edit`.
 
 **Example:**
 ```json
 {
-  "permission": {
-    "edit": "ask",
-    "bash": "ask"
-  }
+  "permissions": [
+    { "action": "edit", "resource": "*", "effect": "ask" },
+    { "action": "shell", "resource": "git push *", "effect": "ask" }
+  ]
 }
 ```
 
+Note: V2's default policy **allows** `external_directory` access (V1 prompted). Add `{ "action": "external_directory", "resource": "*", "effect": "ask" }` first to restore prompting.
+
 ---
 
-#### `attachment`
-Controls image attachment normalisation before sending to models.
+#### `attachment` → `media`
+V2 renamed the key to `media` (nested image settings keep their names). Controls image attachment normalisation before sending to models.
 
 | Key | Type | Description |
 |-----|------|-------------|
@@ -240,45 +242,48 @@ Enable/configure LSP servers. Omit to keep disabled.
 ---
 
 #### `mcp`
-MCP (Model Context Protocol) server configurations. See https://opencode.ai/docs/mcp-servers.
+MCP (Model Context Protocol) server configurations. V2 nests servers under `mcp.servers`, uses the inverse `disabled` flag, and splits the old per-server timeout into `{ startup, catalog, execution }`. See https://opencode.ai/v2/docs/mcp-servers.
 
 **Example:**
 ```json
 {
   "mcp": {
-    "jira": {
-      "type": "remote",
-      "url": "https://jira.example.com/mcp",
-      "enabled": true
-    }
+    "servers": {
+      "jira": {
+        "type": "remote",
+        "url": "https://jira.example.com/mcp",
+        "disabled": false,
+        "timeout": { "catalog": 30000, "execution": 30000 }
+      }
+    },
+    "timeout": { "startup": 30000 }
   }
 }
 ```
 
 ---
 
-#### `agent`
-Define custom agents for specialised tasks.
+#### `agents`
+Define custom agents for specialised tasks (`agent` is the deprecated V1 singleton). V2 fields: `system` (was `prompt`), `disabled` (was `disable`), `permissions` (ordered ruleset, was `permission`), plus `mode`, `model`, `description`, `steps`, `hidden`, `color`, `request`.
 
 | Key | Type | Description |
 |-----|------|-------------|
 | `<name>.description` | `string` | What this agent does |
-| `<name>.model` | `string` | Model to use for this agent |
-| `<name>.prompt` | `string` | System prompt for the agent |
-| `<name>.tools` | `object` | Tool overrides (e.g. `{ "write": false }`) |
+| `<name>.model` | `string` | Model to use for this agent (`provider/model` or `provider/model#variant`) |
+| `<name>.system` | `string` | System prompt for the agent |
+| `<name>.permissions` | `array` | `{ action, resource, effect }` rules (e.g. `{ "action": "edit", "resource": "*", "effect": "deny" }`) |
 
 **Example:**
 ```json
 {
-  "agent": {
+  "agents": {
     "code-reviewer": {
       "description": "Reviews code for best practices and potential issues",
       "model": "anthropic/claude-sonnet-4-5",
-      "prompt": "You are a code reviewer. Focus on security, performance, and maintainability.",
-      "tools": {
-        "write": false,
-        "edit": false
-      }
+      "system": "You are a code reviewer. Focus on security, performance, and maintainability.",
+      "permissions": [
+        { "action": "edit", "resource": "*", "effect": "deny" }
+      ]
     }
   }
 }
@@ -298,19 +303,19 @@ Define custom slash commands for repetitive tasks.
 
 ---
 
-#### `provider`
-Configure LLM providers. See the **Provider Reference** section below for the full list.
+#### `providers`
+Configure LLM providers (`provider` is the deprecated V1 singleton). See the **Provider Reference** section below for the full list.
 
 | Key | Type | Description |
 |-----|------|-------------|
-| `<id>.options.apiKey` | `string` | API key (supports `{env:VAR}` syntax) |
-| `<id>.options.baseURL` | `string` | Custom base URL / endpoint |
-| `<id>.options.timeout` | `number` | Request timeout in ms. Default: `300000`. Set to `false` to disable |
-| `<id>.options.chunkTimeout` | `number` | Timeout between streamed chunks in ms |
-| `<id>.options.setCacheKey` | `boolean` | Always set a cache key for this provider |
-| `<id>.options.headers` | `object` | Custom headers sent with every request |
+| `<id>.settings.apiKey` | `string` | API key (supports `{env:VAR}` / `{file:path}` syntax) |
+| `<id>.settings.baseURL` | `string` | Custom base URL / endpoint |
+| `<id>.settings.timeout` | `number` | Request timeout in ms. Set to `false` to disable |
+| `<id>.settings.chunkTimeout` | `number` | Timeout between streamed chunks in ms |
+| `<id>.settings.headers` | `object` | Custom headers sent with every request |
+| `<id>.compatibility.supportsPromptCacheKey` | `boolean` | Always set a cache key (was `options.setCacheKey`) |
 | `<id>.models` | `object` | Model overrides/additions |
-| `<id>.npm` | `string` | npm package for custom providers |
+| `<id>.package` | `string` | AI SDK package for custom providers, prefixed `aisdk:` (was `npm`) |
 | `<id>.name` | `string` | Display name for custom providers |
 
 Model entry shape:
@@ -436,7 +441,7 @@ Model entry shape:
 
 # Provider Reference
 
-OpenCode supports 75+ providers via the AI SDK. API keys are stored in `~/.local/share/opencode/auth.json` after running `/connect`. Keys can also be set via environment variables or `provider.<id>.options.apiKey` in config. Variable substitution (`{env:VAR}`, `{file:path}`) is supported.
+OpenCode supports 75+ providers via the AI SDK. API keys are stored in `~/.local/share/opencode/auth.json` after running `/connect`. Keys can also be set via environment variables or `providers.<id>.settings.apiKey` in config (V2 shape). Variable substitution (`{env:VAR}`, `{file:path}`) is supported.
 
 ## First-party / Recommended
 
@@ -462,7 +467,7 @@ OpenCode supports 75+ providers via the AI SDK. API keys are stored in `~/.local
 
 | Provider | Config ID | Env Var / Auth | Notes |
 |----------|-----------|----------------|-------|
-| **OpenRouter** | `openrouter` | API key | 75+ models. Extra models via `provider.openrouter.models` |
+| **OpenRouter** | `openrouter` | API key | 75+ models. Extra models via `providers.openrouter.models` |
 | **Cloudflare AI Gateway** | `cloudflare-ai-gateway` | `CLOUDFLARE_ACCOUNT_ID`, `CLOUDFLARE_GATEWAY_ID`, `CLOUDFLARE_API_TOKEN` | Unified billing. Supports Anthropic, OpenAI, Workers AI etc. |
 | **Cloudflare Workers AI** | `cloudflare-workers-ai` | `CLOUDFLARE_ACCOUNT_ID`, `CLOUDFLARE_API_KEY` | Models run on Cloudflare's network |
 | **Vercel AI Gateway** | `vercel` | API key | List price, no markup. Routing options: `order`, `only`, `zeroDataRetention` |
@@ -503,11 +508,11 @@ OpenCode supports 75+ providers via the AI SDK. API keys are stored in `~/.local
 
 | Provider | Config approach | Default base URL | Notes |
 |----------|----------------|------------------|-------|
-| **Ollama** | Custom provider block | `http://localhost:11434/v1` | npm: `@ai-sdk/openai-compatible`. Ollama can auto-configure via its integration |
+| **Ollama** | Custom provider block | `http://localhost:11434/v1` | package: `aisdk:@ai-sdk/openai-compatible`. Ollama can auto-configure via its integration |
 | **Ollama Cloud** | `/connect` → Ollama Cloud | — | Must `ollama pull <model>` locally first |
-| **LM Studio** | Custom provider block | `http://127.0.0.1:1234/v1` | npm: `@ai-sdk/openai-compatible` |
-| **llama.cpp** | Custom provider block | `http://127.0.0.1:8080/v1` | npm: `@ai-sdk/openai-compatible` |
-| **Atomic Chat** | Custom provider block | `http://127.0.0.1:1337/v1` | npm: `@ai-sdk/openai-compatible`. Desktop app |
+| **LM Studio** | Custom provider block | `http://127.0.0.1:1234/v1` | package: `aisdk:@ai-sdk/openai-compatible` |
+| **llama.cpp** | Custom provider block | `http://127.0.0.1:8080/v1` | package: `aisdk:@ai-sdk/openai-compatible` |
+| **Atomic Chat** | Custom provider block | `http://127.0.0.1:1337/v1` | package: `aisdk:@ai-sdk/openai-compatible`. Desktop app |
 
 ## Custom / OpenAI-Compatible Provider
 
@@ -516,11 +521,11 @@ Any provider with an OpenAI-compatible API:
 ```json
 {
   "$schema": "https://opencode.ai/config.json",
-  "provider": {
+  "providers": {
     "myprovider": {
-      "npm": "@ai-sdk/openai-compatible",
+      "package": "aisdk:@ai-sdk/openai-compatible",
       "name": "My Provider Display Name",
-      "options": {
+      "settings": {
         "baseURL": "https://api.myprovider.com/v1",
         "apiKey": "{env:MY_API_KEY}",
         "headers": {

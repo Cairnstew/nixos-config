@@ -11,13 +11,25 @@ the terminal, with support for 15+ LLM providers, custom skills, agents, and MCP
 - **MCP Integration**: Model Context Protocol servers for extended capabilities
 - **Agenix Integration**: Secure API key management
 
-## OpenCode 2 notes (2.2.x)
+## OpenCode 2 notes (2.2.x / 2.3.x, native V2 config)
 
-Nixpkgs now ships OpenCode 2. The module keeps V1 config compatibility but the
-extensibility surfaces changed:
+Nixpkgs now ships OpenCode 2. The module emits **native V2 config** (no V1
+deprecation aliases) and only relies on V2-supported surfaces:
 
 - **CLI settings** live in `cli.json`, set with `my.programs.opencode.cli`.
   `my.programs.opencode.tui` is V1-only (`tui.json` is ignored by V2).
+  `session.verbosity` defaults to `medium` here — 2.3.0's own default is `low`,
+  which collapses each run of tool calls into one activity row.
+- **Config shapes are V2-native**: `agents` (`system`/`disabled`/`permissions`),
+  `providers` (`package = "aisdk:…"`, `settings`), `plugins`, `mcp.servers`,
+  `snapshots`, and the ordered `permissions` array. The deprecated V1 singletons
+  (`agent`, `provider`, `permission`, `plugin`, `autoupdate`, `small_model`,
+  `snapshot`) are no longer emitted; `autoupdate`/`smallModel`/`snapshot` are
+  translated at emission time (`update`, `agents.title.model`, `snapshots`).
+- **Schema validation** is on: `programs.opencode.validateFiles.{config,cli}`
+  runs `check-jsonschema` at build time against the schema shipped by the
+  configured package (`passthru.jsonschema`), which the `opencode` wrapper
+  re-exports. A config-shape regression fails the build, not the session.
 - **Local plugins** must default-export `{ id, setup(ctx) }`; V1 named-export
   hook objects silently fail to load. See `plugins/self-improve-guard.ts` and
   `plugins/copylast.ts` for the V2 shape.
@@ -27,7 +39,12 @@ extensibility surfaces changed:
 - **`opencode web` was removed.** The `opencode-web` NixOS module runs
   `opencode serve --hostname … --port …` instead.
 - **`lsp` is accepted but not executed** in V2; `enableLsp` is inert. Agent
-  `temperature`/`top_p` are also preserved but not sent — use model variants.
+  `temperature`/`top_p` are not sent by V2 at all, so the module no longer
+  emits them — use model variants (`providers.<p>.models.<m>.variants[].body`)
+  for sampling.
+- **2.3.0 behavior changes**: subagents always run in the background and report
+  back when idle (no foreground mode); tool-output truncation keeps the
+  beginning of the output and a usable preview.
 
 ## Background service lifecycle
 

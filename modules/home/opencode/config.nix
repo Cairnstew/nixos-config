@@ -13,6 +13,11 @@ let
 
   cfg = config.my.programs.opencode;
 
+  # JSON schemas shipped by the configured package (passthru.jsonschema in
+  # nixpkgs). Home-manager's build-time `validateFiles` reads these through
+  # cfg.package, which is why the wrapper below must re-export them.
+  pkgSchema = (cfg.package.passthru or { }).jsonschema or { };
+
   # Wrap opencode so libstdc++.so.6 is available for the native file watcher
   # binding (e.g. chokidar / fsevents). On NixOS this is not in the default
   # library path.
@@ -179,6 +184,9 @@ let
     # OpenCode 1 (warns that programs.opencode.cli is unsupported, and would
     # choose the V1 env var if mutableSettings were enabled).
     inherit (cfg.package) version;
+    # Same reason: HM's programs.opencode.validateFiles asserts
+    # cfg.package.passthru.jsonschema.*, and a writeShellScriptBin drops it.
+    passthru = { jsonschema = pkgSchema; };
   };
 
   providers = import ./providers.nix { inherit lib cfg; };
@@ -262,32 +270,60 @@ let
     '';
   };
 
-  # Transform agent config to opencode.json format
-  # Omit null/false values so only relevant fields appear in the JSON
+  # ── V2 permission conversion ──────────────────────────────────────────────
+  # V1 groups permission effects by tool name; V2 uses one ordered array of
+  # { action, resource, effect } with last-match-wins (docs migrate-v1
+  # §permissions). Action renames: bash→shell, task→subagent, write/patch→edit.
+  v2PermissionAction = action:
+    if action == "bash" then "shell"
+    else if action == "task" then "subagent"
+    else if action == "write" || action == "patch" then "edit"
+    else action;
+
+  # `tools` entries are tool-name actions with resource "*"; scalar action
+  # values mean "*"; attrset values are resource globs.
+  mkPermissionRules = perm:
+    let
+      toolRules = mapAttrsToList
+        (tool: effect: { action = tool; resource = "*"; inherit effect; })
+        (if (perm.tools or null) == null then { } else perm.tools);
+      scalar = filterAttrs (n: v: n != "tools" && builtins.isString v) perm;
+      pattern = filterAttrs (n: v: n != "tools" && builtins.isAttrs v) perm;
+    in
+    toolRules
+    ++ builtins.concatLists (mapAttrsToList
+      (name: effect: [{ action = v2PermissionAction name; resource = "*"; effect = effect; }])
+      scalar)
+    ++ builtins.concatLists (mapAttrsToList
+      (name: rules: mapAttrsToList
+        (resource: effect: { action = v2PermissionAction name; inherit resource effect; })
+        rules)
+      pattern);
+
+  # Transform agent config to opencode.json format (native V2 `agents` entries)
+  # Omit null/false values so only relevant fields appear in the JSON.
+  # temperature/top_p are NOT emitted: V2 keeps agent `request.body` but never
+  # sends it (docs migrate-v1 §agents) — set those on a model variant instead.
   mkAgentConfig = agentCfg:
     (lib.optionalAttrs (agentCfg.model != null) { model = agentCfg.model; })
     // (lib.optionalAttrs (agentCfg.mode != null) { mode = agentCfg.mode; })
     // (lib.optionalAttrs (agentCfg.description != null) { description = agentCfg.description; })
-    // (lib.optionalAttrs (agentCfg.prompt != null) { prompt = agentCfg.prompt; })
-    // (lib.optionalAttrs (agentCfg.temperature != null) { temperature = agentCfg.temperature; })
-    // (lib.optionalAttrs (agentCfg.top_p != null) { top_p = agentCfg.top_p; })
+    // (lib.optionalAttrs (agentCfg.prompt != null) { system = agentCfg.prompt; })
     // (lib.optionalAttrs (agentCfg.steps != null) { steps = agentCfg.steps; })
-    // (lib.optionalAttrs agentCfg.disable { disable = true; })
+    // (lib.optionalAttrs agentCfg.disable { disabled = true; })
     // (lib.optionalAttrs agentCfg.hidden { hidden = true; })
     // (lib.optionalAttrs (agentCfg.color != null) { color = agentCfg.color; })
     // (lib.optionalAttrs (agentCfg.permission != null) {
-      permission = filterAttrs (_: v: v != null)
-        {
-          inherit (agentCfg.permission)
-            read edit glob grep list bash task external_directory
-            lsp skill todowrite webfetch websearch question doom_loop;
-        }
-      // (lib.optionalAttrs (agentCfg.permission.tools != null) agentCfg.permission.tools);
+      permissions = mkPermissionRules agentCfg.permission;
     })
     // agentCfg.extraOptions;
 
-  agentSettings = lib.optionalAttrs (cfg.agents != { }) {
-    agent = mapAttrs (_: mkAgentConfig) cfg.agents;
+  agentSettings = lib.optionalAttrs (cfg.agents != { } || cfg.smallModel != null) {
+    agents = mapAttrs (_: mkAgentConfig) cfg.agents
+      # V2 replaced `small_model` with the built-in `title` agent's model.
+      // lib.optionalAttrs (cfg.smallModel != null) {
+      title.model = cfg.smallModel;
+    };
   };
 
   # Transform references to opencode JSON format
@@ -306,14 +342,57 @@ let
   # Deep merge settings with provider, mcp, references, plugins, and agent settings
   # Use recursiveUpdate to merge nested attrsets properly
   settingsWithProviders = recursiveUpdate cfg.settings providers.allProviderSettings;
-  settingsWithMcp = recursiveUpdate settingsWithProviders (
-    lib.optionalAttrs (cfg.mcp != { }) { inherit (cfg) mcp; }
-  );
+
+  # V2 groups servers under `mcp.servers`, inverts `enabled` to `disabled`, and
+  # splits the old per-server timeout into catalog/execution (docs migrate-v1
+  # §mcp). Non-integer timeouts are assumed to be V2 objects already.
+  mkMcpServer = server:
+    builtins.removeAttrs server [ "enabled" ]
+    // lib.optionalAttrs (server.enabled or null == false) { disabled = true; }
+    // lib.optionalAttrs (server ? timeout && builtins.isInt server.timeout) {
+      timeout = { catalog = server.timeout; execution = server.timeout; };
+    };
+
+  mcpSettings = lib.optionalAttrs (cfg.mcp != { }) {
+    mcp.servers = mapAttrs (_: mkMcpServer) cfg.mcp;
+  };
+
+  settingsWithMcp = recursiveUpdate settingsWithProviders mcpSettings;
   settingsWithReferences = recursiveUpdate settingsWithMcp referencesSettings;
   settingsWithPlugins = recursiveUpdate settingsWithReferences (
-    lib.optionalAttrs (cfg.plugins != [ ]) { plugin = cfg.plugins; }
+    lib.optionalAttrs (cfg.plugins != [ ]) { plugins = cfg.plugins; }
   );
-  mergedSettings = recursiveUpdate (recursiveUpdate settingsWithPlugins agentSettings) policySettings;
+
+  # ── External-directory permission rules ──────────────────────────────────
+  # V2 permissions are one ordered array. These are the directories the agent
+  # may read outside a project; a user-supplied `settings.permissions` wins.
+  defaultExternalDirs = [
+    "/nix/*"
+    "/nix/store/**"
+    "/nix/var/nix/**"
+    "/run/current-system/**"
+    "/run/agenix/**"
+    "/etc/nixos/**"
+    "/etc/xdg/waybar/**"
+    "/etc/profiles/per-user/*/bin/*"
+    "/tmp/*"
+    "~/.cache/opencode/go-usage.json"
+    "~/.local/share/opencode/worktree/**"
+    "~/Projects/*"
+    "~/Documents/*"
+  ];
+  externalDirRules = builtins.map
+    (resource: { action = "external_directory"; inherit resource; effect = "allow"; })
+    (defaultExternalDirs
+      ++ map (entry: if builtins.isString entry then entry else entry.path) cfg.allowedDirs);
+  rootPermissionsSettings =
+    lib.optionalAttrs (!(cfg.settings ? permissions)) {
+      permissions = externalDirRules;
+    };
+
+  mergedSettings = recursiveUpdate
+    (recursiveUpdate (recursiveUpdate settingsWithPlugins agentSettings) policySettings)
+    rootPermissionsSettings;
 
   # ── Provider access policies ────────────────────────────────────────────────
   # Generate deny-all-then-allow-listed policy rules from cfg.policies
@@ -422,7 +501,6 @@ in
             description = "Analyze code and review suggestions without making changes";
             model = "opencode-go/deepseek-v4.1-flash";
             mode = "primary";
-            temperature = 0.1;
             steps = 10;
             permission = { edit = "deny"; bash = "deny"; };
           };
@@ -430,7 +508,6 @@ in
             description = "Quickly explore the codebase by searching files, patterns, and keywords (read-only)";
             model = "opencode-go/deepseek-v4.1-flash";
             mode = "subagent";
-            temperature = 0.1;
             permission = { edit = "deny"; bash = "deny"; };
           };
           build = {
@@ -459,7 +536,6 @@ in
             # pinned to "medium" by the model-level options block below.
             model = "opencode-go/muse-spark-1.3-contributor";
             mode = "subagent";
-            temperature = 0.2;
             prompt = builtins.readFile ./agents/researcher.md;
             permission = {
               webfetch = "allow";
@@ -616,7 +692,6 @@ in
           description = "Quickly explore the codebase by searching files, patterns, and keywords (read-only) — ensemble scout role";
           mode = "subagent";
           model = null;
-          temperature = 0.1;
           permission = {
             edit = "deny";
             bash = "deny";
@@ -632,7 +707,6 @@ in
           description = "Review diffs for correctness, missed tests, and risky behavior — ensemble reviewer role";
           mode = "subagent";
           model = null;
-          temperature = 0.1;
           permission = {
             edit = "deny";
             bash = "deny";
@@ -658,7 +732,17 @@ in
         context = cfg.context;
         commands = cfg.commands;
         themes = cfg.themes;
-        cli = lib.mkDefault cfg.cli;
+        # Schema-validate the generated home-manager.json / -cli.json at build
+        # time (check-jsonschema). Only enabled when the package ships the
+        # schemas (pkgSchema), so a bare wrapper still evaluates.
+        validateFiles = {
+          config = lib.mkDefault (pkgSchema ? config);
+          cli = lib.mkDefault (pkgSchema ? cli);
+        };
+        # OpenCode 2.3.0 defaults `session.verbosity` to "low", which collapses
+        # each run of tool calls into one activity row. Pin "medium" so tool
+        # calls stay visible; hosts override via my.programs.opencode.cli.
+        cli = lib.mkDefault (recursiveUpdate { session.verbosity = "medium"; } cfg.cli);
         skills = cfg.skills;
         tools = cfg.tools;
         extraPackages = cfg.extraPackages
@@ -674,31 +758,31 @@ in
     # ── Default model context window + reasoning effort ─────────────────────
     # opencode's `limit.context` caps how many context tokens are sent to the
     # model; the schema requires `output` alongside it. The same per-model
-    # block carries `options.reasoningEffort` — the model's default thinking
+    # block carries `settings.reasoningEffort` — the model's default thinking
     # effort everywhere it is dispatched (agents AND fallback-chain rungs),
     # which per-agent config can override. Allowed effort values come from
     # models.dev `reasoning_options`: deepseek-v4.1-flash is low|high|max,
     # muse-spark-1.3-contributor is minimal|low|medium|high|xhigh. Hosts
     # override via my.programs.opencode.settings.
     {
-      programs.opencode.settings.provider.opencode-go.models."deepseek-v4-flash".limit =
+      programs.opencode.settings.providers.opencode-go.models."deepseek-v4-flash".limit =
         lib.mkDefault {
           context = 500000;
           output = 8192;
         };
-      programs.opencode.settings.provider.opencode-go.models."deepseek-v4.1-flash".limit =
+      programs.opencode.settings.providers.opencode-go.models."deepseek-v4.1-flash".limit =
         lib.mkDefault {
           context = 500000;
           output = 8192;
         };
-      programs.opencode.settings.provider.opencode-go.models."deepseek-v4.1-flash".options.reasoningEffort =
+      programs.opencode.settings.providers.opencode-go.models."deepseek-v4.1-flash".settings.reasoningEffort =
         lib.mkDefault "high";
-      programs.opencode.settings.provider.opencode-go.models."muse-spark-1.3-contributor".limit =
+      programs.opencode.settings.providers.opencode-go.models."muse-spark-1.3-contributor".limit =
         lib.mkDefault {
           context = 500000;
           output = 8192;
         };
-      programs.opencode.settings.provider.opencode-go.models."muse-spark-1.3-contributor".options.reasoningEffort =
+      programs.opencode.settings.providers.opencode-go.models."muse-spark-1.3-contributor".settings.reasoningEffort =
         lib.mkDefault "medium";
     }
 
@@ -809,53 +893,9 @@ in
         '';
     })
 
-    # Default permissions for NixOS paths, Ensemble worktrees, and user projects
-    {
-      programs.opencode.settings.permission = lib.mkDefault {
-        external_directory = {
-          # NixOS system paths
-          "/nix/*" = "allow";
-          "/nix/store/**" = "allow";
-          "/nix/var/nix/**" = "allow";
-          "/run/current-system/**" = "allow";
-          "/run/agenix/**" = "allow";
-          "/etc/nixos/**" = "allow";
-
-          # Waybar config and profile binaries (waybar custom modules use absolute paths)
-          "/etc/xdg/waybar/**" = "allow";
-          "/etc/profiles/per-user/*/bin/*" = "allow";
-
-          # Temporary files
-          "/tmp/*" = "allow";
-
-          # OpenCode Go usage snapshot (used by model-select, dashboard)
-          "~/.cache/opencode/go-usage.json" = "allow";
-
-          # OpenCode worktrees (ensemble plugin)
-          "~/.local/share/opencode/worktree/**" = "allow";
-
-          # User project directories
-          "~/Projects/*" = "allow";
-          "~/Documents/*" = "allow";
-        };
-      };
-    }
-
-    # Merge user-contributed allowed directories from my.programs.opencode.allowedDirs
-    (mkIf (cfg.allowedDirs != [ ]) {
-      programs.opencode.settings.permission.external_directory =
-        builtins.listToAttrs (map
-          (entry:
-            let
-              path = if builtins.isString entry then entry else entry.path;
-            in
-            {
-              name = path;
-              value = "allow";
-            }
-          )
-          cfg.allowedDirs);
-    })
+    # External-directory permissions are emitted as V2 `permissions` rules in
+    # `mergedSettings` (see rootPermissionsSettings above); the old V1
+    # `settings.permission` map is no longer emitted.
 
     # ── Ollama: auto-select default model if one is tagged ──────────────────
     (mkIf (providers.defaultOllamaModel != null) {
@@ -865,11 +905,15 @@ in
     # ── Shorthands (plain assignment = priority 100, overrides mkDefault) ───
     (mkIf (cfg.model != null) { programs.opencode.settings.model = cfg.model; })
     (mkIf (cfg.share != null) { programs.opencode.settings.share = cfg.share; })
-    (mkIf (cfg.autoupdate != null) { programs.opencode.settings.autoupdate = cfg.autoupdate; })
-    (mkIf (cfg.smallModel != null) { programs.opencode.settings.small_model = cfg.smallModel; })
+    # V2 renamed `autoupdate` to `update`. `true` maps to "notify", not V2's
+    # "auto": this install is Nix-owned, so nothing may overwrite the store.
+    (mkIf (cfg.autoupdate != null) {
+      programs.opencode.settings.update =
+        if cfg.autoupdate == false then "disable" else "notify";
+    })
     (mkIf (cfg.defaultAgent != null) { programs.opencode.settings.default_agent = cfg.defaultAgent; })
     (mkIf (cfg.shell != null) { programs.opencode.settings.shell = cfg.shell; })
-    (mkIf (cfg.snapshot != null) { programs.opencode.settings.snapshot = cfg.snapshot; })
+    (mkIf (cfg.snapshot != null) { programs.opencode.settings.snapshots = cfg.snapshot; })
 
     # ── Write ALL provider credentials to auth.json ───────────────────────────
     (mkIf hasAuthProviders {
