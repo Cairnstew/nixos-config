@@ -2650,3 +2650,18 @@ Symptom (removing the ensemble options): seven `.nix` files were edited by slici
 Cause: the range `start=index("## SECTION"); end=index("## NEXT")` includes the enclosing attrset's `};` when the last member of that attrset is the thing being deleted, and an interpolation's opener/closer can belong to a *shared* wrapper rather than the removed block. Neither shows up in `git diff` as an obviously wrong line; the parser reports the first place the imbalance becomes impossible (often EOF or a later file).
 
 Fix/practice: after any structural deletion, run `nix-instantiate --parse <file>` on **every** edited `.nix` file (fast, no eval) before touching the flake — one command per file, and the error then names the right file and a nearby position. The three restored anchors are `modules/nixos/proxy/options.nix:353` (`systemMetrics = {`), `modules/home/opencode/config.nix:109` (`${optionalString (cfg.modelFallback.chains != { }) ''`), and `modules/nixos/opencode-web/options.nix:133` (`memoryHigh = mkOption`). Also prefer deleting the block *and* restoring its parent's `};` in one edit, or replace the block with a `};`-preserving stub, rather than trusting two independent text indices.
+
+---
+
+**`nix eval .#inputs.<name>` does not exist — a flake input is not a flake attribute, so locate an upstream input's source with `builtins.getFlake … .inputs.<name>.outPath`** (2026-11-14, desktop)
+
+Symptom (changing the PZ viewpoint start time): the schedule option is an *upstream* one (`services.project-zomboid-servers.servers.<name>.schedule.start`), so the next step was to read the option's definition. `nix eval --raw .#inputs.project-zomboid-servers.outPath` failed with `error: flake 'git+file:///home/seanc/nixos-config' does not provide attribute 'packages.x86_64-linux.inputs.project-zomboid-servers.outPath', 'legacyPackages.x86_64-linux.…' or 'inputs.project-zomboid-servers.outPath'` — which reads like the input is missing from `flake.lock`, not like an invalid attribute path. It is not a tool-mode problem either: `GOTCHAS.md:2395` lists `.#inputs...` among the paths `nix-eval` "handles fine", and that line is wrong — `inputs` is never a flake output.
+
+Cause: only a flake's *outputs* are addressable as `.#<attr>` (`nixosConfigurations`, `packages`, `legacyPackages`, …). `inputs` lives on the flake object, reachable only through impure evaluation.
+
+Fix/practice: 
+```
+nix eval --impure --raw --expr '(builtins.getFlake "/home/seanc/nixos-config").inputs.project-zomboid-servers.outPath'
+# -> /nix/store/azxfpjnijmwi7jcwml17ma2gkfshzwgc-source
+```
+then `grep` that store path for the option. Do **not** try to find the input by globbing `/nix/store/*-source` for a filename — this run's loop `[ -d "$s/modules/project-zomboid-servers" ] || [ -f "$s/docs/options.md" ] && grep …` matched 26 unrelated sources because `&&`/`||` bind left-associatively, so the first test's failure still ran the grep branch. Verify the store path you took is the pinned one: `nix flake metadata --json .` must show the same `rev` (here `67450ec8…`).
