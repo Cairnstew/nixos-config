@@ -2665,3 +2665,11 @@ nix eval --impure --raw --expr '(builtins.getFlake "/home/seanc/nixos-config").i
 # -> /nix/store/azxfpjnijmwi7jcwml17ma2gkfshzwgc-source
 ```
 then `grep` that store path for the option. Do **not** try to find the input by globbing `/nix/store/*-source` for a filename — this run's loop `[ -d "$s/modules/project-zomboid-servers" ] || [ -f "$s/docs/options.md" ] && grep …` matched 26 unrelated sources because `&&`/`||` bind left-associatively, so the first test's failure still ran the grep branch. Verify the store path you took is the pinned one: `nix flake metadata --json .` must show the same `rev` (here `67450ec8…`).
+
+---
+
+**`just update` / `nix run .#update` does not bump extracted-module inputs — it only updates `primary-inputs`** (2026-11-14, desktop + server)
+
+Symptom (shipping a pack change through `nixos-config`): after committing a new `modpacks/viewpoint.nix` to `nixos-projectzomboid-servers`, the justfile's "Update all flake inputs and commit lockfile" recipe was run on both hosts and reported success, yet `nix flake metadata --json` still pinned the old revision (`67450ec8…`) for the `project-zomboid-servers` node — the rebuild would have reinstalled the old pack, with no error to notice. Cause: the update app is nixos-unified's, and it only bumps `nixos-unified.primary-inputs` — `nixpkgs`, `home-manager`, `nixos-unified` (`modules/flake-parts/nixos-flake.nix:30-33`) — so every extracted repo input (this one, `nixos-minecraft-modpacks`, `agenix-manager`, …) is deliberately left alone, and the justfile comment (`justfile:6`) overstates the recipe.
+
+Fix/practice: bump the specific input, `nix flake update project-zomboid-servers`, then `nix run`; verify with `nix flake metadata --json` that the node's `rev` is the commit you pushed, and — on a host whose `project-zomboid-install` still runs — that the new Workshop ids exist under `steamapps/workshop/content/108600/<id>`. A bare `nix flake update` also works but drags nixpkgs into the same rebuild, which is how a "only the mod preset should change" bump turns into a full system upgrade.
