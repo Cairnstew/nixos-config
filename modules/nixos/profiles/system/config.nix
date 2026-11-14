@@ -42,6 +42,14 @@ in
           suspendTimeout = lib.mkDefault 0;
         };
 
+        # ── Screen locker ───────────────────────────────────────────────────
+        # hyprlock (Hyprland's own locker) instead of swaylock: it is the
+        # upstream-maintained Wayland locker, uses Hyprland's session-lock
+        # protocol, and — unlike swaylock — does read its theme from
+        # /etc/xdg/hypr/hyprlock.conf (see lockscreen/theme.nix). mkDefault so
+        # a host can still opt back into swaylock.
+        lockscreen.useHyprlock = lib.mkDefault true;
+
         # ── Visual features ─────────────────────────────────────────────────
         colorpicker.enable = true;
         nightLight.enable = true;

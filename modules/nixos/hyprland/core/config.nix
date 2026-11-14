@@ -216,7 +216,7 @@ let
     hl.bind(mainMod .. " + E", hl.dsp.exec_cmd(${luaStr "${lib.getExe cfg.terminal} -e ${lib.getExe cfg.fileManager.package} ${cfg.fileManager.startDirectory}"}))
     ''}
     ${lib.optionalString cfg.lockscreen.enable ''
-    hl.bind(mainMod .. " + L", hl.dsp.exec_cmd(${luaStr "swaylock"}))
+    hl.bind(mainMod .. " + L", hl.dsp.exec_cmd(${luaStr (lib.getExe cfg.lockscreen.package)}))
     ''}
     ${lib.optionalString cfg.screenshot.enable ''
     hl.bind(mainMod .. " + SHIFT + S", hl.dsp.exec_cmd(${luaStr ''grim -g "$(slurp)" - | wl-copy''}))
