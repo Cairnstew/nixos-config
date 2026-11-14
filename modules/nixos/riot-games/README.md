@@ -15,7 +15,7 @@ sufficient ability to attest boot state or kernel modules".
 |-------|--------------|
 | League of Legends (desktop) | Denied — Vanguard |
 | TFT (desktop client) | Same client, same Vanguard |
-| TFT (Android via Waydroid) | Dead since the mobile Vanguard `libmvg.so` (~Jan 2026) |
+| TFT (Android via Waydroid) | Dead — mobile Vanguard `libmvg.so` (PBE 2026-01-09, production 2026-08-26) |
 | TFT (real phone + scrcpy) | Works — the phone runs the game |
 | Windows dual-boot | Works |
 

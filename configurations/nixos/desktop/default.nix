@@ -445,7 +445,8 @@
 
   # ── Riot Games: League of Legends / TFT ─────────────────────────────────
   # Neither runs on Linux — Vanguard is a Windows kernel driver, and the
-  # Android TFT client is blocked by the mobile Vanguard since early 2026.
+  # Android TFT client is blocked by the mobile Vanguard (production since
+  # 2026-08-26).
   # This adds a one-shot "reboot into Windows 11" launcher (GRUB next_entry)
   # and scrcpy mirroring of the Android client. See
   # modules/nixos/riot-games/README.md for the evidence.

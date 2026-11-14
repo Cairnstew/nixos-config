@@ -54,7 +54,9 @@ in
         scrcpy mirroring of the Android Teamfight Tactics client — the only
         route that still works on Linux (the phone runs the game; the desktop
         only mirrors and forwards input). The Android path via Waydroid is dead
-        since Riot shipped the mobile Vanguard (libmvg.so) in early 2026
+        — the mobile Vanguard (libmvg.so) shipped to the production client on
+        2026-08-26 — and the only revival published since (2026-10) ptrace-masks
+        the anti-cheat, which is ban risk and is deliberately not shipped here
       '';
 
       maxSize = mkOption {
