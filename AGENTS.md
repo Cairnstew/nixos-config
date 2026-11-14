@@ -680,3 +680,18 @@ style tool/skill/command injection from flake inputs.
   `scout`/`planner`/`reviewer` fan out, `builder`/`qa` are single-writer, full
   rules in `modules/home/opencode/agents/build.md` and
   `modules/home/opencode/skills/subagent-decomposition.md`.
+
+### 2026-11-14 — §2 autowiring makes a flake *output*, not a host import: a new module must be added to `modules/nixos/common.nix`
+- Lesson: §2's table (`AGENTS.md:84`, `modules/nixos/(name)/default.nix` →
+  `nixosModules.(name)`) reads as "drop the directory in and hosts get it". It
+  does not: the output is only a flake attribute, and hosts receive modules
+  solely through the explicit `imports` list in `modules/nixos/common.nix`
+  (e.g. `./riot-games` at `modules/nixos/common.nix:115`). Enabling a brand-new
+  `my.programs.<name>` in `configurations/nixos/desktop/default.nix` failed
+  eval with "The option `my.programs.riotGames' does not exist … Did you mean
+  `my.programs.steam'", pointing at the host config rather than the missing
+  import.
+- Fix: after creating a module directory, add `./<name>` to the right section of
+  `modules/nixos/common.nix`'s `imports` **before** evaluating the host, and
+  treat §2 as the output map only (a flat `(name).nix` file is likewise only an
+  output until imported).
