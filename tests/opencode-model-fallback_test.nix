@@ -274,7 +274,7 @@ in
             local rc=0
             OPENCODE_SELECT_JQ="$prog" OPENCODE_SELECT_CONFIG="$dir/mf.json" \
               OPENCODE_SELECT_CACHE="$2" OPENCODE_SELECT_SLICE="$dir/none.json" \
-              OPENCODE_SELECT_LOG="$dir/log.jsonl" OPENCODE_SELECT_ENSEMBLE="$dir/ens.json" \
+              OPENCODE_SELECT_LOG="$dir/log.jsonl" \
               bash "$wrap" --agent "$1" > "$dir/stdout" 2> "$dir/stderr" || rc=$?
             printf '%s' "$rc" > "$dir/rc"
           }
@@ -331,7 +331,7 @@ in
 
                               export OPENCODE_SELECT_JQ="$prog" OPENCODE_SELECT_CONFIG="$dir/mf.json" \
                                 OPENCODE_SELECT_CACHE="$dir/cache.json" OPENCODE_SELECT_SLICE="$dir/none.json" \
-                                OPENCODE_SELECT_LOG="$dir/log.jsonl" OPENCODE_SELECT_ENSEMBLE="$dir/ens.json"
+                                OPENCODE_SELECT_LOG="$dir/log.jsonl"
 
                               # Usable run: monthly 94 > deepseek-v4.1-flash static cap 90 ->
                               # skipped by static, muse-spark chosen. The log line must contain

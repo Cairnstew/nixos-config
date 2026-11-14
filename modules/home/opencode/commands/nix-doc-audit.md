@@ -2,37 +2,38 @@
 description: Audit and update all documentation in the repo so future agents have accurate, complete context. Optionally improves itself after each run (SELF_IMPROVE).
 ---
 
-You are the **lead** of a documentation-audit team for a NixOS flake-parts repository.
-You orchestrate a team of parallel agents via the opencode-ensemble plugin; you do not do the
-section work yourself. **The team — not the human — decides which changes to make.** Workload is
-split between agents along natural doc boundaries, then re-integrated by you with a verification
-gate.
+You are the **lead** of a documentation audit for a NixOS flake-parts repository. You fan out the
+read-only audit to subagents and **you apply every doc edit yourself** — subagents share this
+working tree, so there is no parallel-writer mode and no merge step. **The agent — not the
+human — decides which changes to make.** The audit is split along natural doc boundaries, then
+re-integrated by you with a verification gate.
 
-Load and follow the `opencode-ensemble` and `nixos-ensemble-decomposition` skills for the lead
-workflow before starting.
+Load and follow the `subagent-decomposition` skill before starting.
 
-**Non-negotiable rules (apply to every teammate, every phase):**
+**Non-negotiable rules (apply to every agent, every phase):**
 - The team reads the **actual current state of the code** and updates every doc file to match it.
-- **Never update docs from memory. Every doc change must be grounded in a file a teammate read this session.**
+- **Never update docs from memory. Every doc change must be grounded in a file an agent read this session.**
 - **Do not add aspirational or speculative content — only document what exists.**
 - **Docs use plain relative markdown links only — never wikilinks (`[[...]]`). GitHub must render every link with no plugin.**
 
 ---
 
-## ENSEMBLE GATING
+## EXECUTION MODE
 
-Detect whether the team tools are actually present in this session (config can list the plugin
-but it may not have loaded):
+Parallelism comes from opencode's built-in `subagent` tool. There is no ensemble plugin, no task
+board, and no worktree merge.
 
-- If tools named `team_create`, `team_spawn`, `team_tasks_add`, `team_status`, `team_results`,
-  `team_merge`, `team_shutdown`, `team_cleanup` are available to you right now → **`ENSEMBLE_ACTIVE=true`**.
-- Otherwise → **`ENSEMBLE_ACTIVE=false`**, regardless of config.
-
-- **If `ENSEMBLE_ACTIVE=true`** — run the team orchestration in this command exactly.
-- **If `ENSEMBLE_ACTIVE=false`** — run a single-agent fallback: you play every role (scout ×5,
-  arbiter, builder ×4, verifier) in order, applying the **same** decision protocol. The team
-  decision rules still replace the human confirmation gates; the "confirm with the human" steps
-  in this file are never taken.
+- **Read-only fan-out** — the five audit scouts run as `general` subagents with an explicit
+  *read-only, report-only* instruction (the sections are shell-heavy, and the configured `scout`
+  agent denies bash). They read the **live working tree**, which is exactly what this audit targets.
+- **Single writer** — you apply every APPLY item yourself, one file group at a time; a large group
+  may be delegated to ONE `builder` subagent (committed before the next writer starts). Never run
+  two writers concurrently — the tree is dirty by design here, and a second writer would make the
+  pre-edit baseline unrecoverable.
+- **GOTCHAS.md is always last** — its RESOLVED markers cite fixes made in the other groups.
+- **Waves of 2, one build/check at a time** — concurrent evaluations OOM the service cgroup.
+- **Wait for the subagent's message** — never poll; read the report and re-verify anything that
+  quotes content differing between committed HEAD and the dirty file.
 
 ---
 
@@ -115,13 +116,14 @@ git status --short
 ```
 If the working tree is **dirty** (uncommitted `.md` changes — this repo frequently has them), then:
 - Those dirty files **ARE the current audit target**. They are NOT a mess to be reverted; a prior pass
-  may have already improved them. Scouts must read the **main-repo files at `/home/seanc/nixos-config/<path>`**
-  (or the equivalent CWD for whatever checkout you launched from), NOT whatever a freshly-created
-  teammate worktree shows — a worktree is forked at committed HEAD and will be **stale**.
-- Record in LIVE CONTEXT: the list of dirty files (`git status --short` output). Hand this to every scout
-  and builder so nobody audits/edits the committed-HEAD version by accident.
-- Builders MUST physically sync (`cp` main-repo file over worktree file + verify `diff` identical) before
-  editing, or their merge will clobber the dirty state. See the builder rules in Phase 3.
+  may have already improved them. Scouts read the live working tree by definition (subagents share
+  it), so there is no stale-worktree failure mode any more — but a subagent that runs
+  `git show HEAD:<file>` will still report the committed version, so tell it to read the file.
+- Record in LIVE CONTEXT: the list of dirty files (`git status --short` output). Hand this to every
+  scout so nobody audits the committed-HEAD version by accident.
+- You apply every edit to the live files, so the dirty baseline cannot be clobbered by a merge —
+  but re-read each file immediately before editing (see Phase 3) and diff against the pre-edit
+  dirty content afterwards.
 - The lead must reconcile scout findings against the dirty files before handing them to the arbiter
   (a scout that read committed HEAD will report false STALE/MISSING items, e.g. "mkForce site undocumented"
   when the dirty GOTCHAS.md already documents it — this happened 2026-08-03 and cost a full arbiter pass).
@@ -172,111 +174,43 @@ alone; a team maps the repo faster and, critically, **replaces the human confirm
 team decision gate** — findings are triaged by an arbiter, decided by the team, and the human only
 reviews the outcome.
 
-## Team shape
+## Roles
 
-| Role | Agent | Worktree | Ownership |
-|------|-------|----------|-----------|
-| Audit scout ×5 | `general` | `false` | One A-section group each (see below) |
-| Arbiter (triage/decision) | `general` | `false` | Synthesizes scout findings → DECISION LOG |
-| Builder ×4 | `build` | `true` | One file group each (strict, non-overlapping) |
-| Verifier | `qa` | `false` | Post-merge review + mechanical checks |
+| Role | Agent | Permissions | Ownership |
+|------|-------|-------------|-----------|
+| Audit scout ×5 | `general` | read-only instruction | one A-section group each |
+| Arbiter (triage/decision) | `general` | read-only instruction | scout findings → DECISION LOG |
+| Writer | you (lead) | full | one file group at a time; `builder` by exception |
+| Reviewer | `reviewer` | read-only | doc-link integrity + rule compliance |
 
-> **Why `general` instead of the configured `scout`/`reviewer` subagents:** the audit sections are
-> shell-heavy (`grep`, `rg`, `find`, `test`) and the config.nix subagents `scout` and `reviewer`
-> are declared `bash = "deny"`. Spawn audit/triage teammates as `general` with an explicit
-> **read-only, report-only** instruction. If those subagents are later granted bash, swap the role
-> names in — the task spec below is unchanged.
+Audit and triage use `general` because those sections are shell-heavy (`grep`, `rg`, `find`, `test`)
+and the configured `scout`/`reviewer` agents deny bash. Give them an explicit **read-only,
+report-only** instruction.
 
-## Task board
+## Work order
 
-Create the team (`team_create` — name it `nix-doc-audit`), then record every task up front with
-`team_tasks_add`. **Use the returned IDs** for `depends_on` — do not invent IDs.
+1. **Fan out the five scouts in parallel.** Give each the LIVE CONTEXT output plus the full text of
+   its A-section(s). Tell every scout to read files from the live working tree (the audit target),
+   and that a finding quoting content that differs between committed HEAD and the dirty file must be
+   re-verified against the dirty file.
+2. Wait for their messages. **Reconcile the findings against the dirty files yourself** before
+   composing the arbiter prompt (see the LIVE CONTEXT working-tree check).
+3. Spawn the arbiter (`general`, read-only) with the reconciled findings (verbatim quotes).
+4. Review the DECISION LOG. If you disagree with a ruling, re-verify and record it as an `OVERRIDE`
+   row with both positions (see Decision protocol). The arbiter's log is the approval — there is no
+   human gate.
+5. **Apply the APPLY items yourself, one group at a time**, in this order:
+   `build-struct-readme` → `build-modules` → `build-skills` → **`build-gotchas` last**. After each
+   group, diff the file against its pre-edit dirty state and spot-check the distinctive strings from
+   the DECISION LOG rows. Commit per group if the audit is running on a branch, or keep the groups
+   as separate working-tree edits if the point is to hand the human one reviewable diff — say which
+   in the report.
+6. Spawn `reviewer` on the final diff (link integrity + the rules above). Fix what it finds and
+   record it.
+7. Run the final verification yourself (Phase 4 commands), then write the report.
 
-> **`depends_on` label trap (confirmed 2026-08-03):** the `Task key` column below is a label for
-> humans only. Real task IDs come from `team_tasks_add`'s return (format `task_<rand>_<n>`). Passing
-> the labels as `depends_on` values creates a phantom dependency that never resolves — the downstream
-> task shows permanently `[blocked] by unresolved dependencies` and no builder can claim it (this
-> happened for all four build tasks in the 2026-08-03 run). If that happens, tell the builders to
-> proceed **without claiming** (their DECISION LOG rows are embedded in their prompts) and use
-> `team_tasks_complete` on the build tasks once their builders are done so the board unblocks the
-> verifier. The table is illustrative; treat the returned IDs as authoritative.
-
-| Task key (label) | Description | depends_on (real IDs) |
-|----------|-------------|------------|
-| `audit-struct-readme` | Scout: A1 STRUCTURE.md + A2 README.md audit (read-only) | — |
-| `audit-modules` | Scout: A3 module READMEs + A8 sidecars audit (read-only) | — |
-| `audit-gotchas` | Scout: A4 GOTCHAS.md audit (read-only) | — |
-| `audit-skills` | Scout: A5 opencode skills + A6 AGENTS.md audit (read-only) | — |
-| `audit-links` | Scout: A7 cross-doc link integrity audit (read-only) | — |
-| `triage` | Arbiter: synthesize all scout findings into the DECISION LOG | all five `audit-*` |
-| `build-struct-readme` | Builder: apply APPLY items to STRUCTURE.md + README.md | `triage` |
-| `build-modules` | Builder: apply APPLY items to module READMEs + Related Modules sidecars | `triage` |
-| `build-skills` | Builder: apply APPLY items to opencode skills + AGENTS.md | `triage` |
-| `build-gotchas` | Builder: apply APPLY items to GOTCHAS.md (always last) | `triage`, all three `build-*` |
-| `verify` | Verifier: review merged diff + run mechanical checks | all four `build-*` |
-| `report` | Lead: compile decision log + summary table, deliver | `verify` |
-| `self-improve` | Meta-scout: audit this command file (Phase 6, only when `SELF_IMPROVE=true`) | — |
-
-## Spawn sequence & merge order
-
-1. `team_create`, `team_tasks_add` (board above), then **spawn the five scouts in parallel**,
-   `worktree: false`, `claim_task` their audit task. Give each the LIVE CONTEXT output plus the
-   full text of its A-section(s) below as the prompt. **Tell every scout explicitly to read files
-   from the main repo checkout (e.g. `/home/seanc/nixos-config/<path>`), not a worktree copy** —
-   worktrees fork at committed HEAD and are stale when the working tree is dirty.
-2. Wait for all scouts via `team_results`. **Reconcile scout findings against the dirty files
-   yourself before composing the arbiter prompt** (see the LIVE CONTEXT working-tree check): any
-   finding that quotes content that differs between committed HEAD and the dirty file must be
-   re-verified against the dirty file. Compose the arbiter prompt from the reconciled findings
-   (verbatim quotes) and spawn the arbiter (`general`, `worktree: false`, `claim_task: triage`).
-3. Review the DECISION LOG. If you disagree with any ruling, message the arbiter to reconsider
-   (see Decision protocol). Once settled, spawn B1–B3 builders in parallel
-   (`build`, own worktree, `claim_task` their build task). **Do NOT use `plan_approval: true`** —
-   see the warning below. Each builder gets: its file group, the DECISION LOG APPLY items for that
-   group, the applicable update rules + template from Phase 3 below, and the mandatory sync step.
-4. As each builder reports done: `team_results`, `team_shutdown`, `team_merge`. **Inspect the
-   merged diff before trusting it** — confirm the dirty current content survived (compare the
-   merged file against the pre-edit dirty state + the DECISION LOG rows, not against committed HEAD).
-   **Dirty-tree merge refusal (confirmed 2026-08-03 — happens on EVERY builder merge when the main
-   tree is dirty):** `team_merge` returns `Cannot merge <name> — you have local changes to the same
-   files: ...` for every target file that is dirty in the main checkout (which is the whole point —
-   those dirty files ARE the audit target). This is the PRIMARY merge path for a dirty tree, not an
-   edge case. Recovery: the builder's branch is preserved at
-   `ensemble/preserved/<team>#<run>/<builder>` and its committed version of each file equals
-   "dirty baseline + intended edits" (the builder synced the dirty file before editing). Restore it:
-   ```
-   git diff "<preserved-branch>" -- <files>   # must show ONLY the intended edits
-   git restore --source="<preserved-branch>" --worktree -- <files>
-   git diff "<preserved-branch>" -- <files>   # must now be empty
-   ```
-   then spot-check the distinctive strings from the DECISION LOG rows. If instead `team_merge`
-   **applies nothing** (confirmed 2026-08-03: builders that only stash uncommitted changes produce
-   an empty merge — `team_merge` has no commit to bring in), then the builder's work sits in its
-   worktree; copy the files directly: `cp <worktree>/<file> /home/seanc/nixos-config/<file>` after
-   verifying the worktree diff shows exactly the intended edits. **Before spawning each builder,
-   cross-check every `OVERRIDE` row for that builder's group is present in its prompt** (the 2026-08-03
-   run omitted the M11 override row from b-modules' prompt, requiring a post-verifier manual fix).
-   Update the task board (`team_tasks_complete` on the build task — also unblocks downstream tasks
-   caught in the label trap) and record the manual-apply in the report.
-5. After B1–B3 are merged, spawn B4 (`build-gotchas`, `build`, `claim_task`) so it forks
-   from the merged state — GOTCHAS RESOLVED markers cite fixes made by the other builders.
-   Merge it the same way.
-6. Spawn the verifier (`qa`, `worktree: false`, `claim_task: verify`). If it finds issues, message
-   the owning builder (still alive) to fix, re-merge, re-verify. Minor issues you may fix directly,
-   recording that in the report.
-7. Run the final verification yourself (Phase 4 commands) before `team_cleanup`.
-
-> **WARNING — `plan_approval: true` is broken (confirmed 2026-08-03).** A builder spawned with
-> `plan_approval: true` sends its plan then **ends its run-cycle**; the lead's `team_message`
-> `approve: true` response is stored but **never wakes it** (the tool returns "teammate has
-> completed their task — message will not wake them"). The builder idles forever with zero edits.
-> Do not use `plan_approval: true` in this command. The DECISION LOG IS the approval: the arbiter
-> already decided the exact changes, so embed the APPLY rows directly in the builder prompt. If a
-> builder is spawned with `plan_approval: true` anyway (e.g. pasted from an older version), the fix
-> is `team_shutdown --force` + re-spawn without the flag, embedding the approved plan as the task.
-
-If any teammate stalls or errs: message it directly first; `team_shutdown --force` only as a last
-resort; record the disruption in the final report.
+If a subagent stalls or reports an error, record it in the final report rather than silently
+absorbing its section.
 
 ---
 
@@ -284,7 +218,7 @@ resort; record the disruption in the final report.
 
 Spawn five scouts in parallel. **Each is read-only — it must not edit or write anything.** Each
 must return findings in the STALE / MISSING format below, with `file:line` evidence and verbatim
-quotes. Scouts report via `team_message`.
+quotes. Scouts report back in their final message.
 
 Give each scout: the LIVE CONTEXT output, the shared rules at the top of this command, and the full
 text of its A-section(s) from below as its prompt.
@@ -535,7 +469,7 @@ call. The human reviews the outcome at the end, not each step.
 
 ## Arbiter spec
 
-Spawn the arbiter (`general`, `worktree: false`, `claim_task: triage`). Prompt it with:
+Spawn the arbiter (`general`, read-only). Prompt it with:
 - All five scout reports (verbatim).
 - The shared rules at the top of this command.
 - The decision protocol below.
@@ -587,16 +521,11 @@ recorded in the log:**
 
 ## Disagreement protocol
 
-- If you (the lead) disagree with any arbiter ruling: message the arbiter, present your evidence,
-  and ask it to reconsider with a specific counter-argument.
-- **But a completed arbiter can't be woken** (confirmed 2026-08-03 — same "message will not wake
-  them" limitation as the `plan_approval` builders): if the arbiter already sent its DECISION LOG
-  and ended its run-cycle, your `team_message` is stored but never delivered. The effective path is
-  then your call wins as lead, **recorded as `OVERRIDE` in the DECISION LOG** with both positions
-  (see below), and the OVERRIDE row must be included in the owning builder's prompt (see Spawn
-  sequence step 4). The human sees it in the report. Verify the disputed finding yourself before
-  overriding — the 2026-08-03 arbiter's M11 ruling rested on a faulty grep (claimed 0 matches for a
-  pattern that actually matched 5 times).
+- If you (the lead) disagree with any arbiter ruling: re-verify the finding yourself. A subagent
+  that has already returned cannot be woken (there is no teammate messaging), so your call wins,
+  **recorded as `OVERRIDE` in the DECISION LOG** with both positions (see below). The human sees it
+  in the report. Verify the disputed finding before overriding — the 2026-08-03 arbiter's M11 ruling
+  rested on a faulty grep (claimed 0 matches for a pattern that actually matched 5 times).
 - If the arbiter changes the ruling → update the DECISION LOG.
 - If it holds its ground and you still disagree → your call wins as lead, but it is **recorded**
   as `OVERRIDE` in the DECISION LOG with both positions. The human sees it in the report.
@@ -618,13 +547,13 @@ The builders implement **only** APPLY rows for their group.
 
 ---
 
-# PHASE 3 — UPDATE (parallel builders)
+# PHASE 3 — UPDATE (single writer)
 
-Spawn B1–B3 in parallel (`build`, own worktree, `claim_task`). **Do NOT use `plan_approval: true`**
-(see the WARNING in Spawn sequence). Each builder gets: its file group, the DECISION LOG APPLY rows
-for that group, the shared rules, the mandatory sync step below, and the rules below. After merging
-B1–B3, spawn B4. **Each builder must only touch its own files** — overlapping edits are the one
-thing that makes parallel updates unsafe.
+You apply the APPLY rows yourself, **one file group at a time**: `b-struct-readme` →
+`b-modules` → `b-skills` → **`b-gotchas` last** (its RESOLVED markers cite the other groups'
+fixes). A large group may be delegated to ONE `builder` subagent; if you delegate, it edits this
+same working tree, so finish and review that group before starting the next. **Each group only
+touches its own files.**
 
 | Builder | Task | Owned files |
 |---------|------|-------------|
@@ -641,22 +570,17 @@ thing that makes parallel updates unsafe.
 > assigned to `b-skills` (opencode-skill-ecosystem rows), NOT `b-modules`, even though they match
 > `modules/home/*/README.md`.
 
-**MANDATORY sync step for every builder (dirty-working-tree protection):**
-A builder's worktree is forked at committed HEAD. If the main working tree is dirty (uncommitted
-`.md` changes — the audit target), the worktree copies are **stale** and editing them would make
-`team_merge` clobber the current state. Before editing ANY owned file:
-1. `git rev-parse --show-toplevel` — if your top-level is NOT the main checkout (e.g.
-   `/home/seanc/nixos-config`), you are in a stale worktree.
-2. For each file you will edit: `cp /home/seanc/nixos-config/<file> <your-cwd>/<file>` (or the
-   equivalent path for your checkout), then `diff` to confirm identical.
-3. Apply your DECISION LOG edits **on the synced content**. Never base edits on the worktree's
-   committed-HEAD copy.
-4. Post-edit, confirm the pre-existing dirty content survived (diff your final file against the
-   pre-edit dirty state + your intended changes only).
+**Dirty-working-tree protection (single-writer version):**
+The main working tree is dirty by design (those `.md` changes are the audit target). Before editing
+ANY file:
+1. Save the pre-edit state of the file you are about to change (`git diff -- <file>` or a copy),
+   so you can prove the pre-existing dirty content survived.
+2. Apply the DECISION LOG edits **on the current file content** — never on `git show HEAD:<file>`.
+3. Post-edit, diff your final file against the pre-edit dirty state + your intended changes only.
 
-**Builders must confirm the change is still true at write time** — re-read the source file
-(`options.nix`, `config.nix`, etc.) immediately before writing, then apply the DECISION LOG edit.
-If the code has moved, report back rather than writing stale content.
+**Confirm the change is still true at write time** — re-read the source file (`options.nix`,
+`config.nix`, etc.) immediately before writing, then apply the DECISION LOG edit. If the code has
+moved, report it rather than writing stale content.
 
 ### Rules for every builder update
 
@@ -746,10 +670,8 @@ The `b-gotchas` builder applies, in order:
 - **Undated entries** the arbiter chose to backfill: append `(date from git history commit <sha>)`
   provenance as instructed in the DECISION LOG. Do not backfill any entry the arbiter marked SKIP.
 
-The builder's plan message must show the proposed full new GOTCHAS.md (it is opinion-laden — the
-lead approves the whole file). Merge B4 last, after B1–B3. (No `plan_approval: true` — B4's plan is
-its full-file proposal message; approve or request changes via `team_message` and, if it stalls like
-the Phase-3 builders can, force-shutdown + re-spawn without the flag.)
+GOTCHAS.md is opinion-laden: propose the full new file in the report before writing it, and apply it
+**last**, after the other groups, so its RESOLVED markers can cite their fixes.
 
 ---
 
@@ -757,8 +679,7 @@ the Phase-3 builders can, force-shutdown + re-spawn without the flag.)
 
 ## Verifier spec
 
-Spawn the verifier (`qa`, `worktree: false`, `claim_task: verify`, **instructed read-only — report
-findings, do not edit**). Give it: the DECISION LOG, the merged diff scope, the shared rules, and
+Spawn `reviewer` (read-only) on the final diff. Give it: the DECISION LOG, the merged diff scope, the shared rules, and
 the check list below. It must verify **every APPLY row was implemented as specified** and report:
 
 - **GOTCHAS.md** follows its own stated `## Adding New Entries` convention (top-insert, format,
@@ -768,13 +689,12 @@ the check list below. It must verify **every APPLY row was implemented as specif
 - **No broken relative links** introduced: re-resolve the link list from LIVE CONTEXT plus any new
   links, `test -f "$(dirname "$SOURCE_FILE")/$TARGET"` per link.
 - **No `## Related Modules` sidecar** was hand-edited or rendered from an unfiltered query.
-- **Only owned files changed** per builder; no overlap, no unexpected file types.
+- **Only owned files changed** per group; no overlap, no unexpected file types.
 - **No nix file was modified** (this command only edits docs). If any `.nix` changed, flag it and
   run `nix fmt -- --check` + `nix flake check --no-build` on the result before merging.
 
-The verifier reports `VERIFY PASS` or a list of `VERIFY FAIL` items with file:line. Any FAIL goes
-back to the owning builder (message it, re-merge, re-verify) or is fixed directly by you for
-trivial issues, recorded in the report.
+The reviewer reports `VERIFY PASS` or a list of `VERIFY FAIL` items with file:line. You fix the
+FAILs (re-read the source, re-apply, re-check) and record them in the report.
 
 > **Verifier baseline (dirty tree).** If the working tree was dirty at start, the verifier must
 > compare against the **pre-edit dirty state + DECISION LOG rows** (i.e. what the builders should
@@ -784,7 +704,7 @@ trivial issues, recorded in the report.
 > baseline. Confirmed 2026-08-03: without this, a verifier flags all 14 pre-existing dirty files
 > as builder errors.
 
-## Lead's final verification (run yourself before `team_cleanup`)
+## Lead's final verification (run yourself, before the report)
 
 ```bash
 git diff --stat                    # confirm only intended .md files changed
@@ -846,29 +766,27 @@ extended with a per-file commit step matching `nix-refine`'s pattern.
 ## Why
 
 Every run of this command exercises its own instructions. When an instruction is wrong, stale, or
-wasteful (a broken flag, a worktree trap, a merge that silently applies nothing), the next run
-repeats the cost. Phase 6 captures those lessons *in the command itself* so each run can optionally
-improve the tool that drives it.
+wasteful (a broken flag, a stale line reference, a step that can't work under single-writer mode),
+the next run repeats the cost. Phase 6 captures those lessons *in the command itself* so each run
+can optionally improve the tool that drives it.
 
 ## 6.1 Capture run-time lessons (lead, as you go)
 
 During the run, keep a short scratch list of operational facts about **this command's own
-execution** — not repo-doc findings. Examples of real lessons (2026-08-03):
-- `plan_approval: true` never wakes builders after approval → must re-spawn without the flag.
-- Builder worktrees fork at committed HEAD; the dirty working tree is the audit target → builders
-  must `cp` the main-repo file over their worktree copy before editing.
-- `team_merge` silently applies nothing when a builder only stashed (uncommitted) its work →
-  the lead must copy the worktree files into the main repo directly and verify.
-- Scouts that read their worktree (committed HEAD) instead of the main repo path produce false
-  STALE/MISSING findings → scouts must be told to read `/home/seanc/nixos-config/<path>`.
+execution** — not repo-doc findings. Examples of the kind of lesson:
+- A subagent cannot see this conversation → its prompt must carry the section text, the dirty-file
+  list, and an explicit "read the live file, not `git show HEAD:<file>`" instruction; otherwise it
+  reports false STALE/MISSING items.
+- Two writers on this tree make the pre-edit dirty baseline unrecoverable → one group at a time.
+- Applying GOTCHAS.md before the other groups loses the RESOLVED markers' fix references → it runs
+  last.
 
 Each lesson must be grounded in something that actually happened this run (file:line or a concrete
 observed behavior). Do not invent lessons.
 
 ## 6.2 Audit this command file (meta-scout)
 
-Spawn **one** read-only scout (`general`, `worktree: false`, `claim_task: self-improve`) whose
-only job is to audit `modules/home/opencode/commands/nix-doc-audit.md` against:
+Spawn **one** read-only `scout` subagent (or do it yourself) whose only job is to audit `modules/home/opencode/commands/nix-doc-audit.md` against:
 - The live run just completed (the run-time lessons from 6.1).
 - The actual repo state (do the commands it references exist? are the paths it names current?).
 - Internal consistency (duplicate headings, stale line refs, box-drawing breakage, unbalanced
@@ -883,7 +801,7 @@ ending with `AUDIT COMPLETE`.
 The lead triages the meta-scout's findings with the same APPLY / SKIP / NOTE protocol:
 - **APPLY** only when the change is grounded in this run's reality (a real failure) or the actual
   current repo (a stale path/command). If it would require guessing, SKIP and NOTE instead.
-- Apply edits **directly to this command file** — this is the lead's own tool, no worktree needed.
+- Apply edits **directly to this command file** — this is the lead's own tool.
 - Do not add aspirational self-healing ("in future we might..."); only fix what is true now.
 - Do not let Phase 6 balloon the file; keep each fix tight and referenced to the lesson.
 

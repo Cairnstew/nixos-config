@@ -27,12 +27,6 @@ in
         || lib.all (u: lib.hasPrefix "/" u.path) (builtins.attrValues enabledUpstreams);
       message = "my.services.proxy.upstreams.*.path must start with /.";
     }
-    # Ensemble dashboard apiPath must be a root-relative Caddy handle prefix
-    {
-      assertion = !cfg.enable || !cfg.dashboard.ensemble.enable
-        || lib.hasPrefix "/" cfg.dashboard.ensemble.apiPath;
-      message = "my.services.proxy.dashboard.ensemble.apiPath must start with /.";
-    }
     # Dashboard auth needs its agenix secret on the host; otherwise the Caddy
     # EnvironmentFile would be missing and Caddy would fail to load.
     {

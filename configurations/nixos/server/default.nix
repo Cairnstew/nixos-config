@@ -151,7 +151,7 @@ in
     };
   };
   # Terminal opencode must not run while the browser (web) session is live —
-  # both share ~/.config/opencode and the ensemble DB. Gate both directions.
+  # both share ~/.config/opencode and one background service. Gate both directions.
   my.homeManager.extraConfig.my.programs.opencode.sessionGate.enable = true;
 
   # ── Location ─────────────────────────────────────────────────────────────

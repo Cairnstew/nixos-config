@@ -176,16 +176,16 @@ Services register themselves into `my.services.proxy.upstreams.<name>`
 - Each upstream becomes `${directive} ${path}* { reverse_proxy host:port ... }`
   via `handleBlock` (config.nix:15-25), `handle_path` when `stripPrefix`,
   `handle` otherwise.
-- Dashboard opencode/ensemble API handles are emitted as
+- Dashboard opencode API handles are emitted as
   `handle_path ${apiPath}/*` (config.nix:55-67).
 - The dashboard itself is `handle /index.html` + `handle { root * ${dashboardDir}; file_server }` (config.nix:73-82).
 - `services.nix` wires the systemd units: caddy `EnvironmentFile`,
   `metrics-collect` timer, and the `tailscale-serve` oneshot unit that runs
   `tailscale serve --bg --https ${httpsPort} http://<firstListenAddr>:<port>`
   (services.nix:132-146).
-- `dashboard.nix` builds the static HTML page; `cfg.dashboard.opencode` /
-  `cfg.dashboard.ensemble` entries render service cards and are populated by
-  the opencode-web module (`my.services.opencodeWeb`).
+- `dashboard.nix` builds the static HTML page; `cfg.dashboard.opencode` entries
+  render service cards and are populated by the opencode-web module
+  (`my.services.opencodeWeb`).
 
 ## GOTCHAS — read before changing networking
 

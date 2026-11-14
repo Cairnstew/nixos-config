@@ -2630,3 +2630,13 @@ Symptom: after running `nix fmt -- modules/home/opencode/config.nix … modules/
 Cause: the flake formatter is plain `pkgs.nixpkgs-fmt` (`modules/flake-parts/formatter.nix:12`), and 1.3.0 has no file-type filter — handed a non-Nix file it tokenizes the text as Nix and prints a mangled rewrite. Reproduce in isolation: `printf '# T\n\nSee [x](https://y) now.\n\n- **a**: one\n  continued\n' > /tmp/f.md && nixpkgs-fmt /tmp/f.md` yields `See [ x ] (https://y)` + `now.- **a * *: one`.
 
 Fix/practice: pass only `.nix` paths to `nix fmt --` (`nix fmt -- $(git diff --name-only | grep '\.nix$')`), never the whole changed-file set from a doc+code commit. If a Markdown file was already mangled, `git checkout -- <file>` and re-apply the edit by hand — the corruption is not recoverable by reformatting. The affected line here was `modules/home/opencode/README.md:3`; `nix fmt` with no args still formats the tree's Nix files only, so the default invocation is safe.
+
+---
+
+**The opencode-ensemble plugin is removed (2026-11-14) — every `team_*` / ensemble / Agent Space entry above is historical**
+
+Symptom: searching this file for `ensemble` or `team_spawn` still finds ~20 entries describing team orchestration, worktree merges, preserved branches, the teams dashboard and Agent Spaces. They are a record of how the plugin behaved, not instructions: the plugin, its vendored fork (`modules/home/opencode/fork.nix`, `vendor/`, `patches/`), the `my.programs.opencode.ensemble` option, the dashboard section and the `opencode-model-select --sync-ensemble` lever were all removed in one migration.
+
+Cause/context: the plugin's value was isolated parallel writers, and subagents cannot provide that (they share one working tree). Parallel work is now opencode's built-in `subagent` tool — `scout`/`planner`/`reviewer` read-only, `builder`/`qa` as a **single writer** — with the roster in `my.programs.opencode.agents` and the rules in `modules/home/opencode/skills/subagent-decomposition.md`. Upstream repos are developed in their own checkouts and re-pinned as flake inputs; there are no "spaces".
+
+Fix/practice: read ensemble entries for the *underlying* lesson only where it still transfers — the memory/OOM rules (waves of 2, one eval at a time, `free -h` first), "a subagent cannot see your conversation so the prompt must be self-contained", and "`nix flake check` does not run nixtest suites" all still hold. Ignore the `team_*` mechanics, the worktree/merge recovery playbooks, and the space-registration/session-restart notes: those code paths no longer exist.

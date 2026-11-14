@@ -112,10 +112,8 @@ let
       wantedBy = [ "multi-user.target" ];
       # PATH for the server process (top-level key, NOT inside serviceConfig —
       # see GOTCHAS.md "serviceConfig.path is silently ignored"). Extends the
-      # NixOS default systemd path with git + bash so the ensemble plugin's
-      # worktree creation (`git worktree add`, spawned by opencode's Worktree
-      # service) and start commands (`bash -lc`) resolve. Without git every
-      # `worktree=true` teammate spawn fails with `spawn:worktree:failed`.
+      # NixOS default systemd path with git + bash so opencode's worktree
+      # service (`git worktree add`) and start commands (`bash -lc`) resolve.
       path = with pkgs; [ git bash coreutils findutils gnugrep gnused systemd ];
       serviceConfig = {
         Type = "simple";
@@ -130,14 +128,14 @@ let
         ];
         ExecStart = mkScript inst;
       }
-      # Teammates spawned by the ensemble run in this cgroup; cap it so a
-      # runaway browser team can't OOM the host (see GOTCHAS.md).
+      # Subagents run in this cgroup; cap it so a runaway session tree can't
+      # OOM the host (see GOTCHAS.md).
       // (lib.optionalAttrs (cfg.memoryHigh != null) { MemoryHigh = cfg.memoryHigh; })
       // (lib.optionalAttrs (cfg.memoryMax != null) { MemoryMax = cfg.memoryMax; })
-      # Bound swap so a memory-stressed team can't trip systemd-oomd's global
-      # SwapUsedLimit (default 90%), which OOM-kills the whole unit and blanks
-      # the browser (see GOTCHAS.md). The kernel then OOM-kills one teammate at
-      # a time inside the cgroup instead of the web server.
+      # Bound swap so a memory-stressed session can't trip systemd-oomd's
+      # global SwapUsedLimit (default 90%), which OOM-kills the whole unit and
+      # blanks the browser (see GOTCHAS.md). The kernel then OOM-kills one
+      # process at a time inside the cgroup instead of the web server.
       // (lib.optionalAttrs (cfg.memorySwapMax != null) { MemorySwapMax = cfg.memorySwapMax; })
       # Opt the unit out of systemd-oomd wholesale kills so degradation falls to
       # the kernel cgroup OOM-killer (one process at a time), keeping the web
@@ -265,18 +263,6 @@ in
       {
         my.services.proxy.dashboard.opencode = dashboardInstances;
       }
-      # Ensemble teams browser UI: the plugin's dashboard server (singleton on
-      # dashboard.ensemble.port) is proxied at the proxy's dashboard.ensemble
-      # apiPath so the proxy dashboard can render a same-origin card + live
-      # team status. Enabled whenever this module's own dashboard section is
-      # on and dashboard.ensemble.enable is not disabled.
-      (mkIf cfg.dashboard.ensemble.enable {
-        my.services.proxy.dashboard.ensemble = {
-          enable = true;
-          host = "127.0.0.1";
-          port = cfg.dashboard.ensemble.port;
-        };
-      })
     ]))
   ]);
 }

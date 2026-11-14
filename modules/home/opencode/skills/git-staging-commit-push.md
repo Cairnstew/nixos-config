@@ -124,7 +124,7 @@ git commit -m "[nix] Enable bluetooth on laptop"
 # With body explaining why
 git commit -m "[nix] Add memory limit to opencode-web service
 
-Prevents OOM kills when running ensemble commands.
+Prevents OOM kills when running parallel builds.
 Sets MemorySwapMax=4G and opts out of systemd-oomd."
 
 # Multi-file refactor

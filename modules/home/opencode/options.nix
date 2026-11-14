@@ -146,8 +146,8 @@ in
           Refuse to start a terminal opencode session while the opencode web
           (browser) service is running, and write a PID lock the web service
           checks before starting. Both sessions share
-          <filename>~/.config/opencode</filename> and the ensemble state DB, so
-          running them concurrently corrupts team orchestration. Set
+          <filename>~/.config/opencode</filename> and one background service,
+          so running them concurrently corrupts session state. Set
           <literal>true</literal> on hosts that run
           <option>my.services.opencodeWeb</option>. Set
           <literal>OPENCODE_ALLOW_CONCURRENT=1</literal> to bypass.
@@ -173,8 +173,8 @@ in
           Mark the shared background service as stale when a home-manager
           activation changes the files it loads at boot (local plugins, custom
           tools, and the <filename>home-manager*.json</filename> /
-          <filename>ensemble.json</filename> / <filename>model-fallback.json</filename>
-          config layers), then restart it lazily on the next session start.
+          <filename>model-fallback.json</filename> config layers), then restart
+          it lazily on the next session start.
 
           OpenCode 2 caches plugin modules for the life of the service. Because
           home-manager renders those files as store symlinks, a switch retargets
@@ -920,41 +920,6 @@ in
       '';
     };
 
-    # ── Ensemble plugin config ────────────────────────────────────────────────
-
-    ensemble = mkOption {
-      type = types.nullOr (pkgs.formats.json { }).type;
-      default = null;
-      example = {
-        defaultModel = "opencode-go/deepseek-v4-flash";
-        dashboardPort = 4747;
-        mergeOnCleanup = true;
-        spaces = {
-          my-repo = {
-            path = "/home/user/projects/my-repo";
-            agent = "build";
-            description = "My project source";
-          };
-        };
-      };
-      description = ''
-        Configuration for the opencode-ensemble plugin.
-        Written to $XDG_CONFIG_HOME/opencode/ensemble.json.
-
-        Controls model selection, rate limiting, stall detection, timeout,
-        dashboard port, auto-merge behavior, and Agent Spaces for parallel
-        agent teams.
-        See https://github.com/Cairnstew/opencode-ensemble for full reference.
-
-        Agent Spaces (spaces key):
-          Spawn teammates into separate, independent repositories instead of
-          git worktrees. Each space is a full clone with its own git history.
-          Keys are space names used with team_spawn(space="name").
-          Spaces appear in tool descriptions so agents see them as context.
-          See the opencode-ensemble skill for full documentation.
-      '';
-    };
-
     # ── Usage-aware model fallback ────────────────────────────────────────────
 
     modelFallback = {
@@ -968,24 +933,13 @@ in
         not exceeded wins. Requires usage data to be present; without it the
         selector falls back to the chain's LAST entry (the safe default).
 
-        Two consumption paths:
-        - The `opencode` wrapper injects --model into `opencode run` and
-          `opencode mini` (opencode v2 no longer accepts a root --model flag;
-          the full TUI uses the configured opencode.json model).
-        - A project-level .opencode/ensemble.json is rewritten so ensemble
-          plugin spawns resolve modelsByAgent from the same chains.
+        The `opencode` wrapper injects --model into `opencode run` and
+        `opencode mini` (opencode v2 no longer accepts a root --model flag;
+        the full TUI uses the configured opencode.json model).
 
         NOTE: thresholds are PERCENT-based. The OpenCode Go usage API exposes
         only status/percent/resetsAt per window — no dollar amounts — so USD
         budgets cannot be enforced here by design.
-
-        NOTE: the ensemble override only applies when opencode runs with its
-        working directory inside ${config.home.homeDirectory}/nixos-config
-        (the plugin reads <projectDir>/.opencode/ensemble.json), and only for
-        processes started AFTER the selector last wrote it (the plugin loads
-        config once at process start). Long-running `opencode serve` sessions
-        need a restart to pick up new selections; in-session overrides can
-        still be passed as an explicit team_spawn model argument.
       '';
 
       cacheFile = mkOption {
@@ -1174,26 +1128,6 @@ in
           percent cap is >= current usage for that window. Make the last
           entry cap-free (always eligible) or the chain can exhaust.
         '';
-      };
-
-      syncEnsembleProjectFile = mkEnableOption ''
-        rewriting <repo>/.opencode/ensemble.json before each dispatch so
-        ensemble plugin spawns pick up chain-resolved modelsByAgent entries.
-        The file is gitignored by design (intentional imperative exception,
-        see GOTCHAS.md).
-
-        OpenCode 2 caveat: the ensemble plugin loads this file once when its
-        location starts inside the shared background service. Rewriting it
-        after that service is up has no effect until
-        `opencode service restart`; pass an explicit `model=` to team_spawn
-        for an immediate per-spawn override.
-      '';
-
-      repoDir = mkOption {
-        type = types.str;
-        default = "${config.home.homeDirectory}/nixos-config";
-        defaultText = literalExpression ''"''${config.home.homeDirectory}/nixos-config"'';
-        description = "Repo whose .opencode/ensemble.json receives the resolved modelsByAgent.";
       };
     };
 

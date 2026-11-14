@@ -16,16 +16,13 @@
   # behaviour, the option surface, the seeding machinery, upstream docs) belong
   # in the upstream repo; only the proxy / Ollama wiring stays local.
   #
-  # `space = "sillytavern"` is registered under
-  # my.programs.opencode.ensemble.spaces (modules/nixos/homeManager/config.nix),
-  # so upstream work runs in that Agent Space and the input is re-pinned on a
-  # clean shutdown (autoUpdateFlakeInput). Spawn with
-  # team_spawn(space="sillytavern", ...); load the opencode-ensemble skill
-  # first. See modules/AGENT.md §4.2 and README.md "Upstream".
+  # Work on upstream features in the upstream checkout
+  # (`~/Projects/SillyTavern`), then re-pin the `sillytavern` flake input
+  # (`nix flake lock --update-input sillytavern`). See modules/AGENT.md §4.2
+  # and README.md "Upstream".
   upstream = {
     repo = "github:Cairnstew/SillyTavern";
     mode = "wrapped";
     flakeInput = "sillytavern";
-    space = "sillytavern";
   };
 }

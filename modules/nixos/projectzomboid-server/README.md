@@ -98,35 +98,16 @@ upstream's `modules/options.nix` is upstream's. This module declares **no**
 options of its own (`options.nix` is intentionally empty), so there is no
 ambiguous middle ground.
 
-### Spawning an agent to make the upstream change
+### Making the upstream change
 
-**Load the `opencode-ensemble` skill first** — it is the only place
-`team_spawn` and Agent Spaces are documented, and `AGENTS.md` §5.3 requires it
-before touching a module whose `meta.nix` names a space.
+Work in the upstream checkout directly —
+`/home/seanc/Projects/nixos-projectzomboid-servers` (the repo
+`flakeInput = "project-zomboid-servers"` points at). Nothing in this repo
+implements the module, so an edit here is always the wrong layer.
 
-```bash
-team_create name="pz-upstream"            # once per piece of work
-team_spawn  name="pz-fix" \
-            space="project-zomboid-servers" \
-            worktree=false \
-            prompt="<the concrete upstream change>"
-```
-
-Non-negotiable details:
-
-- **`space="project-zomboid-servers"`** — the space name registered in
-  `modules/nixos/homeManager/config.nix`. It clones
-  `/home/seanc/Projects/nixos-projectzomboid-servers` (pinned by
-  `flakeInput = "project-zomboid-servers"`), so the teammate gets its own git
-  history and its own remote, and its work never lands on this repo's branch.
-- **`worktree=false` is mandatory.** Spaces and worktrees are mutually
-  exclusive; passing `true` errors.
-- One coherent upstream change per teammate. The upstream repo is small; two
-  teammates editing `modules/options.nix` will collide.
-
-The teammate commits and pushes to `master`. Because the space sets
-`autoUpdateFlakeInput = true`, a clean shutdown reports the new SHA — then
-re-pin here:
+- One coherent upstream change per commit/push. The upstream repo is small;
+  two writers touching `modules/options.nix` will collide.
+- Push to `master`, then re-pin here:
 
 ```bash
 nix flake update project-zomboid-servers
@@ -141,14 +122,6 @@ nix flake update project-zomboid-servers \
 
 Then re-verify — `nix flake check path:/home/seanc/Projects/nixos-projectzomboid-servers`
 runs the upstream suite, and a host `nix eval` proves this repo still merges.
-
-**If the space is unavailable, work in the clone directly** rather than editing
-here: `cd /home/seanc/Projects/nixos-projectzomboid-servers`, commit, push, then
-re-pin. `team_spawn` fails with `Unknown agent space` until the config carrying
-the space has been **activated and opencode restarted** — the plugin reads
-`~/.config/opencode/ensemble.json` once at process start, and that path is a
-symlink into `/nix/store` that only a Home Manager activation can repoint. That
-is not a reason to fall back to editing this repo.
 
 ## OpenCode tooling
 

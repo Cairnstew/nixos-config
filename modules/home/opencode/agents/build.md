@@ -19,25 +19,43 @@ triage verdicts. A runtime guard plugin (`self-improve-guard`) reminds you if a
 session with `SELF_IMPROVE=true` ends without either a completed self-apply or an
 explicit "no lessons this run".
 
-## Parallel work with ensemble teams
+## Parallel work with subagents
 
-Ensemble teammates (`team_create`/`team_spawn`) suit work that splits into independent slices. Every rule here indexes existing repo docs; none is new policy.
+Parallelism comes from opencode's built-in `subagent` tool — the ensemble plugin
+(teams, worktrees, task boards, spaces) is retired. Every rule here indexes
+existing repo docs; none is new policy.
 
-1. **Load the `opencode-ensemble` skill before creating a team** — it is the only place the `team_*` tools are documented; an agent that skipped it hand-edited the upstream repo instead (`AGENTS.md` §5.3, `modules/AGENT.md` §4.2 + RUN LOG).
+1. **Load the `subagent-decomposition` skill before fanning out** — it is the
+   only place the roster, the one-writer rule and the memory budget are
+   documented (`modules/home/opencode/skills/subagent-decomposition.md`).
 
-2. **Use a team for 2-3+ independent slices with a clear file boundary each**, or read-only fan-out (audit, research, doc review) — not for a small task, shared-file work, or sequential steps (`nixos-ensemble-decomposition.md:109-110`, `opencode-ensemble.md:14-29,54`).
+2. **Use subagents for 2-3+ independent slices with a clear file boundary
+   each**, or read-only fan-out (audit, research, doc review) — not for a small
+   task, shared-file work, or sequential steps.
 
-3. **Read-only roles pass `worktree: false`, writers `worktree: true`** — Role Defaults are scout/reviewer `false`, builder/qa `true` (`opencode-ensemble.md:37,47-52`).
+3. **Read-only roles fan out freely; writers run one at a time.** `scout`,
+   `planner` and `reviewer` have no edit/bash permission. `builder` and `qa`
+   share this working tree (no worktrees, no merge step), so never run two
+   writers concurrently and commit each slice before the next one starts.
 
-4. **Never poll `team_status`/`team_tasks_list`** — wait for the teammate message; use `team_results` when it is truncated or consequential (`opencode-ensemble.md:39-40`).
+4. **Wait for the subagent's message** — do not poll for its result; read what
+   it reports and inspect the diff/output before trusting it.
 
-5. **Commit teammate work before spawning the next worktree teammate.** `team_merge` squash-merges and leaves the result **unstaged**; `team_cleanup` blocks on uncommitted changes; never `git merge` by hand (`vendor/opencode-ensemble-*.js`: `team_merge` description + MERGE WORKFLOW).
+5. **Spawn in waves of 2, one eval at a time** — concurrent
+   `nixos-rebuild dry-activate` builds OOM-kill the whole
+   `opencode-web-*.service` cgroup and have twice dropped the server SSH
+   session; any prompt that may run Nix must carry: own host only, `free -h`
+   first, wait if < 5Gi.
 
-6. **Spawn in waves of 2, one eval at a time** — concurrent `nixos-rebuild dry-activate` builds OOM-kill the whole `opencode-web-*.service` cgroup and have twice dropped the server SSH session; each builder prompt must carry: own host only, `free -h` first, wait if < 5Gi (`nix-refine.md:170-201,316`; `opencode-ensemble.md:36`).
+6. **A commit here is auto-pushed within ~5m** (`autoPush = true`,
+   branch-per-host, `interval = "5m"`; 30s after boot, and other repos fall
+   back to the `15m` option default). The sync pushes commits and never commits
+   for you, so uncommitted work is never published (`common.nix:424,440`,
+   `gitreposync/options.nix:164`, `gitreposync/README.md:70-80`).
 
-7. **A commit here is auto-pushed within ~5m** (`autoPush = true`, branch-per-host, `interval = "5m"`; 30s after boot, and other repos fall back to the `15m` option default). The sync pushes commits and never commits for you, so uncommitted work is never published (`common.nix:424,440`, `gitreposync/options.nix:164`, `gitreposync/README.md:70-80`).
-
-8. **Verify before trusting** — read the result and inspect the diff before merging or claiming done (`opencode-ensemble.md:42,63`).
+7. **Verify before trusting** — read the result and inspect the diff before
+   claiming done. A subagent that reports success without a diff or command
+   output has not verified anything.
 
 ## Mechanical guards (non-LLM)
 

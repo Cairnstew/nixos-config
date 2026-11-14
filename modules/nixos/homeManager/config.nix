@@ -194,38 +194,24 @@ in
           # references config key (open ≥ 1.16 / check release notes)
           # path = "/home/${username}/SillyTavern";
 
-          # Ensemble plugin: NOT installed as an npm package. A vendored,
-          # build-time-patched fork from https://github.com/Cairnstew/opencode-ensemble
-          # is installed as a local plugin (pluginFiles.opencode-ensemble →
-          # ~/.config/opencode/plugins/opencode-ensemble.js, auto-discovered).
-          # Keep this array free of any ensemble npm spec — a similar-named
-          # local file and an npm spec would BOTH load. See FORK.md.
+          # Local opencode plugins are rendered to ~/.config/opencode/plugins/
+          # by my.programs.opencode.pluginFiles; this npm-spec array stays empty.
           plugins = lib.mkDefault [ ];
 
-          # Ensemble plugin config — agents use the paid OpenCode Go DeepSeek V4.1
-          # Flash (opencode-go/ is the Go provider prefix; model id format per
-          # https://opencode.ai/docs/go — "opencode-go/<model-id>"). Moved off the
-          # free Zen tier (opencode-deepseek-v4-flash-free) to the normal flash for
-          # better reliability/limits under the paid Go subscription.
           # Usage-aware model fallback (my.programs.opencode.modelFallback).
-          # Chains resolve against ~/.cache/opencode/go-usage.json percent data:
-          # first entry whose caps all pass wins; the LAST entry is the
-          # cap-free safety net. Self-improvement/triage agents get tighter
-          # caps than the default chain because they run unattended and in
-          # bursts (ensemble triage). Thresholds are PERCENT-based — the Go
-          # usage API exposes no dollar amounts, so USD budgets are not
-          # enforceable here by construction. Every rung also carries a
-          # maxMonthlyPercent: the monthly window is a hard backstop (a rung
-          # is never eligible above it), and the lead rung's pacing can only
-          # tighten it further.
+          # Agents use the paid OpenCode Go DeepSeek V4.1 Flash (opencode-go/ is
+          # the Go provider prefix; model id format per https://opencode.ai/docs/go
+          # — "opencode-go/<model-id>"). Chains resolve against
+          # ~/.cache/opencode/go-usage.json percent data: first entry whose caps
+          # all pass wins; the LAST entry is the cap-free safety net.
+          # Self-improvement agents get tighter caps than the default chain
+          # because they run unattended and in bursts. Thresholds are
+          # PERCENT-based — the Go usage API exposes no dollar amounts, so USD
+          # budgets are not enforceable here by construction. Every rung also
+          # carries a maxMonthlyPercent: the monthly window is a hard backstop
+          # (a rung is never eligible above it), and the lead rung's pacing can
+          # only tighten it further.
           modelFallback.enable = lib.mkDefault true;
-          # Ensemble model sync is DISABLED (2026-09-30): the ensemble plugin
-          # now inherits the lead session's model (inheritLeadModel default
-          # true), and the budget-sync would keep writing modelsByAgent pins
-          # that override that inheritance. The fallback chains below still
-          # route the MAIN agent's own model dispatch; only the ensemble
-          # spawn-side sync is off.
-          modelFallback.syncEnsembleProjectFile = lib.mkDefault false;
           modelFallback.chains = lib.mkDefault {
             # Main chain: DeepSeek V4.1 Flash (high reasoning, the main model)
             # → Muse Spark 1.3 Contributor (medium reasoning, the researcher
@@ -272,61 +258,6 @@ in
               { model = "opencode-go/deepseek-v4-flash"; maxRollingPercent = 70; maxWeeklyPercent = 80; maxMonthlyPercent = 95; }
               { blockedTerminal = true; }
             ];
-          };
-
-          ensemble = lib.mkDefault {
-            # Model selection: the ensemble plugin now inherits the LEAD
-            # session's model by default (resolveModel: explicit arg >
-            # modelsByAgent > modelPool > lead model > defaultModel). No
-            # defaultModel/modelsByAgent pins here — teammates follow the
-            # main agent's model instead of a static config pin. Opt out per
-            # repo via ensemble.inheritLeadModel = false or an explicit
-            # model= on team_spawn.
-            dashboardPort = 4747;
-            mergeOnCleanup = true;
-            spaces = {
-              ensemble = {
-                path = "/home/seanc/Projects/opencode-ensemble";
-                agent = "build";
-                description = "Ensemble plugin source repo";
-              };
-              agenix-manager = {
-                path = "/home/seanc/Projects/agenix-manager";
-                agent = "build";
-                description = "Agenix-manager: declarative agenix secret lifecycle";
-              };
-              spotify-playlist-manager = {
-                path = "/home/seanc/Projects/spotify-playlist-manager";
-                agent = "build";
-                description = "Spotify playlist manager tool";
-              };
-              kraken-python = {
-                path = "/home/seanc/Projects/kraken/kraken-python";
-                agent = "build";
-                description = "Kraken Python API wrapper — historical data pipelines, pagination";
-              };
-              project-zomboid-servers = {
-                path = "/home/seanc/Projects/nixos-projectzomboid-servers";
-                agent = "build";
-                description = "Project Zomboid dedicated servers: NixOS module + modpack catalogue";
-                # Consumed as a flake input (modules/nixos/projectzomboid-server
-                # wraps nixosModules.project-zomboid-servers). After a teammate
-                # pushes upstream work, re-pin this input automatically.
-                flakeInput = "project-zomboid-servers";
-                autoUpdateFlakeInput = true;
-              };
-              sillytavern = {
-                path = "/home/seanc/Projects/SillyTavern";
-                agent = "build";
-                description = "SillyTavern for NixOS: the module, packaging, and the Breeze TTS / llama.cpp backends";
-                # Same contract as project-zomboid-servers: this repo consumes
-                # the fork as the `sillytavern` input (modules/nixos/sillytavern
-                # is only the host-local wrapper), so upstream work is done in
-                # the space and the input is re-pinned on clean shutdown.
-                flakeInput = "sillytavern";
-                autoUpdateFlakeInput = true;
-              };
-            };
           };
 
           # OpenCode 2 reads cli.json, not tui.json. The repo's theme

@@ -34,8 +34,8 @@ let
   # Terminal session gate: when enabled, a terminal opencode refuses to start
   # while the opencode web (browser) service is running, and otherwise writes a
   # PID lock that the web service checks before starting. Both sessions share
-  # ~/.config/opencode and the ensemble DB, so running them concurrently
-  # corrupts team orchestration (see GOTCHAS.md). Matches
+  # ~/.config/opencode and the shared background service, so running them
+  # concurrently corrupts session state (see GOTCHAS.md). Matches
   # my.services.opencodeWeb.sessionGate on the system side.
   #
   # The gate runs before `exec`, so the wrapper shell is replaced by opencode
@@ -107,21 +107,6 @@ let
     ''}
 
     ${optionalString (cfg.modelFallback.chains != { }) ''
-      # ── Usage-aware model fallback (my.programs.opencode.modelFallback) ──
-      # The ensemble plugin reads .opencode/ensemble.json ONCE when its
-      # location starts. Under V2 that location lives in the shared background
-      # service, so this pre-dispatch sync only reaches a service started
-      # afterwards; a running service needs `opencode service restart`.
-      #
-      # The ensemble sync (--sync-ensemble) is gated on
-      # modelFallback.syncEnsembleProjectFile (default false since
-      # 2026-09-30): the plugin inherits the lead session's model, and the
-      # chain sync would re-pin modelsByAgent and override that.
-      if ${if cfg.modelFallback.syncEnsembleProjectFile then "true" else "false"} \
-         && command -v opencode-model-select >/dev/null 2>&1; then
-        opencode-model-select --sync-ensemble || true
-      fi
-
       # opencode v2 (2.2.1) removed the ROOT `--model` flag: yargs→effect-cli
       # now rejects it with `Unrecognized flag: --model in command opencode`
       # before dispatching anything, so appending it to every argv (the v1
@@ -131,9 +116,9 @@ let
       # model from opencode.json (agent/default model) plus its own picker.
       #
       # So inject ONLY for `run`/`mini`, and insert it AFTER the subcommand
-      # token (never at the root). The usage-aware selector still governs
-      # programmatic runs and, via lever (ii), ensemble spawns; the bare TUI
-      # keeps the configured model. Opt out with OPENCODE_MODEL_SELECT_OFF=1.
+      # token (never at the root). The usage-aware selector governs
+      # programmatic runs; the bare TUI keeps the configured model. Opt out
+      # with OPENCODE_MODEL_SELECT_OFF=1.
       if [ -z "''${OPENCODE_MODEL_SELECT_OFF:-}" ]; then
         # First positional arg (the subcommand) and its 1-based index,
         # skipping leading global flags.
@@ -578,6 +563,7 @@ in
         skills.mcp-server-management = builtins.readFile ./skills/mcp-server-management.md;
         skills.ci-monitoring = builtins.readFile ./skills/ci-monitoring.md;
         skills.module-extraction = builtins.readFile ./skills/module-extraction.md;
+        skills.subagent-decomposition = builtins.readFile ./skills/subagent-decomposition.md;
         commands = {
           refactor-python = ./commands/refactor-python.md;
           nix-map = ./commands/nix-map.md;
@@ -595,12 +581,6 @@ in
         pluginFiles = lib.mkDefault ({
           copylast = ./plugins/copylast.ts;
           self-improve-guard = ./plugins/self-improve-guard.ts;
-          # Vendored fork from https://github.com/Cairnstew/opencode-ensemble
-          # — replaces the npm spec (which would double-load with a similar-named
-          # local file). See fork.nix + FORK.md. Loads from the plugins dir as
-          # opencode-ensemble.js (auto-discovered); the npm `plugins` entry in
-          # modules/nixos/homeManager/config.nix must stay empty.
-          opencode-ensemble = import ./fork.nix { inherit pkgs; };
         } // lib.optionalAttrs (cfg.tools != { }) {
           # V2 registers custom tools through a plugin (see toolPlugin above).
           nixos-tools = toolPlugin;
@@ -683,13 +663,16 @@ in
       };
     }
 
-    # ── Ensemble skills & sub-agents ──────────────────────────────────────
+    # ── Subagent roster ──────────────────────────────────────────────────
+    # Parallel work is done with opencode's built-in `subagent` tool instead
+    # of the retired opencode-ensemble plugin. Subagents share this working
+    # tree (there are no worktrees and no merge step), so only ONE writer may
+    # run at a time; scout/planner/reviewer are read-only and safe to fan out.
+    # Guidance: skills/subagent-decomposition.md.
     {
-      my.programs.opencode.skills.opencode-ensemble = builtins.readFile ./skills/opencode-ensemble.md;
-      my.programs.opencode.skills.nixos-ensemble-decomposition = builtins.readFile ./skills/nixos-ensemble-decomposition.md;
       my.programs.opencode.agents = lib.mkDefault {
         scout = {
-          description = "Quickly explore the codebase by searching files, patterns, and keywords (read-only) — ensemble scout role";
+          description = "Read-only codebase reconnaissance — files, patterns, call sites, subsystem mapping";
           mode = "subagent";
           model = null;
           permission = {
@@ -697,14 +680,29 @@ in
             bash = "deny";
           };
         };
+        planner = {
+          description = "Read-only planning — turn recon findings into an ordered task list with file ownership and validation steps";
+          mode = "subagent";
+          model = null;
+          permission = {
+            edit = "deny";
+            bash = "deny";
+          };
+        };
+        builder = {
+          description = "Single-file-scoped implementer — ONE writer at a time; commit before the next builder starts";
+          mode = "subagent";
+          model = null;
+          permission = { edit = "allow"; bash = "allow"; };
+        };
         qa = {
-          description = "Write tests, fixtures, and regression coverage — ensemble QA role";
+          description = "Write tests, fixtures, and regression coverage, then run the suite and report failures verbatim";
           mode = "subagent";
           model = null;
           permission = { edit = "allow"; bash = "allow"; };
         };
         reviewer = {
-          description = "Review diffs for correctness, missed tests, and risky behavior — ensemble reviewer role";
+          description = "Read-only diff review — correctness, missed tests, risky behavior, scope creep";
           mode = "subagent";
           model = null;
           permission = {
@@ -786,28 +784,12 @@ in
         lib.mkDefault "medium";
     }
 
-    # ── Ensemble plugin config → ~/.config/opencode/ensemble.json ─────────
-    # The ensemble plugin (opencode-ensemble) reads this file once at process
-    # start. It controls model selection, rate limiting, stall detection,
-    # timeout, dashboard port, auto-merge, and Agent Spaces.
-    #
-    # Agent Spaces (my.programs.opencode.ensemble.spaces):
-    #   Spawn teammates into separate, independent repositories instead of
-    #   git worktrees. Each space is a full clone with its own git history.
-    #   Spaces are listed in tool descriptions so agents see them as context.
-    #   See the opencode-ensemble skill for full documentation.
-    (mkIf (cfg.ensemble != null) {
-      home.file.".config/opencode/ensemble.json" = {
-        text = builtins.toJSON cfg.ensemble;
-      };
-    })
-
     # ── Local plugin files ──────────────────────────────────────────────────
     # Render each plugin into ~/.config/opencode/plugins/. Source paths ending
     # in `.ts` keep a `.ts` extension so opencode loads them as TypeScript;
     # everything else (and inline text) renders as `.js`. Derivation sources
-    # (e.g. the vendored ensemble fork, fork.nix) render as `source` too —
-    # builtins.isPath is false for derivations, so test for them explicitly.
+    # render as `source` too — builtins.isPath is false for derivations, so
+    # test for them explicitly.
     (mkIf (cfg.pluginFiles != { }) {
       home.file = builtins.listToAttrs (mapAttrsToList
         (name: src:
@@ -868,7 +850,6 @@ in
               done
               for f in ${config.home.homeDirectory}/.config/opencode/home-manager.json \
                        ${config.home.homeDirectory}/.config/opencode/home-manager-cli.json \
-                       ${config.home.homeDirectory}/.config/opencode/ensemble.json \
                        ${config.home.homeDirectory}/.config/opencode/model-fallback.json \
                        ${config.home.homeDirectory}/.config/opencode/self-improve.json; do
                 [ -f "$f" ] || continue

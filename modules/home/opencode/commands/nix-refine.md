@@ -1,34 +1,32 @@
 ---
-description: Refactor the NixOS flake config — deduplicate, modularise, apply structural changes. Orchestrates an ensemble team (scouts → planner → builders → verifier) and can improve itself after each run (SELF_IMPROVE).
+description: Refactor the NixOS flake config — deduplicate, modularise, apply structural changes. Fans out read-only recon to subagents, plans, applies tasks as the single writer, and can improve itself after each run (SELF_IMPROVE).
 ---
 
-You are the **lead** of a refactoring team working inside the nixos-config repo. You orchestrate a
-team of parallel agents via the opencode-ensemble plugin; you do not do the task work yourself.
+You are the **lead** of a refactor working inside the nixos-config repo. You fan out the read-only
+work to subagents and **you apply every edit yourself** — subagents share this working tree, so
+there is no parallel-writer mode and no merge step.
 This command assumes you have already run `nix-map` to produce an architecture audit. Note that
-`nix-map` is a **read-only** ensemble that persists nothing (its output is a team_message report,
-not a file) — so "having one" means a prior `nix-map` run in this session or a genuinely fresh
-architecture picture. Confirmed 2026-08-07: with no persisted audit available, the run proceeded by
-folding the architecture audit (host/module/duplication mapping) into the recon phase — the
-`recon-*` scouts subsume nix-map's M1-M5 axes. If a saved audit exists, hand it to the planner;
-otherwise let recon produce it.
+`nix-map` is **read-only** and persists nothing (its output is a report, not a file) — so "having
+one" means a prior `nix-map` run in this session or a genuinely fresh architecture picture.
+Confirmed 2026-08-07: with no persisted audit available, the run proceeded by folding the
+architecture audit (host/module/duplication mapping) into the recon phase — the `recon-*` scouts
+subsume nix-map's M1-M5 axes. If a saved audit exists, hand it to the planner; otherwise let recon
+produce it.
 
-The team maps the target, plans the refactor, executes parallel-safe tasks, and verifies the
-result. **The team — not the human — decides which changes to make.** Per-task diffs are reviewed by
-you (the lead) as they merge; the human reviews the outcome at the end. This replaces the old serial
-"show diff → wait for apply" loop entirely: the planner's DECISION LOG is the approval.
+The run maps the target, plans the refactor, applies one task at a time, and verifies the result.
+**The agent — not the human — decides which changes to make.** The planner's DECISION LOG is the
+approval; the human reviews the outcome at the end.
 
 **Rollback is the safety net, not approval gates.** Every task is one independently-revertible
 commit, verified by dry-activate before it lands. If a task's change turns out wrong, the rollback
-is `git revert <task-commit>` (or `git restore` of that commit's diff) — nothing ever depends on a
-human having pre-approved it. The team proceeds autonomously and rolls back failures.
+is `git revert <task-commit>` — nothing ever depends on a human having pre-approved it.
 
-Load and follow the `opencode-ensemble` and `nixos-ensemble-decomposition` skills for the lead
-workflow before starting.
+Load and follow the `subagent-decomposition` skill before starting.
 
-**Non-negotiable rules (apply to every teammate, every phase):**
+**Non-negotiable rules (apply to every agent, every phase):**
 - `tested = false` in any `meta.nix` is never changed.
 - `secrets/` and `/run/agenix/` paths are never touched.
-- `lib.mkForce` is never added without a comment and a DECISION LOG row (the team decides; the
+- `lib.mkForce` is never added without a comment and a DECISION LOG row (the agent decides; the
   row records why, for the human to review in the report).
 - If a dry-run errors, revert immediately before continuing.
 - Do not fabricate command output. If a command cannot run, say so.
@@ -46,22 +44,19 @@ workflow before starting.
 
 ---
 
-## ENSEMBLE GATING
+## EXECUTION MODE
 
-Detect whether the team tools are actually present in this session (config can list the plugin
-but it may not have loaded):
+Parallelism comes from opencode's built-in `subagent` tool. There is no ensemble plugin, no task
+board, and no worktree merge.
 
-- If tools named `team_create`, `team_spawn`, `team_tasks_add`, `team_status`, `team_results`,
-  `team_merge`, `team_shutdown`, `team_cleanup` are available to you right now → **`ENSEMBLE_ACTIVE=true`**.
-- Otherwise → **`ENSEMBLE_ACTIVE=false`**, regardless of config.
-
-- **If `ENSEMBLE_ACTIVE=true`** — run the team orchestration in this command exactly. **Always
-  spawn and manage a team** — a team is the default execution path for this command, not an
-  optimization.
-- **If `ENSEMBLE_ACTIVE=false`** — run a single-agent fallback: you play every role (recon scout
-  ×3, planner, builder ×N, verifier) in order, applying the **same** decision protocol. The team
-  decision rules still replace any human confirmation; the "confirm with the human" steps in this
-  file are never taken.
+- **Read-only fan-out** — recon uses `general` subagents with an explicit *read-only, report-only*
+  instruction (they need shell for `rg`/`git`; the configured `scout` agent has bash denied).
+- **Single writer** — you apply every planned task yourself. A large, self-contained task may be
+  delegated to ONE `builder` subagent; commit it before the next writer starts. Never run two
+  writers concurrently.
+- **Waves of 2, one Nix command at a time** — concurrent evaluations/builds OOM the whole service
+  cgroup (see R-pre). Recon scouts may run in parallel because they do not build.
+- **Wait for the subagent's message** — never poll; read the report and verify anything you rely on.
 
 ---
 
@@ -153,13 +148,13 @@ git status --porcelain
 If this returns any output, stop and report it. Do not proceed until the tree is clean —
 a dirty tree at task-start makes it impossible to attribute a bad dry-activate to the task
 that caused it (see GOTCHAS.md: "Generations built from an uncommitted (dirty) working tree are
-hard to diagnose retroactively", ~GOTCHAS:345). It also makes builder worktree merges
-refuse (see "Merge pitfalls" below) — a clean tree keeps the merge path simple.
+hard to diagnose retroactively", ~GOTCHAS:345). It also makes per-task commits and
+`git revert` unreliable — a clean tree before every task keeps attribution honest.
 
-Also check `.git/objects` ownership once before spawning builders (confirmed 2026-08-07): prior
-`sudo`-run tooling can leave root-owned loose objects in the shared object DB, and a builder's
-`git commit` then dies with "insufficient permission for adding an object to repository database
-.git/objects" mid-wave. Fix up front:
+Also check `.git/objects` ownership once before the first commit (confirmed 2026-08-07): prior
+`sudo`-run tooling can leave root-owned loose objects in the shared object DB, and a commit then
+dies with "insufficient permission for adding an object to repository database .git/objects"
+mid-run. Fix up front:
 ```bash
 sudo find .git/objects -not -user "$(whoami)" -exec chown "$(whoami)":"$(id -gn)" {} +
 ```
@@ -170,11 +165,10 @@ sudo find .git/objects -not -user "$(whoami)" -exec chown "$(whoami)":"$(id -gn)
 
 ### R-pre memory check (do NOT skip — see GOTCHAS.md "systemd-oomd killed the whole web unit")
 
-The ensemble team runs entirely inside the `opencode-web-*.service` cgroup (browser runs) or a
-terminal opencode process (console runs). A full 16-teammate spawn + concurrent `nixos-rebuild
-dry-activate` builds can spike past the cgroup's `MemorySwapMax` (default 4G) and get teammates
-OOM-killed one at a time — or, on an older host without the oomd opt-out, take the whole web unit
-down. Check headroom first:
+The whole session runs inside the `opencode-web-*.service` cgroup (browser runs) or a
+terminal opencode process (console runs). Concurrent `nixos-rebuild dry-activate` builds can spike
+past the cgroup's `MemorySwapMax` (default 4G), get subagents OOM-killed one at a time — or, on an
+older host without the oomd opt-out, take the whole web unit down. Check headroom first:
 
 ```bash
 free -h
@@ -185,27 +179,26 @@ free -h
 builder's 5-host dry-activate loop meant 9+ concurrent `nixos-rebuild dry-activate` evals, each
 peaking 2-6GB RAM on a 15Gi host. The kernel global OOM killer fired and took out `ssh-agent` /
 `dbus-broker` along with the evals — dropping the SSH session and killing every builder as
-`[error]`. Twice. The fix that worked (zero crashes after): **waves of 2 builders, each dry-activating
-ONLY its own affected host (1 eval, not the 5-host loop), plus a per-builder memory guard**
-(`free -h` before each eval; wait 30s if available < 5Gi). The verifier's full matrix then runs
-alone at the end.
+`[error]`. Twice. The fix that worked (zero crashes after): **waves of 2, each agent dry-activating
+ONLY its own affected host (1 eval, not the 5-host loop), plus a per-agent memory guard**
+(`free -h` before each eval; wait 30s if available < 5Gi). The final matrix then runs alone at the
+end.
 
-- **Always spawn in waves of 2** (not 4, not "normal parallel spawn"). Each builder verifies its
-  single affected host. Pair a light host (laptop/minimal) with a heavy host (desktop/server) so a
-  heavy eval never runs twice concurrently. If a task's change is host-agnostic (sharedModules,
-  module options), have the builder verify on the lightest host that exercises it.
-- **Every builder prompt MUST carry the memory constraint** verbatim: one dry-activate at a time,
-  `free -h` before each eval, wait if < 5Gi available.
-- Never spawn the full builder roster at once — that is what OOMs the host and drops the session
-  (see RUN LOG 2026-08-06).
-- The verifier's full dry-activate matrix is the single most memory-heavy step; run it once with
-  the host loop, not in parallel with anything else.
+- In single-writer mode this is simple: **one build at a time**, always.
+- If you do delegate a task to a `builder`, **at most 2 subagents may run Nix at once** and each
+  verifies its single affected host. Pair a light host (laptop/minimal) with a heavy host
+  (desktop/server) so a heavy eval never runs twice concurrently. If a task's change is
+  host-agnostic (sharedModules, module options), verify on the lightest host that exercises it.
+- **Every prompt that may build MUST carry the memory constraint** verbatim: one dry-activate at a
+  time, `free -h` before each eval, wait if < 5Gi available.
+- The final full dry-activate matrix is the single most memory-heavy step; run it once with the
+  host loop, not in parallel with anything else.
 
 ---
 
 ## LIVE CONTEXT (lead gathers before spawning)
 
-Run these yourself before creating the team. Hand the output to every recon scout so they don't
+Run these yourself before fanning out. Hand the output to every recon scout so they don't
 rediscover it. This is the shared baseline; scouts must build on it, not repeat it.
 
 Start with the nix-graph structural overview:
@@ -233,137 +226,62 @@ re-running. The tree is clean (R-pre), so there is no dirty-vs-HEAD split to rec
 
 ---
 
-# TEAM ORCHESTRATION
+# ORCHESTRATION
 
-## Why a team
+## Why fan out
 
-A refactor is naturally parallel: recon scouts map independent axes (structure, hosts, modules),
-and tasks with disjoint file ownership run concurrently. A team also **replaces the old per-task
-human confirmation gates entirely**: findings are triaged by a planner, decided by the team, and
-the human only reviews the outcome. Rollback (per-task commit) makes that safe.
+A refactor is naturally parallel **on the read side**: recon scouts map independent axes (structure,
+hosts, modules). The write side is not parallel — subagents share this working tree and there is no
+merge step — so the lead is the only writer. This also **replaces the old per-task human confirmation
+gates**: findings are triaged by a planner, decided by the agent, and the human reviews the outcome.
+Rollback (per-task commit) makes that safe.
 
-## Team shape
+## Roles
 
-| Role | Agent | Worktree | Ownership |
-|------|-------|----------|-----------|
-| Recon scout ×3 | `general` | `false` | One decomposition axis each (see Phase 1) |
-| Planner (arbiter) | `general` | `false` | Scout findings → branch tree + numbered task plan |
-| Builder ×N | `build` | `true` | One planned task each (strict, non-overlapping files) |
-| Verifier | `qa` | `false` | Post-merge dry-activate matrix + nix-graph invariants + diff review |
+| Role | Agent | Permissions | Ownership |
+|------|-------|-------------|-----------|
+| Recon scout ×3 | `general` | read-only instruction | one decomposition axis each |
+| Planner | `planner` | read-only | scout findings → branch tree + numbered task plan |
+| Writer | you (lead) | full | one planned task at a time; `builder` by exception |
+| Reviewer | `reviewer` | read-only | committed diff range: scope, safety, missed cases |
+| Verifier | you (lead) | full | dry-activate matrix + nix-graph invariants (serial, memory-heavy) |
 
-> **Why `general` instead of the configured `scout`/`reviewer` subagents:** recon and planning are
-> shell-heavy (`grep`, `rg`, `nix-graph`), and the config.nix subagents `scout` and `reviewer` are
-> declared `bash = "deny"`. Spawn recon/planner teammates as `general` with an explicit
-> **read-only, report-only** instruction. If those subagents are later granted bash, swap the role
-> names in — the task spec below is unchanged.
+Recon uses `general` because it is shell-heavy (`rg`, `git`, `nix-graph`); the configured `scout`
+agent denies bash. Give it an explicit **read-only, report-only** instruction — it must not edit.
 
-## Task board
+## Task plan
 
-Create the team (`team_create` — name it `nix-refine`), then record the recon/plan/verify tasks up
-front with `team_tasks_add`. **Use the returned IDs for `depends_on` — do not invent IDs.**
+The planner returns the DECISION LOG and numbered task list (Phase 2). That list replaces the old
+task board: there are no task IDs to claim and no dependencies to resolve. Each task must state:
 
-> **Team-name collision (confirmed 2026-08-06):** `nix-refine` may already exist as a stale
-> archived record from a prior run (the plugin keeps an archive with preserved branches; a stale
-> record that can't be purged returns "Team 'nix-refine' already exists" while `team_status` says
-> "This session is not in a team"). If so, create the team under a suffixed name (e.g.
-> `nix-refine-r2`) and note the rename in the final report. Do not attempt to purge the stale
-> record mid-run — `team_cleanup` purge on it can fail on leftover non-preserved worktree branches.
+- its files (disjoint from other tasks — a write conflict is fatal, not recoverable);
+- the exact change and why (DECISION LOG row);
+- the validation command.
 
-> **`depends_on` label trap (confirmed 2026-08-03 in nix-doc-audit):** the Task key column below is
-> a label for humans only. Real task IDs come from `team_tasks_add`'s return (format
-> `task_<rand>_<n>`). Passing the labels as `depends_on` values creates a phantom dependency that
-> never resolves — the downstream task shows permanently `[blocked] by unresolved dependencies` and
-> no builder can claim it. If that happens, tell the builders to proceed **without claiming** and
-> use `team_tasks_complete` on the tasks once the owning teammate is done. The table is
-> illustrative; treat the returned IDs as authoritative.
->
-> **Board bookkeeping is advisory, not authoritative (confirmed 2026-08-07):** `team_tasks_complete`
-> and `team_claim` can themselves return "Task not found" for a valid board ID (one builder failed,
-> a sibling succeeded on the same run). Do not stall the run on board state — the per-task git
-> history is the authoritative progress tracker; the lead marks tasks done when it merges each
-> commit, and a "Task not found" is recorded as a NOTE, not a blocker.
+**Re-check `git status --porcelain` before each task.** External PRs can land mid-run (confirmed
+2026-08-07: PRs #73-#77 merged while builders were active); a clean tree before every task is what
+keeps attribution and rollback honest.
 
-| Task key (label) | Description | depends_on (real IDs) |
-|------------------|-------------|------------|
-| `recon-graph` | Scout: nix-graph structural health (namespace violations, mkForce, graph stats) | — |
-| `recon-hosts` | Scout: host config duplication / dead code / override misuse | — |
-| `recon-modules` | Scout: module duplication / monoliths / cross-module coupling | — |
-| `plan` | Planner: synthesize recon → branch tree + numbered task list | all three `recon-*` |
-| `task-<n>` (per planned task) | Builder: execute one planned task | `plan` |
-| `verify` | Verifier: dry-activate matrix + nix-graph invariants + diff review | all `task-*` |
-| `report` | Lead: compile summary table | `verify` |
-| `self-improve` | Meta-scout: audit this command file (Phase 6, only when `SELF_IMPROVE=true`) | — |
+## Execution sequence
 
-**Builder tasks are created as soon as the planner's plan is settled** (Phase 2) — add one
-`task-<n>` per planned task with returned IDs (depends_on `plan`). The recon/plan/verify tasks are
-created up front.
+1. Gather LIVE CONTEXT (below) yourself.
+2. **Fan out the three recon scouts in parallel** with the LIVE CONTEXT output plus the full text of
+   their axis. Each ends its report with `RECON COMPLETE`.
+3. Wait for their messages, reconcile the findings, then spawn the `planner` with verbatim quotes.
+4. Review the plan (branch tree + numbered task list). **The plan is final — no human approval
+   gate.** Cross-check it yourself (Phase 2 — lead verification); if you disagree with a ruling,
+   verify the disputed finding and override it as `OVERRIDE` in the DECISION LOG.
+5. **Apply tasks sequentially, one commit each:** edit → `nixos-rebuild dry-activate` (or eval) for
+   that task → commit with the task-scoped message including its DECISION LOG row. Inspect
+   `git diff --stat` before committing: only that task's files.
+6. After all tasks, spawn `reviewer` on the commit range (`git log`/`git diff <base>..HEAD`) with the
+   DECISION LOG and the hard rules. Fix what it finds, re-verify, and record the fix in the report.
+7. Run the final verification yourself (Phase 4 commands) — the full dry-activate matrix is the most
+   memory-heavy step; run it once, with nothing else building.
+8. Write the report, then Phase 6 self-improvement.
 
-## Spawn sequence & merge order
-
-1. `team_create`, `team_tasks_add` (recon/plan/verify board above), then **spawn the three recon
-   scouts in parallel**, `worktree: false`, `claim_task` their recon task. Give each the LIVE
-   CONTEXT output plus the full text of its axis below as the prompt. Each is read-only and ends
-   its report with `RECON COMPLETE`.
-2. Wait for all scouts via `team_results`. Compose the planner prompt from the reconciled findings
-   (verbatim quotes). Spawn the planner (`general`, `worktree: false`, `claim_task: plan`).
-3. Review the planner's plan (branch tree + numbered task list). **The plan is final — no human
-   approval gate.** Cross-check it yourself (see Phase 2 — lead verification): if you disagree with
-   any ruling, verify the disputed finding and, if needed, override it as `OVERRIDE` in the DECISION
-   LOG. Then add one builder task per planned task with `team_tasks_add` (returned IDs; depends_on
-   `plan`), and spawn the parallel-safe builders in parallel (`build`, own worktree, `claim_task`
-   their task). **Do NOT use `plan_approval: true`** — see the warning below. Each builder gets: its
-   DECISION LOG row (the task spec), the shared rules, and the applicable rules from Phase 3.
-   **3b — memory waves:** always spawn builders in waves of 2, regardless of resting RAM (see
-   R-pre; the resting `free -h` number is not the real constraint). Wait for each wave to merge
-   (step 4) before spawning the next. Never spawn the full builder roster at once on a constrained
-   host — that is what OOMs the cgroup and gets teammates killed mid-task.
-4. As each builder reports done: `team_results`, `team_shutdown`, `team_merge`. **Inspect the
-   merged diff before trusting it** — confirm it contains only that task's files and matches the
-   DECISION LOG row. Then commit that task's changes yourself with the task-scoped message
-   (see Phase 3 Step 5 — the merge lands as unstaged changes; you commit per task to preserve
-   one-task-one-commit in the main history). If `team_merge` refuses or applies nothing, recover
-   via the "Merge pitfalls" box below. Update the task board (`team_tasks_complete`).
-5. After all builders are merged, spawn the verifier (`qa`, `worktree: false`, `claim_task:
-   verify`). If it finds issues, message the owning builder (still alive) to fix, re-merge,
-   re-verify. Minor issues you may fix directly, recording that in the report.
-6. Run the final verification yourself (Phase 4 commands) before `team_cleanup`.
-
-> **WARNING — `plan_approval: true` is broken (confirmed 2026-08-03 in nix-doc-audit).** A builder
-> spawned with `plan_approval: true` sends its plan then **ends its run-cycle**; the lead's
-> `team_message` `approve: true` response is stored but **never wakes it** (the tool returns
-> "teammate has completed their task — message will not wake them"). The builder idles forever with
-> zero edits. Do not use `plan_approval: true` in this command. The DECISION LOG IS the approval:
-> the planner already decided the exact change, so embed the DECISION LOG row directly in the
-> builder prompt. If a builder is spawned with
-> `plan_approval: true` anyway (e.g. pasted from an older version), the fix is
-> `team_shutdown --force` + re-spawn without the flag, embedding the approved plan as the task.
-
-> **Merge pitfalls (learned 2026-08-03 from nix-doc-audit; extended 2026-08-06):** R-pre keeps the
-> tree clean, so the dirty-file refusal path is avoided — but three other cases occur. (a) If
-> `team_merge` **refuses** because of local changes (e.g. the tree got dirtied mid-run), the
-> builder's branch is preserved at `ensemble/preserved/<team>#<run>/<builder>`; verify with
-> `git diff "<preserved-branch>" -- <files>` (must show ONLY the intended edits) then
-> `git restore --source="<preserved-branch>" --worktree -- <files>`. (b) If `team_merge` **applies
-> nothing** (the builder only stashed, uncommitted, its work), copy the files directly from the
-> worktree: `cp <worktree>/<file> /home/seanc/nixos-config/<file>` after verifying the worktree
-> diff shows exactly the intended edits. **Every builder must commit in its worktree before
-> reporting done** — an uncommitted builder produces an empty merge. (c) **Session crash prunes
-> worktrees and loses uncommitted work.** Confirmed 2026-08-06: an SSH/connection drop (itself
-> caused by OOM from too many concurrent dry-activates — see R-pre) killed every builder session
-> as `[error]`; the plugin pruned their worktrees and their uncommitted edits were unrecoverable
-> (preserved branches were at base, no dangling blobs). Only a builder that had *committed* in its
-> worktree (b-t7) survived via normal merge; one uncommitted worktree (b-t8-r2) survived only
-> because it was idle when the crash hit, and its files were reclaimed by `cp` from the worktree.
-> Recovery playbook: check `git worktree list` + `git status --porcelain` in each surviving
-> worktree, `cp` any intended edits into the main tree, verify, commit as that task. Do not assume
-> a preserved branch contains the work — check its `git log` for a real commit first. (d)
-> **External PR merges can land mid-run** (confirmed 2026-08-07: PRs #73-#77 from Cairnstew/server
-> merged while builders were active). Tree stayed clean and flake check passed, but re-check
-> `git status --porcelain` before each new wave and before the verifier, so an interleaved merge
-> can't be misattributed to a task.
-
-If any teammate stalls or errs: message it directly first; `team_shutdown --force` only as a last
-resort; record the disruption in the final report.
+If a subagent stalls or reports an error, record it in the final report rather than silently
+absorbing its step.
 
 ---
 
@@ -371,7 +289,7 @@ resort; record the disruption in the final report.
 
 Spawn three scouts in parallel. **Each is read-only — it must not edit or write anything.** Each
 must return findings in the FINDING format below, with `file:line` evidence and verbatim quotes.
-Scouts report via `team_message` and end with `RECON COMPLETE`.
+Scouts report back in their final message and end with `RECON COMPLETE`.
 
 Give each scout: the LIVE CONTEXT output, the shared rules at the top of this command, and the full
 text of its axis below as its prompt.
@@ -443,11 +361,11 @@ End with `RECON COMPLETE` and a per-axis count of findings.
 
 ---
 
-# PHASE 2 — PLAN & DECISION (the team decides)
+# PHASE 2 — PLAN & DECISION (the plan decides)
 
 ## Planner spec
 
-Spawn the planner (`general`, `worktree: false`, `claim_task: plan`). Prompt it with:
+Spawn the planner (`planner`, read-only). Prompt it with:
 - All three scout reports (verbatim).
 - The LIVE CONTEXT output (verbatim).
 - The shared rules at the top of this command.
@@ -502,7 +420,7 @@ Rules the planner must apply:
 
 ## Team decision gate (no human approval)
 
-**The planner's plan is final — the team decides, the human reviews the outcome in the report.**
+**The planner's plan is final — the agent decides, the human reviews the outcome in the report.**
 There is no "wait for the human to approve" step in this command. Safety comes from the per-task
 rollback: every task is one dry-activate-verified commit, so a wrong decision is `git revert`-ed,
 not pre-empted.
@@ -546,25 +464,20 @@ task-to-finding grounding** — the recon findings themselves can be wrong:
   the lead re-scope the task rather than forcing the original edit through.
 - If you disagree with any ruling: verify the disputed finding yourself (re-read the code /
   nix-graph). If you still disagree, record the reversal as **`OVERRIDE`** in the DECISION LOG with
-  both positions, and include the override row in the owning builder's prompt. The human sees it in
-  the report.
-- Then return to Spawn sequence step 3: add the tasks to the board and spawn their builders.
+  both positions. The human sees it in the report.
+- Then start Phase 3: apply the tasks in order.
 
 ---
 
-# PHASE 3 — EXECUTION (parallel builders)
+# PHASE 3 — EXECUTION (single writer)
 
-Spawn the planned builders in parallel (`build`, own worktree, `claim_task`). **Do NOT use
-`plan_approval: true`** (see the WARNING in Spawn sequence). Each builder gets: its DECISION LOG
-row (the task spec), the shared rules, and the loop below. **Each builder must only touch
-its own task's files** — overlapping edits are the one thing that makes parallel refactoring
-unsafe (the planner's Parallel-safe flag enforces this).
+Apply the planned tasks **yourself, one at a time**, following the loop below. A task may be
+delegated to ONE `builder` subagent when it is large and self-contained; if you delegate, it edits
+this same working tree, so commit that task before starting the next one and never run a second
+writer concurrently.
 
-**MANDATORY worktree note:** a builder's worktree forks at committed HEAD. R-pre guarantees the
-main tree is clean, so the worktree is **not** stale — edit directly. (If the tree was somehow
-dirtied mid-run, sync first: `cp /home/seanc/nixos-config/<file> <worktree>/<file>` + `diff`.)
-
-For each task, the builder follows this loop:
+Each task touches only its own files (the planner's Parallel-safe flag enforces this — it is about
+attribution and revertability now, not concurrent merges, since nothing is merged).
 
 ### Step 0 — Impact analysis (use nix-graph)
 
@@ -590,8 +503,8 @@ Read and paste the relevant file sections verbatim with path and line numbers.
 
 ### Step 2 — Apply the change
 
-Apply the edit exactly as the DECISION LOG row specifies, on the worktree copy. Every added line
-gets an explanatory comment (or is pure whitespace). Moved lines retain their comments.
+Apply the edit exactly as the DECISION LOG row specifies. Every added line gets an explanatory
+comment (or is pure whitespace). Moved lines retain their comments.
 
 ### Step 3 — State the invariant and confirm hard-rule compliance
 
@@ -603,7 +516,7 @@ Then an explicit checklist line:
 - [ ] No `lib.mkForce` added (or: added with comment + a DECISION LOG row exists for it)
 - [ ] Every changed line has an explanatory comment, or is pure whitespace/formatting
 
-### Step 4 — Verify in the worktree
+### Step 4 — Verify
 
 Full output is written to a log file; paste the tail plus the log path:
 
@@ -630,14 +543,14 @@ If any host errors or nix-graph invariants are broken, revert the change immedia
 failure, and do not commit. `ventoy-deploy` is excluded from the dry-activate loop (known OOM
 issue).
 
-**Non-root dry-activate limitation (confirmed 2026-08-07):** when run as non-root (e.g. from a
-builder's worktree shell), `nixos-rebuild dry-activate` reaches full eval + toplevel derivation
+**Non-root dry-activate limitation (confirmed 2026-08-07):** when run as non-root,
+`nixos-rebuild dry-activate` reaches full eval + toplevel derivation
 build but the final `systemd-run ... switch-to-configuration dry-activate` step fails with "Access
 denied as the requested operation requires interactive authentication" — a polkit/env limitation,
 NOT a config error. The reliable bar is **eval-stage pass + toplevel derivation build**; if the
 final systemd-run step fails only on interactive-auth, treat it as pass (`sudo nixos-rebuild
-dry-activate` can confirm). Add this note to builder prompts so they don't revert good changes over
-the auth failure.
+dry-activate` can confirm). Keep this in mind so you don't revert a good change over the auth
+failure.
 
 **Known pre-existing host failure — do NOT revert a good change over it.** Confirmed 2026-08-06,
 line refs updated 2026-08-07: the `desktop` dry-activate fails at a pre-existing SillyTavern fetch
@@ -655,23 +568,18 @@ and the failure is in the build phase of an input. When a builder or the verifie
 config error from the task), and continue — do not revert. Log it as a NOTE in the final report.
 (A `nix flake update`/rev-bump is the eventual fix, outside this command's scope.)
 
-### Step 5 — Commit in the worktree, then report
+### Step 5 — Commit, then next task
 
-Commit the task in your worktree:
+Commit the task in the working tree:
 
 ```bash
-git add -A
+git add <this task's files>
 git commit -m "refactor(<task-id>): <one-line what> — <recon finding cited in Why>"
 ```
 
-Then report done via `team_message` with:
-- The diff (unified, or full content for new files).
-- The commit hash.
-- The Step 3 invariant + checklist.
-- The dry-activate tail + log path.
-
-The lead merges and re-commits this task's files in the main repo with the same task-scoped
-message (see Spawn sequence step 4) — preserving one-task-one-commit in the main history.
+Record in the report: the commit hash, the Step 3 invariant + checklist, and the dry-activate tail
++ log path. Then re-check `git status --porcelain` and start the next task. One task, one commit —
+no task's changes ride along with another's.
 
 ---
 
@@ -679,9 +587,8 @@ message (see Spawn sequence step 4) — preserving one-task-one-commit in the ma
 
 ## Verifier spec
 
-Spawn the verifier (`qa`, `worktree: false`, `claim_task: verify`, **instructed read-only — report
-findings, do not edit**). Give it: the DECISION LOG, the merged diff scope, the shared rules, and
-the check list below. It must verify **every task was implemented as specified** and report:
+Spawn the `reviewer` (read-only) on the committed range, then run the check list below yourself.
+Give it: the DECISION LOG, the commit range, the shared rules, and the check list. It must verify **every task was implemented as specified** and report:
 
 - **One task, one commit** — the main-repo history has exactly one commit per task, and `git show
   --stat HEAD~N` file lists match the DECISION LOG rows.
@@ -701,7 +608,7 @@ The verifier reports `VERIFY PASS` or a list of `VERIFY FAIL` items with file:li
 back to the owning builder (message it, re-merge, re-verify) or is fixed directly by you for
 trivial issues, recorded in the report.
 
-## Lead's final verification (run yourself before `team_cleanup`)
+## Lead's final verification (run yourself, before the report)
 
 ```bash
 git log --oneline -20          # confirm one commit per task, scoped messages
@@ -729,7 +636,7 @@ done
 # PHASE 5 — REPORT
 
 Compile the single coherent report for the human — one document, not stitched transcripts. This is
-the human's review point: the team made the calls; the human inspects the outcome here.
+the human's review point: the agent made the calls; the human inspects the outcome here.
 
 ## 1. Plan summary
 
@@ -788,15 +695,13 @@ improve the tool that drives it.
 During the run, keep a short scratch list of operational facts about **this command's own
 execution** — not repo findings. Examples of real lessons (learned 2026-08-03 in nix-doc-audit,
 ported here):
-- `plan_approval: true` never wakes builders after approval → must re-spawn without the flag.
-- Builder worktrees fork at committed HEAD; R-pre keeps the main tree clean, so no sync is needed —
-  but if the tree gets dirtied mid-run, builders must `cp` the main-repo file over their worktree
-  copy before editing.
-- `team_merge` silently applies nothing when a builder only stashed (uncommitted) its work →
-  the lead must copy the worktree files into the main repo directly and verify.
-- One-task-one-commit requires the lead to re-commit each merged task with a scoped message,
-  because the merge lands as unstaged changes.
-- No human approval gates: the planner's plan is final and the team proceeds; a wrong task is
+- Subagents share this working tree: two writers corrupt each other's work with no merge step to
+  recover it → one writer at a time, commit before the next slice.
+- A subagent's prompt must be self-contained (it cannot see this conversation) — include the
+  file scope, the evidence, and the validation command, or it will rediscover context.
+- Single-writer mode: the tree you verify is the tree you edited; if `git status` is dirty mid-run,
+  stop and account for the changes before the next task.
+- No human approval gates: the planner's plan is final and the run proceeds; a wrong task is
   reverted via its own commit, never pre-approved by the human.
 
 Each lesson must be grounded in something that actually happened this run (file:line or a concrete
@@ -818,8 +723,7 @@ on graph query results.
 
 ## 6.2 Audit this command file (meta-scout)
 
-Spawn **one** read-only scout (`general`, `worktree: false`, `claim_task: self-improve`) whose
-only job is to audit `modules/home/opencode/commands/nix-refine.md` against:
+Spawn **one** read-only `scout` subagent (or do it yourself) whose only job is to audit `modules/home/opencode/commands/nix-refine.md` against:
 - The live run just completed (the run-time lessons from 6.1).
 - The actual repo state (do the commands it references exist? are the paths it names current? —
   check against `nix-doc-audit.md` for shared trap documentation).

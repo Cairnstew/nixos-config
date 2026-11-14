@@ -6,12 +6,17 @@
 
 ---
 
-## Parallel work with ensemble teams
+## Parallel work with subagents
 
 When a task splits into **2-3+ independent slices with disjoint file ownership**, or is read-only
-fan-out (audit, research, doc review), spawn an ensemble team rather than working it serially. Load
-the `opencode-ensemble` skill first; the full rule set is the "Parallel work with ensemble teams"
-section of `modules/home/opencode/agents/build.md`. Not for a single-module edit or sequential steps.
+fan-out (audit, research, doc review), fan out with opencode's built-in `subagent` tool instead of
+working serially. `scout`, `planner` and `reviewer` are read-only and safe to run in parallel;
+`qa` writes tests and `builder` writes code. Subagents share this working tree — there are no
+worktrees and no merge step — so **only one writer may run at a time**, and a commit must land
+before the next writer starts. Full rule set: "Parallel work with subagents" in
+`modules/home/opencode/agents/build.md`; decomposition guidance:
+`modules/home/opencode/skills/subagent-decomposition.md`. Not for a single-module edit or
+sequential steps.
 
 ---
 
@@ -273,22 +278,20 @@ modules/nixos/example/
 
 **Rule:** `default.nix` is an **import manifest** — contains only `imports`, no logic.
 
-### 5.3 Upstream Modules & Ensemble Spaces
+### 5.3 Upstream Modules
 
-Some modules wrap external repos. Their `meta.nix` declares an `upstream` block
-with a `space` name. **When you see `upstream.space` in a module's `meta.nix`,
-load the `opencode-ensemble` skill** — it explains what ensemble spaces are and
-how to use `team_spawn(space=...)` to develop upstream changes in isolation.
+Some modules wrap external repos. Their `meta.nix` declares an `upstream` block naming the repo.
+**When you see `upstream` in a module's `meta.nix`, implementation changes belong in that repo, not
+here.**
 
 | `upstream.mode` | What it means | What to do |
 |---|---|---|
-| `wrapped` + `space=X` | Implementation changes belong in space `X` | Load `opencode-ensemble` skill → `team_spawn(space="X", ...)` |
-| `vendored` + `space=X` | Hash-guarded local copy; edits fail CI | Develop in space `X`, then re-vendor |
-| `wrapped` / `input`, no space | Upstream repo, no ensemble space | Work in the upstream repo directly |
+| `wrapped` | Config wrapper around an upstream module/package/CLI | Implement in the upstream checkout, push, then re-pin `flakeInput` |
+| `vendored` | Hash-guarded local copy; local edits fail CI | Change it upstream, then re-vendor |
+| `input` | Consumed only as data/source | Change the upstream source, then update the pin |
 | No `upstream` block | Pure local module | Edit normally |
 
-See `modules/AGENT.md` §4.2 for the full rule and `modules/home/opencode/skills/opencode-ensemble.md`
-for the skill.
+See `modules/AGENT.md` §4.2 for the full rule.
 
 ---
 
@@ -666,3 +669,14 @@ style tool/skill/command injection from flake inputs.
   `message` rows) and treat an absent session row as "efficiency lens
   unavailable this run" — report that plainly instead of inferring cost or
   inventing a proposal from partial data.
+
+### 2026-11-14 — ensemble teams removed; parallel work is subagents
+- Lesson: §5.3 and the "Parallel work" preamble told every agent to load
+  `opencode-ensemble` and spawn `team_*` teammates. The plugin was removed (no
+  isolated worktrees with subagents), so those instructions pointed at tools
+  that no longer exist.
+- Fix: §5.3 is now "Upstream Modules" (implement in the upstream checkout, re-pin
+  the flake input) and the preamble is "Parallel work with subagents": read-only
+  `scout`/`planner`/`reviewer` fan out, `builder`/`qa` are single-writer, full
+  rules in `modules/home/opencode/agents/build.md` and
+  `modules/home/opencode/skills/subagent-decomposition.md`.

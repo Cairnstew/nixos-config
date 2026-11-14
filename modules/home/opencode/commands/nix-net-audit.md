@@ -109,7 +109,7 @@ Then, for each registered upstream, read its service `config.nix` and report:
 passes through), `extraLocations`, `trustProxy` mechanism. Summarise:
 - The Caddy listen surface: `port`, `listenAddresses`, `bind`.
 - Tailscale serve: `enable`, `httpsPort`, the `serve --bg --https :443 → http://<listenAddr>:<port>` mapping.
-- Dashboard exposure: `dashboard.enable`, `title`, opencode instance count, ensemble card.
+- Dashboard exposure: `dashboard.enable`, `title`, opencode instance count.
 
 Output format:
 ```
@@ -118,7 +118,7 @@ caddy port: <p>  listenAddresses: <list>
 tailscaleServe: <enable>  httpsPort: <p>
 upstreams registered:
   - <name>: port=<p> path=<path> stripPrefix=<bool> extraLocations=<n> trustProxy=<mech>
-dashboard: title=<t> opencode=<n instances> ensemble=<bool>
+dashboard: title=<t> opencode=<n instances>
 exposure surface: <tailnet URL(s)>
 ```
 

@@ -88,22 +88,11 @@ Add to your waybar style:
 ## Development
 
 The now-playing widget uses the `spotify-playlist-manager` Python package
-for Spotify API interaction. If the Spotify API changes or you need to
-fix/add features to the widget, use the **opencode ensemble space** to work
-directly in the `spotify-playlist-manager` source:
-
-```
-team_spawn(
-  name="fix",
-  space="spotify-playlist-manager",
-  prompt="fix the issue with ...",
-  worktree=false
-)
-```
-
-The `spotify-playlist-manager` space is cloned to
-`~/.config/opencode/ensemble-spaces/spotify-playlist-manager/` on first use.
-After pushing fixes upstream, update the local package or flake input.
+for Spotify API interaction. If the Spotify API changes or you need to fix/add
+features to the widget, make the change in the upstream checkout
+(`~/Projects/spotify-playlist-manager`), push it, then re-pin the
+`spotify-playlist-manager` flake input (`nix flake lock --update-input
+spotify-playlist-manager`). No part of that implementation lives in this repo.
 
 ## Notes
 

@@ -311,7 +311,7 @@ Home Manager modules for user-level configuration.
 | `opencode/providers.md` | Provider documentation |
 | `opencode/agents/*.md` | Custom agent prompt definitions (researcher — self-improving via SELF_IMPROVE toggle + RUN LOG) |
 | `opencode/commands/*.md` | Custom slash-command definitions |
-| `opencode/skills/*.md` | 10 agent skills (deploy-workflow, docker-management, git-repo-management, module-development, nixos-configuration, nixos-ensemble-decomposition, opencode-ensemble, secrets-management, testing-patterns, windows-integration) |
+| `opencode/skills/*.md` | Agent skills (deploy-workflow, docker-management, git-repo-management, module-development, nixos-configuration, subagent-decomposition, secrets-management, testing-patterns, windows-integration, ...) |
 | `opencode/plugins/*.ts` | Local opencode plugins (copylast.ts) |
 | `opencode/tools/*.ts` | 6 MCP tools (agenix-manager, just, nix-eval, nix-flake-check, nix-hosts, tailscale-manager) |
 
@@ -391,8 +391,6 @@ Nix test suites.
 | `theming_test.nix` | Unit tests for `lib/color.nix` and `lib/theming.nix` — parsing, published WCAG contrast values, blending, legibility, catalog integrity, two-phase override behaviour, `recolor` |
 | `theme-coverage_test.nix` | Enforces the `theme.nix` contract: declared in `meta.theme`, imported by the module entrypoint, absent when `mechanism = "none"` |
 | `opencode-model-fallback_test.nix` | Regression tests for the opencode model-select resolver |
-| `opencode-ensemble-fork_test.nix` | Regression tests for the vendored ensemble plugin |
-| `opencode-ensemble-vendor_test.nix` | Verifies the vendored ensemble build matches its upstream revision |
 
 ## .github/
 

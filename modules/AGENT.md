@@ -320,12 +320,10 @@ cheaply.
   # Optional: external upstream this module wraps/vendors/consumes.
   # Declared ONLY for modules whose implementation (or data) lives in a repo
   # outside this flake. Consumed by .opencode/tools/nix-modules.ts (rendered
-  # as the `upstream:` line) and validated at flake-check time against
-  # my.programs.opencode.ensemble.spaces (modules/home/opencode/tests.nix).
+  # as the `upstream:` line).
   upstream = {
     repo       = "github:Cairnstew/agenix-manager";  # upstream source
     mode       = "wrapped";  # wrapped | vendored | input
-    space      = "agenix-manager";  # ensemble space to develop it in — REQUIRED for vendored; optional for wrapped; omit for input
     flakeInput = "agenix-manager";  # flake input to nix flake lock --update-input after an upstream push (optional)
   };
 
@@ -339,11 +337,11 @@ cheaply.
 
 **`upstream.mode` semantics** — how this repo consumes the upstream:
 
-| mode | meaning | ensemble `space` | layer-2 handling |
+| mode | meaning | where upstream work happens | layer-2 handling |
 |---|---|---|---|
-| `wrapped` | This module wires config around an upstream module/package/CLI consumed via flake input or package. Local `config.nix` editing is legitimate; **implementation changes belong upstream**. | optional — set when a space is registered (you can `team_spawn(space=...)` into it) | README "Upstream" note (no file banner) |
-| `vendored` | This repo carries a copy of an upstream artifact (e.g. `modules/home/opencode/vendor/`). Local edits to that artifact are **forbidden** (hash-guarded). | **required** | "DO NOT EDIT — vendored" banner on the artifact + hash-guard nixtest |
-| `input` | Upstream is consumed only as a data/source input; there is no local copy to edit. | omit — spawning "into it locally" is meaningless | no banner, no guard |
+| `wrapped` | This module wires config around an upstream module/package/CLI consumed via flake input or package. Local `config.nix` editing is legitimate; **implementation changes belong upstream**. | the upstream repo's own checkout, then re-pin `flakeInput` | README "Upstream" note (no file banner) |
+| `vendored` | This repo carries a copy of an upstream artifact. Local edits to that artifact are **forbidden** (hash-guarded). | upstream, then re-vendor | "DO NOT EDIT — vendored" banner on the artifact + hash-guard nixtest |
+| `input` | Upstream is consumed only as a data/source input; there is no local copy to edit. | the upstream source, then update the pin | no banner, no guard |
 
 ### 4.2 Agent Rules for `meta.nix`
 
@@ -358,16 +356,13 @@ cheaply.
   `mechanism = "none"` must not ship `theme.nix`. Enforced by
   `tests/theme-coverage_test.nix`.
 * **Check `upstream` FIRST before editing any module.** Before opening a
-  module's implementation, run `nix-modules` (or read its `meta.nix`) and
-  look at the `upstream:` line. If it names an ensemble `space`, **load the
-  `opencode-ensemble` skill first** — it explains what spaces are and how to
-  use `team_spawn(space=...)`. Then: implementation changes belong upstream
-  via `team_spawn(name=..., space=<that>, worktree=false)`, push, then update
-  the pin (`nix flake lock --update-input <flakeInput>` if set) or re-vendor.
-  Only config-wiring stays local. Do not brute-force a local change when an
+  module's implementation, run `nix-modules` (or read its `meta.nix`) and look
+  at the `upstream:` line. If it names an upstream repo, implementation
+  changes belong there: edit the upstream checkout, push, then update the pin
+  (`nix flake lock --update-input <flakeInput>` if set) or re-vendor. Only
+  config-wiring stays local. Do not brute-force a local change when an
   upstream path is declared — local edits to a `vendored` artifact fail CI
-  (hash-guard). If the line says "no space registered", work in the upstream
-  repo directly.
+  (hash-guard).
 * **Re-read the upstream option surface after `nix flake update <input>`.** A
   wrapped upstream **module** can be rewritten between pins, and then its
   option names change wholesale: this repo's `sillytavern` input moved from a
@@ -703,3 +698,14 @@ the current mechanism.
 - Fix: added the "re-read the upstream option surface after `nix flake update`"
   bullet to §4.2, naming the concrete failure mode and the two ways to list
   the upstream options before touching consumers.
+
+### 2026-11-14 — §4.2 upstream rules no longer involve Agent Spaces
+- Lesson: §4 and §4.2 required `upstream.space` and told agents to develop
+  wrappers "in the space" via `team_spawn`. The ensemble plugin (and therefore
+  spaces) was removed, so a meta.nix carrying `space = ...` was both
+  unenforceable and misleading; tests.nix's space-registration assertions went
+  with it.
+- Fix: `upstream` is `repo` / `mode` / `flakeInput` only. §4.2 now says to
+  implement in the upstream repo's own checkout, push, then
+  `nix flake lock --update-input <flakeInput>` (or re-vendor for `vendored`).
+  The per-mode table keeps the `vendored` hash-guard rule unchanged.

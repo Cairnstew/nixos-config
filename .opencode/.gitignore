@@ -2,6 +2,6 @@ node_modules
 package.json
 package-lock.json
 bun.lock
-# Runtime-mutated model-fallback override (my.programs.opencode.modelFallback).
-# Intentionally imperative: rewritten by opencode-model-select before dispatch.
-ensemble.json
+# (The runtime-mutated model-fallback override that used to live here was
+# removed with the opencode-ensemble plugin; model fallback is now limited to
+# `opencode run`/`mini` --model injection.)

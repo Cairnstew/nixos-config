@@ -192,8 +192,8 @@
     };
 
     # Spotify playlist manager — Python wrapper + CLI + Waybar/Hyprland widgets.
-    # Developed via the ensemble space (spotify-playlist-manager); the home
-    # spotify module installs its `spotify-playlist-manager` binary and points
+    # Developed in its own checkout (~/Projects/spotify-playlist-manager); the
+    # home spotify module installs its `spotify-playlist-manager` binary and points
     # the waybar custom modules at `waybar now/upvote --json`.
     spotify-playlist-manager = {
       url = "github:Cairnstew/spotify-playlist-manager";

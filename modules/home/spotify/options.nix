@@ -80,8 +80,8 @@ in
           description = ''
             The spotify-playlist-manager package (upstream flake input).
             Provides the `spotify-playlist-manager waybar upvote` CLI used by
-            the waybar module. The upstream is developed via the ensemble space
-            (spotify-playlist-manager); see modules/AGENT.md §4.2.
+            the waybar module. The upstream is developed in its own checkout
+            (`~/Projects/spotify-playlist-manager`); see modules/AGENT.md §4.2.
           '';
         };
       };

@@ -1,5 +1,5 @@
 ---
-description: Unattended, git-tracked data-quality audit + improvement of any repository's data pipeline. Orchestrates an opencode ensemble team and improves itself after each run (SELF_IMPROVE).
+description: Unattended, git-tracked data-quality audit + improvement of any repository's data pipeline. Fans out read-only audits to subagents and improves itself after each run (SELF_IMPROVE).
 agent: build
 subtask: false
 ---
@@ -72,26 +72,27 @@ Use the run id above as `RUN`. All run artefacts live in `ROOT="$DQ_DIR/$RUN/"`.
 
 ---
 
-## ENSEMBLE GATING
+## PARALLELISM (subagents)
 
-Detect whether the team tools are actually present in this session (the plugin may be configured
-but not loaded):
+Parallel agents come from opencode's built-in `subagent` tool; there is no
+ensemble plugin any more. Decide up front and record it in `PIPELINE_MAP.md`:
 
-- If the tools `team_create`, `team_spawn`, `team_tasks_add`, `team_status`, `team_results`,
-  `team_merge`, `team_shutdown`, `team_cleanup` are available to you right now →
-  **`ENSEMBLE_ACTIVE=true`**.
-- Otherwise → **`ENSEMBLE_ACTIVE=false`**, regardless of config.
-
-- **`ENSEMBLE_ACTIVE=true`** — run Phase 2 and Phase 4 as a real team. Auditor work is read-only
-  fan-out (spawn with `worktree: false`); implementer work is isolated (spawn with
-  `worktree: true`, one branch per item). Spawn in **waves of 2**, one verification at a time, so
-  concurrent test/audit runs do not exhaust memory. Never poll `team_status`/`team_tasks_list` —
-  wait for the teammate message, then read `team_results`.
-- **`ENSEMBLE_ACTIVE=false`** — run a single-agent fallback: you play every role (auditor,
-  planner, implementer, reviewer) in order, applying the **same** protocol and the same
-  independent-review rule (you must review your own diff as a separate step, against the metric,
-  after a clean checkout of the branch). State `ENSEMBLE_ACTIVE=false — serial fallback` in
-  `PIPELINE_MAP.md` so the report is honest about how it ran.
+- **Read-only audit fan-out** — use `scout` subagents (no edit/bash permission).
+  Split by disjoint surface (one stage, one directory, one report section) and
+  require the same output shape from each.
+- **Implementation is single-writer** — subagents share this working tree; only
+  one `builder`/`qa` may run at a time, and each slice is committed before the
+  next starts. If you want real isolation, use plain `git worktree add`
+  yourself — not an agent.
+- **Waves of 2, one verification at a time** — concurrent test/audit runs
+  exhaust memory and can OOM the whole service cgroup.
+- **Wait for the subagent message** — never poll; read the report, then verify
+  the diff/output yourself.
+- **Independent review still applies**: `reviewer` (read-only) reviews the diff
+  against the metric after a clean checkout of the branch. If you do it
+  yourself, do it as a separate step and say so.
+- State `SUBAGENTS_USED=true` or `SUBAGENTS_USED=false` in `PIPELINE_MAP.md` so
+  the report is honest about how it ran.
 
 ---
 
@@ -245,12 +246,11 @@ Acceptance (an independent REVIEWER/EVALUATOR checks, never the implementer):
 - no leakage introduced (probes still clean); audit output deterministic across 2 runs
 - diff touches only what the item needs
 
-If accepted: lead merges with `git merge --no-ff dq/$RUN/<item-id>` into `dq/$RUN`, appends a row
-to `$ROOT/LEDGER.md` (item, commit, metric before/after, verdict). With the ensemble, `team_merge`
-squash-merges and leaves the result **unstaged** — commit it before spawning the next worktree
-teammate. If rejected or conflicting: do not merge; record the reason in `LEDGER.md` and remove the
-item branch's worktree only (keep the branch for traceability). Two consecutive rejections = stop
-condition.
+If accepted: the lead merges with `git merge --no-ff dq/$RUN/<item-id>` into `dq/$RUN` and
+appends a row to `$ROOT/LEDGER.md` (item, commit, metric before/after, verdict). Commit the ledger
+update before the next item starts — writers run one at a time. If rejected or conflicting: do not
+merge; record the reason in `LEDGER.md` and remove the item branch's worktree only (keep the branch
+for traceability). Two consecutive rejections = stop condition.
 
 ## Phase 5: Re-audit
 

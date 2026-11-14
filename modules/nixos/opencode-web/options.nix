@@ -128,28 +128,6 @@ in
           current page's hostname instead.
         '';
       };
-
-      ensemble = {
-        enable = mkOption {
-          type = types.bool;
-          default = true;
-          description = ''
-            Also register the opencode ensemble teams browser UI section on the
-            proxy dashboard. The ensemble dashboard is a singleton served by
-            whichever opencode process is running (this web service counts), so
-            on a host with opencode-web enabled it is almost always live.
-          '';
-        };
-
-        port = mkOption {
-          type = types.port;
-          default = 4747;
-          description = ''
-            Backend port of the ensemble dashboard. Must match
-            <literal>my.programs.opencode.ensemble.dashboardPort</literal>.
-          '';
-        };
-      };
     };
 
     memoryHigh = mkOption {
@@ -158,9 +136,9 @@ in
       example = "4G";
       description = ''
         Soft memory limit (<literal>MemoryHigh</literal>) for each opencode web
-        service. Teammates spawned by the ensemble run inside the same systemd
-        unit cgroup, so this bounds a whole browser team. Set to
-        <literal>null</literal> to leave the unit uncapped.
+        service. Subagents run inside the same systemd unit cgroup, so this
+        bounds the whole session tree. Set to <literal>null</literal> to leave
+        the unit uncapped.
       '';
     };
 
@@ -171,7 +149,7 @@ in
       description = ''
         Hard memory limit (<literal>MemoryMax</literal>) for each opencode web
         service. When the cgroup exceeds this the kernel OOM-kills the largest
-        member (usually a teammate) instead of the whole host. Set to
+        member (usually a subagent process) instead of the whole host. Set to
         <literal>null</literal> to leave the unit uncapped.
       '';
     };
@@ -182,13 +160,13 @@ in
       example = "4G";
       description = ''
         Per-unit swap limit (<literal>MemorySwapMax</literal>). Without this a
-        memory-stressed team can push the cgroup deep into system swap and trip
-        systemd-oomd's global <literal>SwapUsedLimit</literal> (default 90%),
-        which kills the ENTIRE unit — web server and every teammate at once —
+        memory-stressed session can push the cgroup deep into system swap and
+        trip systemd-oomd's global <literal>SwapUsedLimit</literal> (default
+        90%), which kills the ENTIRE unit — web server and every child at once —
         the "blank browser / can't send messages" incident of 2026-08-05
         (peak 4.3G memory + 5.8G swap). Capping swap makes the kernel OOM-kill
-        a single largest member (a teammate) inside the cgroup instead, so the
-        web session survives. Set <literal>null</literal> to leave swap
+        a single largest member inside the cgroup instead, so the web session
+        survives. Set <literal>null</literal> to leave swap
         uncapped.
       '';
     };
@@ -203,8 +181,8 @@ in
           Degradation then falls to
           the kernel cgroup OOM-killer (bounded by <option>memoryHigh</option> /
           <option>memoryMax</option> / <option>memorySwapMax</option>), which
-          kills one process at a time — a teammate, not the web server — so the
-          browser session survives a memory spike instead of going blank.
+          kills one process at a time — a subagent, not the web server — so
+          the browser session survives a memory spike instead of going blank.
         '';
       };
     };
@@ -217,8 +195,9 @@ in
           Refuse to start the opencode web service while a terminal opencode
           session is running (and vice versa — see
           <option>my.programs.opencode.sessionGate</option>). Both sessions
-          share <filename>~/.config/opencode</filename> and the ensemble state
-          DB, so running them concurrently corrupts team orchestration.
+          share <filename>~/.config/opencode</filename> and one shared
+          background service, so running them concurrently corrupts session
+          state.
         '';
       };
 

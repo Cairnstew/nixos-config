@@ -9,7 +9,6 @@
 #   OPENCODE_SELECT_CACHE   go-usage.json      (usage cache)
 #   OPENCODE_SELECT_SLICE   go-usage-slices.json (budget slice snapshot)
 #   OPENCODE_SELECT_LOG     model-select.log   (decision log)
-#   OPENCODE_SELECT_ENSEMBLE <repo>/.opencode/ensemble.json
 #
 # Exit codes: 0 resolved (model id on stdout); 3 missing config/cache;
 # 4 no chain configured for the agent; 5 chain blocked (no cap-free terminal
@@ -21,7 +20,6 @@ FALLBACK_CONFIG="${OPENCODE_SELECT_CONFIG:-${XDG_CONFIG_HOME:-$HOME/.config}/ope
 CACHE_FILE="${OPENCODE_SELECT_CACHE:-$HOME/.cache/opencode/go-usage.json}"
 SLICE_FILE="${OPENCODE_SELECT_SLICE:-$HOME/.cache/opencode/go-usage-slices.json}"
 LOG_FILE="${OPENCODE_SELECT_LOG:-$HOME/.cache/opencode/model-select.log}"
-ENSEMBLE_PROJECT="${OPENCODE_SELECT_ENSEMBLE:-$HOME/nixos-config/.opencode/ensemble.json}"
 
 # Rough cap on the decision log: trim in batches (only when far over), not per write.
 LOG_CAP=2000
@@ -29,13 +27,10 @@ LOG_TRIM=2500
 
 usage() {
   cat <<'USAGE'
-usage: opencode-model-select [--agent NAME] [--sync-ensemble]
+usage: opencode-model-select [--agent NAME]
   Resolves the winning model for an agent from the cached Go usage snapshot
   and the configured modelFallback chains. Prints the model id on stdout.
   --agent NAME        use chains[NAME], falling back to chains.default
-  --sync-ensemble     additionally rewrite the project .opencode/ensemble.json
-                      with modelsByAgent resolved for EVERY configured agent
-                      (must run BEFORE the opencode process starts)
 
 Exit codes: 0 resolved (model id on stdout); 3 missing config/cache;
 4 no chain configured for the agent; 5 chain blocked (usage data unusable, or
@@ -45,11 +40,9 @@ USAGE
 }
 
 agent=""
-sync=0
 while [ $# -gt 0 ]; do
   case "$1" in
     --agent) agent="$2"; shift 2 ;;
-    --sync-ensemble) sync=1; shift ;;
     -h|--help) usage; exit 0 ;;
     *) echo "opencode-model-select: unknown arg $1" >&2; usage >&2; exit 2 ;;
   esac
@@ -163,9 +156,7 @@ resolve_for_agent() { # $1 = agent name; empty means default chain
       degraded=1
       echo "opencode-model-select: chain for agent='${key:-default}' exhausted; degrading to last cap-free entry" >&2
     else
-      # NOTE: report $key (this function's argument), not the CLI-level $agent —
-      # during --sync-ensemble the CLI var is empty and every per-agent BLOCKED
-      # used to mislabel itself as "agent=default" (caught 2026-08-26, Tier 1 Task 2).
+      # NOTE: report $key (this function's argument), not the CLI-level $agent.
       echo "opencode-model-select: chain for agent='${key:-default}' exhausted; no cap-free terminal — BLOCKED" >&2
       log_resolution "${key:-default}" "" "${skipped:-[]}" 1
       exit 5
@@ -175,38 +166,10 @@ resolve_for_agent() { # $1 = agent name; empty means default chain
   [ -n "$winner" ] && printf '%s' "$winner"
 }
 
-if [ "$sync" -eq 0 ]; then
-  m=$(resolve_for_agent "$agent")
-  if [ -z "$m" ]; then
-    echo "opencode-model-select: no resolvable chain for agent='${agent:-default}'" >&2
-    exit 4
-  fi
-  printf '%s\n' "$m"
-  exit 0
+m=$(resolve_for_agent "$agent")
+if [ -z "$m" ]; then
+  echo "opencode-model-select: no resolvable chain for agent='${agent:-default}'" >&2
+  exit 4
 fi
-
-# --sync-ensemble: resolve every configured agent and write the project override
-# atomically, preserving unrelated keys already in the file. NOTE: a BLOCKED/
-# unresolvable agent is skipped and its PREVIOUS modelsByAgent entry is left in
-# place — the file cannot distinguish fresh-resolved from carried-over entries.
-models_by_agent='{}'
-while IFS= read -r key; do
-  [ "$key" = "default" ] && continue
-  if m=$(resolve_for_agent "$key"); then
-    models_by_agent=$(jq -cn --argjson acc "$models_by_agent" --arg k "$key" --arg m "$m" '$acc + { ($k): $m }')
-  else
-    echo "opencode-model-select: agent '$key' has no eligible model (rc=$?) — keeping its existing modelsByAgent entry unchanged" >&2
-  fi
-done < <(jq -r '.chains | keys[]' "$FALLBACK_CONFIG")
-
-mkdir -p "$(dirname "$ENSEMBLE_PROJECT")"
-tmp=$(mktemp "$(dirname "$ENSEMBLE_PROJECT")/.ensemble.json.tmp.XXXXXX")
-trap 'rm -f "$tmp"' EXIT
-
-if [ -r "$ENSEMBLE_PROJECT" ]; then base=$(cat "$ENSEMBLE_PROJECT"); else base='{}'; fi
-jq -s '.[0] * { modelsByAgent: ((.[0].modelsByAgent // {}) * $mba) }' \
-  --argjson mba "$models_by_agent" \
-  <(echo "$base") <(printf '{"modelsByAgent":%s}' "$models_by_agent") > "$tmp"
-mv "$tmp" "$ENSEMBLE_PROJECT"
-trap - EXIT
-echo "opencode-model-select: synced $ENSEMBLE_PROJECT ($(jq -r '.modelsByAgent | length' "$ENSEMBLE_PROJECT") agents)" >&2
+printf '%s\n' "$m"
+exit 0

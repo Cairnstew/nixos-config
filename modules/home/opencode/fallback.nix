@@ -1,7 +1,7 @@
 # Usage-aware model fallback for opencode agents.
 #
 # Ships:
-#   - `opencode-model-select`  selector CLI (resolve + optional ensemble sync)
+#   - `opencode-model-select`  selector CLI (resolve a model per agent)
 #   - ~/.config/opencode/model-fallback.json   chains config consumed by it
 #
 # Design (Tier 0 findings, /tmp/opencode/model-fallback/tier0-findings.md):
@@ -11,12 +11,6 @@
 #   - Lever (i): the `opencode` wrapper injects --model from the selector
 #     into `opencode run` / `opencode mini` (v2 dropped the root --model flag;
 #     the TUI uses the configured model, see config.nix).
-#   - Lever (ii): the selector rewrites <repoDir>/.opencode/ensemble.json
-#     (project-level override wins over the HM global per the ensemble
-#     plugin's src/config.ts merge order). The plugin reads that file ONCE
-#     per opencode process start — under V2 that process is the shared
-#     background service, so a sync after service start is only seen after
-#     `opencode service restart` (or via an explicit team_spawn model=).
 
 { config, lib, pkgs, ... }:
 
@@ -109,7 +103,6 @@ in
       export OPENCODE_SELECT_CACHE="${cfg.modelFallback.cacheFile}"
       export OPENCODE_SELECT_SLICE="${cfg.modelFallback.sliceFile}"
       export OPENCODE_SELECT_LOG="${cfg.modelFallback.logFile}"
-      export OPENCODE_SELECT_ENSEMBLE="${cfg.modelFallback.repoDir}/.opencode/ensemble.json"
       exec ${modelSelectScript} "$@"
     '')
   ];

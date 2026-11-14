@@ -64,8 +64,8 @@ process loads the new files.
 
 1. Activation fingerprints everything the service reads at boot — SHA-256 of
    every file in `plugins/*` and `tools/*` plus `home-manager.json`,
-   `home-manager-cli.json`, `ensemble.json`, `model-fallback.json`,
-   `self-improve.json` — and stores it in
+   `home-manager-cli.json`, `model-fallback.json`, `self-improve.json` — and
+   stores it in
    `~/.local/state/opencode/service-payload.sha256`.
 2. When the fingerprint changes it writes
    `~/.local/state/opencode/service-stale` and prints a notice.
@@ -74,8 +74,8 @@ process loads the new files.
    this invocation spawn a fresh one.
 
 Deliberately *not* a stop during activation: `nixos-rebuild switch` is
-routinely run from inside an opencode session (and from ensemble teammates), and
-an activation-time stop would kill the session that is running the rebuild.
+routinely run from inside an opencode session (and by subagents), and an
+activation-time stop would kill the session that is running the rebuild.
 `opencode service start|restart` clears the marker itself, and
 `OPENCODE_SERVICE_STALE_GUARD_OFF=1` skips the check for one invocation.
 
@@ -126,10 +126,8 @@ an activation-time stop would kill the session that is running the rebuild.
 | `my.programs.opencode.mcp` | `{}` | MCP server configurations |
 | `my.programs.opencode.modelFallback.enable` | `false` | Usage-aware model fallback |
 | `my.programs.opencode.modelFallback.chains` | `{}` | Ordered fallback chains per agent (`model` + optional `maxRollingPercent` / `maxWeeklyPercent` / `maxMonthlyPercent`) |
-| `my.programs.opencode.modelFallback.syncEnsembleProjectFile` | `false` | Rewrite `<repoDir>/.opencode/ensemble.json` before dispatch so ensemble spawns use chain-resolved models |
 | `my.programs.opencode.modelFallback.cacheFile` | `~/.cache/opencode/go-usage.json` | Usage snapshot consumed by the selector |
 | `my.programs.opencode.modelFallback.sliceFile` | `~/.cache/opencode/go-usage-slices.json` | Budget-pacing slice snapshot (written by usage.nix) |
-| `my.programs.opencode.modelFallback.repoDir` | `~/nixos-config` | Repo whose project-level ensemble override receives resolved models |
 
 Chain entries additionally accept a `pacing` block (`mode`,
 `budget.windows`, `budget.sliceHours`, `floor`, `buffer`) — see
@@ -255,36 +253,12 @@ times (elapsed 0%, just-under/just-over floor, stale cache past `resetsAt`,
 static-ceiling precedence) — see the boundary harness transcript referenced
 in `/tmp/opencode/model-fallback-pacing/`.
 
-Two consumption paths:
-
-1. **`run` / `mini` invocations** — the `opencode` wrapper injects
-   `--model <resolved>` after the subcommand (`opencode run --model …`)
-   unless you already passed `-m/--model`, or set
-   `OPENCODE_MODEL_SELECT_OFF=1`. opencode v2 removed the root `--model`
-   flag, so the bare TUI (and `service`, `session`, …) is never injected;
-   the TUI uses the configured `opencode.json` model.
-2. **Ensemble spawns** — with `syncEnsembleProjectFile = true`, the selector
-   rewrites `<repoDir>/.opencode/ensemble.json` (gitignored) with
-   chain-resolved `modelsByAgent`. The ensemble plugin merges project config
-   over the HM-managed global one.
-
-### Scope caveats (documented deliberately)
-
-- The project-level override only applies when opencode's working directory
-  resolves inside `<repoDir>`; dispatches from other trees silently keep the
-  static global model.
-- The ensemble plugin reads its config **once at process start**
-  (`loadConfig` in `src/index.ts`), so a synced override reaches only
-  processes started afterwards. Under OpenCode 2 the plugin runs inside the
-  shared background service, so writing `.opencode/ensemble.json` from the
-  wrapper after that service is already up does **not** take effect until
-  `opencode service restart` (or the next location start). Long-running
-  `opencode serve --attach` sessions need a restart to pick up new
-  selections; within a live session, pass an explicit `model=` argument to
-  `team_spawn` instead (it outranks
-  `modelsByAgent` in the plugin's resolution order).
-- `.opencode/ensemble.json` being runtime-mutated inside a git-tracked
-  directory is an intentional imperative exception — see GOTCHAS.md.
+One consumption path: **`run` / `mini` invocations** — the `opencode` wrapper
+injects `--model <resolved>` after the subcommand (`opencode run --model …`)
+unless you already passed `-m/--model`, or set `OPENCODE_MODEL_SELECT_OFF=1`.
+opencode v2 removed the root `--model` flag, so the bare TUI (and `service`,
+`session`, …) is never injected; the TUI (and its subagents, which inherit the
+session model) uses the configured `opencode.json` model.
 
 ### Blocked chains — no free-tier terminal (`blockedTerminal`)
 
@@ -306,9 +280,8 @@ paid model with no (or capped) enforcement. The degrade rule is:
   they give scout/qa/reviewer subagents tighter caps and end in
   `blockedTerminal`, so bad usage data or exhaustion surfaces as **BLOCKED**
   (selector exit 5) instead of dispatching an uncapped paid model.
-- Exit 5 means "do not dispatch": ensemble `--sync-ensemble` skips blocked
-  agents and keeps their previous `modelsByAgent` entry (it cannot distinguish
-  fresh from carried-over; the stderr line makes it visible).
+- Exit 5 means "do not dispatch": treat it as "do not start this agent", not an
+  error to retry.
 
 ### Decision log
 
@@ -350,8 +323,8 @@ The single-lineage self-improvement checkpoint runs in-band on `build`/`research
 and has no dedicated watcher, queue, or `opencode serve` dependency — the in-band
 checkpoint itself needs no model protection. `modelFallback` governs the
 interactive `default` chain and the triage chains
-(`scout-skeptical`/`qa-verification`/`adversarial`/`learning-promoter`) that
-scout/verify/review ensemble work: the triage chains carry the tightest caps and
+(`scout-skeptical`/`qa-verification`/`adversarial`/`learning-promoter`) reserved
+for subagent work: the triage chains carry the tightest caps and
 end in `blockedTerminal`, so an exhausted triage chain pauses its dispatch instead
 of running a degraded model.
 
@@ -420,8 +393,7 @@ This module includes pre-configured skills for common tasks:
 | `module-development` | Creating modules following repo conventions |
 | `deploy-workflow` | Deploying NixOS via nixos-anywhere, Ventoy USB, and related tools |
 | `docker-management` | Docker/Podman containers, Ollama, and OCI tooling |
-| `nixos-ensemble-decomposition` | Splitting NixOS work into parallel team slices |
-| `opencode-ensemble` | Coordinating ensemble teams, delegating, reviewing teammate output |
+| `subagent-decomposition` | Splitting work across parallel subagents: read-only fan-out, one-writer rule, memory budget |
 | `secrets-management` | Managing agenix-encrypted secrets |
 | `testing-patterns` | Writing and running tests |
 | `windows-integration` | Windows dual-boot, DSC, unattended installs via Ventoy |

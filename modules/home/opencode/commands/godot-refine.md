@@ -56,47 +56,34 @@ fi
   - After writing `flake.nix`, run `nix flake lock` to generate `flake.lock` so the environment is actually pinned, not just declared. Report the result.
   - Flag this clearly in the final summary as a new file requiring the person's review — a scaffolded flake is a best-effort starting point (SDK/package names for Godot Mono can drift across nixpkgs versions), not a guarantee it builds unmodified on the first try.
 
-## 0.75 Multi-agent orchestration check
+## 0.75 Multi-agent orchestration (subagents)
 
-This command can optionally run as a small coordinated team via the [opencode-ensemble](https://github.com/Cairnstew/opencode-ensemble) plugin (`team_create`/`team_spawn`/`team_tasks_add`/etc.), if it's enabled. Detect this before deciding how to execute the rest of the command.
+Parallel agents come from opencode's built-in `subagent` tool; there is no
+ensemble plugin any more. This refactor is sequential and touches overlapping
+files (a script moved in step 3 affects step 4's scene edits), so do **not**
+over-fragment it. The useful split is one read-only audit, one focused set of
+edits, one read-only review:
 
-!`
-FOUND=false
-for f in "opencode.json" "$HOME/.config/opencode/opencode.json"; do
-  if [ -f "$f" ] && grep -q 'opencode-ensemble' "$f" 2>/dev/null; then
-    FOUND=true
-    echo "ENSEMBLE_CONFIG_FILE=$f"
-  fi
-done
-echo "ENSEMBLE_CONFIGURED=$FOUND"
-`
+1. **Audit (read-only)** — spawn `scout` with the full text of step 1 (the
+   audit checklist) plus the project-snapshot commands from this file, and the
+   instruction: read every touched `.cs`/`.tscn`, report the issue table and
+   refactor plan, edit nothing.
+2. **Checkpoint** — review the scout's issue table and plan yourself before
+   touching anything. This is the "state your refactor plan" gate in step 1.
+3. **Implement** — you apply steps 2–7 (or hand them to ONE `builder`
+   subagent, with the scout findings, steps 2–7, and the Constraints section
+   verbatim, committed atomically per logical change). Never run two writers
+   at once — they share this working tree.
+4. **Review (read-only)** — spawn `reviewer` on the committed diff plus the
+   Constraints section: broken node paths/signals/`ext_resource` references,
+   inheritance forced where composition fits, flake edits beyond 0.5's
+   scaffold, hand-edited `.tscn` UIDs, and anything that shouldn't ship.
+5. Compile the audit, the changes, and the review findings into the single
+   **Output** structure defined at the end of this command — one coherent
+   report, not three stitched transcripts.
 
-Also check whether the team tools are actually present in this session (config can list the plugin but it may not have loaded, e.g. on an unsupported runtime — see the plugin's Node/Bun version requirements):
-
-- If tools named `team_create`, `team_spawn`, `team_tasks_add`, and `team_status` are available to you right now → **`ENSEMBLE_ACTIVE=true`**.
-- Otherwise → **`ENSEMBLE_ACTIVE=false`**, regardless of what the config file says (a listed-but-unloaded plugin is the same as not enabled for this run).
-
-- **If `ENSEMBLE_ACTIVE=false`** — proceed exactly as the rest of this command is written below: you (the single agent) work through steps 1–7 yourself, in order.
-- **If `ENSEMBLE_ACTIVE=true`** — use the **Team execution plan** immediately below instead of running every step solo. Skip straight to "Environment detection" only after the team is set up, since the scout teammate will need that context too.
-
-### Team execution plan (Ensemble path only)
-
-Follow the "scout, builder, reviewer" shape from the plugin's own guidance — this refactor is exactly that kind of task: one read-only exploration phase, one focused set of edits, one read-only review. Do not over-fragment it into many parallel `build` agents; the steps below are sequential and touch overlapping files (a script moved in step 3 affects step 4's scene edits), so parallel `build` teammates would conflict rather than help.
-
-1. **`team_create`** — name the team after the project (e.g. `godot-refine-<repo-name>`).
-2. **`team_tasks_add`** — record these tasks up front, wiring `depends_on` from the returned IDs so the board reflects real sequencing:
-   - `audit`: "Structural audit of Godot scenes/scripts per godot-refine step 1 — read every touched .cs and .tscn file, report the issue table and refactor plan. Do not edit anything." (no dependency)
-   - `refactor`: "Apply the refactor plan from `audit`: introduce/refine C# inheritance (step 2), modularise into the trunk/branch/leaf tree (step 3), enforce scene/script conventions (step 4), fix types/docs/imports (step 5), run static analysis (step 6), and verify the build + headless Godot import (step 7). Commit atomically per logical change." (`depends_on: [audit]`)
-   - `review`: "Review the merged diff from `refactor` for correctness: broken node paths/signals/`ext_resource` references, any inheritance forced where composition would fit better, anything that violates the constraints in godot-refine (no flake edits beyond 0.5's scaffold, no hand-edited `.tscn` UIDs, etc.). Do not edit files." (`depends_on: [audit, refactor]`)
-3. **Spawn `scout`** — `agent: explore`, `worktree: false` (read-only, no need for its own branch), `claim_task: audit`. Give it the full text of step 1 above (the audit checklist) as its prompt, plus the project-snapshot commands from this file so it doesn't need to rediscover them.
-4. Wait for `scout`'s result via `team_results`. Review its issue table and refactor plan yourself before proceeding — this is the natural checkpoint to catch a bad plan before any file changes happen, equivalent to the "state your refactor plan before touching anything" instruction in step 1.
-5. **Spawn `refactor`** — `agent: build`, own worktree (default), `plan_approval: true` (this touches many files across scenes/scripts/tree structure, so a plan checkpoint matters), `claim_task: refactor`. Prompt it with scout's findings plus the full text of steps 2 through 7 (including the 0.5 reproducibility guard if a flake still doesn't exist) and the Constraints section verbatim, since those constraints apply regardless of which teammate is doing the work.
-6. Approve or reject `refactor`'s plan via `team_message` when it arrives. Once it reports done: `team_results`, `team_shutdown`, `team_merge`.
-7. **Spawn `reviewer`** — `agent: explore`, `worktree: false`, `claim_task: review`. Point it at the now-merged diff (`git diff`) plus the Constraints section, and ask it to flag anything that shouldn't have been merged as-is.
-8. Compile `scout`'s audit, `refactor`'s changes, and `reviewer`'s findings into the single **Output** structure defined at the end of this command — the person should get one coherent report, not three separate agent transcripts stitched together.
-9. Run `team_cleanup` once the report is delivered and the person has no follow-up for the team.
-
-If at any point a teammate stalls, errors, or its plan looks wrong, handle it the way the plugin intends: message it directly first, only `team_shutdown --force` as a last resort, and note the disruption in the final summary rather than silently absorbing the affected step yourself without saying so.
+If a subagent stalls or reports an error, don't silently absorb its step:
+note the disruption in the final summary.
 
 ## Environment detection
 

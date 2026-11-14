@@ -46,7 +46,6 @@ modules/home/opencode/
 | `tools` | Custom tools for opencode |
 | `agents` | Custom agent configurations |
 | `mcp` | MCP server configurations |
-| `ensemble` | OpenCode Ensemble plugin config (models, spaces, dashboard) |
 
 ---
 
@@ -63,11 +62,10 @@ They are stored in `$XDG_CONFIG_HOME/opencode/skills/<name>/SKILL.md`.
 | `deploy-workflow` | Deploying NixOS via nixos-anywhere, Ventoy USB, and related tools |
 | `docker-management` | Docker/Podman containers, Ollama, and OCI tooling |
 | `module-development` | Creating modules following repo conventions |
-| `module-extraction` | Auditing for extraction candidates, extracting modules to standalone repos, ensemble space setup, update workflow |
+| `module-extraction` | Auditing for extraction candidates, extracting modules to standalone repos, update workflow |
 | `model-selection` | Looking up LLM models by pricing/capabilities (OpenCode Go & beyond) |
 | `nixos-configuration` | Working with this NixOS configuration repository |
-| `nixos-ensemble-decomposition` | Splitting NixOS work into parallel team slices |
-| `opencode-ensemble` | Coordinating ensemble teams, delegating, reviewing teammate output |
+| `subagent-decomposition` | Splitting work across parallel subagents: read-only fan-out, one-writer rule, memory budget |
 | `secrets-management` | Managing agenix-encrypted secrets |
 | `testing-patterns` | Writing and running tests |
 | `windows-integration` | Windows dual-boot, DSC, unattended installs via Ventoy |
@@ -108,43 +106,32 @@ Skills should follow the [OpenCode skills documentation](https://opencode.ai/doc
 - **agenix**: API keys read from age-encrypted secrets
 - **home-manager**: User environment and config files
 - **MCP**: Model Context Protocol servers for extended capabilities
-- **OpenCode Ensemble**: Parallel agent coordination via `opencode-ensemble` plugin (see `my.programs.opencode.ensemble`)
+- **Subagents**: parallel fan-out through opencode's built-in `subagent` tool
+  (`my.programs.opencode.agents`)
 
 ---
 
-## OpenCode Ensemble & Agent Spaces
+## Subagents (parallel work)
 
-The [opencode-ensemble](https://github.com/Cairnstew/opencode-ensemble) plugin adds parallel agent coordination to opencode. It is vendored in `modules/home/opencode/vendor/` and patched via `patches/opencode-ensemble.py` (see `FORK.md`).
+The opencode-ensemble plugin — teams, worktrees, task boards and Agent Spaces —
+is retired. Parallelism is opencode's built-in `subagent` tool, and the agents
+come from `my.programs.opencode.agents`:
 
-### Core Features
+| Agent | Mode | Permissions | Use for |
+|---|---|---|---|
+| `scout` | subagent | read-only | locating files, call sites, subsystem mapping |
+| `planner` | subagent | read-only | recon → ordered task list with file ownership |
+| `builder` | subagent | edit + bash | one file-scoped slice at a time |
+| `qa` | subagent | edit + bash | writing/running tests, reproducing failures |
+| `reviewer` | subagent | read-only | diff review: correctness, missed tests, risk |
 
-- **Team management**: `team_create`, `team_spawn`, `team_shutdown`, `team_merge`, `team_cleanup`
-- **Task board**: `team_tasks_add`, `team_tasks_list`, `team_tasks_complete`
-- **Inter-agent messaging**: `team_message`, `team_broadcast`, `team_results`
-- **Dashboard**: Real-time team status at `http://localhost:4747`
+**Subagents share the working tree.** There is no worktree isolation and no
+merge step, so only one writer (`builder`, `qa`, or the lead) may run at a time,
+and each slice is committed before the next writer starts. Read-only agents
+(`scout`, `planner`, `reviewer`) fan out freely. Concurrent Nix builds are still
+the OOM hazard: waves of 2, one eval at a time, `free -h` first.
 
-### Agent Spaces
-
-Agent Spaces let you spawn teammates into **separate, independent repositories** instead of git worktrees. Each space is a full clone with its own git history and working directory.
-
-Spaces are defined in `ensemble.json` and appear in tool descriptions automatically — agents see available spaces as context without needing to read the config file.
-
-```nix
-# In modules/nixos/homeManager/config.nix
-ensemble = {
-  spaces = {
-    ensemble = {
-      path = "/home/seanc/Projects/opencode-ensemble";
-      agent = "build";
-      description = "Ensemble plugin source repo";
-    };
-  };
-};
-```
-
-Usage: `team_spawn(name="worker", space="ensemble", prompt="...", worktree=false)`
-
-See the `opencode-ensemble` skill for full documentation on spaces, shutdown behavior, and flake-input handoff.
+Full guidance: `skills/subagent-decomposition.md`.
 
 ---
 
@@ -382,11 +369,34 @@ now, never aspirational. Record each applied change in the RUN LOG below.
   the eval if a V1 `agent`/`permission` key reappears.
 - Not done here: the 2.3.0 binary itself waits for the nixpkgs bump (HEAD had
   2.2.6 on 2026-11-14; a local override needs a new src hash **and** a new
-  fixed-output `node_modules` hash). On that bump, re-run FORK.md §3
-  (ensemble plugin API smoke + live spawn) and the `part`-table smoke test.
+  fixed-output `node_modules` hash). On that bump run `nix run .#nixtests-run`,
+  a live `subagent` spawn (each roster agent loads + `scout` returns a report),
+  and the `part`-table smoke test — the ensemble plugin that used to need
+  FORK.md verification is gone (see the 2026-11-14 RUN LOG entry).
 
 ## See Also
 
 - `modules/nixos/gitreposync/` - Git repository sync service
 - `modules/home/core/git.nix` - Git configuration
 - [OpenCode Docs](https://opencode.ai/docs/)
+
+### 2026-11-14 — removed opencode-ensemble; subagents replace teams
+- Lesson: the vendored ensemble fork, the teams dashboard and Agent Spaces were
+  the repo's only parallel-writer mechanism, but they also brought a fork to
+  re-verify on every opencode bump (FORK.md §3), a dashboard with no auth, and
+  a model-sync lever (`--sync-ensemble`) whose project file had to be mutated
+  imperatively. Subagents cover the part that mattered (read-only fan-out,
+  review, tests) without any of it.
+- Fix: deleted `fork.nix`, `vendor/`, `patches/`, `FORK.md`, the two skills,
+  the two ensemble nixtests and `tools/revendor-opencode-ensemble.sh`; removed
+  `my.programs.opencode.ensemble`, the `ensemble.json` render and
+  stale-guard fingerprint entry, `modelFallback.syncEnsembleProjectFile` +
+  `repoDir`, and the proxy/opencode-web `dashboard.ensemble` options.
+  `my.programs.opencode.agents` now defines `scout`/`planner`/`builder`/`qa`/
+  `reviewer`, with the one-writer rule documented in
+  `skills/subagent-decomposition.md`. Six module `meta.nix` files dropped
+  `upstream.space`.
+- Remaining risk: subagents share the working tree, so parallel writes are
+  impossible by design; the guard is the roster's permissions (only `builder`/
+  `qa` may edit) plus the one-at-a-time rule. The opencode bump checklist no
+  longer needs FORK.md §3, but still needs the `part`-table smoke test.

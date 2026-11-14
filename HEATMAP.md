@@ -538,13 +538,7 @@ All `my.*` options declared across module files.
 | `my.services.opencodeWeb.tailnetServe.basePort` | port | `8443` | First tailnet serve HTTPS port |
 | `my.services.opencodeWeb.dashboard.enable` | bool | `true` | Add an OpenCode section to the proxy dashboard |
 | `my.services.opencodeWeb.dashboard.baseUrl` | str | `"http://localhost"` | Base URL for dashboard instance links |
-| `my.services.opencodeWeb.dashboard.ensemble.enable` | bool | `true` | Register the opencode ensemble teams browser UI section on the proxy dashboard |
-| `my.services.opencodeWeb.dashboard.ensemble.port` | port | `4747` | Backend port of the ensemble dashboard (matches `my.programs.opencode.ensemble.dashboardPort`) |
 | `my.services.proxy.dashboard.opencode` | list | `[]` | OpenCode instances shown in the dashboard (populated by opencode-web) |
-| `my.services.proxy.dashboard.ensemble.enable` | bool | `false` | OpenCode ensemble teams browser UI section on the dashboard (populated by opencode-web) |
-| `my.services.proxy.dashboard.ensemble.host` | str | `"127.0.0.1"` | Backend host of the ensemble dashboard |
-| `my.services.proxy.dashboard.ensemble.port` | port | `4747` | Backend port of the ensemble dashboard |
-| `my.services.proxy.dashboard.ensemble.apiPath` | str | `"/ensemble"` | Same-origin path prefix proxied to the ensemble dashboard |
 | `my.services.proxy.systemMetrics.opencodeGo.usageJsonFile` | null/path | `null` | OpenCode Go usage snapshot merged into dashboard metrics.json and rendered as usage bars |
 | `my.services.xmltv.enable` | bool | `false` | XMLTV EPG grabber service for UK Freeview TV listings |
 | `my.services.xmltv.package` | package | `null` | XMLTV package to use |

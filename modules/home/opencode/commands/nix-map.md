@@ -63,23 +63,23 @@ Flake inputs declared:
 
 ## Approach
 
-Use the opencode-ensemble skill to parallelise the read-only audit. Create a team,
-spawn scouts for the sections below, then collect and synthesise their results.
+Parallelise the read-only audit with opencode's built-in `subagent` tool — no
+ensemble plugin. M1 and M5 depend on M0 (live context), so gather that first.
 
-M1 and M5 depend on M0 (live context), so run them after the live context is gathered.
+### Subagent plan
 
-### Team plan
+1. `scout-hosts` (agent `scout`) — M1. Host assembly.
+2. `scout-modules` (agent `scout`) — M2. Module inventory.
+3. `scout-profiles` (agent `scout`) — M3. Profile coverage.
+4. `scout-duplication` (agent `scout`) — M4. Cross-cutting duplication.
+5. `scout-inputs` (agent `scout`) — M5. Input hygiene.
 
-1. `scout-hosts` (scout, worktree=false) — M1. Host assembly.
-2. `scout-modules` (scout, worktree=false) — M2. Module inventory.
-3. `scout-profiles` (scout, worktree=false) — M3. Profile coverage.
-4. `scout-duplication` (scout, worktree=false) — M4. Cross-cutting duplication.
-5. `scout-inputs` (scout, worktree=false) — M5. Input hygiene.
-
-All five scouts are independent and can run in parallel.
-
-Each scout must return findings in the format specified below with file paths and line numbers.
-After all scouts report, synthesise the results into M6 (architecture summary).
+All five scouts are read-only and independent, so they can fan out; keep to
+**waves of 2** if any of them runs `nix` (memory). Subagents do not see this
+conversation — give each the M0 context it needs and the exact section it owns.
+Each scout must return findings in the format specified below with file paths
+and line numbers. After all scouts report, synthesise the results into M6
+(architecture summary).
 
 ---
 

@@ -1,6 +1,6 @@
 ---
 name: module-extraction
-description: "Use when auditing this NixOS config for modules that could be extracted into standalone repos as flake inputs, when extracting a module, setting up an extracted repo for ensemble development, or managing the update workflow back to the main flake."
+description: "Use when auditing this NixOS config for modules that could be extracted into standalone repos as flake inputs, when extracting a module, wiring the extracted repo back as an input, or managing the update workflow back to the main flake."
 ---
 
 # Module Extraction
@@ -11,7 +11,7 @@ Audit, extract, and maintain standalone NixOS module repos sourced as flake inpu
 
 - User asks "what modules could be extracted?" or "audit for extraction candidates"
 - User picks an extraction target and wants to create the standalone repo
-- User wants to set up ensemble spaces for developing an extracted module
+- User wants to develop an extracted module in its own repo
 - User wants to update a pinned extracted module from its upstream
 
 ## Phase 1: Audit
@@ -230,38 +230,33 @@ nix flake check --no-build
 nix build .#nixosConfigurations.<host>.config.system.build.toplevel --dry-run
 ```
 
-## Phase 4: Ensemble Development Setup
+## Phase 4: Development Setup
 
-### Register as Agent Space
+### Wire the extracted repo as a flake input
 
-In `modules/nixos/homeManager/config.nix`, add to the `ensemble.spaces` attrset:
+Add the input in `flake.nix` (and, for the `upstream` block in `meta.nix`,
+`flakeInput = "nixos-<name>"`):
 
 ```nix
-ensemble = {
-  spaces = {
-    nixos-<name> = {
-      path = "/home/seanc/Projects/nixos-<name>";
-      agent = "build";
-      description = "Standalone <NAME> NixOS module — fix bugs, add features";
-      flakeInput = "nixos-<name>";  # optional: auto-notify on push
-    };
-  };
+nixos-<name> = {
+  url = "github:Cairnstew/nixos-<name>";
+  inputs.nixpkgs.follows = "nixpkgs";
 };
 ```
 
 ### Development Workflow
 
-1. **Work in the space**: `team_spawn(name="fix", space="nixos-<name>", prompt="fix ...", worktree=false)`
-2. **Teammate commits and pushes** in the standalone repo
-3. **On shutdown**: Lead gets notified with commit SHA
-4. **Update the pin** in nixos-config:
+1. **Work in the standalone repo**: `cd ~/Projects/nixos-<name>` — that checkout
+   is the implementation, this repo only wires it in.
+2. **Commit and push** there.
+3. **Update the pin** in nixos-config:
    ```bash
    nix flake lock --update-input nixos-<name>
    ```
 
 ### Making Changes to the Extracted Module
 
-**Bug fixes / features** → Work in the standalone repo (via ensemble space or directly):
+**Bug fixes / features** → Work in the standalone repo:
 ```bash
 cd ~/Projects/nixos-<name>
 # make changes, test
@@ -273,7 +268,8 @@ nix flake lock --update-input nixos-<name>
 git add flake.lock && git commit -m "chore: update nixos-<name>"
 ```
 
-**Changes that need both repos** → Use ensemble with two spaces, or work sequentially:
+**Changes that need both repos** → work sequentially (there is no parallel
+cross-repo checkout any more):
 1. Make the standalone repo change first
 2. Push and update the pin
 3. Then make the nixos-config change that consumes the new version
@@ -346,9 +342,9 @@ Ensure `flake.nix` in the standalone repo exports `nixosModules.default` (or the
 
 The standalone module must NOT import anything from `nixos-config`. All dependencies go through options or flake inputs.
 
-### "ensemble space won't clone"
+### "the extracted repo won't build"
 
-Check that the repo exists and is accessible: `gh repo view Cairnstew/nixos-<name>`. The ensemble plugin clones into `~/.config/opencode/ensemble-spaces/<space-name>/`.
+Check that the repo exists and is accessible: `gh repo view Cairnstew/nixos-<name>`, and that `flake.nix` in the standalone repo exports `nixosModules.default`. Work in `~/Projects/nixos-<name>`; there is no clone-on-demand step any more.
 
 ## RUN LOG
 
