@@ -444,16 +444,10 @@
   };
 
   # ── Riot Games: League of Legends / TFT ─────────────────────────────────
-  # Neither runs on Linux — Vanguard is a Windows kernel driver, and the
-  # Android TFT client is blocked by the mobile Vanguard (production since
-  # 2026-08-26).
-  # This adds a one-shot "reboot into Windows 11" launcher (GRUB next_entry)
-  # and scrcpy mirroring of the Android client. See
-  # modules/nixos/riot-games/README.md for the evidence.
-  my.programs.riotGames = {
-    enable = true;
-    mobileMirror.enable = true;
-  };
+  # Deliberately NOT enabled. The module (modules/nixos/riot-games/) only
+  # offers a one-shot reboot into Windows and scrcpy mirroring — neither can
+  # run the game on Linux (Vanguard; mobile Vanguard since 2026-08-26). Flip
+  # `my.programs.riotGames.enable = true` here to get the desktop entries back.
 
   my.homeProfiles = {
     common.enable = true;
