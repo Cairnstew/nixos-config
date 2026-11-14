@@ -654,10 +654,10 @@ in
       # mkForce rather than a same-priority assignment.
       #
       # Schedule-only uptime: do not start at boot. The start timer brings the
-      # world up at 22:00 local, and idleStop stops it after 30 empty minutes.
-      # Both are upstream options in the project-zomboid-servers flake.
+      # world up at midnight local, and idleStop stops it after 30 empty
+      # minutes. Both are upstream options in the project-zomboid-servers flake.
       autoStart = lib.mkForce false;
-      schedule.start = [ "*-*-* 22:00:00" ];
+      schedule.start = [ "*-*-* 00:00:00" ];
       idleStop = {
         enable = true;
         timeout = "30m";
