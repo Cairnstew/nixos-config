@@ -112,6 +112,7 @@ in
     ./steam
     ./proton
     ./hearthstone
+    ./riot-games
     ./godot
     ./houdini
     ./sillytavern

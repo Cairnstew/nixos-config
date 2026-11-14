@@ -292,6 +292,15 @@ All `my.*` options declared across module files.
 | `my.programs.hearthstone.enable` | bool | `false` | Native Hearthstone launcher |
 | `my.programs.hearthstone.package` | null/pkg | `null` | Custom hearthstone-linux-gui package |
 | `my.programs.hearthstone.dataDir` | null/path | `null` | Game data directory (e.g. /mnt/media/hearthstone) |
+| `my.programs.riotGames.enable` | bool | `false` | LoL/TFT dual-boot launcher (no Wine path — Vanguard) |
+| `my.programs.riotGames.leagueOfLegends.enable` | bool | `true` | Desktop entry: League (reboot to Windows) |
+| `my.programs.riotGames.teamfightTactics.enable` | bool | `true` | Desktop entry: TFT (reboot to Windows) |
+| `my.programs.riotGames.windows.bootEntry` | str | `"Windows 11"` | GRUB menu title of the Windows install |
+| `my.programs.riotGames.mobileMirror.enable` | bool | `false` | scrcpy mirroring of the Android TFT client |
+| `my.programs.riotGames.mobileMirror.maxSize` | int | `1920` | scrcpy `--max-size` |
+| `my.programs.riotGames.mobileMirror.maxFps` | int | `60` | scrcpy `--max-fps` |
+| `my.programs.riotGames.mobileMirror.extraArgs` | list | `[]` | Extra scrcpy arguments |
+| `my.programs.riotGames.extraPackages` | list | `[]` | Extra system packages |
 | `my.programs.lutris.enable` | bool | `false` | Lutris game manager |
 | `my.programs.lutris.gamemode.enable` | bool | `true` | Feral Gamemode for Lutris |
 | `my.programs.lutris.mangohud.enable` | bool | `false` | MangoHud overlay for Lutris |
