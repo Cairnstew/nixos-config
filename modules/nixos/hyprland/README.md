@@ -107,7 +107,7 @@ its colour code in `./<module>/theme.nix` — see `modules/AGENT.md` §2.2.
 |---|---|---|
 | `bar` | `/etc/xdg/waybar/style.css` | `backgroundOpacity`/`borderOpacity`/`hoverOpacity`/`popupOpacity`; `bar.style` is appended last |
 | `notifications` | `/etc/xdg/mako/config` | `theme.settings` is the generated file |
-| `lockscreen` | `/etc/xdg/swaylock/config` or `/etc/xdg/hypr/hyprlock.conf` | one of the two, per `useHyprlock` |
+| `lockscreen` | `~/.config/swaylock/config` or `/etc/xdg/hypr/hyprlock.conf` | one of the two, per `useHyprlock` |
 | `appearance` | — | sets the default of `shadow.color` (palette background @ 80% alpha) |
 | `utilities` | `/etc/xdg/gtk-3.0/settings.ini` | polarity + fonts + cursor; theme/icon names are omitted while stylix owns GTK |
 | `displayManager` | SDDM theme package | Catppuccin flavour/accent follow the scheme |

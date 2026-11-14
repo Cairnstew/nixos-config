@@ -69,7 +69,7 @@ in
           readOnly = true;
           default = if config.enable then swaylockConf else "";
           defaultText = lib.literalExpression "generated from my.theming.colors";
-          description = "The generated `xdg/swaylock/config` (used when `useHyprlock = false`).";
+          description = "The generated `~/.config/swaylock/config` (used when `useHyprlock = false`).";
         };
 
         hyprlockConfig = lib.mkOption {
@@ -83,10 +83,20 @@ in
   };
 
   config = lib.mkIf (cfg.enable && lockCfg.enable && t.enable) {
-    environment.etc = lib.optionalAttrs (!lockCfg.useHyprlock)
-      {
-        "xdg/swaylock/config".text = t.swaylockConfig;
-      } // lib.optionalAttrs lockCfg.useHyprlock {
+    # swaylock only searches $XDG_CONFIG_HOME/swaylock/config and
+    # ~/.swaylock/config. Its compiled-in "system" path points at the *package*
+    # prefix (…-swaylock-1.8.6/etc/swaylock/config), not /etc, so a system-wide
+    # file is unreachable — the theme has to live in the user's home.
+    # Writing /etc/xdg/swaylock/config is what made the 2026-11-13 idle lock
+    # come up as swaylock's unthemed white-on-white screen (background and text
+    # both default to white, so the password field is invisible).
+    home-manager.users.${cfg.user} = lib.mkIf (!lockCfg.useHyprlock) {
+      xdg.configFile."swaylock/config".text = t.swaylockConfig;
+    };
+
+    # hyprlock *does* search XDG_CONFIG_DIRS, so /etc/xdg/hypr/hyprlock.conf is
+    # found where it is written.
+    environment.etc = lib.optionalAttrs lockCfg.useHyprlock {
       "xdg/hypr/hyprlock.conf".text = t.hyprlockConfig;
     };
   };
