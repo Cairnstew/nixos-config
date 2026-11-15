@@ -408,3 +408,26 @@ mcp.my-server = {
 - Record-only: the 30 s MCP connect timeout is fixed in opencode and is not
   configurable per server for the *connect* phase; `timeout` only scales the
   per-request timeout.
+
+### 2026-11-15 — a PyPI MCP server that is not in nixpkgs is a packaging task, and upstream's stdio entry point can be broken
+- Lesson: the command-pattern table above (`skills/mcp-server-management.md:83`)
+  makes `[ "uvx" "package-name" ]` look like the way to add any Python MCP
+  server, and every "Adding an MCP Server" path assumes the server either exists
+  in nixpkgs or genuinely speaks stdio. For `byteoverdev/diagrams-mcp` neither
+  held: it is not in nixpkgs, its published entry point calls
+  `mcp.run(stateless_http=True)` — an HTTP-only FastMCP keyword, so it raises
+  `TypeError: run_stdio_async() got an unexpected keyword argument` on the
+  default stdio transport — and nixpkgs' `fastmcp` is currently `broken` because
+  `python3Packages.mcp` moved to the 2.x SDK while fastmcp 3.x requires
+  `mcp<2`. A bare `uvx` command would additionally have died for the already
+  logged reason (the systemd-spawned service has no `uvx`/`nix` on its `PATH`).
+- Fix: packaged it (`packages/diagrams-mcp` + `packages/python-mcp1`, which pins
+  the 1.x SDK back via `python3.override`), verified with a real JSON-RPC
+  handshake — `initialize` → `notifications/initialized` → `tools/list` →
+  a `tools/call` per renderer — and only then wired `mcp.diagrams` at
+  `modules/home/opencode/config.nix:657`. The four packaging traps are written
+  up in `GOTCHAS.md` so the next FastMCP server does not rediscover them.
+- Record-only: before choosing the route, read the upstream entry point
+  (`grep -n "\.run(" <server>/server.py`). That one line decides between "a
+  config block" and "a derivation", and `status=failed` from opencode carries no
+  stderr detail either way.
