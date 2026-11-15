@@ -173,6 +173,7 @@ nix run
 | `terraform` | Terraform/HCP provider + module registry | No |
 | `ieee` | IEEE Xplore academic paper search | Yes (`ieee-api-key`) |
 | `steam` | Steam game library management | Optional (`steam-api-key`) |
+| `diagrams` | Cloud architecture (mingrammer/diagrams), Mermaid and PlantUML rendering | No |
 | `apify` | Apify hosted actors — scoped to the Wattpad Story Scraper | OAuth (no token in config) |
 
 ## Common Patterns

@@ -2693,3 +2693,22 @@ Symptom: called `nix-eval` with `attr = "nixosConfigurations.desktop.config.…"
 Cause: `modules/home/opencode/tools/nix-eval.ts:77` sets `flakeDir = process.env.PWD || "."` and runs `nix eval ${flakeDir}#${attr}` — `PWD` belongs to the opencode service process, which was started from a different checkout, so the tool can silently target an unrelated flake regardless of the session's `directory`.
 
 Fix/practice: in a nixos-config session use `nix eval .#<attr>` from the repo root (shell), or check what `nix-eval` is about to target before trusting its error text. The same applies to any of the repo's nix-* tools that shell out with a bare `.` / `$PWD`.
+
+---
+
+**Wrapping an upstream FastMCP MCP server (diagrams-mcp) hits four unrelated-looking walls: nixpkgs' `fastmcp` is `broken` (mcp 2.x), upstream's stdio entry point is HTTP-only, and the render sandbox's landlock rule set excludes `/nix/store`** (2026-11-15, desktop)
+
+Symptom (task: add `diagrams-mcp-server` to `my.programs.opencode.mcp`): four failures, each of which looks like its own bug:
+1. `error: Refusing to evaluate package 'python3.14-fastmcp-slim-3.4.7' … because it has problems: - broken`. nixpkgs' `fastmcp`/`fastmcp-slim` are `broken = lib.versionAtLeast mcp.version "2"` — `python3Packages.mcp` is now the 2.x SDK (`mcp-types`, `httpx2`, …), while fastmcp 3.x requires `mcp>=1.24,<2`. Nothing is wrong with your change.
+2. `TypeError: run_stdio_async() got an unexpected keyword argument 'stateless_http'`. Upstream `main()` is `mcp.run(stateless_http=True)`; that keyword only exists for the HTTP transports, and FastMCP defaults to `settings.transport = "stdio"`. Their published console script therefore cannot start under any client that spawns it (their Docker image sets `FASTMCP_TRANSPORT=http`) — so "it works with `uvx`" is not true for stdio clients.
+3. `ModuleNotFoundError: No module named 'diagrams.aws'` inside the tool, while `python -I -c "import diagrams.aws.network"` succeeds by hand. The server's render sandbox applies landlock rules **only to `sys.path` entries**; with `python.withPackages` those entries are symlinks into `/nix/store`, so the resolved targets sit outside every rule and reads are denied (importlib reports it as "no such module").
+4. `RuntimeError: Unable to find libseccomp` (then `RuntimeError: pyseccomp is required on Linux for sandbox network blocking`) in the sandboxed child. `pyseccomp` resolves the library with `ctypes.util.find_library("seccomp")` (ldconfig-based), and the sandbox passes **only `PATH`** to the child.
+5. Bonus: `python3Packages.buildPythonApplication` sets `pythonModule = false`, so `python.withPackages` silently drops it — the env has no `bin/diagrams-mcp-server` at all.
+
+Fix/practice: the working shape is `packages/diagrams-mcp/default.nix` + `packages/python-mcp1/`:
+- pin `mcp` back with `python3.override { packageOverrides = new: old: { mcp = new.callPackage ../python-mcp1 {}; … }; }` and, on `fastmcp`/`fastmcp-slim`, set `doCheck = false; doInstallCheck = false; meta.broken = false` (nixpkgs runs the upstream suite from `installCheckPhase`, so `doCheck` alone is not enough);
+- build the server with `buildPythonPackage` (not `buildPythonApplication`) and run it out of `python.withPackages`, so the sandbox's `sys.executable -I` children find deps in the interpreter's own site-packages (a wrapped script only gets them via `PYTHONPATH`, which `-I` drops);
+- patch the landlock block to also allow `/nix/store` (`_add_path_rule("/nix/store", ro_rights)`); the store is read-only by construction, so this is safe;
+- bake `${lib.getLib libseccomp}/lib/libseccomp.so.2` into `pyseccomp.py` (`libseccomp`'s default output has only `bin/` — the library is in the `lib` output);
+- set `DIAGRAMS_INLINE_DEFAULT=1`, otherwise every render returns an `/images/<token>` link served by a FastMCP `custom_route` that does not exist on stdio.
+- `fetchPypi`'s legacy `packages/source/…` mirror path 404s for these projects — use `fetchurl` with the exact `files.pythonhosted.org` URL.

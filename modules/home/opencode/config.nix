@@ -649,6 +649,17 @@ in
           };
           timeout = 120000;
         };
+        # Diagram rendering (cloud architecture via mingrammer/diagrams, Mermaid,
+        # PlantUML). Not in nixpkgs — packaged in packages/diagrams-mcp because
+        # upstream's stdio entry point is broken and nixpkgs' fastmcp needs its
+        # `mcp` dependency pinned back to 1.x. Renders come back as inline
+        # images (DIAGRAMS_INLINE_DEFAULT=1 in the wrapper).
+        mcp.diagrams = {
+          enabled = true;
+          type = "local";
+          command = [ "${pkgs.callPackage ../../../packages/diagrams-mcp {}}/bin/diagrams-mcp-server" ];
+          timeout = 120000;
+        };
         # Apify hosted MCP server (https://mcp.apify.com), scoped to the
         # Wattpad Story Scraper actor (easyapi/wattpad-story-scraper) plus the
         # generic actor-details tool. Remote + OAuth: sign in on first use with
