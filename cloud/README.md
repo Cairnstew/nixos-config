@@ -137,11 +137,14 @@ environment variables via the wrapper's `prefixText` (guarded with `-r` checks s
 machines/CI without secrets still evaluate).
 
 > ⚠️ **Verify secrets before `apply`:** `gcloud-auth.age` was re-encrypted on
-> 2026-11-17 to the `nixos-infra-admin@nixos-infra-496517` service-account key
-> (verified: it decrypts with the host key and mints a token with project
-> `roles/owner`). `aws-cloud.age`, `aws-ssh-key.age` and the other cloud
-> secrets have not been re-verified since the hosts were rekeyed — check them
-> before an `apply`:
+> 2026-11-17 to the `org-admin@nixos-infra-496517` seed service-account key
+> (verified: the blob decrypts with the host key and the identity holds
+> `projectCreator`, `folderAdmin`, `securityAdmin`, `serviceAccountAdmin`,
+> `serviceAccountKeyAdmin` and `orgpolicy.policyAdmin` on the organization).
+> That is a deliberate org-wide blast radius: rotate the key out of agenix if
+> only project-scoped access is needed. `aws-cloud.age`, `aws-ssh-key.age` and
+> the other cloud secrets have not been re-verified since the hosts were
+> rekeyed — check them before an `apply`:
 >
 > ```bash
 > nix develop .#secrets

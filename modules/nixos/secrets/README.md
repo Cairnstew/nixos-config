@@ -50,7 +50,7 @@ Then add to `secrets-manifest.json`.
 | dashboard-basic-auth | Dashboard HTTP basic-auth password (hashed at boot by Caddy) |
 | deepinfra-key | DeepInfra API key |
 | discord-auth | Discord token for Endcord profiles |
-| gcloud-auth | GCloud service-account JSON (`nixos-infra-admin@nixos-infra-496517`) |
+| gcloud-auth | GCloud service-account JSON (`org-admin@nixos-infra-496517`, org-level seed admin) |
 | github-token | GitHub personal access token |
 | github-token-nixos-config | GitHub token for nixos-config repo |
 | github-token-obsidian | GitHub token for Obsidian sync |
