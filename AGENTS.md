@@ -695,3 +695,22 @@ style tool/skill/command injection from flake inputs.
   `modules/nixos/common.nix`'s `imports` **before** evaluating the host, and
   treat §2 as the output map only (a flat `(name).nix` file is likewise only an
   output until imported).
+
+### 2026-11-17 — §11.4 "the repo stays manual-push" is false; the lens/guard query a dead table pair
+- Lesson: `git-reposync` sets `autoPush = lib.mkDefault true` on a `5m` interval
+  (`modules/nixos/common.nix:451`, `:435`), so a self-improvement commit is
+  published within ~5 minutes like any other commit — it is not held back. The
+  sentence "The repo stays manual-push" (`AGENTS.md:511`, mirrored at
+  `modules/home/opencode/AGENT.md:174` and `modules/home/opencode/agents/build.md:80`)
+  is therefore wrong. Separately, the efficiency lens at `AGENTS.md:515-520`
+  reads `session.cost`/`tokens_*` and the `part` table, but `session`/`part`
+  stopped being written on 2026-11-02 — live data is `session_v2`/`session_message`
+  — and the guard's `SELECT agent FROM session`
+  (`modules/home/opencode/plugins/self-improve-guard.ts:145`) finds nothing, so
+  the checkpoint's runtime reminder has been a silent no-op and the lens returns
+  NULL/0.
+- Fix: treat self-applies as auto-pushed — a bad commit is public in minutes, so
+  `git revert` is the net, not "it's only local". The prompt/plugin/lens wording
+  fixes are record-only here (`agents/*.md`, `plugins/*.ts` and this section are
+  outside the append-only self-apply allow-list); the behavioural trap is
+  recorded in `GOTCHAS.md`.
