@@ -2712,3 +2712,11 @@ Fix/practice: the working shape is `packages/diagrams-mcp/default.nix` + `packag
 - bake `${lib.getLib libseccomp}/lib/libseccomp.so.2` into `pyseccomp.py` (`libseccomp`'s default output has only `bin/` — the library is in the `lib` output);
 - set `DIAGRAMS_INLINE_DEFAULT=1`, otherwise every render returns an `/images/<token>` link served by a FastMCP `custom_route` that does not exist on stdio.
 - `fetchPypi`'s legacy `packages/source/…` mirror path 404s for these projects — use `fetchurl` with the exact `files.pythonhosted.org` URL.
+
+---
+
+**Rotating the GCP admin key also exposes that `config.nix` `me.sshKey` is stale — `gcloud-auth` decrypts with the host key, not the user key** (2026-11-17, desktop)
+
+Symptom: the old `gcloud-auth` key (`project-main-owner@nixos-infra-496517`, key id `afa1b76…`) stopped authenticating, so a new `nixos-infra-admin@nixos-infra-496517` JSON key had to be imported. Re-encrypting with `nix run .#secrets-set -- gcloud-auth < key.json` succeeds and `nix run .#secrets-validate` passes, but `age -d -i ~/.ssh/id_ed25519 modules/nixos/secrets/gcloud-auth.age` still fails with "no identity matched any of the recipients" even though the recipient list names `sean.cairnsst@gmail.com`. Cause: `config.nix`'s `me.sshKey` is the old desktop key `…IPWrhAp1ZU9…`, while the live login key on desktop is `…IGEp55lp8743…` (only added to `configurations/nixos/server/default.nix` authorized keys). Every secret is encrypted to a public key whose private half is not on this machine.
+
+Fix/practice: re-encrypt with the repo tooling (`keys-snapshot.json`), then prove the new blob actually decrypts with a real recipient before trusting it — `sudo age -d -i /etc/ssh/ssh_host_ed25519_key -o <tmp> modules/nixos/secrets/gcloud-auth.age`, and `sha256sum` it against the source key. Activation uses the host key, so that is the path that matters. Update the live copy with `sudo install -m 0400 -o seanc -g users <key.json> /run/agenix/gcloud-auth` for immediate use; a rebuild is still required to bind the new store path. Shred the plaintext key afterwards. To restore user-level decryption, update `me.sshKey` to the on-disk key and rekey every secret (`agenix-manager rekey`) — do not fold that into a single-secret rotation.

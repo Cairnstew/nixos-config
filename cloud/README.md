@@ -136,15 +136,17 @@ Credentials are **not** committed. They flow from agenix secrets into `TF_VAR_*`
 environment variables via the wrapper's `prefixText` (guarded with `-r` checks so
 machines/CI without secrets still evaluate).
 
-> ⚠️ **Known stale secrets:** the `.age` files under
-> `modules/nixos/secrets/` (`aws-cloud.age`, `gcloud-auth.age`, `aws-ssh-key.age`,
-> …) could not be decrypted with the current host keys (the hosts were likely
-> rekeyed since encryption). Regenerate them before `apply`:
+> ⚠️ **Verify secrets before `apply`:** `gcloud-auth.age` was re-encrypted on
+> 2026-11-17 to the `nixos-infra-admin@nixos-infra-496517` service-account key
+> (verified: it decrypts with the host key and mints a token with project
+> `roles/owner`). `aws-cloud.age`, `aws-ssh-key.age` and the other cloud
+> secrets have not been re-verified since the hosts were rekeyed — check them
+> before an `apply`:
 >
 > ```bash
 > nix develop .#secrets
 > agenix-manager edit aws-cloud
-> agenix-manager edit gcloud-auth
+> agenix-manager edit aws-ssh-key
 > ```
 
 ## State
