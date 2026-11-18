@@ -2736,3 +2736,13 @@ Symptom: while validating an unrelated module change, `nix flake check --no-buil
 Cause: `packages/python-mcp1/default.nix` is a Python-package function (`{ lib, buildPythonPackage, anyio, … }`) meant to be instantiated from an overridden Python set — `packages/diagrams-mcp/default.nix:51` calls it as `new.callPackage ../python-mcp1 { }`. But every directory under `packages/` is also auto-exported as `packages.<system>.<name>`, and that path instantiates it with top-level `pkgs.callPackage`, which has no `anyio` argument.
 
 Fix/practice: don't chase this when validating something else — confirm with a HEAD worktree first (`git worktree add /tmp/… HEAD`, then `nix eval .#packages.x86_64-linux.python-mcp1.drvPath` in it), then validate with the per-host eval sequence instead of a full flake check. Until the helper moves out of the auto-wired `packages/` namespace (or gains a top-level-compatible arg set), a full `flake check` stays red on this one attribute.
+
+---
+
+**`python-tofu` prune only inspects `stack.provider.project` — a bootstrap stack with prune on aims at the shared provider project, not the declared one** (2026-11-18, desktop)
+
+Symptom: enabling `stack.prune.enabled = true` + `settings.prune = true` on a stack whose `provider.project` was `nixos-infra-496517` while `projects."python-tofu-probe-…"` declared a different project made the unit log `Note: pruning only inspects nixos-infra-496517; other projects are left untouched: python-tofu-probe-…`, plan disabling three APIs in the shared infra project (`orgpolicy`, `privilegedaccessmanager`, `pubsub`), then fail with `403 … permission=serviceusage.services.disable`; the failed unit made `switch-to-configuration` exit 4. No API was actually disabled (verified afterwards), but the plan was aimed at the wrong project.
+
+Cause: prune discovery uses `project = stack.provider.project` and merely warns about the other declared projects, so `projects.*` is invisible to it. A stack that bootstraps a new project from a separate quota project therefore cannot safely enable prune.
+
+Fix/practice: one stack owns one project — set `provider.project` to the project prune should manage, and leave prune off on a bootstrap stack that creates other projects. Retargeting `provider.project` at the probe project made prune disable exactly its five undeclared APIs and leave `nixos-infra-496517` untouched. Service accounts stay behind the separate `include_service_accounts` + `--allow-service-accounts` gate either way.
