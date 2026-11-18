@@ -199,6 +199,7 @@ NixOS system modules. Import `nixosModules.common` to get the base profile syste
 | `letta/` | Letta (MemGPT) stateful AI agent platform |
 | `jan/` | Jan open-source ChatGPT alternative with local LLM inference |
 | `sillytavern/` | SillyTavern LLM frontend (thin wrapper around the upstream Cairnstew/SillyTavern flake module — options under `services.sillytavern-nixos.*`) |
+| `python-tofu/` | python-tofu GCP/OpenTofu reconciler (thin wrapper around the upstream Cairnstew/python-tofu flake module — upstream options under `services.python-tofu.*`, opt-in via `my.services.python-tofu.enable`) |
 | `chatterbox-tts/` | Chatterbox TTS server — OpenAI-compatible TTS API |
 | `suwayomi/` | Suwayomi manga reader server with HOCON config and sync |
 | `ttyd/` | ttyd web terminal for browser-based emergency SSH access |

@@ -87,6 +87,14 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
+    # Typed Python DSL + CLI wrapper around OpenTofu for GCP infrastructure.
+    # Exposes `nixosModules.default` (services.python-tofu.*) and the Nix
+    # stack-authoring option tree; wired into modules/nixos/python-tofu/.
+    python-tofu = {
+      url = "github:Cairnstew/python-tofu";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+
     # MCP server framework — declarative server configs, multi-flavor output
     mcp-servers-nix = {
       url = "github:natsukium/mcp-servers-nix";

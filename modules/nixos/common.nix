@@ -163,6 +163,8 @@ in
     ./homeManager
 
     # ── External Modules ───────────────────────────────────────────────────
+    # Thin wrapper around the `python-tofu` input (GCP/OpenTofu stacks).
+    ./python-tofu
     inputs.agenix.nixosModules.default
     inputs.agenix-manager.nixosModules.default
     inputs.nixos-wsl.nixosModules.default

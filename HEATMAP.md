@@ -587,6 +587,11 @@ All `my.*` options declared across module files.
 | `machines.<name>.nixos.autoInstall.enable` | bool | `false` | Automated NixOS install via custom netboot |
 | `machines.<name>.nixos.autoInstall.diskoConfig` | raw | `{}` | disko configuration attrset |
 | `machines.<name>.nixos.autoInstall.nixosConfig` | str | `""` | NixOS module expression for target system |
+| `my.services.python-tofu.enable` | bool | `false` | Enable the python-tofu GCP/OpenTofu reconciler (upstream `services.python-tofu.*`) |
+| `my.services.python-tofu.stack` | null/attrs | `null` | Nix-declared GCP stack (upstream `nix/stack.nix` option tree) |
+| `my.services.python-tofu.stackFile` | null/path | `null` | Nix module declaring the stack (for `imports`/`mkMerge`) |
+| `my.services.python-tofu.credentialsFile` | null/str | `"/run/agenix/gcloud-auth"` | Exported as `GOOGLE_APPLICATION_CREDENTIALS`; `null` = use ADC |
+| `my.services.python-tofu.applyOnRebuild` | bool | `false` | Apply the stack on activation (`apply` + `--auto-approve`) |
 
 ## my.virtualisation.* (Virtualization)
 
