@@ -449,3 +449,16 @@ gh pr merge <pr-number> --merge --repo Cairnstew/nixos-config
   before moving on: a stat listing files from another module is the symptom.
   Both incidents here were recovered with `git reset --soft <base>` while the
   commits were still unpushed.
+
+### 2026-11-18 — `nix flake check --no-build` does run here; warnings are the only failure
+- Lesson: the 2026-10-20 entry above says the check "cannot complete here" and
+  sends you straight to the per-host eval sequence. This session ran
+  `nix flake check --no-build` (memory-capped) against a tree with the terranix
+  input removed, and it finished in about a minute, checking `apps`, `checks`,
+  `packages`, `overlays` and `templates`. Everything it reported was a
+  pre-existing warning (several `apps.*` lack `meta.description`, plus nixpkgs
+  deprecations), so it passed once warnings were tolerated.
+- Fix: run it as a fast whole-flake eval gate, but expect a non-zero exit purely
+  from those old warnings — compare the warning set against `HEAD` before
+  blaming the change, and keep the per-host `drvPath` evals as the authoritative
+  check.
