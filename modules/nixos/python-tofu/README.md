@@ -88,6 +88,28 @@ For secret *values* rather than a file path, use upstream
 `services.python-tofu.environmentFile` — never `environment`, which is
 world-readable store data.
 
+## Pruning
+
+`prune.enabled = true` makes the **provider project** authoritative. Prune only
+inspects `stack.provider.project` (upstream `prune.py`), so a bootstrap stack
+that declares a *different* project cannot prune safely — point the stack at
+the project it should own. `sections` defaults to `("all",)`; `projects` is
+never implied by `all` and must be named explicitly (and only deletes projects
+carrying `goog-terraform-provisioned`).
+
+Prune's `subscriptions`/`topics` discovery calls the Pub/Sub API. If `apis`
+pruning would otherwise disable `pubsub.googleapis.com`, declare it so it stays
+enabled and protected:
+
+```nix
+stack.apis.pubsub = {
+  project = "<provider-project>";
+  service = "pubsub.googleapis.com";
+};
+```
+
+Without that, the next prune fails with `403 … pubsub.googleapis.com/v1/…`.
+
 ## Tests
 
 `tests.nix` carries L0 assertions only: the systemd unit is declared upstream,
