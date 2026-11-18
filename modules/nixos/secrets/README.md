@@ -63,7 +63,7 @@ Then add to `secrets-manifest.json`.
 | neko-admin-password | Neko admin password (NEKO_MEMBER_MULTIUSER_ADMIN_PASSWORD) |
 | neko-user-password | Neko user password (NEKO_MEMBER_MULTIUSER_USER_PASSWORD) |
 | nixos-config-cache-token | Cachix push token |
-| oci-api-key | Oracle Cloud API signing private key (PEM) — `oracle/oci` Terraform provider auth |
+| oci-api-key | Oracle Cloud API signing private key (PEM) — OCI API/provider auth |
 | oci-auth-token | Oracle Cloud auth token (OCI Registry / API password auth) |
 | oci-cloud | Oracle Cloud CLI `~/.oci/config` (INI: tenancy, user, fingerprint, region, key_file — OCI_CONFIG_FILE target) |
 | onepassword-token | 1Password service account token — has an `.age` file but is **not** in `secrets-manifest.json` (not wired to `age.secrets.*`) |

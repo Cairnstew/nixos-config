@@ -284,7 +284,6 @@ in
             playwright-mcp
             betterEmailPkg
             googleCalendarMcpPkg
-            terraform
             nixpkgs-fmt
           ];
         };

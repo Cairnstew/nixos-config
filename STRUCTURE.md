@@ -110,7 +110,6 @@ Flake-level modules for outputs, packages, and development tools. `flake.nix` au
 | `act-fixed.Dockerfile` | Custom act image replacing the `/var/run → /run` symlink (Docker 29+ `mkdirat` workaround) |
 | `caches.nix` | Binary cache substituters and public keys (Cachix, CUDA, personal) |
 | `theming.nix` | Flake-level `theming.*` schema — the single source of truth for the colour scheme (`theming.scheme`, `theming.overrides`) |
-| `cloud.nix` | Cloud IaC via terranix: `terranix.terranixConfigurations` (gcp/aws), OpenTofu wrappers, `tf`/`tf-plan`/`tf-apply`/`tf-destroy`/`tf-show-config` apps + `packages.tf-config` |
 | `config.nix` | Identity and preference option declarations consumed from `config.nix` |
 | `formatter.nix` | Treefmt/nixpkgs-fmt configuration for `nix fmt` |
 | `local-verify.nix` | Local CI verification jobs (eval, format, lint, flake checks) |
@@ -345,16 +344,6 @@ Nixpkgs overlays for package modifications.
 | File | Description |
 |------|-------------|
 | `default.nix` | All overlays combined; also pins `qutebrowser` to the Cairnstew fork (native `:onepass`) [→ overlays.default] |
-
-## cloud/
-
-Cloud infrastructure-as-code (terranix modules → OpenTofu).
-
-| File | Description |
-|------|-------------|
-| `README.md` | Two-stage provisioning/deploy docs, usage, secret notes |
-| `gcp/default.nix` | GCP: VPC, Cloud NAT, firewalls, GCS bucket, GPU NixOS spot MIG [→ packages.gcp] |
-| `aws/default.nix` | AWS: VPC, key pair, security group, NixOS EC2 instance [→ packages.aws] |
 
 ## templates/
 

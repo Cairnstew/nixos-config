@@ -604,12 +604,6 @@ in
           ];
           timeout = 30000;
         };
-        mcp.terraform = {
-          enabled = true;
-          type = "local";
-          command = [ "terraform-mcp-server" "stdio" ];
-          timeout = 120000;
-        };
         mcp.ieee = lib.mkIf (config.age.secrets ? "ieee-api-key") {
           enabled = true;
           type = "local";
@@ -755,7 +749,7 @@ in
         skills = cfg.skills;
         tools = cfg.tools;
         extraPackages = cfg.extraPackages
-          ++ [ pkgs.terraform-mcp-server pkgs.nodejs ];
+          ++ [ pkgs.nodejs ];
         settings = mergedSettings;
       };
     }

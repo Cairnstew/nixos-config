@@ -84,7 +84,7 @@ mcp.my-server = {
 | uvx (from) | `[ "uvx" "--from" "package-name" "server-name" ]` |
 | local binary | `[ "${pkgs.my-package}/bin/my-server" ]` |
 | python script | `[ "${pythonEnv}/bin/python3" "./path/to/server.py" ]` |
-| go binary | `[ "terraform-mcp-server" "stdio" ]` |
+| go binary | `[ "my-go-mcp-server" "stdio" ]` |
 
 ### 3. Apply
 
@@ -170,7 +170,6 @@ nix run
 | `memory` | Knowledge graph for persistent cross-session facts | No |
 | `github` | GitHub official: repos, file tree, issues, PRs, actions | Yes (`github-token`) |
 | `pdf-mcp` | PDF text extraction, search, and structural analysis | No |
-| `terraform` | Terraform/HCP provider + module registry | No |
 | `ieee` | IEEE Xplore academic paper search | Yes (`ieee-api-key`) |
 | `steam` | Steam game library management | Optional (`steam-api-key`) |
 | `diagrams` | Cloud architecture (mingrammer/diagrams), Mermaid and PlantUML rendering | No |

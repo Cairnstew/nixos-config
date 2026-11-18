@@ -35,11 +35,6 @@
 
     # M5: auto-cpufreq removed — unused flake input (services.auto-cpufreq uses nixpkgs package, not flake input)
 
-    terranix = {
-      url = "github:terranix/terranix";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
-
     # Software inputs
     nixos-vscode-server.flake = false;
     nixos-vscode-server.url = "github:nix-community/nixos-vscode-server";

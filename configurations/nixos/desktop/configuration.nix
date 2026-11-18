@@ -24,6 +24,6 @@
   users.users.seanc = {
     # F8: isNormalUser is common.nix:156 mkDefault true (recon F8)
     description = "Sean Cairns";
-    # extraGroups removed — matches common.nix default [networkmanager terraform wheel] (M4b)
+    # extraGroups removed — matches common.nix default [networkmanager wheel] (M4b)
   };
 }

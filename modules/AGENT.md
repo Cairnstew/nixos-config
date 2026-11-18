@@ -261,7 +261,7 @@ devShells, and exported modules.
 | **Autoload** | `flake.nix` imports **all** `.nix` files in this directory automatically, plus any subdirectory containing a `default.nix`. Any new file or subdirectory becomes a live flake module. |
 | **Identity Pattern** | `config.nix` (repo root) is imported by `modules/flake-parts/config.nix`. Extend the submodule there when adding new identity fields; consume via `config.me.*` / `config.tailnet.*`. |
 | **`pkgs` wiring** | Use the existing `_module.args.pkgs` pattern in `perSystem` (see this document's §3.4 flake-parts Modules). Do not shadow `pkgs` with a custom import unless you are adding overlays. |
-| **Manual Wiring** | Packages/apps are often exposed explicitly in `perSystem.packages` / `perSystem.apps` (see `packages.nix` and `cloud.nix` for examples). Autowiring does not cover these. |
+| **Manual Wiring** | Packages/apps are often exposed explicitly in `perSystem.packages` / `perSystem.apps` (see `packages.nix` and `ventoy/` for examples). Autowiring does not cover these. |
 | **Cross-flake inputs** | Use `inputs.<name>` sparingly; prefer forwarding via `follows` to keep closure sizes small. Declare primary inputs in `nixos-flake.nix` under `nixos-unified.primary-inputs`. |
 | **Tests** | Validate via `nix flake check`. |
 

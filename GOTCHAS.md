@@ -521,27 +521,9 @@ Symptom: `nixos-rebuild switch` dies with `A definition for option 'home-manager
 
 ---
 
-**Cloud secrets (.age files) can't be decrypted after hosts were rekeyed**
+**Secrets (.age files) can't be decrypted after hosts were rekeyed**
 
-Symptom: `nix run .#gcp -- plan` fails with provider auth errors, or `age -d -i <hostkey> modules/nixos/secrets/aws-cloud.age` reports `no identity matched any of the recipients`. Cause: the encrypted `.age` blobs were encrypted to host keys that have since been rotated (`/etc/ssh/ssh_host_ed25519_key` no longer matches any recipient in `/etc/agenix/secrets.nix`). The files are structurally valid but useless. Fix: regenerate via agenix-manager (`nix develop .#secrets && agenix-manager edit aws-cloud`) so they re-encrypt to the current keys. Guard all credential consumption in `modules/flake-parts/cloud.nix` with `[ -r /run/agenix/<name> ]` checks so evaluation never breaks on machines/CI without the secret.
-
----
-
-**Terranix configs must live outside `modules/nixos/` (namespace violation)**
-
-Symptom: a terranix module (options like `terraform.required_providers`, `resource.*`, `variable.*`) placed under `modules/nixos/<name>/default.nix` is autowired as `nixosModules.<name>`. It only evaluates because no host imports it — the moment `common.nix` or any host globs it, every host eval fails with `attribute 'terraform' missing` (terranix options aren't NixOS options). Fix: keep terranix modules under `cloud/` (see `cloud/README.md`); the flake-parts layer (`modules/flake-parts/cloud.nix`) wires them via `terranix.terranixConfigurations.*`.
-
----
-
-**Terranix `${}` escaping is easy to get wrong**
-
-Symptom: Terraform references render literally (e.g. the generated JSON contains `\${var.region}` or the wrong `$var.region`), or provider evaluation throws on unescaped Nix interpolation. Fix: use `lib.tf.ref "var.region"` / `lib.tf.file` in terranix modules instead of hand-rolling `\${...}`. Inside Nix string interpolation wrapping a reference (e.g. `"seanc:${lib.tf.ref "var.ssh_pub_key"}"`) the result is the literal `seanc:${var.ssh_pub_key}` — correct Terraform. Verify with `nix run .#tf-show-config | jq .`.
-
----
-
-**Computed Terraform values can't feed Nix evaluation**
-
-Symptom: interpolating an instance IP / resource attribute (known only after `apply`) into a NixOS config (e.g. via `terraform-nixos` deploy modules) renders an empty drvPath or `<computed>`. Cause: Nix evaluates at build time, Terraform resources resolve at plan/apply time. Fix: don't feed computed values into Nix. Use Terraform **outputs** + stage-2 tools (`nixos-anywhere`, `colmena`, or `nixos-rebuild --target-host`); pass only known-at-plan-time values (AMI ids, image families, key names) as variables.
+Symptom: `age -d -i <hostkey> modules/nixos/secrets/<name>.age` reports `no identity matched any of the recipients` (a consumed secret then reads as missing at runtime). Cause: the encrypted `.age` blob was encrypted to host keys that have since been rotated (`/etc/ssh/ssh_host_ed25519_key` no longer matches any recipient in `/etc/agenix/secrets.nix`). The file is structurally valid but useless. Fix: regenerate via agenix-manager (`nix develop .#secrets && agenix-manager edit <name>`) so it re-encrypts to the current keys, and guard every consumer with `[ -r /run/agenix/<name> ]` so evaluation never breaks on machines/CI without the secret.
 
 ---
 
@@ -2134,7 +2116,7 @@ Fix/practice: before adding a Workshop id to a pack, verify it with `POST https:
 
 **BigQuery public datasets need a `US` job location — a `europe-west4` job reports a misleading "Access Denied"** (2026-11-02, desktop)
 
-Symptom: querying `bigquery-public-data` from a job pinned to the repo's default region (`cloud/gcp/default.nix:43`, inherited by datasets at `cloud/gcp/bigquery.nix:27`) fails with `Access Denied: Table bigquery-public-data:samples.wikipedia: User does not have permission to query table ...`, which reads like an IAM fault. The same SQL with `--location=US` returns rows, and `SELECT 1` works either way. Cause: a BigQuery job runs in one location; `bigquery-public-data` is the US multi-region, and BigQuery surfaces a cross-region read as accessDenied rather than a location error. Fix/practice: pin public-dataset jobs to `US` (`bq --location=US query ...`, `bigquery.Client(location="US")`) and keep `europe-west4` for the project's own `main` dataset. Related, verified the same day: `cloud/README.md:139` calls `gcloud-auth` a "known stale" secret, but it decrypted from `/run/agenix/gcloud-auth` and authenticated as `project-main-owner@nixos-infra-496517.iam.gserviceaccount.com` — do not re-encrypt on that warning alone. The real blocker on that project is its **closed billing account**: BigQuery queries work, but GCS bucket creation and writes fail with `403 ... billing account ... disabled in state closed`.
+Symptom: querying `bigquery-public-data` from a job pinned to `europe-west4` fails with `Access Denied: Table bigquery-public-data:samples.wikipedia: User does not have permission to query table ...`, which reads like an IAM fault. The same SQL with `--location=US` returns rows, and `SELECT 1` works either way. Cause: a BigQuery job runs in one location; `bigquery-public-data` is the US multi-region, and BigQuery surfaces a cross-region read as accessDenied rather than a location error. Fix/practice: pin public-dataset jobs to `US` (`bq --location=US query ...`, `bigquery.Client(location="US")`) and keep `europe-west4` for the project's own `main` dataset. Related, verified the same day: `gcloud-auth` decrypted from `/run/agenix/gcloud-auth` and authenticated as `project-main-owner@nixos-infra-496517.iam.gserviceaccount.com`, so a "known stale" warning alone is no reason to re-encrypt. The real blocker on that project is its **closed billing account**: BigQuery queries work, but GCS bucket creation and writes fail with `403 ... billing account ... disabled in state closed`. (The `cloud/` terranix modules were removed on 2026-11-18; the location lesson stands on its own.)
 
 **`DISPLAY=:0` dies mid-session while Hyprland and Xwayland keep running — the `/tmp/.X11-unix/X0` path was re-bound by a stray X server and left as a dead socket (Hyprland also serves `X0_`)** (2026-11-03, desktop)
 
