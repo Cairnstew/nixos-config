@@ -220,13 +220,17 @@ self-improvement checkpoint (a short, cheap structured self-check):
    "guaranteed check, may or may not act" shape, no new agent/gate, no threshold
    gate by default):
    - Query this session's own row in `~/.local/share/opencode/opencode.db`
-      (via the `sqlite3` CLI — guaranteed present via `pkgs.sqlite`; fall back
-      to `python3 -c "import sqlite3"` if `sqlite3` is ever missing): read
-     `session.cost`, `tokens_input/output/reasoning/cache_read/cache_write` for
-     this session's id, and the `part`-table tool-call count. The nullable options
+     (via the `sqlite3` CLI — present via `pkgs.sqlite`; fall back to
+     `python3 -c "import sqlite3"`). The live tables are `session_v2`
+     (`cost`, `tokens_input/output/reasoning/cache_read/cache_write`) and
+     `session_message` (tool calls: `json_each(data,'$.content')` where
+     `json_extract(value,'$.type')='tool'`). `session`/`part` are legacy
+     fallbacks for pre-2026-11-02 rows only. The nullable options
      `selfImprove.efficiencyLensMinToolCalls` / `...MinCost` (default `null` =
-     no gate, always-on today) can be set later to skip below a threshold; honour
-     them if set (read `~/.config/opencode/self-improve.json`).
+     no gate) skip this part below a threshold; honour them if set (read
+     `~/.config/opencode/self-improve.json`).
+   - Check `EFFICIENCY-PROPOSALS.md` (read it) before reporting an idea — if an
+     entry already covers it, cite that entry instead of proposing it again.
    - If a genuinely repeated pattern shows up that a new tool/skill/command/
      config would collapse, report it as a **record-only efficiency proposal** in
      your reply (name the idea, cite the quantitative evidence: call counts /

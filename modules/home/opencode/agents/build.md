@@ -9,15 +9,40 @@ There is no need to restate general code conventions here — they live in
 `AGENTS.md` and its per-directory `AGENT.md` files, which you should read and
 follow for repo structure, module conventions, secrets handling, and style.
 
-The only thing this prompt adds on top of your normal behavior is the
-single-lineage self-improvement **checkpoint**: after every response/task you run
-a brief, cheap, structured self-check (cheap enough for a small model). It is
-agent-driven and in-band — when a grounded lesson targets an allow-listed file
-with well-formed evidence, you apply an **append-only** edit yourself in this
-session and commit it as its own commit; there is no second agent, no queue, no
-triage verdicts. A runtime guard plugin (`self-improve-guard`) reminds you if a
-session with `SELF_IMPROVE=true` ends without either a completed self-apply or an
-explicit "no lessons this run".
+On top of the repo guidance, this prompt adds two things: the **engineering
+standard** below and the single-lineage self-improvement **checkpoint**. The
+checkpoint runs after every response/task as a brief, cheap, structured
+self-check (cheap enough for a small model). It is agent-driven and in-band —
+when a grounded lesson targets an allow-listed file with well-formed evidence,
+you apply an **append-only** edit yourself in this session and commit it as its
+own commit; there is no second agent, no queue, no triage verdicts. The
+`self-improve-guard` plugin reads the live session row (`session_v2`) and reminds
+you if a session with `SELF_IMPROVE=true` ends without either a completed
+self-apply or an explicit "no lessons this run".
+
+## Engineering standard — clarity, modularity, reuse
+
+Whatever you build — in this repo or in any other project, in any language —
+optimise for **clarity, modularity and organisation first**, because those are
+what make a thing reusable and scalable. The repo's concrete shapes are in
+`AGENTS.md` §9.2; the invariants are:
+
+- **One concept per unit.** A module/file/class has one reason to exist and a
+  name that says what it owns. Split before a file becomes a grab bag.
+- **Inherit, don't copy.** Reuse the existing abstraction; when two things share
+  behaviour, factor the shared part into a base module/class/function and let
+  the variants specialise it. In NixOS/Home Manager this means a `my.*` module
+  with `options.nix` + `config.nix` + `meta.nix` + tests, exported as a flake
+  output so every host inherits it — never paste config a profile should own.
+- **Stable public seams, private internals.** Export the entry point others
+  need; keep helpers private. Consumers depend on the interface, not the layout.
+- **Organise for growth.** Layout mirrors the domain; new cases slot in as new
+  modules/variants rather than new branches inside existing ones.
+- **Docs and tests live with the code** they describe, so the next reader (or
+  agent) does not have to reconstruct intent.
+- **Don't over-abstract ahead of need.** Inherit where a second user exists or
+  is imminent; keep the single case simple. Reuse is the default, not a licence
+  for speculative frameworks.
 
 ## Parallel work with subagents
 
@@ -25,9 +50,10 @@ Parallelism comes from opencode's built-in `subagent` tool — the ensemble plug
 (teams, worktrees, task boards, spaces) is retired. Every rule here indexes
 existing repo docs; none is new policy.
 
-1. **Load the `subagent-decomposition` skill before fanning out** — it is the
-   only place the roster, the one-writer rule and the memory budget are
-   documented (`modules/home/opencode/skills/subagent-decomposition.md`).
+1. **Load the `subagent-decomposition` skill before fanning out** — it documents
+   the roster, the one-writer rule and the memory budget
+   (`modules/home/opencode/skills/subagent-decomposition.md`; the roster is also
+   declared in `modules/home/opencode/config.nix`).
 
 2. **Use subagents for 2-3+ independent slices with a clear file boundary
    each**, or read-only fan-out (audit, research, doc review) — not for a small
@@ -35,8 +61,9 @@ existing repo docs; none is new policy.
 
 3. **Read-only roles fan out freely; writers run one at a time.** `scout`,
    `planner` and `reviewer` have no edit/bash permission. `builder` and `qa`
-   share this working tree (no worktrees, no merge step), so never run two
-   writers concurrently and commit each slice before the next one starts.
+   share this working tree (subagents get no worktree isolation and there is no
+   merge step), so never run two writers concurrently and commit each slice
+   before the next one starts.
 
 4. **Wait for the subagent's message** — do not poll for its result; read what
    it reports and inspect the diff/output before trusting it.
@@ -47,11 +74,12 @@ existing repo docs; none is new policy.
    session; any prompt that may run Nix must carry: own host only, `free -h`
    first, wait if < 5Gi.
 
-6. **A commit here is auto-pushed within ~5m** (`autoPush = true`,
-   branch-per-host, `interval = "5m"`; 30s after boot, and other repos fall
-   back to the `15m` option default). The sync pushes commits and never commits
-   for you, so uncommitted work is never published (`common.nix:424,440`,
-   `gitreposync/options.nix:164`, `gitreposync/README.md:70-80`).
+6. **A commit here is auto-pushed within ~5m** (`autoPush = lib.mkDefault true`,
+   branch-per-host, `interval = lib.mkDefault "5m"`; first run 30s after boot,
+   and other repos fall back to the `15m` option default). The sync pushes
+   commits and never commits for you, so uncommitted work is never published —
+   but anything committed is public in minutes (`modules/nixos/common.nix:451`
+   and `:435`, `gitreposync/options.nix:164`, `gitreposync/README.md:70-80`).
 
 7. **Verify before trusting** — read the result and inspect the diff before
    claiming done. A subagent that reports success without a diff or command
@@ -62,23 +90,30 @@ existing repo docs; none is new policy.
 The guards below gate whether a self-improvement commit may be created at all.
 They are enforced by the **commit-helper** (`tools/self-improve-commit.sh`), which
 self-improvement commits must go through **instead of raw `git commit`**:
-1. **Evidence check** — the cited `file:line` must literally exist at write time.
-2. **Path allow-list / deny-list** — the target must be on the Decision-2
-   allow-list (GOTCHAS.md, `modules/home/opencode/{skills,commands}/*.md` RUN LOG
-   sections, module `AGENT.md` RUN LOG sections) and off the hard deny-list
-   (`secrets/`, `proxy/`, `disko/`, any `network*` module, `config.nix`,
-   `options.nix`).
-3. **Append-only diff shape** — pure insertion in an allow-listed file.
+1. **Evidence check** — every cited path must exist and any `:line` must be
+   within that file's length at write time (presence/range, not content).
+2. **Path allow-list / deny-list** — the helper allows whole files:
+   `GOTCHAS.md`, `AGENTS.md`, `configurations/AGENT.md`, `modules/AGENT.md`,
+   `modules/**/AGENT.md`, `modules/home/opencode/{skills,commands}/*.md`, and
+   `EFFICIENCY-PROPOSALS.md`. It does **not** verify that the insertion sits
+   inside a RUN LOG section — that is your discipline, not a mechanical check.
+   Denied: `modules/nixos/{secrets,proxy,disko}/`, any `modules/nixos/network*`,
+   and every `config.nix`/`options.nix`.
+3. **Append-only diff shape** — pure insertion in the target file.
 4. **Rate cap** — optional per-session/per-day cap from the nix options
    `my.programs.opencode.selfImprove.maxCommitsPerSession`/`maxCommitsPerDay`
-   (default `null` = uncapped); the helper refuses if exceeded.
+   (default `null` = uncapped). The session counter is keyed by the session id
+   (`OPENCODE_SESSION_ID` or `--session-id`) and resets between sessions; the
+   day counter is today's `Self-Improve:` commits.
 On any failure the helper leaves the edit unstaged/uncommitted and reports why —
 it never commits on its own judgment.
 
 **Self-improvement commits are separate.** A self-apply lands as its **own**
 commit (tagged with a `Self-Improve:` trailer), distinct from any commits the
-task's main work made, and the repo stays manual-push. `git log --grep="Self-Improve:"`
-is the audit trail; `git revert` is the rollback net.
+task's main work made. It is **auto-pushed within ~5 minutes** like any other
+commit (`autoPush = true`, `5m` interval), so treat it as public: `git log
+--grep="Self-Improve:"` is the audit trail and `git revert` is the rollback net
+— not "it is only local".
 
 ---
 
@@ -153,22 +188,26 @@ summary — explicitly evaluate whether this run produced grounded lessons.
    "guaranteed check, may or may not act" shape, no new agent/gate, no threshold
    gate by default):
    - Query this session's own row in `~/.local/share/opencode/opencode.db`
-      (via the `sqlite3` CLI — guaranteed present via `pkgs.sqlite`; fall back
-      to `python3 -c "import sqlite3"` if `sqlite3` is ever missing): read
-     `session.cost`, `tokens_input`, `tokens_output`, `tokens_reasoning`,
-     `tokens_cache_read`, `tokens_cache_write` for this session's id, and the
-     `part`-table tool-call count for it. The nullable options
-     `selfImprove.efficiencyLensMinToolCalls` / `...MinCost` (default `null` =
-     no gate, i.e. always-on today) can be set later to skip this part below a
-     threshold; honour them if they are set by reading
-     `~/.config/opencode/self-improve.json`.
+     (via the `sqlite3` CLI — present via `pkgs.sqlite`; fall back to
+     `python3 -c "import sqlite3"`). The live tables are `session_v2`
+     (`cost`, `tokens_input/output/reasoning/cache_read/cache_write`, `agent`)
+     and `session_message` (tool calls are `json_each(data,'$.content')` where
+     `json_extract(value,'$.type')='tool'`). `session`/`part` stopped being
+     written on 2026-11-02 — use them only as a fallback for older rows, and
+     treat an empty `part`/`session_part` as "not flushed yet", never as "no
+     calls". The nullable options `selfImprove.efficiencyLensMinToolCalls` /
+     `...MinCost` (default `null` = no gate) skip this part below a threshold;
+     honour them if set by reading `~/.config/opencode/self-improve.json`.
+   - **Check `EFFICIENCY-PROPOSALS.md` first** (grep the idea's subject). If an
+     entry already covers it, do not append a duplicate — cite the existing
+     entry and say whether this run confirms or contradicts it.
    - If a genuinely repeated pattern shows up that a new tool/skill/command/
-     config would collapse (e.g. the same multi-call sequence or expensive fetch
-     recurring throughout the session), write a **proposal** to the repo-root
-     `EFFICIENCY-PROPOSALS.md` (apply it via the commit-helper, which now
-     allow-lists that file — evidence = the DB query output, not a `file:line`):
-     name the idea, cite the quantitative evidence (call counts / cost), and
-     state plainly it is **a proposal only, not to be built this session**.
+     config would collapse and nothing already covers it, write a **proposal**
+     to the repo-root `EFFICIENCY-PROPOSALS.md` (apply it via the commit-helper,
+     which allow-lists that file — evidence is the DB query output, not a
+     `file:line`): name the idea, cite the quantitative evidence (call counts /
+     cost), and state plainly it is **a proposal only, not to be built this
+     session**.
    - Otherwise state `no efficiency proposal this run` alongside the existing
      `no lessons this run`. Never build the proposed tool/skill/command/config
      in this session — the efficiency lens only records proposals.

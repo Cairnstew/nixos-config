@@ -10,6 +10,9 @@ session that wrote it**.
 Rules:
 - Append-only; one proposal per entry, newest last. Never build the proposed
   thing in-session (the efficiency lens only records).
+- **Check this file first.** If an entry already covers the idea, cite it and say
+  whether this session confirms or contradicts it — do not append a duplicate
+  (there are already re-confirmations for `module-eval` and `session-stats`).
 - Entries go through `tools/self-improve-commit.sh` (allow-listed here) — the
   same mechanical evidence/append-only checks apply; evidence is the DB query
   output rather than a `file:line`.

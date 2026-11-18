@@ -2732,3 +2732,9 @@ Cause: opencode 2's live storage is `session_v2` + `session_message` (they carry
 2. `session.cost` / `tokens_*` return NULL and `part`-table tool counts return 0, so the lens query shape in `agents/build.md:155-160` and the option text at `options.nix:1159` ("`part`-table tool-call count") cannot work on a live session.
 
 Fix/practice: read `session_v2` (fall back to `session` only for rows before 2026-11-02) and `session_message`; tool calls are `json_each(data, '$.content')` where `json_extract(value,'$.type') = 'tool'`. Treat an empty `part`/`session_part` as "not flushed yet", never as "no calls". Until the guard is patched it enforces nothing; the lens fix is already proposed twice (`EFFICIENCY-PROPOSALS.md:238`, `:246`).
+
+**Fixed (2026-11-18): the guard and lens now read the live tables; helper allow-list, deny-list and rate cap corrected** (desktop)
+
+- `modules/home/opencode/plugins/self-improve-guard.ts` looks up `agent` in `session_v2` (fallback `session`) and scans `session_message.data.content[]` text blocks (fallback `part`), so the checkpoint reminder works again; a table missing on an older opencode degrades to "no rows" instead of disabling the guard.
+- `tools/self-improve-commit.sh`: `modules/AGENT.md` added to `AGENT_MD_GLOBS` (closes the 2026-10-19 depth gap above); any `config.nix`/`options.nix` is denied by basename at any depth; the per-session cap counter is keyed by session id and resets between sessions (it was one never-reset file, so the first capped session refused every later one); `OPENCODE_SESSION_ID` is used when `--session-id` is omitted.
+- Guidance updated to match: `agents/build.md` (citations `common.nix:435`/`:451`, auto-push not manual-push, real allow/deny lists, live lens tables, engineering standard), `agents/researcher.md`, `AGENTS.md` §8/§9.1/§9.2/§11.4, `modules/home/opencode/AGENT.md`, `options.nix`, and the `EFFICIENCY-PROPOSALS.md` header (check for existing entries before appending).

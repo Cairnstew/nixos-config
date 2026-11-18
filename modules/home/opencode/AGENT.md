@@ -144,6 +144,9 @@ Full guidance: `skills/subagent-decomposition.md`.
 5. **Self-improving agents**: Agent prompts that want to learn from runs use the
    `SELF_IMPROVE` toggle + RUN LOG pattern (see `agents/researcher.md`, mirroring
    `commands/nix-refine.md`); scope `edit` permission to the agent's own file.
+6. **Clarity first**: follow the architecture standard in `AGENTS.md` §9.2 —
+   one concept per unit, inherit rather than copy, stable public seams, layout
+   mirrors the domain.
 
 ---
 
@@ -161,17 +164,23 @@ serve` / watcher infra anymore (decommissioned 2026-09-12).
   `researcher` is read-only and therefore record-only.
 - Every self-apply goes through the **mechanical commit-helper**
   (`tools/self-improve-commit.sh`) instead of raw `git commit`. The helper enforces
-  (a) evidence `file:line` exists, (b) path allow-list / hard deny-list (`secrets/`,
-  `proxy/`, `disko/`, `network*`, `config.nix`, `options.nix`), (c) append-only
-  diff shape, and (d) the Decision-3 rate caps
+  (a) every cited path exists and any `:line` is within the file, (b) path
+  allow-list (`GOTCHAS.md`, `AGENTS.md`, `configurations/AGENT.md`,
+  `modules/AGENT.md`, `modules/**/AGENT.md`,
+  `modules/home/opencode/{skills,commands}/*.md`, `EFFICIENCY-PROPOSALS.md`) and
+  hard deny-list (`modules/nixos/{secrets,proxy,disko}/`, `modules/nixos/network*`,
+  every `config.nix`/`options.nix`), (c) append-only diff shape, and (d) the
+  Decision-3 rate caps
   (`my.programs.opencode.selfImprove.maxCommitsPerSession`/`maxCommitsPerDay`,
-  default `null` = uncapped); on any failure it leaves the edit unstaged.
+  default `null` = uncapped; the session counter resets between sessions); on any
+  failure it leaves the edit unstaged.
 - The `self-improve-guard` plugin (loaded unconditionally when opencode is enabled,
   NOT gated behind `my.programs.goals.enable`) reminds a `build`/`researcher`
   session if it skipped the checkpoint.
 - Audit trail: each self-apply is its own commit with a `Self-Improve:` trailer;
   `git log --grep="Self-Improve:"` + GOTCHAS.md are the audit trail; `git revert`
-  is the rollback net. The repo stays manual-push.
+  is the rollback net. The commit is auto-pushed within ~5 minutes like any other
+  (`autoPush = true`, `5m` interval), so treat it as public.
 
 **Decoupled from `goals`:** the checkpoint + guard run wherever opencode runs
 (`desktop`, laptop, `server`) regardless of `my.programs.goals.enable`; the goals
@@ -400,3 +409,17 @@ now, never aspirational. Record each applied change in the RUN LOG below.
   impossible by design; the guard is the roster's permissions (only `builder`/
   `qa` may edit) plus the one-at-a-time rule. The opencode bump checklist no
   longer needs FORK.md §3, but still needs the `part`-table smoke test.
+
+### 2026-11-18 — guard/lens moved to the live session tables; helper + prompt corrected
+- Lesson: a prompt audit found the checkpoint's runtime guard silent since the
+  storage migration — `plugins/self-improve-guard.ts` read `agent` from `session`
+  and the transcript from `part`, both frozen on 2026-11-02 (live:
+  `session_v2`/`session_message`). The prompt also claimed manual-push (false:
+  `autoPush = true`, `5m`), cited stale `common.nix` lines, and described a
+  "per-session" cap that was one never-reset counter file.
+- Fix: guard now reads `session_v2` + `session_message` (safe fallbacks, missing
+  tables = no rows); helper allows `modules/AGENT.md`, denies any
+  `config.nix`/`options.nix` by basename, and keys the session counter by id
+  (resetting between sessions, `OPENCODE_SESSION_ID` accepted); `agents/build.md`
+  gained the engineering standard (§9.2 pointer) and corrected guards/lens text.
+  GOTCHAS.md carries the behavioural trap + fixes.

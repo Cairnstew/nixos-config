@@ -408,15 +408,16 @@ but the guard pattern is still required for any secret that may not exist on eve
 
 **⚠ Flake visibility rule:** Nix flakes only see **git-tracked** files. Before
 running *any* `nix` command (`build`, `eval`, `flake check`, `nixos-rebuild`,
-`nix run`, etc.), stage new or modified files first:
+`nix run`, etc.), stage any **new/untracked** path:
 
 ```bash
-git add -A          # or git add path/to/new-file.nix
+git add path/to/new-file.nix    # not `git add -A` — see §9.1
 ```
 
-No commit needed — staging is enough. Forgetting this causes confusing
-"does not provide attribute" errors on new packages/modules, or silently
-stale eval results on changed files. See GOTCHAS.md for full details.
+Modified tracked files need no staging (Nix reads their working-tree content).
+No commit is needed. Forgetting this causes confusing "does not provide
+attribute" errors on new packages/modules, or silently stale eval results. See
+§9.1 and GOTCHAS.md for details.
 
 ---
 
@@ -427,6 +428,46 @@ stale eval results on changed files. See GOTCHAS.md for full details.
 * Use `lib.mkOption` + `lib.mkEnableOption` for all new `my.*` options.
 * Keep `let … in` blocks close to where they are used; avoid giant top-level
   `let` bindings in host configs.
+
+### 9.1 Flake visibility before any `nix` command
+
+Stage **new/untracked** files before evaluating or building. Nix reads the
+working-tree content of tracked files, so a *modified* tracked file needs no
+staging; only a brand-new path does. Stage exactly that path — `git add -A` in
+this shared checkout also sweeps whatever another session left dirty.
+
+```bash
+git add path/to/new-file.nix      # not `git add -A`
+```
+
+### 9.2 Architecture & modularity standard
+
+This applies to **everything built here or in any other project, in any
+language** — clarity, modularity and organisation first, because they are what
+make a thing reusable and scalable.
+
+- **One concept per unit.** A module/file/class has one reason to exist and a
+  name that says what it owns. Split before it becomes a grab bag.
+- **Inherit, don't copy.** Factor shared behaviour into one base
+  module/class/function and let the variants specialise it. Before writing a
+  parallel implementation, look for the existing seam to extend.
+- **Declare the interface, hide the internals.** Consumers depend on a stable
+  entry point (options, exports, public functions); helpers stay private.
+- **Layout mirrors the domain.** New cases are new modules/variants, not new
+  branches inside existing ones. Directory structure should predict where the
+  next feature goes.
+- **Docs and tests live with the code** they describe.
+- **Don't over-abstract ahead of need.** Inherit where a second user exists or
+  is imminent; keep the single case simple. Reuse is the default, not a licence
+  for speculative frameworks.
+
+Repo-specific shapes: `modules/AGENT.md` (module layout, `options.nix` /
+`config.nix` / `meta.nix` / `tests.nix`), `configurations/AGENT.md` (hosts
+inherit profiles; never paste what a profile should own), and
+`modules/flake-parts/README.md` (flake-layer composition). For non-Nix projects
+the same rules apply in that ecosystem's idiom — e.g. Python: small modules,
+explicit interfaces, base classes/protocols for a family of types, dependency
+injection instead of globals, and a package layout that mirrors the domain.
 
 ---
 
@@ -497,18 +538,23 @@ MCP no longer exposes them).
   the checkpoint.
 - **Mechanical guards (non-LLM), not reviewers:** the commit-helper
   (`tools/self-improve-commit.sh`) every self-apply must go through instead of raw
-  `git commit` enforces: (1) the cited `file:line` exists at write time, (2) the
-  target is on the Decision-2 allow-list (GOTCHAS.md,
-  `modules/home/opencode/{skills,commands}/*.md` RUN LOG sections, module
-  `AGENT.md` RUN LOG sections) and off the hard deny-list (`secrets/`, `proxy/`,
-  `disko/`, any `network*` module, `config.nix`, `options.nix`), (3) the diff is
+  `git commit` enforces: (1) every cited path exists and any `:line` is within the
+  file at write time, (2) the target is on the Decision-2 allow-list (`GOTCHAS.md`,
+  `AGENTS.md`, `configurations/AGENT.md`, `modules/AGENT.md`, `modules/**/AGENT.md`,
+  `modules/home/opencode/{skills,commands}/*.md`, `EFFICIENCY-PROPOSALS.md`) and
+  off the hard deny-list (`modules/nixos/{secrets,proxy,disko}/`, any
+  `modules/nixos/network*`, every `config.nix`/`options.nix`), (3) the diff is
   pure insertion, and (4) the Decision-3 rate caps
   (`my.programs.opencode.selfImprove.maxCommitsPerSession`/`maxCommitsPerDay`,
-  default `null` = uncapped). On any failure it leaves the edit unstaged and
-  reports why.
+  default `null` = uncapped; the session counter is keyed by session id and
+  resets between sessions). The allow-list is per **file**: the helper does not
+  require the insertion to be inside a RUN LOG section — that part is discipline.
+  On any failure it leaves the edit unstaged and reports why.
 - **Audit trail:** each self-apply is its **own** commit with a `Self-Improve:`
   trailer — `git log --grep="Self-Improve:"` is the audit trail; `git revert` is
-  the rollback net. The repo stays manual-push.
+  the rollback net. The commit is auto-pushed within ~5 minutes like any other
+  (`autoPush = true`, `5m` interval in `modules/nixos/common.nix`), so treat it as
+  public rather than local.
 - **Un-gated channels:** behavioural problems/solutions still go straight into
   `GOTCHAS.md` (§11.3), and the Minecraft pack/packwiz tooling keeps its own
   direct RUN LOG convention (below).
@@ -516,12 +562,14 @@ MCP no longer exposes them).
   carries two lenses. The **correctness lens** is the mechanical/self-applying one
   described above (allow-listed commit-helper self-applies). The **efficiency
   lens** is proposal-only: the same pass also queries the session's own
-  `opencode.db` row (`cost` / `tokens_input/output/reasoning/cache_read/cache_write`)
-  and `part`-table tool-call count (reusing `self-improve-guard.ts`'s bun:sqlite
-  pattern), and when a genuinely repeated pattern would be collapsed by a new
+  `opencode.db` row — `session_v2` (`cost`, `tokens_*`, `agent`) and
+  `session_message` (tool calls via `json_each(data,'$.content')` where
+  `type = 'tool'`); `session`/`part` are legacy fallbacks only — and when a
+  genuinely repeated pattern would be collapsed by a new
   tool/skill/command/config, writes a **proposal** (name + quantitative evidence,
   marked proposal-only, never built this session) to the repo-root
-  `EFFICIENCY-PROPOSALS.md`. It is still the same checkpoint: one pass, both
+  `EFFICIENCY-PROPOSALS.md`, after checking that file for an existing entry. It is
+  still the same checkpoint: one pass, both
   lenses, no new agent or gate. `EFFICIENCY-PROPOSALS.md` is allow-listed for the
   commit-helper (same evidence/append-only checks; evidence = DB query output).
   The optional threshold options
@@ -714,3 +762,16 @@ style tool/skill/command injection from flake inputs.
   fixes are record-only here (`agents/*.md`, `plugins/*.ts` and this section are
   outside the append-only self-apply allow-list); the behavioural trap is
   recorded in `GOTCHAS.md`.
+
+### 2026-11-18 — build prompt audited: guard/lens were reading dead tables; auto-push, citations and allow-lists corrected
+- Lesson: the `build` agent prompt promised a runtime guard that could not fire
+  (it read `session`/`part`, frozen on 2026-11-02), called the repo
+  "manual-push" while `autoPush = true` on a `5m` interval, cited
+  `common.nix:424,440` (actual `435`/`451`), and described the commit-helper's
+  allow/deny lists imprecisely (whole files, no RUN LOG-section check; only
+  opencode's `config.nix`/`options.nix` were denied).
+- Fix: guard reads `session_v2`/`session_message`; helper allows
+  `modules/AGENT.md`, denies every `config.nix`/`options.nix` by basename, and
+  keys the per-session counter by session id; §9.1 (stage new files only),
+  §9.2 (architecture & modularity standard) and §11.4 (allow-lists, live lens
+  tables, auto-push) are now accurate. `agents/build.md` was updated in place.
