@@ -1142,7 +1142,8 @@ in
           Max self-improvement commit-helper applies per opencode session.
           null (default) = uncapped. Enforced mechanically by
           tools/self-improve-commit.sh, which reads the value from
-          ~/.config/opencode/self-improve.json (written by this module).
+          ~/.config/opencode/self-improve.json (written by this module) and
+          keys its counter by session id, resetting it when the session changes.
         '';
       };
 
@@ -1158,10 +1159,12 @@ in
         default = null;
         example = 30;
         description = ''
-          Optional floor on `part`-table tool-call count before the checkpoint's
+          Optional floor on the session's tool-call count before the checkpoint's
           efficiency lens runs. null (default) = no gate, lens runs every pass.
-          Set later from usage data to skip the DB query reflection on trivial
-          sessions; read from ~/.config/opencode/self-improve.json.
+          Count is taken from the live `session_message` rows (tool blocks in
+          `data.content[]`). Set later from usage data to skip the DB query
+          reflection on trivial sessions; read from
+          ~/.config/opencode/self-improve.json.
         '';
       };
 

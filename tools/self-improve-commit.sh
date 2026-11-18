@@ -19,7 +19,10 @@
 #   4. Rate cap — per-session / per-day caps read from
 #      ~/.config/opencode/self-improve.json (written by the opencode module from
 #      my.programs.opencode.selfImprove.maxCommitsPerSession/maxCommitsPerDay);
-#      null / missing / unset = uncapped.
+#      null / missing / unset = uncapped. The per-session counter is keyed by the
+#      session id (env OPENCODE_SESSION_ID or --session-id) and resets when the
+#      session changes; the per-day counter is the count of today's
+#      "Self-Improve:" commits.
 #
 # Usage (run from the repo root):
 #   tools/self-improve-commit.sh --file <repo-path> \
@@ -43,7 +46,10 @@ ALLOW_GLOBS=(
   'modules/home/opencode/commands/*.md'
 )
 # Module AGENT.md RUN LOG sections (any depth, but not under a hard-denied dir).
+# `modules/AGENT.md` (the one-level module policy file) is listed explicitly: the
+# `modules/*` globs require at least one directory level below `modules/`.
 AGENT_MD_GLOBS=(
+  'modules/AGENT.md'
   'modules/*/AGENT.md'
   'modules/*/*/AGENT.md'
   'modules/*/*/*/AGENT.md'
@@ -54,13 +60,15 @@ AGENT_MD_GLOBS=(
 DENY_DIRS=('modules/nixos/secrets/' 'modules/nixos/proxy/' 'modules/nixos/disko/')
 DENY_NET_PREFIX='modules/nixos/network'
 DENY_FILES=('modules/home/opencode/config.nix' 'modules/home/opencode/options.nix')
+# Implementation files are never guidance, at any depth.
+DENY_BASENAMES=('config.nix' 'options.nix')
 
 # ── Args ─────────────────────────────────────────────────────────────────────
 TARGET=""
 TRAILER=""
 EVIDENCE=""
 MESSAGE="self-improve: apply checkpoint lesson"
-SESSION_ID=""
+SESSION_ID="${OPENCODE_SESSION_ID:-}"
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --file) TARGET="${2:-}"; shift 2 ;;
@@ -74,6 +82,38 @@ done
 
 fail() { echo "self-improve-commit: REFUSED: $*" >&2; echo "self-improve-commit: edit left unstaged/uncommitted; nothing committed." >&2; exit 1; }
 
+# ── Per-session counter (state: "<session-id>\n<count>") ────────────────────
+# A legacy single-number file belongs to no session, so it is treated as a
+# fresh count for the current one instead of capping every future session.
+SESSION_STATE="${SELF_IMPROVE_SESSION_STATE:-$HOME/.local/share/opencode/self-improve-session.count}"
+
+session_reset_if_needed() {
+  local sid="$1" cur
+  mkdir -p "$(dirname "$SESSION_STATE")"
+  if [[ -f "$SESSION_STATE" ]]; then
+    cur="$(sed -n '1p' "$SESSION_STATE")"
+    if [[ "$cur" != "$sid" ]]; then
+      printf '%s\n%s\n' "$sid" "0" > "$SESSION_STATE"
+    fi
+  else
+    printf '%s\n%s\n' "$sid" "0" > "$SESSION_STATE"
+  fi
+}
+
+session_count() {
+  local sid="$1" n
+  session_reset_if_needed "$sid"
+  n="$(sed -n '2p' "$SESSION_STATE")"
+  [[ "$n" =~ ^[0-9]+$ ]] || n=0
+  printf '%s' "$n"
+}
+
+session_bump() {
+  local sid="$1" n
+  n="$(session_count "$sid")"
+  printf '%s\n%s\n' "$sid" "$((n + 1))" > "$SESSION_STATE"
+}
+
 [[ -n "$TARGET" ]] || fail "--file is required"
 [[ -n "$TRAILER" ]] || fail "--commit-trailer (a 'Self-Improve: <id>' string) is required"
 
@@ -85,9 +125,11 @@ TARGET_FULL="$REPO_ROOT/$TARGET"
 
 is_denied() {
   local p="$1"
+  local base="${p##*/}"
   for d in "${DENY_DIRS[@]}"; do [[ "$p" == "$d"* ]] && return 0; done
   [[ "$p" == "$DENY_NET_PREFIX"* ]] && return 0
   for f in "${DENY_FILES[@]}"; do [[ "$p" == "$f" ]] && return 0; done
+  for f in "${DENY_BASENAMES[@]}"; do [[ "$base" == "$f" ]] && return 0; done
   return 1
 }
 
@@ -142,12 +184,9 @@ if [[ -f "$SELF_IMPROVE_JSON" ]]; then
   fi
   if [[ -n "$max_sess" ]]; then
     if [[ -z "$SESSION_ID" ]]; then
-      fail "--session-id is required because a per-session cap (maxCommitsPerSession) is configured"
+      fail "--session-id (or OPENCODE_SESSION_ID) is required because a per-session cap (maxCommitsPerSession) is configured"
     fi
-    state="$HOME/.local/share/opencode/self-improve-session.count"
-    mkdir -p "$(dirname "$state")"
-    [[ -f "$state" ]] || echo "0" > "$state"
-    n="$(cat "$state")"
+    n="$(session_count "$SESSION_ID")"
     if (( n >= max_sess )); then
       fail "session self-improve cap reached ($n >= $max_sess)"
     fi
@@ -173,10 +212,7 @@ git commit -q -m "$TRAILER" -m "$MESSAGE" -- "$TARGET"
 
 # Bump the per-session counter.
 if [[ -n "$SESSION_ID" ]]; then
-  state="$HOME/.local/share/opencode/self-improve-session.count"
-  mkdir -p "$(dirname "$state")"
-  n=0; [[ -f "$state" ]] && n="$(cat "$state")"
-  echo "$((n + 1))" > "$state"
+  session_bump "$SESSION_ID"
 fi
 
 echo "self-improve-commit: committed: $TRAILER"

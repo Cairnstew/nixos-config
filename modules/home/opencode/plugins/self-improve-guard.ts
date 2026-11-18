@@ -31,8 +31,14 @@ import { existsSync, readFileSync } from "node:fs";
 // It is deliberately a *reminder*, not a blocker: it never edits the session,
 // never changes agent config, and never calls any goals tool (the goals MCP
 // exposes no self-improvement tools anymore). It reads the transcript from
-// opencode.db's `part` table (bun:sqlite with node:sqlite fallback) because the
-// SDK's session.messages API returns empty for another session at idle time.
+// opencode.db (bun:sqlite with node:sqlite fallback) because the SDK's
+// session.messages API returns empty for another session at idle time.
+//
+// STORAGE (verified 2026-11-17 on desktop): the live tables are `session_v2`
+// (has `agent`, `cost`, `tokens_*`) and `session_message` (assistant/user JSON
+// with `data.content[]` blocks). The legacy `session`/`part` pair stopped being
+// written on 2026-11-02, so querying it made this guard a silent no-op. Every
+// lookup below tries the live table first and falls back for pre-migration rows.
 
 function opencodeDbPath(): string {
   return process.env.SELF_IMPROVE_OPENCODE_DB ?? join(homedir(), ".local", "share", "opencode", "opencode.db");
@@ -96,20 +102,59 @@ function selfImproveEnabled(directory: string, agent: string): boolean {
 // the commit-helper stamps. Either means the checkpoint ran; only when NEITHER
 // appears should the guard remind.
 function checkpointSatisfied(db: any, kind: string, sessionID: string): boolean {
-  const rows = queryAll(db, kind, "SELECT data FROM part WHERE session_id = ?", sessionID);
-  for (const row of rows) {
-    let data: any;
-    try {
-      data = typeof row.data === "string" ? JSON.parse(row.data) : row.data;
-    } catch {
-      continue;
+  // Live storage: session_message.data.content[] text blocks.
+  const messages = safeQueryAll(db, kind, "SELECT data FROM session_message WHERE session_id = ?", sessionID);
+  for (const row of messages) {
+    const data = parseJson(row.data);
+    const content = Array.isArray(data?.content) ? data.content : [];
+    for (const block of content) {
+      if (block?.type === "text" && typeof block.text === "string" && textSatisfies(block.text)) return true;
     }
+  }
+  // Legacy fallback for rows written before 2026-11-02 (or on older installs).
+  const parts = safeQueryAll(db, kind, "SELECT data FROM part WHERE session_id = ?", sessionID);
+  for (const row of parts) {
+    const data = parseJson(row.data);
     if (data?.type !== "text") continue;
     const text = typeof data.text === "string" ? data.text : "";
-    if (/no lessons this run/i.test(text) || /no lessons\.?$/im.test(text.trim())) return true;
-    if (/self-improve:/i.test(text)) return true;
+    if (textSatisfies(text)) return true;
   }
   return false;
+}
+
+// A missing table (schema differences across opencode versions) is "no rows".
+function safeQueryAll(db: any, kind: string, sql: string, ...params: any[]): any[] {
+  try {
+    return queryAll(db, kind, sql, ...params);
+  } catch {
+    return [];
+  }
+}
+
+function parseJson(value: any): any {
+  if (typeof value !== "string") return value;
+  try {
+    return JSON.parse(value);
+  } catch {
+    return null;
+  }
+}
+
+function textSatisfies(text: string): boolean {
+  return /no lessons this run/i.test(text) || /no lessons\.?$/im.test(text.trim()) || /self-improve:/i.test(text);
+}
+
+// `session_v2` is the live table; `session` is the legacy fallback.
+function sessionAgent(db: any, kind: string, sessionID: string): string | null {
+  for (const table of ["session_v2", "session"] as const) {
+    try {
+      const row = queryGet(db, kind, `SELECT agent FROM ${table} WHERE id = ?`, sessionID);
+      if (row?.agent) return row.agent;
+    } catch {
+      // Table absent on this opencode version — try the next one.
+    }
+  }
+  return null;
 }
 
 export default {
@@ -142,7 +187,7 @@ export default {
         try {
           const open = await openDb(opencodeDbPath());
           try {
-            agent = queryGet(open.db, open.kind, "SELECT agent FROM session WHERE id = ?", sessionID)?.agent ?? null;
+            agent = sessionAgent(open.db, open.kind, sessionID);
           } finally {
             open.db.close();
           }
