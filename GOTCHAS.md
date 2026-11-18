@@ -2746,3 +2746,13 @@ Symptom: enabling `stack.prune.enabled = true` + `settings.prune = true` on a st
 Cause: prune discovery uses `project = stack.provider.project` and merely warns about the other declared projects, so `projects.*` is invisible to it. A stack that bootstraps a new project from a separate quota project therefore cannot safely enable prune.
 
 Fix/practice: one stack owns one project — set `provider.project` to the project prune should manage, and leave prune off on a bootstrap stack that creates other projects. Retargeting `provider.project` at the probe project made prune disable exactly its five undeclared APIs and leave `nixos-infra-496517` untouched. Service accounts stay behind the separate `include_service_accounts` + `--allow-service-accounts` gate either way.
+
+---
+
+**`python-tofu` prune can disable the Pub/Sub API its own `subscriptions`/`topics` discovery needs — the next prune 403s and takes the rebuild with it** (2026-11-18, desktop)
+
+Symptom: after `prune.enabled = true` (`sections = ("all",)`) disabled the undeclared `pubsub.googleapis.com` in the provider project, the next rebuild's `apply` succeeded (`0 added`) but prune died at `403 … https://pubsub.googleapis.com/v1/projects/<project>/subscriptions`, so `python-tofu.service` failed and `switch-to-configuration` exited 4.
+
+Cause: prune discovers subscriptions/topics through the Pub/Sub API, yet the `apis` section runs last and counts pubsub as undeclared unless something declares or protects it. The dependency protection added upstream only covers APIs that *declared resources* require, and discovery itself is not a declared resource.
+
+Fix/practice: declare `stack.apis.pubsub = { project = <provider project>; service = "pubsub.googleapis.com"; }` (or add it to `provider.default_apis`) whenever `subscriptions`/`topics` pruning is on — apply re-enables it and the `apis` prune then leaves it alone. Otherwise restrict `prune.sections` to `[ "apis" ]`/drop subscriptions+topics. Also note the same run's trap: deleting a project out from under the stack leaves local state pointing at it, so remove the declaration AND move `/var/lib/python-tofu/terraform.tfstate*` aside before rebuilding.
