@@ -2726,3 +2726,13 @@ Fix/practice: read `session_v2` (fall back to `session` only for rows before 202
 Symptom: while auditing the opencode module, `nix eval .#nixosConfigurations.desktop.config.my.programs.opencode.selfImprove` failed with "does not provide attribute 'packages.x86_64-linux.nixosConfigurations…'", and `nix eval --impure --expr '(builtins.getFlake …).nixosConfigurations.desktop.config.my.programs.opencode'` failed with `attribute 'opencode' missing`. The option lives in the Home Manager module, so the correct path is `nixosConfigurations.desktop.config.home-manager.users.seanc.my.programs.opencode.selfImprove` (which returned the expected nulls). In the same session the `nix-eval` MCP tool failed with `error: unexpected argument 'Vault#nixosConfigurations.desktop.config.my.programs.opencode.selfImprove'`, and `nix-hosts` returned an empty error — both tool-side failures, while plain `nix eval` in a shell worked.
 
 Fix/practice: for anything under `my.programs.*`, evaluate through `config.home-manager.users.<user>.my.programs…` (or the standalone `homeConfigurations.*`). When a `nix-*` MCP tool fails with a garbled argument or an empty error, re-run the equivalent `nix eval .#…` / `nix eval --impure --expr '…'` in the shell before concluding the config is broken.
+
+---
+
+**`nix flake check` aborts on `packages.python-mcp1` (missing `anyio`) — the Python helper is auto-exported as a top-level package** (2026-11-18, desktop)
+
+Symptom: while validating an unrelated module change, `nix flake check --no-build` dies at `checking derivation packages.x86_64-linux.python-mcp1` with `lib.customisation.callPackageWith: Function called without required argument "anyio" at …/packages/python-mcp1/default.nix:17`. Re-running the same eval from a `git worktree` of HEAD reproduces it, so it predates the change under test.
+
+Cause: `packages/python-mcp1/default.nix` is a Python-package function (`{ lib, buildPythonPackage, anyio, … }`) meant to be instantiated from an overridden Python set — `packages/diagrams-mcp/default.nix:51` calls it as `new.callPackage ../python-mcp1 { }`. But every directory under `packages/` is also auto-exported as `packages.<system>.<name>`, and that path instantiates it with top-level `pkgs.callPackage`, which has no `anyio` argument.
+
+Fix/practice: don't chase this when validating something else — confirm with a HEAD worktree first (`git worktree add /tmp/… HEAD`, then `nix eval .#packages.x86_64-linux.python-mcp1.drvPath` in it), then validate with the per-host eval sequence instead of a full flake check. Until the helper moves out of the auto-wired `packages/` namespace (or gains a top-level-compatible arg set), a full `flake check` stays red on this one attribute.
