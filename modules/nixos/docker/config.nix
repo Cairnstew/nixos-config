@@ -32,11 +32,12 @@ in
           dates = cfg.autoPrune.dates;
         };
 
-        daemon.settings =
+        daemon.settings = lib.mkMerge [
           cfg.daemon.settings
-          // (mkIf (cfg.dataRoot != null) {
+          (mkIf (cfg.dataRoot != null) {
             data-root = cfg.dataRoot;
-          });
+          })
+        ];
 
         rootless = {
           enable = cfg.rootless.enable;
