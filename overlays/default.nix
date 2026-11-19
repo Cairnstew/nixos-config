@@ -22,6 +22,23 @@ let
   packages = self + /packages;
 in
 self: super: {
+  # `backrefs` 6.2 ships `tests/test_bregex.py::TestExceptions::test_timeout`,
+  # which expects `regex.sub(pattern, callback, string, timeout=2)` to raise
+  # TimeoutError after the callback has spent 3 s. The `regex` that nixpkgs
+  # 2026-11-17 ships only checks the timeout between matches, so the callback
+  # never trips it, the test fails, and the failure cascades through
+  # mkdocs-material -> copier -> jupyter-builder to the whole Jupyter Python
+  # environment (2026-11-19). Skip that one upstream test instead of pinning
+  # nixpkgs back: the failure is in the test's timing assumption, not in
+  # backrefs' output.
+  python312Packages = super.python312Packages.overrideScope (
+    _pythonSelf: pythonSuper: {
+      backrefs = pythonSuper.backrefs.overridePythonAttrs (old: {
+        disabledTests = (old.disabledTests or [ ]) ++ [ "test_timeout" ];
+      });
+    }
+  );
+
   # Nushell environment overlay from nuenv flake input
   nuenv = (inputs.nuenv.overlays.nuenv self super).nuenv;
 
