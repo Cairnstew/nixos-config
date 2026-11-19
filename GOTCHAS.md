@@ -2818,3 +2818,9 @@ Symptom: the desktop could not ping, SSH to, or join Project Zomboid on the serv
 **`zerotier-mtu` clamped only the first `zt*` interface when a host joins two networks** (2026-11-19, server)
 
 Symptom: server `zt6ntnehy5` stayed at ZeroTier's default 2800 while the desktop's was 1300, and the unit log only showed `clamped zt2lr37ya6: mtu 1500 -> 1300`. Cause: the oneshot exited on the first scan that found *any* `zt*` link; on a host joined to HomeServer and PPextendo the second interface appears seconds later, after the service had already exited 0. Fix: keep clamping until the interface set is unchanged for three scans (`modules/nixos/zerotier/config.nix`). Both ends must be clamped — a 2800-byte sender fragments past a 1300-byte path and the large datagrams are silently dropped while small control packets still flow.
+
+---
+
+**`attrs // (mkIf cond { … })` silently discards `attrs` — the module system treats any value carrying `_type = "if"` as a conditional and keeps only `content`** (2026-11-19, server)
+
+Symptom: `my.virtualisation.docker.daemon.settings` evaluated to `{ default-address-pools = …; }`, but `config.virtualisation.docker.daemon.settings` and `/etc/docker/daemon.json` omitted it while `data-root` from the same expression was applied. Cause: `modules/nixos/docker/config.nix` wrote `daemon.settings = cfg.daemon.settings // (mkIf (cfg.dataRoot != null) { data-root = …; })`; `mkIf` returns `{ _type = "if"; condition; content; }`, so the `//` result still had `_type = "if"` and the module system discharged the whole definition as an `if`, keeping only `content`. Fix: `lib.mkMerge [ cfg.daemon.settings (mkIf cond { … }) ]`. Rule: never `//` a `mkIf`/`mkMerge` result into an attrset; when a setting "doesn't reach" the generated file, compare the option eval with the final `config.*` eval before touching the consumer.
