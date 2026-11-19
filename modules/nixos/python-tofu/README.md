@@ -110,6 +110,68 @@ stack.apis.pubsub = {
 
 Without that, the next prune fails with `403 … pubsub.googleapis.com/v1/…`.
 
+## Remote state
+
+Set `backend` to keep state out of the host:
+
+```nix
+stack = {
+  backend = { kind = "gcs"; bucket = "<bucket>"; prefix = "<stack>"; };
+  external_buckets = [ "<bucket>" ];   # required, see below
+};
+```
+
+`prefix` defaults to `python-tofu/<stack name>`. Two things to know:
+
+- **The bucket must exist before `tofu init`**, so it is bootstrapped
+  out-of-band, not declared in the same stack. The credential needs
+  `storage.buckets.create` plus `storage.objects.*`; upstream's
+  `scripts/bootstrap-org-admin.sh` grants `roles/storage.admin` on the host
+  project for exactly this reason (and can be re-run with `--no-key` to add the
+  binding to an existing seed account).
+- **List it in `external_buckets`.** `external_buckets` are treated as declared
+  and are never pruned; without the entry, `prune.sections = ("all",)` includes
+  `buckets` and would delete the bucket holding the state.
+- **A backend change is a one-time migration.** `apply` runs
+  `tofu init -input=false` internally, which cannot migrate state, so switching
+  an existing workdir from local to GCS fails until
+  `tofu init -migrate-state` has been run once by hand.
+
+Versioning on the bucket (`--enable-versioning`) is what makes a bad apply
+recoverable: state objects can be restored from a previous generation.
+
+## Cost guardrails
+
+Two different mechanisms, and only one of them can stop a spend:
+
+| Mechanism | Effect |
+|---|---|
+| `limits_mode = "error"` | **Enforced before the provider call.** Refuses to plan/apply when the stack measures above the GCP free-tier policy. |
+| `billing_budgets.<name>` | **Alert-only.** GCP has no hard spend cap; a budget emails the billing admins at the thresholds and never disables billing. |
+
+```nix
+stack = {
+  limits_mode = "error";
+  billing_budgets.guardrail = {
+    billing_account = "<id>";
+    display_name = "nixos-config guardrail";
+    amount = 1;                       # billing-account currency
+    thresholds = [ 0.5 0.9 1.0 ];
+    project_filter = "<project number>";
+  };
+};
+```
+
+Limits only bind what can be measured: a resource without an
+`estimated_size_gb`/`usage_estimates` entry is `unknown`, and unknown limits do
+not block unless `--fail-on-unknown` is passed (`settings.extraArgs`). Creating
+a budget needs `billing.budgets.create` on the billing account
+(`roles/billing.costsManager` or `roles/billing.admin`) — `roles/billing.user`
+is not enough and returns `403 PERMISSION_DENIED`. Billing-account IAM is not
+inherited from the organization, so this is the one grant a human must make;
+upstream's bootstrap script includes the role, but no workload identity can
+self-grant it.
+
 ## Tests
 
 `tests.nix` carries L0 assertions only: the systemd unit is declared upstream,

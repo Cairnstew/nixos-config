@@ -1411,4 +1411,74 @@
     };
   };
 
+  # TEMPORARY end-to-end probe of the python-tofu module (uncommitted).
+  my.services.python-tofu = {
+    enable = true;
+    applyOnRebuild = true;
+    stack = {
+      provider = {
+        # Quota/billing project for API calls — the project the agenix
+        # org-admin service account lives in.
+        project = "nixos-infra-496517";
+        region = "europe-west1";
+      };
+
+      # State lives in GCS so a host wipe — or a project deleted underneath the
+      # stack, which already stranded local state once — cannot lose it. The
+      # bucket is bootstrapped out-of-band because it must exist before
+      # `tofu init`, and it is listed in `external_buckets` (treated as
+      # declared) so prune's `buckets` section never deletes its own state.
+      backend = {
+        kind = "gcs";
+        bucket = "nixos-infra-496517-tofu-state";
+        prefix = "desktop";
+      };
+      external_buckets = [ "nixos-infra-496517-tofu-state" ];
+
+      # The binding the state backend runs under, declared so it lives in git
+      # instead of only in the console. It had to be granted once before the
+      # first `init -migrate-state` (the backend reads the bucket before any
+      # apply can run), which the seed SA could do itself — it holds
+      # `resourcemanager.projects.setIamPolicy`.
+      iam_members.state_storage = {
+        project = "nixos-infra-496517";
+        role = "roles/storage.admin";
+        member = "serviceAccount:org-admin@nixos-infra-496517.iam.gserviceaccount.com";
+      };
+
+      # Enforcement gate: the GCP free-tier policy runs in `error` mode, so a
+      # stack measuring above the free tier refuses to plan/apply. Budgets
+      # below are alerts only — this is the hard stop.
+      limits_mode = "error";
+
+      # Cost guardrail. Alert-only by design (GCP has no hard spend cap): the
+      # thresholds email the billing admins at 50/90/100% of £1. Scoped to this
+      # project's number so the billing account's other projects don't count.
+      billing_budgets.guardrail = {
+        billing_account = "01FDB7-83376D-105D8B";
+        display_name = "nixos-config guardrail";
+        amount = 1;
+        currency_code = "GBP";
+        thresholds = [ 0.5 0.9 1.0 ];
+        project_filter = "920556237222";
+      };
+      # Prune's subscriptions/topics discovery calls the Pub/Sub API, so that
+      # API must stay enabled: declare it here or the next sweep 403s (the
+      # earlier `apis` prune disabled it while it was undeclared).
+      apis.pubsub = {
+        project = "nixos-infra-496517";
+        service = "pubsub.googleapis.com";
+      };
+      # Nixos-Infra is authoritative: prune disables APIs the stack does not
+      # declare. The 10 control-plane defaults stayed protected; the seed SA
+      # now has roles/serviceusage.serviceUsageAdmin on the project.
+      #
+      # No `projects` section: the probe project (python-tofu-probe-20261118)
+      # was deleted on 2026-11-18 (DELETE_REQUESTED) and is no longer managed.
+      prune.enabled = true;
+    };
+  };
+
+  # Pass --prune to `apply`; without this the stack-level flag is inert.
+  services.python-tofu.settings.prune = true;
 }

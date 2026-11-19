@@ -1359,11 +1359,11 @@
         "uv2nix": "uv2nix_2"
       },
       "locked": {
-        "lastModified": 1795001873,
-        "narHash": "sha256-tJJgaqIiAXNgP3w0Yj22sSsUnhHKxG2VoGjjO8A9eAc=",
+        "lastModified": 1795059784,
+        "narHash": "sha256-How4klU7WrZxdoxBikIqJLqcao53447/nqZ2IwrdU7Q=",
         "owner": "Cairnstew",
         "repo": "python-tofu",
-        "rev": "3d19cf749603aaf7dcc26abd4e824c73575aa510",
+        "rev": "a4a0a1d5f7619f472cd04f0ce912416224033d4a",
         "type": "github"
       },
       "original": {
