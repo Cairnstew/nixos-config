@@ -2776,3 +2776,23 @@ Symptom: adding `backend = { kind = "gcs"; bucket = …; }` to a stack whose wor
 Cause: three separate traps stack up. `tofu init` with a `gcs` backend requires the bucket to exist before any state is read, so it cannot be declared in the same stack (chicken-and-egg). `init -input=false` refuses to migrate. And `prune.sections = ("all",)` includes `buckets`, so a state bucket that is not declared, not `external_buckets`, and not otherwise referenced is "undeclared" and gets pruned — deleting the state that prune itself is running from.
 
 Fix/practice: bootstrap the bucket out-of-band (versioning on, so a bad apply is recoverable), grant the credential `roles/storage.*` (it had no storage role at all — only `projectDeleter` + `serviceusage`), render the new HCL, then run `tofu init -migrate-state` by hand **once** in the workdir before the rebuild that flips the backend. Always list the bucket in `external_buckets`: those are treated as declared and are never pruned. Keep a per-stack `prefix` so two hosts can share one bucket without sharing an object prefix.
+
+---
+
+**`yes | tofu init -migrate-state` answers `y`, not `yes` — OpenTofu reports success while silently creating an *empty* state** (2026-11-19, desktop)
+
+Symptom: migrating the python-tofu workdir from the local backend to GCS with `yes | tofu init -migrate-state` printed the copy prompt twice and then `Successfully configured the backend "gcs"!` — but the object it wrote was 152 bytes, `tofu state list` returned nothing, and the previously working 11-resource state was only still available in `terraform.tfstate.backup` and a manual `terraform.tfstate.pre-gcs.bak`.
+
+Cause: the prompt requires the literal word `yes`. `yes(1)` emits `y`, which OpenTofu rejects and then treats as "no, start with an empty state" — continuing without an error, so the success banner is misleading. The local `terraform.tfstate` was left as a 0-byte file.
+
+Fix/practice: drive the prompt with `printf 'yes\n'` (or run `tofu init -migrate-state` interactively) and always verify afterwards with `tofu state list` **and** the object size in the bucket (`gcloud storage ls -l gs://<bucket>/<prefix>/`) — a 152-byte `default.tfstate` is an empty state, not a migrated one. Recovery is `tofu state push -force <backup>`, which repopulated the 11 resources here; keep a `cp terraform.tfstate terraform.tfstate.pre-gcs.bak` before migrating.
+
+---
+
+**The seed SA can bootstrap *project* IAM but not *billing* IAM — verified by permission probe, not by inference** (2026-11-19, desktop)
+
+Symptom: the question "can `org-admin@` just grant itself what it needs?" has two different answers depending on the resource family. `projects:testIamPermissions` on `nixos-infra-496517` returned `resourcemanager.projects.setIamPolicy`, `iam.serviceAccounts.create`, `iam.serviceAccounts.setIamPolicy`, `storage.buckets.create`, `storage.buckets.setIamPolicy`, `storage.objects.create`, `serviceusage.services.enable` and `serviceusage.quotas.update` — but a `POST …/billingAccounts/01FDB7-83376D-105D8B/budgets` as the same SA returned `403 PERMISSION_DENIED`.
+
+Cause: project-level permissions are inherited from the org bindings (`roles/iam.securityAdmin`, `roles/resourcemanager.folderAdmin`, `roles/iam.serviceAccountAdmin`), so project and bucket IAM are self-service. Billing-account IAM sits outside that inheritance and only `roles/billing.admin` carries `billing.accounts.setIamPolicy`; the SA holds `roles/billing.user`, which has no `billing.budgets.*` at all.
+
+Fix/practice: bootstrap storage from the SA (`gcloud storage buckets create` + `projects add-iam-policy-binding … roles/storage.admin`) and then declare the binding in `iam_members` so it lives in git — no human step. Budgets are the one exception: a human with `roles/billing.admin` must grant `roles/billing.costsManager` **once**, because no workload identity should be able to grant itself spend control. Probe with `testIamPermissions` (and a real create attempt) before planning a self-bootstrap; "the SA has admin in the name" is not evidence.
