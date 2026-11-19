@@ -36,7 +36,10 @@ my.services.zerotier = {
   (up to 300 s, they appear only after the network join) and runs
   `ip link set dev <if> mtu <mtu>` on each. It is pulled in by
   `zerotierone.service` and `partOf` it, so the clamp is re-applied after every
-  ZeroTier restart — the devices come back at the default 2800.
+  ZeroTier restart — the devices come back at the default 2800. On a host joined
+  to more than one network the interfaces appear staggered, so the unit waits
+  until the set has been stable for three scans; an earlier version exited after
+  the first interface and left the late one at 2800.
 
 ### Why clamp the MTU
 

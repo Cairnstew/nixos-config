@@ -2806,3 +2806,15 @@ Symptom: implementing upstream work in `~/Projects/python-tofu` (AGENTS.md §5.3
 Cause: the repo's pre-commit runs `mypy` by name, and only `nix develop .#dev` (or `just lint`/`just check` inside it) puts it on PATH. Running the commit from a plain shell fails the hook, and `git push` is happy to push an unchanged branch.
 
 Fix/practice: do upstream verification *and* commits inside `nix develop .#dev`; if a hook is environment-blocked, verify the same tool in the dev shell first and commit with `--no-verify`, then re-run `git log --oneline -1` and confirm HEAD moved before pushing. The flake-side check that actually matters for a `nix/stack.nix` change is the CI `nix / nix` job (a full flake check, ~6 min) — it caught nothing here, but it is the gate that exercises the option tree, so wait for it rather than trusting the local push.
+
+---
+
+**Docker's auto-allocated /16 can swallow the ZeroTier subnet — the mesh reports DIRECT while every packet to the peer is dropped** (2026-11-19, server)
+
+Symptom: the desktop could not ping, SSH to, or join Project Zomboid on the server's PPextendo address `172.23.49.211`, while `zerotier-cli peers` on both ends showed the peer `DIRECT` with fresh TX/RX and `listnetworks` showed `OK PRIVATE` — nothing in ZeroTier looked wrong. Cause: Compose had auto-allocated `172.23.0.0/16` to `docker_default`, the exact /16 PPextendo hands out, so the server held `172.23.0.0/16 dev br-536259af891e … linkdown` alongside `172.23.0.0/16 dev zt6ntnehy5`. The kernel preferred the bridge for `172.23.235.60` and every reply went into a dead device. Fix: `docker network rm docker_default` and pin `my.virtualisation.docker.daemon.settings."default-address-pools"` to `10.201.0.0/16` so new networks cannot land in either mesh's space. Diagnose with `ip route get <peer>` on the host before blaming the VPN — a `linkdown` route that wins the prefix lookup is the tell.
+
+---
+
+**`zerotier-mtu` clamped only the first `zt*` interface when a host joins two networks** (2026-11-19, server)
+
+Symptom: server `zt6ntnehy5` stayed at ZeroTier's default 2800 while the desktop's was 1300, and the unit log only showed `clamped zt2lr37ya6: mtu 1500 -> 1300`. Cause: the oneshot exited on the first scan that found *any* `zt*` link; on a host joined to HomeServer and PPextendo the second interface appears seconds later, after the service had already exited 0. Fix: keep clamping until the interface set is unchanged for three scans (`modules/nixos/zerotier/config.nix`). Both ends must be clamped — a 2800-byte sender fragments past a 1300-byte path and the large datagrams are silently dropped while small control packets still flow.
