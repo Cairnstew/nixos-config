@@ -2796,3 +2796,13 @@ Symptom: the question "can `org-admin@` just grant itself what it needs?" has tw
 Cause: project-level permissions are inherited from the org bindings (`roles/iam.securityAdmin`, `roles/resourcemanager.folderAdmin`, `roles/iam.serviceAccountAdmin`), so project and bucket IAM are self-service. Billing-account IAM sits outside that inheritance and only `roles/billing.admin` carries `billing.accounts.setIamPolicy`; the SA holds `roles/billing.user`, which has no `billing.budgets.*` at all.
 
 Fix/practice: bootstrap storage from the SA (`gcloud storage buckets create` + `projects add-iam-policy-binding … roles/storage.admin`) and then declare the binding in `iam_members` so it lives in git — no human step. Budgets are the one exception: a human with `roles/billing.admin` must grant `roles/billing.costsManager` **once**, because no workload identity should be able to grant itself spend control. Probe with `testIamPermissions` (and a real create attempt) before planning a self-bootstrap; "the SA has admin in the name" is not evidence.
+
+---
+
+**Committing in the upstream `python-tofu` checkout needs `nix develop .#dev` — a failed pre-commit hook leaves HEAD unmoved, so the follow-up `git push` publishes an empty branch** (2026-11-19, desktop)
+
+Symptom: implementing upstream work in `~/Projects/python-tofu` (AGENTS.md §5.3 / the module's `meta.nix` upstream block) and running `git commit` aborted with `mypy … Failed - Executable 'mypy' not found`; ruff and nixpkgs-fmt passed, so the hook looked mostly green. The commit never landed — `git log --oneline -1` still showed the previous upstream commit — but `git push -u origin feat/quota-overrides` then reported success and created the branch, which was simply identical to `main`. The PR would have been empty of the feature.
+
+Cause: the repo's pre-commit runs `mypy` by name, and only `nix develop .#dev` (or `just lint`/`just check` inside it) puts it on PATH. Running the commit from a plain shell fails the hook, and `git push` is happy to push an unchanged branch.
+
+Fix/practice: do upstream verification *and* commits inside `nix develop .#dev`; if a hook is environment-blocked, verify the same tool in the dev shell first and commit with `--no-verify`, then re-run `git log --oneline -1` and confirm HEAD moved before pushing. The flake-side check that actually matters for a `nix/stack.nix` change is the CI `nix / nix` job (a full flake check, ~6 min) — it caught nothing here, but it is the gate that exercises the option tree, so wait for it rather than trusting the local push.
