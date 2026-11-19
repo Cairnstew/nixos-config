@@ -2756,3 +2756,23 @@ Symptom: after `prune.enabled = true` (`sections = ("all",)`) disabled the undec
 Cause: prune discovers subscriptions/topics through the Pub/Sub API, yet the `apis` section runs last and counts pubsub as undeclared unless something declares or protects it. The dependency protection added upstream only covers APIs that *declared resources* require, and discovery itself is not a declared resource.
 
 Fix/practice: declare `stack.apis.pubsub = { project = <provider project>; service = "pubsub.googleapis.com"; }` (or add it to `provider.default_apis`) whenever `subscriptions`/`topics` pruning is on — apply re-enables it and the `apis` prune then leaves it alone. Otherwise restrict `prune.sections` to `[ "apis" ]`/drop subscriptions+topics. Also note the same run's trap: deleting a project out from under the stack leaves local state pointing at it, so remove the declaration AND move `/var/lib/python-tofu/terraform.tfstate*` aside before rebuilding.
+
+---
+
+**`python-tofu` billing budgets cannot cap spend, and the seed SA cannot even create one — `roles/billing.user` has no `billing.budgets.*`** (2026-11-19, desktop)
+
+Symptom: `billing_budgets.<name>` renders a valid `google_billing_budget` block, but the account's only binding for `org-admin@nixos-infra-496517.iam.gserviceaccount.com` is `roles/billing.user`; `gcloud iam roles describe roles/billing.user` lists no `billing.budgets.*` permission (only `roles/billing.costsManager`/`roles/billing.admin` carry create/update/delete). An apply with a budget declared therefore 403s and, with `applyOnRebuild`, takes `switch-to-configuration` down with exit 4.
+
+Cause: budgets are alert-only by design — the API has no "stop at amount" field, and the upstream model documents exactly that ("Budgets never disable billing by themselves"). The nearest *hard* mechanisms are the provider limit policy (`limits_mode = "error"`, enforced before the provider call) and Service Usage **consumer quota overrides**, which the renderer cannot express today.
+
+Fix/practice: treat a budget as an early-warning email, not a cap — grant `roles/billing.costsManager` on the billing account, scope the budget with `project_filter = "<project number>"` (the billing account also pays for unrelated projects), and rely on `limits_mode = "error"` for enforcement. `limits` only binds measurable resources: without `estimated_size_gb`/`usage_estimates` everything reports `unknown` (`54 limits checked; 0 exceeded, 53 unknown`) and nothing is blocked unless `--fail-on-unknown` is passed via `settings.extraArgs`. A true quota cap needs `google_service_usage_consumer_quota_override`, which is **beta-only** (`provider = google-beta`) while the renderer pins `hashicorp/google` and `extra_files` cannot add a second `required_providers` block — so it is an upstream feature request (a `quota_overrides` section), not a local `extra_files` patch.
+
+---
+
+**`python-tofu` GCS state: the bucket must pre-exist, a backend switch needs a manual `init -migrate-state`, and prune will delete the state bucket unless it is in `external_buckets`** (2026-11-19, desktop)
+
+Symptom: adding `backend = { kind = "gcs"; bucket = …; }` to a stack whose workdir already holds local state does not "just work" — `apply` runs `tofu init -input=false` itself (`core/runner.py`), and init cannot answer the backend-migration prompt, so the first rebuild after the switch fails instead of migrating.
+
+Cause: three separate traps stack up. `tofu init` with a `gcs` backend requires the bucket to exist before any state is read, so it cannot be declared in the same stack (chicken-and-egg). `init -input=false` refuses to migrate. And `prune.sections = ("all",)` includes `buckets`, so a state bucket that is not declared, not `external_buckets`, and not otherwise referenced is "undeclared" and gets pruned — deleting the state that prune itself is running from.
+
+Fix/practice: bootstrap the bucket out-of-band (versioning on, so a bad apply is recoverable), grant the credential `roles/storage.*` (it had no storage role at all — only `projectDeleter` + `serviceusage`), render the new HCL, then run `tofu init -migrate-state` by hand **once** in the workdir before the rebuild that flips the backend. Always list the bucket in `external_buckets`: those are treated as declared and are never pruned. Keep a per-stack `prefix` so two hosts can share one bucket without sharing an object prefix.
