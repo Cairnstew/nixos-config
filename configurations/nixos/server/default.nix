@@ -219,6 +219,22 @@ in
   # to preserve NVMe space for the Nix store and OS.
   my.virtualisation.docker.dataRoot = "/mnt/data/docker-data";
 
+  # Docker's default address pool is 172.16.0.0/12 sliced into /16s, and the
+  # PPextendo ZeroTier network hands out 172.23.0.0/16. Compose had
+  # auto-allocated 172.23.0.0/16 to `docker_default`, so the kernel sent every
+  # reply to a ZeroTier peer (172.23.235.60) into that bridge instead of
+  # zt6ntnehy5: ICMP, SSH and Project Zomboid all timed out while ZeroTier
+  # itself reported the peer DIRECT and both ends were authorised. Keep new
+  # Docker networks on 10.201.0.0/16 so they cannot collide with either mesh.
+  # Existing networks keep their subnets; the stale `docker_default` was
+  # removed by hand once.
+  my.virtualisation.docker.daemon.settings."default-address-pools" = [
+    {
+      base = "10.201.0.0/16";
+      size = 24;
+    }
+  ];
+
   virtualisation.containers.storage.settings.storage = {
     graphroot = "/mnt/data/containers/storage";
   };
