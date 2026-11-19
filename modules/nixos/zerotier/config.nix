@@ -14,30 +14,44 @@ let
     mtu=${toString cfg.mtu}
 
     # zt* interfaces only appear after zerotierone has joined (and been
-    # authorised on) a network, which lags the service start by seconds.
+    # authorised on) a network, and they appear one at a time: on a box joined
+    # to two networks the first interface is up seconds before the second.
+    # The loop used to exit as soon as *any* zt* interface existed, so the
+    # late one kept ZeroTier's 2800-byte default and its oversized datagrams
+    # were silently dropped (small control packets still flowed). Keep
+    # clamping until the set of interfaces has stayed unchanged for a few
+    # scans, so a network that joins late is clamped too.
+    prev=""
+    stable=0
     i=0
     while [ "$i" -lt 150 ]; do
       i=$((i + 1))
-      found=0
+      cur=""
+      ok=1
       for link in /sys/class/net/zt*; do
         [ -e "$link/mtu" ] || continue
-        found=1
         iface=''${link##*/}
+        cur="$cur $iface"
         current=$(cat "$link/mtu")
         if [ "$current" -ne "$mtu" ]; then
-          ${pkgs.iproute2}/bin/ip link set dev "$iface" mtu "$mtu"
+          ${pkgs.iproute2}/bin/ip link set dev "$iface" mtu "$mtu" || ok=0
           echo "clamped $iface: mtu $current -> $mtu"
-        else
-          echo "$iface: already at mtu $mtu"
         fi
       done
-      if [ "$found" -eq 1 ]; then
+      if [ -n "$cur" ] && [ "$ok" -eq 1 ] && [ "$cur" = "$prev" ]; then
+        stable=$((stable + 1))
+      else
+        stable=0
+      fi
+      if [ "$stable" -ge 3 ]; then
+        echo "zerotier interfaces at mtu $mtu:$cur"
         exit 0
       fi
+      prev="$cur"
       sleep 2
     done
 
-    echo "no zt* interface appeared within 300s; nothing to clamp" >&2
+    echo "zt* interfaces did not settle at mtu $mtu within 300s" >&2
     exit 1
   '';
 in
