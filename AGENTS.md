@@ -787,3 +787,19 @@ style tool/skill/command injection from flake inputs.
 - Fix: bump a non-primary input (PZ, minecraft, sillytavern, …) with
   `nix flake update <input>`; `nix run .#update` is only for the three
   primary inputs, and a silent no-op from it is expected, not a failure.
+
+### 2026-11-21 — `nix flake update` exits 0 and changes nothing when GitHub rate-limits
+- Lesson: the §8 update row was run twice this session. The first run printed
+  only `unable to download 'https://api.github.com/repos/…/commits/HEAD':
+  HTTP error 403 … using cached version` warnings, exited 0 and left
+  `flake.lock` byte-identical — including `project-zomboid-servers`, the input
+  that needed the bump. `github:` inputs resolve HEAD through api.github.com,
+  so an unauthenticated rate limit silently freezes *every* input; "using cached
+  version" is the only signal, and it is a warning, not an error.
+- Fix: re-run the same command with a token so the lookups authenticate —
+  `export NIX_CONFIG="access-tokens = github.com=$(gh auth token)"` (the token
+  gh already holds) — then prove it with
+  `jq -r '.nodes.root.inputs["<input>"].locked.rev' flake.lock` and not with the
+  exit code. Remember the lock indirection (GOTCHAS.md:1962): a bare
+  `.nodes.<input>` read can report a stale copy and make a successful update
+  look like a no-op.
