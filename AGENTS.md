@@ -775,3 +775,15 @@ style tool/skill/command injection from flake inputs.
   keys the per-session counter by session id; §9.1 (stage new files only),
   §9.2 (architecture & modularity standard) and §11.4 (allow-lists, live lens
   tables, auto-push) are now accurate. `agents/build.md` was updated in place.
+
+### 2026-11-21 — §8: `nix run .#update` is NOT "all flake inputs"
+- Lesson: §8's table row says "Update all flake inputs | `nix flake update` or
+  `nix run .#update`". The two are not equivalent. `.#update` is nixos-unified's
+  `update-main-flake-inputs`, which runs `nix flake update nixpkgs home-manager
+  nixos-unified` — exactly the `primary-inputs` list at
+  `modules/flake-parts/nixos-flake.nix:30`. It exited 0 and changed nothing when
+  the input that needed bumping was `project-zomboid-servers`; plain
+  `nix flake update` then moved it (and `nix-minecraft`).
+- Fix: bump a non-primary input (PZ, minecraft, sillytavern, …) with
+  `nix flake update <input>`; `nix run .#update` is only for the three
+  primary inputs, and a silent no-op from it is expected, not a failure.
