@@ -1161,11 +1161,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1795417375,
-        "narHash": "sha256-/63tl89IPZ5wIlaVNW03w04lV95T6Cdm5rPgPeJMAQI=",
+        "lastModified": 1795431580,
+        "narHash": "sha256-Of/uuUrtN6OAYBhmBsYmWe4ZqXqX6UOREcgdPdS9I7o=",
         "owner": "Cairnstew",
         "repo": "nixos-projectzomboid-servers",
-        "rev": "71864af7588c4508ab3e037b8bd4e5a4a8f2383a",
+        "rev": "22886a7c52aea82919a76480fc360ba6ce51ce2e",
         "type": "github"
       },
       "original": {
