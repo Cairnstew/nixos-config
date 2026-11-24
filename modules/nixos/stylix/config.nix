@@ -87,6 +87,15 @@ in
       }
       {
         stylix.targets.zed.enable = lib.mkDefault false;
+
+        # wayprompt was removed from nixpkgs (unmaintained upstream, failed to
+        # build) and home-manager removed its module, which turned
+        # `programs.wayprompt` into a removed-option assertion. stylix still
+        # auto-enables this target and writes `programs.wayprompt.settings
+        # .colours`, so every switch fails evaluation even though nothing in
+        # this repo references the program. Drop the override when stylix
+        # removes the target.
+        stylix.targets.wayprompt.enable = lib.mkDefault false;
       }
 
       # Ghostty / Helix: their theme.nix files generate a theme from
