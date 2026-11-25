@@ -62,9 +62,16 @@ Set `parent.enable = true` to enable all default submodules. Each can be overrid
 | | `position` | enum | `"top-right"` | Popup position |
 | | `defaultTimeout` | int | `5000` | Timeout in ms |
 | | `width` | int | `380` | Popup width |
-| `wallpapers` | `enable` | bool | `true` | Unified wallpaper management (hyprpaper/awww/mpvpaper/waypaper) |
-| | `backend` | enum | `"hyprpaper"` | Wallpaper daemon: `hyprpaper`, `awww`, `mpvpaper`, or `waypaper` |
+| `wallpapers` | `enable` | bool | `true` | Unified wallpaper management (hyprpaper/awww/mpvpaper/waypaper/swaybg) |
+| | `backend` | enum | `"hyprpaper"` | Wallpaper daemon: `hyprpaper`, `awww`, `mpvpaper`, `waypaper`, or `swaybg` |
 | | `images` | list | `[]` | Wallpaper paths `[{path, output?}]` |
+| | `span.enable` | bool | `false` | Span one image/video as one continuous canvas across all monitors |
+| | `span.source` | path | — | Image/video to span (videos require `mpvpaper`) |
+| | `span.fit` | enum | `"cover"` | `cover` / `contain` (black bars) / `stretch` |
+| | `span.format` | enum | `"auto"` | `auto` (by extension), `image` (PNG), `video` (H.264 MP4) |
+| | `span.segments` | list | `[]` | Manual per-output crops in canvas coordinates (default: derive from `my.monitors`) |
+| | `span.package` | derivation / null | read-only | Generated per-output files (`<index>-<output>.png\|mp4`) |
+| | `resolvedImages` | list | read-only | Images actually applied (span crops when enabled) |
 | | `settings.awww.transitionType` | enum | `null` | awww transition effect |
 | | `settings.awww.transitionStep` | int | `null` | awww transition smoothness |
 | | `settings.awww.transitionFps` | int | `null` | awww transition frame rate |

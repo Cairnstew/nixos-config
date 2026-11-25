@@ -3,10 +3,6 @@ let
   cfg = config.my.desktop.hyprland;
   coreCfg = cfg.core;
 
-  mkSwaybgFlag = img:
-    (lib.optionalString (img.output != null) "-o ${lib.escapeShellArg img.output} ")
-    + "-i ${lib.escapeShellArg img.path}";
-
   # Lua string literal (double-quoted). lib.escapeShellArg is shell quoting
   # and is NOT valid here: it leaves simple words bare (a Lua variable
   # reference) and single-quotes the rest.
@@ -102,9 +98,8 @@ let
     ${lib.optionalString (cfg.wallpapers.enable && cfg.wallpapers.backend == "waypaper") ''
       hl.exec_cmd(${luaStr "waypaper --restore"})
     ''}
-    ${lib.optionalString (cfg.wallpapers.enable && cfg.wallpapers.backend == "swaybg" && cfg.wallpapers.images != []) ''
-      hl.exec_cmd(${luaStr "swaybg ${lib.concatStringsSep " " (builtins.map mkSwaybgFlag cfg.wallpapers.images)} -m fill"})
-    ''}
+    -- swaybg is started by a systemd user unit in wallpapers/config.nix so it
+    -- also picks up span-generated per-output crops.
     ${lib.optionalString cfg.bar.enable ''
       hl.exec_cmd(${luaStr "systemctl --user start waybar"})
     ''}
