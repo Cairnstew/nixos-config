@@ -34,7 +34,7 @@ let
 
   wpCfg = lockCfg.wallpaper;
   lockImages = cfg.wallpapers.resolvedImages;
-  useWallpaper = wpCfg.enable && lockImages != [ ];
+  useWallpaper = wpCfg.enable && lockCfg.useHyprlock && lockImages != [ ];
 
   backgroundBlocks = lib.concatMapStrings
     (img: ''

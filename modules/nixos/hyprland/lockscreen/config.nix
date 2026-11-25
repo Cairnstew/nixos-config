@@ -9,11 +9,7 @@ in
   config = lib.mkIf (cfg.enable && lockCfg.enable) {
     assertions = [
       {
-        assertion = !lockCfg.wallpaper.enable || lockCfg.useHyprlock;
-        message = "lockscreen.wallpaper.enable needs useHyprlock = true; swaylock cannot draw per-output images.";
-      }
-      {
-        assertion = !lockCfg.wallpaper.enable
+        assertion = !(lockCfg.wallpaper.enable && lockCfg.useHyprlock)
           || !lib.any (img: lib.hasSuffix ".mp4" "${img.path}") cfg.wallpapers.resolvedImages;
         message = "lockscreen.wallpaper.enable cannot show video span segments; use an image source (span.format = \"image\") or mpvpaper without the lock-screen wallpaper.";
       }
