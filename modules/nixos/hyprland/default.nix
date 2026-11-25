@@ -2,6 +2,7 @@
 {
   imports = [
     ./core
+    ./settings
     ./appearance
     ./bar
     ./launcher

@@ -34,14 +34,27 @@ Set `parent.enable = true` to enable all default submodules. Each can be overrid
 
 | Submodule | Option | Type | Default | Description |
 |-----------|--------|------|---------|-------------|
-| `core` | `enable` | bool | `true` | Compositor core: programs.hyprland, env vars, appearance, keybinds |
-| | `workspaceStartup` | list | `[]` | Launch commands on specific workspaces `[{command, workspace, class?, title?}]` |
-| | `extraWindowRules` | `[str]` | `[]` | Extra hyprland window rules (e.g. `"float, class:^(pavucontrol)$"`) |
+| `core` | `enable` | bool | `true` | Compositor core: programs.hyprland, env vars, autostart, keybinds |
+| | `workspaceStartup` | list | `[]` | Launch commands on specific workspaces `[{command, workspace, class?, title?, floating?, size?, position?, silent?}]` |
+| | `extraExecOnce` | `[str]` | `[]` | Extra start commands not tied to a workspace |
+| | `extraBinds` | `[str]` | `[]` | Extra Lua bind statements (see `settings.binds` for the typed form) |
+| | `extraWindowRules` | `[str]` | `[]` | Extra Lua window-rule statements (see `settings.windowRules` for the typed form) |
+| | `debug.trace` | bool | `false` | Set `HYPRLAND_TRACE`/`AQ_TRACE` for verbose logs |
+| `settings` | — | — | — | **Full Hyprland configuration surface** — see [settings/README.md](./settings/README.md) |
+| | `env` | attrs of str | XDG/GTK/cursor | Session environment (`hl.env`) |
+| | `binds` | list | `[]` | Typed keybinds `{ keys, dispatcher, opts }` |
+| | `windowRules` / `layerRules` | list | `[]` | Typed rules `{ match, rules, enabled?, name? }` |
+| | `workspaceRules` | list | `[]` | Typed `{ workspace, rules }` rules |
+| | `animations.curves` / `.entries` | list | `[]` | Bezier/spring curves and per-leaf animation entries |
+| | `devices` / `gestures` / `permissions` | list | `[]` | Per-device config, gestures, app permissions |
+| | `plugins` / `submaps` / `extraLua` | list | `[]` | Plugin loads, keybind submaps, raw Lua escape hatch |
 | `bar` | `enable` | bool | `true` | Waybar status bar |
 | | `style` | lines | `""` | Extra CSS for waybar |
 | | `position` | enum | `"top"` | Waybar position (`top`/`bottom`) |
 | | `height` | int | `30` | Waybar height in pixels |
 | | `customModules` | attrs | `{}` | Custom waybar modules `{name = {exec, execIf?, interval?, format?, returnType?, position?}}` |
+| `appearance` | `enable` | bool | `false` | Palette-derived border/shadow colour defaults in `settings` |
+| | `overrides` | list | `[]` | Per-class opacity rules `{class, focused, unfocused}` |
 | `launcher` | `enable` | bool | `true` | Wofi app launcher (SUPER+D) |
 | | `package` | pkg | `pkgs.wofi` | Launcher package |
 | | `args` | str | `"--show drun"` | Extra launcher args |
@@ -97,6 +110,26 @@ Set `parent.enable = true` to enable all default submodules. Each can be overrid
      and legacy hyprpaper-daemon submodules were deleted; awww is configured via
      wallpapers.backend = "awww" and wallpapers owns all wallpaper backends. -->
 
+## Full configuration surface
+
+`my.desktop.hyprland.settings` declares **every** option Hyprland documents
+(`hl.config()` surface: general, decoration, input, gestures, group, misc,
+layers, binds, xwayland, opengl, render, cursor, ecosystem, debug, layouts,
+experimental, input_capture, quirks) plus typed keyword options (`env`, `binds`,
+`windowRules`, `layerRules`, `workspaceRules`, animations/curves, devices,
+gestures, permissions, plugins, submaps). Each option carries a default and can
+be overridden per host. The complete table lives in
+[`settings/README.md`](./settings/README.md).
+
+```nix
+my.desktop.hyprland.settings = {
+  general.gaps_out = 30;
+  decoration.blur.enabled = true;
+  input.touchpad.natural_scroll = false;
+  misc.vrr = 1;
+};
+```
+
 ## Theming
 
 Every UI submodule owns `my.desktop.hyprland.<module>.theme` (the shared
@@ -108,7 +141,7 @@ its colour code in `./<module>/theme.nix` — see `modules/AGENT.md` §2.2.
 | `bar` | `/etc/xdg/waybar/style.css` | `backgroundOpacity`/`borderOpacity`/`hoverOpacity`/`popupOpacity`; `bar.style` is appended last |
 | `notifications` | `/etc/xdg/mako/config` | `theme.settings` is the generated file |
 | `lockscreen` | `~/.config/swaylock/config` or `/etc/xdg/hypr/hyprlock.conf` | one of the two, per `useHyprlock` |
-| `appearance` | — | sets the default of `shadow.color` (palette background @ 80% alpha) |
+| `appearance` | — | sets `settings.general.col.active_border` / `inactive_border` / `settings.decoration.shadow.color` defaults from the palette |
 | `utilities` | `/etc/xdg/gtk-3.0/settings.ini` | polarity + fonts + cursor; theme/icon names are omitted while stylix owns GTK |
 | `displayManager` | SDDM theme package | Catppuccin flavour/accent follow the scheme |
 

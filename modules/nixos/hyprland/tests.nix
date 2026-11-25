@@ -3,8 +3,9 @@ let
   cfg = config.my.desktop.hyprland;
   inherit (lib) mkIf;
 
-  wpCfg = cfg.appearance.windowOpacity;
-  wpOverrides = wpCfg.overrides or [ ];
+  decCfg = cfg.settings.decoration;
+  opacityEnabled = decCfg.active_opacity != 1.0 || decCfg.inactive_opacity != 1.0;
+  wpOverrides = cfg.appearance.overrides;
 
   monitors = config.my.monitors or [ ];
 
@@ -17,12 +18,12 @@ let
     fi
   '';
 
-  # Generate L0 assertions for windowOpacity overrides
+  # Generate L0 assertions for per-class opacity overrides
   overrideAssertions = lib.imap1
     (i: o: {
       assertion = o.focused >= 0.0 && o.focused <= 1.0 && o.unfocused >= 0.0 && o.unfocused <= 1.0;
       message = lib.concatStrings [
-        "my.desktop.hyprland.appearance.windowOpacity.overrides[${toString i}]."
+        "my.desktop.hyprland.appearance.overrides[${toString i}]."
         (if o.focused < 0.0 || o.focused > 1.0 then
           "focused (${toString o.focused}) must be between 0.0 and 1.0."
         else
@@ -85,8 +86,8 @@ let
       message = "hyprland lockscreen theme: the config for the selected locker is empty.";
     }
     {
-      assertion = !cfg.appearance.enable || cfg.appearance.shadow.color != "";
-      message = "hyprland appearance: shadow.color must not be empty.";
+      assertion = !cfg.appearance.enable || cfg.settings.decoration.shadow.color != null;
+      message = "hyprland appearance: settings.decoration.shadow.color must not be null.";
     }
     {
       assertion = !cfg.utilities.enable || !cfg.utilities.theme.enable
@@ -134,29 +135,38 @@ in
     # awww-daemon unit from ./wallpapers. awww is now configured exclusively via
     # wallpapers.backend = "awww"; the assertion that forbade enabling both is gone.
     {
-      assertion = !cfg.enable || !wpCfg.enable || (wpCfg.focused >= 0.0 && wpCfg.focused <= 1.0);
-      message = "my.desktop.hyprland.appearance.windowOpacity.focused (${toString wpCfg.focused}) must be between 0.0 and 1.0.";
+      assertion = !cfg.enable || !opacityEnabled || (decCfg.active_opacity >= 0.0 && decCfg.active_opacity <= 1.0);
+      message = "my.desktop.hyprland.settings.decoration.active_opacity (${toString decCfg.active_opacity}) must be between 0.0 and 1.0.";
     }
     {
-      assertion = !cfg.enable || !wpCfg.enable || (wpCfg.unfocused >= 0.0 && wpCfg.unfocused <= 1.0);
-      message = "my.desktop.hyprland.appearance.windowOpacity.unfocused (${toString wpCfg.unfocused}) must be between 0.0 and 1.0.";
+      assertion = !cfg.enable || !opacityEnabled || (decCfg.inactive_opacity >= 0.0 && decCfg.inactive_opacity <= 1.0);
+      message = "my.desktop.hyprland.settings.decoration.inactive_opacity (${toString decCfg.inactive_opacity}) must be between 0.0 and 1.0.";
     }
     {
-      assertion = !cfg.enable || (cfg.appearance.gapsIn >= 0 && cfg.appearance.gapsOut >= 0);
-      message = "my.desktop.hyprland.appearance.gapsIn/gapsOut must be non-negative pixel values.";
+      assertion = !cfg.enable || lib.all
+        (a: (a.bezier == null) != (a.spring == null))
+        cfg.settings.animations.entries;
+      message = ''
+        my.desktop.hyprland.settings.animations.entries: each entry needs exactly
+        one of `bezier` or `spring` (Hyprland rejects an animation with neither).
+      '';
+    }
+    {
+      assertion = !cfg.enable || (cfg.settings.general.gaps_in >= 0 && cfg.settings.general.gaps_out >= 0);
+      message = "my.desktop.hyprland.settings.general.gaps_in/gaps_out must be non-negative.";
     }
     {
       assertion = !cfg.enable || !btEnabled || config.services.blueman.enable or false;
       message = "services.blueman must be enabled when my.desktop.hyprland and my.system.bluetooth are both enabled.";
     }
     {
-      assertion = !cfg.enable || !wpCfg.enable || !hasBareOpacityRule;
+      assertion = !cfg.enable || !opacityEnabled || !hasBareOpacityRule;
       message = ''
         my.desktop.hyprland.core.extraWindowRules contains a bare 'opacity a b' rule
         without a class: or title: target. Such rules are silently ignored by Hyprland.
-        Use decoration:active_opacity and decoration:inactive_opacity for global window
+        Use settings.decoration.active_opacity and inactive_opacity for global window
         transparency, or add a class:^(ClassName)$ target for per-window overrides via
-        appearance.windowOpacity.overrides.
+        appearance.overrides.
       '';
     }
     {
@@ -202,7 +212,7 @@ in
             fi
 
             # Opacity: verify decoration settings (not bare windowrule)
-            if [ "${toString wpCfg.enable}" = 1 ]; then
+            if [ "${toString opacityEnabled}" = 1 ]; then
               if grep -q "active_opacity" "$HYPR_CONF" && grep -q "inactive_opacity" "$HYPR_CONF"; then
                 pass "Opacity: decoration:active_opacity/inactive_opacity in config"
               else
@@ -385,18 +395,18 @@ in
               fi
 
               # Opacity: runtime values via hyprctl
-              if [ "${toString wpCfg.enable}" = 1 ]; then
+              if [ "${toString opacityEnabled}" = 1 ]; then
                 ACTIVE_OPACITY=$($HCTL getoption decoration:active_opacity 2>/dev/null | head -1 | awk '{print $2}' || echo "unknown")
                 INACTIVE_OPACITY=$($HCTL getoption decoration:inactive_opacity 2>/dev/null | head -1 | awk '{print $2}' || echo "unknown")
-                if [ "$ACTIVE_OPACITY" = "${toString wpCfg.focused}" ]; then
+                if [ "$ACTIVE_OPACITY" = "${toString decCfg.active_opacity}" ]; then
                   pass "Opacity: decoration:active_opacity = $ACTIVE_OPACITY"
                 else
-                  fail "Opacity: decoration:active_opacity = $ACTIVE_OPACITY (expected ${toString wpCfg.focused})"
+                  fail "Opacity: decoration:active_opacity = $ACTIVE_OPACITY (expected ${toString decCfg.active_opacity})"
                 fi
-                if [ "$INACTIVE_OPACITY" = "${toString wpCfg.unfocused}" ]; then
+                if [ "$INACTIVE_OPACITY" = "${toString decCfg.inactive_opacity}" ]; then
                   pass "Opacity: decoration:inactive_opacity = $INACTIVE_OPACITY"
                 else
-                  fail "Opacity: decoration:inactive_opacity = $INACTIVE_OPACITY (expected ${toString wpCfg.unfocused})"
+                  fail "Opacity: decoration:inactive_opacity = $INACTIVE_OPACITY (expected ${toString decCfg.inactive_opacity})"
                 fi
                 # Window-level opacity via hyprctl clients -j
                 CLIENTS_JSON=$($HCTL clients -j 2>/dev/null || echo "[]")
@@ -472,7 +482,7 @@ in
             fi
 
             # Opacity: verify decoration settings (not bare windowrule)
-            if [ "${toString wpCfg.enable}" = 1 ]; then
+            if [ "${toString opacityEnabled}" = 1 ]; then
               if grep -q "active_opacity" "$HYPR_CONF" && grep -q "inactive_opacity" "$HYPR_CONF"; then
                 pass "Opacity: decoration:active_opacity/inactive_opacity in config"
               else
@@ -650,7 +660,7 @@ in
               fi
 
               # Window rules
-              ${lib.optionalString (wpCfg.enable || cfg.core.extraWindowRules != [ ]) ''
+              ${lib.optionalString (opacityEnabled || cfg.core.extraWindowRules != [ ]) ''
               RULE_COUNT=$($HCTL getoption windowrule 2>/dev/null | grep -c "windowrule" || true)
               if [ "$RULE_COUNT" -gt 0 ]; then
                 pass "Window rules: $RULE_COUNT configured"
@@ -660,18 +670,18 @@ in
               ''}
 
               # Opacity: runtime values via hyprctl
-              if [ "${toString wpCfg.enable}" = 1 ]; then
+              if [ "${toString opacityEnabled}" = 1 ]; then
                 ACTIVE_OPACITY=$($HCTL getoption decoration:active_opacity 2>/dev/null | head -1 | awk '{print $2}' || echo "unknown")
                 INACTIVE_OPACITY=$($HCTL getoption decoration:inactive_opacity 2>/dev/null | head -1 | awk '{print $2}' || echo "unknown")
-                if [ "$ACTIVE_OPACITY" = "${toString wpCfg.focused}" ]; then
+                if [ "$ACTIVE_OPACITY" = "${toString decCfg.active_opacity}" ]; then
                   pass "Opacity: decoration:active_opacity = $ACTIVE_OPACITY"
                 else
-                  fail "Opacity: decoration:active_opacity = $ACTIVE_OPACITY (expected ${toString wpCfg.focused})"
+                  fail "Opacity: decoration:active_opacity = $ACTIVE_OPACITY (expected ${toString decCfg.active_opacity})"
                 fi
-                if [ "$INACTIVE_OPACITY" = "${toString wpCfg.unfocused}" ]; then
+                if [ "$INACTIVE_OPACITY" = "${toString decCfg.inactive_opacity}" ]; then
                   pass "Opacity: decoration:inactive_opacity = $INACTIVE_OPACITY"
                 else
-                  fail "Opacity: decoration:inactive_opacity = $INACTIVE_OPACITY (expected ${toString wpCfg.unfocused})"
+                  fail "Opacity: decoration:inactive_opacity = $INACTIVE_OPACITY (expected ${toString decCfg.inactive_opacity})"
                 fi
                 CLIENTS_JSON=$($HCTL clients -j 2>/dev/null || echo "[]")
                 OPACITY_COUNT=$(echo "$CLIENTS_JSON" | grep -c '"opacity"' || true)

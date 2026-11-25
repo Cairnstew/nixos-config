@@ -13,12 +13,6 @@ let
   luaStr = s:
     "\"" + builtins.replaceStrings [ "\\" "\"" ] [ "\\\\" "\\\"" ] s + "\"";
 
-  hasWallpaperContent = cfg.wallpapers.enable && (
-    cfg.wallpapers.backend == "hyprpaper"
-      || cfg.wallpapers.backend == "waypaper"
-      || cfg.wallpapers.images != [ ]
-  );
-
   # Lua string literal for generated code. Nix ''...'' strings pass through
   # literally except for ''${'' escapes, so Lua ${...} interpolation must be
   # spelled ''${ in the Nix source (only the grim binds use it).
@@ -126,72 +120,11 @@ let
     end)
 
     -- ── Environment variables ───────────────────────────────────────────────
-    hl.env("XDG_CURRENT_DESKTOP", "Hyprland")
-    hl.env("XDG_SESSION_TYPE", "wayland")
-    hl.env("XDG_SESSION_DESKTOP", "Hyprland")
-    hl.env("GTK_THEME", "Adwaita:dark")
-    hl.env("XCURSOR_THEME", "Adwaita")
-    hl.env("XCURSOR_SIZE", "24")
-    ${lib.optionalString cfg.nvidia.enable ''
-    hl.env("LIBVA_DRIVER_NAME", "nvidia")
-    hl.env("__GLX_VENDOR_LIBRARY_NAME", "nvidia")
-    hl.env("WLR_NO_HARDWARE_CURSORS", "1")
-    ''}
+    -- Session env lives in my.desktop.hyprland.settings.env (settings/config.nix).
 
-    -- ── General ────────────────────────────────────────────────────────────
-    hl.config({
-      general = {
-        gaps_in = ${toString cfg.appearance.gapsIn},
-        gaps_out = ${toString cfg.appearance.gapsOut},
-        border_size = 2,
-        col = {
-          active_border = { colors = {"rgba(89b4faff)", "rgba(cba6f7ff)"}, angle = 45 },
-          inactive_border = "rgba(313244ff)",
-        },
-        layout = "dwindle",
-        resize_on_border = true,
-      },
-    })
-
-    -- ── Animations ─────────────────────────────────────────────────────────
-    hl.config({ animations = { enabled = true } })
-
-    -- ── Input ──────────────────────────────────────────────────────────────
-    hl.config({
-      input = {
-        kb_layout = "us",
-        follow_mouse = 1,
-        sensitivity = 0,
-        ${lib.optionalString (coreCfg.accelProfile != null) ''accel_profile = "${coreCfg.accelProfile}",''}
-        touchpad = {
-          natural_scroll = true,
-          tap_to_click = true,
-          drag_lock = true,
-        },
-      },
-    })
-
-    -- ── Layout ─────────────────────────────────────────────────────────────
-    hl.config({ dwindle = { preserve_split = true } })
-    hl.config({ master = { new_status = "master" } })
-
-    -- ── Misc ───────────────────────────────────────────────────────────────
-    hl.config({
-      misc = {
-        ${lib.optionalString hasWallpaperContent "force_default_wallpaper = 0,"}
-        disable_hyprland_logo = true,
-      },
-    })
-
-    ${lib.optionalString coreCfg.debug.enable ''
-    -- ── Debug / Logging ─────────────────────────────────────────────────────
-    hl.config({
-      debug = {
-        disable_logs = ${if coreCfg.debug.disableLogs then "true" else "false"},
-        gl_debugging = ${if coreCfg.debug.glDebugging then "true" else "false"},
-      },
-    })
-    ''}
+    -- ── Compositor settings ────────────────────────────────────────────────
+    -- general/decoration/input/animations/layout/misc/debug are declared in
+    -- my.desktop.hyprland.settings and emitted by settings/config.nix.
 
     -- ── Window rules ───────────────────────────────────────────────────────
     ${lib.concatStringsSep "\n" workspaceWindowRuleLines}

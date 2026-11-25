@@ -6,6 +6,7 @@
   provides = [
     "my.desktop.hyprland"
     "my.desktop.hyprland.core"
+    "my.desktop.hyprland.settings"
     "my.desktop.hyprland.appearance"
     "my.desktop.hyprland.bar"
     "my.desktop.hyprland.bar.theme"

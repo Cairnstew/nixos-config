@@ -150,28 +150,6 @@
     };
 
     debug = {
-      enable = lib.mkEnableOption "debug logging section in hyprland.lua (debug.disable_logs, debug.gl_debugging)";
-
-      disableLogs = lib.mkOption {
-        type = lib.types.bool;
-        default = false;
-        description = ''
-          debug.disable_logs in hyprland.lua. Set to true to disable logging,
-          false to enable. Defaults to false (logs on) to match Hyprland's own
-          default. Only written to config when debug.enable is true.
-        '';
-      };
-
-      glDebugging = lib.mkOption {
-        type = lib.types.bool;
-        default = false;
-        description = ''
-          debug.gl_debugging in hyprland.lua. Enables OpenGL error messages.
-          Disabled by default due to performance impact. Only written to config
-          when debug.enable is true.
-        '';
-      };
-
       trace = lib.mkOption {
         type = lib.types.bool;
         default = false;
@@ -182,16 +160,6 @@
           to avoid performance impact.
         '';
       };
-    };
-
-    accelProfile = lib.mkOption {
-      type = lib.types.nullOr (lib.types.enum [ "adaptive" "flat" ]);
-      default = null;
-      description = ''
-        Mouse acceleration profile in the Hyprland input section.
-        Set to "flat" when using maccel kernel module so libinput doesn't
-        apply its own acceleration on top.
-      '';
     };
   };
 }

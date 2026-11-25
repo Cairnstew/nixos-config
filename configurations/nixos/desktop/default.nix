@@ -240,18 +240,18 @@
         ''hl.bind(mainMod .. " + G", hl.dsp.exec_cmd("projectzomboid-viewpoint"))''
       ];
 
-      debug.enable = true;
-      accelProfile = "flat";
+      debug.trace = false;
     };
 
-    appearance = {
-      enable = true;
-      windowOpacity = {
-        enable = true;
-        focused = 0.93;
-        unfocused = 0.80;
+    settings = {
+      input.accel_profile = "flat";
+      decoration = {
+        active_opacity = 0.93;
+        inactive_opacity = 0.80;
       };
     };
+
+    appearance.enable = true;
 
     # Never auto-suspend: the desktop must stay awake and SSH/Tailscale
     # reachable. Screens still power off (profile dpmsTimeout = 900s) and the
