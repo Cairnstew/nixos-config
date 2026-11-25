@@ -49,6 +49,9 @@ in
         # /etc/xdg/hypr/hyprlock.conf (see lockscreen/theme.nix). mkDefault so
         # a host can still opt back into swaylock.
         lockscreen.useHyprlock = lib.mkDefault true;
+        # Draw the configured wallpapers (span crops included) behind hyprlock;
+        # falls back to the palette colour when no images exist.
+        lockscreen.wallpaper.enable = lib.mkDefault true;
 
         # ── Visual features ─────────────────────────────────────────────────
         colorpicker.enable = true;

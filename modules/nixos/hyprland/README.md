@@ -85,6 +85,10 @@ Set `parent.enable = true` to enable all default submodules. Each can be overrid
 | `lockscreen` | `enable` | bool | `true` | Screen locker (SUPER+L) |
 | | `package` | pkg | `pkgs.swaylock` | Lock screen package |
 | | `useHyprlock` | bool | `false` | Use hyprlock instead of swaylock |
+| | `wallpaper.enable` | bool | `false` (profile: `true`) | Draw `wallpapers.resolvedImages` behind hyprlock |
+| | `wallpaper.blurPasses` | int | `2` | hyprlock background blur passes (0 = off) |
+| | `wallpaper.blurSize` | int | `8` | hyprlock background blur size |
+| | `wallpaper.brightness` | float | `0.85` | hyprlock background brightness |
 | `screenshot` | `enable` | bool | `true` | Grim+slurp (SUPER+SHIFT+S, Print) |
 | | `directory` | str | `"~/Pictures"` | Screenshot directory |
 | `clipboard` | `enable` | bool | `true` | wl-clipboard + cliphist |

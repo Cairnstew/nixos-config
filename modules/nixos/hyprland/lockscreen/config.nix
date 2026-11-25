@@ -7,6 +7,18 @@ let
 in
 {
   config = lib.mkIf (cfg.enable && lockCfg.enable) {
+    assertions = [
+      {
+        assertion = !lockCfg.wallpaper.enable || lockCfg.useHyprlock;
+        message = "lockscreen.wallpaper.enable needs useHyprlock = true; swaylock cannot draw per-output images.";
+      }
+      {
+        assertion = !lockCfg.wallpaper.enable
+          || !lib.any (img: lib.hasSuffix ".mp4" "${img.path}") cfg.wallpapers.resolvedImages;
+        message = "lockscreen.wallpaper.enable cannot show video span segments; use an image source (span.format = \"image\") or mpvpaper without the lock-screen wallpaper.";
+      }
+    ];
+
     # Keep the option honest: `useHyprlock`'s description promises it sets the
     # package to hyprlock, and both the SUPER+L bind (core/config.nix) and
     # hypridle's lock_cmd derive the binary from this option. Without this the

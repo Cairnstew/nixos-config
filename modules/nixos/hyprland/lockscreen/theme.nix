@@ -32,11 +32,35 @@ let
     indicator-radius=80
   '';
 
+  wpCfg = lockCfg.wallpaper;
+  lockImages = cfg.wallpapers.resolvedImages;
+  useWallpaper = wpCfg.enable && lockImages != [ ];
+
+  backgroundBlocks = lib.concatMapStrings
+    (img: ''
+      background {
+          monitor = ${if img.output == null then "" else img.output}
+          path = ${img.path}
+          color = ${rgba p.background 1.0}
+          ${lib.optionalString (wpCfg.blurPasses > 0) "blur_passes = ${toString wpCfg.blurPasses}"}
+          blur_size = ${toString wpCfg.blurSize}
+          brightness = ${toString wpCfg.brightness}
+      }
+    '')
+    lockImages;
+
+  backgroundSection =
+    if useWallpaper then
+      backgroundBlocks
+    else ''
+      background {
+          monitor =
+          color = ${rgba p.background 1.0}
+      }
+    '';
+
   hyprlockConf = ''
-    background {
-        monitor =
-        color = ${rgba p.background 1.0}
-    }
+    ${backgroundSection}
 
     input-field {
         monitor =

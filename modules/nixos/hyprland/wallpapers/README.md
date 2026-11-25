@@ -88,6 +88,15 @@ nix eval --raw .#nixosConfigurations.desktop.config \
   --apply 'c: builtins.concatStringsSep "\n" (map (i: "${i.output} ${toString i.path}") c.my.desktop.hyprland.wallpapers.resolvedImages)'
 ```
 
+## Lock screen
+
+With hyprlock (the workstation profile default), setting
+`lockscreen.wallpaper.enable = true` reuses `resolvedImages`: each output gets
+its own `background { monitor = …; path = …; }` block, so span crops line up on
+the lock screen as they do on the desktop. `blurPasses`, `blurSize` and
+`brightness` tune the effect. swaylock and video span segments are not
+supported and fail an assertion.
+
 ## Notes
 
 - `cover` scales to fill the canvas (may crop edges), `contain` fits the whole
