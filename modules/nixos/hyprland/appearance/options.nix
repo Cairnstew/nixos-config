@@ -53,6 +53,20 @@
       };
     };
 
+    gapsIn = lib.mkOption {
+      type = lib.types.int;
+      default = 5;
+      example = 10;
+      description = "Padding between tiled windows (Hyprland `general:gaps_in`) in pixels.";
+    };
+
+    gapsOut = lib.mkOption {
+      type = lib.types.int;
+      default = 20;
+      example = 30;
+      description = "Padding between tiled windows and the monitor edge (Hyprland `general:gaps_out`) in pixels.";
+    };
+
     rounding = lib.mkOption {
       type = lib.types.int;
       default = 8;

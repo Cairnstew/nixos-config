@@ -142,6 +142,10 @@ in
       message = "my.desktop.hyprland.appearance.windowOpacity.unfocused (${toString wpCfg.unfocused}) must be between 0.0 and 1.0.";
     }
     {
+      assertion = !cfg.enable || (cfg.appearance.gapsIn >= 0 && cfg.appearance.gapsOut >= 0);
+      message = "my.desktop.hyprland.appearance.gapsIn/gapsOut must be non-negative pixel values.";
+    }
+    {
       assertion = !cfg.enable || !btEnabled || config.services.blueman.enable or false;
       message = "services.blueman must be enabled when my.desktop.hyprland and my.system.bluetooth are both enabled.";
     }
