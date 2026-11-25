@@ -284,6 +284,49 @@ let
       description = "Commands run once when the compositor starts (`hl.exec_cmd` inside `hyprland.start`).";
     };
 
+    execShutdown = mkOption {
+      type = types.listOf types.str;
+      default = [ ];
+      example = [ "systemctl --user stop waybar" ];
+      description = "Commands run on the `hyprland.shutdown` event (session exit).";
+    };
+
+    monitors = mkOption {
+      type = types.listOf (types.submodule {
+        options = {
+          output = mkOption { type = types.str; example = "DP-1"; description = "Connector name (`hyprctl monitors`)."; };
+          mode = mkOption { type = types.nullOr types.str; default = null; example = "2560x1440@144"; description = "Mode as WxH@Hz; omit for preferred."; };
+          position = mkOption { type = types.nullOr types.str; default = null; example = "0x0"; description = "Layout position `XxY` or `auto`."; };
+          scale = mkOption { type = types.nullOr (types.either types.int types.float); default = null; example = 1.5; description = "Scale factor or `auto`."; };
+          transform = mkOption { type = types.nullOr types.int; default = null; description = "Rotation: 0=normal, 1=90°, 2=180°, 3=270°, 4-7 flipped."; };
+          disabled = mkOption { type = types.nullOr types.bool; default = null; description = "Disable this output."; };
+          mirror = mkOption { type = types.nullOr types.str; default = null; example = "DP-2"; description = "Mirror another output."; };
+          bitdepth = mkOption { type = types.nullOr types.int; default = null; description = "Requested bit depth (10 for HDR)."; };
+          vrr = mkOption { type = types.nullOr types.int; default = null; description = "VRR: 0=off, 1=on, 2=fullscreen, 3=fullscreen game/video."; };
+          icc = mkOption { type = types.nullOr types.str; default = null; description = "Path to an ICC profile."; };
+          cm = mkOption { type = types.nullOr types.str; default = null; example = "hdr"; description = "Colour management preset (`srgb`, `hdr`, `hdredid`, `wide`, `edid`, `auto`, …)."; };
+          sdrbrightness = mkOption { type = types.nullOr types.float; default = null; description = "SDR brightness in HDR mode."; };
+          sdrsaturation = mkOption { type = types.nullOr types.float; default = null; description = "SDR saturation in HDR mode."; };
+          sdr_min_luminance = mkOption { type = types.nullOr types.float; default = null; description = "SDR minimum luminance."; };
+          sdr_max_luminance = mkOption { type = types.nullOr types.int; default = null; description = "SDR maximum luminance."; };
+          min_luminance = mkOption { type = types.nullOr types.float; default = null; description = "Panel minimum luminance."; };
+          max_luminance = mkOption { type = types.nullOr types.int; default = null; description = "Panel maximum luminance."; };
+          max_avg_luminance = mkOption { type = types.nullOr types.int; default = null; description = "Panel maximum average luminance."; };
+          supports_hdr = mkOption { type = types.nullOr types.int; default = null; description = "Override HDR capability: 0=no, 1=yes, 2=auto."; };
+          supports_wide_color = mkOption { type = types.nullOr types.int; default = null; description = "Override wide-colour capability: 0=no, 1=yes, 2=auto."; };
+          sdr_eotf = mkOption { type = types.nullOr types.str; default = null; description = "SDR transfer function preset."; };
+          reserved = mkOption { type = types.nullOr (types.either types.int types.str); default = null; description = "Reserved area (CSS gap syntax) for bars/panels."; };
+          reserved_area = mkOption { type = types.nullOr (types.either types.int types.str); default = null; description = "Additional reserved area."; };
+        };
+      });
+      default = [ ];
+      description = ''
+        Extra `hl.monitor` rules, emitted after `my.monitors`. A rule whose
+        `output` matches one generated from `my.monitors` overrides only the
+        fields set here (Hyprland merges monitor rules per output).
+      '';
+    };
+
     exec = mkOption {
       type = types.listOf types.str;
       default = [ ];

@@ -78,6 +78,17 @@ let
 
   execLines = map (cmd: ''hl.exec_cmd(${luaStr cmd})'') s.exec;
 
+  shutdownLines = optionalString (s.execShutdown != [ ]) ''
+
+    hl.on("hyprland.shutdown", function()
+    ${concatMapStringsSep "\n" (cmd: "  hl.exec_cmd(${luaStr cmd})") s.execShutdown}
+    end)
+  '';
+
+  monitorLines = map
+    (m: ''hl.monitor(${luaTable (filterAttrs (_: v: v != null) m)})'')
+    s.monitors;
+
   bindLine = prefix: b:
     ''${prefix}hl.bind(${luaStr b.keys}, ${b.dispatcher}${optionalString (b.opts != { }) ", ${luaTable b.opts}"})'';
 
@@ -165,6 +176,8 @@ in
     + linesFor permissions
     + linesFor plugins
     + linesFor (builtins.concatLists (map submapLines s.submaps))
+    + linesFor monitorLines
+    + shutdownLines
     + linesFor s.extraLua
     + optionalString (s.execOnce != [ ]) ''
 

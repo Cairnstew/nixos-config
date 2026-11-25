@@ -562,6 +562,8 @@ These are not `hl.config()` values; each renders the matching `hl.*` call.
 | `env` | attrs of str | XDG/GTK/cursor defaults | Environment variables (`hl.env`). |
 | `execOnce` | list of str | `[]` | Commands run in `hyprland.start` (`hl.exec_cmd`). |
 | `exec` | list of str | `[]` | Commands run on every config load. |
+| `execShutdown` | list of str | `[]` | Commands run on `hyprland.shutdown` (session exit). |
+| `monitors` | list of monitor specs | `[]` | Extra `hl.monitor` rules emitted after `my.monitors` (mode, position, vrr, HDR/ICC fields, …). |
 | `binds` | list of `{ keys, dispatcher, opts }` | `[]` | Extra keybinds (`hl.bind`), emitted after the built-ins so they can shadow. |
 | `windowRules` | list of `{ match, rules, enabled, name }` | `[]` | Typed `hl.window_rule` entries. |
 | `layerRules` | list of `{ match, rules, enabled, name }` | `[]` | Typed `hl.layer_rule` entries. |
@@ -579,3 +581,16 @@ The built-in binds, workspace startup (`core.workspaceStartup`), raw
 `core.extraBinds` / `core.extraWindowRules` and per-class opacity overrides
 (`appearance.overrides`) still exist and are emitted alongside these options.
 
+
+## Regenerating after a Hyprland upgrade
+
+`spec.nix` mirrors the `HL.ConfigOpt` stubs that ship in the Hyprland package
+(`share/hypr/stubs/hl.meta.lua`); the descriptions, types and defaults come
+from the wiki pages linked above. After bumping Hyprland:
+
+1. Diff the new `hl.meta.lua` against `spec.nix` — new keys need a leaf, removed
+   keys must be dropped, changed Lua types need the matching `type` string.
+2. Check the wiki table for new/changed defaults and copy them in; keep the
+   repo overrides marked in the table above.
+3. Regenerate the Options table from `spec.nix` and verify the result with
+   `Hyprland --verify-config --config <generated hyprland.lua>` before merging.
