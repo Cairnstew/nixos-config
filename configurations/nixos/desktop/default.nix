@@ -263,17 +263,12 @@
     wallpapers = {
       span = {
         enable = true;
-        # 7680x4320 Lofoten panorama, split into per-output PNG crops by
-        # `wallpapers.span` (canvas is 4960x1920 for this monitor layout).
-        # 4kwallpapers.com rejects plain curl (403), hence the browser UA and
-        # Referer — keep them in sync if the URL is ever changed.
+        # 7680x4320 "Vector Forest with Sunset" panorama, split into per-output
+        # PNG crops by `wallpapers.span` (canvas is 4960x1920 for this layout).
+        # backiee serves the original to curl; no special UA/Referer needed.
         source = pkgs.fetchurl {
-          url = "https://4kwallpapers.com/images/wallpapers/lofoten-mountains-7680x4320-27986.jpg";
-          hash = "sha256-hjdQ/5r8rWpsGFMcb4iD8ovnxDhbtQR3fOMKZ4hra+8=";
-          curlOptsList = [
-            "-A" "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36"
-            "-e" "https://4kwallpapers.com/"
-          ];
+          url = "https://backiee.com/static/wallpapers/7680x4320/198927.jpg";
+          hash = "sha256-tdy7XlZ4scfjSzSidN74RhduNqGbLYDdXq+Rs3uwvFg=";
         };
         fit = "cover";
       };
