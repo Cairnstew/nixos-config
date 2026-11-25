@@ -175,7 +175,7 @@ let
       let
         outputFlag = lib.optionalString (img.output != null) "-o ${lib.escapeShellArg img.output}";
       in
-      "${awwwBin} img ${outputFlag} ${lib.escapeShellArg img.path} --no-cache"
+      "${awwwBin} img ${outputFlag} ${lib.escapeShellArg img.path}"
     )
     images;
 
