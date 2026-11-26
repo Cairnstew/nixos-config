@@ -52,6 +52,10 @@ my.programs.vscode = {
   the user's `PATH`.
 - `mcp.enable` requires `programs.mcp.enable = true`; the NixOS host config
   enables it and declares the shared servers (`nixos`, `fetch`, `filesystem`, …).
+- The `mkhl.direnv` extension loads each workspace's `.envrc` (this repo's uses
+  `use flake`, so the devShell). Settings pin the `direnv` executable by store
+  path and set `direnv.restart.automatic`, so the extension host reloads once
+  the environment changes. Each project still needs a one-time `direnv allow`.
 - Update checks are disabled by `mkDefault` — Nix owns the VS Code build and its
   extensions. Override `programs.vscode.profiles.default.enableUpdateCheck` to
   re-enable the notifications.

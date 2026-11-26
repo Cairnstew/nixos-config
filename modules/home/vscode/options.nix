@@ -111,6 +111,15 @@ in
           "editor.tabSize" = 2;
           "editor.insertSpaces" = true;
         };
+
+        # ── direnv (mkhl.direnv) ───────────────────────────────────────────
+        # Load the workspace `.envrc` (here `use flake`, so the repo devShell)
+        # into terminals and the extension host. The executable path is pinned
+        # so a GUI-launched VS Code does not need direnv on its PATH.
+        "direnv.path.executable" = "${pkgs.direnv}/bin/direnv";
+        # Without this the extension host keeps the pre-.envrc environment
+        # (formatters, LSPs, tasks) after the devShell loads.
+        "direnv.restart.automatic" = true;
       };
       description = "VS Code user settings (settings.json).";
     };
