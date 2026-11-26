@@ -6,13 +6,22 @@ in
   config = lib.mkIf cfg.enable {
     programs.vscode = {
       enable = true;
+      package = lib.mkIf (cfg.package != null) cfg.package;
       profiles.default = {
         extensions = cfg.extensions
           ++ cfg.additionalExtensions
           ++ lib.optional cfg.continue.enable pkgs.vscode-extensions.continue.continue;
+        # Generated palette first, user settings win on conflict.
+        userSettings = lib.recursiveUpdate cfg.theme.settings cfg.userSettings;
+        inherit (cfg) keybindings globalSnippets languageSnippets;
+        # Shared MCP registry (programs.mcp.servers) from the host config.
+        enableMcpIntegration = cfg.mcp.enable;
+        # Nix-managed install: neither VS Code nor its extensions can update
+        # themselves, so suppress the notifications. mkDefault keeps a host
+        # free to opt back in.
+        enableUpdateCheck = lib.mkDefault false;
+        enableExtensionUpdateCheck = lib.mkDefault false;
       };
-      # Generated palette first, user settings win on conflict.
-      profiles.default.userSettings = lib.recursiveUpdate cfg.theme.settings cfg.userSettings;
     };
 
     home.file.".continue/config.yaml" = lib.mkIf cfg.continue.enable {

@@ -265,7 +265,7 @@ in
 
     # ── VS Code settings ───────────────────────────────────────────────────
 
-    programs.vscode.userSettings = mkIf
+    programs.vscode.profiles.default.userSettings = mkIf
       (config.programs.vscode.enable or false)
       clineVSCodeSettings;
 
