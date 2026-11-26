@@ -462,3 +462,16 @@ gh pr merge <pr-number> --merge --repo Cairnstew/nixos-config
   from those old warnings — compare the warning set against `HEAD` before
   blaming the change, and keep the per-host `drvPath` evals as the authoritative
   check.
+
+### 2026-11-26 — `git commit -m "…"` executes backticks in zsh; use `-F <file>` for messages quoting identifiers
+
+- Lesson: the Examples block above (`:125`) shows the multi-line
+  `git commit -m "…"` form. Reused verbatim for a body that named extensions and
+  option paths in backticks, zsh ran each backtick as command substitution — the
+  commit landed with `command not found: bbenoist.nix` and the identifiers
+  blanked out of the body, so it needed an immediate amend (auto-push publishes
+  commits within ~5 minutes).
+- Fix: for any message containing backticks, `$`, `$(` or `!`, write it to a file
+  (`/tmp/opencode/<topic>-commit-msg.txt`) and use `git commit -F <file>`; or
+  feed a single-quoted heredoc via `git commit -F -`. Amend before auto-push if it
+  slips through, but do not rely on that window.
