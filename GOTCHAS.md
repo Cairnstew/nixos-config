@@ -726,6 +726,12 @@ Symptom: Overwatch 2 hangs at "Processing Vulkan Shaders" for a very long time (
 
 ---
 
+**`ensure-steam-shader-cache` never writes `steam_dev.cfg` — `shaderPreCaching.backgroundThreads` is inert** (2026-11-27)
+
+Symptom: after enabling `my.programs.steam.shaderPreCaching` (`configurations/nixos/desktop/default.nix:426`), `~/.steam/steam/steam_dev.cfg` does not exist, so the thread-count mitigation described in the Overwatch entry above never takes effect and Vulkan pre-cache replay still runs at Steam's default thread count. Cause: the script body at `modules/nixos/steam/config.nix:105` only rewrites `config.vdf` / `localconfig.vdf` (`ShaderPreCache`, `AllowBackgroundProcessingOfVulkanShaders`); `cfg.shaderPreCaching.backgroundThreads`, declared at `modules/nixos/steam/options.nix:44`, is referenced nowhere else in the repo, so the option is declared and documented but unused. Fix until `config.nix` writes the file: create it by hand (Steam closed) with `unShaderBackgroundProcessingThreads <N>` (`12` on a 6c/12t CPU). Diagnosing a real stall on this: Slay the Spire 2 (app `2868840`, native Linux Godot/Vulkan) hung on Steam's "Processing Vulkan shaders" while `logs/shader_log.txt` looped `Still replaying 2868840 (0-8%, ~48k pipelines)` with `FOZ underflow, file truncated?` — the blocker was the corrupt `steamapps/shadercache/2868840` (a fresh 522 MB Fossilize cache after an app update), not the thread count, and no new `~/.local/share/SlayTheSpire2/logs/godot*.log` appeared because the game process never started.
+
+---
+
 **`windowrule = opacity a b` without class target silently ignored in Hyprland 0.55**
 
 Symptom: Setting `windowrule = opacity 0.93 0.80` in hyprland.conf has no visible effect — windows stay fully opaque. `hyprctl clients -j` shows no `opacity` field on any window. `decoration:active_opacity` and `decoration:inactive_opacity` remain at their default of `1.0`. Cause: `windowrule = opacity` without a `class:` or `title:` target is silently ignored by Hyprland 0.55 — it doesn't apply to any windows. This was previously used as a "global" opacity hack but was never a supported syntax for setting global opacity. Fix: Use `decoration { active_opacity = 0.93; inactive_opacity = 0.80; }` instead of a windowrule. These decoration-level settings control global window opacity properly. For per-window overrides, use `windowrule = opacity a b, class:^(ClassName)$` with an explicit class target — those DO work. See `modules/nixos/hyprland/core/config.nix` and `modules/nixos/hyprland/core/options.nix`.
