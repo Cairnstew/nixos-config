@@ -423,7 +423,10 @@
   };
 
   my.programs.steam = {
-    shaderPreCaching.enable = true;
+    # Steam's Fossilize pre-cache stalls on large caches — StS2 (2868840) looped
+    # at 0-8% of ~48k pipelines, and OW2 re-runs its shader update daily. Run
+    # `ensure-steam-shader-cache` with Steam closed to apply this.
+    shaderPreCaching.enable = false;
     gamemode.enable = true;
     games = {
       overwatch-2 = {

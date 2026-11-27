@@ -11,8 +11,8 @@ Unified NixOS module for Steam gaming platform. Replaces the deprecated
 | `my.programs.steam.remotePlay.openFirewall` | `false` | Open ports for Remote Play Together |
 | `my.programs.steam.dedicatedServer.openFirewall` | `false` | Open ports for dedicated servers |
 | `my.programs.steam.gamemode.enable` | `false` | Enable Feral Gamemode |
-| `my.programs.steam.shaderPreCaching.enable` | `false` | Ensure Steam shader pre-caching is on in config.vdf |
-| `my.programs.steam.shaderPreCaching.backgroundThreads` | `null` | CPU threads for Vulkan shader background processing (auto-detected when `null`) |
+| `my.programs.steam.shaderPreCaching.enable` | `null` | Force Steam shader pre-caching on/off (`null` leaves Steam's setting alone) |
+| `my.programs.steam.shaderPreCaching.backgroundThreads` | `null` | CPU threads for Vulkan shader background processing (CPU count when `null`) |
 | `my.programs.steam.extraCompatPaths` | `null` | Extra Proton compatibility tool paths |
 | `my.programs.steam.extraPackages` | `[]` | Extra Steam-related packages |
 | `my.programs.steam.hyprland.enable` | `false` | Hyprland window rules forcing Steam games onto a monitor |
@@ -51,6 +51,8 @@ my.profiles.gaming.enable = true;
 - Enables `programs.steam.enable` (NixOS built-in) for 32-bit OpenGL, unfree, and system-wide install.
 - Installs `steam-run` and `steamcmd` system-wide.
 - `STEAM_EXTRA_COMPAT_TOOLS_PATHS` is set as a home-manager session variable when `extraCompatPaths` is non-null.
+- `ensure-steam-shader-cache` applies `shaderPreCaching` to `config.vdf` / `localconfig.vdf` and writes `unShaderBackgroundProcessingThreads` to `steam_dev.cfg`. Nothing runs it automatically; run it with Steam closed.
+- `steam-clear-shader-cache <appid>` deletes `steamapps/shadercache/<appid>` in every library. Use it when Steam's "Processing Vulkan shaders" dialog never finishes (a corrupt Fossilize cache), with Steam closed.
 - This module replaces the deprecated `modules/home/steam/` home-manager module.
 
 ## Related Modules

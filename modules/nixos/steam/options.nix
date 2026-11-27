@@ -32,27 +32,31 @@ in
 
     shaderPreCaching = {
       enable = mkOption {
-        type = types.bool;
-        default = false;
+        type = types.nullOr types.bool;
+        default = null;
         description = ''
-          Ensure Steam shader pre-caching is enabled in config.vdf.
-          Enables both "Shader Pre-Caching" and "Background Processing of
-          Vulkan Shaders" in Steam → Settings → Downloads.
+          Force Steam shader pre-caching on or off. <literal>true</literal>
+          enables "Shader Pre-Caching" and "Background Processing of Vulkan
+          Shaders", <literal>false</literal> disables both globally, and
+          <literal>null</literal> leaves Steam's own settings untouched.
+
+          This only installs the <command>ensure-steam-shader-cache</command>
+          helper; nothing runs it automatically. Run it with Steam closed,
+          since the client rewrites these files on exit.
         '';
       };
 
       backgroundThreads = mkOption {
         type = types.nullOr types.ints.unsigned;
         default = null;
-        example = 8;
+        example = 12;
         description = ''
-          Number of CPU threads to use for Vulkan shader background processing.
-          Writes <filename>steam_dev.cfg</filename> with
-          <literal>unShaderBackgroundProcessingThreads</literal> and
-          <literal>@ShaderBackgroundProcessingThreads</literal>.
-          Set to your CPU thread count (e.g. 8 for a 4-core/8-thread CPU).
-          When <literal>null</literal>, the script auto-detects via
-          <literal>os.cpu_count()</literal>.
+          Number of CPU threads Steam may use for Vulkan shader background
+          processing, written to <filename>~/.steam/steam/steam_dev.cfg</filename>
+          as <literal>unShaderBackgroundProcessingThreads</literal> by the
+          <command>ensure-steam-shader-cache</command> helper.
+          Set to your CPU thread count (e.g. 12 for a 6-core/12-thread CPU).
+          When <literal>null</literal>, the helper uses the CPU count.
         '';
       };
     };

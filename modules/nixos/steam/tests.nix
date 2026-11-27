@@ -24,6 +24,14 @@ in
           my.programs.steam.games requires my.programs.steam.enable to be true.
         '';
       }
+      {
+        assertion =
+          cfg.shaderPreCaching.backgroundThreads == null
+          || cfg.shaderPreCaching.backgroundThreads > 0;
+        message = ''
+          my.programs.steam.shaderPreCaching.backgroundThreads must be null or a positive thread count.
+        '';
+      }
     ]
     ++ lib.optionals (hasGames && cfg.enable) (lib.mapAttrsToList
       (name: game: {
