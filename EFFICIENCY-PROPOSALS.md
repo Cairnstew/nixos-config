@@ -265,3 +265,40 @@ Rules:
 - **Idea**: a read-only app in the pz repo (`nix run .#pz-deploy-status -- server`) that prints one JSON object per host for the `pz-deploy` workflow — `branch`, `trackedDirty`, `memAvailableGi`, `pzPin` (from `flake.lock`), `gameUnit`/`installUnit` states plus their start timestamps, connector item mtime + bundled-mod directory listing, and the last `Workshop content ready` line. `--all` would emit both hosts. The skill currently spells out each of these as its own `ssh` heredoc (Phase 0, Phase 3, Phase 4), so the agent re-derives them one call at a time and re-checks the same five facts before and after activation.
 - **Evidence** (this session `ses_df47ad884ffeb7YtY5Mh16IZDe` via `opencode.db`: cost $0.00, 114,562 in / 13,189 out / 18,685 reasoning / 2,715,392 cache-read; **61 tool calls = shell 57, execute 2, skill 1, read 1, question 1, edit 1**): **19 of the 57 shell calls are `ssh`** into `server`, all of them deploy preflight/verification rather than work — preflight status+branch+pin, memory, clean-checkout, unit states (twice), install-journal tails (three times), connector tree listing, ini inspection, pack-doctor, and post-boot log greps. Several were re-runs of the same query because a first answer was ambiguous (e.g. the server's CST clock made a fresh install look 6h old, and `is-active` caught a unit mid-shutdown). A single typed JSON payload per host would collapse most of them and remove the clock/locale ambiguity by emitting UTC ISO timestamps.
 - **NOT built this session** (proposal-only).
+
+---
+
+## 2026-11-28 — `nix run .#pz-trace`: one bounded call per PZ log/engine question instead of 86 log reads plus 7 jar digs
+
+- **Idea**: a read-only app in the pz repo (`nixos-projectzomboid-servers`) with
+  two verbs over the *installed* build, both hard-capped in output:
+  - `--error <substring> [--host server] [--max-hits N] [--since TS]`: newest
+    `~/Zomboid/Logs/*DebugLog*.txt` (or the dedicated log dir over ssh) → the
+    first hit with its **full** stack, the ≤30 log lines around it, and an
+    occurrence histogram grouped by the innermost non-engine `Lua(MOD).fn`
+    frame (`file:line`). That grouping is the whole diagnosis: it separates "one
+    call site failing repeatedly" from "the same engine error surfacing through
+    many call sites".
+  - `--class <fqcn> [--method <name>]`: extract that class from
+    `projectzomboid.jar` with `python3 zipfile` (no `unzip` on this box) and
+    print `javap -p -c -l` for the class or one method. The `LineNumberTable` is
+    what turns a logged `ReturnValues.java:61` into "line 61 is
+    `a.callFrame = null`", which is the difference between guessing a cause and
+    knowing it.
+- **Evidence** (this session `ses_ddcbc4896ffeoEl1jSnijL0foC` via `opencode.db`:
+  cost $0.00 on the free model, 629,007 in / 67,567 out / 214,248 reasoning /
+  58,791,680 cache-read; **443 tool calls**): **86 of them were shell commands
+  over `~/Zomboid/Logs`** — `sed -n` window dumps into 9 MB DebugLogs, repeated
+  `grep -c`, `sort | uniq -c` histograms, and re-reading the same file for each
+  new question — and **7 more dug into `projectzomboid.jar`** (python `zipfile`
+  extraction, then `nix shell nixpkgs#jdk21 -- javap` with three different flag
+  sets, because `-p -c` alone hides the line table). The two facts that actually
+  decided the bug are exactly what the two verbs would return: `ReturnValues.put`
+  line 61 nulls its argument, and its only caller passes
+  `MethodArguments.getReturnValues()`.
+- **Not a duplicate**: it confirms the *shape* of the 2026-10-15 `oclog` proposal
+  (bounded, time-filtered wrapper for a huge log) but applies it to a different
+  artifact — PZ DebugLogs need call-site grouping and stack extraction, not
+  opencode-log boilerplate collapsing. The 2026-11-24 `pz-deploy-status`
+  proposal covers deploy preflight, not log/engine forensics.
+- **NOT built this session** (proposal-only).
